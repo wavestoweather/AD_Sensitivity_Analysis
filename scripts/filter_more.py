@@ -45,8 +45,9 @@ def filt_highest_in(df, out_param, n=3):
    # return df_out[conditions2]
 
 
-res = pd.read_csv("sb_ice_wcb272280_filt_zero_30_start_over_20160922_00.csv")
-res = get_traj(df=res, traj=1)
-res.to_csv("sb_ice_wcb272280_filt_zero_30_start_over_20160922_00_traj1_all.csv")
-# res = filt_highest_in(df=res, out_param="qr", n=10)
-# res.to_csv("sb_ice_wcb272280_filt_zero_30_start_over_20160922_00_traj1_qr_top10.csv")
+if __name__ == "__main__":
+    res = pd.read_csv("sb_ice_wcb272280_filt_zero_30_start_over_20160922_00.csv")
+    res = get_traj(df=res, traj=1)
+    res.to_csv("sb_ice_wcb272280_filt_zero_30_start_over_20160922_00_traj1_all.csv")
+    # res = filt_highest_in(df=res, out_param="qr", n=10)
+    # res.to_csv("sb_ice_wcb272280_filt_zero_30_start_over_20160922_00_traj1_qr_top10.csv")

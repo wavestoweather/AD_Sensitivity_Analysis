@@ -4,10 +4,7 @@ __pycache__/*
 *.log
 pics/*
 data/*
-# sphinx doc
-conf.py
-make.bat
-Makefile
-_static/*
-_build/*
-_templates/*
+# Sphinx build
+docs/_build/*
+docs/_static/*
+docs/_templates/*

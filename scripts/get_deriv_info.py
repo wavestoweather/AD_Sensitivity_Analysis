@@ -1,17 +1,16 @@
-"""
-Get some information about csv trajectories from simulations.
-
-"""
 from argparse import ArgumentParser
 import numpy as np
+import pandas as pd
 
 
 def norm_derivatives(df):
     """
     Normalize the derivatives for every timestep individually such that
-    values are between [-1, 1] for big negative and positive impacts.
-    norm(x, t) = sgn(x(t)) * ( |x(t)| - min(x(t)) ) / ( max(x(t)) - min(x(t)) )
-    This is done inplace
+    values are between :math:`[-1, 1]` for big negative and positive impacts.
+    .. math:: 
+    \text{norm}(x, t) = \text{sign}(x(t)) \cdot \frac{|x(t)| - \min(x(t))}{\max(x(t)) - \min(x(t))})
+    
+    This is done inplace.
 
     Parameters
     ----------
@@ -39,7 +38,7 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("-i", "--input", type=str, default=None,
             help='''Path to folder with all files to load.''')
-    parser.add_argument("-o", "--output", type=str, default=None,
+    parser.add_argument("-o", "--output", type=str, default="file.csv",
             help='''Directory and name to save the normed csv.''')
     parser.add_argument("-e", "--epsilon", type=float, default=0.0,
             help='''Value to filter values with. Default is 0.0.''')
@@ -48,15 +47,26 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--trajectory", nargs='+', type=int, default=1,
             help='''A list of trajectories to consider here. Using a selected
             number of trajectories helps reducing the amount of used RAM.''')
-
+    parser.add_argument("-c", "--csv", type=str, default=None,
+            help='''Load an already filtered csv file and just norm the derivatives.
+            Deactivates -t, -f and -e.''')
     args = parser.parse_args()
 
-    df_data = load_mult_derivates_directory(
-            direc=args.input,
-            filt=args.filter,
-            EPSILON=args.epsilon,
-            trajectories=args.trajectory)
+    if args.csv is None:
+        df_data = load_mult_derivates_directory(
+                direc=args.input,
+                filt=args.filter,
+                EPSILON=args.epsilon,
+                trajectories=args.trajectory)
+    else:
+        df_data = pd.read_csv(args.csv)
+        # df_data = pd.read_csv(args.csv, nrows=1000000, names=["deriv", "in_param", "out_param", "timestep", "trajectory"], skiprows=100000)
+    print("Max and min deriv: {}, {}".format(df_data["deriv"].max(), df_data["deriv"].min()))
+    
     norm_derivatives(df_data)
+    df_data = df_data.loc[:, ~df_data.columns.str.contains('^Unnamed')]
+    print(df_data)
+    print("Max and min deriv: {}, {}".format(df_data["deriv"].max(), df_data["deriv"].min()))
     df_data.to_csv(args.output)
 
 

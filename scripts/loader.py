@@ -344,7 +344,7 @@ def load_mult_derivates_directory(direc="", filt=True,
     """
     df = pd.DataFrame(data={"timestep": [], "trajectory": [], "out_param": [],
                             "in_param": [], "deriv": []})
-    file_list = [f for f in listdir(direc= if isfile(join(direc, f))]
+    file_list = [f for f in listdir(direc) if isfile(join(direc, f))]
     file_list2 = []
     for f in file_list:
         s = f.split("traj")
