@@ -2,6 +2,7 @@ __pycache__/*
 *.txt
 *.pyc
 *.log
+*.csv
 pics/*
 data/*
 # Sphinx build
