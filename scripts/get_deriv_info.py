@@ -6,9 +6,10 @@ import pandas as pd
 def norm_derivatives(df):
     """
     Normalize the derivatives for every timestep individually such that
-    values are between :math:`[-1, 1]` for big negative and positive impacts.
-    .. math:: 
-    \text{norm}(x, t) = \text{sign}(x(t)) \cdot \frac{|x(t)| - \min(x(t))}{\max(x(t)) - \min(x(t))})
+    values are between [-1, 1] for big negative and positive impacts.
+    
+    .. math::
+        \\text{norm}(x, t) = \\text{sign}(x(t)) \cdot \\frac{|x(t)| - \min(x(t))}{\max(x(t)) - \min(x(t))}
     
     This is done inplace.
 

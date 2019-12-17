@@ -1,12 +1,15 @@
 Welcome to Process and Plot Scripts's documentation!
 ====================================================
 
-.. automodule:: scripts.get_deriv_info
-   :members:
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+.. automodule:: scripts.get_deriv_info
+   :members:
+
+.. automodule:: scripts.loader
+   :members:
 
 
 

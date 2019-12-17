@@ -50,16 +50,19 @@ def filter_zeros(df_dict, EPSILON=1e-31):
 
     Parameters
     ----------
-    df_dict     A dictionary of pandas.Dataframe with key the output parameter
-                and the columns the input parameters and values are the
-                derivatives.
-    EPSILON     If all values in a column are lower than EPSILON,
-                drop that one.
+    df_dict : Dictionary of pandas.Dataframe
+        A dictionary of pandas.Dataframe with key the output parameter
+        and the columns the input parameters and values are the
+        derivatives.
+    EPSILON : float
+        If all values in a column are lower than EPSILON,
+        drop that one.
 
-    Return
-    ------
-    Modified df_dict with removed columns in each dataframe where only (near)
-    zeros existed before.
+    Returns
+    -------
+    Dictionary of pandas.Dataframe
+        Modified df_dict with removed columns in each dataframe where only (near)
+        zeros existed before.
     """
     key_drop = []
     for key in df_dict:
@@ -91,16 +94,19 @@ def filter_high(df_dict, high=1e1):
 
     Parameters
     ----------
-    df_dict     A dictionary of pandas.Dataframe with key the output parameter
-                and the columns the input parameters and values are the
-                derivatives.
-    high        If some values in a column are higher than high,
-                drop that one.
+    df_dict : Dictionary of pandas.Dataframe
+        A dictionary of pandas.Dataframe with key the output parameter
+        and the columns the input parameters and values are the
+        derivatives.
+    high : float
+        If some values in a column are higher than high,
+        drop that one.
 
-    Return
-    ------
-    Modified df_dict with removed columns in each dataframe where some values
-    were too high before.
+    Returns
+    -------
+    Dictionary of pandas.Dataframe
+        Modified df_dict with removed columns in each dataframe where some values
+        were too high before.
     """
     key_drop = []
     for key in df_dict:
@@ -134,12 +140,12 @@ def load_derivatives(prefix="", suffix="", filt=False, EPSILON=1e-31):
 
     Parameters
     ----------
-    prefix      Prefix of the datafile such as "sb_ice".
-    suffix      Suffix of the datafile such as "start_over".
+    prefix : string                                                                                                                           Prefix of the datafile such as "sb_ice".                                                                                          suffix : string                                                                                                                           Suffix of the datafile such as "start_over".                                                                                      filt : bool                                                                                                                               Filter the data with values smaller than EPSILON if true.                                                                         EPSILON : float                                                                                                                           If filt is true, filter values smaller than EPSILON out.   
 
-    Return
-    ------
-    Dictionary with dataframes as described above.
+    Returns
+    -------
+    Dictionary with pandas.Dataframe
+        Dictionary with dataframes as described above.
 
     """
     df_dict = {}
@@ -174,12 +180,44 @@ def load_derivatives(prefix="", suffix="", filt=False, EPSILON=1e-31):
 def load_nc(inp="/mnt/localscratch/data/project/m2_jgu-tapt/o"
                 + "nline_trajectories/foehn201305_case/" +
                 "foehn201305_warming1.nc"):
+    """
+    Read a netCDF file and create a pandas.Dataframe.
+
+    Parameters
+    ----------
+    inp : string
+        Path to a nc file.
+
+    Returns
+    -------
+    pandas.Dataframe
+        The loaded file as pandas.Dataframe.
+    """
     ds = xr.open_dataset(inp)
     df = ds.to_dataframe()
     return df
 
 
 def load_output(prefix="sb_ice", suffix="_start_over"):
+    """
+    Read a csv file and return a pandas.Dataframe with 
+    physical (not normalized) entries.
+
+    Parameters
+    ----------
+    prefix : string   
+        Prefix of the datafile such as "sb_ice".    
+    suffix : string   
+        Suffix of the datafile such as "start_over".        
+    
+    Returns
+    -------
+    pandas.Dataframe
+        Dataframe with the columns "p", "T", "w", 
+        "qc", "qr", "qs", "qg", "qh", "qi", "qv",
+        "qiout", "qsout", "qrout", "qgout", "qhout",
+        "latent_heat", "latent_cool".
+    """
     data = pd.read_csv("data/" + prefix + suffix + ".txt", sep=",")
     data["p"] = data["p"]*pref/100  # We want hPa
     data["T"] = data["T"]*Tref
@@ -208,11 +246,13 @@ def transform_df(df):
 
     Parameters
     ----------
-    df      pandas.DataFrame where columns are the names of the parameters.
+    df : pandas.DataFrame
+        Dataframe where columns are the names of the parameters.
 
     Returns
     -------
-    Transformed Dataframe.
+    pandas.Dataframe
+        Transformed Dataframe.
     """
     dicti = {"param": [], "timestep": [], "deriv": []}
     for key in df:
@@ -235,12 +275,12 @@ def load_mult_derivates(prefix="", suffix="", filt=False, EPSILON=1e-31,
 
     Parameters
     ----------
-    prefix      Prefix of the datafile such as "sb_ice".
-    suffix      Suffix of the datafile such as "start_over".
+    prefix : string                                                                                                                           Prefix of the datafile such as "sb_ice".                                                                                          suffix : string                                                                                                                           Suffix of the datafile such as "start_over".                                                                                      filt : bool                                                                                                                               Filter the data with values smaller than EPSILON if true.                                                                         EPSILON : float                                                                                                                           If filt is true, filter values smaller than EPSILON out.                                                                          lo : int                                                                                                                                  Lowest trajectory number to read in.                                                                                              hi : int                                                                                                                                  Highest trajectory number to read in.                                                                                             high : float                                                                                                                              If not None: Filter those derivatives out that have                                                                                   higher values. 
 
-    Return
-    ------
-    Pandas dataframe as described above.
+    Returns
+    -------
+    pandas.Dataframe
+        Pandas dataframe as described above.
     """
     df_dict = {"timestep": [], "trajectory": [], "out_param": [],
                "in_param": [], "deriv": []}
@@ -282,12 +322,23 @@ def load_mult_derivates_big(prefix="", suffix="", filt=False, EPSILON=1e-31,
 
     Parameters
     ----------
-    prefix      Prefix of the datafile such as "sb_ice".
-    suffix      Suffix of the datafile such as "start_over".
+    prefix : string
+        Prefix of the datafile such as "sb_ice".
+    suffix : string
+        Suffix of the datafile such as "start_over".
+    filt : bool                                                                                                                               Filter the data with values smaller than EPSILON if true.                                                                         EPSILON : float                                                                                                                           If filt is true, filter values smaller than EPSILON out.
+    lo : int
+        Lowest trajectory number to read in.
+    hi : int
+        Highest trajectory number to read in.
+    high : float
+        If not None: Filter those derivatives out that have
+        higher values.
 
-    Return
-    ------
-    Pandas dataframe as described above.
+    Returns
+    -------
+    pandas.Dataframe
+        Pandas dataframe as described above.
     """
     df = pd.DataFrame(data={"timestep": [], "trajectory": [], "out_param": [],
                             "in_param": [], "deriv": []})
@@ -331,16 +382,25 @@ def load_mult_derivates_directory(direc="", filt=True,
     trajectory, timestep, out_param, in_param, deriv
     where out_param is a string such as 'p', 'T', 'w' etc
     in_param is a string such as "da_1", "da_2", "dsnow_alfa_q", ...
-    deriv is the float derivative of the given in_param
+    deriv is the float derivative of the given in_param.
 
     Parameters
     ----------
-    prefix      Prefix of the datafile such as "sb_ice".
-    suffix      Suffix of the datafile such as "start_over".
+    direc : string
+        A path to a directory wit a list of files to read.
+    filt : bool
+        Filter the data with values smaller than EPSILON if true.
+    EPSILON : float
+        If filt is true, filter values smaller than EPSILON out.
+    trajectories : list of int
+        A list of trajectories to read in.
+    suffix : string
+        The suffix of the filenames before '_diff_xx.txt'.
 
-    Return
-    ------
-    Pandas dataframe as described above.
+    Returns
+    -------
+    pandas.Dataframe
+        Pandas dataframe as described above.
     """
     df = pd.DataFrame(data={"timestep": [], "trajectory": [], "out_param": [],
                             "in_param": [], "deriv": []})
