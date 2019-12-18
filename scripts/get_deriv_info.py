@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from iris.analysis.cartography import rotate_pole
 import numpy as np
 import pandas as pd
 
@@ -7,10 +8,10 @@ def norm_derivatives(df):
     """
     Normalize the derivatives for every timestep individually such that
     values are between [-1, 1] for big negative and positive impacts.
-    
+
     .. math::
         \\text{norm}(x, t) = \\text{sign}(x(t)) \cdot \\frac{|x(t)| - \min(x(t))}{\max(x(t)) - \min(x(t))}
-    
+
     This is done inplace.
 
     Parameters
@@ -35,57 +36,15 @@ def norm_derivatives(df):
                 df.update(df_t)
 
 
-def rotate(lon, lat, pollat=90, pollon=-180):
-    """
-    Calculate the rotated coordinates to non-rotated.
-    non-rotated lat-lon grid set uses pollat = 90 and pollon = -180.
-
-    Parameters
-    ----------
-    lon : list of float
-        A list of longitudes.
-    lat : list of float 
-        A list of latitudes.
-    pollat : float
-        Rotated south pole coordinates.
-    pollon : float
-        Rotated south pole coordiantes.
-
-    Returns
-    -------
-    list, list
-        List of rotated latitudes and list of rotated longitudes.
-    """
-    lon1 = lon*np.pi/180.0
-    lat1 = lat*np.pi/180.0
-
-    x = np.cos(lon1)*np.cos(lat1)
-    y = np.sin(lon1)*np.cos(lat1)
-    z = np.sin(lat1)
-
-    theta = -(90-pollat)*np.pi/180.0
-    phi = -pollon*np.pi/180.0
-
-    xx =  np.cos(theta)*np.cos(phi)*x + np.sin(phi)*y + np.sin(theta)*np.cos(phi)*z
-    yy = -np.cos(theta)*np.sin(phi)*x + np.cos(phi)*y - np.sin(theta)*np.sin(phi)*z
-    zz = -np.sin(theta)*x + np.cos(theta)*z
-
-    lon2 = np.arctan2(yy, xx)
-    lat2 = np.arcsin(zz)
-    lon2 = lon2*180.0/np.pi
-    lat2 = lat2*180.0/np.pi
-    return lat2, lon2
-
-
 def transform_df(res, net_path=None, rotate=False):
     """
     Return a new pandas dataframe that adds longitude and latitude to res
-    given information in net_df. 
+    given information in net_df.
 
     Parameters
     ----------
     res : pandas.Dataframe
-        A pandas dataframe with "deriv", "in_param", 
+        A pandas dataframe with "deriv", "in_param",
         "out_parm", "timestep" and "trajectory".
     net_path : string
         Path to a netCDF file with information
@@ -98,9 +57,9 @@ def transform_df(res, net_path=None, rotate=False):
     pandas.Dataframe
         res with latitude and longitude added.
     """
-    new_dic = {"deriv": [], "in_param": [], 
-               "out_param": [], "timestep": [], 
-               "trajectory": [], "LONGITUDE": [], 
+    new_dic = {"deriv": [], "in_param": [],
+               "out_param": [], "timestep": [],
+               "trajectory": [], "LONGITUDE": [],
                "LATITUDE": []}
     ds = xr.open_dataset(net_path)
     pollat = ds.attrs["pollat"]
@@ -129,8 +88,9 @@ def transform_df(res, net_path=None, rotate=False):
                     new_dic["trajectory"].append(traj)
     new_df = pd.DataFrame.from_dict(new_dic)
     if rotate:
-        lat, lon = rotate(new_df["LONGITUDE"], new_df["LATITUDE"],
-                          pollon=pollon, pollat=pollat)
+        lat, lon = rotate_pole(np.asarray(new_df["LONGITUDE"].tolist()),
+                               np.asarray(new_df["LATITUDE"].tolist()),
+                               pole_lon=pollon, pole_lat=pollat)
         new_df["LONGITUDE"] = lon
         new_df["LATITUDE"] = lat
     return new_df
@@ -168,9 +128,10 @@ if __name__ == "__main__":
         df_data = pd.read_csv(args.csv)
         # df_data = pd.read_csv(args.csv, nrows=1000000, names=["deriv", "in_param", "out_param", "timestep", "trajectory"], skiprows=100000)
     print("Max and min deriv: {}, {}".format(df_data["deriv"].max(), df_data["deriv"].min()))
-    
+
     norm_derivatives(df_data)
     df_data = df_data.loc[:, ~df_data.columns.str.contains('^Unnamed')]
+
     print(df_data)
     print("Max and min deriv: {}, {}".format(df_data["deriv"].max(), df_data["deriv"].min()))
     if not args.netcdf is None:
