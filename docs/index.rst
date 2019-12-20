@@ -20,6 +20,9 @@ Welcome to Process and Plot Scripts's documentation!
 .. automodule:: scripts.plot_many_traj
    :members:
 
+.. automodule:: scripts.plot_trajectories
+   :members:
+
 Indices and tables
 ==================
 

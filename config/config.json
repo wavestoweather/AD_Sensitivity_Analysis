@@ -1,0 +1,22 @@
+{
+    "deriv_params": [
+        [
+            "qr",
+            "dzeta"
+        ],
+        [
+            "S",
+            "dzeta"
+        ],
+        [
+            "T",
+            "dzeta"
+        ]
+    ],
+    "net_params": [
+        "T",
+        "S",
+        "QR",
+        "QV"
+    ]
+}

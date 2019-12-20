@@ -16,4 +16,7 @@ The two moment schemes is also available. Documentation is done using [Sphynx](h
 - [seaborn](https://seaborn.pydata.org/)
 - [matplotlib](https://matplotlib.org/)
 - [scipy](https://www.scipy.org/)
+- [matplotlib toolkits](https://matplotlib.org/1.4.3/mpl_toolkits/index.html)
+- [netCDF4](https://unidata.github.io/netcdf4-python/netCDF4/index.html)
+- [pillow, formerly known as PIL](https://pillow.readthedocs.io/en/stable/)
 
