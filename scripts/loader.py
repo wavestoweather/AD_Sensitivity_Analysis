@@ -275,7 +275,21 @@ def load_mult_derivates(prefix="", suffix="", filt=False, EPSILON=1e-31,
 
     Parameters
     ----------
-    prefix : string                                                                                                                           Prefix of the datafile such as "sb_ice".                                                                                          suffix : string                                                                                                                           Suffix of the datafile such as "start_over".                                                                                      filt : bool                                                                                                                               Filter the data with values smaller than EPSILON if true.                                                                         EPSILON : float                                                                                                                           If filt is true, filter values smaller than EPSILON out.                                                                          lo : int                                                                                                                                  Lowest trajectory number to read in.                                                                                              hi : int                                                                                                                                  Highest trajectory number to read in.                                                                                             high : float                                                                                                                              If not None: Filter those derivatives out that have                                                                                   higher values. 
+    prefix : string
+        Prefix of the datafile such as "sb_ice".  
+    suffix : string
+        Suffix of the datafile such as "start_over".
+    filt : bool
+        Filter the data with values smaller than EPSILON if true.
+    EPSILON : float
+        If filt is true, filter values smaller than EPSILON out.
+    lo : int
+        Lowest trajectory number to read in.
+    hi : int
+        Highest trajectory number to read in. 
+    high : float
+        If not None: Filter those derivatives out that have 
+        higher values. 
 
     Returns
     -------

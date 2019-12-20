@@ -33,8 +33,8 @@ def filt_highest_in(df, out_param, n=3):
     in_params (sum over all timesteps) and discard all others. Deletes
     other out_params as well.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     df : pandas.Dataframe
         Dataframe with columns "in_param" and "deriv".
     out_param : string
