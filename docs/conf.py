@@ -36,8 +36,31 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
               'sphinx.ext.imgmath',
               'sphinx_rtd_theme',
-              'recommonmark'
+              'recommonmark',
+              'breathe',
+              'exhale'
 ]
+
+# Setup the breathe extension
+breathe_projects = {
+    "AD": "./doxyoutput/xml"
+}
+breathe_default_project = "AD"
+
+# Setup the exhale extension
+exhale_args = {
+    # These arguments are required
+    "containmentFolder":     "./api",
+    "rootFileName":          "library_root.rst",
+    "rootFileTitle":         "C++ API",
+    "doxygenStripFromPath":  "..",
+    # Suggested optional arguments
+    "createTreeView":        True,
+    # TIP: if using the sphinx-bootstrap-theme, you need
+    # "treeViewIsBootstrap": True,
+    "exhaleExecutesDoxygen": True,
+    "exhaleDoxygenStdin":    "INPUT = ../include"
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

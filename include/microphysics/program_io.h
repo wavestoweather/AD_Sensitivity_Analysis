@@ -14,7 +14,15 @@
 using namespace netCDF;
 
 
-// CALL init_dmin_wg_gr_ltab_equi('dmin_wetgrowth_lookup.dat', unitnr, 61, ltabdminwgg)
+/** Based on
+ * init_dmin_wg_gr_ltab_equi('dmin_wetgrowth_lookup.dat', unitnr, 61, ltabdminwgg)
+ * Loads a lookup table for calculating the growth of rain droplets or something.
+ *
+ * @param table Reference to the dataobject where the lookup table is going to
+ *              be stored.
+ * @param filename Path to the data file.
+ * @param ndT Number of equidistant table vectors.
+ */
 bool load_lookup_table(
     table_t &table,
     std::string filename = "dmin_wetgrowth_lookup.dat",

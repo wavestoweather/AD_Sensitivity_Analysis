@@ -36,37 +36,33 @@
 #ifdef IMPLICIT_EULER
 #include "include/microphysics/implicit_euler.h"
 #endif
-// TODO: Saturation adjustement!
 
-//////////////////////////////////////////
-/*
-Based on
-Revisiting the latent heating contribution to foehn warming:
-Lagrangian analysis of two foehn events over the Swiss Alps
-DOI:10.1002/qj.2816
-
-Horizontal grid spacing of 2.2 km
-Initial conditions from COMSO model simulation with horizontal grid spacing
-of 7 km
-60 levels with mean spacing of 388 m
-
-Start at 2100 UTC on 3 March 2013 for the dry foehn for 102 h
-Start at 0300 UTC on 14 May 2013 for the moist foehn  for 93 h
-
-temporal resolution of 20 s
-
-14125 trajectories for the dry foehn event
-27491 trajectories for the moist foehn event
-
-important variables:
-- air temperature T
-- pressure P
-- mixing ratio of water vapour, cloud droplets, rain, ice, graupel and snow
-- velocity in three dimensions
-
-*/
-//////////////////////////////////////////
-
+/**
+ * Based on
+ * Revisiting the latent heating contribution to foehn warming:
+ * Lagrangian analysis of two foehn events over the Swiss Alps
+ * DOI:10.1002/qj.2816
+ *
+ * Horizontal grid spacing of 2.2 km
+ * Initial conditions from COMSO model simulation with horizontal grid spacing
+ * of 7 km
+ * 60 levels with mean spacing of 388 m
+ *
+ * Start at 2100 UTC on 3 March 2013 for the dry foehn for 102 h
+ * Start at 0300 UTC on 14 May 2013 for the moist foehn  for 93 h
+ *
+ * temporal resolution of 20 s
+ *
+ * 14125 trajectories for the dry foehn event
+ * 27491 trajectories for the moist foehn event
+ *
+ * important variables:
+ * - air temperature T
+ * - pressure P
+ * - mixing ratio of water vapour, cloud droplets, rain, ice, graupel and snow
+ * - velocity in three dimensions
+ *
+ */
 int main(int argc, char** argv)
 {
     input_parameters_t input;

@@ -12,13 +12,14 @@ Welcome to Process and Plot Scripts's documentation!
    scripts/plot_heat
    scripts/plot_many_traj
    scripts/plot_trajectories
+   scripts/executing
 
 
 .. toctree::
    :maxdepth: 4
    :caption: C++ Documentation
 
-   src/ad
+   api/library_root
 
 Indices and tables
 ==================

@@ -6,14 +6,18 @@ using namespace netCDF;
 ////////////////////////////////////////////////////////////////////////////////
 // Collect all reference quantities into this structure.
 ////////////////////////////////////////////////////////////////////////////////
-struct reference_quantities_t{
-  double Tref;			// Reference temperature
-  double pref;			// Reference pressure
-  double qref;			// Reference mixing-ratio
-  double wref;			// Reference vertical velocity
-  double tref;			// Reference time
 
-  double Nref;			// DUMMY
+/**
+ *  Struct to hold all reference values.
+ */
+struct reference_quantities_t{
+  double Tref;          /*!< Reference temperature */
+  double pref;          /*!< Reference pressure */
+  double qref;          /*!< Reference mixing-ratio */
+  double wref;          /*!< Reference vertical velocity */
+  double tref;          /*!< Reference time */
+
+  double Nref;          /*!< DUMMY */
 };
 
 struct particle_model_constants_t{
