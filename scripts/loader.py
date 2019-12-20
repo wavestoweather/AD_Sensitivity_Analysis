@@ -9,13 +9,12 @@ import os
 import xarray as xr
 
 
-refs = np.loadtxt('reference_values.txt')
-Tref = refs[0]
-pref = refs[1]
-qref = refs[2]
-Nref = refs[3]
-wref = refs[4]
-tref = refs[5]
+Tref = 273.15
+pref = 100000
+qref = 1e-06
+Nref = 1
+wref = 1
+tref = 1
 
 params_dict = {"p": "_diff_0.txt", "T": "_diff_1.txt",
                "w": "_diff_2.txt", "S": "_diff_3.txt", "qc": "_diff_4.txt",
@@ -43,6 +42,7 @@ params_dict2 = {"_diff_0.txt": "p", "_diff_1.txt": "T",
                "_diff_22.txt": "qgout",
                "_diff_23.txt": "qhout", "_diff_24.txt": "latent_heat",
                "_diff_25.txt": "latent_cool"}
+
 
 def filter_zeros(df_dict, EPSILON=1e-31):
     """
@@ -140,7 +140,7 @@ def load_derivatives(prefix="", suffix="", filt=False, EPSILON=1e-31):
 
     Parameters
     ----------
-    prefix : string                                                                                                                           Prefix of the datafile such as "sb_ice".                                                                                          suffix : string                                                                                                                           Suffix of the datafile such as "start_over".                                                                                      filt : bool                                                                                                                               Filter the data with values smaller than EPSILON if true.                                                                         EPSILON : float                                                                                                                           If filt is true, filter values smaller than EPSILON out.   
+    prefix : string                                                                                                                           Prefix of the datafile such as "sb_ice".                                                                                          suffix : string                                                                                                                           Suffix of the datafile such as "start_over".                                                                                      filt : bool                                                                                                                               Filter the data with values smaller than EPSILON if true.                                                                         EPSILON : float                                                                                                                           If filt is true, filter values smaller than EPSILON out.
 
     Returns
     -------
@@ -200,20 +200,20 @@ def load_nc(inp="/mnt/localscratch/data/project/m2_jgu-tapt/o"
 
 def load_output(prefix="sb_ice", suffix="_start_over"):
     """
-    Read a csv file and return a pandas.Dataframe with 
+    Read a csv file and return a pandas.Dataframe with
     physical (not normalized) entries.
 
     Parameters
     ----------
-    prefix : string   
-        Prefix of the datafile such as "sb_ice".    
-    suffix : string   
-        Suffix of the datafile such as "start_over".        
-    
+    prefix : string
+        Prefix of the datafile such as "sb_ice".
+    suffix : string
+        Suffix of the datafile such as "start_over".
+
     Returns
     -------
     pandas.Dataframe
-        Dataframe with the columns "p", "T", "w", 
+        Dataframe with the columns "p", "T", "w",
         "qc", "qr", "qs", "qg", "qh", "qi", "qv",
         "qiout", "qsout", "qrout", "qgout", "qhout",
         "latent_heat", "latent_cool".
@@ -276,7 +276,7 @@ def load_mult_derivates(prefix="", suffix="", filt=False, EPSILON=1e-31,
     Parameters
     ----------
     prefix : string
-        Prefix of the datafile such as "sb_ice".  
+        Prefix of the datafile such as "sb_ice".
     suffix : string
         Suffix of the datafile such as "start_over".
     filt : bool
@@ -286,10 +286,10 @@ def load_mult_derivates(prefix="", suffix="", filt=False, EPSILON=1e-31,
     lo : int
         Lowest trajectory number to read in.
     hi : int
-        Highest trajectory number to read in. 
+        Highest trajectory number to read in.
     high : float
-        If not None: Filter those derivatives out that have 
-        higher values. 
+        If not None: Filter those derivatives out that have
+        higher values.
 
     Returns
     -------
@@ -324,6 +324,7 @@ def load_mult_derivates(prefix="", suffix="", filt=False, EPSILON=1e-31,
         except:
             pass
     return pd.DataFrame(df_dict)
+
 
 def load_mult_derivates_big(prefix="", suffix="", filt=False, EPSILON=1e-31,
                         lo=0, hi=0, high=None):
@@ -389,7 +390,7 @@ def load_mult_derivates_big(prefix="", suffix="", filt=False, EPSILON=1e-31,
     return df
 
 
-def load_mult_derivates_directory(direc="", filt=True, 
+def load_mult_derivates_directory(direc="", filt=True,
                                   EPSILON=0.0, trajectories=[1], suffix="20160922_00"):
     """
     Create a dataframe with columns:
@@ -425,7 +426,7 @@ def load_mult_derivates_directory(direc="", filt=True,
         s = s[1].split("_")
         if int(s[0]) in trajectories:
             file_list2.append(f)
-    for f in pb(file_list2, redirect_stdout=True):       
+    for f in pb(file_list2, redirect_stdout=True):
         tmp_dict = {}
         try:
             tmp = pd.read_csv(f, sep=",")
@@ -446,8 +447,8 @@ def load_mult_derivates_directory(direc="", filt=True,
         except:
             pass
     return df
-            
-    
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 4:
@@ -460,6 +461,18 @@ if __name__ == "__main__":
         prefix = sys.argv[1]
         suffix = sys.argv[2]
         ident  = sys.argv[3]
+
+    try:
+        refs = np.loadtxt('reference_values.txt')
+        Tref = refs[0]
+        pref = refs[1]
+        qref = refs[2]
+        Nref = refs[3]
+        wref = refs[4]
+        tref = refs[5]
+    except:
+        print("No file with reference values found. Using default values.")
+
     filt = True
     lo = 1
     hi = 3

@@ -1,27 +1,24 @@
 Welcome to Process and Plot Scripts's documentation!
 ====================================================
+.. include:: ../README.md
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 4
+   :caption: Python Documentation
 
-.. automodule:: scripts.get_deriv_info
-   :members:
+   scripts/get_deriv_info
+   scripts/loader
+   scripts/filter_more
+   scripts/plot_heat
+   scripts/plot_many_traj
+   scripts/plot_trajectories
 
-.. automodule:: scripts.loader
-   :members:
 
-.. automodule:: scripts.filter_more
-   :members:
+.. toctree::
+   :maxdepth: 4
+   :caption: C++ Documentation
 
-.. automodule:: scripts.plot_heat
-   :members:
-
-.. automodule:: scripts.plot_many_traj
-   :members:
-
-.. automodule:: scripts.plot_trajectories
-   :members:
+   src/ad
 
 Indices and tables
 ==================
