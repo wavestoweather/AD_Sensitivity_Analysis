@@ -8,25 +8,40 @@ SEASON=-DSPRING
 FLUX=-DFLUX
 SOURCE=-DWCB
 
-all: trajectories score debug test trajectories_sb trajectories_sb_noice
+BUILD=build
+OBJ_DIR=$(BUILD)/objects
+APP_DIR=$(BUILD)/apps
 
-score: trajectories.cpp
-	$(PCC) $(GCCINCLUDES) trajectories.cpp -o trajectories_score.out  $(GCCFLAGS) $(TIMESTEPPER) $(SEASON) $(FLUX) $(SOURCE)
+SRC=\
+    $(wildcard src/microphysics/*.cpp) \
 
-trajectories: trajectories.cpp
-	$(GCC) $(GCCINCLUDES) trajectories.cpp -o trajectories.out  $(GCCFLAGS) -O2 -march=native -DRK4 $(SEASON) $(FLUX) $(SOURCE)
+OBJECTS=$(SRC:%.cpp=$(OBJ_DIR)/%.o)
+TARGETS=$(SRC:%.cpp=$(APP_DIR)/%)
 
-trajectories_sb: trajectories.cpp
-	$(GCC) $(GCCINCLUDES) trajectories.cpp -o trajectories_sb.out  $(GCCFLAGS) -O2 -march=native -DRK4ICE $(SEASON) $(FLUX) $(SOURCE)
+all: build $(TARGETS)
 
-trajectories_sb_noice: trajectories.cpp
-	$(GCC) $(GCCINCLUDES) trajectories.cpp -o trajectories_sb_noice.out  $(GCCFLAGS) -O2 -march=native -DRK4NOICE $(SEASON) $(FLUX) $(SOURCE)
+$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) $(TIMESTEPPER) $(SEASON) $(FLUX) $(SOURCE) -o $@ -c $<
 
-debug: trajectories.cpp
-	$(GCC) $(GCCINCLUDES) trajectories.cpp -o trajectories_debug.out  $(GCCFLAGS) -g -Og $(TIMESTEPPER) $(SEASON) $(FLUX) $(SOURCE)
+$(TARGETS): $(OBJECTS)
+	@mkdir -p $(@D)
+	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) -o $@ $<
 
-test: load_test.cpp
-	$(GCC) $(GCCINCLUDES) load_test.cpp -o load_test.out  $(GCCFLAGS) -O2 -march=native $(TIMESTEPPER) $(SEASON) $(FLUX) $(SOURCE)
+.PHONY: all build clean debug release
+
+build:
+	@mkdir -p $(BUILD)
+	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(APP_DIR)
+
+debug: GCCFLAGS += -g -0g
+debug: all
+
+release: GCCLFAGS += -O2 -march=native
+release: all
 
 clean:
-	rm -f *.out
+	-@rm -rvf $(OBJ_DIR)/*
+	-@rm -rvf $(APP_DIR)/src/microphysics/*
+
