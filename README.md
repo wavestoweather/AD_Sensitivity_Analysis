@@ -31,3 +31,10 @@ Sphinx Docs Prerequisites
 - [Sphinx](http://www.sphinx-doc.org/en/master/)
 - [Read the Docs Sphinx Theme](https://sphinx-rtd-theme.readthedocs.io/en/stable/)
 - [recommonmark](https://www.sphinx-doc.org/en/master/usage/markdown.html) to use Markdown
+
+C++ Prerequisites
+-----------------
+- [GSL](https://www.gnu.org/software/gsl/)
+- [NetCDF C++](https://github.com/Unidata/netcdf-cxx4/releases)
+- [Boost](https://www.boost.org/)
+- [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/)
