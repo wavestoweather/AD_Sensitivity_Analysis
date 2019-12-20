@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
@@ -9,11 +10,6 @@ import os
 from loader import *
 
 
-prefix = sys.argv[1]
-prefix_title = sys.argv[1]
-sns.set_style("darkgrid")
-
-
 def plot_heat(df_dict, prefix):
     """
     Plot a heatmap where the x-axis consists of timesteps and the y-axis
@@ -22,10 +18,12 @@ def plot_heat(df_dict, prefix):
 
     Parameters
     ----------
-    df_dict     A dictionary of pandas.Dataframe with key the output parameter
-                and the columns the input parameters and values are the
-                derivatives.
-    prefix      Prefix of the filename where the plot shall be stored.
+    df_dict : pandas.Dataframe
+        A dictionary of pandas.Dataframe with key the output parameter
+        and the columns the input parameters and values are the
+        derivatives.
+    prefix : string
+        Prefix of the filename where the plot shall be stored.
 
     """
     for out_param in df_dict.keys():
@@ -56,10 +54,12 @@ def plot_line(df_dict, prefix):
 
     Parameters
     ----------
-    df_dict     A dictionary of pandas.Dataframe with key the output parameter
-                and the columns the input parameters and values are the
-                derivatives.
-    prefix      Prefix of the filename where the plot shall be stored.
+    df_dict : pandas.Dataframe
+        A dictionary of pandas.Dataframe with key the output parameter
+        and the columns the input parameters and values are the                
+        derivatives.
+    prefix : string
+        Prefix of the filename where the plot shall be stored.
 
     """
     for out_param in df_dict.keys():
@@ -93,8 +93,10 @@ def plot_line_res(df, prefix):
 
     Parameters
     ----------
-    df          A pandas.Dataframe with the columns the output parameters.
-    prefix      Prefix of the filename where the plot shall be stored.
+    df : pandas.Dataframe
+        A pandas.Dataframe with the columns the output parameters.
+    prefix : string
+        Prefix of the filename where the plot shall be stored.
 
     """
     x_ticks = np.arange(0, df.timestep.unique().max() + 19, 20)
@@ -115,12 +117,30 @@ def plot_line_res(df, prefix):
         plt.savefig(save, dpi=300)
         plt.close()
 
-# def plot_map(xar, prefix, suffix):
-#     outpath = out + name
 
+if __name__ == "__main__":
+    parser = ArgumentParser(description=
+            '''Load data given a prefix and suffix of the filenames and plot variuous figures, mostly heatmaps.''')
+    parser.add_argument("-p", "--prefix", type=str, required=True,
+            help='''Prefix of the files to load such as "data/sb_ice_traj".''')
+    parser.add_argument("-s", "--suffix", type=str, required=True,
+            help='''Suffix of the files to load without datatype such as "_start_over_20160922_00" 
+            or "_start_over" for derivatives.''')
+    parser.add_argument("-i", "--image", type=str, default="results",
+            help='''Which plot to generate. Can be either "results" or "derivatives" to plot lineplots
+            of either the output parameters or the derivatives.''')
+    parser.add_argument("-e", "--epsilon", type=float, default=1e-30,
+            help='''If "filter" is set to true, use this as filter threshold.''')
+    parser.add_argument("-f", "--filter", action="store_true", default=True,
+            help='''If you load derivatives, use this to filter derivatives smaller than "epsilon".''')
+    args = parser.parse_args()
 
-df_results = load_output(prefix=prefix, suffix="_start_over_20160922_00")
-plot_line_res(df=df_results, prefix=prefix)
-# df_deriv = load_derivatives(prefix=prefix, suffix="_start_over",
-                            # filt=True, EPSILON=1e-8)
-# plot_line(df_deriv, prefix=prefix)
+    sns.set_style("darkgrid")
+    
+    if args.image == "results":
+        df_results = load_output(prefix=args.prefix, suffix=args.suffix)
+        plot_line_res(df=df_results, prefix=args.prefix)
+    elif args.image == "derivatives":
+        df_deriv = load_derivatives(prefix=args.prefix, suffix=args.suffix,
+                                    filt=args.filter, EPSILON=args.epsilon)
+        plot_line(df_deriv, prefix=args.prefix)
