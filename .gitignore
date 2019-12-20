@@ -5,6 +5,7 @@ __pycache__/*
 *.csv
 pics/*
 data/*
+build/*
 # Sphinx build
 docs/_build/*
 docs/_static/*

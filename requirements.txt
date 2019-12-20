@@ -1,0 +1,6 @@
+pandas
+progressbar2
+iris
+seaborn
+matplotlib
+scipy
