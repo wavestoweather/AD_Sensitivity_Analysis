@@ -7,7 +7,10 @@ import pandas as pd
 from scipy import stats
 import sys
 import os
-from loader import *
+try:
+    from loader import *
+except:
+    from scripts.loader import *
 
 
 def correlation(data, out_param):

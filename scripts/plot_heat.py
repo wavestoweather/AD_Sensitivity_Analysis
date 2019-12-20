@@ -7,7 +7,10 @@ import numpy as np
 import pandas as pd
 import sys
 import os
-from loader import *
+try:
+    from loader import *
+except:
+    from scripts.loader import *
 
 
 def plot_heat(df_dict, prefix):

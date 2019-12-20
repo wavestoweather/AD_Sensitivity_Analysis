@@ -17,6 +17,9 @@ Welcome to Process and Plot Scripts's documentation!
 .. automodule:: scripts.plot_heat
    :members:
 
+.. automodule:: scripts.plot_many_traj
+   :members:
+
 Indices and tables
 ==================
 
