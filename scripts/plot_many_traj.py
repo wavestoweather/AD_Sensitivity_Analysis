@@ -10,11 +10,6 @@ import os
 from loader import *
 
 
-# prefix = sys.argv[1]
-# prefix_title = sys.argv[1]
-sns.set_style("darkgrid")
-
-
 def correlation(data, out_param):
     """
     Calculate the correlation for a given out_param along all (important)
@@ -22,12 +17,17 @@ def correlation(data, out_param):
 
     Parameters
     ----------
-    data        A pandas dataframe with columns
-                trajectory, timestep, out_param, in_param, deriv
+    data : pandas.Dataframe
+        A pandas dataframe with columns
+        trajectory, timestep, out_param, in_param, deriv
+    out_param : string
+        Output parameter to get the correlation matrix for such as "qr".
 
-    Return
-    ------
-    A dictionary for each in_param as keys and a correlation matrix.
+    Returns
+    -------
+    dic of 2D np.ndarrays
+        A dictionary for each in_param as keys and a correlation matrix.
+   
     """
     corr = {}
     tmp_data = data.loc[data["out_param"] == out_param]
@@ -78,13 +78,18 @@ def chi_squared(data, out_param):
 
     Parameters
     ----------
-    data        A pandas dataframe with columns
-                trajectory, timestep, out_param, in_param, deriv
+    data : pandas.Dataframe
+        A pandas dataframe with columns
+        trajectory, timestep, out_param, in_param, deriv
+    out_param : string
+        Output parameter to get the chi-squared matrix such as "qr".
 
-    Return
+    Returns
     ------
-    A dictionary for each in_param as keys and a tupel with a matrix of
-    chi_squared values and the p-values as result.
+    dic of tuples of 2D np.ndarrays 
+        A dictionary for each in_param as keys and a tupel with a matrix of
+        chi_squared values and the p-values as result.
+    
     """
     chi = {}
     tmp_data = data.loc[data["out_param"] == out_param]
@@ -115,6 +120,15 @@ def chi_squared(data, out_param):
 
 
 def plot_corr(dic):
+    """
+    Plot the correlation matrix.
+
+    Parameters
+    ----------
+    dic : dic
+        Dictionary from the function "correlation".
+
+    """
     # print(dic)
     for out_param in dic["out_param"].unique():
         out_dic = dic.loc[dic["out_param"] == out_param]
@@ -139,10 +153,12 @@ def plot_heat(df_dict, prefix):
 
     Parameters
     ----------
-    df_dict     A dictionary of pandas.Dataframe with key the output parameter
-                and the columns the input parameters and values are the
-                derivatives.
-    prefix      Prefix of the filename where the plot shall be stored.
+    df_dict : dic of pandas.Dataframe
+        A dictionary of pandas.Dataframe with key the output parameter
+        and the columns the input parameters and values are the
+        derivatives.
+    prefix : string
+        Prefix of the filename where the plot shall be stored.
 
     """
     for out_param in df_dict.keys():
@@ -173,10 +189,12 @@ def plot_line(df_dict, prefix):
 
     Parameters
     ----------
-    df_dict     A dictionary of pandas.Dataframe with key the output parameter
-                and the columns the input parameters and values are the
-                derivatives.
-    prefix      Prefix of the filename where the plot shall be stored.
+    df_dict : dic of pandas.Datafram
+        A dictionary of pandas.Dataframe with key the output parameter
+        and the columns the input parameters and values are the
+        derivatives.
+    prefix : string
+        Prefix of the filename where the plot shall be stored.
 
     """
     for out_param in df_dict.keys():
@@ -210,8 +228,10 @@ def plot_line_res(df, prefix):
 
     Parameters
     ----------
-    df          A pandas.Dataframe with the columns the output parameters.
-    prefix      Prefix of the filename where the plot shall be stored.
+    df : pandas.Dataframe
+        A pandas.Dataframe with the columns the output parameters.
+    prefix : string
+        Prefix of the filename where the plot shall be stored.
 
     """
     x_ticks = np.arange(0, df.timestep.unique().max() + 19, 20)
@@ -233,24 +253,18 @@ def plot_line_res(df, prefix):
         plt.close()
 
 
-# res = load_mult_derivates("dataMogon/sb_ice_wcb7200_traj",
-#                           "start_over_20160922_00", filt=True, lo=1, hi=865,
-#                           EPSILON=1e-30, high=None)
-# res.to_pickle("sb_ice_wcb7200_traj_start_over_20160922_00.gzip")
-# res.to_csv("sb_ice_wcb7200_traj_no_filter_start_over_20160922_00.csv")
-res = pd.read_csv("sb_ice_wcb272280_filt_zero_30_start_over_20160922_00.csv")
-# res = pd.read_csv("sb_ice_wcb7200_trajAll_start_over_20160922_00.csv")
-# with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-#     print(res[0:40])
-
 def plot_avg_df(df):
     """
     Plot a heatmap with summed and normalized derivatives where the
     x-axis is the trajectories,
     the y-axis are the input parameters and the color indicates the
     size of the derivatives. Plots for each output variable another heatmap.
-
-
+    
+    Parameters
+    ----------
+    df : pandas.Dataframe
+        Dataframe with columns "out_param", "in_param", "trajectory", "deriv".    
+    
     """
     out_params = df["out_param"].unique()
     for param in out_params:
@@ -298,12 +312,15 @@ def plot_avg_df(df):
 
     return True
 
-# Remove all entries with "min"
-print(res)
-res = res[~res.in_param.str.contains("min")]
-print(res)
-plot_avg_df(res)
-# print(res)
+if __name__ == "__main__":
+   # TODO
+    res = pd.read_csv("sb_ice_wcb272280_filt_zero_30_start_over_20160922_00.csv")
+    # Remove all entries with "min"
+    print(res)
+    res = res[~res.in_param.str.contains("min")]
+    print(res)
+    plot_avg_df(res)
+    # print(res)
 
 ### Idea
 ### Get the sum of the derivatives for each trajectory (perhaps abs())
