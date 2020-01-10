@@ -10,28 +10,25 @@
 #include "physical_parameterizations.h"
 #include "types.h"
 
+/** @defgroup ufunc User Functions
+ * Functions to be defined by the user, specifically the definition of
+ * the right-hand side function RHS of the ODE
+ * \f[ y' = \text{RHS}(y) \f]
+ * which is solved.
+ * @{
+ */
 
-////////////////////////////////////////////////////////////////////////////////
-// =============================================================================
-// This file provides the functions to be defined by the user,
-// specifically the definition of the right-hand side function RHS of
-// the ODE
-// y' = RHS(y)
-// which is solved.
-// =============================================================================
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-// This function sets the constants for the cloud model from given
-// environmental conditions.
-//
+/**
+ * Set the constants for the cloud model from given environmental conditions.
+ *
+ * @param y Vector of initial conditions for pressure and temperature
+ * @param cc Pointer to constants from the model. On out: modified constants
+ * @param ref Pointer to reference quantities to transform between units
+ */
 void setCoefficients(
     std::vector<codi::RealReverse> & y,
     model_constants_t& cc,
-    reference_quantities_t& ref,
-    nc_parameters_t& nc)
+    reference_quantities_t& ref)
 {
     codi::RealReverse p_prime = y[p_idx]*ref.pref;
     codi::RealReverse T_prime = y[T_idx]*ref.Tref;
@@ -52,9 +49,17 @@ void setCoefficients(
     cc.d_prime = cc.d_scale;	// Constant coefficient
 }
 
-void setCoefficients(codi::RealReverse p_prime,
-		     codi::RealReverse T_prime,
-		     model_constants_t &cc)
+/**
+ * Set the constants for the cloud model from given environmental conditions.
+ *
+ * @param p_prime Initial pressure in Pa
+ * @param T_prime Initial temperature in Kelvin
+ * @param cc Pointer to constants from the model. On out: modified constants
+ */
+void setCoefficients(
+    codi::RealReverse p_prime,
+    codi::RealReverse T_prime,
+    model_constants_t &cc)
 {
   codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
   codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
@@ -72,23 +77,26 @@ void setCoefficients(codi::RealReverse p_prime,
   cc.d_prime = cc.d_scale;	// Constant coefficient
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// This function evaluates the RHS function of the ODE.
-//
+
+/**
+ * This function evaluates the RHS function of the ODE. It uses the 1 moment
+ * cloud scheme.
+ *
+ * @param res On out: system state difference
+ * @param y Old system state
+ * @param ref Pointer to reference quantities to transform between units
+ * @param cc Pointer to constants from the model
+ * @param nc Pointer to parameters from the netCDF file
+ */
 void RHS(std::vector<codi::RealReverse> &res,
 	 std::vector<codi::RealReverse> &y,
 	 const reference_quantities_t &ref,
 	 model_constants_t &cc,
      nc_parameters_t& nc)
 {
-
-
   // ============================================================
   // This is the RHS for the water cloud
   // ============================================================
-
-  // Storage:
-  // y = [p, T, w, S, qc, qr, qv]
 
   // Decrypt the variables
   codi::RealReverse p = y[p_idx];
@@ -204,26 +212,22 @@ void RHS(std::vector<codi::RealReverse> &res,
   // specific humidity
   res[qv_idx] = -C9*(S-1)*qc_third - (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0);
 
-//   std::cout << "S: " << S << ", C9: " << C9 << ", qc_third: " << qc_third
-//     << ", C12: " << C12 << ", qr_delta1: " << qr_delta1
-//     << ", C13: " << C13 << ", qr_delta2: " << qr_delta2 << "\n";
-
-//   std::cout << "derivatives: p: " << res[p_idx] << ", T: " << res[T_idx]
-//     << ", w: " << res[w_idx] << ", " << w << ", qc: " << res[qc_idx]
-//     << ", qr: " << res[qr_idx] << ", S: " << res[S_idx]
-//     << ", qv: " << res[qv_idx] << "\n";
-
 } // End of RHS
-////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * This function evaluates the RHS function of the ODE. It uses the 1 moment
+ * cloud scheme. Updates only pressure and temperature.
+ *
+ * @param res On out: system state difference
+ * @param y Old system state
+ * @param ref Pointer to reference quantities to transform between units
+ * @param cc Pointer to constants from the model
+ */
 void Press_Temp(
     std::vector<codi::RealReverse> &res,
     std::vector<codi::RealReverse> &y,
     const reference_quantities_t &ref,
-    model_constants_t &cc,
-    nc_parameters_t& nc,
-    const uint32_t traj,
-    bool set_S=false)
+    model_constants_t &cc)
 {
   codi::RealReverse p = y[p_idx];
   codi::RealReverse T = y[T_idx];
@@ -277,7 +281,6 @@ void Press_Temp(
     *pow(ref.qref,cc.delta1))/(ref.Tref*cpa_prime);
   codi::RealReverse C8 = (ref.tref*L_prime*cc.e2_prime
     *pow(ref.qref,cc.delta2))/(ref.Tref*cpa_prime);
-  codi::RealReverse B = ref.tref*nc.QRin; //cc.B_prime;
 
   //
   // Pressure
@@ -292,18 +295,28 @@ void Press_Temp(
 }
 
 
-// 2 moment cloud scheme https://doi.org/10.1007/s00703-005-0112-4
-// After Seifert and Beheng (2006)
-// Based on mo_art_2mom_driver.f90 and
-// mo_art_2mom_main.f90 of ICON
+/**
+ * This function evaluates the RHS function of the ODE. It uses the 2 moment
+ * cloud scheme after Seifert and Beheng (2006),
+ * see https://doi.org/10.1007/s00703-005-0112-4
+ * Based on mo_art_2mom_driver.f90 and mo_art_2mom_main.f90 of ICON.
+ *
+ * @param res On out: system state difference
+ * @param y Old system state
+ * @param ref Pointer to reference quantities to transform between units
+ * @param cc Pointer to constants from the model
+ * @param nc Pointer to parameters from the netCDF file
+ * @param dt Timestep size
+ * @param fixed If True: Reset change of pressure, temperature and ascent (w)
+ *              at the end to zero
+ */
 void RHS_SB(std::vector<codi::RealReverse> &res,
     std::vector<codi::RealReverse> &y,
     const reference_quantities_t &ref,
     model_constants_t &cc,
     nc_parameters_t &nc,
     const double &dt,
-    bool fixed=false,
-    const int counter=0)
+    bool fixed=false)
 {
     // // Decrypt the variables
     codi::RealReverse p = y[p_idx];
@@ -401,6 +414,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     // <6: ccn_activation_hdcp2 (Hande et al)
     // else: ccn_activation_sk (Segal & Khain)
     const int nuc_typ = 1;
+
     ////////////// ccn_activation_hdcp2
     // Hande et al 2015
     // non maritime case
@@ -421,49 +435,16 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         codi::RealReverse dcoeff = a_ccn[3] * atan(b_ccn[3] * p_prime - c_ccn[3]) + d_ccn[3];
         // concentration of ccn
         codi::RealReverse nuc_n = acoeff * atan(bcoeff * log(w_prime) + ccoeff) + dcoeff;
-        // std::cout << "acoeff " << acoeff << ", bcoeff " << bcoeff
-        //           << ", ccoeff " << ccoeff << ", dcoeff " << dcoeff
-        //           << ", log(w) " << log(w_prime) << ", atan(...) "
-        //           << atan(bcoeff * log(w_prime) + ccoeff)
-        //           << ", --- " << acoeff * atan(bcoeff * log(w_prime) + ccoeff) <<"\n";
-        // this is per m^-3. Change to per cm^-3?
-        // nuc_n /= 10e6;
-        // codi::RealReverse rho = compute_rhoa(p_prime, T_prime, S);
-        // codi::RealReverse tst = (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x;
-        // std::cout << "nuc_n " << nuc_n << ", Nc " << Nc // << ", Nc_avg " << qc_prime/tst
-                //   << ", Nc_tmpmin " << qc_prime / cc.cloud.min_x
-                //   << ", Nc_tmpmax " << qc_prime / cc.cloud.max_x
-                //   << ", p " << p_prime
-                //   << ", min_x " << cc.cloud.min_x << ", qv "
-                //   << qv_prime << ", dqv_avg " << nuc_n * tst
-                //   << ", dqvmin " << nuc_n * cc.cloud.min_x
-                //   << ",dqv actually " << (nuc_n-Nc) * cc.cloud.min_x
-                //   << ", rhoa " << compute_rhoa(p_prime, T_prime, S)
-                //   << "\n";
-                //   << ", w " << w_prime << "\n";
+
         // we need to substract the already "used" ccn in cloud droplets
         // the rest can create new cloud droplets
         // codi::RealReverse Nc_tmp = qv_prime / cc.cloud.min_x;
-        // TODO: This looks weird. It should be the line directly under this comment
         codi::RealReverse delta_n = max(max(nuc_n, 10.0e-6) - Nc, 0.0);
-        // codi::RealReverse delta_n = max(max(nuc_n, 10.0e7) , 0.0);
-        // codi::RealReverse denom = (cc.cloud.max_x - cc.cloud.min_x) / 2.0 + cc.cloud.min_x;
         codi::RealReverse delta_q = min(delta_n * cc.cloud.min_x, qv_prime);
         delta_n = delta_q / cc.cloud.min_x;
-        // codi::RealReverse delta_q = min(delta_n * denom, qv_prime);
-        // delta_n = delta_q /denom;
-
 
         res[Nc_idx] += delta_n;
         res[qc_idx] += delta_q;
-        // DEBUG STATEMENT
-        // if(delta_q/ref.qref >= 0.003)
-        //     std::cout << "line 452, dqc " << delta_q << ", nuc_n " << nuc_n
-        //               << ", delta_n " << delta_n << ", Nc " << Nc << ", P "
-        //               << p_prime << ", w " << w_prime
-        //               << ", qv " << qv_prime << " vs "
-        //               << delta_n * cc.cloud.min_x
-        //               << ", qc_prime " << qc_prime << "\n";
         res[qv_idx] -= delta_q;
 
         codi::RealReverse delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
@@ -472,9 +453,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[lat_cool_idx] += delta_e;
         else
             res[lat_heat_idx] += delta_q;
-
-        // std::cout << delta_q << ", q_prime " << qc_prime << "\n";
-        // cond += delta_q
     }
 
     ////////////// ice_nucleation_homhet
@@ -533,9 +511,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[Ni_idx] += delta_n;
             res[qv_idx] -= delta_q;
             n_inact += delta_n;
-            // dep += delta_q;
-            // lwrite_n_inpot = use_prog_in && ndiag > 1.0e-12;
-            // ndiag_mask = lwrite_n_inpot
             delta_n_a = delta_n;
 
             // latent heating and cooling
@@ -551,6 +526,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     {
         // heterogeneous nucleation using Phillips et al.
         // ice_nucleation_het_philips
+        // TODO
 
     } // end Phillips
     // use_prog_in?
@@ -626,7 +602,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[Ni_idx] += delta_n;
             res[qi_idx] += delta_q;
             res[qv_idx] -= delta_q;
-            // depo += nuc_q;
 
             codi::RealReverse delta_e = latent_heat_melt(T_prime) * delta_q / specific_heat_ice(T_prime);
             // Sublimation, cooling
@@ -675,9 +650,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         res[Ni_idx] += delta_ni;
         // Remove cloud droplets
         res[qc_idx] -= delta_qi;
-        // DEBUG STATEMENT
-        if(delta_qi/ref.qref >= 0.003)
-            std::cout << "line 666, dqc " << delta_qi << "\n";
         res[Nc_idx] -= delta_ni;
 
         codi::RealReverse delta_e = latent_heat_melt(T_prime) * delta_qi / specific_heat_ice(T_prime);
@@ -720,7 +692,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         }
     };
 
-
     if(T_prime < tmelt)
     {
         codi::RealReverse e_d = qv_prime * Rv * T_prime;
@@ -748,7 +719,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
             codi::RealReverse xi_i = tau_i_i + tau_s_i + tau_g_i + tau_h_i;
             // TODO: Check wether dt is needed here or not
-            codi::RealReverse xfac = (xi_i < EPSILON) ? (codi::RealReverse) 0.0 : qvsidiff/xi_i * (1.0-exp(-xi_i));
+            codi::RealReverse xfac = (xi_i < EPSILON) ?
+                (codi::RealReverse) 0.0 : qvsidiff/xi_i * (1.0-exp(-xi_i));
 
             dep_ice     = xfac * tau_i_i;
             dep_snow    = xfac * tau_s_i;
@@ -771,35 +743,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[qg_idx] += dep_graupel;
             res[qh_idx] += dep_hail;
             res[qv_idx] -= dep_sum;
-            // If I want to store the deposition/sublimination
-            // if(dep_ice > 0)
-            // {
-            //     depo += dep_ice;
-            // } else
-            // {
-            //     subl += dep_ice;
-            // }
-            // if(dep_snow > 0)
-            // {
-            //     depo += dep_snow;
-            // } else
-            // {
-            //     subl += dep_snow;
-            // }
-            // if(dep_graupel > 0)
-            // {
-            //     depo += dep_graupel;
-            // } else
-            // {
-            //     subl += dep_graupel;
-            // }
-            // if(dep_hail > 0)
-            // {
-            //     depo += dep_hail;
-            // } else
-            // {
-            //     subl += dep_hail;
-            // }
+
             dep_rate_ice += dep_ice;
             dep_rate_snow += dep_snow;
 
@@ -1137,9 +1081,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[qi_idx] += rime_q;
             // Cloud
             res[qc_idx] -= rime_q;
-            // DEBUG STATEMENT
-            if(rime_q/ref.qref >= 0.003)
-                std::cout << "line 1128, dqc " << rime_q << "\n";
+
             // Cloud N
             res[Nc_idx] -= rime_n;
 
@@ -1199,9 +1141,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[qi_idx] += rime_q;
             // Cloud
             res[qc_idx] -= rime_q;
-            // DEBUG STATEMENT
-            if(rime_q/ref.qref >= 0.003)
-                std::cout << "line 1190, dqc " << rime_q << "\n";
+
             // Cloud N
             res[Nc_idx] -= rime_n;
 
@@ -1339,9 +1279,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[qs_idx] += rime_q;
             // Cloud
             res[qc_idx] -= rime_q;
-            // DEBUG STATEMENT
-            if(rime_q/ref.qref >= 0.003)
-                std::cout << "line 1330, dqc " << rime_q << "\n";
+
             // Cloud N
             res[Nc_idx] -= rime_n;
 
@@ -1426,9 +1364,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[qs_idx] += rime_q;
             // Cloud
             res[qc_idx] -= rime_q;
-            // DEBUG STATEMENT
-            if(rime_q/ref.qref >= 0.003)
-                std::cout << "line 1417, dqc " << rime_q << "\n";
+
             // Cloud N
             res[Nc_idx] -= rime_n;
 
@@ -1535,7 +1471,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 // Rain N
                 res[Nr_idx] += rime_qr/x_r;
 
-                codi::RealReverse delta_e = latent_heat_melt(T_prime) * rime_qr / specific_heat_ice(T_prime);
+                codi::RealReverse delta_e = latent_heat_melt(T_prime) * rime_qr
+                                            / specific_heat_ice(T_prime);
                 // Melting, cooling
                 if(rime_qr > 0.0)
                     res[lat_cool_idx] -= delta_e;
@@ -1601,9 +1538,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             resq += rime_q;
             // Cloud
             res[qc_idx] -= rime_q;
-            // DEBUG STATEMENT
-            if(rime_q/ref.qref >= 0.003)
-                std::cout << "line 1592, dqc " << rime_q << "\n";
+
             // Cloud N
             res[Nc_idx] -= rime_n;
 
@@ -1649,7 +1584,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 // Rain N
                 res[Nr_idx] += melt_n;
 
-                codi::RealReverse delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
+                codi::RealReverse delta_e = latent_heat_melt(T_prime) * melt_q
+                                            / specific_heat_ice(T_prime);
                 // Melting, cooling
                 if(melt_q > 0.0)
                     res[lat_cool_idx] -= delta_e;
@@ -1820,11 +1756,11 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                     fr_q = j_het * qr_prime * x_r * cc.rain.c_z; // rain_coeffs
                     codi::RealReverse lam = pow(cc.rain.g1/cc.rain.g2 * x_r, -cc.rain.mu);
                     codi::RealReverse N0 = cc.rain.mu * Nr_tmp * pow(lam, cc.rain.nm1) / cc.rain.g1;
-                    // codi::RealReverse arg1 = lam*xmax_ice;
+
                     codi::RealReverse tmp = lam*xmax_ice;
                     fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
                     fr_q_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
-                    // arg1 = lam*xmax_gr;
+
                     tmp = lam*xmax_gr;
                     fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
                     fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
@@ -1871,14 +1807,14 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         // Hail N
         res[Nh_idx] += fr_n_h;
 
-        codi::RealReverse delta_e = latent_heat_melt(T_prime) * fr_q / specific_heat_ice(T_prime);
+        codi::RealReverse delta_e = latent_heat_melt(T_prime) * fr_q
+                                    / specific_heat_ice(T_prime);
         // Melting, cooling
         if(fr_q < 0.0)
             res[lat_cool_idx] += delta_e;
         // Freezing, heating
         else
             res[lat_heat_idx] += delta_e;
-
     }
 
     /////////// ice melting
@@ -1909,9 +1845,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         {
             // Cloud
             res[qc_idx] += melt_q;
-            // DEBUG STATEMENT
-            if(melt_q/ref.qref >= 0.003)
-                std::cout << "line 1900, dqc " << melt_q << "\n";
+
             // Cloud N
             res[Nc_idx] += melt_n;
         }
@@ -2099,7 +2033,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         // autoconversionKB
         codi::RealReverse k_a = 6.0 + 25 * pow(9.59, -1.7);
         codi::RealReverse x_s_i = 1.0/cc.cloud.max_x;
-        codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
+        codi::RealReverse x_c = particle_mean_mass(
+            qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
         // Using Beheng 1994
         codi::RealReverse au = k_a * pow(x_c*1e3, 3.3) * pow(qc_prime*1e3, 1.4) * 1e3;
         au = min(qc_prime/cc.dt, au);
@@ -2108,20 +2043,14 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         res[Nc_idx] -= au*x_s_i*2.0;
         res[qc_idx] -= au;
 
-        // DEBUG STATEMENT
-        if(au/ref.qref >= 0.003)
-            std::cout << "line 2099, dqc " << au << "\n";
-
         // accretionKB
         if(qc_prime > q_crit_i && qr_prime > q_crit_i)
         {
-            codi::RealReverse ac = 6.0 * qc_prime * qr_prime; // k_r = 6.0 from Beheng (1994)
+            // k_r = 6.0 from Beheng (1994)
+            codi::RealReverse ac = 6.0 * qc_prime * qr_prime;
             ac = min(qc_prime/cc.dt, ac);
             res[qr_idx] += ac;
             res[qc_idx] -= ac;
-            // DEBUG STATEMENT
-            if(ac/ref.qref >= 0.003)
-                std::cout << "line 2110, dqc " << ac << "\n";
         }
     } else if(auto_type == 2)
     {
@@ -2134,9 +2063,12 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         {
             const double k_1 = 6.0e2;
             const double k_2 = 0.68;
-            codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
-            codi::RealReverse au = cloud_k_au * qc_prime*qc_prime * x_c*x_c * cc.cloud.rho_v;
-            codi::RealReverse tau = min(max(1.0-qc_prime/(qc_prime+qr_prime+EPSILON), EPSILON), 0.9);
+            codi::RealReverse x_c = particle_mean_mass(
+                qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
+            codi::RealReverse au = cloud_k_au * qc_prime*qc_prime
+                                    * x_c*x_c * cc.cloud.rho_v;
+            codi::RealReverse tau = min(max(1.0-qc_prime/
+                                    (qc_prime+qr_prime+EPSILON), EPSILON), 0.9);
             codi::RealReverse phi = k_1 * pow(tau, k_2) * pow(1.0-pow(tau, k_2), 3);
             au *= (1.0 + phi/pow(1.0-tau, 2));
             au = max(min(qc_prime, au), 0.0);
@@ -2154,16 +2086,15 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         {
             const double k_1 = 5.0e-4;
             const double k_r = 5.78;
-            codi::RealReverse tau = min(max(1.0-qc_prime/(qc_prime+qr_prime+EPSILON), EPSILON), 1.0);
+            codi::RealReverse tau = min(max(1.0-qc_prime/
+                                    (qc_prime+qr_prime+EPSILON), EPSILON), 1.0);
             codi::RealReverse phi = pow(tau/(tau+k_1), 4);
             codi::RealReverse ac = k_r * qc_prime * qr_prime * phi;
             ac = min(qc_prime, ac);
-            codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
+            codi::RealReverse x_c = particle_mean_mass(
+                qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
             res[qr_idx] += ac;
             res[qc_idx] -= ac;
-            // DEBUG STATEMENT
-            if(ac/ref.qref >= 0.003)
-                std::cout << "line 2152, dqc " << ac << "\n";
             res[Nc_idx] -= min(Nc, x_c);
         }
     }
@@ -2203,7 +2134,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             mue = cc.rain.cmu1 * tanh( pow(cc.rain.cmu2*(D_v-cc.rain.cmu3),
                 cc.rain.cmu5)) + cc.rain.cmu4;
         // Equation A8
-        codi::RealReverse lambda = pow(M_PI/6.0*rho_w*(mue+3.0)*(mue+2.0)*(mue+1.0)/x_r, 1.0/3.0);
+        codi::RealReverse lambda = pow(
+            M_PI/6.0*rho_w*(mue+3.0)*(mue+2.0)*(mue+1.0)/x_r, 1.0/3.0);
 
         // Approximation of Gamma(mue+5/2) / Gamma(mue+2)
         codi::RealReverse gamma_approx = 0.1357940435E+01
@@ -2241,7 +2173,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         res[Nr_idx] -= delta_nv;
         // evap -= delta_qv
 
-        codi::RealReverse delta_e = latent_heat_evap(T_prime) * delta_qv / specific_heat_water_vapor(T_prime);
+        codi::RealReverse delta_e = latent_heat_evap(T_prime) * delta_qv
+            / specific_heat_water_vapor(T_prime);
         // Evaporation, cooling
         if(delta_qv > 0.0)
             res[lat_cool_idx] -= delta_e;
@@ -2393,11 +2326,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     //////// end sedimentation_explicit
 
     ////// Get back to non-prime
-    // DEBUG STATEMENT
-    if(res[qc_idx]/ref.qref >= 0.003)
-        std::cout << "line 2384, dqc " << res[qc_idx] << "\n";
     res[qc_idx] /= ref.qref;
-
     res[qr_idx] /= ref.qref;
     res[qv_idx] /= ref.qref;
     res[qi_idx] /= ref.qref;
@@ -2460,6 +2389,21 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         + (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0) ) - C16*(S/(T*T))*res[T_idx];
 }
 
+
+/**
+ * This function evaluates the RHS function of the ODE. It uses the 1 moment
+ * cloud scheme without ice after Seifert and Beheng (2006),
+ * see https://doi.org/10.1007/s00703-005-0112-4
+ * and 10.1175/2008JAS2586.1
+ *
+ * @param res On out: system state difference
+ * @param y Old system state
+ * @param ref Pointer to reference quantities to transform between units
+ * @param cc Pointer to constants from the model
+ * @param nc Pointer to parameters from the netCDF file
+ * @param fixed If True: Reset change of pressure, temperature and ascent (w)
+ *              at the end to zero
+ */
 void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
 	 std::vector<codi::RealReverse> &y,
 	 const reference_quantities_t &ref,
@@ -2616,11 +2560,6 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
         res[qv_idx] += delta_qv;
         res[qr_idx] -= delta_qv;
         res[Nr_idx] -= delta_nv;
-
-        // res[qc_idx] *= delta_qv;
-        // How about?
-        // res[] += delta_nv;
-        //  evap(i,k) = evap(i,k)-eva_q
     }
 
      // Compute parameters
@@ -2693,7 +2632,6 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
             * pow( 1.0+cc.rain.gamma*D_p, -mue-4.0);
 
         codi::RealReverse rhocorr = pow(compute_rhoa(p_prime, T_prime, S)/1.225, -0.4);
-        // codi::RealReverse rhocorr = pow(cc.rho_a_prime/1.225, -0.4);
         v_nr *= rhocorr;
         // TODO: Check the scaling here. I'm not convinced that this is okay as it is!
         v_qr *= rhocorr*ref.qref*ref.qref;
@@ -2710,77 +2648,6 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
     res[qs_idx] /= ref.qref;
     res[qg_idx] /= ref.qref;
 }
-
-
+/** @} */ // end of group ufunc
 
 #endif
-
-
-// mo_satad.f90
-// #ifdef __COSMO__
-//    ! diagnostically (re)compute density of moist air for time-level nnow
-//    ! ... using specific moisture quantities
-//    CALL calrho( te, ppe,qve,qce,qle+qie, p0e, rhotot, idim, kdim, r_d, rvd_m_o )
-// #endif
-
-//     DO k = klo, kup
-//       DO i = ilo , iup
-
-//         ! total content of the species which are changed by the adjustment:
-//         qw(i,k) = qve(i,k) + qce(i,k)
-
-//         ! check, which points will still be subsaturated even
-//         ! if all the cloud water would have been evaporated.
-//         ! At such points, the Newton iteration is not necessary and the
-//         ! adjusted values of T, p, qv and qc can be obtained directly.
-
-//         lwdocvd(i,k) = ( lwd + (cp_v - cl)*(te(i,k)-tmelt) - r_v*te(i,k) )/ cvd
-
-//         Ttest(i,k) = te(i,k) - lwdocvd(i,k)*qce(i,k)
-
-//         qtest(i,k) = qsat_rho(Ttest(i,k), rhotot(i,k))
-
-//       END DO
-//     END DO
-
-//     DO k = klo, kup
-//       DO i = ilo , iup
-
-//        ll_satad = .TRUE.
-//        IF (lqtvar) THEN
-//          IF ( qtvar(i,k) > 0.0001_ireals * (qve(i,k)+qce(i,k))**2 ) THEN ! satad not in EDMF boundary layer
-//            ll_satad = .false.                                            ! sqrt(qtvar) > 0.001
-//          ENDIF
-//        ENDIF
-
-//        IF ( ll_satad ) THEN
-
-//         IF (qw(i,k) <= qtest(i,k) ) THEN
-//           ! In this case, all the cloud water evaporates and there is still (sub)saturation.
-//           ! The resulting state depends only on the available cloud water and is
-//           ! not saturated, which enables direct computation of the adjusted variables:
-//           evap(i,k) = evap(i,k)-qce(i,k)
-//           qve(i,k)  = qw(i,k)
-//           qce(i,k)  = 0.0_ireals
-//           te(i,k)   = Ttest(i,k)
-//         ELSE
-//           ! In this case, the Newton interation is needed
-//           nsat       = nsat+1
-//           iwrk(nsat) = i
-//           kwrk(nsat) = k
-//           ! Field for the iterated temperature, here set the starting value for the below iteration
-//           ! to the "old" temperature (as an alternative, the arithmetic mean
-//           ! between "old" temperature and dew point has been tested, but did
-//           ! not significantly increase the convergence speed of the iteration):
-//           twork(nsat)  = te(i,k)
-//           ! And this is the storage variable for the "old" values in the below iteration:
-//           ! Add some nonesense increment to the starting, which is sufficient to trigger the
-//           ! iteration below:
-//           tworkold(nsat) = twork(nsat) + 10.0_ireals
-//           qv_tmp(nsat) = qve(i,k)
-//         END IF
-
-//        END IF
-
-//       END DO
-//     END DO

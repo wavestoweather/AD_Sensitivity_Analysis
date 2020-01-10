@@ -14,10 +14,18 @@ Welcome to Process and Plot Scripts's documentation!
    scripts/plot_trajectories
    scripts/executing
 
+.. toctree::
+   :maxdepth: 4
+   :caption: Grouped C++ Documentation
+
+   groups/ufunc
+
 
 .. toctree::
    :maxdepth: 4
-   :caption: C++ Documentation
+   :caption: Full C++ Documentation
+
+
 
    api/library_root
 

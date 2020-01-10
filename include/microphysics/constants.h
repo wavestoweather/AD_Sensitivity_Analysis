@@ -46,190 +46,291 @@
 // Constants
 ////////////////////////////////////////////////////////////////////////////////
 
-// Universal gas constant, unit: J/(mol*K)
-// Source: http://physics.nist.gov/cuu/Constants/
+/**
+ * Universal gas constant, unit: J/(mol*K)
+ * Source: http://physics.nist.gov/cuu/Constants/
+ */
 const double R_universal = 8.3144598;
 
-// Molar mass of water, unit: kg/mol
-// Source: http://www1.lsbu.ac.uk/water/water_properties.html
+/**
+ * Molar mass of water, unit: kg/mol
+ * Source: http://www1.lsbu.ac.uk/water/water_properties.html
+ */
 const double Mw = 0.018015265;
 
-// Molar mass of dry air, unit: kg/mol
-// Source: Picard et al, 2008: Revised formula for the density of moist air
+/**
+ * Molar mass of dry air, unit: kg/mol
+ * Source: Picard et al, 2008: Revised formula for the density of moist air
+ */
 const double Ma = 0.02896546;
 
-// Gas constant for water vapor, unit: J/(kg*K)
+/**
+ * Gas constant for water vapor, unit: J/(kg*K)
+ */
 const double Rv = R_universal/Mw;
 
-// Gas constant for dry air, unit: J/(kg*K)
+/**
+ * Gas constant for dry air, unit: J/(kg*K)
+ */
 const double Ra = R_universal/Ma;
 
-// Quotient of the individual gas constants
+/**
+ * Quotient of the individual gas constants
+ */
 const double Epsilon = Ra/Rv;
 
-// Gravitational acceleration (m/s^2)
+/**
+ * Gravitational acceleration (m/s^2)
+ */
 const double gravity_acc = 9.81;
 
-// Melting temperature of ice/snow
+/**
+ * Melting temperature of ice/snow
+ */
 const double tmelt = 273.15;
 
-// Tresholds for ice selfcollection
+/**
+ * Treshold for ice selfcollection
+ */
 const double q_crit_i = 1.0e-6;
+/**
+ * Treshold for ice selfcollection
+ */
 const double D_crit_i = 1.0e-4;
 
-// Threshold for ice conversion in selfcollection
+/**
+ * Threshold for ice conversion in selfcollection
+ */
 const double D_conv_i = 75.0e-6;
 
-// Thresholds for ice rain riming and snow rain riming
+/**
+ * Threshold for ice rain riming and snow rain riming
+ */
 const double q_crit_r = 1.0e-5;
+/**
+ * Threshold for ice rain riming and snow rain riming
+ */
 const double D_crit_r = 1.0e-4;
 
-// Thresholds for rain freeze and cloud water
+/**
+ * Threshold for rain freeze and cloud water
+ */
 const double q_crit_fr = 1.0e-6;
+/**
+ * Threshold for rain freeze and cloud water
+ */
 const double q_crit_c = 1.0e-6;
 
-// Threshold is 1e-4 g/m^3 elsewhere
-// const double q_crit = 1.0e-7;
+/**
+ * Default threshold is 1e-4 g/m^3
+ */
 const double q_crit = 1.0e-7;
 
-// Thresholds for conversion snow to graupel, ice to graupel
+/**
+ * Threshold for conversion snow to graupel, ice to graupel
+ */
 const double D_conv_sg = 2.0e-4;
+/**
+ * Threshold for conversion snow to graupel, ice to graupel
+ */
 const double D_conv_ig = 2.0e-4;
 
-// Minimum mass of conversion due to riming
+/**
+ * Minimum mass of conversion due to riming
+ */
 const double x_conv = 1.0e-10;
 
-// Threshold for cloud drop collection efficiency
+/**
+ * Threshold for cloud drop collection efficiency
+ */
 const double D_crit_c = 1.0e-5;
 
-// Upper bound for diameter in collision efficiency
+/**
+ * Upper bound for diameter in collision efficiency
+ */
 const double D_coll_c = 4.0e-5;
 
-// Lower temperature threshold for ice nucleation, -5°C
+/**
+ * Lower temperature threshold for ice nucleation, -5°C
+ */
 const double T_nuc = 268.15;
 
-// Lower temperature threshold for raindrop freezing
+/**
+ * Lower temperature threshold for raindrop freezing
+ */
 const double T_freeze = 273.15;
+//! Lower temperature threshold for (instantaneous) raindrop freezing
 const double T_f = 233.0;
+
 
 const double D_eq = 1.1e-3;
 
-// [kg/m^3] density of liquid water
+//! [kg/m^3] density of liquid water
 const double rho_w = 1000.0;
 
-// norm air density
+//! norm air density
 const double rho_0 = 1.225;
 
-// exponent for density correction
+//! exponent for density correction
 const double rho_vel = 0.4;
 
-// [kg/m^3] density of ice
+//! [kg/m^3] density of ice
 const double rho_ice = 916.7;
 
-// gas constant of water vapor from ICON mo_physical_constants
+//! gas constant of water vapor from ICON mo_physical_constants
 const double R_v = 461.51;
 
-// Variuous constants from ICON regarding evaporation from melting ice particles
+//! Variuous constants from ICON regarding evaporation from melting ice particles
 const double a_v = 0.78;
+//! Variuous constants from ICON regarding evaporation from melting ice particles
 const double b_v = 0.308;
+//! Variuous constants from ICON regarding evaporation from melting ice particles
 const double N_Sc = 0.71;
+//! Variuous constants from ICON regarding evaporation from melting ice particles
 const double a_prime = 9.65;
+//! Variuous constants from ICON regarding evaporation from melting ice particles
 const double b_prime = 9.80;
+//! Variuous constants from ICON regarding evaporation from melting ice particles
 const double c_prime = 600;
-// heat conductivity of air
+//! heat conductivity of air
 const double K_T = 1; // TODO
-// Latent heat of evaporation of water (wasser->dampf)
+//! Latent heat of evaporation of water (wasser->dampf)
 const double L_wd = 2.5008e6;
-// heat of sublimination ice -> vapor
+//! heat of sublimination ice -> vapor
 const double L_ed = 2.8345e6;
-// heat of fusion ice -> water
+//! heat of fusion ice -> water
 const double L_ew = L_ed - L_wd;
-// Diffusivity of water vapor in air at 0°C
+//! Diffusivity of water vapor in air at 0°C
 const double D_v = 2.22e-5;
-// Min. efficiency for collisions graupel - cloud, ice - cloud, snow - cloud
+//! Min. efficiency for collisions graupel - cloud, ice - cloud, snow - cloud
 const double ecoll_min = 0.01;
-// Collision efficiency for graupel selfcollection
+//! Collision efficiency for graupel selfcollection
 const double ecoll_gg = 0.10;
-// Collision efficiency for wet graupel
+//! Collision efficiency for wet graupel
 const double ecoll_gg_wet = 0.40;
-// [m^2/s]  kinematic viscosity of dry air from mo_physical_constants.f90
+//! [m^2/s]  kinematic viscosity of dry air from mo_physical_constants.f90
 const double kin_visc_air = 1.5e-5;
-// max 0.68
+//! max 0.68
 const double alpha_spacefilling = 0.01;
-// Hallet-Mossop ice multiplication
-const double C_mult = 3.5e8; // Coefficient for splintering
+//! Hallet-Mossop ice multiplication
+/*!
+    Coefficient for splintering
+*/
+const double C_mult = 3.5e8;
+//! Hallet-Mossop ice multiplication
 const double T_mult_min = 265.0;
+//! Hallet-Mossop ice multiplication
 const double T_mult_max = 270.0;
+//! Hallet-Mossop ice multiplication
 const double T_mult_opt = 268.0;
 
 const double const0 = 1.0/(D_coll_c - D_crit_c);
 const double const3 = 1.0/(T_mult_opt - T_mult_min);
 const double const4 = 1.0/(T_mult_opt - T_mult_max);
-// const5 = c_w / L_ew ?
+//! const5 = c_w / L_ew ?
 const double const5 = alpha_spacefilling * rho_w/rho_ice;
 
 const bool ice_multiplication = true;
 const bool enhanced_melting = true;
 
-// Size thresholds for partitioning of freezing rain in the hail scheme
+//! Size thresholds for partitioning of freezing rain in the hail scheme
 const double D_rainfrz_ig = 0.5e-3;
+//! Size thresholds for partitioning of freezing rain in the hail scheme
 const double D_rainfrz_gh = 1.25e-3;
 
-// Diffusivity of water vapor in air at 0 C
+//! Diffusivity of water vapor in air at 0 C
 const double dv0 = 2.22e-5;
-// Saturation pressure at T=tmelt, e_3 in ICON
+//! Saturation pressure at T=tmelt, e_3 in ICON
 const double p_sat_melt = 6.1078e2;
 
-// specific heat capacity of air at constant pressure [J/K/kg]
+//! specific heat capacity of air at constant pressure [J/K/kg]
 const double cp = 1004.64;
 
-// Boltzmann constant [J/K]
+//! Boltzmann constant [J/K]
 const double k_b = 1.3806504e-23;
 
 // A switch for constant drops
 #if CONSTANT_DROP
+//! A switch for constant drops
 const bool nuc_c_type = true;
 #else
+//! A switch for constant drops
 const bool nuc_c_type = false;
 #endif
 
 double rain_nm1, rain_nm2, rain_nm3, rain_g1, rain_g2,
     graupel_nm1, graupel_nm2, graupel_g1, graupel_g2;
 
-// Parameters for rain freeze with data of Barklie and Gokhale (PK page 350)
+//! Parameters for rain freeze with data of Barklie and Gokhale (PK page 350)
 const double a_HET = 0.65;
+//! Parameters for rain freeze with data of Barklie and Gokhale (PK page 350)
 const double b_HET = 200.0;
 
-// Schmidt number (PK, page 541)
+//! Schmidt number (PK, page 541)
 const double N_sc  = 0.71;
-// Exponent of N_sc in the vent-coeff. (PK, page 541)
+/**
+ * Exponent of N_sc in the vent-coeff. (PK, page 541)
+ */
 const double n_f = 0.333;
 
-// Avogadro number [1/mol]
+/**
+ * Avogadro number [1/mol]
+ */
 const double N_avo = 6.02214179e23;
-// average gravity
+/**
+ * average gravity
+ */
 const double grav = 9.80665;
-// molar weight of dry air
+/**
+ *  molar weight of dry air
+ */
 const double amd = 28.97;
-// molar weight of water [g/mol]
+/**
+ *  molar weight of water [g/mol]
+ */
 const double amw = 18.0154;
 
-//// Constants for Phillips et al. ice nucleation scheme
-// initial number density of dust [1/m³], Phillips08 value 162e3
+/**
+ * Constants for Phillips et al. ice nucleation scheme
+ * initial number density of dust [1/m³], Phillips08 value 162e3
+ */
 const double na_dust = 162.0e3;
-// initial number density of soot [1/m³], Phillips08 value 15e6
+/**
+ * Constants for Phillips et al. ice nucleation scheme
+ * initial number density of soot [1/m³], Phillips08 value 15e6
+ */
 const double na_soot = 15.0e6;
-// initial number density of organics [1/m3], Phillips08 value 177e6
+/**
+ * Constants for Phillips et al. ice nucleation scheme
+ * initial number density of organics [1/m3], Phillips08 value 177e6
+ */
 const double na_orga = 177.0e6;
-// max number of IN between 1-10 per liter, i.e. 1d3-10d3
+/**
+ * Constants for Phillips et al. ice nucleation scheme
+ * max number of IN between 1-10 per liter, i.e. 1d3-10d3
+*/
 const double ni_het_max = 500.0e3;
-// number of liquid aerosols between 100-5000 per liter
+/**
+ * Constants for Phillips et al. ice nucleation scheme
+ * number of liquid aerosols between 100-5000 per liter
+ */
 const double ni_hom_max = 5000.0e3;
 
-//// parameters for deposition formula (2) of Hande et al.
+/**
+ * parameters for deposition formula (2) of Hande et al.
+ */
 const double a_dep = 0.27626;
+/**
+ * parameters for deposition formula (2) of Hande et al.
+ */
 const double b_dep = 6.21;
+/**
+ * parameters for deposition formula (2) of Hande et al.
+ */
 const double c_dep = -1.3107;
+/**
+ * parameters for deposition formula (2) of Hande et al.
+ */
 const double d_dep = 0.26789;
 
 //// more parameters for Hande et al. nucleation for HDCP2 simulations
@@ -276,20 +377,25 @@ const double bet_imm = 1.2293;
 
 uint32_t auto_type = 3;
 
-codi::RealReverse rain_gfak = -1.0; // see mo_2mom_mcrph_main.f90 line 830 following
+/**
+ * see mo_2mom_mcrph_main.f90 line 830 following
+ */
+codi::RealReverse rain_gfak = -1.0;
 
 codi::RealReverse cloud_k_au;
 codi::RealReverse cloud_k_sc;
 
-// Kernel for autoconversion
+/**
+ * Kernel for autoconversion
+ */
 codi::RealReverse kc_autocon = 9.44e9;
 
-// Inverse layer thickness. Used for sedimentation.
-// In Miltenberger (2016) the trajectories start every 100 m between the surface
-// and 4 km altitude using COSMO-2, which uses a mean spacing of 388 m
-// with 13 m close to the surface and 1190 m at 23 km.
-// codi::RealReverse inv_z = 1.0/100.0;
-// codi::RealReverse inv_z = 1.0/100.0;
+/**
+ * Inverse layer thickness. Used for sedimentation.
+ * In Miltenberger (2016) the trajectories start every 100 m between the surface
+ * and 4 km altitude using COSMO-2, which uses a mean spacing of 388 m
+ * with 13 m close to the surface and 1190 m at 23 km.
+ */
 codi::RealReverse inv_z = 1.0/1000.0;
 
 void print_reference_quantities(reference_quantities_t &ref)

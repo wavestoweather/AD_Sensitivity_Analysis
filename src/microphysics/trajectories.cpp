@@ -1071,7 +1071,7 @@ int main(int argc, char** argv)
                 // the input files
                 // *Should* only be necessary when parameters from the
                 // trajectory are used as start point
-                setCoefficients(y_single_old, cc, ref_quant, nc_params);
+                setCoefficients(y_single_old, cc, ref_quant);
                 // CODIPACK: BEGIN
 
                 tape.setActive();
@@ -1133,7 +1133,7 @@ int main(int argc, char** argv)
 #endif
 #if defined(RK4ICE)
                 RK4_step_2_sb_ice(y_single_new, y_single_old, ref_quant, cc,
-                    nc_params, input.fixed_iteration, sub);
+                    nc_params, input.fixed_iteration);
 #endif
                 // CODIPACK: BEGIN
                 for(int ii = 0 ; ii < num_comp ; ii++)

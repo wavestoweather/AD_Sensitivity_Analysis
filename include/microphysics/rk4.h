@@ -17,13 +17,19 @@ using v_rev = std::vector<codi::RealReverse>;
 // =============================================================================
 ////////////////////////////////////////////////////////////////////////////////
 
-
-////////////////////////////////////////////////////////////////////////////////
-// This method computes a single step using the Runge-Kutta 4 method
-// for the ODE
-// y' = RHS(y)
-// with old system state yold and new system state ynew.
-//
+/**
+ * Compute a single step using the Runge-Kutta 4 method for the ODE
+ * \f[ y' = \text{RHS}(y) \f]
+ * with old system state yold and new system state ynew. It uses the
+ * 1 moment bulk scheme from 10.1175/JAS3980
+ *
+ * @param ynew On out: new system state
+ * @param yold Old system state
+ * @param ref Pointer to reference quantities to transform between units
+ * @param cc Pointer to constants from the model
+ * @param nc Pointer to parameters from the netCDF file
+ * @param fixed If True: Do not change pressure, temperature and ascent (w)
+ */
 void RK4_step(
     v_rev &ynew,
     v_rev &yold,
@@ -92,16 +98,23 @@ void RK4_step(
     if(fixed)
         for(int ii=0; ii < update_idx; ii++)
             ynew[ii] = yold[ii];
-    if(k[qv_idx] != 0.0)
-    {
-        std::cout << "dqv: " << k[qv_idx] << "\n";
-    }
-    // std::cout << "\n#####################################################\n";
 
 } // End of method RK4_step
-////////////////////////////////////////////////////////////////////////////////
 
-// 2 moment bulk scheme 10.1175/JAS3980 without ice
+
+/**
+ * Compute a single step using the Runge-Kutta 4 method for the ODE
+ * \f[ y' = \text{RHS}(y) \f]
+ * with old system state yold and new system state ynew.  It uses the
+ * 2 moment bulk scheme from 10.1175/JAS3980 without ice.
+ *
+ * @param ynew On out: new system state
+ * @param yold Old system state
+ * @param ref Pointer to reference quantities to transform between units
+ * @param cc Pointer to constants from the model
+ * @param nc Pointer to parameters from the netCDF file
+ * @param fixed If True: Do not change pressure, temperature and ascent (w)
+ */
 void RK4_step_2_no_ice(
     v_rev &ynew,
     v_rev &yold,
@@ -160,18 +173,28 @@ void RK4_step_2_no_ice(
     for(int ii = 0 ; ii < num_comp ; ii++)
         ynew[ii] += cc.dt_sixth*k[ii];
 
-
 }
 
-// 2 moment bulk scheme 10.1175/JAS3980 without ice
+/**
+ * Compute a single step using the Runge-Kutta 4 method for the ODE
+ * \f[ y' = \text{RHS}(y) \f]
+ * with old system state yold and new system state ynew.  It uses the
+ * 2 moment bulk scheme from 10.1175/JAS3980 with ice.
+ *
+ * @param ynew On out: new system state
+ * @param yold Old system state
+ * @param ref Pointer to reference quantities to transform between units
+ * @param cc Pointer to constants from the model
+ * @param nc Pointer to parameters from the netCDF file
+ * @param fixed If True: Do not change pressure, temperature and ascent (w)
+ */
 void RK4_step_2_sb_ice(
     v_rev &ynew,
     v_rev &yold,
     const reference_quantities_t& ref,
     model_constants_t& cc,
     nc_parameters_t& nc,
-    bool fixed,
-    const int counter)
+    bool fixed)
 {
 
     // Define temporary variables
@@ -185,7 +208,7 @@ void RK4_step_2_sb_ice(
     //
     // Do all computations involving k1
     //
-    RHS_SB(k, yold, ref, cc, nc, cc.dt_sixth, fixed, counter); // k = k1
+    RHS_SB(k, yold, ref, cc, nc, cc.dt_sixth, fixed); // k = k1
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
@@ -197,7 +220,7 @@ void RK4_step_2_sb_ice(
     //
     // Do all computations involving k2
     //
-    RHS_SB(k, ytmp, ref, cc, nc, cc.dt_third, fixed, counter); // k = k2
+    RHS_SB(k, ytmp, ref, cc, nc, cc.dt_third, fixed); // k = k2
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
@@ -208,7 +231,7 @@ void RK4_step_2_sb_ice(
     //
     // Do all computations involving k3
     //
-    RHS_SB(k, ytmp, ref, cc, nc, cc.dt_third, fixed, counter); // k = k3
+    RHS_SB(k, ytmp, ref, cc, nc, cc.dt_third, fixed); // k = k3
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
@@ -219,11 +242,9 @@ void RK4_step_2_sb_ice(
     //
     // Do all computations involving k4
     //
-    RHS_SB(k, ytmp, ref, cc, nc, cc.dt_sixth, fixed, counter); // k = k4
+    RHS_SB(k, ytmp, ref, cc, nc, cc.dt_sixth, fixed); // k = k4
 
     for(int ii = 0 ; ii < num_comp ; ii++)
         ynew[ii] += cc.dt_sixth*k[ii];
-
-
 }
 #endif
