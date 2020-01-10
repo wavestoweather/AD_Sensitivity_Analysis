@@ -15,6 +15,11 @@
 using namespace netCDF;
 
 
+/** @defgroup io Input/Output Functions
+ * Functions to load data and setup and initialize structs.
+ * @{
+ */
+
 /**
  * Based on
  * init_dmin_wg_gr_ltab_equi('dmin_wetgrowth_lookup.dat', unitnr, 61, ltabdminwgg)
@@ -373,9 +378,12 @@ void load_nc_parameters(
 #endif
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Initialize the input parameters to default values.
-////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Initialize the input parameters to default values.
+ *
+ * @param in Structure where to store the input parameters.
+ */
 void init_input_parameters(input_parameters_t &in)
 {
   // Numerics
@@ -405,8 +413,17 @@ void init_input_parameters(input_parameters_t &in)
   in.traj = 0;
 }
 
+/**
+ * String used to parse commandline input.
+ */
 static const char *optString = "f:d:i:b:o:l:s:t:a:r:?";
 
+
+/**
+ * Initialize global args for parsing command line arguments.
+ *
+ * @param arg Struct that shall be initialized.
+ */
 void init_global_args(global_args_t &arg)
 {
 
@@ -441,9 +458,12 @@ void init_global_args(global_args_t &arg)
   arg.traj_string = nullptr;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Print all given input parameters
-////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Print all given input parameters
+ *
+ * @param in Struct where the input parameters are stored.
+ */
 void print_input_parameters(input_parameters_t &in)
 {
   std::cout << "\n"
@@ -462,6 +482,13 @@ void print_input_parameters(input_parameters_t &in)
         << std::endl;
 }
 
+
+/**
+ * Set the input parameters with the data from the global arguments.
+ *
+ * @param arg Stuct with command line arguments.
+ * @param in Struct where the input parameters will be stored.
+ */
 void set_input_from_arguments(global_args_t &arg ,
 			      input_parameters_t &in )
 {
@@ -524,6 +551,9 @@ void set_input_from_arguments(global_args_t &arg ,
 }
 
 
+/**
+ * Display a help message on how to use this program.
+ */
 void display_usage()
 {
 
@@ -548,12 +578,21 @@ void display_usage()
 }
 
 
+/**
+ * Display an error message when command line arguments are faulty.
+ */
 void display_error_on_command_line()
 {
   std::cout << "==> ERROR: An error occured while dealing with the command line arguments!"
 	    << std::endl;
 }
 
+
+/**
+ * Setup the cloud autoconversion parameters.
+ *
+ * @param pc Model constants for a certain particle type.
+ */
 void setup_cloud_autoconversion(
     particle_model_constants_t &pc)
 {
@@ -575,7 +614,12 @@ void setup_cloud_autoconversion(
     }
 }
 
-// setup for bulk sedimentation velocity
+
+/**
+ * Setup for bulk sedimentation velocity.
+ *
+ * @param pc Model constants for a certain particle type.
+ */
 void setup_bulk_sedi(
     particle_model_constants_t &pc)
 {
@@ -586,5 +630,7 @@ void setup_bulk_sedi(
     pc.lambda = tgamma( (pc.nu+1.0)/pc.mu )
         / tgamma( (pc.nu+2.0)/pc.mu );
 }
+
+/** @} */ // end of group io
 
 #endif

@@ -19,6 +19,8 @@ Welcome to Process and Plot Scripts's documentation!
    :caption: Grouped C++ Documentation
 
    groups/ufunc
+   groups/io
+   groups/parametrizations
 
 .. toctree::
    :maxdepth: 4

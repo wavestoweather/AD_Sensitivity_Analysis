@@ -531,39 +531,39 @@ struct nc_parameters_t{
 };
 
 
-////////////////////////////////////////////////////////////////////////////////
-// Helper structures to handle command line arguments.
-////////////////////////////////////////////////////////////////////////////////
+/**
+ * Helper structure to handle command line arguments.
+ */
 struct global_args_t{
 
-  int final_time_flag;
+  int final_time_flag; /*!< Using a final simulation time? */
   char* final_time_string;
 
-  int timestep_flag;
+  int timestep_flag; /*!< Timestep in seconds specified? */
   char* timestep_string;
 
-  int snapshot_index_flag;
+  int snapshot_index_flag; /*!< Snapshot every x iterations specified? */
   char* snapshot_index_string;
 
-  int output_flag;
+  int output_flag; /*!< Output path specified? */
   char* output_string;
 
-  int input_flag;
+  int input_flag; /*!< Input netCDF file specified? */
   char* input_file;
 
-  int scaling_fact_flag;
+  int scaling_fact_flag; /*!< Scaling factor specified? */
   char* scaling_fact_string;
 
-  int start_over_flag;
+  int start_over_flag; /*!< Reload data from trajectory every few seconds? */
   char* start_over_string;
 
-  int fixed_iteration_flag;
+  int fixed_iteration_flag; /*!< Fix p, T, w during simulation? */
   char* fixed_iteration_string;
 
-  int auto_type_flag;
+  int auto_type_flag; /*!< Particle type specified? */
   char* auto_type_string;
 
-  int traj_flag;
+  int traj_flag; /*!< Trajectory to use specified? */
   char* traj_string;
 };
 
@@ -574,28 +574,27 @@ struct global_args_t{
 struct input_parameters_t{
 
   // Numerics
-  double t_end_prime;
-  double dt_prime;
-  double dt_traject_prime;
-  double dt_traject;
-  int snapshot_index;
+  double t_end_prime; /*!< End simulation time in seconds. */
+  double dt_prime; /*!< Timestep size in seconds for the simulation. */
+  double dt_traject_prime; /*!< Timestep size in seconds of the trajectory in the netCDF file. */
+  double dt_traject; /*!< Timestep size of the trajectory in the netCDF file. */
+  int snapshot_index; /*!< Save a snapshot every snapshot_index iteration. */
+  /**
+   * Number of timesteps for the simulation between two
+   * datapoints from the netCDF file.
+   */
   uint64_t num_sub_steps;
-  // Filename for output
-  std::string OUTPUT_FILENAME;
+  std::string OUTPUT_FILENAME; /*!< Filename for output. */
 
-  // Filename for input
-  std::string INPUT_FILENAME;
+  std::string INPUT_FILENAME; /*!< Filename for input netCDF file. */
 
-  // Start over at new timestep of trajectory?
-  bool start_over;
-  // Fix temperature, pressure and so forth at every iteration?
-  bool fixed_iteration;
+  bool start_over; /*!< Start over at new timestep of trajectory? */
+  bool fixed_iteration; /*!< Fix temperature, pressure and ascension at every iteration? */
 
-  // Scaling factor
-  double scaling_fact;
+  double scaling_fact; /*!< Scaling factor. */
 
-  uint32_t auto_type;
-  uint32_t traj;
+  uint32_t auto_type; /*!< Particle type. */
+  uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
 };
 
 /** @} */ // end of group types

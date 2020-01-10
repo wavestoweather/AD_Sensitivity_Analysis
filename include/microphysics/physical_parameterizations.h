@@ -7,23 +7,41 @@
 #include "constants.h"
 
 #include <boost/math/special_functions/gamma.hpp>
-// #include "user_functions.h"
-// Structure to hold the new equidistant lookup table for graupel wetgrowth diameter
+
+
+/** @defgroup parametrizations Physical Parametrizations
+ * Various functions for physical parametrizations, initializing lookup tables
+ * and particle collection constants.
+ * @{
+ */
+
+/**
+ * Structure to hold the new equidistant lookup table for
+ * graupel wetgrowth diameter
+ */
 table_t ltabdminwgg;
 gamma_table_t table_g1, table_g2, table_r1, table_r2, table_r3;
 
-// From ICON mo_2mom_mcrph_util.f90 incgfct_lower_lookupcreate
-// Create a lookup-table for the lower incomplete gamma function
-// int(0)(x) exp(-t) t^(a-1)dt
-// with constant a from x=0 to the 99.5% value of the normalized incomplete
-// gamma function. This 99.5 % - value has been fitted
-// with high accuracy as function of a in the range a in [0;20], but can
-// safely be applied also to higher values of a. (Fit created with the
-// matlab-program "gamma_unvoll_lower_lookup.m" by Ulrich Blahak, 2008/11/13).
-//
-// The last value in the table corresponds to x = infinity, so that
-// during the reconstruction of incgfct-values from the table,
-// the x-value can safely be truncated at the maximum table x-value.
+
+/** Init lookup table for the incomplete gamma function.
+ * From ICON mo_2mom_mcrph_util.f90 incgfct_lower_lookupcreate
+ * Create a lookup-table for the lower incomplete gamma function
+ * \f[ \text{int}(0)(x) \exp(-t) t^{a-1} \text{d}t \f]
+ * with constant a from x=0 to the 99.5% value of the normalized incomplete
+ * gamma function. This 99.5 % - value has been fitted
+ * with high accuracy as function of a in the range a in [0;20], but can
+ * safely be applied also to higher values of a. (Fit created with the
+ * matlab-program "gamma_unvoll_lower_lookup.m" by Ulrich Blahak, 2008/11/13).
+ *
+ * The last value in the table corresponds to x = infinity, so that
+ * during the reconstruction of incgfct-values from the table,
+ * the x-value can safely be truncated at the maximum table x-value.
+ *
+ * @param t Gamma table that shall be initialized.
+ * @param nl Number of bins in the table.
+ * @param nl_highres Optional number of bins for the high resolution table.
+ * @param a Value where the incomplete gamma function shall be interpolated around.
+ */
 void init_gamma_table(
     gamma_table_t &t,
     const uint64_t &nl,
@@ -70,11 +88,18 @@ void init_gamma_table(
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Evaluate a polynomial
-// a_0 + a_1*x + a_2*x^2
-// of order 2 using Horner's method
-//
+
+/**
+ * Evaluate a polynomial
+ * \f[ a_0 + a_1*x + a_2*x^2 \f]
+ * of order 2 using Horner's method.
+ *
+ * @param a0 Coefficient of the polynomial.
+ * @param a1 Coefficient of the polynomial.
+ * @param a2 Coefficient of the polynomial.
+ * @param x Value at which to evaluate the polynomial.
+ * @return Value at x
+ */
 template <class A>
 inline A polyval2(const double a0,
 		  const double a1,
@@ -84,11 +109,20 @@ inline A polyval2(const double a0,
   return ( a0 + x*(a1 + a2*x) );
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Evaluate a polynomial
-// a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4
-// of order 4 using Horner's method
-//
+
+/**
+ * Evaluate a polynomial
+ * \f[ a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4 \f]
+ * of order 4 using Horner's method.
+ *
+ * @param a0 Coefficient of the polynomial.
+ * @param a1 Coefficient of the polynomial.
+ * @param a2 Coefficient of the polynomial.
+ * @param a3 Coefficient of the polynomial.
+ * @param a4 Coefficient of the polynomial.
+ * @param x Value at which to evaluate the polynomial.
+ * @return Value at x
+ */
 template <class A>
 inline A polyval4(const double a0,
 		  const double a1,
@@ -100,11 +134,21 @@ inline A polyval4(const double a0,
   return ( a0 + x*(a1 + x*(a2 + x*(a3 + x*a4))) );
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Evaluate a polynomial
-// a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4 + a_5*x^5
-// of order 5 using Horner's method
-//
+
+/**
+ * Evaluate a polynomial
+ * \f[ a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4 + a_5*x^5 \f]
+ * of order 5 using Horner's method.
+ *
+ * @param a0 Coefficient of the polynomial.
+ * @param a1 Coefficient of the polynomial.
+ * @param a2 Coefficient of the polynomial.
+ * @param a3 Coefficient of the polynomial.
+ * @param a4 Coefficient of the polynomial.
+ * @param a5 Coefficient of the polynomial.
+ * @param x Value at which to evaluate the polynomial.
+ * @return Value at x
+ */
 template <class A>
 inline A polyval5(const double a0,
 		  const double a1,
@@ -122,6 +166,21 @@ inline A polyval5(const double a0,
 // a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4 + a_5*x^5 + a_6*x^6
 // of order 6 using Horner's method
 //
+/**
+ * Evaluate a polynomial
+ * \f[ a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4 + a_5*x^5 + a_6*x^6 \f]
+ * of order 6 using Horner's method.
+ *
+ * @param a0 Coefficient of the polynomial.
+ * @param a1 Coefficient of the polynomial.
+ * @param a2 Coefficient of the polynomial.
+ * @param a3 Coefficient of the polynomial.
+ * @param a4 Coefficient of the polynomial.
+ * @param a5 Coefficient of the polynomial.
+ * @param a6 Coefficient of the polynomial.
+ * @param x Value at which to evaluate the polynomial.
+ * @return Value at x
+ */
 template <class A>
 inline A polyval6(const double a0,
 		  const double a1,
@@ -135,19 +194,16 @@ inline A polyval6(const double a0,
   return ( a0 + x*(a1 + x*(a2 + x*(a3 + x*(a4 + x*(a5 + a6*x))))) );
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Diffusivity of dry air.
-//
-// Input:
-// T: Temperature (K)
-// p: Pressure (Pa)
-//
-// Output:
-// Diffusivity of dry air, unit: m^2/s
-//
-// Source: Hall and Pruppacher (1976)
-// Validity range: 193.15 K <= T <= 313.15 K
-//
+
+/**
+ * Diffusivity of dry air in \f$ \text{m}^2/\text{s} \f$.
+ * From Hall and Pruppacher (1976)
+ * Validity range: \f$ 193.15 \text{K} <= \text{T} <= 313.15 \text{K} \f$
+ *
+ * @param T Temperature in Kelvin.
+ * @param p Pressure in Pascal.
+ * @return Diffusivity
+ */
 template <class A>
 inline A diffusivity(A T,
 		     A p)
@@ -157,18 +213,15 @@ inline A diffusivity(A T,
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Thermal conductivity of dry air.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Thermal conductivity of dry air, unit: W/(m*K)
-//
-// Source: Kannuluik and Carman (1951)
-// Validity range: 90.15 K <= T <= 491.15 K
-//
+
+/**
+ * Thermal conductivity of dry air in \f$ \text{W}/(\text{m} \cdot \text{K}) \f$.
+ * From Kannuluik and Carman (1951)
+ * Validity range: \f$ 90.15 \text{K} <= \text{T} <= 491.15 \text{K} \f$
+ *
+ * @param T Temperature in Kelvin
+ * @return Thermal conductivity
+ */
 template <class A>
 inline A thermal_conductivity_dry_air(A T)
 {
@@ -178,19 +231,16 @@ inline A thermal_conductivity_dry_air(A T)
   return ( 418.68*(5.75e-5)*polyval2(1.0, 0.00317, -0.0000021, T_cel) );
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Thermal conductivity of moist air.
-//
-// Input:
-// T: Temperature (K)
-// qv: Mixing-ratio of water vapor (1)
-//
-// Output:
-// Thermal conductivity of moist air, unit: W/(m*K)
-//
-// Source: Pruppacher and Klett (1997), Equation 13-18c
-// Validity range: ?
-//
+
+/**
+ * Thermal conductivity of moist air in \f$ \text{W}/(\text{m} \cdot \text{K}) \f$.
+ * From Pruppacher and Klett (1997), Equation 13-18c
+ * Validity range: ?
+ *
+ * @param T Temperature in Kelvin
+ * @param qv Mixing-ratio of water vapor
+ * @return Thermal conductivity
+ */
 template <class A>
 inline A thermal_conductivity_moist_air(A T, A qv)
 {
@@ -203,18 +253,15 @@ inline A thermal_conductivity_moist_air(A T, A qv)
   return ( Kt*( 1.0 - (1.17 - 1.02*(Kt_tilde/Kv_tilde))*(qv/(qv+Epsilon)) ) );
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Density of liquid water.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Density of liquid water, unit: kg/m^3
-//
-// Source: Hare and Sorensen (1987); Kell (1975)
-// Validity range: 239.74 K <= T <= 423.15 K
-//
+
+/**
+ * Density of liquid water in \f$ \text{kg}/\text{m}^3 \f$.
+ * From Hare and Sorensen (1987); Kell (1975)
+ * Validity range: \f$ 239.74 \text{K} <= \text{T} <= 423.15 \text{K} \f$
+ *
+ * @param T Temperature in Kelvin
+ * @return Density
+ */
 template <class A>
 inline A density_water(A T)
 {
@@ -257,18 +304,15 @@ inline A density_water(A T)
   return ( F_T/denom );
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Density of ice.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Density of ice, unit: kg/m^3
-//
-// Source: Bogdan (1997)
-// Validity range: 228 K <= T <= 273.15 K
-//
+
+/**
+ * Density of ice in \f$ \text{kg}/\text{m}^3 \f$.
+ * From Bogdan (1997)
+ * Validity range: \f$ 228 \text{K} <= \text{T} <= 273.15 \text{K} \f$
+ *
+ * @param T Temperature in Kelvin
+ * @return Density
+ */
 template <class A>
 inline A density_ice(A T)
 {
@@ -277,18 +321,15 @@ inline A density_ice(A T)
   return polyval2(916.7, -0.175, -0.0005, T_cel);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Specific heat capacity of dry air.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Specific heat capacity of dry air, unit: J/(kg*K)
-//
-// Source: Rogers and Yau (1989)
-// Validity range: ?
-//
+
+/**
+ * Specific heat capacity of dry air in \f$ \text{J}/(\text{kg} \cdot \text{K}) \f$.
+ * From Rogers and Yau (1989)
+ * Validity range: ?
+ *
+ * @param T Temperature in Kelvin
+ * @return Specific heat capacity
+ */
 template <class A>
 inline A specific_heat_dry_air(A T)
 {
@@ -297,18 +338,15 @@ inline A specific_heat_dry_air(A T)
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Specific heat capacity of water vapor.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Specific heat capacity of water vapor, unit: J/(kg*K)
-//
-// Source: Pruppacher and Klett (1997)
-// Validity range: ?
-//
+
+/**
+ * Specific heat capacity of water vapor in \f$ \text{J}/(\text{kg} \cdot \text{K}) \f$.
+ * From Pruppacher and Klett (1997)
+ * Validity range: ?
+ *
+ * @param T Temperature in Kelvin
+ * @return Specific heat capacity
+ */
 template <class A>
 inline A specific_heat_water_vapor(A T)
 {
@@ -317,18 +355,15 @@ inline A specific_heat_water_vapor(A T)
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Specific heat capacity of liquid water.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Specific heat capacity of liquid water, unit: J/(kg*K)
-//
-// Source: Pruppacher and Klett (1997), equations 3-15 and 3-16
-// Validity range: 236.15 K <= T <= 308.15 K
-//
+
+/**
+ * Specific heat capacity of liquid water in \f$ \text{J}/(\text{kg} \cdot \text{K}) \f$.
+ * From Pruppacher and Klett (1997), equations 3-15 and 3-16
+ * Validity range: \f$ 236.15 \text{K} <= \text{T} <= 308.15 \text{K} \f$
+ *
+ * @param T Temperature in Kelvin
+ * @return Specific heat capacity
+ */
 template <class A>
 inline A specific_heat_water(A T)
 {
@@ -352,18 +387,15 @@ inline A specific_heat_water(A T)
   return ( 4186.8*polyval4(a0, a1, a2, a3, a4, T_cel) );
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Specific heat capacity of ice.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Specific heat capacity of ice, unit: J/(kg*K)
-//
-// Source: Murphy and Koop (2005)
-// Validity range: 20 K <= T
-//
+
+/**
+ * Specific heat capacity of ice in \f$ \text{J}/(\text{kg} \cdot \text{K}) \f$.
+ * From Murphy and Koop (2005)
+ * Validity range: \f$ 20 \text{K} <= \text{T} \f$
+ *
+ * @param T Temperature in Kelvin
+ * @return Specific heat capacity
+ */
 template <class A>
 inline A specific_heat_ice(A T)
 {
@@ -374,18 +406,16 @@ inline A specific_heat_ice(A T)
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Latent heat of vaporization of (supercooled) liquid water. (lh_evap_RH87?)
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Latent heat of liquid water, unit: J/(kg)
-//
-// Source: Murphy and Koop (2005)
-// Validity range: 236 K <= T <= 273.16 K
-//
+
+/**
+ * Latent heat of vaporization of (supercooled) liquid water in
+ * \f$ \text{J}/\text{kg} \f$.
+ * From Murphy and Koop (2005)
+ * Validity range: \f$ 236 \text{K} <= \text{T} <= 273.16 \text{K} \f$
+ *
+ * @param T Temperature in Kelvin
+ * @return Latent heat
+ */
 template <class A>
 inline A latent_heat_water(A T)
 {
@@ -394,18 +424,16 @@ inline A latent_heat_water(A T)
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Latent heat of sublimation of ice.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Latent heat of ice, unit: J/(kg)
-//
-// Source: Murphy and Koop (2005)
-// Validity range: 30 K <= T
-//
+
+/**
+ * Latent heat of sublimation of ice in
+ * \f$ \text{J}/\text{kg} \f$.
+ * From Murphy and Koop (2005)
+ * Validity range: \f$ 30 \text{K} <= \text{T} \f$
+ *
+ * @param T Temperature in Kelvin
+ * @return Latent heat
+ */
 template <class A>
 inline A latent_heat_ice(A T)
 {
@@ -416,20 +444,18 @@ inline A latent_heat_ice(A T)
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Latent heat of melting of ice.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Latent heat of ice, unit: J/(kg)
-//
-// Source: Rasmussen and Heymsfield
-//  Melting and Shedding of Graupel and Hail. Part I: Model Physics
-//  Updated with ICON (instead of cal/g we use J/kg)
-// Validity range:
-//
+
+/**
+ * Latent heat of melting of ice in
+ * \f$ \text{J}/\text{kg} \f$.
+ * From Rasmussen and Heymsfield -
+ * Melting and Shedding of Graupel and Hail. Part I: Model Physics
+ * Updated with ICON (instead of cal/g we use J/kg)
+ * Validity range: ?
+ *
+ * @param T Temperature in Kelvin
+ * @return Latent heat
+ */
 template <class A>
 inline A latent_heat_melt(A T)
 {
@@ -437,20 +463,18 @@ inline A latent_heat_melt(A T)
   return 4.184e3 * (79.7+0.485*(T-tmelt) - 2.5e-3*(T-tmelt)*(T-tmelt));
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Latent heat of evaporation of water.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Latent heat of water, unit: J/(kg)
-//
-// Source: Rasmussen and Heymsfield
-//  Melting and Shedding of Graupel and Hail. Part I: Model Physics
-//  Updated with ICON (instead of cal/g we use J/kg)
-// Validity range:
-//
+
+/**
+ * Latent heat of evaporation of water in
+ * \f$ \text{J}/\text{kg} \f$.
+ * From Rasmussen and Heymsfield -
+ * Melting and Shedding of Graupel and Hail. Part I: Model Physics
+ * Updated with ICON (instead of cal/g we use J/kg)
+ * Validity range: ?
+ *
+ * @param T Temperature in Kelvin
+ * @return Latent heat
+ */
 template <class A>
 inline A latent_heat_evap(A T)
 {
@@ -460,36 +484,30 @@ inline A latent_heat_evap(A T)
   return lh_e0 * pow(tmelt/T, gam);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Saturation vapor pressure over a flat surface of liquid water.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Saturation pressure, unit: Pa
-//
-// Source: ICON
-// Validity range: I dunno
-//
+
+/**
+ * Saturation vapor pressure over a flat surface of liquid water in Pa.
+ * From ICON.
+ * Validity range: ?
+ *
+ * @param T Temperature in Kelvin
+ * @return Saturation vapor pressure
+ */
 template <class A>
 inline A saturation_pressure_water_icon(A T)
 {
   return 610.78*exp(17.269*(T-273.15)/(T-35.86));
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Saturation vapor pressure over a flat surface of liquid water.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Saturation pressure, unit: Pa
-//
-// Source: Murphy and Koop (2005)
-// Validity range: 123 K <= T <= 332 K
-//
+
+/**
+ * Saturation vapor pressure over a flat surface of liquid water in Pa.
+ * From Murphy and Koop (2005).
+ * Validity range: \f$ 123 \text{K} <= \text{T} <= 332 \text{K} \f$
+ *
+ * @param T Temperature in Kelvin
+ * @return Saturation vapor pressure
+ */
 template <class A>
 inline A saturation_pressure_water(A T)
 {
@@ -501,18 +519,15 @@ inline A saturation_pressure_water(A T)
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Saturation vapor pressure over a flat surface of ice.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Saturation pressure, unit: Pa
-//
-// Source: Murphy and Koop (2005)
-// Validity range: 110 K <= T
-//
+
+/**
+ * Saturation vapor pressure over a flat surface of ice in Pa.
+ * From Murphy and Koop (2005).
+ * Validity range: \f$ 110 \text{K} <= \text{T} \f$
+ *
+ * @param T Temperature in Kelvin
+ * @return Saturation vapor pressure
+ */
 template <class A>
 inline A saturation_pressure_ice(A T)
 {
@@ -521,18 +536,15 @@ inline A saturation_pressure_ice(A T)
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Surface tension of liquid water.
-//
-// Input:
-// T: Temperature (K)
-//
-// Output:
-// Surface tension, unit: N/m
-//
-// Source: Prof. Borrmann, based on equation 5-12 from Pruppacher and Klett (1997)
-// Validity range: 233.15 K <= T <= 373.15 K
-//
+
+/**
+ * Surface tension of liquid water in \f$ \text{N}/\text{m} \f$.
+ * From Prof. Borrmann, based on equation 5-12 from Pruppacher and Klett (1997)
+ * Validity range: \f$ 233.15 \text{K} <= \text{T} <= 373.15 \text{K} \f$
+ *
+ * @param T Temperature in Kelvin
+ * @return Surface tension
+ */
 template <class A>
 inline A surface_tension_water(A T)
 {
@@ -551,19 +563,16 @@ inline A surface_tension_water(A T)
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Mean free path in air.
-//
-// Input:
-// p: Pressure (Pa)
-// T: Temperature (K)
-//
-// Output:
-// Mean free path, unit: m
-//
-// Source: Somewhere in Pruppacher (?)
-// Validity range: ??
-//
+
+/**
+ * Mean free path in air in m.
+ * From somewhere in Pruppacher (?)
+ * Validity range: ?
+ *
+ * @param p Pressure in Pascal
+ * @param T Temperature in Kelvin
+ * @return Mean free path
+ */
 template <class A>
 inline A mean_free_path(A p,
 			A T)
@@ -573,16 +582,14 @@ inline A mean_free_path(A p,
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Compute the partial pressure of water vapor.
-//
-// Input:
-// T: Temperature (K)
-// S: Saturation ratio
-//
-// Output:
-// Partial pressure, unit: Pa
-//
+
+/**
+ * Partial pressure of water vapor in Pa.
+ *
+ * @param T Temperature in Kelvin
+ * @param S Saturation ratio
+ * @return Partial pressure
+ */
 template <class A>
 inline A compute_pv(A T,
 		    A S)
@@ -592,17 +599,15 @@ inline A compute_pv(A T,
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Compute the partial pressure of dry air.
-//
-// Input:
-// p: Total pressure (Pa)
-// T: Temperature (K)
-// S: Saturation ratio
-//
-// Output:
-// Partial pressure, unit: Pa
-//
+
+/**
+ * Partial pressure of dry air in Pa.
+ *
+ * @param p Total pressure in Pascal
+ * @param T Temperature in Kelvin
+ * @param S Saturation ratio
+ * @return Partial pressure
+ */
 template <class A>
 inline A compute_pa(A p,
 		    A T,
@@ -613,17 +618,15 @@ inline A compute_pa(A p,
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Compute density of dry air.
-//
-// Input:
-// p: Total pressure (Pa)
-// T: Temperature (K)
-// S: Saturation ratio
-//
-// Output:
-// Density, unit: kg/m^3
-//
+
+/**
+ * Density of dry air in \f$ \text{kg}/\text{m}^3 \f$.
+ *
+ * @param p Pressure in Pascal
+ * @param T Temperature in Kelvin
+ * @param S Saturation ratio
+ * @return Density
+ */
 template <class A>
 inline A compute_rhoa(A p,
 		      A T,
@@ -634,17 +637,15 @@ inline A compute_rhoa(A p,
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Convert saturation ratio to water vapor mixing-ratio.
-//
-// Input:
-// p: Total pressure (Pa)
-// T: Temperature (K)
-// S: Saturation ratio
-//
-// Output:
-// Mixing-ratio, unit: 1
-//
+
+/**
+ * Convert saturation ratio to water vapor mixing-ratio.
+ *
+ * @param p Total pressure in Pascal
+ * @param T Temperature in Kelvin
+ * @param S Saturation ratio
+ * @return Water vapor mixing ratio
+ */
 template <class A>
 inline A convert_S_to_qv(A p,
 			 A T,
@@ -655,17 +656,15 @@ inline A convert_S_to_qv(A p,
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Convert ice saturation ratio to water vapor mixing-ratio.
-//
-// Input:
-// p: Total pressure (Pa)
-// T: Temperature (K)
-// Si: Ice saturation ratio
-//
-// Output:
-// Mixing-ratio, unit: 1
-//
+
+/**
+ * Convert ice saturation ratio to water vapor mixing-ratio.
+ *
+ * @param p Total pressure in Pascal
+ * @param T Temperature in Kelvin
+ * @param Si Ice saturation ratio
+ * @return Water vapor mixing ratio
+ */
 template <class A>
 inline A convert_Si_to_qv(A p,
 			  A T,
@@ -678,17 +677,15 @@ inline A convert_Si_to_qv(A p,
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Convert water vapor mixing-ratio to saturation ratio.
-//
-// Input:
-// p: Total pressure (Pa)
-// T: Temperature (K)
-// qv: Water vapor mixing-ratio (1)
-//
-// Output:
-// Saturation ratio, unit: 1
-//
+
+/**
+ * Convert water vapor mixing-ratio to saturation ratio.
+ *
+ * @param p Total pressure in Pascal
+ * @param T Temperature in Kelvin
+ * @param qv Water vapor mixing ratio
+ * @return Saturation ratio
+ */
 template <class A>
 inline A convert_qv_to_S(A p,
 			 A T,
@@ -700,7 +697,15 @@ inline A convert_qv_to_S(A p,
 }
 
 
-// Get mean mass of particle assuming a gamma distribution or so
+/**
+ * Get mean mass of particle assuming a gamma distribution (?).
+ *
+ * @param q Particle mixing ratio
+ * @param n Number of particles
+ * @param min_x Minimum size of particle
+ * @param max_x Maximum size of particle
+ * @return Mean mass of particle in kg
+ */
 template <class A>
 inline A particle_mean_mass(
     const A &q,
@@ -711,6 +716,16 @@ inline A particle_mean_mass(
     return min(max(q/(n+DBL_EPSILON), min_x), max_x);
 }
 
+
+/**
+ * Get diameter of the particle by calculating
+ * \f[ a_{\text{geo}} \cdot x^{b_{\text{geo}}} \f]
+ *
+ * @param x Particle mass in kg
+ * @param a_geo Coefficient from particle model constant
+ * @param b_geo Exponent from particle model constant
+ * @return Particle diameter in m
+ */
 template <class A>
 inline A particle_diameter(
     const A &x,
@@ -720,6 +735,15 @@ inline A particle_diameter(
     return a_geo * pow(x, b_geo);
 }
 
+/**
+ * Get particle velocity of the particle by calculating
+ * \f[ a_{\text{vel}} \cdot x^{b_{\text{vel}}} \f]
+ *
+ * @param x Particle mass in kg
+ * @param a_vel Coefficient from particle model constant
+ * @param b_vel Exponent from particle model constant
+ * @return Particle velocity in \f$ \text{m}/\text{s} \f$
+ */
 template <class A>
 inline A particle_velocity(
     const A &x,
@@ -1020,5 +1044,8 @@ inline codi::RealReverse moment_gamma(
     return tgamma( (n+pc.nu+1.0)/pc.mu ) / tgamma( (pc.nu+1.0)/pc.mu )
         * pow(tgamma( (pc.nu+1.0)/pc.mu ) / tgamma( (pc.nu+2.0)/pc.mu), n);
 }
+
+/** @} */ // end of group parametrizations
+
 
 #endif
