@@ -84,7 +84,7 @@ void setCoefficients(
  *
  * @param res On out: system state difference
  * @param y Old system state
- * @param ref Pointer to reference quantities to transform between units
+ * @param ref Reference quantities to transform between units
  * @param cc Pointer to constants from the model
  * @param nc Pointer to parameters from the netCDF file
  */

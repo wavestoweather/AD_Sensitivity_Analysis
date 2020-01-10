@@ -20,7 +20,6 @@ Welcome to Process and Plot Scripts's documentation!
 
    groups/ufunc
 
-
 .. toctree::
    :maxdepth: 4
    :caption: Full C++ Documentation

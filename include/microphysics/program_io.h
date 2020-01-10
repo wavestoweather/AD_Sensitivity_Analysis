@@ -11,10 +11,12 @@
 #include <fstream>
 #include <iterator>
 #include "codi.hpp"
+#include "types.h"
 using namespace netCDF;
 
 
-/** Based on
+/**
+ * Based on
  * init_dmin_wg_gr_ltab_equi('dmin_wetgrowth_lookup.dat', unitnr, 61, ltabdminwgg)
  * Loads a lookup table for calculating the growth of rain droplets or something.
  *
@@ -189,9 +191,14 @@ bool load_lookup_table(
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Initialize the nc parameters to default values.
-////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Initialize the nc parameters to default values. and allocate memory.
+ *
+ * @param nc The struct where the parameters are initialized.
+ * @param n The number of trajectories in the netCDF file.
+ * @param n_timesteps The maximum number of timesteps in the netCDF file.
+ */
 void init_nc_parameters(
     nc_parameters_t &nc,
     uint32_t n=32,
@@ -203,6 +210,14 @@ void init_nc_parameters(
     nc.z.resize(4);
 }
 
+
+/**
+ * Load variables from the netCDF file such that data can be loaded using
+ * load_nc_parameters()
+ *
+ * @param nc Struct where to load the variables.
+ * @param datafile The netCDF file.
+ */
 void load_nc_parameters_var(
     nc_parameters_t &nc,
     netCDF::NcFile &datafile)
@@ -244,6 +259,19 @@ void load_nc_parameters_var(
 #endif
 }
 
+/**
+ * Load the parameters from the netCDF file where load_nc_parameters_var()
+ * must have been called beforehand.
+ *
+ * @param nc s Struct where to store the values.
+ * @param startp Must have two values with index from where to load values.
+ *               Depending on the NetCDF file, startp[0] may refer to the
+ *               trajectory id.
+ * @param countp Must have two values for how many values to load.
+ *               Depending on the NetCDF file, countp[0] may refer to the
+ *               trajectory id. Usually we set the values to 1.
+ * @param ref_quant Reference quantities to transform between units.
+ */
 void load_nc_parameters(
     nc_parameters_t &nc,
     std::vector<size_t> &startp,
@@ -278,7 +306,6 @@ void load_nc_parameters(
     nc.qs_var.getVar(startp, countp, &nc.qs);
     nc.qv_var.getVar(startp, countp, &nc.qv);
 
-
     double psat_prime = saturation_pressure_water(nc.t);
 
     // We are reading in hPa. Convert to Pa
@@ -290,7 +317,6 @@ void load_nc_parameters(
     nc.qv       /= ref_quant.qref;
     nc.qi       /= ref_quant.qref;
     nc.qs       /= ref_quant.qref;
-
 
 #if !defined(WCB)
     nc.S = 1.0;
@@ -348,44 +374,12 @@ void load_nc_parameters(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Structure to collect all input parameters.
-////////////////////////////////////////////////////////////////////////////////
-struct input_parameters_t{
-
-  // Numerics
-  double T_end_prime;
-  double dt_prime;
-  double dt_traject_prime;
-  double dt_traject;
-  int snapshot_index;
-  uint64_t num_sub_steps;
-  // Filename for output
-  std::string OUTPUT_FILENAME;
-
-  // Filename for input
-  std::string INPUT_FILENAME;
-
-  // Start over at new timestep of trajectory?
-  bool start_over;
-  // Fix temperature, pressure and so forth at every iteration?
-  bool fixed_iteration;
-
-  // Scaling factor
-  double scaling_fact;
-
-  uint32_t auto_type;
-  uint32_t traj;
-};
-
-
-
-////////////////////////////////////////////////////////////////////////////////
 // Initialize the input parameters to default values.
 ////////////////////////////////////////////////////////////////////////////////
 void init_input_parameters(input_parameters_t &in)
 {
   // Numerics
-  in.T_end_prime = 100.0;	// Seconds
+  in.t_end_prime = 100.0;	// Seconds
   in.dt_prime = 0.01;		// Seconds
   in.snapshot_index = 1000;
   in.dt_traject = 20;       // Seconds; fixed from paper
@@ -411,45 +405,7 @@ void init_input_parameters(input_parameters_t &in)
   in.traj = 0;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Helper structures to handle command line arguments.
-////////////////////////////////////////////////////////////////////////////////
-struct global_args_t{
-
-  int final_time_flag;
-  char* final_time_string;
-
-  int timestep_flag;
-  char* timestep_string;
-
-  int snapshot_index_flag;
-  char* snapshot_index_string;
-
-  int output_flag;
-  char* output_string;
-
-  int input_flag;
-  char* input_file;
-
-  int scaling_fact_flag;
-  char* scaling_fact_string;
-
-  int start_over_flag;
-  char* start_over_string;
-
-  int fixed_iteration_flag;
-  char* fixed_iteration_string;
-
-  int auto_type_flag;
-  char* auto_type_string;
-
-  int traj_flag;
-  char* traj_string;
-};
-
-
 static const char *optString = "f:d:i:b:o:l:s:t:a:r:?";
-
 
 void init_global_args(global_args_t &arg)
 {
@@ -493,7 +449,7 @@ void print_input_parameters(input_parameters_t &in)
   std::cout << "\n"
 	    << "Technical input parameters:\n"
 	    << "---------------------------\n"
-        << "Time to integrate: " << in.T_end_prime << " Second\n"
+        << "Time to integrate: " << in.t_end_prime << " Second\n"
         << "Timestep: " << in.dt_prime << " Second\n"
 	    << "Snapshot index: " << in.snapshot_index << "\n"
         << "Name of output file: " << in.OUTPUT_FILENAME << "\n"
@@ -511,7 +467,7 @@ void set_input_from_arguments(global_args_t &arg ,
 {
   // Final time
   if(1 == arg.final_time_flag){
-    in.T_end_prime = std::strtod(arg.final_time_string, nullptr);
+    in.t_end_prime = std::strtod(arg.final_time_string, nullptr);
   }
 
   // Timestep

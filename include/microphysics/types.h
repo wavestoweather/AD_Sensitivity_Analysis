@@ -3,9 +3,12 @@
 #include <netcdf>
 using namespace netCDF;
 
-////////////////////////////////////////////////////////////////////////////////
-// Collect all reference quantities into this structure.
-////////////////////////////////////////////////////////////////////////////////
+
+/** @defgroup types Commonly Used Types
+ * Various types for storing model constants, reading data from netCDF files
+ * and lookup tables used in Icon.
+ * @{
+ */
 
 /**
  *  Struct to hold all reference values.
@@ -20,186 +23,214 @@ struct reference_quantities_t{
   double Nref;          /*!< DUMMY */
 };
 
+/**
+ * Struct to hold all model constants regarding particles that we want to
+ * know the gradients using AD of.
+ * Has getter and register functions for codi::RealReverse for its
+ * members.
+ */
 struct particle_model_constants_t{
-  codi::RealReverse a_geo;
-  codi::RealReverse b_geo;
-  codi::RealReverse min_x;
-  codi::RealReverse max_x;
-  codi::RealReverse sc_theta_q;
-  codi::RealReverse sc_delta_q;
-  codi::RealReverse sc_theta_n;
-  codi::RealReverse sc_delta_n;
-  codi::RealReverse s_vel; // sigma_vel
-  codi::RealReverse a_vel;
-  codi::RealReverse b_vel;
-  codi::RealReverse rho_v;
-  codi::RealReverse c_z;
-  codi::RealReverse sc_coll_n; // e_coll
-  codi::RealReverse cmu0, cmu1, cmu2, cmu3, cmu4, cmu5, alpha, beta, gamma;
-  codi::RealReverse nu;
 
-  codi::RealReverse g1, g2, mu, nm1, nm2, nm3;
-  // Parameters for riming
-  codi::RealReverse q_crit_c;
-  codi::RealReverse d_crit_c;
-  codi::RealReverse ecoll_c;
-  codi::RealReverse cap; // coefficient for capacity of particle
-  codi::RealReverse a_ven;
-  codi::RealReverse b_ven;
+    codi::RealReverse a_geo;
+    codi::RealReverse b_geo;
+    codi::RealReverse min_x;
+    codi::RealReverse max_x;
+    codi::RealReverse sc_theta_q;
+    codi::RealReverse sc_delta_q;
+    codi::RealReverse sc_theta_n;
+    codi::RealReverse sc_delta_n;
+    codi::RealReverse s_vel;        /*!< Also known as sigma_vel in ICON. */
+    codi::RealReverse a_vel;
+    codi::RealReverse b_vel;
+    codi::RealReverse rho_v;
+    codi::RealReverse c_z;
+    codi::RealReverse sc_coll_n;    /*!< Also known as e_coll in ICON. */
+    codi::RealReverse cmu0, cmu1, cmu2, cmu3, cmu4, cmu5, alpha, beta, gamma;
+    codi::RealReverse nu;
 
-  codi::RealReverse c_s; // c_i
-  codi::RealReverse a_f;
-  codi::RealReverse b_f;
+    codi::RealReverse g1, g2, mu, nm1, nm2, nm3;
 
-  // Bulk sedimentation velocity
-  codi::RealReverse alfa_n;
-  codi::RealReverse alfa_q;
-  codi::RealReverse lambda;
-  codi::RealReverse vsedi_min;
-  codi::RealReverse vsedi_max;
+    codi::RealReverse q_crit_c; /*!<  Riming parameter. */
+    codi::RealReverse d_crit_c; /*!<  Riming parameter. */
+    codi::RealReverse ecoll_c;  /*!<  Riming parameter. */
+    /**
+     * Riming parameter. Coefficient for capacity of particle.
+     */
+    codi::RealReverse cap;
+    codi::RealReverse a_ven;    /*!<  Riming parameter. */
+    codi::RealReverse b_ven;    /*!<  Riming parameter. */
 
-  void register_input(codi::RealReverse::TapeType &tape)
-  {
-      tape.registerInput(this->a_geo);
-      tape.registerInput(this->b_geo);
-      tape.registerInput(this->min_x);
-      tape.registerInput(this->max_x);
-      tape.registerInput(this->sc_theta_q);
-      tape.registerInput(this->sc_delta_q);
-      tape.registerInput(this->sc_theta_n);
-      tape.registerInput(this->sc_delta_n);
-      tape.registerInput(this->s_vel);
-      tape.registerInput(this->a_vel);
-      tape.registerInput(this->b_vel);
-      tape.registerInput(this->rho_v);
-      tape.registerInput(this->c_z);
-      tape.registerInput(this->sc_coll_n);
-      tape.registerInput(this->cmu0);
-      tape.registerInput(this->cmu1);
-      tape.registerInput(this->cmu2);
-      tape.registerInput(this->cmu3);
-      tape.registerInput(this->cmu4);
-      tape.registerInput(this->cmu5);
-      tape.registerInput(this->alpha);
-      tape.registerInput(this->beta);
-      tape.registerInput(this->gamma);
-      tape.registerInput(this->nu);
-      tape.registerInput(this->g1);
-      tape.registerInput(this->g2);
-      tape.registerInput(this->mu);
-      tape.registerInput(this->nm1);
-      tape.registerInput(this->nm2);
-      tape.registerInput(this->nm3);
-      tape.registerInput(this->q_crit_c);
-      tape.registerInput(this->d_crit_c);
-      tape.registerInput(this->ecoll_c);
-      tape.registerInput(this->cap);
-      tape.registerInput(this->a_ven);
-      tape.registerInput(this->b_ven);
-      tape.registerInput(this->c_s);
-      tape.registerInput(this->a_f);
-      tape.registerInput(this->b_f);
-      tape.registerInput(this->alfa_n);
-      tape.registerInput(this->alfa_q);
-      tape.registerInput(this->lambda);
-      tape.registerInput(this->vsedi_min);
-      tape.registerInput(this->vsedi_max);
-  }
+    codi::RealReverse c_s;  /*!< Also known as c_i in ICON.*/
+    codi::RealReverse a_f;
+    codi::RealReverse b_f;
 
-  template<class T>
-  void get_gradient(T &out_vec, uint64_t &idx)
-  {
-      out_vec[idx] = this->a_geo.getGradient();
-      idx++;
-      out_vec[idx] = this->b_geo.getGradient();
-      idx++;
-      out_vec[idx] = this->min_x.getGradient();
-      idx++;
-      out_vec[idx] = this->max_x.getGradient();
-      idx++;
-      out_vec[idx] = this->sc_theta_q.getGradient();
-      idx++;
-      out_vec[idx] = this->sc_delta_q.getGradient();
-      idx++;
-      out_vec[idx] = this->sc_theta_n.getGradient();
-      idx++;
-      out_vec[idx] = this->sc_delta_n.getGradient();
-      idx++;
-      out_vec[idx] = this->s_vel.getGradient();
-      idx++;
-      out_vec[idx] = this->a_vel.getGradient();
-      idx++;
-      out_vec[idx] = this->b_vel.getGradient();
-      idx++;
-      out_vec[idx] = this->rho_v.getGradient();
-      idx++;
-      out_vec[idx] = this->c_z.getGradient();
-      idx++;
-      out_vec[idx] = this->sc_coll_n.getGradient();
-      idx++;
-      out_vec[idx] = this->cmu0.getGradient();
-      idx++;
-      out_vec[idx] = this->cmu1.getGradient();
-      idx++;
-      out_vec[idx] = this->cmu2.getGradient();
-      idx++;
-      out_vec[idx] = this->cmu3.getGradient();
-      idx++;
-      out_vec[idx] = this->cmu4.getGradient();
-      idx++;
-      out_vec[idx] = this->cmu5.getGradient();
-      idx++;
-      out_vec[idx] = this->alpha.getGradient();
-      idx++;
-      out_vec[idx] = this->beta.getGradient();
-      idx++;
-      out_vec[idx] = this->gamma.getGradient();
-      idx++;
-      out_vec[idx] = this->nu.getGradient();
-      idx++;
-      out_vec[idx] = this->g1.getGradient();
-      idx++;
-      out_vec[idx] = this->g2.getGradient();
-      idx++;
-      out_vec[idx] = this->mu.getGradient();
-      idx++;
-      out_vec[idx] = this->nm1.getGradient();
-      idx++;
-      out_vec[idx] = this->nm2.getGradient();
-      idx++;
-      out_vec[idx] = this->nm3.getGradient();
-      idx++;
-      out_vec[idx] = this->q_crit_c.getGradient();
-      idx++;
-      out_vec[idx] = this->d_crit_c.getGradient();
-      idx++;
-      out_vec[idx] = this->ecoll_c.getGradient();
-      idx++;
-      out_vec[idx] = this->cap.getGradient();
-      idx++;
-      out_vec[idx] = this->a_ven.getGradient();
-      idx++;
-      out_vec[idx] = this->b_ven.getGradient();
-      idx++;
-      out_vec[idx] = this->c_s.getGradient();
-      idx++;
-      out_vec[idx] = this->a_f.getGradient();
-      idx++;
-      out_vec[idx] = this->b_f.getGradient();
-      idx++;
-      out_vec[idx] = this->alfa_n.getGradient();
-      idx++;
-      out_vec[idx] = this->alfa_q.getGradient();
-      idx++;
-      out_vec[idx] = this->lambda.getGradient();
-      idx++;
-      out_vec[idx] = this->vsedi_min.getGradient();
-      idx++;
-      out_vec[idx] = this->vsedi_max.getGradient();
-      idx++;
-  }
+    codi::RealReverse alfa_n;       /*!<  Bulk sedimentation velocity parameter. */
+    codi::RealReverse alfa_q;       /*!<  Bulk sedimentation velocity parameter. */
+    codi::RealReverse lambda;       /*!<  Bulk sedimentation velocity parameter. */
+    codi::RealReverse vsedi_min;    /*!<  Bulk sedimentation velocity parameter. */
+    codi::RealReverse vsedi_max;    /*!<  Bulk sedimentation velocity parameter. */
+
+    /**
+     * Register the model parameters on the tape for codi::RealReverse.
+     *
+     * @param tape Tape where the parameters should be registered on.
+     */
+    void register_input(codi::RealReverse::TapeType &tape)
+    {
+        tape.registerInput(this->a_geo);
+        tape.registerInput(this->b_geo);
+        tape.registerInput(this->min_x);
+        tape.registerInput(this->max_x);
+        tape.registerInput(this->sc_theta_q);
+        tape.registerInput(this->sc_delta_q);
+        tape.registerInput(this->sc_theta_n);
+        tape.registerInput(this->sc_delta_n);
+        tape.registerInput(this->s_vel);
+        tape.registerInput(this->a_vel);
+        tape.registerInput(this->b_vel);
+        tape.registerInput(this->rho_v);
+        tape.registerInput(this->c_z);
+        tape.registerInput(this->sc_coll_n);
+        tape.registerInput(this->cmu0);
+        tape.registerInput(this->cmu1);
+        tape.registerInput(this->cmu2);
+        tape.registerInput(this->cmu3);
+        tape.registerInput(this->cmu4);
+        tape.registerInput(this->cmu5);
+        tape.registerInput(this->alpha);
+        tape.registerInput(this->beta);
+        tape.registerInput(this->gamma);
+        tape.registerInput(this->nu);
+        tape.registerInput(this->g1);
+        tape.registerInput(this->g2);
+        tape.registerInput(this->mu);
+        tape.registerInput(this->nm1);
+        tape.registerInput(this->nm2);
+        tape.registerInput(this->nm3);
+        tape.registerInput(this->q_crit_c);
+        tape.registerInput(this->d_crit_c);
+        tape.registerInput(this->ecoll_c);
+        tape.registerInput(this->cap);
+        tape.registerInput(this->a_ven);
+        tape.registerInput(this->b_ven);
+        tape.registerInput(this->c_s);
+        tape.registerInput(this->a_f);
+        tape.registerInput(this->b_f);
+        tape.registerInput(this->alfa_n);
+        tape.registerInput(this->alfa_q);
+        tape.registerInput(this->lambda);
+        tape.registerInput(this->vsedi_min);
+        tape.registerInput(this->vsedi_max);
+    }
+
+    /**
+     * Get the gradients of all its members. You need to register them on a
+     * type before to get meaningful values.
+     *
+     * @param out_vec On out: Stores all gradients.
+     * @param idx Start index of out_vec where the gradients should be stored.
+     */
+    template<class T>
+    void get_gradient(T &out_vec, uint64_t &idx)
+    {
+        out_vec[idx] = this->a_geo.getGradient();
+        idx++;
+        out_vec[idx] = this->b_geo.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x.getGradient();
+        idx++;
+        out_vec[idx] = this->max_x.getGradient();
+        idx++;
+        out_vec[idx] = this->sc_theta_q.getGradient();
+        idx++;
+        out_vec[idx] = this->sc_delta_q.getGradient();
+        idx++;
+        out_vec[idx] = this->sc_theta_n.getGradient();
+        idx++;
+        out_vec[idx] = this->sc_delta_n.getGradient();
+        idx++;
+        out_vec[idx] = this->s_vel.getGradient();
+        idx++;
+        out_vec[idx] = this->a_vel.getGradient();
+        idx++;
+        out_vec[idx] = this->b_vel.getGradient();
+        idx++;
+        out_vec[idx] = this->rho_v.getGradient();
+        idx++;
+        out_vec[idx] = this->c_z.getGradient();
+        idx++;
+        out_vec[idx] = this->sc_coll_n.getGradient();
+        idx++;
+        out_vec[idx] = this->cmu0.getGradient();
+        idx++;
+        out_vec[idx] = this->cmu1.getGradient();
+        idx++;
+        out_vec[idx] = this->cmu2.getGradient();
+        idx++;
+        out_vec[idx] = this->cmu3.getGradient();
+        idx++;
+        out_vec[idx] = this->cmu4.getGradient();
+        idx++;
+        out_vec[idx] = this->cmu5.getGradient();
+        idx++;
+        out_vec[idx] = this->alpha.getGradient();
+        idx++;
+        out_vec[idx] = this->beta.getGradient();
+        idx++;
+        out_vec[idx] = this->gamma.getGradient();
+        idx++;
+        out_vec[idx] = this->nu.getGradient();
+        idx++;
+        out_vec[idx] = this->g1.getGradient();
+        idx++;
+        out_vec[idx] = this->g2.getGradient();
+        idx++;
+        out_vec[idx] = this->mu.getGradient();
+        idx++;
+        out_vec[idx] = this->nm1.getGradient();
+        idx++;
+        out_vec[idx] = this->nm2.getGradient();
+        idx++;
+        out_vec[idx] = this->nm3.getGradient();
+        idx++;
+        out_vec[idx] = this->q_crit_c.getGradient();
+        idx++;
+        out_vec[idx] = this->d_crit_c.getGradient();
+        idx++;
+        out_vec[idx] = this->ecoll_c.getGradient();
+        idx++;
+        out_vec[idx] = this->cap.getGradient();
+        idx++;
+        out_vec[idx] = this->a_ven.getGradient();
+        idx++;
+        out_vec[idx] = this->b_ven.getGradient();
+        idx++;
+        out_vec[idx] = this->c_s.getGradient();
+        idx++;
+        out_vec[idx] = this->a_f.getGradient();
+        idx++;
+        out_vec[idx] = this->b_f.getGradient();
+        idx++;
+        out_vec[idx] = this->alfa_n.getGradient();
+        idx++;
+        out_vec[idx] = this->alfa_q.getGradient();
+        idx++;
+        out_vec[idx] = this->lambda.getGradient();
+        idx++;
+        out_vec[idx] = this->vsedi_min.getGradient();
+        idx++;
+        out_vec[idx] = this->vsedi_max.getGradient();
+        idx++;
+    }
 };
 
+
+/**
+ * Struct to hold model constants for particle collection that we *usually*
+ * are not interested in regarding their influence on the overall model.
+ * It is stored within a struct model_constants_t for different collisions
+ * such as hail and ice collection or ice and rain riming.
+ */
 struct collection_model_constants_t{
     codi::RealReverse delta_n_aa;
     codi::RealReverse delta_n_ab;
@@ -219,13 +250,49 @@ struct collection_model_constants_t{
 };
 
 // A 4D lookup table
+/**
+ * A 4D lookup table on a grid used in ICON.
+ */
 struct table_t{
-    uint64_t n1, n2, n3, n4; // Number of grid points in every direction
-    std::vector<codi::RealReverse> x1, x2, x3, x4; // Grid vectors
-    codi::RealReverse dx1, dx2, dx3, dx4; // Grid distances for every vector
-    codi::RealReverse odx1, odx2, odx3, odx4; // One over dx 1, 2, 3, 4
-    std::vector<codi::RealReverse> table;
+    /**
+     * Number of grid points in direction 1.
+     */
+    uint64_t n1;
+    /**
+     * Number of grid points in direction 1.
+     */
+    uint64_t n2;
+    /**
+     * Number of grid points in direction 1.
+     */
+    uint64_t n3;
+    /**
+     * Number of grid points in direction 1.
+     */
+    uint64_t n4;
 
+    std::vector<codi::RealReverse> x1; /*!< Grid vector */
+    std::vector<codi::RealReverse> x2; /*!< Grid vector */
+    std::vector<codi::RealReverse> x3; /*!< Grid vector */
+    std::vector<codi::RealReverse> x4; /*!< Grid vector */
+    codi::RealReverse dx1; /*!< Grid distances for vector x1 */
+    codi::RealReverse dx2; /*!< Grid distances for vector x2 */
+    codi::RealReverse dx3; /*!< Grid distances for vector x3 */
+    codi::RealReverse dx4; /*!< Grid distances for vector x4 */
+    codi::RealReverse odx1; /*!< One over dx1 */
+    codi::RealReverse odx2; /*!< One over dx2 */
+    codi::RealReverse odx3; /*!< One over dx3 */
+    codi::RealReverse odx4; /*!< One over dx4 */
+    std::vector<codi::RealReverse> table; /*!< The table values */
+
+    /**
+     * Get the value at a given index.
+     *
+     * @param i Index along vector 1
+     * @param j Index along vector 2
+     * @param k Index along vector 3
+     * @param l Index along vector 4
+     */
     codi::RealReverse get(
         uint64_t i,
         uint64_t j,
@@ -236,19 +303,46 @@ struct table_t{
     }
 };
 
+
+/**
+ * A lookup table for the lower incomplete gamma function from ICON
+ * mo_2mom_mcrph_util.f90 at incgfct_lower_lookupcreate:
+ * \f[ \text{int}(0)(x) \exp(-t) t^{a-1} \text{d}t \f]
+ *
+ * with constant a from x=0 to the 99.5% value of the normalized incomplete
+ * gamma function. This 99.5 % - value has been fitted
+ * with high accuracy as function of a in the range a in [0;20], but can
+ * safely be applied also to higher values of a. (Fit created with the
+ * matlab-program "gamma_unvoll_lower_lookup.m" by Ulrich Blahak, 2008/11/13).
+
+ * The last value in the table corresponds to x = infinity, so that
+ * during the reconstruction of incgfct-values from the table,
+ * the x-value can safely be truncated at the maximum table x-value.
+ */
 struct gamma_table_t{
-    uint64_t n_bins;
+    uint64_t n_bins;    /*!< Number of bins of the lookup table. */
+    /**
+     * Number of bins of the lookup table with higher resolution if desired.
+     */
     uint64_t n_bins_highres;
-    double a;
-    std::vector<double> x; // always starts at 0 and has distant dx
-    std::vector<double> x_highres; // as x but with higher resolution
-    double dx;
-    double dx_highres;
-    double odx; // 1/dx
-    double odx_highres;
-    std::vector<double> igf; // values of the inc. gamma function at (a,x)
+    double a; /*!< Value at which the function is being fit. */
+    std::vector<double> x; /*!< always starts at 0 and has distant dx. */
+    std::vector<double> x_highres; /*!< as x but with higher resolution. */
+    double dx; /*!< Distance of each value in x. */
+    double dx_highres; /*!< Distance of each value in x_highres. */
+    double odx; /*!< 1/dx. */
+    double odx_highres; /*!< 1/dx_highres. */
+    std::vector<double> igf; /*!< Values of the inc. gamma function at (a,x). */
+    /**
+     * Values of the inc. gamma function at (a,x) with higher resolution.
+     */
     std::vector<double> igf_highres;
 
+    /**
+     * Get the lower incomplete gamma function value for a given x coordinate.
+     *
+     * @param x Coordinate at which to evaluate the gamma function.
+     */
     template <class A>
     A look_lo(A x)
     {
@@ -261,119 +355,171 @@ struct gamma_table_t{
     }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// Constants
-////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Structure for constants of a model. Includes particle constants as well.
+ */
 struct model_constants_t{
   //
   // Physical constants warm cloud
   //
-  // Accomodation coefficient
-  double alpha_d;
 
-  // Density of dry air
-  double rho_a_prime;
+  double alpha_d; /*!< Accomodation coefficient */
 
-  // Number concentration of cloud droplets
-  codi::RealReverse Nc_prime;
+  double rho_a_prime; /*!< Density of dry air */
 
-  // Dimensional coefficients
-  codi::RealReverse a1_prime;
-  codi::RealReverse a2_prime;
-  codi::RealReverse e1_prime;
-  codi::RealReverse e2_prime;
-  codi::RealReverse B_prime;
-  codi::RealReverse d_prime;
+  codi::RealReverse Nc_prime; /*!< Number concentration of cloud droplets */
 
-  // Change in buoancy
-  codi::RealReverse dw;
+  codi::RealReverse a1_prime; /*!< Dimensional coefficients */
+  codi::RealReverse a2_prime; /*!< Dimensional coefficients */
+  codi::RealReverse e1_prime; /*!< Dimensional coefficients */
+  codi::RealReverse e2_prime; /*!< Dimensional coefficients */
+  codi::RealReverse B_prime;  /*!< Dimensional coefficients */
+  codi::RealReverse d_prime;  /*!< Dimensional coefficients */
 
-  // Exponents
-  codi::RealReverse gamma;
-  codi::RealReverse betac;
-  codi::RealReverse betar;
-  codi::RealReverse delta1;
-  codi::RealReverse delta2;
-  codi::RealReverse zeta;
+  codi::RealReverse dw; /*!< Change in buoancy */
 
-  // 2 moment stuff
+  codi::RealReverse gamma;  /*!< Exponents */
+  codi::RealReverse betac;  /*!< Exponents */
+  codi::RealReverse betar;  /*!< Exponents */
+  codi::RealReverse delta1; /*!< Exponents */
+  codi::RealReverse delta2; /*!< Exponents */
+  codi::RealReverse zeta;   /*!< Exponents */
+
+  /**
+   * Model constants for hail.
+   */
   particle_model_constants_t hail;
+  /**
+   * Model constants for ice.
+   */
   particle_model_constants_t ice;
+  /**
+   * Model constants for snow.
+   */
   particle_model_constants_t snow;
+  /**
+   * Model constants for cloud.
+   */
   particle_model_constants_t cloud;
+  /**
+   * Model constants for rain.
+   */
   particle_model_constants_t rain;
+  /**
+   * Model constants for graupel.
+   */
   particle_model_constants_t graupel;
+
+  /**
+   * Snow - cloud droplet riming.
+   */
   collection_model_constants_t coeffs_scr;
+  /**
+   * Snow - rain droplet riming.
+   */
   collection_model_constants_t coeffs_srr;
+  /**
+   * Ice - rain droplet riming.
+   */
   collection_model_constants_t coeffs_irr;
+  /**
+   * Ice - cloud droplet riming.
+   */
   collection_model_constants_t coeffs_icr;
+  /**
+   * Hail - rain droplet riming.
+   */
   collection_model_constants_t coeffs_hrr;
+  /**
+   * Graupel - rain droplet riming.
+   */
   collection_model_constants_t coeffs_grr;
+  /**
+   * Hail - cloud droplet riming.
+   */
   collection_model_constants_t coeffs_hcr;
+  /**
+   * Graupel - cloud droplet riming.
+   */
   collection_model_constants_t coeffs_gcr;
+  /**
+   * Snow - ice collection.
+   */
   collection_model_constants_t coeffs_sic;
+  /**
+   * Hail - ice collection.
+   */
   collection_model_constants_t coeffs_hic;
+  /**
+   * Graupel - ice collection.
+   */
   collection_model_constants_t coeffs_gic;
+  /**
+   * Hail - snow collection.
+   */
   collection_model_constants_t coeffs_hsc;
+  /**
+   * Graupel - snow collection.
+   */
   collection_model_constants_t coeffs_gsc;
 
   //
   // Technical constants
   //
-  double T_end_prime;
-  double T_end;
-  double dt_prime;
-  double dt;
-  double dt_traject_prime;
-  double dt_traject;
-  uint64_t num_steps;
+  double t_end_prime;       /*!< End time in seconds for the simulation. */
+  double t_end;             /*!< End time for the simulation. */
+  double dt_prime;          /*!< Timestep size in seconds for the simulation. */
+  double dt;                /*!< Timestep size for the simulation. */
+  double dt_traject_prime;  /*!< Timestep size in seconds of the trajectory from the netCDF file. */
+  double dt_traject;        /*!< Timestep size of the trajectory from the netCDF file. */
+  uint64_t num_steps;       /*!< Number of timesteps to read from the netCDF file. */
+  /**
+   * Number of timesteps to simulate between each timestep of the netCDF file.
+   */
   uint64_t num_sub_steps;
+  /**
+   * Number of simulation steps before a snapshot shall be stored on disk.
+   */
   uint64_t snapshot_index;
 
   //
   // General performance constants
   //
-  double dt_half;
-  double dt_sixth;
-  double dt_third;
+  double dt_half;   /*!< dt/2 */
+  double dt_sixth;  /*!< dt/6 */
+  double dt_third;  /*!< dt/3 */
 
-  //
-  // Performance constants warm cloud
-  //
-  codi::RealReverse a1_scale;
-  codi::RealReverse a2_scale;
-  codi::RealReverse e1_scale;
-  codi::RealReverse e2_scale;
-  codi::RealReverse d_scale;
+  codi::RealReverse a1_scale; /*!< Performance constants warm cloud */
+  codi::RealReverse a2_scale; /*!< Performance constants warm cloud */
+  codi::RealReverse e1_scale; /*!< Performance constants warm cloud */
+  codi::RealReverse e2_scale; /*!< Performance constants warm cloud */
+  codi::RealReverse d_scale;  /*!< Performance constants warm cloud */
 
-  //
-  // More constants for the IFS model
-  //
-  const double nar = 0.22;
-  const double nbr = 2.2;
-  const double ar = M_PI / 6.0;
-  const double br = 3.0;
-  const double cr = 386.8;
-  const double dr = 0.67;
-  const double Sc = 0.6;
-  const double mu = 16.0e-6;
-  const double rho0 = 1.0; // 1.225?
+  const double nar = 0.22;      /*!< Constants for the IFS model. */
+  const double nbr = 2.2;       /*!< Constants for the IFS model. */
+  const double ar = M_PI / 6.0; /*!< Constants for the IFS model. */
+  const double br = 3.0;        /*!< Constants for the IFS model. */
+  const double cr = 386.8;      /*!< Constants for the IFS model. */
+  const double dr = 0.67;       /*!< Constants for the IFS model. */
+  const double Sc = 0.6;        /*!< Constants for the IFS model. */
+  const double mu = 16.0e-6;    /*!< Constants for the IFS model. */
+  const double rho0 = 1.0;      /*!< Constants for the IFS model. Why not 1.225? */
 
-  const double alphar = 1.0/(br + 1.0 - nbr);
-  const double epsilonr = 0.5*dr + 2.5 - nbr;
+  const double alphar = 1.0/(br + 1.0 - nbr);   /*!< Constants for the IFS model. */
+  const double epsilonr = 0.5*dr + 2.5 - nbr;   /*!< Constants for the IFS model. */
 
-  // Scaling factor
-  double scaling_fact;
-
+  double scaling_fact; /*!< Scaling factor. */
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// Structure to collect all nc parameters.
-////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Structure to collect all nc parameters.
+ */
 struct nc_parameters_t{
 
-    uint32_t n_trajectories = 30;
-    uint32_t n_timesteps = 7922;
+    uint32_t n_trajectories = 30; /*!< Number of trajectories in the netCDF file. */
+    uint32_t n_timesteps = 7922; /*!< Number of timesteps in the netCDF file. */
     std::vector<double> w, z;
     double lat, lon, t, p, time_rel,
             qc, qr, qi, qs, qg, qv, S, dw,
@@ -383,3 +529,73 @@ struct nc_parameters_t{
             QIin_var, QSin_var, QRin_var, QGin_var, QIout_var, QSout_var,
             QRout_var, QGout_var;
 };
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Helper structures to handle command line arguments.
+////////////////////////////////////////////////////////////////////////////////
+struct global_args_t{
+
+  int final_time_flag;
+  char* final_time_string;
+
+  int timestep_flag;
+  char* timestep_string;
+
+  int snapshot_index_flag;
+  char* snapshot_index_string;
+
+  int output_flag;
+  char* output_string;
+
+  int input_flag;
+  char* input_file;
+
+  int scaling_fact_flag;
+  char* scaling_fact_string;
+
+  int start_over_flag;
+  char* start_over_string;
+
+  int fixed_iteration_flag;
+  char* fixed_iteration_string;
+
+  int auto_type_flag;
+  char* auto_type_string;
+
+  int traj_flag;
+  char* traj_string;
+};
+
+
+/**
+ * Structure to collect all input parameters.
+ */
+struct input_parameters_t{
+
+  // Numerics
+  double t_end_prime;
+  double dt_prime;
+  double dt_traject_prime;
+  double dt_traject;
+  int snapshot_index;
+  uint64_t num_sub_steps;
+  // Filename for output
+  std::string OUTPUT_FILENAME;
+
+  // Filename for input
+  std::string INPUT_FILENAME;
+
+  // Start over at new timestep of trajectory?
+  bool start_over;
+  // Fix temperature, pressure and so forth at every iteration?
+  bool fixed_iteration;
+
+  // Scaling factor
+  double scaling_fact;
+
+  uint32_t auto_type;
+  uint32_t traj;
+};
+
+/** @} */ // end of group types

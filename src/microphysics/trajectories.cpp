@@ -251,8 +251,8 @@ int main(int argc, char** argv)
     // cc.zeta = 1.0;
 
     // Numerics
-    cc.T_end_prime = input.T_end_prime;
-    cc.T_end = input.T_end_prime/ref_quant.tref;
+    cc.t_end_prime = input.t_end_prime;
+    cc.t_end = input.t_end_prime/ref_quant.tref;
     // Time of the substeps
 
     cc.dt = input.dt_prime/ref_quant.tref;
@@ -498,7 +498,7 @@ int main(int argc, char** argv)
         nc_inq_dimid(ncid, "time", &dimid);
 #endif
         nc_inq_dimlen(ncid, dimid, &n_timesteps);
-        uint64_t n_timesteps_input = ceil(cc.T_end/20.0);
+        uint64_t n_timesteps_input = ceil(cc.t_end/20.0);
 
         cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         init_nc_parameters(nc_params, lenp, n_timesteps);
