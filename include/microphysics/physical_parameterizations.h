@@ -698,7 +698,8 @@ inline A convert_qv_to_S(A p,
 
 
 /**
- * Get mean mass of particle assuming a gamma distribution (?).
+ * Get mean mass of particle assuming a gamma distribution
+ * (TODO: Is it though? It assumes a rather high shape parameter \f$k\f$).
  *
  * @param q Particle mixing ratio
  * @param n Number of particles
@@ -720,6 +721,7 @@ inline A particle_mean_mass(
 /**
  * Get diameter of the particle by calculating
  * \f[ a_{\text{geo}} \cdot x^{b_{\text{geo}}} \f]
+ * with \f$x\f4 the particle mass in kg.
  *
  * @param x Particle mass in kg
  * @param a_geo Coefficient from particle model constant
@@ -738,6 +740,7 @@ inline A particle_diameter(
 /**
  * Get particle velocity of the particle by calculating
  * \f[ a_{\text{vel}} \cdot x^{b_{\text{vel}}} \f]
+ * with \f$x\f4 the particle mass in kg.
  *
  * @param x Particle mass in kg
  * @param a_vel Coefficient from particle model constant
@@ -753,7 +756,17 @@ inline A particle_velocity(
     return a_vel * pow(x, b_vel);
 }
 
-// As seen in ICON
+/**
+ * Calculate the shape parameter \f$\mu\f$ as in ICON.
+ *
+ * @param D_m Volume diameter
+ * @param cmu0 Parametrization value
+ * @param cmu1 Parametrization value
+ * @param cmu2 Parametrization value
+ * @param cmu3 Parametrization value
+ * @param cmu4 Parametrization value
+ * @return \f$mu\f$
+ */
 template <class A>
 inline A rain_mue_dm_relation(
     const A &D_m,
@@ -769,7 +782,17 @@ inline A rain_mue_dm_relation(
     return cmu1*tanh(delta*delta) + cmu4;
 }
 
-// From Seifert & Beheng (2008), Eq. 20
+/**
+ * Calculate the shape parameter \f$\mu\f$ as in Seifert & Beheng (2008), Eq. 20.
+ *
+ * @param D_m Volume diameter
+ * @param cmu0 Parametrization value
+ * @param cmu1 Parametrization value
+ * @param cmu2 Parametrization value
+ * @param cmu3 Parametrization value
+ * @param cmu4 Parametrization value
+ * @return \f$mu\f$
+ */
 template <class A>
 inline A rain_mue_dm_relation_sb(
     const A &D_m,
@@ -787,6 +810,17 @@ inline A rain_mue_dm_relation_sb(
 
 
 //dmin_wg_gr_ltab_equi
+/**
+ * Calculate the separation diameter for wet growth of supercooled
+ * water to ice.
+ *
+ * @param p Pressure in Pascal
+ * @param T Temperature in Kelvin
+ * @param qw Mixing ratio of rain and cloud water
+ * @param qi Mixing ratio of ice
+ * @param table Lookup-table (usually ltabdminwgg)
+ * @return Separation diameter in m
+ */
 template <class A>
 A wet_growth_diam(
     const A &p,
@@ -854,7 +888,13 @@ A wet_growth_diam(
 ////////////////////////////////////////////////////////////////////////////////
 // Variuous functions for collision integrals of SB2006 (Eq. 90, 91, 92, 93)
 
-// Eq. 90
+/**
+ * Function for collision integrals of Seifert & Beheng (2006), Eq. 90.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param n \f$ k \f$ from Eq. 90
+ * @return \f$\delta_b^k\f$
+ */
 template <class A = codi::RealReverse>
 inline A coll_delta(
     particle_model_constants_t &pc1,
@@ -870,6 +910,14 @@ inline A coll_delta(
         / pow(tgamma( tmp4 ), 2.0*pc1.b_geo+n);
 }
 
+/**
+ * Function for collision integrals of Seifert & Beheng (2006), Eq. 90.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param pc2 Model constants for a particle type that collects
+ * @param n \f$ k \f$ from Eq. 90
+ * @return \f$\delta_b^k\f$
+ */
 template <class A = codi::RealReverse>
 inline A coll_delta_11(
     particle_model_constants_t &pc1,
@@ -879,6 +927,15 @@ inline A coll_delta_11(
     return coll_delta<A>(pc1, n);
 }
 
+
+/**
+ * Function for collision integrals of Seifert & Beheng (2006), Eq. 90.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param pc2 Model constants for a particle type that collects
+ * @param n \f$ k \f$ from Eq. 90
+ * @return \f$\delta_a^k\f$
+ */
 template <class A = codi::RealReverse>
 inline A coll_delta_22(
     particle_model_constants_t &pc1,
@@ -888,6 +945,14 @@ inline A coll_delta_22(
     return coll_delta<A>(pc2, n);
 }
 
+/**
+ * Function for collision integrals of Seifert & Beheng (2006), Eq. 91.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param pc2 Model constants for a particle type that collects
+ * @param n \f$ k \f$ from Eq. 91
+ * @return \f$\delta_{ba}^k\f$
+ */
 template <class A = codi::RealReverse>
 inline A coll_delta_12(
     particle_model_constants_t &pc1,
@@ -912,7 +977,13 @@ inline A coll_delta_12(
         / pow(tgamma( tmp4 ), pc2.b_geo+n);
 }
 
-// Eq. 92
+/**
+ * Function for collision integrals of Seifert & Beheng (2006), Eq. 92.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param n \f$ k \f$ from Eq. 92
+ * @return \f$\vartheta_b^k\f$
+ */
 template <class A = codi::RealReverse>
 inline A coll_theta(
     particle_model_constants_t &pc1,
@@ -928,6 +999,15 @@ inline A coll_theta(
         / pow(tgamma( tmp4 ), 2.0*pc1.b_vel);
 }
 
+
+/**
+ * Function for collision integrals of Seifert & Beheng (2006), Eq. 92.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param pc2 Model constants for a particle type that collects
+ * @param n \f$ k \f$ from Eq. 92
+ * @return \f$\vartheta_b^k\f$
+ */
 template <class A = codi::RealReverse>
 inline A coll_theta_11(
     particle_model_constants_t &pc1,
@@ -937,6 +1017,14 @@ inline A coll_theta_11(
     return coll_theta<A>(pc1, n);
 }
 
+/**
+ * Function for collision integrals of Seifert & Beheng (2006), Eq. 92.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param pc2 Model constants for a particle type that collects
+ * @param n \f$ k \f$ from Eq. 92
+ * @return \f$\vartheta_a^k\f$
+ */
 template <class A = codi::RealReverse>
 inline A coll_theta_22(
     particle_model_constants_t &pc1,
@@ -946,7 +1034,14 @@ inline A coll_theta_22(
     return coll_theta<A>(pc2, n);
 }
 
-// Eq. 93
+/**
+ * Function for collision integrals of Seifert & Beheng (2006), Eq. 93.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param pc2 Model constants for a particle type that collects
+ * @param n \f$ k \f$ from Eq. 93
+ * @return \f$\vartheta_{ba}^k\f$
+ */
 template <class A = codi::RealReverse>
 inline A coll_theta_12(
     particle_model_constants_t &pc1,
@@ -971,7 +1066,15 @@ inline A coll_theta_12(
         / pow(tgamma( tmp4 ), pc2.b_vel);
 }
 
-
+/**
+ * Initialize the constants for the particle collection using
+ * Seifert & Beheng (2006) Eq. 90-93. This function is for all collections
+ * except snow - rain and ice - rain collection.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param pc2 Model constants for a particle type that collects
+ * @param c Model constants for particle collection
+ */
 void init_particle_collection_1(
     particle_model_constants_t &pc1,
     particle_model_constants_t &pc2,
@@ -990,10 +1093,17 @@ void init_particle_collection_1(
     c.theta_q_aa = coll_theta_11(pc1, pc2, 0);
     c.theta_q_ab = coll_theta_12(pc1, pc2, 1);
     c.theta_q_bb = coll_theta_22(pc1, pc2, 1);
-
-
 }
 
+/**
+ * Initialize the constants for the particle collection using
+ * Seifert & Beheng (2006) Eq. 90-93. This function is for snow - rain and
+ * ice - rain collection.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param pc2 Model constants for a particle type that collects
+ * @param c Model constants for particle collection
+ */
 void init_particle_collection_2(
     particle_model_constants_t &pc1,
     particle_model_constants_t &pc2,
@@ -1016,6 +1126,19 @@ void init_particle_collection_2(
     c.theta_q_bb = coll_theta_22(pc1, pc2, 1);
 }
 
+
+/**
+ * Calculate the model constant \f$a_f = \overline{a}_{\text{vent},n}\f$ of a particle model that is used
+ * for vaporization and melting processes with formulas such as
+ * \f[ a_f + b_f \sqrt{d \cdot v} \f]
+ * where \f$d\f$ is the diameter of the particle to melt/vaporize and
+ * \f$v\f$ is the particle velocity.
+ * From Seifert & Beheng (2006), Eq. 88.
+ *
+ * @param pc Model constants for a particle type
+ * @param n 1 for cosmo5
+ * @return \f$a_f\f$
+ */
 inline codi::RealReverse vent_coeff_a(
     particle_model_constants_t &pc,
     uint64_t n)
@@ -1025,6 +1148,18 @@ inline codi::RealReverse vent_coeff_a(
         * pow( tgamma((pc.nu+1.0)/pc.mu) / tgamma((pc.nu+2.0)/pc.mu), pc.b_geo+n-1.0 );
 }
 
+/**
+ * Calculate the model constant \f$b_f = \overline{b}_{\text{vent},n}\f$ of a particle model that is used
+ * for vaporization and melting processes with formulas such as
+ * \f[ a_f + b_f \sqrt{d \cdot v} \f]
+ * where \f$d\f$ is the diameter of the particle to melt/vaporize and
+ * \f$v\f$ is the particle velocity.
+ * From Seifert & Beheng (2006), Eq. 89:
+ *
+ * @param pc Model constants for a particle type
+ * @param n 1 for cosmo5
+ * @return \f$b_f\f$
+ */
 inline codi::RealReverse vent_coeff_b(
     particle_model_constants_t &pc,
     uint64_t n)
@@ -1037,6 +1172,14 @@ inline codi::RealReverse vent_coeff_b(
 }
 
 // complete mass moment of particle size distribution, Eq (82) of SB2006
+/**
+ * Calculate the complete mass moment of particle size distribution from
+ * Seifert & Beheng (2006), Eq. 82.
+ *
+ * @param pc Model constants for a particle type
+ * @param n power (2 for cosmo5)
+ * @return Complete mass moment \f$M^n\f$
+ */
 inline codi::RealReverse moment_gamma(
     particle_model_constants_t &pc,
     uint64_t n)

@@ -10,12 +10,12 @@
 #include "types.h"
 
 using v_rev = std::vector<codi::RealReverse>;
-////////////////////////////////////////////////////////////////////////////////
-// =============================================================================
-// This file provides the function for a single step with the
-// Runge-Kutta 4 method
-// =============================================================================
-////////////////////////////////////////////////////////////////////////////////
+
+/** @defgroup rk Runge-Kutta 4 Method
+ * This file provides the function for a single step with the
+ * Runge-Kutta 4 method.
+ * @{
+ */
 
 /**
  * Compute a single step using the Runge-Kutta 4 method for the ODE
@@ -247,4 +247,7 @@ void RK4_step_2_sb_ice(
     for(int ii = 0 ; ii < num_comp ; ii++)
         ynew[ii] += cc.dt_sixth*k[ii];
 }
+
+/** @} */ // end of group rk
+
 #endif

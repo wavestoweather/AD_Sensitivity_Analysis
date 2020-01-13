@@ -1,6 +1,7 @@
-Welcome to Process and Plot Scripts's documentation!
+Welcome to AD with ICON and Processing Results' documentation!
 ====================================================
-.. include:: ../README.md
+.. include::
+   ../README.md
 
 .. toctree::
    :maxdepth: 4
@@ -18,9 +19,14 @@ Welcome to Process and Plot Scripts's documentation!
    :maxdepth: 4
    :caption: Grouped C++ Documentation
 
+   groups/rk
    groups/ufunc
    groups/io
    groups/parametrizations
+   groups/types
+   groups/general
+
+
 
 .. toctree::
    :maxdepth: 4

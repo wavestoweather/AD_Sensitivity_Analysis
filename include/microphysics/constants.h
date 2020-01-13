@@ -6,41 +6,47 @@
 #include "physical_parameterizations.h"
 #include "types.h"
 
+/** @defgroup constants Constants
+ * Various constants for accessing data in the right order and model constants
+ * for which most are rather uninteresting (i.e. no AD available).
+ * @{
+ */
+
 ////////////////////////////////////////////////////////////////////////////////
-// Indices of the parameters
+// Indices of the output parameters
 ////////////////////////////////////////////////////////////////////////////////
-#define p_idx 0
-#define T_idx 1
-#define w_idx 2
-#define S_idx 3
-#define qc_idx 4
-#define qr_idx 5
-#define qv_idx 6
-#define Nc_idx 7
-#define Nr_idx 8
-#define Nv_idx 9
-#define qi_idx 10
-#define Ni_idx 11
-#define vi_idx 12
-#define qs_idx 13
-#define Ns_idx 14
-#define qg_idx 15
-#define Ng_idx 16
-#define qh_idx 17
-#define Nh_idx 18
-#define qi_out_idx 19
-#define qs_out_idx 20
-#define qr_out_idx 21
-#define qg_out_idx 22
-#define qh_out_idx 23
-#define lat_heat_idx 24
-#define lat_cool_idx 25
-#define num_comp 26
+#define p_idx 0             /*!< Pressure index */
+#define T_idx 1             /*!< Temperature index */
+#define w_idx 2             /*!< Vertical acceleration index */
+#define S_idx 3             /*!< Satruation index */
+#define qc_idx 4            /*!< Cloud droplet mixing ratio index */
+#define qr_idx 5            /*!< Rain droplet mixing ratio index */
+#define qv_idx 6            /*!< Water vapor mixing ratio index */
+#define Nc_idx 7            /*!< Number of cloud droplets index */
+#define Nr_idx 8            /*!< Number of rain droplets index */
+#define Nv_idx 9            /*!< Number of water vapor droplets index */
+#define qi_idx 10           /*!< Ice mixing ratio index */
+#define Ni_idx 11           /*!< Number of ice crystals index */
+#define vi_idx 12           /*!< Vertical acceleration of ice index */
+#define qs_idx 13           /*!< Snow mixing ratio index */
+#define Ns_idx 14           /*!< Number of snow particles index */
+#define qg_idx 15           /*!< Graupel mixing ratio index */
+#define Ng_idx 16           /*!< Number of graupel particles index */
+#define qh_idx 17           /*!< Hail mixing ratio index */
+#define Nh_idx 18           /*!< Number of hail particles index */
+#define qi_out_idx 19       /*!< Ice mixing ratio precipitation index */
+#define qs_out_idx 20       /*!< Snow mixing ratio precipitation index */
+#define qr_out_idx 21       /*!< Rain mixing ratio precipitation index */
+#define qg_out_idx 22       /*!< Graupel mixing ratio precipitation index */
+#define qh_out_idx 23       /*!< Hail mixing ratio precipitation index */
+#define lat_heat_idx 24     /*!< Latent heating index */
+#define lat_cool_idx 25     /*!< Latent cooling index */
+#define num_comp 26         /*!< Number of output elements of a model */
 // Those are for a different vector
-#define qi_in_idx 0
-#define qs_in_idx 1
-#define qr_in_idx 2
-#define qg_in_idx 3
+#define qi_in_idx 0         /*!< Ice input index for another vector */
+#define qs_in_idx 1         /*!< Snow input index for another vector */
+#define qr_in_idx 2         /*!< Rain input index for another vector */
+#define qg_in_idx 3         /*!< Graupel input index for another vector */
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -159,114 +165,206 @@ const double T_nuc = 268.15;
  * Lower temperature threshold for raindrop freezing
  */
 const double T_freeze = 273.15;
-//! Lower temperature threshold for (instantaneous) raindrop freezing
+/**
+ * Lower temperature threshold for (instantaneous) raindrop freezing
+ */
 const double T_f = 233.0;
 
-
+/**
+ * Equilibrium diameter for Seifert & Beheng (2008), ie Eq. 20.
+ */
 const double D_eq = 1.1e-3;
 
-//! [kg/m^3] density of liquid water
+/**
+ * Density of liquid water in \f$\text{kg}/\text{m}^3\f$
+ */
 const double rho_w = 1000.0;
 
-//! norm air density
+/**
+ * Norm air density.
+ */
 const double rho_0 = 1.225;
 
-//! exponent for density correction
+/**
+ * Exponent for density correction
+ */
 const double rho_vel = 0.4;
 
-//! [kg/m^3] density of ice
+/**
+ * Density of ice in \f$\text{kg}/\text{m}^3\f$
+ */
 const double rho_ice = 916.7;
 
-//! gas constant of water vapor from ICON mo_physical_constants
+/**
+ * Gas constant of water vapor from ICON mo_physical_constants
+ */
 const double R_v = 461.51;
 
-//! Variuous constants from ICON regarding evaporation from melting ice particles
+/**
+ * Various constants from ICON regarding evaporation from melting ice particles
+ */
 const double a_v = 0.78;
-//! Variuous constants from ICON regarding evaporation from melting ice particles
-const double b_v = 0.308;
+/**
+ * Various constants from ICON regarding evaporation from melting ice particles
+ */const double b_v = 0.308;
 //! Variuous constants from ICON regarding evaporation from melting ice particles
 const double N_Sc = 0.71;
-//! Variuous constants from ICON regarding evaporation from melting ice particles
-const double a_prime = 9.65;
-//! Variuous constants from ICON regarding evaporation from melting ice particles
-const double b_prime = 9.80;
-//! Variuous constants from ICON regarding evaporation from melting ice particles
-const double c_prime = 600;
-//! heat conductivity of air
+/**
+ * Various constants from ICON regarding evaporation from melting ice particles
+ */const double a_prime = 9.65;
+/**
+ * Various constants from ICON regarding evaporation from melting ice particles
+ */const double b_prime = 9.80;
+/**
+ * Various constants from ICON regarding evaporation from melting ice particles
+ */const double c_prime = 600;
+
+/**
+ * Heat conductivity of air.
+ */
 const double K_T = 1; // TODO
-//! Latent heat of evaporation of water (wasser->dampf)
+
+/**
+ * Latent heat of evaporation of water (water->vapor)
+ */
 const double L_wd = 2.5008e6;
-//! heat of sublimination ice -> vapor
+/**
+ * Heat of sublimination ice -> vapor
+ */
 const double L_ed = 2.8345e6;
-//! heat of fusion ice -> water
+/**
+ * Heat of fusion ice -> water
+ */
 const double L_ew = L_ed - L_wd;
-//! Diffusivity of water vapor in air at 0°C
+/**
+ * Diffusivity of water vapor in air at \f$0^\circ\text{C}\f$
+ */
 const double D_v = 2.22e-5;
-//! Min. efficiency for collisions graupel - cloud, ice - cloud, snow - cloud
+/**
+ * Min. efficiency for collisions graupel - cloud, ice - cloud, snow - cloud
+ */
 const double ecoll_min = 0.01;
-//! Collision efficiency for graupel selfcollection
+/**
+ * Collision efficiency for graupel selfcollection
+ */
 const double ecoll_gg = 0.10;
-//! Collision efficiency for wet graupel
+/**
+ * Collision efficiency for wet graupel
+ */
 const double ecoll_gg_wet = 0.40;
-//! [m^2/s]  kinematic viscosity of dry air from mo_physical_constants.f90
+/**
+ * Kinematic viscosity of dry air from mo_physical_constants.f90 in
+ * \f$\text{m}^2/\text{s}\f$.
+ */
 const double kin_visc_air = 1.5e-5;
-//! max 0.68
+/**
+ * Maxmimum is 0.68.
+ */
 const double alpha_spacefilling = 0.01;
-//! Hallet-Mossop ice multiplication
-/*!
-    Coefficient for splintering
-*/
+
+/**
+ * Hallet-Mossop ice multiplication: coefficient for splintering
+ */
 const double C_mult = 3.5e8;
-//! Hallet-Mossop ice multiplication
+/**
+ * Hallet-Mossop ice multiplication
+ */
 const double T_mult_min = 265.0;
-//! Hallet-Mossop ice multiplication
+/**
+ * Hallet-Mossop ice multiplication
+ */
 const double T_mult_max = 270.0;
-//! Hallet-Mossop ice multiplication
+/**
+ * Hallet-Mossop ice multiplication
+ */
 const double T_mult_opt = 268.0;
 
+/**
+ * Constant used in cloud riming.
+ */
 const double const0 = 1.0/(D_coll_c - D_crit_c);
+/**
+ * Hallet-Mossop ice multiplication.
+ * Constant used in ice - x and snow - x riming.
+ */
 const double const3 = 1.0/(T_mult_opt - T_mult_min);
+/**
+ * Hallet-Mossop ice multiplication.
+ * Constant used in ice - x and snow - x riming.
+ */
 const double const4 = 1.0/(T_mult_opt - T_mult_max);
-//! const5 = c_w / L_ew ?
+/**
+ * Constant for conversions ice -> graupel, snow -> graupel,
+ * melting (used in riming).
+ */
 const double const5 = alpha_spacefilling * rho_w/rho_ice;
 
+/**
+ * Constant wether to use ice multiplication.
+ */
 const bool ice_multiplication = true;
+/**
+ * Constant wether to enhance riming with melting.
+ */
 const bool enhanced_melting = true;
 
-//! Size thresholds for partitioning of freezing rain in the hail scheme
+/**
+ * Size thresholds for partitioning of freezing rain in the hail scheme
+ */
 const double D_rainfrz_ig = 0.5e-3;
-//! Size thresholds for partitioning of freezing rain in the hail scheme
+/**
+ * Size thresholds for partitioning of freezing rain in the hail scheme
+ */
 const double D_rainfrz_gh = 1.25e-3;
 
-//! Diffusivity of water vapor in air at 0 C
+/**
+ * Diffusivity of water vapor in air at \f$0^\circ\text{C}\f$
+ */
 const double dv0 = 2.22e-5;
-//! Saturation pressure at T=tmelt, e_3 in ICON
+/**
+ * Saturation pressure at \f$\text{T}=\text{tmelt}\f$, called e_3 in ICON.
+ */
 const double p_sat_melt = 6.1078e2;
 
-//! specific heat capacity of air at constant pressure [J/K/kg]
+/**
+ * Specific heat capacity of air at constant pressure in
+ * \f$\text{J}/\text{K}/\text{kg}\f$
+ */
 const double cp = 1004.64;
 
-//! Boltzmann constant [J/K]
+/**
+ * Boltzmann constant in \f$\text{J}/\text{K}\f$
+ */
 const double k_b = 1.3806504e-23;
 
 // A switch for constant drops
 #if CONSTANT_DROP
-//! A switch for constant drops
+/**
+ * Do not use constant drops.
+ */
 const bool nuc_c_type = true;
 #else
-//! A switch for constant drops
+/**
+ * Use constant drops.
+ */
 const bool nuc_c_type = false;
 #endif
 
 double rain_nm1, rain_nm2, rain_nm3, rain_g1, rain_g2,
     graupel_nm1, graupel_nm2, graupel_g1, graupel_g2;
 
-//! Parameters for rain freeze with data of Barklie and Gokhale (PK page 350)
+/**
+ * Parameters for rain freeze with data of Barklie and Gokhale (PK page 350).
+ */
 const double a_HET = 0.65;
-//! Parameters for rain freeze with data of Barklie and Gokhale (PK page 350)
+/**
+ * Parameters for rain freeze with data of Barklie and Gokhale (PK page 350)
+ */
 const double b_HET = 200.0;
 
-//! Schmidt number (PK, page 541)
+/**
+ * Schmidt number (PK, page 541).
+ */
 const double N_sc  = 0.71;
 /**
  * Exponent of N_sc in the vent-coeff. (PK, page 541)
@@ -274,54 +372,54 @@ const double N_sc  = 0.71;
 const double n_f = 0.333;
 
 /**
- * Avogadro number [1/mol]
+ * Avogadro number in \f$\text{mol}^{-1}\f$
  */
 const double N_avo = 6.02214179e23;
 /**
- * average gravity
+ * Average gravity
  */
 const double grav = 9.80665;
 /**
- *  molar weight of dry air
+ *  Molar weight of dry air in \f$\text{g}\cdot\text{mol}^{-1}\f$
  */
 const double amd = 28.97;
 /**
- *  molar weight of water [g/mol]
+ *  Molar weight of water in \f$\text{g}\cdot\text{mol}^{-1}\f$
  */
 const double amw = 18.0154;
 
 /**
  * Constants for Phillips et al. ice nucleation scheme
- * initial number density of dust [1/m³], Phillips08 value 162e3
+ * initial number density of dust in \f$\text{m}^{-3}\f$, Phillips08
  */
 const double na_dust = 162.0e3;
 /**
  * Constants for Phillips et al. ice nucleation scheme
- * initial number density of soot [1/m³], Phillips08 value 15e6
+ * initial number density of soot in \f$\text{m}^{-3}\f$ Phillips08
  */
 const double na_soot = 15.0e6;
 /**
  * Constants for Phillips et al. ice nucleation scheme
- * initial number density of organics [1/m3], Phillips08 value 177e6
+ * initial number density of organics in \f$\text{m}^{-3}\f$, Phillips08
  */
 const double na_orga = 177.0e6;
 /**
  * Constants for Phillips et al. ice nucleation scheme
- * max number of IN between 1-10 per liter, i.e. 1d3-10d3
+ * max number of IN between \f$1-10\f$ per liter, i.e. 1d3-10d3
 */
 const double ni_het_max = 500.0e3;
 /**
  * Constants for Phillips et al. ice nucleation scheme
- * number of liquid aerosols between 100-5000 per liter
+ * number of liquid aerosols between \f$100-5000\f$ per liter
  */
 const double ni_hom_max = 5000.0e3;
 
 /**
- * parameters for deposition formula (2) of Hande et al.
+ * Parameters for deposition formula (2) of Hande et al.
  */
 const double a_dep = 0.27626;
 /**
- * parameters for deposition formula (2) of Hande et al.
+ * Parameters for deposition formula (2) of Hande et al.
  */
 const double b_dep = 6.21;
 /**
@@ -329,61 +427,65 @@ const double b_dep = 6.21;
  */
 const double c_dep = -1.3107;
 /**
- * parameters for deposition formula (2) of Hande et al.
+ * Parameters for deposition formula (2) of Hande et al.
  */
 const double d_dep = 0.26789;
 
 //// more parameters for Hande et al. nucleation for HDCP2 simulations
 #if defined(SPRING)
-const double nim_imm = 1.5684e5;
-const double nin_dep = 1.7836e5;
-const double alf_imm = 0.2466;
-const double alf_dep = 0.0075;
-const double bet_dep = 2.0341;
-const double bet_imm = 1.2293;
+const double nim_imm = 1.5684e5;    /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double nin_dep = 1.7836e5;    /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double alf_imm = 0.2466;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double alf_dep = 0.0075;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double bet_dep = 2.0341;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double bet_imm = 1.2293;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
 #endif
 #if defined(SUMMER)
-const double nim_imm = 2.9694e4;
-const double nin_dep = 2.6543e4;
-const double alf_imm = 0.2813;
-const double alf_dep = 0.0020;
-const double bet_dep = 2.5128;
-const double bet_imm = 1.1778;
+const double nim_imm = 2.9694e4;    /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double nin_dep = 2.6543e4;    /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double alf_imm = 0.2813;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double alf_dep = 0.0020;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double bet_dep = 2.5128;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double bet_imm = 1.1778;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
 #endif
 #if defined(AUTUMN)
-const double nim_imm = 4.9920e4;
-const double nin_dep = 7.7167e4;
-const double alf_imm = 0.2622;
-const double alf_dep = 0.0406;
-const double bet_dep = 1.4705;
-const double bet_imm = 1.2044;
+const double nim_imm = 4.9920e4;    /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double nin_dep = 7.7167e4;    /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double alf_imm = 0.2622;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double alf_dep = 0.0406;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double bet_dep = 1.4705;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double bet_imm = 1.2044;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
 #endif
 #if defined(WINTER)
-const double nim_imm = 1.0259e5;
-const double nin_dep = 1.1663e4;
-const double alf_imm = 0.2073;
-const double alf_dep = 0.0194;
-const double bet_dep = 1.6943;
-const double bet_imm = 1.2873;
+const double nim_imm = 1.0259e5;    /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double nin_dep = 1.1663e4;    /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double alf_imm = 0.2073;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double alf_dep = 0.0194;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double bet_dep = 1.6943;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double bet_imm = 1.2873;      /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
 #endif
 #if defined(SPRING95)
-const double nim_imm = 1.5684e5 * 17.82;
-const double nin_dep = 1.7836e5 * 5.87;
-const double alf_imm = 0.2466;
-const double alf_dep = 0.0075;
-const double bet_dep = 2.0341;
-const double bet_imm = 1.2293;
+const double nim_imm = 1.5684e5 * 17.82; /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double nin_dep = 1.7836e5 * 5.87;  /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double alf_imm = 0.2466;           /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double alf_dep = 0.0075;           /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double bet_dep = 2.0341;           /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
+const double bet_imm = 1.2293;           /*!< More parameters for Hande et al. nucleation for HDCP2 simulations */
 #endif
 
+/**
+ * Different autoconversion types. Use 1 for KB and Beheng (1994), 3 for
+ * Seifert & Beheng. 2 is currently not supported.
+ */
 uint32_t auto_type = 3;
 
 /**
- * see mo_2mom_mcrph_main.f90 line 830 following
+ * See mo_2mom_mcrph_main.f90 line 830 following of ICON.
  */
 codi::RealReverse rain_gfak = -1.0;
 
-codi::RealReverse cloud_k_au;
-codi::RealReverse cloud_k_sc;
+codi::RealReverse cloud_k_au; /*!< Parameter for autoconversion Seifert & Beheng. */
+codi::RealReverse cloud_k_sc; /*!< Parameter for autoconversion Seifert & Beheng. */
 
 /**
  * Kernel for autoconversion
@@ -392,44 +494,14 @@ codi::RealReverse kc_autocon = 9.44e9;
 
 /**
  * Inverse layer thickness. Used for sedimentation.
- * In Miltenberger (2016) the trajectories start every 100 m between the surface
- * and 4 km altitude using COSMO-2, which uses a mean spacing of 388 m
- * with 13 m close to the surface and 1190 m at 23 km.
+ * In Miltenberger (2016) the trajectories start every \f$100 \text{m}\f$
+ * between the surface and \f$4 \text{km}\f$ altitude using COSMO-2, which
+ * uses a mean spacing of \f$388 \text{m}\f$
+ * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
+ * at \f$23 \text{km}\f$.
  */
 codi::RealReverse inv_z = 1.0/1000.0;
 
-void print_reference_quantities(reference_quantities_t &ref)
-{
-  std::cout << "\nReference quantities\n"
-	    << "--------------------\n"
-        << "Temperature: " << ref.Tref << " Kelvin\n"
-        << "Pressure: " << ref.pref << " Pascal\n"
-        << "Mixing-ratio: " << ref.qref << "\n"
-        << "Vertical velocity: " << ref.wref << " meter per second\n"
-        << "Time: " << ref.tref << " Second\n"
-        << std::endl;
-}
-
-void print_constants(model_constants_t &cc)
-{
-
-  std::cout << "\nModel constants:\n"
-	    << "----------------\n"
-	    << "\n"
-	    << "Final integration time: " << cc.t_end_prime << " seconds\n"
-        << "Nondimensional final integration time: " << cc.t_end << "\n"
-	    << "Timestep: " << cc.dt_prime << " seconds\n"
-	    << "Snapshot Index: " << cc.snapshot_index << "\n"
-	    << "Nondimensional timestep: " << cc.dt << "\n"
-	    << "Number of iterations: " << cc.num_steps << "\n"
-        << "Number of substeps: " << cc.num_sub_steps << "\n"
-	    << "a1_scale: " << cc.a1_scale << "\n"
-        << "a2_scale: " << cc.a2_scale << "\n"
-        << "e1_scale: " << cc.e1_scale << "\n"
-        << "e2_scale: " << cc.e2_scale << "\n"
-        << "d_scale: " << cc.d_scale << "\n"
-	    << "Scaling factor: " << cc.scaling_fact << "\n"
-	    << std::endl;
-}
+/** @} */ // end of group constants
 
 #endif
