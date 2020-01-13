@@ -458,8 +458,7 @@ if __name__ == "__main__":
             '''Load derivatives of a simulation or a netCDF file and plot
             trajectories over satellite images.''')
     parser.add_argument("-c", "--csv", type=str, default=None,
-            help='''Load an already processed csv file with derivatives.
-            Deactivates -t, -f and -e.''')
+            help='''Load an already processed csv file with derivatives.''')
     parser.add_argument("-n", "--netcdf", type=str, default=None,
             help='''Path to a netCDF file. If you want to plot derivatives from
             a csv file that lacks "LONGITUDE" and "LATITUDE", you need to
