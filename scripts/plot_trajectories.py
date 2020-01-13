@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from iris.analysis.cartography import rotate_pole
 import json
 import matplotlib
+import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 from netCDF4 import Dataset as netset
 import numpy as np

@@ -151,7 +151,8 @@ def load_derivatives(prefix="", suffix="", filt=False, EPSILON=1e-31):
     """
     df_dict = {}
     for key in params_dict.keys():
-        print("Loading {}".format(key))
+        print("Loading {} from {}".format(key,
+            "data/" + prefix + suffix + params_dict[key]))
         tmp = pd.read_csv(
             "data/" + prefix + suffix + params_dict[key], sep=",")
 
@@ -211,7 +212,7 @@ def load_nc(inp="/mnt/localscratch/data/project/m2_jgu-tapt/o"
     return df
 
 
-def load_output(filename="sb_ice", sep=None, nrows=None):
+def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True):
     """
     Read a csv file and return a pandas.Dataframe with
     physical (not normalized) entries.
@@ -224,6 +225,8 @@ def load_output(filename="sb_ice", sep=None, nrows=None):
         Separator in the file.
     nrows : int, optional
         Number of rows to read from the datafile.
+    change_ref : bool
+        If true: Multiply all entries with reference values.
 
     Returns
     -------
@@ -231,29 +234,31 @@ def load_output(filename="sb_ice", sep=None, nrows=None):
         Dataframe with the columns "p", "T", "w",
         "qc", "qr", "qs", "qg", "qh", "qi", "qv",
         "qiout", "qsout", "qrout", "qgout", "qhout",
-        "latent_heat", "latent_cool".
+        "latent_heat", "latent_cool" if change_ref is True. Otherwise
+        any dataframe from the given csv file.
     """
     if sep is None:
         data = pd.read_csv(filename, nrows=nrows)
     else:
         data = pd.read_csv(filename, sep=sep, nrows=nrows)
-    data["p"] = data["p"]*pref/100  # We want hPa
-    data["T"] = data["T"]*Tref
-    data["w"] = data["w"]*wref
-    data["qc"] = data["qc"]*qref
-    data["qr"] = data["qr"]*qref
-    data["qs"] = data["qs"]*qref
-    data["qg"] = data["qg"]*qref
-    data["qh"] = data["qh"]*qref
-    data["qi"] = data["qi"]*qref
-    data["qv"] = data["qv"]*qref
-    data["qiout"] = data["qiout"]*qref
-    data["qsout"] = data["qsout"]*qref
-    data["qrout"] = data["qrout"]*qref
-    data["qgout"] = data["qgout"]*qref
-    data["qhout"] = data["qhout"]*qref
-    data["latent_heat"] = data["latent_heat"]*Tref
-    data["latent_cool"] = data["latent_cool"]*Tref
+    if change_ref:
+        data["p"] = data["p"]*pref/100  # We want hPa
+        data["T"] = data["T"]*Tref
+        data["w"] = data["w"]*wref
+        data["qc"] = data["qc"]*qref
+        data["qr"] = data["qr"]*qref
+        data["qs"] = data["qs"]*qref
+        data["qg"] = data["qg"]*qref
+        data["qh"] = data["qh"]*qref
+        data["qi"] = data["qi"]*qref
+        data["qv"] = data["qv"]*qref
+        data["qiout"] = data["qiout"]*qref
+        data["qsout"] = data["qsout"]*qref
+        data["qrout"] = data["qrout"]*qref
+        data["qgout"] = data["qgout"]*qref
+        data["qhout"] = data["qhout"]*qref
+        data["latent_heat"] = data["latent_heat"]*Tref
+        data["latent_cool"] = data["latent_cool"]*Tref
     return data
 
 
@@ -535,13 +540,13 @@ def rotate_df(df, pollon, pollat, lon="LONGITUDE", lat="LATITUDE"):
     lat : String
         "LATITUDE" for derivative dataframe, "lat" for netCDF dataframe.
     """
-    lat, lon = rotate_pole(
+    lat_v, lon_v = rotate_pole(
                            np.asarray(df[lon].tolist()),
                            np.asarray(df[lat].tolist()),
                            pole_lon=pollon,
                            pole_lat=pollat)
-    df[lon] = lon
-    df[lat] = lat
+    df[lon] = lon_v
+    df[lat] = lat_v
 
 
 if __name__ == "__main__":

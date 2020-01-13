@@ -221,6 +221,7 @@ def plot_line(df_dict, prefix):
                     + "_" + "{:03d}".format(i) + ".png")
 
         print("Saving to " + save)
+        plt.show()
         plt.savefig(save, dpi=300)
         plt.close()
 
@@ -253,6 +254,7 @@ def plot_line_res(df, prefix):
                     + "_" + "{:03d}".format(i) + ".png")
 
         print("Saving to " + save)
+        plt.show()
         plt.savefig(save, dpi=300)
         plt.close()
 
@@ -490,7 +492,7 @@ if __name__ == "__main__":
     except:
         from scripts.loader import *
     from pylab import rcParams
-    rcParams['figure.figsize'] = (14,10)
+    rcParams['figure.figsize'] = (16,10)
 
     if args.csv is not None:
         res = load_output(args.csv)
@@ -513,7 +515,7 @@ if __name__ == "__main__":
                 res.to_csv(args.out_transformed)
         for input_param in args.input_param:
             for output_param in args.output_param:
-                filename = (args.output + "_deriv_" + out_param
+                filename = (args.output + "_deriv_" + output_param
                             + "_" + input_param + ".png")
                 plot_weather_deriv(df=res,
                                    in_param=input_param,
