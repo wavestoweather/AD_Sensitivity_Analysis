@@ -3,6 +3,7 @@ __pycache__/*
 *.pyc
 *.log
 *.csv
+*.nc
 pics/*
 data/*
 build/*
