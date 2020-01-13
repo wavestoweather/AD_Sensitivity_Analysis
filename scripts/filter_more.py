@@ -45,7 +45,7 @@ def filt_highest_in(df, out_param, n=3):
     Returns
     -------
     pandas.Dataframe
-        Dataframe with only out_param and the n most important 
+        Dataframe with only out_param and the n most important
         in_param.
 
     """
@@ -64,7 +64,7 @@ def filt_highest_in(df, out_param, n=3):
     df_filtered = df_out.loc[df_out.in_param == max_params[0]]
     for i in range(1, len(max_params)):
         df_filtered = pd.concat(
-		[df_filtered, df_out.loc[df_out.in_param == max_params[i]]], 
+		[df_filtered, df_out.loc[df_out.in_param == max_params[i]]],
 		ignore_index=True)
     return df_filtered
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
             for a given out_param.''')
     parser.add_argument("-i", "--input", type=str, default="sb_ice_wcb272280_filt_zero_30_start_over_20160922_00.csv",
             help='''Path to csv file.''')
-    parser.add_argument("-n", type=int, default=-1, 
+    parser.add_argument("-n", type=int, default=-1,
             help='''The number of derivatives on output. If n=-1 no filtering is being done.''')
     parser.add_argument("-o", "--output", type=str, default=None, required=True,
             help='''Path and name where to store the filtered file.''')
@@ -83,7 +83,7 @@ if __name__ == "__main__":
             help='''The out parameter to filter for.''')
     parser.add_argument("-t", "--trajectory", type=int, default=1,
             help='''The trajectory to filter for.''')
-    args = parser.parser_args()
+    args = parser.parse_args()
     if args.trajectory < 0:
         raise ValueError("You used {} for trajectories but it should be positive.".format(args.trajectory))
 

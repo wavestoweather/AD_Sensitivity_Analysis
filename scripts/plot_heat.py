@@ -59,7 +59,7 @@ def plot_line(df_dict, prefix):
     ----------
     df_dict : pandas.Dataframe
         A dictionary of pandas.Dataframe with key the output parameter
-        and the columns the input parameters and values are the                
+        and the columns the input parameters and values are the
         derivatives.
     prefix : string
         Prefix of the filename where the plot shall be stored.
@@ -123,11 +123,11 @@ def plot_line_res(df, prefix):
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=
-            '''Load data given a prefix and suffix of the filenames and plot variuous figures, mostly heatmaps.''')
+            '''Load data given a prefix and suffix of the filenames and plot various figures, mostly heatmaps.''')
     parser.add_argument("-p", "--prefix", type=str, required=True,
             help='''Prefix of the files to load such as "data/sb_ice_traj".''')
     parser.add_argument("-s", "--suffix", type=str, required=True,
-            help='''Suffix of the files to load without datatype such as "_start_over_20160922_00" 
+            help='''Suffix of the files to load without datatype such as "_start_over_20160922_00"
             or "_start_over" for derivatives.''')
     parser.add_argument("-i", "--image", type=str, default="results",
             help='''Which plot to generate. Can be either "results" or "derivatives" to plot lineplots
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     sns.set_style("darkgrid")
-    
+
     if args.image == "results":
         df_results = load_output(prefix=args.prefix, suffix=args.suffix)
         plot_line_res(df=df_results, prefix=args.prefix)

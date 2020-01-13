@@ -2,6 +2,8 @@ from argparse import ArgumentParser
 from iris.analysis.cartography import rotate_pole
 import numpy as np
 import pandas as pd
+import xarray as xr
+from loader import load_mult_derivates_directory
 
 
 def norm_derivatives(df):
@@ -20,7 +22,6 @@ def norm_derivatives(df):
         Columns are "timestep", "trajectory", "out_param", "in_param" and "deriv".
 
     """
-    idx = []
 
     for traj in df["trajectory"].unique():
         df_traj = df.loc[df.trajectory == traj]
@@ -36,68 +37,10 @@ def norm_derivatives(df):
                 df.update(df_t)
 
 
-def transform_df(res, net_path=None, rotate=False):
-    """
-    Return a new pandas dataframe that adds longitude and latitude to res
-    given information in net_df.
-
-    Parameters
-    ----------
-    res : pandas.Dataframe
-        A pandas dataframe with "deriv", "in_param",
-        "out_parm", "timestep" and "trajectory".
-    net_path : string
-        Path to a netCDF file with information
-        about the longitude and latitude.
-    rotate : bool
-        Rotate the latitude and longitude.
-
-    Returns
-    -------
-    pandas.Dataframe
-        res with latitude and longitude added.
-    """
-    new_dic = {"deriv": [], "in_param": [],
-               "out_param": [], "timestep": [],
-               "trajectory": [], "LONGITUDE": [],
-               "LATITUDE": []}
-    ds = xr.open_dataset(net_path)
-    pollat = ds.attrs["pollat"]
-    pollon = ds.attrs["pollon"]
-    net_df = ds.to_dataframe()
-
-    for traj in df.trajectory.unique():
-        df_traj = df.loc[df["trajectory"] == traj]
-        net_df_traj = net_df.iloc[np.arange(traj, n_rows, n_traj)]
-        for out_param in df_traj.out_param.unique():
-            df_out = df_traj.loc[df_traj["out_param"] == out_param]
-            for in_param in df_out.in_param.unique():
-                df_in = df_out.loc[df_out["in_param"] == in_param]
-                max_time = df_in["timestep"].max()
-                for t in np.arange(20, max_time+1, 20):
-                    net_df_time = net_df_traj.loc[net_df_traj["time"] == t]
-                    if net_df_time.empty:
-                        continue
-                    new_dic["in_param"].append(in_param)
-                    new_dic["out_param"].append(out_param)
-                    new_dic["timestep"].append(t)
-                    summed = df_in["deriv"].sum()/20.0
-                    new_dic["deriv"].append(summed)
-                    new_dic["LATITUDE"].append(net_df_time["lat"][0])
-                    new_dic["LONGITUDE"].append(net_df_time["lon"][0])
-                    new_dic["trajectory"].append(traj)
-    new_df = pd.DataFrame.from_dict(new_dic)
-    if rotate:
-        lat, lon = rotate_pole(np.asarray(new_df["LONGITUDE"].tolist()),
-                               np.asarray(new_df["LATITUDE"].tolist()),
-                               pole_lon=pollon, pole_lat=pollat)
-        new_df["LONGITUDE"] = lon
-        new_df["LATITUDE"] = lat
-    return new_df
-
-
 if __name__ == "__main__":
-    parser = ArgumentParser(description=__doc__)
+    parser = ArgumentParser(description=
+            '''Load derivatives of a simulation and store that to a csv
+            file after being filtered and transformed if needed.''')
     parser.add_argument("-i", "--input", type=str, default=None,
             help='''Path to folder with all files to load.''')
     parser.add_argument("-o", "--output", type=str, default="file.csv",

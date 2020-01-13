@@ -1,3 +1,8 @@
+from argparse import ArgumentParser
+from iris.analysis.cartography import rotate_pole
+from mpl_toolkits.basemap import Basemap
+from PIL import Image
+
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
@@ -7,10 +12,6 @@ import pandas as pd
 from scipy import stats
 import sys
 import os
-try:
-    from loader import *
-except:
-    from scripts.loader import *
 
 
 def correlation(data, out_param):
@@ -30,7 +31,7 @@ def correlation(data, out_param):
     -------
     dic of 2D np.ndarrays
         A dictionary for each in_param as keys and a correlation matrix.
-   
+
     """
     corr = {}
     tmp_data = data.loc[data["out_param"] == out_param]
@@ -89,10 +90,10 @@ def chi_squared(data, out_param):
 
     Returns
     ------
-    dic of tuples of 2D np.ndarrays 
+    dic of tuples of 2D np.ndarrays
         A dictionary for each in_param as keys and a tupel with a matrix of
         chi_squared values and the p-values as result.
-    
+
     """
     chi = {}
     tmp_data = data.loc[data["out_param"] == out_param]
@@ -205,7 +206,7 @@ def plot_line(df_dict, prefix):
         if df.empty:
             continue
         x_ticks = np.arange(0, df.timestep.unique().max() + 19, 20)
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
 
         ax = sns.lineplot(x="timestep", y="deriv",
                           data=df, hue="param", ax=ax)
@@ -262,12 +263,12 @@ def plot_avg_df(df):
     x-axis is the trajectories,
     the y-axis are the input parameters and the color indicates the
     size of the derivatives. Plots for each output variable another heatmap.
-    
+
     Parameters
     ----------
     df : pandas.Dataframe
-        Dataframe with columns "out_param", "in_param", "trajectory", "deriv".    
-    
+        Dataframe with columns "out_param", "in_param", "trajectory", "deriv".
+
     """
     out_params = df["out_param"].unique()
     for param in out_params:
@@ -315,15 +316,244 @@ def plot_avg_df(df):
 
     return True
 
+
+def plot_weather_deriv(df, in_param, out_param, filename=None):
+    """
+    Plot the derivatives of the trajectories.
+
+    Parameters
+    ----------
+    df : pandas.Dataframe
+        Dataframe with columns "out_param", "in_param", "trajectory", "deriv",
+        "LONGITUDE" and "LATITUDE".
+    in_param : String
+        Input parameter of the simulation to plot, such as "dzeta" or "dbeta_r".
+    out_param : String
+        Output parameter of the simulation to plot, such as "S", "T", "qr".
+    filename : string
+        Where to store the image.
+
+    Returns
+    -------
+    pandas.Dataframe
+        df with additional columns "xm" and "ym" for projected coordinates.
+    """
+    # Get the parts which belong to the in_param and out_param
+    df_tmp = df.loc[df["in_param"] == in_param]
+    df_tmp = df_tmp.loc[df_tmp["out_param"] == out_param]
+
+    if df_tmp.empty:
+        print("Empty dataframe")
+        return None
+    n_traj = df_tmp["trajectory"].nunique()
+    llon = df_tmp["LONGITUDE"].min()# - 5
+    ulon = df_tmp["LONGITUDE"].max() #+ 5
+    llat = df_tmp["LATITUDE"].min() #- 5
+    ulat = df_tmp["LATITUDE"].max() #+ 5
+    # You may change resolution to "h" or "f" for higher resolutions
+    # but you need to install basemap-data-hires first
+    my_map = Basemap(projection="merc",
+                    resolution="f", area_thresh=1000.0,
+                    llcrnrlon=llon, llcrnrlat=llat, # min longitude and latitude
+                    urcrnrlon=ulon, urcrnrlat=ulat) # max longitude and latitude
+
+    my_map.bluemarble()
+    if "xm" not in df_tmp:
+        xs, ys = my_map(np.asarray(df_tmp.LONGITUDE), np.asarray(df_tmp.LATITUDE))
+        df_tmp["xm"] = xs.tolist()
+        df_tmp["ym"] = ys.tolist()
+
+    color = []
+    cmap = matplotlib.cm.get_cmap('Spectral')
+    min_vals = []
+    max_vals = []
+    for i in range(n_traj):
+        df_tmp2 = df_tmp.loc[df_tmp["trajectory"] == i]
+        mi = df_tmp2["deriv"].min()
+        ma = df_tmp2["deriv"].max()
+        if ma-mi <= 1e-29:
+            print("Traj {} has zero with ma {}, mi {}".format(i, ma, mi))
+            ma = ma + 1e-20
+        min_vals.append(mi)
+        max_vals.append(ma)
+
+
+    for i, c in enumerate(df_tmp["deriv"]):
+        color.append(cmap((c-min_vals[i%n_traj]) / (max_vals[i%n_traj]-min_vals[i%n_traj])))
+
+    my_map.scatter(df_tmp["xm"], df_tmp["ym"], color=color, s=6)
+    if filename is not None:
+        plt.savefig(filename, dpi=300)
+
+    return df_tmp
+
+
+def plot_traj_nc(df, out_param, filename=None, trajs=None, max_time=None):
+    """
+    Plot the trajectories of a netCDF file.
+
+    Parameters
+    ----------
+    df : pandas.Dataframe
+         Dataframe with columns "lon" and "lat" and a column for each out_param.
+    out_param : String
+        Parameter to plot such as "T" or "qr".
+    filename : string
+        Where to store the image.
+    trajs : list of int
+        List of trajectory indices to plot.
+    max_time : float
+        Maximum time to plot.
+    """
+    df_tmp = df.copy()
+    n_traj = 903
+    n_rows = len(df_tmp.index)
+    if not trajs is None:
+        idx = []
+        for i in trajs:
+            idx.extend(np.arange(i, n_rows, n_traj))
+        df_tmp = df.iloc[idx]
+#     df_tmp = df.dropna()
+    if not max_time is None:
+        df_tmp = df_tmp.loc[df_tmp["time"] <= max_time]
+    n_rows = len(df_tmp.index)
+
+    llon = df_tmp["lon"].min() -5
+    ulon = df_tmp["lon"].max() + 5
+    llat = df_tmp["lat"].min() - 5
+    ulat = df_tmp["lat"].max() + 5
+    # You may change resolution to "h" or "f" for higher resolutions
+    # but you need to install basemap-data-hires first
+    my_map = Basemap(projection="merc",
+                    resolution="f", area_thresh=1000.0,
+                    llcrnrlon=llon, llcrnrlat=llat, # min longitude and latitude
+                    urcrnrlon=ulon, urcrnrlat=ulat) # max longitude and latitude
+
+    my_map.bluemarble()
+    xs, ys = my_map(np.asarray(df_tmp.lon), np.asarray(df_tmp.lat))
+    xs = xs.tolist()
+    ys = ys.tolist()
+
+    color = []
+    cmap = matplotlib.cm.get_cmap('Spectral')
+    min_vals = []
+    max_vals = []
+    if not trajs is None:
+        n_traj = len(trajs)
+    for i in range(n_traj):
+        df_tmp2 = df_tmp.iloc[np.arange(i, n_rows, n_traj)]
+        min_vals.append(df_tmp2[out_param].min())
+        max_vals.append(df_tmp2[out_param].max())
+
+    for i, c in enumerate(df_tmp[out_param]):
+        color.append(cmap((c-min_vals[i%n_traj]) / (max_vals[i%n_traj]-min_vals[i%n_traj])))
+
+    my_map.scatter(xs, ys, color=color, s=6)
+    if filename is not None:
+        plt.savefig(filename, dpi=300)
+
+
 if __name__ == "__main__":
-   # TODO
-    res = pd.read_csv("sb_ice_wcb272280_filt_zero_30_start_over_20160922_00.csv")
-    # Remove all entries with "min"
-    print(res)
-    res = res[~res.in_param.str.contains("min")]
-    print(res)
-    plot_avg_df(res)
-    # print(res)
+    parser = ArgumentParser(description=
+            '''Load derivatives of a simulation or a netCDF file and plot
+            trajectories over satellite images.''')
+    parser.add_argument("-c", "--csv", type=str, default=None,
+            help='''Load an already processed csv file with derivatives.
+            Deactivates -t, -f and -e.''')
+    parser.add_argument("-n", "--netcdf", type=str, default=None,
+            help='''Path to a netCDF file. If you want to plot derivatives from
+            a csv file that lacks "LONGITUDE" and "LATITUDE", you need to
+            provide a netCDF file with that information.''')
+    parser.add_argument("-o", "--output", type=str, default="pics/traj",
+            help='''Directory and name to save the image.''')
+    parser.add_argument("-t", "--trajectory", nargs='+', type=int, default=1,
+            help='''A list of trajectories to consider here. Using a selected
+            number of trajectories helps reducing the amount of used RAM
+            and makes it easier to see anything in the image.''')
+    parser.add_argument("-r", "--rotate", action="store_true", default=False,
+            help='''Rotate longitude and latitude coordinates.''')
+    parser.add_argument("--out_transformed", type=str, default="transformed.csv",
+            help='''In case the csv file had to be transformed because of missing
+            coordinates, store this as a new csv file. Set to "None" if you
+            don't want to store it.''')
+    parser.add_argument("--input_param", nargs='+', type=str, default="dzeta",
+            help='''A list of input parameters of the model to plot such
+            as "dzeta" or "dbeta_r".''')
+    parser.add_argument("--output_param", nargs='+', type=str, default="T",
+            help='''A list of output parameters of the model to plot such
+            as "T", "qr" or "p".''')
+    parser.add_argument("--max_time", type=float, default=None,
+            help='''Maximum time in seconds to plot.''')
+    args = parser.parse_args()
+
+    try:
+        from loader import *
+    except:
+        from scripts.loader import *
+    from pylab import rcParams
+    rcParams['figure.figsize'] = (14,10)
+
+    if args.csv is not None:
+        res = load_output(args.csv)
+        if "LONGITUDE" not in res:
+            if args.netcdf is None:
+                print("csv file has no coordinates. Please specify a netcdf"
+                    + " file with the necessary information. Aborting.")
+                exit()
+            if args.rotate:
+                net_df, pollat, pollon = load_nc(
+                                        inp=args.netcdf,
+                                        get_pol=True)
+                rotate_df(net_df, pollon, pollat, "lon", "lat")
+            else:
+                net_df = load_nc(
+                                 inp=args.netcdf,
+                                 get_pol=False)
+            res = transform_df2(res, net_df)
+            if args.out_transformed != "None":
+                res.to_csv(args.out_transformed)
+        for input_param in args.input_param:
+            for output_param in args.output_param:
+                filename = (args.output + "_deriv_" + out_param
+                            + "_" + input_param + ".png")
+                plot_weather_deriv(df=res,
+                                   in_param=input_param,
+                                   out_param=output_param,
+                                   filename=filename)
+
+    if net_df is None and args.netcdf is not None:
+        # plot only the netCDF file
+        if args.rotate:
+            net_df, pollat, pollon = load_nc(
+                                    inp=args.netcdf,
+                                    get_pol=True)
+            rotate_df(net_df, pollon, pollat, "lon", "lat")
+        else:
+            net_df = load_nc(
+                                inp=args.netcdf,
+                                get_pol=False)
+    if net_df is not None:
+        for out_param in args.output_param:
+            filename = args.output + "_netcdf_" + out_param + ".png"
+            plot_traj_nc(df=net_df,
+                         out_param=out_param,
+                         filename=filename,
+                         trajs=args.trajectory,
+                         max_time=args.max_time)
+
+    # Example:
+    # res = load_output("sb_ice_wcb272280_filt_zero_30_start_over_20160922_00_traj1_all.csv")
+    # net_df, pollat, pollon = load_nc(
+    #                                  inp="O_WCB_all_20160922_00.nc",
+    #                                  get_pol=True)
+    # rotate_df(res, pollon, pollat)
+    # rotate_df(net_df, pollon, pollat, "lon", "lat")
+    # res = transform_df2(res, net_df)
+    # res.to_csv("transformed.csv") # Transformation takes long so let's store it
+    # df_dzeta_S = plot_weather_deriv(res, "dzeta", "S")
+    # plot_traj_nc(net_df, "T")
+    # plot_traj_nc(net_df, "T", np.arange(0,20))
+
 
 ### Idea
 ### Get the sum of the derivatives for each trajectory (perhaps abs())

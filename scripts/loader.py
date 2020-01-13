@@ -1,3 +1,4 @@
+from iris.analysis.cartography import rotate_pole
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
@@ -179,7 +180,7 @@ def load_derivatives(prefix="", suffix="", filt=False, EPSILON=1e-31):
 
 def load_nc(inp="/mnt/localscratch/data/project/m2_jgu-tapt/o"
                 + "nline_trajectories/foehn201305_case/" +
-                "foehn201305_warming1.nc"):
+                "foehn201305_warming1.nc", get_pol=False):
     """
     Read a netCDF file and create a pandas.Dataframe.
 
@@ -187,28 +188,42 @@ def load_nc(inp="/mnt/localscratch/data/project/m2_jgu-tapt/o"
     ----------
     inp : string
         Path to a nc file.
+    get_pol : bool
+        If true: return latitude and longitude of the pole and mark NaN rows
+        with time -1.
 
     Returns
     -------
-    pandas.Dataframe
-        The loaded file as pandas.Dataframe.
+    pandas.Dataframe, [float, float]
+        The loaded file as pandas.Dataframe. If get_pol=True: Add lat and lon
+        of pole.
     """
     ds = xr.open_dataset(inp)
     df = ds.to_dataframe()
+    # Rotate coordinates
+    if get_pol:
+        pollat = ds.attrs["pollat"]
+        pollon = ds.attrs["pollon"]
+        df["ntim"] = df.index.get_level_values(0)
+        df = df.loc[(df["ntim"] == 0) | (df["time"] > 0.0)]
+        df.loc[df["T"] != df["T"], "time"] = -1
+        return df, pollat, pollon
     return df
 
 
-def load_output(prefix="sb_ice", suffix="_start_over"):
+def load_output(filename="sb_ice", sep=None, nrows=None):
     """
     Read a csv file and return a pandas.Dataframe with
     physical (not normalized) entries.
 
     Parameters
     ----------
-    prefix : string
-        Prefix of the datafile such as "sb_ice".
-    suffix : string
-        Suffix of the datafile such as "start_over".
+    filename : string
+        Filepath and filename of the datafile.
+    sep : string
+        Separator in the file.
+    nrows : int, optional
+        Number of rows to read from the datafile.
 
     Returns
     -------
@@ -218,7 +233,10 @@ def load_output(prefix="sb_ice", suffix="_start_over"):
         "qiout", "qsout", "qrout", "qgout", "qhout",
         "latent_heat", "latent_cool".
     """
-    data = pd.read_csv("data/" + prefix + suffix + ".txt", sep=",")
+    if sep is None:
+        data = pd.read_csv(filename, nrows=nrows)
+    else:
+        data = pd.read_csv(filename, sep=sep, nrows=nrows)
     data["p"] = data["p"]*pref/100  # We want hPa
     data["T"] = data["T"]*Tref
     data["w"] = data["w"]*wref
@@ -262,6 +280,57 @@ def transform_df(df):
         dicti["deriv"].extend(df[key].tolist())
         dicti["param"].extend([key for i in range(len(df["timestep"]))])
     return pd.DataFrame(dicti)
+
+
+def transform_df2(df, net_df, n_traj=903, traj_timestep=20):
+    """
+    Create a new pandas.DataFrame with column "deriv", "in_param", "out_param",
+    "timestep", "trajectory", "LONGITUDE" and "LATITUDE".
+    that can be used for plotting with plot_many_traj.plot_weather_deriv(..).
+    It is mainly used to sum the derivatives for traj_timestep and to add
+    coordinates to the data from df.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Dataframe of derivatives.
+    net_df : pandas.DataFrame
+        Dataframe of a netCDF file, where the coordinates had been rotated.
+    n_traj : int
+        Number of trajectories in the netCDF dataframe.
+    traj_timestep : int or float
+        Timestep size in seconds of the trajectories in the netCDF dataframe.
+
+    Returns
+    -------
+    pandas.Dataframe
+        Transformed Dataframe.
+    """
+    n_rows = len(net_df.index)
+    new_dic = {"deriv": [], "in_param": [], "out_param": [],
+               "timestep": [], "trajectory": [],
+               "LONGITUDE": [], "LATITUDE": []}
+    for traj in df.trajectory.unique():
+        df_traj = df.loc[df["trajectory"] == traj]
+        net_df_traj = net_df.iloc[np.arange(traj, n_rows, n_traj)]
+        for out_param in df_traj.out_param.unique():
+            df_out = df_traj.loc[df_traj["out_param"] == out_param]
+            for in_param in df_out.in_param.unique():
+                df_in = df_out.loc[df_out["in_param"] == in_param]
+                max_time = df_in["timestep"].max()
+                for t in np.arange(traj_timestep, max_time+1, traj_timestep):
+                    net_df_time = net_df_traj.loc[net_df_traj["time"] == t]
+                    if net_df_time.empty:
+                        continue
+                    new_dic["in_param"].append(in_param)
+                    new_dic["out_param"].append(out_param)
+                    new_dic["timestep"].append(t)
+                    summed = df_in["deriv"].sum()/traj_timestep
+                    new_dic["deriv"].append(summed)
+                    new_dic["LATITUDE"].append(net_df_time["lat"][0])
+                    new_dic["LONGITUDE"].append(net_df_time["lon"][0])
+                    new_dic["trajectory"].append(traj)
+    return pd.DataFrame.from_dict(new_dic)
 
 
 def load_mult_derivates(prefix="", suffix="", filt=False, EPSILON=1e-31,
@@ -447,6 +516,32 @@ def load_mult_derivates_directory(direc="", filt=True,
         except:
             pass
     return df
+
+
+def rotate_df(df, pollon, pollat, lon="LONGITUDE", lat="LATITUDE"):
+    """
+    Rotate the longitude and latitude with the given pole coordinates.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Dataframe with longitude and latitude
+    pollon : float
+        Longitude of pole.
+    pollat : float
+        Latitude of pole.
+    lon : String
+        "LONGITUDE" for derivative dataframe, "lon" for netCDF dataframe.
+    lat : String
+        "LATITUDE" for derivative dataframe, "lat" for netCDF dataframe.
+    """
+    lat, lon = rotate_pole(
+                           np.asarray(df[lon].tolist()),
+                           np.asarray(df[lat].tolist()),
+                           pole_lon=pollon,
+                           pole_lat=pollat)
+    df[lon] = lon
+    df[lat] = lat
 
 
 if __name__ == "__main__":
