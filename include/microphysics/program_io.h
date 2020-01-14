@@ -242,6 +242,10 @@ void load_nc_parameters_var(
     nc.time_rel_var = datafile.getVar("time");
     // specific humidity
     nc.S_var        = datafile.getVar("RELHUM");
+    // Flag wether an effective ascent region is reached
+    nc.ascent_flag  = datafile.getVar("MAP");
+    // Potential vorticity (German: Wirbelstaerke)
+    // nc.pot_vortic   = datafile.getVar("POT_VORTIC")
 #else
     nc.p_var        = datafile.getVar("p");
     nc.t_var        = datafile.getVar("t");
@@ -510,15 +514,6 @@ void set_input_from_arguments(global_args_t &arg ,
   // Output
   if(1 == arg.output_flag){
     in.OUTPUT_FILENAME = arg.output_string;
-#if defined(RK4)
-   in.OUTPUT_FILENAME = "data/rain_" + in.OUTPUT_FILENAME;
-#endif
-#if defined(RK4NOICE)
-    in.OUTPUT_FILENAME = "data/sb_" + in.OUTPUT_FILENAME;
-#endif
-#if defined(RK4ICE)
-    in.OUTPUT_FILENAME = "data/sb_ice_" + in.OUTPUT_FILENAME;
-#endif
   }
 
   // Input
