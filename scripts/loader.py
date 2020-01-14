@@ -401,7 +401,7 @@ def load_mult_derivates(prefix="", suffix="", filt=False, EPSILON=1e-31,
 
 
 def load_mult_derivates_big(prefix="", suffix="", filt=False, EPSILON=1e-31,
-                        lo=0, hi=0, high=None):
+                        lo=0, hi=0, high=None, trajectories=None):
     """
     Create a dataframe with columns:
     trajectory, timestep, out_param, in_param, deriv
@@ -423,6 +423,8 @@ def load_mult_derivates_big(prefix="", suffix="", filt=False, EPSILON=1e-31,
     high : float
         If not None: Filter those derivatives out that have
         higher values.
+    trajectories : list of int
+        If given: Load only the trajectories from this list.
 
     Returns
     -------
@@ -431,7 +433,9 @@ def load_mult_derivates_big(prefix="", suffix="", filt=False, EPSILON=1e-31,
     """
     df = pd.DataFrame(data={"timestep": [], "trajectory": [], "out_param": [],
                             "in_param": [], "deriv": []})
-    for i in pb(range(lo, hi+1), redirect_stdout=True):
+    if trajectories is None:
+        trajectories = range(lo, hi+1)
+    for i in pb(trajectories, redirect_stdout=True):
         tmp_dict = {}
         try:
             for out_param in params_dict.keys():
@@ -493,13 +497,25 @@ def load_mult_derivates_directory(direc="", filt=True,
     """
     df = pd.DataFrame(data={"timestep": [], "trajectory": [], "out_param": [],
                             "in_param": [], "deriv": []})
-    file_list = [f for f in listdir(direc) if isfile(join(direc, f))]
+
+    file_list = [f for f in os.listdir(direc) if os.path.isfile(direc.join(f))]
     file_list2 = []
     for f in file_list:
         s = f.split("traj")
         s = s[1].split("_")
         if int(s[0]) in trajectories:
             file_list2.append(f)
+
+    if suffix is None:
+        example = file_list2[0]
+        i = 1
+        while "diff" in example:
+            example = file_list2[i]
+        # The last 4 chars should be ".txt" now.
+        example = example[:-4]
+        example = example.split("_")
+        suffix = example[-2] + example[-1]
+
     for f in pb(file_list2, redirect_stdout=True):
         tmp_dict = {}
         try:
@@ -547,6 +563,51 @@ def rotate_df(df, pollon, pollat, lon="LONGITUDE", lat="LATITUDE"):
                            pole_lat=pollat)
     df[lon] = lon_v
     df[lat] = lat_v
+
+
+def norm_deriv(df, flagged=True):
+    """
+    Given a dataframe with columns:
+    trajectory, timestep, out_param, in_param, deriv, ratio_deriv
+    where out_param is a string such as 'p', 'T', 'w' etc
+    in_param is a string such as "da_1", "da_2", "dsnow_alfa_q", ...
+    deriv is the float derivative of the given in_param.
+
+    Normalize the ratio of the derivatives for every timestep and add that
+    as another column "norm_deriv".
+
+    Parameters
+    ----------
+    df : pandas.Dataframe
+        Dataframe with columns trajectory, timestep, out_param, in_param,
+        deriv, ratio_deriv and optionally MAP. On out: Holds another
+        column "norm_deriv"
+    flagged : boolean
+        If flagged is true, the column "MAP" is used to normalize only
+        within an area (consecutive timesteps with equal flag)
+
+    """
+    print("TODO")
+
+
+def ratio_deriv(df):
+    """
+    Given a dataframe with columns:
+    trajectory, timestep, out_param, in_param, deriv
+    where out_param is a string such as 'p', 'T', 'w' etc
+    in_param is a string such as "da_1", "da_2", "dsnow_alfa_q", ...
+    deriv is the float derivative of the given in_param.
+
+    Calculate the ratio of the derivatives for every timestep and add that
+    as another column "ratio_deriv".
+
+    Parameters
+    ----------
+    df : pandas.Dataframe
+        Dataframe with columns trajectory, timestep, out_param, in_param,
+        deriv and optionally MAP. On out: Holds additional column ratio_deriv
+    """
+    print("TODO")
 
 
 if __name__ == "__main__":
