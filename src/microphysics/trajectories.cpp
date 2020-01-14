@@ -560,8 +560,6 @@ int main(int argc, char** argv)
     print_input_parameters(input);
 
     // CODIPACK: BEGIN
-    // const int num_par = 12;
-    const int num_par = 44*6+17;
     const uint32_t num_inflows = 4;
     // Hold the derivatives of all components
     std::vector< std::array<double, num_par > >  y_diff(num_comp);
@@ -600,7 +598,7 @@ int main(int argc, char** argv)
 
     std::ofstream outfile_refs;
 
-    outfile_refs.open("reference_values.txt");
+    outfile_refs.open(input.OUTPUT_FILENAME + "_reference_values.txt");
     outfile_refs.precision(10);
 
     if( !outfile_refs.is_open() )
@@ -621,8 +619,10 @@ int main(int argc, char** argv)
     outfile_refs.close();
 
     // Append the initial values and write headers
-    outfile << "timestep,trajectory,p,T,w,S,qc,qr,qv,Nc,Nr,Nv,qi,Ni,vi,"
-        << "qs,Ns,qg,Ng,qh,Nh,qiout,qsout,qrout,qgout,qhout,latent_heat,latent_cool\n";
+    outfile << "timestep,trajectory,LONGITUDE,LATITUDE,MAP,"
+        << "p,T,w,S,qc,qr,qv,Nc,Nr,Nv,qi,Ni,vi,"
+        << "qs,Ns,qg,Ng,qh,Nh,qiout,qsout,qrout,qgout,qhout,"
+        << "latent_heat,latent_cool\n";
 
     // for(uint32_t traj=0; traj<nc_params.n_trajectories; ++traj)
     // {
@@ -655,6 +655,11 @@ int main(int argc, char** argv)
         out_diff[ii]
             << "timestep,"
             << "trajectory,"
+            << "LONGITUDE,"
+            << "LATITUDE,"
+#ifdef WCB
+            << "MAP,"
+#endif
             << "da_1,"
             << "da_2,"
             << "de_1,"
@@ -941,7 +946,7 @@ int main(int argc, char** argv)
             << "dsnow_alfa_q,"
             << "dsnow_lambda,"
             << "dsnow_vsedi_min,"
-            << "dsnow_vsedi_max,"
+            << "dsnow_vsedi_max"
             << "\n";
     } // End loop over all components
 
@@ -1188,23 +1193,37 @@ int main(int argc, char** argv)
                 if( 0 == (sub + t*cc.num_sub_steps) % input.snapshot_index)
                 {
                     // Write the results to the output file
-                    outfile << time_new << "," << input.traj << ",";
+#ifdef WCB
+                    outfile << time_new << "," << input.traj << ","
+                            << nc_params.lon << "," << nc_params.lat << ","
+                            << nc_params.ascent_flag << ",";
+#else
+                    outfile << time_new << "," << input.traj << ","
+                            << nc_params.lon << "," << nc_params.lat << ",";
+#endif
                     for(int ii = 0 ; ii < num_comp; ii++)
                         outfile << y_single_new[ii]
                             << ((ii == num_comp-1) ? "\n" : ",");
 
                     // CODIPACK: BEGIN
-
                     for(int ii = 0 ; ii < num_comp ; ii++)
                     {
-                        out_diff[ii] << time_new << "," << input.traj << ",";
+#ifdef WCB
+                        out_diff[ii] << time_new << "," << input.traj << ","
+                                     << nc_params.lon << ","
+                                     << nc_params.lat << ","
+                                     << nc_params.ascent_flag << ",";
+#else
+                        out_diff[ii] << time_new << "," << input.traj << ","
+                                     << nc_params.lon << ","
+                                     << nc_params.lat << ",";
+#endif
                         for(int jj = 0 ; jj < num_par ; jj++)
                             out_diff[ii] << y_diff[ii][jj]
                                 << ((jj==num_par-1) ? "\n" : ",");
                     }
                     // CODIPACK: END
                 }
-
 
                 // ==================================================
                 // Interchange old and new for next step

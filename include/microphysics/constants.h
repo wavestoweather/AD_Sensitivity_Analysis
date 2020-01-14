@@ -48,6 +48,8 @@
 #define qr_in_idx 2         /*!< Rain input index for another vector */
 #define qg_in_idx 3         /*!< Graupel input index for another vector */
 
+#define num_par 44*6+17     /*!< Number of gradients */
+
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////////////////////

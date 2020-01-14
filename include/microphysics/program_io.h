@@ -243,7 +243,7 @@ void load_nc_parameters_var(
     // specific humidity
     nc.S_var        = datafile.getVar("RELHUM");
     // Flag wether an effective ascent region is reached
-    nc.ascent_flag  = datafile.getVar("MAP");
+    nc.ascent_flag_var = datafile.getVar("MAP");
     // Potential vorticity (German: Wirbelstaerke)
     // nc.pot_vortic   = datafile.getVar("POT_VORTIC")
 #else
@@ -298,6 +298,7 @@ void load_nc_parameters(
     nc.z_var.getVar(startp, countp, nc.z.data());
     countp[0]--;
     countp[0]--;
+    nc.ascent_flag_var.getVar(startp, countp, nc.ascent_flag.data());
 #else
     countp[1]++;
     countp[1]++;
