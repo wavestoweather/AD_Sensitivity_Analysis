@@ -298,7 +298,7 @@ void load_nc_parameters(
     nc.z_var.getVar(startp, countp, nc.z.data());
     countp[0]--;
     countp[0]--;
-    nc.ascent_flag_var.getVar(startp, countp, nc.ascent_flag.data());
+    nc.ascent_flag_var.getVar(startp, countp, &nc.ascent_flag);
 #else
     countp[1]++;
     countp[1]++;
