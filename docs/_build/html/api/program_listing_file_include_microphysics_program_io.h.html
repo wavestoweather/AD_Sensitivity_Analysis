@@ -1,0 +1,769 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Program Listing for File program_io.h &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Program Listing for File program_io.h</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/program_listing_file_include_microphysics_program_io.h.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="program-listing-for-file-program-io-h">
+<span id="program-listing-file-include-microphysics-program-io-h"></span><h1>Program Listing for File program_io.h<a class="headerlink" href="#program-listing-for-file-program-io-h" title="Permalink to this headline">¶</a></h1>
+<p>↰ <a class="reference internal" href="file_include_microphysics_program_io.h.html#file-include-microphysics-program-io-h"><span class="std std-ref">Return to documentation for file</span></a> (<code class="docutils literal notranslate"><span class="pre">include/microphysics/program_io.h</span></code>)</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#ifndef PROGRAM_IO_H</span>
+<span class="cp">#define PROGRAM_IO_H</span>
+
+<span class="cp">#include</span> <span class="cpf">&lt;stdlib.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;cmath&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;string&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;netcdf&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;vector&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;constants.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;fstream&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;iterator&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;codi.hpp&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;types.h&quot;</span><span class="cp"></span>
+<span class="k">using</span> <span class="k">namespace</span> <span class="n">netCDF</span><span class="p">;</span>
+
+
+<span class="kt">bool</span> <span class="nf">load_lookup_table</span><span class="p">(</span>
+    <span class="n">table_t</span> <span class="o">&amp;</span><span class="n">table</span><span class="p">,</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">filename</span> <span class="o">=</span> <span class="s">&quot;dmin_wetgrowth_lookup.dat&quot;</span><span class="p">,</span>
+    <span class="kt">uint32_t</span> <span class="n">ndT</span> <span class="o">=</span> <span class="mi">61</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// T may be nonequidistant</span>
+    <span class="c1">// p, qw and qi must be equidistant</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">ifstream</span> <span class="n">data</span><span class="p">;</span>
+    <span class="n">data</span><span class="p">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">);</span>
+    <span class="c1">// Read file</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">is_open</span><span class="p">())</span>
+    <span class="p">{</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">line</span><span class="p">;</span>
+
+        <span class="n">std</span><span class="o">::</span><span class="n">getline</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">istringstream</span> <span class="n">stream</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">line_vec</span><span class="p">(</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">istream_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">{</span><span class="n">stream</span><span class="p">},</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">istream_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">());</span>
+
+        <span class="n">table</span><span class="p">.</span><span class="n">n1</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">line_vec</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">n3</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">line_vec</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">n4</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">line_vec</span><span class="p">[</span><span class="mi">3</span><span class="p">]);</span>
+        <span class="kt">int</span> <span class="n">anzT_wg_loc</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">line_vec</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+
+        <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">Tvec_wg_g_loc</span><span class="p">(</span><span class="n">anzT_wg_loc</span><span class="p">);</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">dmin_wg_g_loc</span><span class="p">(</span><span class="n">anzT_wg_loc</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n3</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n4</span><span class="p">);</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">x1</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="p">);</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">x3</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">table</span><span class="p">.</span><span class="n">n3</span><span class="p">);</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">x4</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">table</span><span class="p">.</span><span class="n">n4</span><span class="p">);</span>
+
+        <span class="kt">uint64_t</span> <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="c1">// The first line holds x1 (p)</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">getline</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">istringstream</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+        <span class="n">line_vec</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="p">(</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">istream_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">{</span><span class="n">stream</span><span class="p">},</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">istream_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">());</span>
+        <span class="k">for</span><span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="nl">val</span><span class="p">:</span> <span class="n">line_vec</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">table</span><span class="p">.</span><span class="n">x1</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stod</span><span class="p">(</span><span class="n">val</span><span class="p">);</span>
+            <span class="n">counter</span><span class="o">++</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c1">// The second line holds Tvec_wg_g_loc (T)</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">getline</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">istringstream</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+        <span class="n">line_vec</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="p">(</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">istream_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">{</span><span class="n">stream</span><span class="p">},</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">istream_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">());</span>
+        <span class="k">for</span><span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="nl">val</span><span class="p">:</span> <span class="n">line_vec</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">Tvec_wg_g_loc</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stod</span><span class="p">(</span><span class="n">val</span><span class="p">);</span>
+            <span class="n">counter</span><span class="o">++</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c1">// The third line holds x3 (qw)</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">getline</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">istringstream</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+        <span class="n">line_vec</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="p">(</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">istream_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">{</span><span class="n">stream</span><span class="p">},</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">istream_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">());</span>
+        <span class="k">for</span><span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="nl">val</span><span class="p">:</span> <span class="n">line_vec</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">table</span><span class="p">.</span><span class="n">x3</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stod</span><span class="p">(</span><span class="n">val</span><span class="p">);</span>
+            <span class="n">counter</span><span class="o">++</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c1">// The fourth line holds x4 (qi)</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">getline</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">istringstream</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+        <span class="n">line_vec</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="p">(</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">istream_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">{</span><span class="n">stream</span><span class="p">},</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">istream_iterator</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">());</span>
+        <span class="k">for</span><span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="nl">val</span><span class="p">:</span> <span class="n">line_vec</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">table</span><span class="p">.</span><span class="n">x4</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stod</span><span class="p">(</span><span class="n">val</span><span class="p">);</span>
+            <span class="n">counter</span><span class="o">++</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c1">// Read the values, one value per line</span>
+        <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">n4</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">n4</span><span class="o">&lt;</span><span class="n">table</span><span class="p">.</span><span class="n">n4</span><span class="p">;</span> <span class="o">++</span><span class="n">n4</span><span class="p">)</span>
+            <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">n3</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">n3</span><span class="o">&lt;</span><span class="n">table</span><span class="p">.</span><span class="n">n3</span><span class="p">;</span> <span class="o">++</span><span class="n">n3</span><span class="p">)</span>
+                <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">anzT_wg_loc</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+                    <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">n1</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">n1</span><span class="o">&lt;</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="p">;</span> <span class="o">++</span><span class="n">n1</span><span class="p">)</span>
+                    <span class="p">{</span>
+                        <span class="n">std</span><span class="o">::</span><span class="n">getline</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+                        <span class="n">dmin_wg_g_loc</span><span class="p">[</span>
+                              <span class="n">n4</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">anzT_wg_loc</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n3</span>
+                            <span class="o">+</span> <span class="n">n3</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">anzT_wg_loc</span>
+                            <span class="o">+</span> <span class="n">i</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span>
+                            <span class="o">+</span> <span class="n">n1</span><span class="p">]</span> <span class="o">=</span> <span class="n">stod</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+                    <span class="p">}</span>
+        <span class="n">data</span><span class="p">.</span><span class="n">close</span><span class="p">();</span>
+
+        <span class="c1">// Generate equidistant table vectors by linear oversampling</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">n2</span> <span class="o">=</span> <span class="n">ndT</span><span class="p">;</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">x2</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">ndT</span><span class="p">);</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">table</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n2</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n3</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n4</span><span class="p">);</span>
+        <span class="kt">double</span> <span class="n">minT</span> <span class="o">=</span> <span class="n">Tvec_wg_g_loc</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="kt">double</span> <span class="n">maxT</span> <span class="o">=</span> <span class="n">Tvec_wg_g_loc</span><span class="p">[</span><span class="n">Tvec_wg_g_loc</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">dx1</span> <span class="o">=</span> <span class="n">table</span><span class="p">.</span><span class="n">x1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">table</span><span class="p">.</span><span class="n">x1</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">odx1</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">table</span><span class="p">.</span><span class="n">dx1</span><span class="p">;</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">dx2</span> <span class="o">=</span> <span class="n">table</span><span class="p">.</span><span class="n">x2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">table</span><span class="p">.</span><span class="n">x2</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">odx2</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">table</span><span class="p">.</span><span class="n">dx2</span><span class="p">;</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">dx3</span> <span class="o">=</span> <span class="n">table</span><span class="p">.</span><span class="n">x3</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">table</span><span class="p">.</span><span class="n">x3</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">odx3</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">table</span><span class="p">.</span><span class="n">dx3</span><span class="p">;</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">dx4</span> <span class="o">=</span> <span class="n">table</span><span class="p">.</span><span class="n">x4</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">table</span><span class="p">.</span><span class="n">x4</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="n">table</span><span class="p">.</span><span class="n">odx4</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">table</span><span class="p">.</span><span class="n">dx4</span><span class="p">;</span>
+
+        <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">table</span><span class="p">.</span><span class="n">n2</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">table</span><span class="p">.</span><span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">minT</span> <span class="o">+</span> <span class="n">i</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">dx2</span><span class="p">;</span>
+
+        <span class="c1">// Linear interpolation w.r.t. T</span>
+        <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">table</span><span class="p">.</span><span class="n">n2</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">uint64_t</span> <span class="n">iu</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">j</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">j</span><span class="o">&lt;</span><span class="n">anzT_wg_loc</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="o">++</span><span class="n">j</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">if</span><span class="p">(</span><span class="n">table</span><span class="p">.</span><span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">Tvec_wg_g_loc</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                    <span class="o">&amp;&amp;</span> <span class="n">table</span><span class="p">.</span><span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">Tvec_wg_g_loc</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+                <span class="p">{</span>
+                    <span class="n">iu</span> <span class="o">=</span> <span class="n">j</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="kt">uint64_t</span> <span class="n">io</span> <span class="o">=</span> <span class="n">iu</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span>
+
+            <span class="c1">// actual linear interpolation</span>
+            <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">n4</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">n4</span><span class="o">&lt;</span><span class="n">table</span><span class="p">.</span><span class="n">n4</span><span class="p">;</span> <span class="o">++</span><span class="n">n4</span><span class="p">)</span>
+                <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">n3</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">n3</span><span class="o">&lt;</span><span class="n">table</span><span class="p">.</span><span class="n">n3</span><span class="p">;</span> <span class="o">++</span><span class="n">n3</span><span class="p">)</span>
+                    <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">n1</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">n1</span><span class="o">&lt;</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="p">;</span> <span class="o">++</span><span class="n">n1</span><span class="p">)</span>
+                        <span class="n">table</span><span class="p">.</span><span class="n">table</span><span class="p">[</span>
+                              <span class="n">n4</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n2</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n3</span>
+                            <span class="o">+</span> <span class="n">n3</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n2</span>
+                            <span class="o">+</span> <span class="n">i</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span>
+                            <span class="o">+</span> <span class="n">n1</span><span class="p">]</span>
+                            <span class="o">=</span>  <span class="n">dmin_wg_g_loc</span><span class="p">[</span>
+                                  <span class="n">n4</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">anzT_wg_loc</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n3</span>
+                                <span class="o">+</span> <span class="n">n3</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">anzT_wg_loc</span>
+                                <span class="o">+</span> <span class="n">iu</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span>
+                                <span class="o">+</span> <span class="n">n1</span><span class="p">]</span>
+                              <span class="o">+</span> <span class="p">(</span><span class="n">dmin_wg_g_loc</span><span class="p">[</span>
+                                  <span class="n">n4</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">anzT_wg_loc</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n3</span>
+                                <span class="o">+</span> <span class="n">n3</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">anzT_wg_loc</span>
+                                <span class="o">+</span> <span class="n">io</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span>
+                                <span class="o">+</span> <span class="n">n1</span><span class="p">]</span>
+                              <span class="o">-</span> <span class="n">dmin_wg_g_loc</span><span class="p">[</span>
+                                  <span class="n">n4</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">anzT_wg_loc</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n3</span>
+                                <span class="o">+</span> <span class="n">n3</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span><span class="o">*</span><span class="n">anzT_wg_loc</span>
+                                <span class="o">+</span> <span class="n">iu</span><span class="o">*</span><span class="n">table</span><span class="p">.</span><span class="n">n1</span>
+                                <span class="o">+</span> <span class="n">n1</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">Tvec_wg_g_loc</span><span class="p">[</span><span class="n">io</span><span class="p">]</span><span class="o">-</span><span class="n">Tvec_wg_g_loc</span><span class="p">[</span><span class="n">iu</span><span class="p">])</span>
+                                    <span class="o">*</span> <span class="p">(</span><span class="n">table</span><span class="p">.</span><span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">Tvec_wg_g_loc</span><span class="p">[</span><span class="n">iu</span><span class="p">]);</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">else</span>
+    <span class="p">{</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;Error loading &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">filename</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;. Does the file exist?</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+
+<span class="kt">void</span> <span class="nf">init_nc_parameters</span><span class="p">(</span>
+    <span class="n">nc_parameters_t</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">,</span>
+    <span class="kt">uint32_t</span> <span class="n">n</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+    <span class="kt">uint32_t</span> <span class="n">n_timesteps</span><span class="o">=</span><span class="mi">7922</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">n_trajectories</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">n_timesteps</span> <span class="o">=</span> <span class="n">n_timesteps</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lat</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lon</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+<span class="p">}</span>
+
+
+<span class="kt">void</span> <span class="nf">load_nc_parameters_var</span><span class="p">(</span>
+    <span class="n">nc_parameters_t</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">,</span>
+    <span class="n">netCDF</span><span class="o">::</span><span class="n">NcFile</span> <span class="o">&amp;</span><span class="n">datafile</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="cp">#ifdef WCB2</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lat_var</span>      <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;latitude&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lon_var</span>      <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;longitude&quot;</span><span class="p">);</span>
+<span class="cp">#else</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lat_var</span>      <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;lat&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lon_var</span>      <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;lon&quot;</span><span class="p">);</span>
+<span class="cp">#endif</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">z_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;z&quot;</span><span class="p">);</span>
+
+<span class="cp">#if defined WCB || defined WCB2</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">p_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;P&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">t_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;T&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qc_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QC&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qv_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QV&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qr_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QR&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qi_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QI&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qs_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QS&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">time_rel_var</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;time&quot;</span><span class="p">);</span>
+<span class="cp">#else</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">p_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;p&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">t_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;t&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;w&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">time_rel_var</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;time_rel&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qc_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;qc&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qr_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;qr&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qi_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;qi&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qs_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;qs&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qg_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;qg&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qv_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;qv&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QIin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QIin&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QSin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QSin&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QRin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QRin&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QGin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QGin&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QIout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QIout&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QSout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QSout&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QRout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QRout&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QGout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QGout&quot;</span><span class="p">);</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifdef WCB</span>
+    <span class="c1">// specific humidity</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">S_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;RELHUM&quot;</span><span class="p">);</span>
+    <span class="c1">// Flag wether an effective ascent region is reached</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">ascent_flag_var</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;MAP&quot;</span><span class="p">);</span>
+    <span class="c1">// Potential vorticity (German: Wirbelstaerke)</span>
+    <span class="c1">// nc.pot_vortic   = datafile.getVar(&quot;POT_VORTIC&quot;)</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifdef WCB2</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qg_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QG&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QIin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QI_IN&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QSin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QS_IN&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QRin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QR_IN&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QGin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QG_IN&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QIout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QI_OUT&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QSout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QS_OUT&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QRout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QR_OUT&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QGout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QG_OUT&quot;</span><span class="p">);</span>
+
+    <span class="n">nc</span><span class="p">.</span><span class="n">NIin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;NI_IN&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">NSin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;NS_IN&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">NRin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;NR_IN&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">NGin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;NG_IN&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">NIout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;NI_OUT&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">NSout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;NS_OUT&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">NRout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;NR_OUT&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">NGout_var</span>    <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;NG_OUT&quot;</span><span class="p">);</span>
+    <span class="c1">// Flag wether an effective ascent region is reached</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">ascent_flag_var</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;WCB_flag&quot;</span><span class="p">);</span>
+    <span class="c1">// 2h ascent rate after Oertel et al. (2019)</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">dp2h_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;dp2h&quot;</span><span class="p">);</span>
+<span class="cp">#endif</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">load_nc_parameters</span><span class="p">(</span>
+    <span class="n">nc_parameters_t</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">,</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span> <span class="o">&amp;</span><span class="n">startp</span><span class="p">,</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span> <span class="o">&amp;</span><span class="n">countp</span><span class="p">,</span>
+    <span class="n">reference_quantities_t</span> <span class="o">&amp;</span><span class="n">ref_quant</span><span class="p">,</span>
+    <span class="kt">uint64_t</span> <span class="n">num_sub_steps</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// startp[0] &lt;- trajectory id</span>
+    <span class="c1">// startp[1] &lt;- timestep</span>
+
+
+<span class="cp">#if defined WCB || defined WCB2</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">z_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lat_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">lat</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lon_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">lon</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">--</span><span class="p">;</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">--</span><span class="p">;</span>
+<span class="cp">#else</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">z_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lat_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">lat</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lon_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">lon</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">--</span><span class="p">;</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">--</span><span class="p">;</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if defined WCB || defined WCB2</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">ascent_flag_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">ascent_flag</span><span class="p">);</span>
+<span class="cp">#endif</span>
+
+    <span class="n">nc</span><span class="p">.</span><span class="n">t_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">t</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">p_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">p</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">time_rel_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">time_rel</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qc_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">qc</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qr_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">qr</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qi_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">qi</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qs_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">qs</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qv_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">qv</span><span class="p">);</span>
+
+    <span class="kt">double</span> <span class="n">psat_prime</span> <span class="o">=</span> <span class="n">saturation_pressure_water</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">t</span><span class="p">);</span>
+
+<span class="cp">#if !defined WCB2</span>
+    <span class="c1">// We are reading in hPa. Convert to Pa</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">p</span>        <span class="o">*=</span> <span class="mi">100</span><span class="p">;</span>
+<span class="cp">#endif</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">p</span>        <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">pref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">t</span>        <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">Tref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qc</span>       <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qr</span>       <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qv</span>       <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qi</span>       <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qs</span>       <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+
+<span class="cp">#if !defined WCB</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">S</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qg_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">qg</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QIin_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">QIin</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QSin_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">QSin</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QRin_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">QRin</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QGin_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">QGin</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QIout_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">QIout</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QSout_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">QSout</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QRout_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">QRout</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QGout_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">QGout</span><span class="p">);</span>
+
+    <span class="n">nc</span><span class="p">.</span><span class="n">qg</span>       <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QRin</span>     <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QRout</span>    <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QIin</span>     <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QIout</span>    <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QSin</span>     <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QSout</span>    <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QGin</span>     <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QGout</span>    <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if !defined WCB &amp;&amp; !defined WCB2</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">--</span><span class="p">;</span>
+
+    <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>     <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">wref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>     <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">wref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+    <span class="c1">// I am not sure why, but those values can be negative...</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QRin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QRin</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QRout</span>    <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QRout</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QIin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QIin</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QIout</span>    <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QIout</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QSin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QSin</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QSout</span>    <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QSout</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QGin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QGin</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">QGout</span>    <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QGout</span><span class="p">);</span>
+<span class="cp">#elif defined WCB</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qc</span> <span class="o">/=</span> <span class="mf">1.0e6</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qr</span> <span class="o">/=</span> <span class="mf">1.0e6</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qv</span> <span class="o">/=</span> <span class="mf">1.0e6</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qi</span> <span class="o">/=</span> <span class="mf">1.0e6</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qs</span> <span class="o">/=</span> <span class="mf">1.0e6</span><span class="p">;</span>
+    <span class="c1">// Calculate w by getting the z-coordinates</span>
+    <span class="c1">// and divide it by the amount of substeps</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">20.0</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">20.0</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">S_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">S</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">S</span> <span class="o">/=</span> <span class="mi">100</span><span class="p">;</span> <span class="c1">// to percentage</span>
+    <span class="c1">// we do not change w</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="cp">#else</span>
+    <span class="c1">// WCB 2</span>
+    <span class="c1">// Calculate w by getting the z-coordinates</span>
+    <span class="c1">// and divide it by the amount of substeps</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">20.0</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">20.0</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// We do not interpolate w for now</span>
+<span class="cp">#endif</span>
+
+    <span class="n">nc</span><span class="p">.</span><span class="n">dlat</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_sub_steps</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">dlon</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_sub_steps</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+<span class="kt">void</span> <span class="nf">init_input_parameters</span><span class="p">(</span><span class="n">input_parameters_t</span> <span class="o">&amp;</span><span class="n">in</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="c1">// Numerics</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">t_end_prime</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">;</span>   <span class="c1">// Seconds</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">dt_prime</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">;</span>       <span class="c1">// Seconds</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">snapshot_index</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">;</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">dt_traject</span> <span class="o">=</span> <span class="mi">20</span><span class="p">;</span>       <span class="c1">// Seconds; fixed from paper</span>
+  <span class="c1">// Filename for output</span>
+<span class="cp">#if defined(RK4)</span>
+   <span class="n">in</span><span class="p">.</span><span class="n">OUTPUT_FILENAME</span> <span class="o">=</span> <span class="s">&quot;data/rain_OUTPUT.txt&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="cp">#if defined(RK4NOICE)</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">OUTPUT_FILENAME</span> <span class="o">=</span> <span class="s">&quot;data/sb_OUTPUT.txt&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="cp">#if defined(RK4ICE)</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">OUTPUT_FILENAME</span> <span class="o">=</span> <span class="s">&quot;data/sb_ice_OUTPUT.txt&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+
+  <span class="c1">// Filename for input</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">INPUT_FILENAME</span> <span class="o">=</span> <span class="s">&quot;/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/foehn201305_case/foehn201305_warming.nc&quot;</span><span class="p">;</span>
+
+  <span class="c1">// Scaling factor</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">scaling_fact</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>    <span class="c1">// No scaling</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">start_over</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">fixed_iteration</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">auto_type</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">traj</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">optString</span> <span class="o">=</span> <span class="s">&quot;f:d:i:b:o:l:s:t:a:r:?&quot;</span><span class="p">;</span>
+
+
+<span class="kt">void</span> <span class="nf">init_global_args</span><span class="p">(</span><span class="n">global_args_t</span> <span class="o">&amp;</span><span class="n">arg</span><span class="p">)</span>
+<span class="p">{</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">final_time_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">final_time_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">timestep_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">timestep_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">snapshot_index_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">snapshot_index_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">output_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">output_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">scaling_fact_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">scaling_fact_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">input_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">input_file</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">start_over_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">start_over_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">fixed_iteration_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">fixed_iteration_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">auto_type_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">auto_type_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">traj_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">traj_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">set_input_from_arguments</span><span class="p">(</span><span class="n">global_args_t</span> <span class="o">&amp;</span><span class="n">arg</span> <span class="p">,</span>
+                  <span class="n">input_parameters_t</span> <span class="o">&amp;</span><span class="n">in</span> <span class="p">)</span>
+<span class="p">{</span>
+  <span class="c1">// Final time</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">final_time_flag</span><span class="p">){</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">t_end_prime</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">strtod</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">final_time_string</span><span class="p">,</span> <span class="k">nullptr</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Timestep</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">timestep_flag</span><span class="p">){</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">dt_prime</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">strtod</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">timestep_string</span><span class="p">,</span> <span class="k">nullptr</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Snapshot index</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">snapshot_index_flag</span><span class="p">){</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">snapshot_index</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">snapshot_index_string</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Output</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">output_flag</span><span class="p">){</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">OUTPUT_FILENAME</span> <span class="o">=</span> <span class="n">arg</span><span class="p">.</span><span class="n">output_string</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Input</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">input_flag</span><span class="p">){</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">INPUT_FILENAME</span> <span class="o">=</span> <span class="n">arg</span><span class="p">.</span><span class="n">input_file</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Scaling factor</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">scaling_fact_flag</span><span class="p">){</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">scaling_fact</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">strtod</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">scaling_fact_string</span><span class="p">,</span> <span class="k">nullptr</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Starting over</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">start_over_flag</span><span class="p">){</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">start_over</span> <span class="o">=</span> <span class="p">(</span><span class="n">strcmp</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">start_over_string</span><span class="p">,</span> <span class="s">&quot;0&quot;</span><span class="p">));</span>
+  <span class="p">}</span>
+
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">fixed_iteration_flag</span><span class="p">){</span>
+      <span class="n">in</span><span class="p">.</span><span class="n">fixed_iteration</span> <span class="o">=</span> <span class="p">(</span><span class="n">strcmp</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">fixed_iteration_string</span><span class="p">,</span> <span class="s">&quot;0&quot;</span><span class="p">));</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Auto type</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">auto_type_flag</span><span class="p">){</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">auto_type</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">auto_type_string</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">traj_flag</span><span class="p">){</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">traj</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">traj_string</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">setup_cloud_autoconversion</span><span class="p">(</span>
+    <span class="n">particle_model_constants_t</span> <span class="o">&amp;</span><span class="n">pc</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">auto</span> <span class="n">nu</span> <span class="o">=</span> <span class="n">pc</span><span class="p">.</span><span class="n">nu</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">;</span>
+    <span class="k">auto</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">pc</span><span class="p">.</span><span class="n">mu</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">pc</span><span class="p">.</span><span class="n">mu</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">cloud_k_au</span> <span class="o">=</span> <span class="n">kc_autocon</span> <span class="o">/</span> <span class="n">pc</span><span class="p">.</span><span class="n">max_x</span> <span class="o">*</span> <span class="mf">0.05</span>
+            <span class="o">*</span> <span class="p">(</span><span class="n">nu</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">nu</span><span class="o">+</span><span class="mf">3.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">pow</span><span class="p">(</span><span class="n">nu</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        <span class="n">cloud_k_sc</span> <span class="o">=</span> <span class="n">kc_autocon</span> <span class="o">*</span> <span class="p">(</span><span class="n">nu</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">nu</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span>
+    <span class="p">{</span>
+        <span class="n">cloud_k_au</span> <span class="o">=</span> <span class="n">kc_autocon</span> <span class="o">/</span> <span class="n">pc</span><span class="p">.</span><span class="n">max_x</span> <span class="o">*</span> <span class="mf">0.05</span>
+            <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">tgamma</span><span class="p">((</span><span class="n">nu</span><span class="o">+</span><span class="mf">3.0</span><span class="p">)</span><span class="o">/</span><span class="n">mu</span><span class="p">)</span>
+            <span class="o">*</span> <span class="n">tgamma</span><span class="p">((</span><span class="n">nu</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span><span class="o">/</span><span class="n">mu</span><span class="p">)</span> <span class="o">*</span> <span class="n">pow</span><span class="p">(</span><span class="n">tgamma</span><span class="p">((</span><span class="n">nu</span><span class="p">)</span><span class="o">/</span><span class="n">mu</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="o">-</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">pow</span><span class="p">(</span><span class="n">tgamma</span><span class="p">((</span><span class="n">nu</span><span class="o">+</span><span class="mf">2.0</span><span class="p">)</span><span class="o">/</span><span class="n">mu</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">pow</span><span class="p">(</span><span class="n">tgamma</span><span class="p">((</span><span class="n">nu</span><span class="p">)</span><span class="o">/</span><span class="n">mu</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="o">/</span> <span class="n">pow</span><span class="p">(</span><span class="n">tgamma</span><span class="p">((</span><span class="n">nu</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span><span class="o">/</span><span class="n">mu</span><span class="p">),</span> <span class="mi">4</span><span class="p">);</span>
+        <span class="n">cloud_k_sc</span> <span class="o">=</span> <span class="n">kc_autocon</span> <span class="o">*</span> <span class="n">pc</span><span class="p">.</span><span class="n">c_z</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">setup_bulk_sedi</span><span class="p">(</span>
+    <span class="n">particle_model_constants_t</span> <span class="o">&amp;</span><span class="n">pc</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">pc</span><span class="p">.</span><span class="n">alfa_n</span> <span class="o">=</span> <span class="n">pc</span><span class="p">.</span><span class="n">a_vel</span> <span class="o">*</span> <span class="n">tgamma</span><span class="p">(</span> <span class="p">(</span><span class="n">pc</span><span class="p">.</span><span class="n">nu</span><span class="o">+</span><span class="n">pc</span><span class="p">.</span><span class="n">b_vel</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span><span class="o">/</span><span class="n">pc</span><span class="p">.</span><span class="n">mu</span> <span class="p">)</span>
+        <span class="o">/</span> <span class="n">tgamma</span><span class="p">(</span> <span class="p">(</span><span class="n">pc</span><span class="p">.</span><span class="n">nu</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span><span class="o">/</span><span class="n">pc</span><span class="p">.</span><span class="n">mu</span><span class="p">);</span>
+    <span class="n">pc</span><span class="p">.</span><span class="n">alfa_q</span> <span class="o">=</span> <span class="n">pc</span><span class="p">.</span><span class="n">a_vel</span> <span class="o">*</span> <span class="n">tgamma</span><span class="p">(</span> <span class="p">(</span><span class="n">pc</span><span class="p">.</span><span class="n">nu</span><span class="o">+</span><span class="n">pc</span><span class="p">.</span><span class="n">b_vel</span><span class="o">+</span><span class="mf">2.0</span><span class="p">)</span><span class="o">/</span><span class="n">pc</span><span class="p">.</span><span class="n">mu</span> <span class="p">)</span>
+        <span class="o">/</span> <span class="n">tgamma</span><span class="p">(</span> <span class="p">(</span><span class="n">pc</span><span class="p">.</span><span class="n">nu</span><span class="o">+</span><span class="mf">2.0</span><span class="p">)</span><span class="o">/</span><span class="n">pc</span><span class="p">.</span><span class="n">mu</span> <span class="p">);</span>
+    <span class="n">pc</span><span class="p">.</span><span class="n">lambda</span> <span class="o">=</span> <span class="n">tgamma</span><span class="p">(</span> <span class="p">(</span><span class="n">pc</span><span class="p">.</span><span class="n">nu</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span><span class="o">/</span><span class="n">pc</span><span class="p">.</span><span class="n">mu</span> <span class="p">)</span>
+        <span class="o">/</span> <span class="n">tgamma</span><span class="p">(</span> <span class="p">(</span><span class="n">pc</span><span class="p">.</span><span class="n">nu</span><span class="o">+</span><span class="mf">2.0</span><span class="p">)</span><span class="o">/</span><span class="n">pc</span><span class="p">.</span><span class="n">mu</span> <span class="p">);</span>
+<span class="p">}</span>
+ <span class="c1">// end of group io</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

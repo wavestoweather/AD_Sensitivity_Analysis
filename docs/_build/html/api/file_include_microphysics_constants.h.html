@@ -1,0 +1,396 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>File constants.h &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>File constants.h</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/file_include_microphysics_constants.h.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="file-constants-h">
+<span id="file-include-microphysics-constants-h"></span><h1>File constants.h<a class="headerlink" href="#file-constants-h" title="Permalink to this headline">¶</a></h1>
+<p>↰ <a class="reference internal" href="dir_include_microphysics.html#dir-include-microphysics"><span class="std std-ref">Parent directory</span></a> (<code class="docutils literal notranslate"><span class="pre">include/microphysics</span></code>)</p>
+<div class="contents local topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#definition-include-microphysics-constants-h" id="id1">Definition (<code class="docutils literal notranslate"><span class="pre">include/microphysics/constants.h</span></code>)</a></p></li>
+<li><p><a class="reference internal" href="#includes" id="id2">Includes</a></p></li>
+<li><p><a class="reference internal" href="#included-by" id="id3">Included By</a></p></li>
+<li><p><a class="reference internal" href="#defines" id="id4">Defines</a></p></li>
+<li><p><a class="reference internal" href="#variables" id="id5">Variables</a></p></li>
+</ul>
+</div>
+<div class="section" id="definition-include-microphysics-constants-h">
+<h2>Definition (<code class="docutils literal notranslate"><span class="pre">include/microphysics/constants.h</span></code>)<a class="headerlink" href="#definition-include-microphysics-constants-h" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="program_listing_file_include_microphysics_constants.h.html">Program Listing for File constants.h</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="includes">
+<h2>Includes<a class="headerlink" href="#includes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cmath</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">codi.hpp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">physical_parameterizations.h</span></code> (<a class="reference internal" href="file_include_microphysics_physical_parameterizations.h.html#file-include-microphysics-physical-parameterizations-h"><span class="std std-ref">File physical_parameterizations.h</span></a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">types.h</span></code> (<a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a>)</p></li>
+</ul>
+</div>
+<div class="section" id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_microphysics_physical_parameterizations.h.html#file-include-microphysics-physical-parameterizations-h"><span class="std std-ref">File physical_parameterizations.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_microphysics_euler.h.html#file-include-microphysics-euler-h"><span class="std std-ref">File euler.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_microphysics_user_functions.h.html#file-include-microphysics-user-functions-h"><span class="std std-ref">File user_functions.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_microphysics_general.h.html#file-include-microphysics-general-h"><span class="std std-ref">File general.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_microphysics_implicit_euler.h.html#file-include-microphysics-implicit-euler-h"><span class="std std-ref">File implicit_euler.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_microphysics_program_io.h.html#file-include-microphysics-program-io-h"><span class="std std-ref">File program_io.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_microphysics_rk4.h.html#file-include-microphysics-rk4-h"><span class="std std-ref">File rk4.h</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="defines">
+<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="define_group__constants_1ga760c72375a2e7c093916fa28caaaef24.html#exhale-define-group-constants-1ga760c72375a2e7c093916fa28caaaef24"><span class="std std-ref">Define lat_cool_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga038e11d10bbe0ea94f26d00930445ad6.html#exhale-define-group-constants-1ga038e11d10bbe0ea94f26d00930445ad6"><span class="std std-ref">Define lat_heat_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga72733bdf8b6b1b8b7c26498b642ecbe7.html#exhale-define-group-constants-1ga72733bdf8b6b1b8b7c26498b642ecbe7"><span class="std std-ref">Define Nc_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga1ec323e65b087e429b227aeb401146f7.html#exhale-define-group-constants-1ga1ec323e65b087e429b227aeb401146f7"><span class="std std-ref">Define Ng_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gaffefc008728c32990663f48ac9aa0927.html#exhale-define-group-constants-1gaffefc008728c32990663f48ac9aa0927"><span class="std std-ref">Define Ng_out_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga2d56e3d1c4a52900cbf7a98bf732ddaf.html#exhale-define-group-constants-1ga2d56e3d1c4a52900cbf7a98bf732ddaf"><span class="std std-ref">Define Nh_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gaab15ed2428b11f5b33ee8ceb5584979d.html#exhale-define-group-constants-1gaab15ed2428b11f5b33ee8ceb5584979d"><span class="std std-ref">Define Nh_out_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gac5cb65d1c10557047f8991f28e5b109a.html#exhale-define-group-constants-1gac5cb65d1c10557047f8991f28e5b109a"><span class="std std-ref">Define Ni_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gae66292d312adb0686c6df081613d3d6f.html#exhale-define-group-constants-1gae66292d312adb0686c6df081613d3d6f"><span class="std std-ref">Define Ni_out_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga53d0ac829b6b67c6d1c475429e9b50a6.html#exhale-define-group-constants-1ga53d0ac829b6b67c6d1c475429e9b50a6"><span class="std std-ref">Define Nr_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gae5189f0c9c28e003206f1ddebcf09bb4.html#exhale-define-group-constants-1gae5189f0c9c28e003206f1ddebcf09bb4"><span class="std std-ref">Define Nr_out_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga6de1c39fc0828cbd243546d1ba9410d5.html#exhale-define-group-constants-1ga6de1c39fc0828cbd243546d1ba9410d5"><span class="std std-ref">Define Ns_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga6c3cc3b610c9ec9b4895643abe83c9ed.html#exhale-define-group-constants-1ga6c3cc3b610c9ec9b4895643abe83c9ed"><span class="std std-ref">Define Ns_out_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga9c0fbdce99f2e2a6b916e72bfcc1d44d.html#exhale-define-group-constants-1ga9c0fbdce99f2e2a6b916e72bfcc1d44d"><span class="std std-ref">Define num_comp</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga31210a467188c31312786fcbff47b7d0.html#exhale-define-group-constants-1ga31210a467188c31312786fcbff47b7d0"><span class="std std-ref">Define num_par</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga16a6da4c317f5172f06ad066c898521f.html#exhale-define-group-constants-1ga16a6da4c317f5172f06ad066c898521f"><span class="std std-ref">Define Nv_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga4c7747acec94dbccc4ad68ad53d1d321.html#exhale-define-group-constants-1ga4c7747acec94dbccc4ad68ad53d1d321"><span class="std std-ref">Define p_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga8e9178051433f118b42d8d958b8be670.html#exhale-define-group-constants-1ga8e9178051433f118b42d8d958b8be670"><span class="std std-ref">Define qc_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga129ccfbe0f249782ba1bee9f78e8a0c0.html#exhale-define-group-constants-1ga129ccfbe0f249782ba1bee9f78e8a0c0"><span class="std std-ref">Define qg_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga73b73c39f00f11149262dcd4500fafaf.html#exhale-define-group-constants-1ga73b73c39f00f11149262dcd4500fafaf"><span class="std std-ref">Define qg_in_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gac119af8ca450e770480721824e30b030.html#exhale-define-group-constants-1gac119af8ca450e770480721824e30b030"><span class="std std-ref">Define qg_out_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gadc89dfb28f2391ab69911c7411a63c41.html#exhale-define-group-constants-1gadc89dfb28f2391ab69911c7411a63c41"><span class="std std-ref">Define qh_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gab9ef722f62e5cae0832a47e243e23c1d.html#exhale-define-group-constants-1gab9ef722f62e5cae0832a47e243e23c1d"><span class="std std-ref">Define qh_out_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga7657f28477937b2bf8bc6290ea062ee1.html#exhale-define-group-constants-1ga7657f28477937b2bf8bc6290ea062ee1"><span class="std std-ref">Define qi_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gafc14fcf5324ae01126e99e54044b8c2d.html#exhale-define-group-constants-1gafc14fcf5324ae01126e99e54044b8c2d"><span class="std std-ref">Define qi_in_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga1545f0b15a1b7aa4c4cf6aac7ec1c78e.html#exhale-define-group-constants-1ga1545f0b15a1b7aa4c4cf6aac7ec1c78e"><span class="std std-ref">Define qi_out_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gadd6524e5d45a5695dc0c1ff5c01bf4cc.html#exhale-define-group-constants-1gadd6524e5d45a5695dc0c1ff5c01bf4cc"><span class="std std-ref">Define qr_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gab4594351cbb175bee6ee6ff94d728b54.html#exhale-define-group-constants-1gab4594351cbb175bee6ee6ff94d728b54"><span class="std std-ref">Define qr_in_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gaab8760f97905a479fa89ad39910cb8d8.html#exhale-define-group-constants-1gaab8760f97905a479fa89ad39910cb8d8"><span class="std std-ref">Define qr_out_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga84d397bbd1b6a2664fdeb5fa5a42ee88.html#exhale-define-group-constants-1ga84d397bbd1b6a2664fdeb5fa5a42ee88"><span class="std std-ref">Define qs_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga79579ea62e2eef48b3a348613cd56131.html#exhale-define-group-constants-1ga79579ea62e2eef48b3a348613cd56131"><span class="std std-ref">Define qs_in_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga5c74319f3b4e2332e875dcc438085fb4.html#exhale-define-group-constants-1ga5c74319f3b4e2332e875dcc438085fb4"><span class="std std-ref">Define qs_out_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1gac841b7a1e99cf3a60cd24f78f82863a1.html#exhale-define-group-constants-1gac841b7a1e99cf3a60cd24f78f82863a1"><span class="std std-ref">Define qv_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga990f1e407a16f0dc95d7f75405fe4c63.html#exhale-define-group-constants-1ga990f1e407a16f0dc95d7f75405fe4c63"><span class="std std-ref">Define S_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga8bc37eb2cc5b614681a5300d99b0cf48.html#exhale-define-group-constants-1ga8bc37eb2cc5b614681a5300d99b0cf48"><span class="std std-ref">Define T_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga8fd6a118a2305eeddb60b14d10020df8.html#exhale-define-group-constants-1ga8fd6a118a2305eeddb60b14d10020df8"><span class="std std-ref">Define vi_idx</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__constants_1ga9b6429e8afd8830baa3291777ae4897d.html#exhale-define-group-constants-1ga9b6429e8afd8830baa3291777ae4897d"><span class="std std-ref">Define w_idx</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="variables">
+<h2>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="variable_group__constants_1ga13e252c8c6ce0450ef3f0dc541b9b651.html#exhale-variable-group-constants-1ga13e252c8c6ce0450ef3f0dc541b9b651"><span class="std std-ref">Variable a_dep</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gaa07347caae65f71f25a1c05308c840d8.html#exhale-variable-group-constants-1gaa07347caae65f71f25a1c05308c840d8"><span class="std std-ref">Variable a_HET</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga632d977fa28ab308b60cf9dec2dc00fd.html#exhale-variable-group-constants-1ga632d977fa28ab308b60cf9dec2dc00fd"><span class="std std-ref">Variable a_prime</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gaf519aa549f91305b42e82b89eb60b3e9.html#exhale-variable-group-constants-1gaf519aa549f91305b42e82b89eb60b3e9"><span class="std std-ref">Variable a_v</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga3a91a5b846b3407547772cb227efa64d.html#exhale-variable-group-constants-1ga3a91a5b846b3407547772cb227efa64d"><span class="std std-ref">Variable alpha_spacefilling</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gaa230b0e065f83fa02ac39cc809a09102.html#exhale-variable-group-constants-1gaa230b0e065f83fa02ac39cc809a09102"><span class="std std-ref">Variable amd</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gab71b0ee33167ac78bc8ceb7b2fa7658d.html#exhale-variable-group-constants-1gab71b0ee33167ac78bc8ceb7b2fa7658d"><span class="std std-ref">Variable amw</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga16ea1611ff37b7aa6aa66d5fb6c0c434.html#exhale-variable-group-constants-1ga16ea1611ff37b7aa6aa66d5fb6c0c434"><span class="std std-ref">Variable auto_type</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga036ffede89385a03e4b9d296df00ef6b.html#exhale-variable-group-constants-1ga036ffede89385a03e4b9d296df00ef6b"><span class="std std-ref">Variable b_dep</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga811b8bbc17cc141c49d14297bca6588e.html#exhale-variable-group-constants-1ga811b8bbc17cc141c49d14297bca6588e"><span class="std std-ref">Variable b_HET</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga03f0dc05eff4c629dbe606f3b8ea8fd9.html#exhale-variable-group-constants-1ga03f0dc05eff4c629dbe606f3b8ea8fd9"><span class="std std-ref">Variable b_prime</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gad5dd4b5f5db4f70af8243e5537df3905.html#exhale-variable-group-constants-1gad5dd4b5f5db4f70af8243e5537df3905"><span class="std std-ref">Variable b_v</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga499f41fbe7f38115c73a79d51a12ea6a.html#exhale-variable-group-constants-1ga499f41fbe7f38115c73a79d51a12ea6a"><span class="std std-ref">Variable c_dep</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga54c3d0897ba9e94ca844b259838208df.html#exhale-variable-group-constants-1ga54c3d0897ba9e94ca844b259838208df"><span class="std std-ref">Variable C_mult</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gae4d56275bfb52a136a7e0b3b7ea71d60.html#exhale-variable-group-constants-1gae4d56275bfb52a136a7e0b3b7ea71d60"><span class="std std-ref">Variable c_prime</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga41ca36bd7517469633f74d60e564fd56.html#exhale-variable-group-constants-1ga41ca36bd7517469633f74d60e564fd56"><span class="std std-ref">Variable cloud_k_au</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga11d3d64647feb0781a8af89a866afad2.html#exhale-variable-group-constants-1ga11d3d64647feb0781a8af89a866afad2"><span class="std std-ref">Variable cloud_k_sc</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga263947bc8ce087f7b55e2f5075af0bfc.html#exhale-variable-group-constants-1ga263947bc8ce087f7b55e2f5075af0bfc"><span class="std std-ref">Variable const0</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga726e5d8727a0774bc0bde532bf159757.html#exhale-variable-group-constants-1ga726e5d8727a0774bc0bde532bf159757"><span class="std std-ref">Variable const3</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga1a2f6b8bf72c47659e19099403c246ea.html#exhale-variable-group-constants-1ga1a2f6b8bf72c47659e19099403c246ea"><span class="std std-ref">Variable const4</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gac222c4556cd008dfe11c4f0438834b26.html#exhale-variable-group-constants-1gac222c4556cd008dfe11c4f0438834b26"><span class="std std-ref">Variable const5</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga3d95d7052117de6cb188a562c9e80e1f.html#exhale-variable-group-constants-1ga3d95d7052117de6cb188a562c9e80e1f"><span class="std std-ref">Variable cp</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga492c59b50d5a3446a8fd2ffcef437a18.html#exhale-variable-group-constants-1ga492c59b50d5a3446a8fd2ffcef437a18"><span class="std std-ref">Variable D_coll_c</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gaefae57a548c205456ee75e71dcc8007d.html#exhale-variable-group-constants-1gaefae57a548c205456ee75e71dcc8007d"><span class="std std-ref">Variable D_conv_i</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga1eea7c68b244ae5ae4a5b34244b74c19.html#exhale-variable-group-constants-1ga1eea7c68b244ae5ae4a5b34244b74c19"><span class="std std-ref">Variable D_conv_ig</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga8cbf8fb02586b55f29e8a473e0dd00da.html#exhale-variable-group-constants-1ga8cbf8fb02586b55f29e8a473e0dd00da"><span class="std std-ref">Variable D_conv_sg</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga7b3e2f2df9103dd2e0fb8969edb9c571.html#exhale-variable-group-constants-1ga7b3e2f2df9103dd2e0fb8969edb9c571"><span class="std std-ref">Variable D_crit_c</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gac33ed052e896d46c9b86ae0b3c0f7aa6.html#exhale-variable-group-constants-1gac33ed052e896d46c9b86ae0b3c0f7aa6"><span class="std std-ref">Variable D_crit_i</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga98ea58ce8fd604fa9495b4d108275a33.html#exhale-variable-group-constants-1ga98ea58ce8fd604fa9495b4d108275a33"><span class="std std-ref">Variable D_crit_r</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga195b70b16c4ae6bb00df7ed4a19f8f4b.html#exhale-variable-group-constants-1ga195b70b16c4ae6bb00df7ed4a19f8f4b"><span class="std std-ref">Variable d_dep</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga24cca3520eae0f359025b0a2449a24cb.html#exhale-variable-group-constants-1ga24cca3520eae0f359025b0a2449a24cb"><span class="std std-ref">Variable D_eq</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga1e3a3930609ed1f6972f38da5cecef60.html#exhale-variable-group-constants-1ga1e3a3930609ed1f6972f38da5cecef60"><span class="std std-ref">Variable D_rainfrz_gh</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga974360347634e8267bbc28a11bfd4d84.html#exhale-variable-group-constants-1ga974360347634e8267bbc28a11bfd4d84"><span class="std std-ref">Variable D_rainfrz_ig</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga45091238ffeb4b07a1acb5a6c35b7a2e.html#exhale-variable-group-constants-1ga45091238ffeb4b07a1acb5a6c35b7a2e"><span class="std std-ref">Variable D_v</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gac6fd4155d86eee9c98e4882588bb32fe.html#exhale-variable-group-constants-1gac6fd4155d86eee9c98e4882588bb32fe"><span class="std std-ref">Variable dv0</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gaea88bd3fbff901c94939df90612d28ff.html#exhale-variable-group-constants-1gaea88bd3fbff901c94939df90612d28ff"><span class="std std-ref">Variable ecoll_gg</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga6f51269dbefd9b2e9dc3df9572060931.html#exhale-variable-group-constants-1ga6f51269dbefd9b2e9dc3df9572060931"><span class="std std-ref">Variable ecoll_gg_wet</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga6e13dada537a17dd63e60c181a4b975f.html#exhale-variable-group-constants-1ga6e13dada537a17dd63e60c181a4b975f"><span class="std std-ref">Variable ecoll_min</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gae289efa576d2d30e0246967d2ba7edd7.html#exhale-variable-group-constants-1gae289efa576d2d30e0246967d2ba7edd7"><span class="std std-ref">Variable enhanced_melting</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga94827e2d927e061829e6b000e8e07d8d.html#exhale-variable-group-constants-1ga94827e2d927e061829e6b000e8e07d8d"><span class="std std-ref">Variable Epsilon</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga14d6396b7d0a7fb1319dacdbb4579ef5.html#exhale-variable-group-constants-1ga14d6396b7d0a7fb1319dacdbb4579ef5"><span class="std std-ref">Variable graupel_g1</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga6c38d8117aae27bf2c916d456d090b89.html#exhale-variable-group-constants-1ga6c38d8117aae27bf2c916d456d090b89"><span class="std std-ref">Variable graupel_g2</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gacae3aac5f83f2eee02002f4043c39bc1.html#exhale-variable-group-constants-1gacae3aac5f83f2eee02002f4043c39bc1"><span class="std std-ref">Variable graupel_nm1</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gaa1e19622d01da0d207bde0beb53d6a63.html#exhale-variable-group-constants-1gaa1e19622d01da0d207bde0beb53d6a63"><span class="std std-ref">Variable graupel_nm2</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga1830677ef00cde15b32ec211df0b073d.html#exhale-variable-group-constants-1ga1830677ef00cde15b32ec211df0b073d"><span class="std std-ref">Variable grav</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga52319f193520e1cd81814d7bf0e77de6.html#exhale-variable-group-constants-1ga52319f193520e1cd81814d7bf0e77de6"><span class="std std-ref">Variable gravity_acc</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga4366806f46b7e85b585d365f905b0fa3.html#exhale-variable-group-constants-1ga4366806f46b7e85b585d365f905b0fa3"><span class="std std-ref">Variable ice_multiplication</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga00dacffd27eede2de1a66871aee3a782.html#exhale-variable-group-constants-1ga00dacffd27eede2de1a66871aee3a782"><span class="std std-ref">Variable inv_z</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gad1afc19e3b181b5ec8a9f49df8639ce3.html#exhale-variable-group-constants-1gad1afc19e3b181b5ec8a9f49df8639ce3"><span class="std std-ref">Variable k_b</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga2681cee4e0af0e26d3a76c9d1602a42a.html#exhale-variable-group-constants-1ga2681cee4e0af0e26d3a76c9d1602a42a"><span class="std std-ref">Variable K_T</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga94b64b215a36792930699a9ec0c53e5e.html#exhale-variable-group-constants-1ga94b64b215a36792930699a9ec0c53e5e"><span class="std std-ref">Variable kc_autocon</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gab1f39e954daa6fcfe91b4d2f8afc59cf.html#exhale-variable-group-constants-1gab1f39e954daa6fcfe91b4d2f8afc59cf"><span class="std std-ref">Variable kin_visc_air</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gae688b255c9b5c9dd3bb46cb8c65cea81.html#exhale-variable-group-constants-1gae688b255c9b5c9dd3bb46cb8c65cea81"><span class="std std-ref">Variable L_ed</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gac1729321b653bcaa4bfdffe7fdf00f3a.html#exhale-variable-group-constants-1gac1729321b653bcaa4bfdffe7fdf00f3a"><span class="std std-ref">Variable L_ew</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gadf66f62257294567807f8eadddda6e29.html#exhale-variable-group-constants-1gadf66f62257294567807f8eadddda6e29"><span class="std std-ref">Variable L_wd</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gaa49da6c6165ff40f0659a431310efe64.html#exhale-variable-group-constants-1gaa49da6c6165ff40f0659a431310efe64"><span class="std std-ref">Variable Ma</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gae038aabb848c6fd2453a6b41e1336c8d.html#exhale-variable-group-constants-1gae038aabb848c6fd2453a6b41e1336c8d"><span class="std std-ref">Variable Mw</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga3588e5c0fa10f92ea55dd16b0529aac0.html#exhale-variable-group-constants-1ga3588e5c0fa10f92ea55dd16b0529aac0"><span class="std std-ref">Variable N_avo</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga5413cb42efd9530883c4584dd606527e.html#exhale-variable-group-constants-1ga5413cb42efd9530883c4584dd606527e"><span class="std std-ref">Variable n_f</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gae086631607ed7214f41bdfc2b4d07254.html#exhale-variable-group-constants-1gae086631607ed7214f41bdfc2b4d07254"><span class="std std-ref">Variable N_Sc</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga1de1c1076b60e02212c7ca4b8c08defd.html#exhale-variable-group-constants-1ga1de1c1076b60e02212c7ca4b8c08defd"><span class="std std-ref">Variable N_sc</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gaea26713cc518b7ffbeb3a2b2f59cc08e.html#exhale-variable-group-constants-1gaea26713cc518b7ffbeb3a2b2f59cc08e"><span class="std std-ref">Variable na_dust</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga1497cebde81d8e7615aefcd354029494.html#exhale-variable-group-constants-1ga1497cebde81d8e7615aefcd354029494"><span class="std std-ref">Variable na_orga</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga000a74f75df3237173807d1463d7c343.html#exhale-variable-group-constants-1ga000a74f75df3237173807d1463d7c343"><span class="std std-ref">Variable na_soot</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gaf9ac46ad53dda6bd48a33994115407e2.html#exhale-variable-group-constants-1gaf9ac46ad53dda6bd48a33994115407e2"><span class="std std-ref">Variable ni_het_max</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga887a2cd85ab3eef010e398e29c34022f.html#exhale-variable-group-constants-1ga887a2cd85ab3eef010e398e29c34022f"><span class="std std-ref">Variable ni_hom_max</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga4bc1d32b4f6f539c449d0364063aa228.html#exhale-variable-group-constants-1ga4bc1d32b4f6f539c449d0364063aa228"><span class="std std-ref">Variable nuc_c_type</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gabb663dfebb938e7ddfc02eae1d8a2a5a.html#exhale-variable-group-constants-1gabb663dfebb938e7ddfc02eae1d8a2a5a"><span class="std std-ref">Variable p_sat_melt</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga66bb4a856ed1df36dd9c8d8943a6af8b.html#exhale-variable-group-constants-1ga66bb4a856ed1df36dd9c8d8943a6af8b"><span class="std std-ref">Variable q_crit</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gab96bc3d98d6aaaa32da54bf8ce13c98f.html#exhale-variable-group-constants-1gab96bc3d98d6aaaa32da54bf8ce13c98f"><span class="std std-ref">Variable q_crit_c</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga4eaea2f9452cf35f0639ef7eddd6e6c5.html#exhale-variable-group-constants-1ga4eaea2f9452cf35f0639ef7eddd6e6c5"><span class="std std-ref">Variable q_crit_fr</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga27ecd03128984e4861b013c10843eb09.html#exhale-variable-group-constants-1ga27ecd03128984e4861b013c10843eb09"><span class="std std-ref">Variable q_crit_i</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga4d4952b99ba74a53a537b0361bb72891.html#exhale-variable-group-constants-1ga4d4952b99ba74a53a537b0361bb72891"><span class="std std-ref">Variable q_crit_r</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gacfaf9380c3f9464c863b5dd6e1a4313e.html#exhale-variable-group-constants-1gacfaf9380c3f9464c863b5dd6e1a4313e"><span class="std std-ref">Variable R_universal</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga1d944c79ac37f3210e8d6ec381104cf8.html#exhale-variable-group-constants-1ga1d944c79ac37f3210e8d6ec381104cf8"><span class="std std-ref">Variable R_v</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga2e7a3f169a98aaa7a553168d654bba8d.html#exhale-variable-group-constants-1ga2e7a3f169a98aaa7a553168d654bba8d"><span class="std std-ref">Variable Ra</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga0a2066559430bf3666079ee7c25a5cd5.html#exhale-variable-group-constants-1ga0a2066559430bf3666079ee7c25a5cd5"><span class="std std-ref">Variable rain_g1</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga41acaf285ebe6d5641bd2e4e4300921b.html#exhale-variable-group-constants-1ga41acaf285ebe6d5641bd2e4e4300921b"><span class="std std-ref">Variable rain_g2</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga477efe2ff0dd080523be5c2bd8170eff.html#exhale-variable-group-constants-1ga477efe2ff0dd080523be5c2bd8170eff"><span class="std std-ref">Variable rain_gfak</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga232700747b3d7cd907d1e74fdcfb043f.html#exhale-variable-group-constants-1ga232700747b3d7cd907d1e74fdcfb043f"><span class="std std-ref">Variable rain_nm1</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga73d5e9cc2df6f21678e3edc8b4b5b9c9.html#exhale-variable-group-constants-1ga73d5e9cc2df6f21678e3edc8b4b5b9c9"><span class="std std-ref">Variable rain_nm2</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gabb549517fe4e5151fed0ae1f59195210.html#exhale-variable-group-constants-1gabb549517fe4e5151fed0ae1f59195210"><span class="std std-ref">Variable rain_nm3</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga4066e07b45853e6a2d87b1b350415257.html#exhale-variable-group-constants-1ga4066e07b45853e6a2d87b1b350415257"><span class="std std-ref">Variable rho_0</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga82480c06ebc43bb6591a92f1fe36566c.html#exhale-variable-group-constants-1ga82480c06ebc43bb6591a92f1fe36566c"><span class="std std-ref">Variable rho_ice</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga7f927fd188adc491312f70ab463ebc9b.html#exhale-variable-group-constants-1ga7f927fd188adc491312f70ab463ebc9b"><span class="std std-ref">Variable rho_vel</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga7fe0572f2803a8c3016f01c0ad728cd3.html#exhale-variable-group-constants-1ga7fe0572f2803a8c3016f01c0ad728cd3"><span class="std std-ref">Variable rho_w</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga367846da193a7787d80dbb3c8717df1f.html#exhale-variable-group-constants-1ga367846da193a7787d80dbb3c8717df1f"><span class="std std-ref">Variable Rv</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gabe89923ce0c917bd178489bf352479da.html#exhale-variable-group-constants-1gabe89923ce0c917bd178489bf352479da"><span class="std std-ref">Variable T_f</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga99b4ad97bfdc774d5617cf3921b72655.html#exhale-variable-group-constants-1ga99b4ad97bfdc774d5617cf3921b72655"><span class="std std-ref">Variable T_freeze</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gaf8e1d9b13007b75a9741c518249f0c25.html#exhale-variable-group-constants-1gaf8e1d9b13007b75a9741c518249f0c25"><span class="std std-ref">Variable T_mult_max</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga833f27254edd99b18e5226229492e6b6.html#exhale-variable-group-constants-1ga833f27254edd99b18e5226229492e6b6"><span class="std std-ref">Variable T_mult_min</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga98481bd0d4b37af7bb7334ee4c741110.html#exhale-variable-group-constants-1ga98481bd0d4b37af7bb7334ee4c741110"><span class="std std-ref">Variable T_mult_opt</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga87f82656b10760e10886d8f0eeccfe0f.html#exhale-variable-group-constants-1ga87f82656b10760e10886d8f0eeccfe0f"><span class="std std-ref">Variable T_nuc</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1gac28627a1d2138310436e450fa5009376.html#exhale-variable-group-constants-1gac28627a1d2138310436e450fa5009376"><span class="std std-ref">Variable tmelt</span></a></p></li>
+<li><p><a class="reference internal" href="variable_group__constants_1ga94aa7863dc38365e1c9ea7cea10c31e8.html#exhale-variable-group-constants-1ga94aa7863dc38365e1c9ea7cea10c31e8"><span class="std std-ref">Variable x_conv</span></a></p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

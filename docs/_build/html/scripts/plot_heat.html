@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>plot_heat &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="plot_many_traj" href="plot_many_traj.html" />
+    <link rel="prev" title="filter_more" href="filter_more.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="executing.html">Executing Scripts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/scripts/plot_heat.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="plot-heat">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code><a class="headerlink" href="#plot-heat" title="Permalink to this headline">¶</a></h1>
+<p>Load data given a prefix and suffix of the filenames and plot various
+figures, mostly heatmaps.
+Usage:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-p</span></code>, <code class="docutils literal notranslate"><span class="pre">--prefix</span></code>: Prefix of the files to load such as <code class="docutils literal notranslate"><span class="pre">data/sb_ice_traj</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-s</span></code>, <code class="docutils literal notranslate"><span class="pre">--suffix</span></code>: Suffix of the files to load without datatype such</p></li>
+</ul>
+<p>as <code class="docutils literal notranslate"><span class="pre">_start_over_20160922_00</span></code> or <code class="docutils literal notranslate"><span class="pre">_start_over</span></code> for derivatives.
+- <code class="docutils literal notranslate"><span class="pre">-i</span></code>, <code class="docutils literal notranslate"><span class="pre">--image</span></code>: Which plot to generate. Can be either <code class="docutils literal notranslate"><span class="pre">results</span></code> or
+<code class="docutils literal notranslate"><span class="pre">derivatives</span></code> to plot lineplots of either the output parameters or the derivatives.
+- <code class="docutils literal notranslate"><span class="pre">-e</span></code>. <code class="docutils literal notranslate"><span class="pre">--epsilon</span></code>: If <code class="docutils literal notranslate"><span class="pre">filter</span></code> is set to true, use this as filter threshold.
+- <code class="docutils literal notranslate"><span class="pre">-f</span></code>, <code class="docutils literal notranslate"><span class="pre">--filter</span></code>: If you load derivatives, use this to filter derivatives smaller than <code class="docutils literal notranslate"><span class="pre">epsilon</span></code>.</p>
+<span class="target" id="module-scripts.plot_heat"></span><dl class="function">
+<dt id="scripts.plot_heat.plot_heat">
+<code class="sig-prename descclassname">scripts.plot_heat.</code><code class="sig-name descname">plot_heat</code><span class="sig-paren">(</span><em class="sig-param">df_dict</em>, <em class="sig-param">prefix</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_heat.plot_heat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a heatmap where the x-axis consists of timesteps and the y-axis
+are the input parameters of the model. The colormap corresponds to the
+derivative. Plots several heatmaps for each dataframe in df_dict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df_dict</strong> (<em>pandas.Dataframe</em>) – A dictionary of pandas.Dataframe with key the output parameter
+and the columns the input parameters and values are the
+derivatives.</p></li>
+<li><p><strong>prefix</strong> (<em>string</em>) – Prefix of the filename where the plot shall be stored.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="scripts.plot_heat.plot_line">
+<code class="sig-prename descclassname">scripts.plot_heat.</code><code class="sig-name descname">plot_line</code><span class="sig-paren">(</span><em class="sig-param">df_dict</em>, <em class="sig-param">prefix</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_heat.plot_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a lineplot where the x-axis consists of timesteps and the y-axis
+are the derivatives of the input parameters of the model.
+The colormap corresponds to the derivative, where brighter colors are
+overall more significant. Plots several lineplots for each dataframe in
+df_dict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df_dict</strong> (<em>pandas.Dataframe</em>) – A dictionary of pandas.Dataframe with key the output parameter
+and the columns the input parameters and values are the
+derivatives.</p></li>
+<li><p><strong>prefix</strong> (<em>string</em>) – Prefix of the filename where the plot shall be stored.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="scripts.plot_heat.plot_line_res">
+<code class="sig-prename descclassname">scripts.plot_heat.</code><code class="sig-name descname">plot_line_res</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">prefix</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_heat.plot_line_res" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a lineplot where the x-axis consists of timesteps and the y-axis
+are the absolute values of the output parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – A pandas.Dataframe with the columns the output parameters.</p></li>
+<li><p><strong>prefix</strong> (<em>string</em>) – Prefix of the filename where the plot shall be stored.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="plot_many_traj.html" class="btn btn-neutral float-right" title="plot_many_traj" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="filter_more.html" class="btn btn-neutral float-left" title="filter_more" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

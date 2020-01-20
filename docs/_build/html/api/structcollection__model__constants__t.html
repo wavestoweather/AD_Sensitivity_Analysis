@@ -1,0 +1,336 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Struct collection_model_constants_t &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Struct gamma_table_t" href="structgamma__table__t.html" />
+    <link rel="prev" title="Namespace netCDF" href="namespace_netCDF.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="library_root.html">C++ API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#class-hierarchy">Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#file-hierarchy">File Hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="library_root.html#full-api">Full API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#namespaces">Namespaces</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="library_root.html#classes-and-structs">Classes and Structs</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Struct collection_model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structgamma__table__t.html">Struct gamma_table_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structglobal__args__t.html">Struct global_args_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structinput__parameters__t.html">Struct input_parameters_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structmodel__constants__t.html">Struct model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structnc__parameters__t.html">Struct nc_parameters_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structparticle__model__constants__t.html">Struct particle_model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structreference__quantities__t.html">Struct reference_quantities_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structtable__t.html">Struct table_t</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#variables">Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#defines">Defines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#typedefs">Typedefs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="library_root.html">C++ API</a> &raquo;</li>
+        
+      <li>Struct collection_model_constants_t</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/structcollection__model__constants__t.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="struct-collection-model-constants-t">
+<span id="exhale-struct-structcollection-model-constants-t"></span><h1>Struct collection_model_constants_t<a class="headerlink" href="#struct-collection-model-constants-t" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a></p></li>
+</ul>
+<div class="section" id="struct-documentation">
+<h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="_CPPv428collection_model_constants_t">
+<span id="_CPPv328collection_model_constants_t"></span><span id="_CPPv228collection_model_constants_t"></span><span id="collection_model_constants_t"></span><span class="target" id="structcollection__model__constants__t"></span><em class="property">struct </em><code class="sig-name descname">collection_model_constants_t</code><a class="headerlink" href="#_CPPv428collection_model_constants_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Struct to hold model constants for particle collection that we <em>usually</em> are not interested in regarding their influence on the overall model. It is stored within a struct <a class="reference internal" href="../groups/types.html#structmodel__constants__t"><span class="std std-ref">model_constants_t</span></a> for different collisions such as hail and ice collection or ice and rain riming. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10delta_n_aaE">
+<span id="_CPPv3N28collection_model_constants_t10delta_n_aaE"></span><span id="_CPPv2N28collection_model_constants_t10delta_n_aaE"></span><span id="collection_model_constants_t::delta_n_aa__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1adc34f5bf05ce4dfb30fb6e6f1b2550ce"></span>codi::RealReverse <code class="sig-name descname">delta_n_aa</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_n_aaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10delta_n_abE">
+<span id="_CPPv3N28collection_model_constants_t10delta_n_abE"></span><span id="_CPPv2N28collection_model_constants_t10delta_n_abE"></span><span id="collection_model_constants_t::delta_n_ab__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a2b5d8a47ae6394787d635e61ac5ca800"></span>codi::RealReverse <code class="sig-name descname">delta_n_ab</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_n_abE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10delta_n_bbE">
+<span id="_CPPv3N28collection_model_constants_t10delta_n_bbE"></span><span id="_CPPv2N28collection_model_constants_t10delta_n_bbE"></span><span id="collection_model_constants_t::delta_n_bb__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a6d32dd81e9a44c29eede4b893c77d6f9"></span>codi::RealReverse <code class="sig-name descname">delta_n_bb</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_n_bbE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10delta_q_aaE">
+<span id="_CPPv3N28collection_model_constants_t10delta_q_aaE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_aaE"></span><span id="collection_model_constants_t::delta_q_aa__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a0c730e7688c06f872082d5ad4422cfcf"></span>codi::RealReverse <code class="sig-name descname">delta_q_aa</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_aaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10delta_q_abE">
+<span id="_CPPv3N28collection_model_constants_t10delta_q_abE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_abE"></span><span id="collection_model_constants_t::delta_q_ab__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1ae3ede633d600d6a1c3bfcebb7eef6108"></span>codi::RealReverse <code class="sig-name descname">delta_q_ab</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_abE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10delta_q_bbE">
+<span id="_CPPv3N28collection_model_constants_t10delta_q_bbE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_bbE"></span><span id="collection_model_constants_t::delta_q_bb__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a440b72d2fb9e06505208d53ea9f8fb35"></span>codi::RealReverse <code class="sig-name descname">delta_q_bb</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_bbE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10delta_q_baE">
+<span id="_CPPv3N28collection_model_constants_t10delta_q_baE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_baE"></span><span id="collection_model_constants_t::delta_q_ba__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a305b2cba86bd241077744a1d45cdee12"></span>codi::RealReverse <code class="sig-name descname">delta_q_ba</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_baE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10theta_n_aaE">
+<span id="_CPPv3N28collection_model_constants_t10theta_n_aaE"></span><span id="_CPPv2N28collection_model_constants_t10theta_n_aaE"></span><span id="collection_model_constants_t::theta_n_aa__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a755eefd3946e25e95b21d2293f4e7172"></span>codi::RealReverse <code class="sig-name descname">theta_n_aa</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_n_aaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10theta_n_abE">
+<span id="_CPPv3N28collection_model_constants_t10theta_n_abE"></span><span id="_CPPv2N28collection_model_constants_t10theta_n_abE"></span><span id="collection_model_constants_t::theta_n_ab__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a7118408ad8f018859fd98027a0001ae2"></span>codi::RealReverse <code class="sig-name descname">theta_n_ab</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_n_abE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10theta_n_bbE">
+<span id="_CPPv3N28collection_model_constants_t10theta_n_bbE"></span><span id="_CPPv2N28collection_model_constants_t10theta_n_bbE"></span><span id="collection_model_constants_t::theta_n_bb__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a070730c489fbd5f27608f85f70d94037"></span>codi::RealReverse <code class="sig-name descname">theta_n_bb</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_n_bbE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10theta_q_aaE">
+<span id="_CPPv3N28collection_model_constants_t10theta_q_aaE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_aaE"></span><span id="collection_model_constants_t::theta_q_aa__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a0528f831999d9be9ce41b3dfc9c409cf"></span>codi::RealReverse <code class="sig-name descname">theta_q_aa</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_aaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10theta_q_abE">
+<span id="_CPPv3N28collection_model_constants_t10theta_q_abE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_abE"></span><span id="collection_model_constants_t::theta_q_ab__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1ad9987fbcb089e999e5f1ab8ecc9fee5d"></span>codi::RealReverse <code class="sig-name descname">theta_q_ab</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_abE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10theta_q_bbE">
+<span id="_CPPv3N28collection_model_constants_t10theta_q_bbE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_bbE"></span><span id="collection_model_constants_t::theta_q_bb__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a8ad5ec31814f6af6f9d0140f973f2b2e"></span>codi::RealReverse <code class="sig-name descname">theta_q_bb</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_bbE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N28collection_model_constants_t10theta_q_baE">
+<span id="_CPPv3N28collection_model_constants_t10theta_q_baE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_baE"></span><span id="collection_model_constants_t::theta_q_ba__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a8739819024e5faa7b7bcc97bd0bb984c"></span>codi::RealReverse <code class="sig-name descname">theta_q_ba</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_baE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="structgamma__table__t.html" class="btn btn-neutral float-right" title="Struct gamma_table_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="namespace_netCDF.html" class="btn btn-neutral float-left" title="Namespace netCDF" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

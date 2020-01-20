@@ -1,0 +1,613 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Struct nc_parameters_t &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Struct particle_model_constants_t" href="structparticle__model__constants__t.html" />
+    <link rel="prev" title="Struct model_constants_t" href="structmodel__constants__t.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="library_root.html">C++ API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#class-hierarchy">Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#file-hierarchy">File Hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="library_root.html#full-api">Full API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#namespaces">Namespaces</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="library_root.html#classes-and-structs">Classes and Structs</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="structcollection__model__constants__t.html">Struct collection_model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structgamma__table__t.html">Struct gamma_table_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structglobal__args__t.html">Struct global_args_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structinput__parameters__t.html">Struct input_parameters_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structmodel__constants__t.html">Struct model_constants_t</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Struct nc_parameters_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structparticle__model__constants__t.html">Struct particle_model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structreference__quantities__t.html">Struct reference_quantities_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structtable__t.html">Struct table_t</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#variables">Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#defines">Defines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#typedefs">Typedefs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="library_root.html">C++ API</a> &raquo;</li>
+        
+      <li>Struct nc_parameters_t</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/structnc__parameters__t.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="struct-nc-parameters-t">
+<span id="exhale-struct-structnc-parameters-t"></span><h1>Struct nc_parameters_t<a class="headerlink" href="#struct-nc-parameters-t" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a></p></li>
+</ul>
+<div class="section" id="struct-documentation">
+<h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="_CPPv415nc_parameters_t">
+<span id="_CPPv315nc_parameters_t"></span><span id="_CPPv215nc_parameters_t"></span><span id="nc_parameters_t"></span><span class="target" id="structnc__parameters__t"></span><em class="property">struct </em><code class="sig-name descname">nc_parameters_t</code><a class="headerlink" href="#_CPPv415nc_parameters_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Structure to collect all nc parameters. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t14n_trajectoriesE">
+<span id="_CPPv3N15nc_parameters_t14n_trajectoriesE"></span><span id="_CPPv2N15nc_parameters_t14n_trajectoriesE"></span><span id="nc_parameters_t::n_trajectories__uint32_t"></span><span class="target" id="structnc__parameters__t_1a428b9724e472e9c7865da8d1b2323e1d"></span>uint32_t <code class="sig-name descname">n_trajectories</code> = 30<a class="headerlink" href="#_CPPv4N15nc_parameters_t14n_trajectoriesE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number of trajectories in the netCDF file. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t11n_timestepsE">
+<span id="_CPPv3N15nc_parameters_t11n_timestepsE"></span><span id="_CPPv2N15nc_parameters_t11n_timestepsE"></span><span id="nc_parameters_t::n_timesteps__uint32_t"></span><span class="target" id="structnc__parameters__t_1a9cb6885a3d2fbb0e91c41973be7fe1f5"></span>uint32_t <code class="sig-name descname">n_timesteps</code> = 7922<a class="headerlink" href="#_CPPv4N15nc_parameters_t11n_timestepsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number of timesteps in the netCDF file. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t1wE">
+<span id="_CPPv3N15nc_parameters_t1wE"></span><span id="_CPPv2N15nc_parameters_t1wE"></span><span id="nc_parameters_t::w__std::vector:double:"></span><span class="target" id="structnc__parameters__t_1af2cb991136c0d738857541114cf1768a"></span>std::vector&lt;double&gt; <code class="sig-name descname">w</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t1wE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t1zE">
+<span id="_CPPv3N15nc_parameters_t1zE"></span><span id="_CPPv2N15nc_parameters_t1zE"></span><span id="nc_parameters_t::z__std::vector:double:"></span><span class="target" id="structnc__parameters__t_1ae9f126f938698fb7036497282497a1a3"></span>std::vector&lt;double&gt; <code class="sig-name descname">z</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t1zE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t3latE">
+<span id="_CPPv3N15nc_parameters_t3latE"></span><span id="_CPPv2N15nc_parameters_t3latE"></span><span id="nc_parameters_t::lat__std::vector:double:"></span><span class="target" id="structnc__parameters__t_1a43500780e4c60bc34f9df090003a0c31"></span>std::vector&lt;double&gt; <code class="sig-name descname">lat</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t3latE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t3lonE">
+<span id="_CPPv3N15nc_parameters_t3lonE"></span><span id="_CPPv2N15nc_parameters_t3lonE"></span><span id="nc_parameters_t::lon__std::vector:double:"></span><span class="target" id="structnc__parameters__t_1a8781fe303d5e578e07c78ff4f5cb7d5f"></span>std::vector&lt;double&gt; <code class="sig-name descname">lon</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t3lonE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t1tE">
+<span id="_CPPv3N15nc_parameters_t1tE"></span><span id="_CPPv2N15nc_parameters_t1tE"></span><span id="nc_parameters_t::t__double"></span><span class="target" id="structnc__parameters__t_1acda34583179f3a3ae35dd601a6e803c2"></span>double <code class="sig-name descname">t</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t1tE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t1pE">
+<span id="_CPPv3N15nc_parameters_t1pE"></span><span id="_CPPv2N15nc_parameters_t1pE"></span><span id="nc_parameters_t::p__double"></span><span class="target" id="structnc__parameters__t_1a1b1142396e86861e2e87bcd3beecafb9"></span>double <code class="sig-name descname">p</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t1pE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t8time_relE">
+<span id="_CPPv3N15nc_parameters_t8time_relE"></span><span id="_CPPv2N15nc_parameters_t8time_relE"></span><span id="nc_parameters_t::time_rel__double"></span><span class="target" id="structnc__parameters__t_1a2ed8d16620b1480da58b47027533b34c"></span>double <code class="sig-name descname">time_rel</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t8time_relE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t2qcE">
+<span id="_CPPv3N15nc_parameters_t2qcE"></span><span id="_CPPv2N15nc_parameters_t2qcE"></span><span id="nc_parameters_t::qc__double"></span><span class="target" id="structnc__parameters__t_1a230b46cbc7c510d9b8b2c0e4fbbdba01"></span>double <code class="sig-name descname">qc</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t2qcE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t2qrE">
+<span id="_CPPv3N15nc_parameters_t2qrE"></span><span id="_CPPv2N15nc_parameters_t2qrE"></span><span id="nc_parameters_t::qr__double"></span><span class="target" id="structnc__parameters__t_1ac172d70cc56e957c40239a91e799bd1a"></span>double <code class="sig-name descname">qr</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t2qrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t2qiE">
+<span id="_CPPv3N15nc_parameters_t2qiE"></span><span id="_CPPv2N15nc_parameters_t2qiE"></span><span id="nc_parameters_t::qi__double"></span><span class="target" id="structnc__parameters__t_1af587e66cce0aee68b1eb7d1e5614954d"></span>double <code class="sig-name descname">qi</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t2qiE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t2qsE">
+<span id="_CPPv3N15nc_parameters_t2qsE"></span><span id="_CPPv2N15nc_parameters_t2qsE"></span><span id="nc_parameters_t::qs__double"></span><span class="target" id="structnc__parameters__t_1a093a1904d5af7475f628eb7b93842a4a"></span>double <code class="sig-name descname">qs</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t2qsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t2qgE">
+<span id="_CPPv3N15nc_parameters_t2qgE"></span><span id="_CPPv2N15nc_parameters_t2qgE"></span><span id="nc_parameters_t::qg__double"></span><span class="target" id="structnc__parameters__t_1ae9eb9d166bec877331b2783fb9d6f00f"></span>double <code class="sig-name descname">qg</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t2qgE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t2qvE">
+<span id="_CPPv3N15nc_parameters_t2qvE"></span><span id="_CPPv2N15nc_parameters_t2qvE"></span><span id="nc_parameters_t::qv__double"></span><span class="target" id="structnc__parameters__t_1ada16c49f4597aef5e7dd704c2e0cb1c7"></span>double <code class="sig-name descname">qv</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t2qvE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t1SE">
+<span id="_CPPv3N15nc_parameters_t1SE"></span><span id="_CPPv2N15nc_parameters_t1SE"></span><span id="nc_parameters_t::S__double"></span><span class="target" id="structnc__parameters__t_1a6532cad81e61f7eba7d77af74f7b3801"></span>double <code class="sig-name descname">S</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t1SE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t2dwE">
+<span id="_CPPv3N15nc_parameters_t2dwE"></span><span id="_CPPv2N15nc_parameters_t2dwE"></span><span id="nc_parameters_t::dw__double"></span><span class="target" id="structnc__parameters__t_1a4f25f42d7f8652d67acf8c4291fa65fe"></span>double <code class="sig-name descname">dw</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t2dwE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4dlatE">
+<span id="_CPPv3N15nc_parameters_t4dlatE"></span><span id="_CPPv2N15nc_parameters_t4dlatE"></span><span id="nc_parameters_t::dlat__double"></span><span class="target" id="structnc__parameters__t_1a0aa8883643a96721e59f7cc5c1da498c"></span>double <code class="sig-name descname">dlat</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4dlatE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4dlonE">
+<span id="_CPPv3N15nc_parameters_t4dlonE"></span><span id="_CPPv2N15nc_parameters_t4dlonE"></span><span id="nc_parameters_t::dlon__double"></span><span class="target" id="structnc__parameters__t_1a730034a5dd7ae11833377965fd4aae5c"></span>double <code class="sig-name descname">dlon</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4dlonE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4QIinE">
+<span id="_CPPv3N15nc_parameters_t4QIinE"></span><span id="_CPPv2N15nc_parameters_t4QIinE"></span><span id="nc_parameters_t::QIin__double"></span><span class="target" id="structnc__parameters__t_1af4d5cb23ce9bd7e4141a4b3b6954e0d3"></span>double <code class="sig-name descname">QIin</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4QIinE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4QSinE">
+<span id="_CPPv3N15nc_parameters_t4QSinE"></span><span id="_CPPv2N15nc_parameters_t4QSinE"></span><span id="nc_parameters_t::QSin__double"></span><span class="target" id="structnc__parameters__t_1a54d45f20aeba0333d026d638f9204804"></span>double <code class="sig-name descname">QSin</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4QSinE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4QRinE">
+<span id="_CPPv3N15nc_parameters_t4QRinE"></span><span id="_CPPv2N15nc_parameters_t4QRinE"></span><span id="nc_parameters_t::QRin__double"></span><span class="target" id="structnc__parameters__t_1a515ee33f9307e441f9aecdb706091156"></span>double <code class="sig-name descname">QRin</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4QRinE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4QGinE">
+<span id="_CPPv3N15nc_parameters_t4QGinE"></span><span id="_CPPv2N15nc_parameters_t4QGinE"></span><span id="nc_parameters_t::QGin__double"></span><span class="target" id="structnc__parameters__t_1a5d792955a32965ef3b0205ea782108ca"></span>double <code class="sig-name descname">QGin</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4QGinE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5QIoutE">
+<span id="_CPPv3N15nc_parameters_t5QIoutE"></span><span id="_CPPv2N15nc_parameters_t5QIoutE"></span><span id="nc_parameters_t::QIout__double"></span><span class="target" id="structnc__parameters__t_1aa63f82d41ae5b92f1fe749570f3f04c9"></span>double <code class="sig-name descname">QIout</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5QIoutE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5QSoutE">
+<span id="_CPPv3N15nc_parameters_t5QSoutE"></span><span id="_CPPv2N15nc_parameters_t5QSoutE"></span><span id="nc_parameters_t::QSout__double"></span><span class="target" id="structnc__parameters__t_1aa0ccb81e4933b18692eaf5cce8462982"></span>double <code class="sig-name descname">QSout</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5QSoutE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5QRoutE">
+<span id="_CPPv3N15nc_parameters_t5QRoutE"></span><span id="_CPPv2N15nc_parameters_t5QRoutE"></span><span id="nc_parameters_t::QRout__double"></span><span class="target" id="structnc__parameters__t_1ae4ca37382fccafcaded5188d2c3a811d"></span>double <code class="sig-name descname">QRout</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5QRoutE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5QGoutE">
+<span id="_CPPv3N15nc_parameters_t5QGoutE"></span><span id="_CPPv2N15nc_parameters_t5QGoutE"></span><span id="nc_parameters_t::QGout__double"></span><span class="target" id="structnc__parameters__t_1a37ef8abb801374187e7577dae357502b"></span>double <code class="sig-name descname">QGout</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5QGoutE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4NIinE">
+<span id="_CPPv3N15nc_parameters_t4NIinE"></span><span id="_CPPv2N15nc_parameters_t4NIinE"></span><span id="nc_parameters_t::NIin__double"></span><span class="target" id="structnc__parameters__t_1aa42deb7a7558cfd82af8299a1fa16bec"></span>double <code class="sig-name descname">NIin</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4NIinE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4NSinE">
+<span id="_CPPv3N15nc_parameters_t4NSinE"></span><span id="_CPPv2N15nc_parameters_t4NSinE"></span><span id="nc_parameters_t::NSin__double"></span><span class="target" id="structnc__parameters__t_1a2bbd5fbe5924c1d7d13331e0491f16bd"></span>double <code class="sig-name descname">NSin</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4NSinE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4NRinE">
+<span id="_CPPv3N15nc_parameters_t4NRinE"></span><span id="_CPPv2N15nc_parameters_t4NRinE"></span><span id="nc_parameters_t::NRin__double"></span><span class="target" id="structnc__parameters__t_1a9f17ca64ded4dc30a61c32330c720bde"></span>double <code class="sig-name descname">NRin</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4NRinE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4NGinE">
+<span id="_CPPv3N15nc_parameters_t4NGinE"></span><span id="_CPPv2N15nc_parameters_t4NGinE"></span><span id="nc_parameters_t::NGin__double"></span><span class="target" id="structnc__parameters__t_1a20833f50d5038c873527ceaeb5ce2dec"></span>double <code class="sig-name descname">NGin</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4NGinE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5NIoutE">
+<span id="_CPPv3N15nc_parameters_t5NIoutE"></span><span id="_CPPv2N15nc_parameters_t5NIoutE"></span><span id="nc_parameters_t::NIout__double"></span><span class="target" id="structnc__parameters__t_1af9f77e723727628333e5e69cf8f09c2d"></span>double <code class="sig-name descname">NIout</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5NIoutE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5NSoutE">
+<span id="_CPPv3N15nc_parameters_t5NSoutE"></span><span id="_CPPv2N15nc_parameters_t5NSoutE"></span><span id="nc_parameters_t::NSout__double"></span><span class="target" id="structnc__parameters__t_1ab12bd0e3359b168058853c94d07fe9cd"></span>double <code class="sig-name descname">NSout</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5NSoutE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5NRoutE">
+<span id="_CPPv3N15nc_parameters_t5NRoutE"></span><span id="_CPPv2N15nc_parameters_t5NRoutE"></span><span id="nc_parameters_t::NRout__double"></span><span class="target" id="structnc__parameters__t_1a9515ba6d051ef4311598a4ffbbb28fbe"></span>double <code class="sig-name descname">NRout</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5NRoutE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5NGoutE">
+<span id="_CPPv3N15nc_parameters_t5NGoutE"></span><span id="_CPPv2N15nc_parameters_t5NGoutE"></span><span id="nc_parameters_t::NGout__double"></span><span class="target" id="structnc__parameters__t_1a0394e273718080d56fbd6b92ed6062c1"></span>double <code class="sig-name descname">NGout</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5NGoutE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t4dp2hE">
+<span id="_CPPv3N15nc_parameters_t4dp2hE"></span><span id="_CPPv2N15nc_parameters_t4dp2hE"></span><span id="nc_parameters_t::dp2h__double"></span><span class="target" id="structnc__parameters__t_1a593a90f9722b4058a9503987274f4cfd"></span>double <code class="sig-name descname">dp2h</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t4dp2hE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t11ascent_flagE">
+<span id="_CPPv3N15nc_parameters_t11ascent_flagE"></span><span id="_CPPv2N15nc_parameters_t11ascent_flagE"></span><span id="nc_parameters_t::ascent_flag__b"></span><span class="target" id="structnc__parameters__t_1aaf08232b2cb777754c11361fc22b422b"></span>bool <code class="sig-name descname">ascent_flag</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t11ascent_flagE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t7lat_varE">
+<span id="_CPPv3N15nc_parameters_t7lat_varE"></span><span id="_CPPv2N15nc_parameters_t7lat_varE"></span><span id="nc_parameters_t::lat_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a848d6653294f4e4d58759029140e29ae"></span>NcVar <code class="sig-name descname">lat_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t7lat_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t7lon_varE">
+<span id="_CPPv3N15nc_parameters_t7lon_varE"></span><span id="_CPPv2N15nc_parameters_t7lon_varE"></span><span id="nc_parameters_t::lon_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a614d650da3b1d87be459a257ba558858"></span>NcVar <code class="sig-name descname">lon_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t7lon_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5z_varE">
+<span id="_CPPv3N15nc_parameters_t5z_varE"></span><span id="_CPPv2N15nc_parameters_t5z_varE"></span><span id="nc_parameters_t::z_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a44b9aa43811157096a5ddee0fb510b38"></span>NcVar <code class="sig-name descname">z_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5z_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5t_varE">
+<span id="_CPPv3N15nc_parameters_t5t_varE"></span><span id="_CPPv2N15nc_parameters_t5t_varE"></span><span id="nc_parameters_t::t_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a7d5b503fcf49b18cbf03cceb164a8968"></span>NcVar <code class="sig-name descname">t_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5t_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5p_varE">
+<span id="_CPPv3N15nc_parameters_t5p_varE"></span><span id="_CPPv2N15nc_parameters_t5p_varE"></span><span id="nc_parameters_t::p_var__NcVar"></span><span class="target" id="structnc__parameters__t_1ac8bc797f3fe2e9d79108811936f1965b"></span>NcVar <code class="sig-name descname">p_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5p_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5w_varE">
+<span id="_CPPv3N15nc_parameters_t5w_varE"></span><span id="_CPPv2N15nc_parameters_t5w_varE"></span><span id="nc_parameters_t::w_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a803eb558c1f244f5c58ccfd9badb6da2"></span>NcVar <code class="sig-name descname">w_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5w_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t12time_rel_varE">
+<span id="_CPPv3N15nc_parameters_t12time_rel_varE"></span><span id="_CPPv2N15nc_parameters_t12time_rel_varE"></span><span id="nc_parameters_t::time_rel_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a213222de1768b021621a6a0cc8298dc5"></span>NcVar <code class="sig-name descname">time_rel_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t12time_rel_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t6qc_varE">
+<span id="_CPPv3N15nc_parameters_t6qc_varE"></span><span id="_CPPv2N15nc_parameters_t6qc_varE"></span><span id="nc_parameters_t::qc_var__NcVar"></span><span class="target" id="structnc__parameters__t_1ac924ab8ac18f9eef6a3fd3852eabb463"></span>NcVar <code class="sig-name descname">qc_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t6qc_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t6qr_varE">
+<span id="_CPPv3N15nc_parameters_t6qr_varE"></span><span id="_CPPv2N15nc_parameters_t6qr_varE"></span><span id="nc_parameters_t::qr_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a4e313d37ea484a58f4e57e4cc650688e"></span>NcVar <code class="sig-name descname">qr_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t6qr_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t6qi_varE">
+<span id="_CPPv3N15nc_parameters_t6qi_varE"></span><span id="_CPPv2N15nc_parameters_t6qi_varE"></span><span id="nc_parameters_t::qi_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a276b58f93c9e25f7fda154d8965eba86"></span>NcVar <code class="sig-name descname">qi_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t6qi_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t6qs_varE">
+<span id="_CPPv3N15nc_parameters_t6qs_varE"></span><span id="_CPPv2N15nc_parameters_t6qs_varE"></span><span id="nc_parameters_t::qs_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a4fbdad8a2d395ad2c9ced0fdbf5b3b64"></span>NcVar <code class="sig-name descname">qs_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t6qs_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t6qg_varE">
+<span id="_CPPv3N15nc_parameters_t6qg_varE"></span><span id="_CPPv2N15nc_parameters_t6qg_varE"></span><span id="nc_parameters_t::qg_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a0d2a24ef2e29f782dc13ec57aa659616"></span>NcVar <code class="sig-name descname">qg_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t6qg_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t6qv_varE">
+<span id="_CPPv3N15nc_parameters_t6qv_varE"></span><span id="_CPPv2N15nc_parameters_t6qv_varE"></span><span id="nc_parameters_t::qv_var__NcVar"></span><span class="target" id="structnc__parameters__t_1abfd5a91bd4cdc85a2790a3737f82d094"></span>NcVar <code class="sig-name descname">qv_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t6qv_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t5S_varE">
+<span id="_CPPv3N15nc_parameters_t5S_varE"></span><span id="_CPPv2N15nc_parameters_t5S_varE"></span><span id="nc_parameters_t::S_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a8ab13923d93814eac2f86390f52ecbd7"></span>NcVar <code class="sig-name descname">S_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t5S_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t8QIin_varE">
+<span id="_CPPv3N15nc_parameters_t8QIin_varE"></span><span id="_CPPv2N15nc_parameters_t8QIin_varE"></span><span id="nc_parameters_t::QIin_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a897370fc5b951430efd37a229925bbd2"></span>NcVar <code class="sig-name descname">QIin_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t8QIin_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t8QSin_varE">
+<span id="_CPPv3N15nc_parameters_t8QSin_varE"></span><span id="_CPPv2N15nc_parameters_t8QSin_varE"></span><span id="nc_parameters_t::QSin_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a35bcd437bd59dca4dd4461a4701326bf"></span>NcVar <code class="sig-name descname">QSin_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t8QSin_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t8QRin_varE">
+<span id="_CPPv3N15nc_parameters_t8QRin_varE"></span><span id="_CPPv2N15nc_parameters_t8QRin_varE"></span><span id="nc_parameters_t::QRin_var__NcVar"></span><span class="target" id="structnc__parameters__t_1aef4f9477829edc95e71ae895af4af119"></span>NcVar <code class="sig-name descname">QRin_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t8QRin_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t8QGin_varE">
+<span id="_CPPv3N15nc_parameters_t8QGin_varE"></span><span id="_CPPv2N15nc_parameters_t8QGin_varE"></span><span id="nc_parameters_t::QGin_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a2f37f9607d32401e8d88b414e4c7bebc"></span>NcVar <code class="sig-name descname">QGin_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t8QGin_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t9QIout_varE">
+<span id="_CPPv3N15nc_parameters_t9QIout_varE"></span><span id="_CPPv2N15nc_parameters_t9QIout_varE"></span><span id="nc_parameters_t::QIout_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a36af5cff0cde18147668c706de7cb088"></span>NcVar <code class="sig-name descname">QIout_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t9QIout_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t9QSout_varE">
+<span id="_CPPv3N15nc_parameters_t9QSout_varE"></span><span id="_CPPv2N15nc_parameters_t9QSout_varE"></span><span id="nc_parameters_t::QSout_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a0fd358d69c99c1ea768500d32695f37f"></span>NcVar <code class="sig-name descname">QSout_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t9QSout_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t9QRout_varE">
+<span id="_CPPv3N15nc_parameters_t9QRout_varE"></span><span id="_CPPv2N15nc_parameters_t9QRout_varE"></span><span id="nc_parameters_t::QRout_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a3373817ae075c848f12d98a36824da9b"></span>NcVar <code class="sig-name descname">QRout_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t9QRout_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t9QGout_varE">
+<span id="_CPPv3N15nc_parameters_t9QGout_varE"></span><span id="_CPPv2N15nc_parameters_t9QGout_varE"></span><span id="nc_parameters_t::QGout_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a19ea279224dc2706298b04d0df72fcb6"></span>NcVar <code class="sig-name descname">QGout_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t9QGout_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t15ascent_flag_varE">
+<span id="_CPPv3N15nc_parameters_t15ascent_flag_varE"></span><span id="_CPPv2N15nc_parameters_t15ascent_flag_varE"></span><span id="nc_parameters_t::ascent_flag_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a9304336dcc420c3fbfc573fadff03bb7"></span>NcVar <code class="sig-name descname">ascent_flag_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t15ascent_flag_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t8NIin_varE">
+<span id="_CPPv3N15nc_parameters_t8NIin_varE"></span><span id="_CPPv2N15nc_parameters_t8NIin_varE"></span><span id="nc_parameters_t::NIin_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a7dff32d5c3a9dfbbb3d127621fd9baec"></span>NcVar <code class="sig-name descname">NIin_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t8NIin_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t8NSin_varE">
+<span id="_CPPv3N15nc_parameters_t8NSin_varE"></span><span id="_CPPv2N15nc_parameters_t8NSin_varE"></span><span id="nc_parameters_t::NSin_var__NcVar"></span><span class="target" id="structnc__parameters__t_1ae6d9e068aa5aded96542bc886a7c0c7b"></span>NcVar <code class="sig-name descname">NSin_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t8NSin_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t8NRin_varE">
+<span id="_CPPv3N15nc_parameters_t8NRin_varE"></span><span id="_CPPv2N15nc_parameters_t8NRin_varE"></span><span id="nc_parameters_t::NRin_var__NcVar"></span><span class="target" id="structnc__parameters__t_1aa660f7b888c092aefde189764b68fbd4"></span>NcVar <code class="sig-name descname">NRin_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t8NRin_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t8NGin_varE">
+<span id="_CPPv3N15nc_parameters_t8NGin_varE"></span><span id="_CPPv2N15nc_parameters_t8NGin_varE"></span><span id="nc_parameters_t::NGin_var__NcVar"></span><span class="target" id="structnc__parameters__t_1ae31e39001668d409c2ff04b48addb59f"></span>NcVar <code class="sig-name descname">NGin_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t8NGin_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t9NIout_varE">
+<span id="_CPPv3N15nc_parameters_t9NIout_varE"></span><span id="_CPPv2N15nc_parameters_t9NIout_varE"></span><span id="nc_parameters_t::NIout_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a9790580f7a6637e53571ff0982bfba49"></span>NcVar <code class="sig-name descname">NIout_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t9NIout_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t9NSout_varE">
+<span id="_CPPv3N15nc_parameters_t9NSout_varE"></span><span id="_CPPv2N15nc_parameters_t9NSout_varE"></span><span id="nc_parameters_t::NSout_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a0f3c3409aa1f9ea4c5b50ddee6b0777e"></span>NcVar <code class="sig-name descname">NSout_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t9NSout_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t9NRout_varE">
+<span id="_CPPv3N15nc_parameters_t9NRout_varE"></span><span id="_CPPv2N15nc_parameters_t9NRout_varE"></span><span id="nc_parameters_t::NRout_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a1a04e867cf17efe355e55772916c5547"></span>NcVar <code class="sig-name descname">NRout_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t9NRout_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t9NGout_varE">
+<span id="_CPPv3N15nc_parameters_t9NGout_varE"></span><span id="_CPPv2N15nc_parameters_t9NGout_varE"></span><span id="nc_parameters_t::NGout_var__NcVar"></span><span class="target" id="structnc__parameters__t_1a8ac71f6765d50b7b209a74b34e8ec29a"></span>NcVar <code class="sig-name descname">NGout_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t9NGout_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N15nc_parameters_t8dp2h_varE">
+<span id="_CPPv3N15nc_parameters_t8dp2h_varE"></span><span id="_CPPv2N15nc_parameters_t8dp2h_varE"></span><span id="nc_parameters_t::dp2h_var__NcVar"></span><span class="target" id="structnc__parameters__t_1ac9771ff9c86474d388ae072d851a172e"></span>NcVar <code class="sig-name descname">dp2h_var</code><a class="headerlink" href="#_CPPv4N15nc_parameters_t8dp2h_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="structparticle__model__constants__t.html" class="btn btn-neutral float-right" title="Struct particle_model_constants_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="structmodel__constants__t.html" class="btn btn-neutral float-left" title="Struct model_constants_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,530 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Struct particle_model_constants_t &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Struct reference_quantities_t" href="structreference__quantities__t.html" />
+    <link rel="prev" title="Struct nc_parameters_t" href="structnc__parameters__t.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="library_root.html">C++ API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#class-hierarchy">Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#file-hierarchy">File Hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="library_root.html#full-api">Full API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#namespaces">Namespaces</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="library_root.html#classes-and-structs">Classes and Structs</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="structcollection__model__constants__t.html">Struct collection_model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structgamma__table__t.html">Struct gamma_table_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structglobal__args__t.html">Struct global_args_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structinput__parameters__t.html">Struct input_parameters_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structmodel__constants__t.html">Struct model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structnc__parameters__t.html">Struct nc_parameters_t</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Struct particle_model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structreference__quantities__t.html">Struct reference_quantities_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structtable__t.html">Struct table_t</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#variables">Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#defines">Defines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#typedefs">Typedefs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="library_root.html">C++ API</a> &raquo;</li>
+        
+      <li>Struct particle_model_constants_t</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/structparticle__model__constants__t.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="struct-particle-model-constants-t">
+<span id="exhale-struct-structparticle-model-constants-t"></span><h1>Struct particle_model_constants_t<a class="headerlink" href="#struct-particle-model-constants-t" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a></p></li>
+</ul>
+<div class="section" id="struct-documentation">
+<h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="_CPPv426particle_model_constants_t">
+<span id="_CPPv326particle_model_constants_t"></span><span id="_CPPv226particle_model_constants_t"></span><span id="particle_model_constants_t"></span><span class="target" id="structparticle__model__constants__t"></span><em class="property">struct </em><code class="sig-name descname">particle_model_constants_t</code><a class="headerlink" href="#_CPPv426particle_model_constants_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Struct to hold all model constants regarding particles that we want to know the gradients using AD of. Has getter and register functions for codi::RealReverse for its members. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="function">
+<dt id="_CPPv4N26particle_model_constants_t14register_inputERN4codi11RealReverse8TapeTypeE">
+<span id="_CPPv3N26particle_model_constants_t14register_inputERN4codi11RealReverse8TapeTypeE"></span><span id="_CPPv2N26particle_model_constants_t14register_inputERN4codi11RealReverse8TapeTypeE"></span><span id="particle_model_constants_t::register_input__codi::RealReverse::TapeTypeR"></span><span class="target" id="structparticle__model__constants__t_1a5b521b7c1f49d18aba333a2528e781b1"></span>void <code class="sig-name descname">register_input</code><span class="sig-paren">(</span>codi::RealReverse::TapeType &amp;<em>tape</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N26particle_model_constants_t14register_inputERN4codi11RealReverse8TapeTypeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Register the model parameters on the tape for codi::RealReverse.</p>
+<p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tape</span></code>: Tape where the parameters should be registered on. </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4I0EN26particle_model_constants_t12get_gradientEvR1TR8uint64_t">
+<span id="_CPPv3I0EN26particle_model_constants_t12get_gradientER1TR8uint64_t"></span><span id="_CPPv2I0EN26particle_model_constants_t12get_gradientER1TR8uint64_t"></span><span class="target" id="structparticle__model__constants__t_1a2e83d1698cb34f5b0f8920e643471349"></span>template&lt;class <code class="sig-name descname">T</code>&gt;<br />void <code class="sig-name descname">get_gradient</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN26particle_model_constants_t12get_gradientEvR1TR8uint64_t" title="particle_model_constants_t::get_gradient::T">T</a> &amp;<em>out_vec</em>, uint64_t &amp;<em>idx</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN26particle_model_constants_t12get_gradientEvR1TR8uint64_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Get the gradients of all its members. You need to register them on a type before to get meaningful values.</p>
+<p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">out_vec</span></code>: On out: Stores all gradients. </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">idx</span></code>: Start index of out_vec where the gradients should be stored. </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5a_geoE">
+<span id="_CPPv3N26particle_model_constants_t5a_geoE"></span><span id="_CPPv2N26particle_model_constants_t5a_geoE"></span><span id="particle_model_constants_t::a_geo__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a4943377ec3970f8d07f2ec4f9333dc4e"></span>codi::RealReverse <code class="sig-name descname">a_geo</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5a_geoE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5b_geoE">
+<span id="_CPPv3N26particle_model_constants_t5b_geoE"></span><span id="_CPPv2N26particle_model_constants_t5b_geoE"></span><span id="particle_model_constants_t::b_geo__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a6704214e3860ac4979df89bba647de71"></span>codi::RealReverse <code class="sig-name descname">b_geo</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5b_geoE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5min_xE">
+<span id="_CPPv3N26particle_model_constants_t5min_xE"></span><span id="_CPPv2N26particle_model_constants_t5min_xE"></span><span id="particle_model_constants_t::min_x__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a620aa58cdff1abe0c3c41a56bbfd7ea6"></span>codi::RealReverse <code class="sig-name descname">min_x</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5min_xE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5max_xE">
+<span id="_CPPv3N26particle_model_constants_t5max_xE"></span><span id="_CPPv2N26particle_model_constants_t5max_xE"></span><span id="particle_model_constants_t::max_x__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1adb80f4bac7acafde6e916df49dcde9aa"></span>codi::RealReverse <code class="sig-name descname">max_x</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5max_xE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t10sc_theta_qE">
+<span id="_CPPv3N26particle_model_constants_t10sc_theta_qE"></span><span id="_CPPv2N26particle_model_constants_t10sc_theta_qE"></span><span id="particle_model_constants_t::sc_theta_q__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a45992eef7e6c0b44b9f2f8750ecb54a7"></span>codi::RealReverse <code class="sig-name descname">sc_theta_q</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t10sc_theta_qE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t10sc_delta_qE">
+<span id="_CPPv3N26particle_model_constants_t10sc_delta_qE"></span><span id="_CPPv2N26particle_model_constants_t10sc_delta_qE"></span><span id="particle_model_constants_t::sc_delta_q__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a875ceaa0c46e0fe4d527592500d98fa6"></span>codi::RealReverse <code class="sig-name descname">sc_delta_q</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t10sc_delta_qE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t10sc_theta_nE">
+<span id="_CPPv3N26particle_model_constants_t10sc_theta_nE"></span><span id="_CPPv2N26particle_model_constants_t10sc_theta_nE"></span><span id="particle_model_constants_t::sc_theta_n__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1ae1be3fde81d276ef7aa9e1c33d171cf0"></span>codi::RealReverse <code class="sig-name descname">sc_theta_n</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t10sc_theta_nE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t10sc_delta_nE">
+<span id="_CPPv3N26particle_model_constants_t10sc_delta_nE"></span><span id="_CPPv2N26particle_model_constants_t10sc_delta_nE"></span><span id="particle_model_constants_t::sc_delta_n__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a8ddc93088e12109e3d22eea39dfc3db0"></span>codi::RealReverse <code class="sig-name descname">sc_delta_n</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t10sc_delta_nE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5s_velE">
+<span id="_CPPv3N26particle_model_constants_t5s_velE"></span><span id="_CPPv2N26particle_model_constants_t5s_velE"></span><span id="particle_model_constants_t::s_vel__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a7d24ce0d83c17caf12b83fca89cd1075"></span>codi::RealReverse <code class="sig-name descname">s_vel</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5s_velE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Also known as sigma_vel in ICON. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5a_velE">
+<span id="_CPPv3N26particle_model_constants_t5a_velE"></span><span id="_CPPv2N26particle_model_constants_t5a_velE"></span><span id="particle_model_constants_t::a_vel__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1ab5de7f88178372b4e8e4be63a72afd50"></span>codi::RealReverse <code class="sig-name descname">a_vel</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5a_velE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5b_velE">
+<span id="_CPPv3N26particle_model_constants_t5b_velE"></span><span id="_CPPv2N26particle_model_constants_t5b_velE"></span><span id="particle_model_constants_t::b_vel__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1ab904c1f4aac7323cf7832048e864c9e1"></span>codi::RealReverse <code class="sig-name descname">b_vel</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5b_velE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5rho_vE">
+<span id="_CPPv3N26particle_model_constants_t5rho_vE"></span><span id="_CPPv2N26particle_model_constants_t5rho_vE"></span><span id="particle_model_constants_t::rho_v__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a5c2567b1739c88789f519fc711018ba1"></span>codi::RealReverse <code class="sig-name descname">rho_v</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5rho_vE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t3c_zE">
+<span id="_CPPv3N26particle_model_constants_t3c_zE"></span><span id="_CPPv2N26particle_model_constants_t3c_zE"></span><span id="particle_model_constants_t::c_z__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a2de30bbbae7a5394e90b0232440800d0"></span>codi::RealReverse <code class="sig-name descname">c_z</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t3c_zE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t9sc_coll_nE">
+<span id="_CPPv3N26particle_model_constants_t9sc_coll_nE"></span><span id="_CPPv2N26particle_model_constants_t9sc_coll_nE"></span><span id="particle_model_constants_t::sc_coll_n__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a821ed6e5df61be2acc8a8f487ad55008"></span>codi::RealReverse <code class="sig-name descname">sc_coll_n</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t9sc_coll_nE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Also known as e_coll in ICON. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t4cmu0E">
+<span id="_CPPv3N26particle_model_constants_t4cmu0E"></span><span id="_CPPv2N26particle_model_constants_t4cmu0E"></span><span id="particle_model_constants_t::cmu0__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1aa9bc78d34c7b2997625e25458daa73b3"></span>codi::RealReverse <code class="sig-name descname">cmu0</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t4cmu0E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t4cmu1E">
+<span id="_CPPv3N26particle_model_constants_t4cmu1E"></span><span id="_CPPv2N26particle_model_constants_t4cmu1E"></span><span id="particle_model_constants_t::cmu1__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1ab0497dd57e5100bdf088827a6481f9e4"></span>codi::RealReverse <code class="sig-name descname">cmu1</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t4cmu1E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t4cmu2E">
+<span id="_CPPv3N26particle_model_constants_t4cmu2E"></span><span id="_CPPv2N26particle_model_constants_t4cmu2E"></span><span id="particle_model_constants_t::cmu2__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a0adb837605dcaf9f63613b6f1d4c910d"></span>codi::RealReverse <code class="sig-name descname">cmu2</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t4cmu2E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t4cmu3E">
+<span id="_CPPv3N26particle_model_constants_t4cmu3E"></span><span id="_CPPv2N26particle_model_constants_t4cmu3E"></span><span id="particle_model_constants_t::cmu3__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1aac11194653d6d9441380bb587a6810dd"></span>codi::RealReverse <code class="sig-name descname">cmu3</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t4cmu3E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t4cmu4E">
+<span id="_CPPv3N26particle_model_constants_t4cmu4E"></span><span id="_CPPv2N26particle_model_constants_t4cmu4E"></span><span id="particle_model_constants_t::cmu4__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a6a7e82a59e74a794c128b093ce7b436a"></span>codi::RealReverse <code class="sig-name descname">cmu4</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t4cmu4E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t4cmu5E">
+<span id="_CPPv3N26particle_model_constants_t4cmu5E"></span><span id="_CPPv2N26particle_model_constants_t4cmu5E"></span><span id="particle_model_constants_t::cmu5__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a5e606b8f9fa02cadf0a5fe05b7cbdd8a"></span>codi::RealReverse <code class="sig-name descname">cmu5</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t4cmu5E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5alphaE">
+<span id="_CPPv3N26particle_model_constants_t5alphaE"></span><span id="_CPPv2N26particle_model_constants_t5alphaE"></span><span id="particle_model_constants_t::alpha__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a0a57fc3e2fe9dab5798be6c0203ead33"></span>codi::RealReverse <code class="sig-name descname">alpha</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5alphaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t4betaE">
+<span id="_CPPv3N26particle_model_constants_t4betaE"></span><span id="_CPPv2N26particle_model_constants_t4betaE"></span><span id="particle_model_constants_t::beta__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a667af4914bded8b0127b5d2384df7801"></span>codi::RealReverse <code class="sig-name descname">beta</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t4betaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5gammaE">
+<span id="_CPPv3N26particle_model_constants_t5gammaE"></span><span id="_CPPv2N26particle_model_constants_t5gammaE"></span><span id="particle_model_constants_t::gamma__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1add4bb974d48df390f0c52b7c0b1f737e"></span>codi::RealReverse <code class="sig-name descname">gamma</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5gammaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t2nuE">
+<span id="_CPPv3N26particle_model_constants_t2nuE"></span><span id="_CPPv2N26particle_model_constants_t2nuE"></span><span id="particle_model_constants_t::nu__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a80d9082f11119b9fe85d0488f51739ea"></span>codi::RealReverse <code class="sig-name descname">nu</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t2nuE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t2g1E">
+<span id="_CPPv3N26particle_model_constants_t2g1E"></span><span id="_CPPv2N26particle_model_constants_t2g1E"></span><span id="particle_model_constants_t::g1__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a06a5bf55b42ba7ccd098ce45a1d49070"></span>codi::RealReverse <code class="sig-name descname">g1</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t2g1E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t2g2E">
+<span id="_CPPv3N26particle_model_constants_t2g2E"></span><span id="_CPPv2N26particle_model_constants_t2g2E"></span><span id="particle_model_constants_t::g2__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1aa8d0f415fa58f04034a7a5307dc486e1"></span>codi::RealReverse <code class="sig-name descname">g2</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t2g2E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t2muE">
+<span id="_CPPv3N26particle_model_constants_t2muE"></span><span id="_CPPv2N26particle_model_constants_t2muE"></span><span id="particle_model_constants_t::mu__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a9d43e60b1d995908122e4772b2c82445"></span>codi::RealReverse <code class="sig-name descname">mu</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t2muE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t3nm1E">
+<span id="_CPPv3N26particle_model_constants_t3nm1E"></span><span id="_CPPv2N26particle_model_constants_t3nm1E"></span><span id="particle_model_constants_t::nm1__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a8e9a5a362bc9e9fb280697dff948dc57"></span>codi::RealReverse <code class="sig-name descname">nm1</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t3nm1E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t3nm2E">
+<span id="_CPPv3N26particle_model_constants_t3nm2E"></span><span id="_CPPv2N26particle_model_constants_t3nm2E"></span><span id="particle_model_constants_t::nm2__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1afabe7c99cb4f78b4d075c0a23edd0a89"></span>codi::RealReverse <code class="sig-name descname">nm2</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t3nm2E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t3nm3E">
+<span id="_CPPv3N26particle_model_constants_t3nm3E"></span><span id="_CPPv2N26particle_model_constants_t3nm3E"></span><span id="particle_model_constants_t::nm3__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1afca9eb85bc4ef82b64d6419401516239"></span>codi::RealReverse <code class="sig-name descname">nm3</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t3nm3E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t8q_crit_cE">
+<span id="_CPPv3N26particle_model_constants_t8q_crit_cE"></span><span id="_CPPv2N26particle_model_constants_t8q_crit_cE"></span><span id="particle_model_constants_t::q_crit_c__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a3424e34c5275ce3ac9583632426e9c91"></span>codi::RealReverse <code class="sig-name descname">q_crit_c</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t8q_crit_cE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Riming parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t8d_crit_cE">
+<span id="_CPPv3N26particle_model_constants_t8d_crit_cE"></span><span id="_CPPv2N26particle_model_constants_t8d_crit_cE"></span><span id="particle_model_constants_t::d_crit_c__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1ac5f509ab532fc10efa112decfad9f966"></span>codi::RealReverse <code class="sig-name descname">d_crit_c</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t8d_crit_cE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Riming parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t7ecoll_cE">
+<span id="_CPPv3N26particle_model_constants_t7ecoll_cE"></span><span id="_CPPv2N26particle_model_constants_t7ecoll_cE"></span><span id="particle_model_constants_t::ecoll_c__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a33d905a82ef23a8c047135bb7b11cb65"></span>codi::RealReverse <code class="sig-name descname">ecoll_c</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t7ecoll_cE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Riming parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t3capE">
+<span id="_CPPv3N26particle_model_constants_t3capE"></span><span id="_CPPv2N26particle_model_constants_t3capE"></span><span id="particle_model_constants_t::cap__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1afc0790e8dced73192ace997f219a97c1"></span>codi::RealReverse <code class="sig-name descname">cap</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t3capE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Riming parameter. Coefficient for capacity of particle. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5a_venE">
+<span id="_CPPv3N26particle_model_constants_t5a_venE"></span><span id="_CPPv2N26particle_model_constants_t5a_venE"></span><span id="particle_model_constants_t::a_ven__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a85fd2e43abb3f9a1675605ef1e524598"></span>codi::RealReverse <code class="sig-name descname">a_ven</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5a_venE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Riming parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t5b_venE">
+<span id="_CPPv3N26particle_model_constants_t5b_venE"></span><span id="_CPPv2N26particle_model_constants_t5b_venE"></span><span id="particle_model_constants_t::b_ven__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a79ec1832785ee8446f50fa4a5504b198"></span>codi::RealReverse <code class="sig-name descname">b_ven</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t5b_venE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Riming parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t3c_sE">
+<span id="_CPPv3N26particle_model_constants_t3c_sE"></span><span id="_CPPv2N26particle_model_constants_t3c_sE"></span><span id="particle_model_constants_t::c_s__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1aa45f04f637091d22bb35b118e0091660"></span>codi::RealReverse <code class="sig-name descname">c_s</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t3c_sE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Also known as c_i in ICON. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t3a_fE">
+<span id="_CPPv3N26particle_model_constants_t3a_fE"></span><span id="_CPPv2N26particle_model_constants_t3a_fE"></span><span id="particle_model_constants_t::a_f__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1ae2d855f8fd26728ab233991f231fa681"></span>codi::RealReverse <code class="sig-name descname">a_f</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t3a_fE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t3b_fE">
+<span id="_CPPv3N26particle_model_constants_t3b_fE"></span><span id="_CPPv2N26particle_model_constants_t3b_fE"></span><span id="particle_model_constants_t::b_f__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a5742a6992754c6a8d89aa439f89f7640"></span>codi::RealReverse <code class="sig-name descname">b_f</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t3b_fE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t6alfa_nE">
+<span id="_CPPv3N26particle_model_constants_t6alfa_nE"></span><span id="_CPPv2N26particle_model_constants_t6alfa_nE"></span><span id="particle_model_constants_t::alfa_n__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a5c3c084f659ed49f37c8868c5cbbef46"></span>codi::RealReverse <code class="sig-name descname">alfa_n</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t6alfa_nE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Bulk sedimentation velocity parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t6alfa_qE">
+<span id="_CPPv3N26particle_model_constants_t6alfa_qE"></span><span id="_CPPv2N26particle_model_constants_t6alfa_qE"></span><span id="particle_model_constants_t::alfa_q__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a948a9a181c981b2d750ef37e30092622"></span>codi::RealReverse <code class="sig-name descname">alfa_q</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t6alfa_qE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Bulk sedimentation velocity parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t6lambdaE">
+<span id="_CPPv3N26particle_model_constants_t6lambdaE"></span><span id="_CPPv2N26particle_model_constants_t6lambdaE"></span><span id="particle_model_constants_t::lambda__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a0b08e0c7f7bbee81d9af50c9edb4048e"></span>codi::RealReverse <code class="sig-name descname">lambda</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t6lambdaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Bulk sedimentation velocity parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t9vsedi_minE">
+<span id="_CPPv3N26particle_model_constants_t9vsedi_minE"></span><span id="_CPPv2N26particle_model_constants_t9vsedi_minE"></span><span id="particle_model_constants_t::vsedi_min__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a422d456049a18e48a9b177b90200244a"></span>codi::RealReverse <code class="sig-name descname">vsedi_min</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t9vsedi_minE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Bulk sedimentation velocity parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N26particle_model_constants_t9vsedi_maxE">
+<span id="_CPPv3N26particle_model_constants_t9vsedi_maxE"></span><span id="_CPPv2N26particle_model_constants_t9vsedi_maxE"></span><span id="particle_model_constants_t::vsedi_max__codi::RealReverse"></span><span class="target" id="structparticle__model__constants__t_1a25823b39c61eafd5b59ffd7d0adf13c5"></span>codi::RealReverse <code class="sig-name descname">vsedi_max</code><a class="headerlink" href="#_CPPv4N26particle_model_constants_t9vsedi_maxE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Bulk sedimentation velocity parameter. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="structreference__quantities__t.html" class="btn btn-neutral float-right" title="Struct reference_quantities_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="structnc__parameters__t.html" class="btn btn-neutral float-left" title="Struct nc_parameters_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

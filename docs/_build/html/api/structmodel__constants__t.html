@@ -1,0 +1,650 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Struct model_constants_t &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Struct nc_parameters_t" href="structnc__parameters__t.html" />
+    <link rel="prev" title="Struct input_parameters_t" href="structinput__parameters__t.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="library_root.html">C++ API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#class-hierarchy">Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#file-hierarchy">File Hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="library_root.html#full-api">Full API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#namespaces">Namespaces</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="library_root.html#classes-and-structs">Classes and Structs</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="structcollection__model__constants__t.html">Struct collection_model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structgamma__table__t.html">Struct gamma_table_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structglobal__args__t.html">Struct global_args_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structinput__parameters__t.html">Struct input_parameters_t</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Struct model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structnc__parameters__t.html">Struct nc_parameters_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structparticle__model__constants__t.html">Struct particle_model_constants_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structreference__quantities__t.html">Struct reference_quantities_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structtable__t.html">Struct table_t</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#variables">Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#defines">Defines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#typedefs">Typedefs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="library_root.html">C++ API</a> &raquo;</li>
+        
+      <li>Struct model_constants_t</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/structmodel__constants__t.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="struct-model-constants-t">
+<span id="exhale-struct-structmodel-constants-t"></span><h1>Struct model_constants_t<a class="headerlink" href="#struct-model-constants-t" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a></p></li>
+</ul>
+<div class="section" id="struct-documentation">
+<h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="_CPPv417model_constants_t">
+<span id="_CPPv317model_constants_t"></span><span id="_CPPv217model_constants_t"></span><span id="model_constants_t"></span><span class="target" id="structmodel__constants__t"></span><em class="property">struct </em><code class="sig-name descname">model_constants_t</code><a class="headerlink" href="#_CPPv417model_constants_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Structure for constants of a model. Includes particle constants as well. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t7alpha_dE">
+<span id="_CPPv3N17model_constants_t7alpha_dE"></span><span id="_CPPv2N17model_constants_t7alpha_dE"></span><span id="model_constants_t::alpha_d__double"></span><span class="target" id="structmodel__constants__t_1a424154a0ce068d9ef56ee9bb66eb2ea4"></span>double <code class="sig-name descname">alpha_d</code><a class="headerlink" href="#_CPPv4N17model_constants_t7alpha_dE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Accomodation coefficient </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t11rho_a_primeE">
+<span id="_CPPv3N17model_constants_t11rho_a_primeE"></span><span id="_CPPv2N17model_constants_t11rho_a_primeE"></span><span id="model_constants_t::rho_a_prime__double"></span><span class="target" id="structmodel__constants__t_1a61f45e227056309589758aeb015c54af"></span>double <code class="sig-name descname">rho_a_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t11rho_a_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Density of dry air </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8Nc_primeE">
+<span id="_CPPv3N17model_constants_t8Nc_primeE"></span><span id="_CPPv2N17model_constants_t8Nc_primeE"></span><span id="model_constants_t::Nc_prime__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a5575131a0b0ea92630bf4ab962ec74f1"></span>codi::RealReverse <code class="sig-name descname">Nc_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t8Nc_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number concentration of cloud droplets </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8a1_primeE">
+<span id="_CPPv3N17model_constants_t8a1_primeE"></span><span id="_CPPv2N17model_constants_t8a1_primeE"></span><span id="model_constants_t::a1_prime__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a1a980c3758859d3f42d45fb55ec086df"></span>codi::RealReverse <code class="sig-name descname">a1_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t8a1_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Dimensional coefficients </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8a2_primeE">
+<span id="_CPPv3N17model_constants_t8a2_primeE"></span><span id="_CPPv2N17model_constants_t8a2_primeE"></span><span id="model_constants_t::a2_prime__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1ad408ae16d6bf313a8923b87a9516af81"></span>codi::RealReverse <code class="sig-name descname">a2_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t8a2_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Dimensional coefficients </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8e1_primeE">
+<span id="_CPPv3N17model_constants_t8e1_primeE"></span><span id="_CPPv2N17model_constants_t8e1_primeE"></span><span id="model_constants_t::e1_prime__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a44738b290c2c86ab2d7e05ce2e4adb7c"></span>codi::RealReverse <code class="sig-name descname">e1_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t8e1_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Dimensional coefficients </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8e2_primeE">
+<span id="_CPPv3N17model_constants_t8e2_primeE"></span><span id="_CPPv2N17model_constants_t8e2_primeE"></span><span id="model_constants_t::e2_prime__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1ac07b9096e0c9bf991f900840865e08c2"></span>codi::RealReverse <code class="sig-name descname">e2_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t8e2_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Dimensional coefficients </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t7B_primeE">
+<span id="_CPPv3N17model_constants_t7B_primeE"></span><span id="_CPPv2N17model_constants_t7B_primeE"></span><span id="model_constants_t::B_prime__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a4e3349b41d16e87cc28c4e087e6bf35b"></span>codi::RealReverse <code class="sig-name descname">B_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t7B_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Dimensional coefficients </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t7d_primeE">
+<span id="_CPPv3N17model_constants_t7d_primeE"></span><span id="_CPPv2N17model_constants_t7d_primeE"></span><span id="model_constants_t::d_prime__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a0a47477749f6e724d21a10d7f2d58c79"></span>codi::RealReverse <code class="sig-name descname">d_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t7d_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Dimensional coefficients </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t2dwE">
+<span id="_CPPv3N17model_constants_t2dwE"></span><span id="_CPPv2N17model_constants_t2dwE"></span><span id="model_constants_t::dw__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a48601028c6d8acba46ae598fe575089d"></span>codi::RealReverse <code class="sig-name descname">dw</code><a class="headerlink" href="#_CPPv4N17model_constants_t2dwE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Change in buoancy </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t5gammaE">
+<span id="_CPPv3N17model_constants_t5gammaE"></span><span id="_CPPv2N17model_constants_t5gammaE"></span><span id="model_constants_t::gamma__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a6f9244b2bc03df03063479016476bdff"></span>codi::RealReverse <code class="sig-name descname">gamma</code><a class="headerlink" href="#_CPPv4N17model_constants_t5gammaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Exponents </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t5betacE">
+<span id="_CPPv3N17model_constants_t5betacE"></span><span id="_CPPv2N17model_constants_t5betacE"></span><span id="model_constants_t::betac__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a66b2188df54091e232d71119789557bf"></span>codi::RealReverse <code class="sig-name descname">betac</code><a class="headerlink" href="#_CPPv4N17model_constants_t5betacE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Exponents </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t5betarE">
+<span id="_CPPv3N17model_constants_t5betarE"></span><span id="_CPPv2N17model_constants_t5betarE"></span><span id="model_constants_t::betar__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a75361118c9a7548a7b9f647990b86dd3"></span>codi::RealReverse <code class="sig-name descname">betar</code><a class="headerlink" href="#_CPPv4N17model_constants_t5betarE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Exponents </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t6delta1E">
+<span id="_CPPv3N17model_constants_t6delta1E"></span><span id="_CPPv2N17model_constants_t6delta1E"></span><span id="model_constants_t::delta1__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a4c534e1fec6da9bc40b5739921fb016b"></span>codi::RealReverse <code class="sig-name descname">delta1</code><a class="headerlink" href="#_CPPv4N17model_constants_t6delta1E" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Exponents </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t6delta2E">
+<span id="_CPPv3N17model_constants_t6delta2E"></span><span id="_CPPv2N17model_constants_t6delta2E"></span><span id="model_constants_t::delta2__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a5ef0d2aea43efcbae6b0d77f7f30b2a4"></span>codi::RealReverse <code class="sig-name descname">delta2</code><a class="headerlink" href="#_CPPv4N17model_constants_t6delta2E" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Exponents </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t4zetaE">
+<span id="_CPPv3N17model_constants_t4zetaE"></span><span id="_CPPv2N17model_constants_t4zetaE"></span><span id="model_constants_t::zeta__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1ad7a2db35eb6a3c1f26e6efe74d423bd0"></span>codi::RealReverse <code class="sig-name descname">zeta</code><a class="headerlink" href="#_CPPv4N17model_constants_t4zetaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Exponents </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t4hailE">
+<span id="_CPPv3N17model_constants_t4hailE"></span><span id="_CPPv2N17model_constants_t4hailE"></span><span id="model_constants_t::hail__particle_model_constants_t"></span><span class="target" id="structmodel__constants__t_1ad4c665e9eedb1e2d695ba1a443e9c61d"></span><a class="reference internal" href="structparticle__model__constants__t.html#_CPPv426particle_model_constants_t" title="particle_model_constants_t">particle_model_constants_t</a> <code class="sig-name descname">hail</code><a class="headerlink" href="#_CPPv4N17model_constants_t4hailE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Model constants for hail. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t3iceE">
+<span id="_CPPv3N17model_constants_t3iceE"></span><span id="_CPPv2N17model_constants_t3iceE"></span><span id="model_constants_t::ice__particle_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a5924b9173ba5c6b3169b8033feebc518"></span><a class="reference internal" href="structparticle__model__constants__t.html#_CPPv426particle_model_constants_t" title="particle_model_constants_t">particle_model_constants_t</a> <code class="sig-name descname">ice</code><a class="headerlink" href="#_CPPv4N17model_constants_t3iceE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Model constants for ice. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t4snowE">
+<span id="_CPPv3N17model_constants_t4snowE"></span><span id="_CPPv2N17model_constants_t4snowE"></span><span id="model_constants_t::snow__particle_model_constants_t"></span><span class="target" id="structmodel__constants__t_1ad54f50d42a6a04beff9286ff8c7d1aa1"></span><a class="reference internal" href="structparticle__model__constants__t.html#_CPPv426particle_model_constants_t" title="particle_model_constants_t">particle_model_constants_t</a> <code class="sig-name descname">snow</code><a class="headerlink" href="#_CPPv4N17model_constants_t4snowE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Model constants for snow. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t5cloudE">
+<span id="_CPPv3N17model_constants_t5cloudE"></span><span id="_CPPv2N17model_constants_t5cloudE"></span><span id="model_constants_t::cloud__particle_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a5cb98a11e381595367b26b4122600940"></span><a class="reference internal" href="structparticle__model__constants__t.html#_CPPv426particle_model_constants_t" title="particle_model_constants_t">particle_model_constants_t</a> <code class="sig-name descname">cloud</code><a class="headerlink" href="#_CPPv4N17model_constants_t5cloudE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Model constants for cloud. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t4rainE">
+<span id="_CPPv3N17model_constants_t4rainE"></span><span id="_CPPv2N17model_constants_t4rainE"></span><span id="model_constants_t::rain__particle_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a1d6240a112401c9251095066d34aebf5"></span><a class="reference internal" href="structparticle__model__constants__t.html#_CPPv426particle_model_constants_t" title="particle_model_constants_t">particle_model_constants_t</a> <code class="sig-name descname">rain</code><a class="headerlink" href="#_CPPv4N17model_constants_t4rainE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Model constants for rain. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t7graupelE">
+<span id="_CPPv3N17model_constants_t7graupelE"></span><span id="_CPPv2N17model_constants_t7graupelE"></span><span id="model_constants_t::graupel__particle_model_constants_t"></span><span class="target" id="structmodel__constants__t_1ad6eb898e9f897440e11ceb92e7385b83"></span><a class="reference internal" href="structparticle__model__constants__t.html#_CPPv426particle_model_constants_t" title="particle_model_constants_t">particle_model_constants_t</a> <code class="sig-name descname">graupel</code><a class="headerlink" href="#_CPPv4N17model_constants_t7graupelE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Model constants for graupel. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_scrE">
+<span id="_CPPv3N17model_constants_t10coeffs_scrE"></span><span id="_CPPv2N17model_constants_t10coeffs_scrE"></span><span id="model_constants_t::coeffs_scr__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a66c7bf465eba2466f4e2cca7f55973ac"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_scr</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_scrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Snow - cloud droplet riming. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_srrE">
+<span id="_CPPv3N17model_constants_t10coeffs_srrE"></span><span id="_CPPv2N17model_constants_t10coeffs_srrE"></span><span id="model_constants_t::coeffs_srr__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a38bf2aa6746f60cf3734827a6d54c614"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_srr</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_srrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Snow - rain droplet riming. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_irrE">
+<span id="_CPPv3N17model_constants_t10coeffs_irrE"></span><span id="_CPPv2N17model_constants_t10coeffs_irrE"></span><span id="model_constants_t::coeffs_irr__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1ac7dcec2b6b511b313d6c0c705f07e3d9"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_irr</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_irrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Ice - rain droplet riming. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_icrE">
+<span id="_CPPv3N17model_constants_t10coeffs_icrE"></span><span id="_CPPv2N17model_constants_t10coeffs_icrE"></span><span id="model_constants_t::coeffs_icr__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1ab1adda4bb90269ab90d4f20e1f34c37e"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_icr</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_icrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Ice - cloud droplet riming. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_hrrE">
+<span id="_CPPv3N17model_constants_t10coeffs_hrrE"></span><span id="_CPPv2N17model_constants_t10coeffs_hrrE"></span><span id="model_constants_t::coeffs_hrr__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a7bad5d830b63155a7822bf2ed5cc4138"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_hrr</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_hrrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Hail - rain droplet riming. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_grrE">
+<span id="_CPPv3N17model_constants_t10coeffs_grrE"></span><span id="_CPPv2N17model_constants_t10coeffs_grrE"></span><span id="model_constants_t::coeffs_grr__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1ab588a97a475b273a85595467cd1c9c7a"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_grr</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_grrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Graupel - rain droplet riming. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_hcrE">
+<span id="_CPPv3N17model_constants_t10coeffs_hcrE"></span><span id="_CPPv2N17model_constants_t10coeffs_hcrE"></span><span id="model_constants_t::coeffs_hcr__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a21789c3b82f0938d77f61604b554c0ac"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_hcr</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_hcrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Hail - cloud droplet riming. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_gcrE">
+<span id="_CPPv3N17model_constants_t10coeffs_gcrE"></span><span id="_CPPv2N17model_constants_t10coeffs_gcrE"></span><span id="model_constants_t::coeffs_gcr__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a62a2ca1f126d8aa0a51e487bb89df10e"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_gcr</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_gcrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Graupel - cloud droplet riming. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_sicE">
+<span id="_CPPv3N17model_constants_t10coeffs_sicE"></span><span id="_CPPv2N17model_constants_t10coeffs_sicE"></span><span id="model_constants_t::coeffs_sic__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1ae7a9e1c62c84fa3c4999c7690c38dba6"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_sic</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_sicE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Snow - ice collection. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_hicE">
+<span id="_CPPv3N17model_constants_t10coeffs_hicE"></span><span id="_CPPv2N17model_constants_t10coeffs_hicE"></span><span id="model_constants_t::coeffs_hic__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1aecf1020412ab3d064c93f9efe761d5d2"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_hic</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_hicE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Hail - ice collection. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_gicE">
+<span id="_CPPv3N17model_constants_t10coeffs_gicE"></span><span id="_CPPv2N17model_constants_t10coeffs_gicE"></span><span id="model_constants_t::coeffs_gic__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a91e669771d2b67a6cf41484b76ffff15"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_gic</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_gicE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Graupel - ice collection. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_hscE">
+<span id="_CPPv3N17model_constants_t10coeffs_hscE"></span><span id="_CPPv2N17model_constants_t10coeffs_hscE"></span><span id="model_constants_t::coeffs_hsc__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a85933a74475874c7229363c357fadca7"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_hsc</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_hscE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Hail - snow collection. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10coeffs_gscE">
+<span id="_CPPv3N17model_constants_t10coeffs_gscE"></span><span id="_CPPv2N17model_constants_t10coeffs_gscE"></span><span id="model_constants_t::coeffs_gsc__collection_model_constants_t"></span><span class="target" id="structmodel__constants__t_1a0f40a18d4f48c5c39ad47adf8ddba803"></span><a class="reference internal" href="structcollection__model__constants__t.html#_CPPv428collection_model_constants_t" title="collection_model_constants_t">collection_model_constants_t</a> <code class="sig-name descname">coeffs_gsc</code><a class="headerlink" href="#_CPPv4N17model_constants_t10coeffs_gscE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Graupel - snow collection. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t11t_end_primeE">
+<span id="_CPPv3N17model_constants_t11t_end_primeE"></span><span id="_CPPv2N17model_constants_t11t_end_primeE"></span><span id="model_constants_t::t_end_prime__double"></span><span class="target" id="structmodel__constants__t_1a516c99ad46adc0e345129e0759660cc2"></span>double <code class="sig-name descname">t_end_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t11t_end_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>End time in seconds for the simulation. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t5t_endE">
+<span id="_CPPv3N17model_constants_t5t_endE"></span><span id="_CPPv2N17model_constants_t5t_endE"></span><span id="model_constants_t::t_end__double"></span><span class="target" id="structmodel__constants__t_1a1dae0fe29fce11d42f739e57c93f658c"></span>double <code class="sig-name descname">t_end</code><a class="headerlink" href="#_CPPv4N17model_constants_t5t_endE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>End time for the simulation. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8dt_primeE">
+<span id="_CPPv3N17model_constants_t8dt_primeE"></span><span id="_CPPv2N17model_constants_t8dt_primeE"></span><span id="model_constants_t::dt_prime__double"></span><span class="target" id="structmodel__constants__t_1a91cf28174b2e75d4c2de62a8b1cc70cb"></span>double <code class="sig-name descname">dt_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t8dt_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Timestep size in seconds for the simulation. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t2dtE">
+<span id="_CPPv3N17model_constants_t2dtE"></span><span id="_CPPv2N17model_constants_t2dtE"></span><span id="model_constants_t::dt__double"></span><span class="target" id="structmodel__constants__t_1abb7db3abd8b6af9e831660701590e547"></span>double <code class="sig-name descname">dt</code><a class="headerlink" href="#_CPPv4N17model_constants_t2dtE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Timestep size for the simulation. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t16dt_traject_primeE">
+<span id="_CPPv3N17model_constants_t16dt_traject_primeE"></span><span id="_CPPv2N17model_constants_t16dt_traject_primeE"></span><span id="model_constants_t::dt_traject_prime__double"></span><span class="target" id="structmodel__constants__t_1adc6a9224cb6863c1a84af82332f0b8c9"></span>double <code class="sig-name descname">dt_traject_prime</code><a class="headerlink" href="#_CPPv4N17model_constants_t16dt_traject_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Timestep size in seconds of the trajectory from the netCDF file. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t10dt_trajectE">
+<span id="_CPPv3N17model_constants_t10dt_trajectE"></span><span id="_CPPv2N17model_constants_t10dt_trajectE"></span><span id="model_constants_t::dt_traject__double"></span><span class="target" id="structmodel__constants__t_1ab03aabea0b71c2db00e0d7c25726e3bf"></span>double <code class="sig-name descname">dt_traject</code><a class="headerlink" href="#_CPPv4N17model_constants_t10dt_trajectE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Timestep size of the trajectory from the netCDF file. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t9num_stepsE">
+<span id="_CPPv3N17model_constants_t9num_stepsE"></span><span id="_CPPv2N17model_constants_t9num_stepsE"></span><span id="model_constants_t::num_steps__uint64_t"></span><span class="target" id="structmodel__constants__t_1ad1c97dbd330ceadda08b167093dd6a5e"></span>uint64_t <code class="sig-name descname">num_steps</code><a class="headerlink" href="#_CPPv4N17model_constants_t9num_stepsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number of timesteps to read from the netCDF file. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t13num_sub_stepsE">
+<span id="_CPPv3N17model_constants_t13num_sub_stepsE"></span><span id="_CPPv2N17model_constants_t13num_sub_stepsE"></span><span id="model_constants_t::num_sub_steps__uint64_t"></span><span class="target" id="structmodel__constants__t_1aa320441cf8c23c7f7e2e58f33e0a4256"></span>uint64_t <code class="sig-name descname">num_sub_steps</code><a class="headerlink" href="#_CPPv4N17model_constants_t13num_sub_stepsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number of timesteps to simulate between each timestep of the netCDF file. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t14snapshot_indexE">
+<span id="_CPPv3N17model_constants_t14snapshot_indexE"></span><span id="_CPPv2N17model_constants_t14snapshot_indexE"></span><span id="model_constants_t::snapshot_index__uint64_t"></span><span class="target" id="structmodel__constants__t_1a68475500e66e3068d9f2938d1d105fa2"></span>uint64_t <code class="sig-name descname">snapshot_index</code><a class="headerlink" href="#_CPPv4N17model_constants_t14snapshot_indexE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number of simulation steps before a snapshot shall be stored on disk. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t7dt_halfE">
+<span id="_CPPv3N17model_constants_t7dt_halfE"></span><span id="_CPPv2N17model_constants_t7dt_halfE"></span><span id="model_constants_t::dt_half__double"></span><span class="target" id="structmodel__constants__t_1a887fbb897d69d7ff398bd675f6058f74"></span>double <code class="sig-name descname">dt_half</code><a class="headerlink" href="#_CPPv4N17model_constants_t7dt_halfE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>dt/2 </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8dt_sixthE">
+<span id="_CPPv3N17model_constants_t8dt_sixthE"></span><span id="_CPPv2N17model_constants_t8dt_sixthE"></span><span id="model_constants_t::dt_sixth__double"></span><span class="target" id="structmodel__constants__t_1af3d51de20fb8a0682a5374aaf9f4b593"></span>double <code class="sig-name descname">dt_sixth</code><a class="headerlink" href="#_CPPv4N17model_constants_t8dt_sixthE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>dt/6 </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8dt_thirdE">
+<span id="_CPPv3N17model_constants_t8dt_thirdE"></span><span id="_CPPv2N17model_constants_t8dt_thirdE"></span><span id="model_constants_t::dt_third__double"></span><span class="target" id="structmodel__constants__t_1aa6a7bc944e30aa63da5b8861cb05fdad"></span>double <code class="sig-name descname">dt_third</code><a class="headerlink" href="#_CPPv4N17model_constants_t8dt_thirdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>dt/3 </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8a1_scaleE">
+<span id="_CPPv3N17model_constants_t8a1_scaleE"></span><span id="_CPPv2N17model_constants_t8a1_scaleE"></span><span id="model_constants_t::a1_scale__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a8389a99c4c3e637ad6fc637f598b9dae"></span>codi::RealReverse <code class="sig-name descname">a1_scale</code><a class="headerlink" href="#_CPPv4N17model_constants_t8a1_scaleE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Performance constants warm cloud </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8a2_scaleE">
+<span id="_CPPv3N17model_constants_t8a2_scaleE"></span><span id="_CPPv2N17model_constants_t8a2_scaleE"></span><span id="model_constants_t::a2_scale__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1ab26017d1707914f8de3e1bf995f0de19"></span>codi::RealReverse <code class="sig-name descname">a2_scale</code><a class="headerlink" href="#_CPPv4N17model_constants_t8a2_scaleE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Performance constants warm cloud </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8e1_scaleE">
+<span id="_CPPv3N17model_constants_t8e1_scaleE"></span><span id="_CPPv2N17model_constants_t8e1_scaleE"></span><span id="model_constants_t::e1_scale__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1ad24b7f4e0aa7724a7309c90062227e8f"></span>codi::RealReverse <code class="sig-name descname">e1_scale</code><a class="headerlink" href="#_CPPv4N17model_constants_t8e1_scaleE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Performance constants warm cloud </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8e2_scaleE">
+<span id="_CPPv3N17model_constants_t8e2_scaleE"></span><span id="_CPPv2N17model_constants_t8e2_scaleE"></span><span id="model_constants_t::e2_scale__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1a090fadb1595c4675235be892b394fee6"></span>codi::RealReverse <code class="sig-name descname">e2_scale</code><a class="headerlink" href="#_CPPv4N17model_constants_t8e2_scaleE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Performance constants warm cloud </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t7d_scaleE">
+<span id="_CPPv3N17model_constants_t7d_scaleE"></span><span id="_CPPv2N17model_constants_t7d_scaleE"></span><span id="model_constants_t::d_scale__codi::RealReverse"></span><span class="target" id="structmodel__constants__t_1ae93e9ad46beeece83a2023551bc073b2"></span>codi::RealReverse <code class="sig-name descname">d_scale</code><a class="headerlink" href="#_CPPv4N17model_constants_t7d_scaleE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Performance constants warm cloud </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t3narE">
+<span id="_CPPv3N17model_constants_t3narE"></span><span id="_CPPv2N17model_constants_t3narE"></span><span id="model_constants_t::nar__doubleC"></span><span class="target" id="structmodel__constants__t_1a59d4556c94a5b222276af42233457490"></span><em class="property">const</em> double <code class="sig-name descname">nar</code> = 0.22<a class="headerlink" href="#_CPPv4N17model_constants_t3narE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t3nbrE">
+<span id="_CPPv3N17model_constants_t3nbrE"></span><span id="_CPPv2N17model_constants_t3nbrE"></span><span id="model_constants_t::nbr__doubleC"></span><span class="target" id="structmodel__constants__t_1a6230706261b3dd9da93d1f5c62de43ad"></span><em class="property">const</em> double <code class="sig-name descname">nbr</code> = 2.2<a class="headerlink" href="#_CPPv4N17model_constants_t3nbrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t2arE">
+<span id="_CPPv3N17model_constants_t2arE"></span><span id="_CPPv2N17model_constants_t2arE"></span><span id="model_constants_t::ar__doubleC"></span><span class="target" id="structmodel__constants__t_1af0a4af25737c8e773f8483069aa69b2f"></span><em class="property">const</em> double <code class="sig-name descname">ar</code> = M_PI / 6.0<a class="headerlink" href="#_CPPv4N17model_constants_t2arE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t2brE">
+<span id="_CPPv3N17model_constants_t2brE"></span><span id="_CPPv2N17model_constants_t2brE"></span><span id="model_constants_t::br__doubleC"></span><span class="target" id="structmodel__constants__t_1a70a08b12f1254a6e794f50f8bea1b31f"></span><em class="property">const</em> double <code class="sig-name descname">br</code> = 3.0<a class="headerlink" href="#_CPPv4N17model_constants_t2brE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t2crE">
+<span id="_CPPv3N17model_constants_t2crE"></span><span id="_CPPv2N17model_constants_t2crE"></span><span id="model_constants_t::cr__doubleC"></span><span class="target" id="structmodel__constants__t_1a481d84ae32950fd5c1dc01a338126962"></span><em class="property">const</em> double <code class="sig-name descname">cr</code> = 386.8<a class="headerlink" href="#_CPPv4N17model_constants_t2crE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t2drE">
+<span id="_CPPv3N17model_constants_t2drE"></span><span id="_CPPv2N17model_constants_t2drE"></span><span id="model_constants_t::dr__doubleC"></span><span class="target" id="structmodel__constants__t_1a64a61d3c0b09bb106ff06fd75d575449"></span><em class="property">const</em> double <code class="sig-name descname">dr</code> = 0.67<a class="headerlink" href="#_CPPv4N17model_constants_t2drE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t2ScE">
+<span id="_CPPv3N17model_constants_t2ScE"></span><span id="_CPPv2N17model_constants_t2ScE"></span><span id="model_constants_t::Sc__doubleC"></span><span class="target" id="structmodel__constants__t_1a04dacdb3ba2b7fc2bc02690a1a59a149"></span><em class="property">const</em> double <code class="sig-name descname">Sc</code> = 0.6<a class="headerlink" href="#_CPPv4N17model_constants_t2ScE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t2muE">
+<span id="_CPPv3N17model_constants_t2muE"></span><span id="_CPPv2N17model_constants_t2muE"></span><span id="model_constants_t::mu__doubleC"></span><span class="target" id="structmodel__constants__t_1adb2045a5a91dbc9eb90605a0ac8775a4"></span><em class="property">const</em> double <code class="sig-name descname">mu</code> = 16.0e-6<a class="headerlink" href="#_CPPv4N17model_constants_t2muE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t4rho0E">
+<span id="_CPPv3N17model_constants_t4rho0E"></span><span id="_CPPv2N17model_constants_t4rho0E"></span><span id="model_constants_t::rho0__doubleC"></span><span class="target" id="structmodel__constants__t_1aab68f87faae79877a4738f2071a9ba2b"></span><em class="property">const</em> double <code class="sig-name descname">rho0</code> = 1.0<a class="headerlink" href="#_CPPv4N17model_constants_t4rho0E" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. Why not 1.225? </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t6alpharE">
+<span id="_CPPv3N17model_constants_t6alpharE"></span><span id="_CPPv2N17model_constants_t6alpharE"></span><span id="model_constants_t::alphar__doubleC"></span><span class="target" id="structmodel__constants__t_1a427e6648b6da205776039aaf7fc593ea"></span><em class="property">const</em> double <code class="sig-name descname">alphar</code> = 1.0 / (<a class="reference internal" href="#_CPPv4N17model_constants_t2brE" title="model_constants_t::br">br</a> + 1.0 - <a class="reference internal" href="#_CPPv4N17model_constants_t3nbrE" title="model_constants_t::nbr">nbr</a>)<a class="headerlink" href="#_CPPv4N17model_constants_t6alpharE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t8epsilonrE">
+<span id="_CPPv3N17model_constants_t8epsilonrE"></span><span id="_CPPv2N17model_constants_t8epsilonrE"></span><span id="model_constants_t::epsilonr__doubleC"></span><span class="target" id="structmodel__constants__t_1a4c46a5d3dc07dc9ce7d4cbfaab375bc8"></span><em class="property">const</em> double <code class="sig-name descname">epsilonr</code> = 0.5 * <a class="reference internal" href="#_CPPv4N17model_constants_t2drE" title="model_constants_t::dr">dr</a> + 2.5 - <a class="reference internal" href="#_CPPv4N17model_constants_t3nbrE" title="model_constants_t::nbr">nbr</a><a class="headerlink" href="#_CPPv4N17model_constants_t8epsilonrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Constants for the IFS model. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N17model_constants_t12scaling_factE">
+<span id="_CPPv3N17model_constants_t12scaling_factE"></span><span id="_CPPv2N17model_constants_t12scaling_factE"></span><span id="model_constants_t::scaling_fact__double"></span><span class="target" id="structmodel__constants__t_1a93f625c4fb9dbbf915497e2eee90739c"></span>double <code class="sig-name descname">scaling_fact</code><a class="headerlink" href="#_CPPv4N17model_constants_t12scaling_factE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Scaling factor. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="structnc__parameters__t.html" class="btn btn-neutral float-right" title="Struct nc_parameters_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="structinput__parameters__t.html" class="btn btn-neutral float-left" title="Struct input_parameters_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>plot_trajectories &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Executing Scripts" href="executing.html" />
+    <link rel="prev" title="plot_many_traj" href="plot_many_traj.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="executing.html">Executing Scripts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/scripts/plot_trajectories.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="plot-trajectories">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code><a class="headerlink" href="#plot-trajectories" title="Permalink to this headline">¶</a></h1>
+<p>Plot data from a filtered csv dataset and from a netcdf file.
+Usage:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-c</span></code>, <code class="docutils literal notranslate"><span class="pre">--csv</span></code>: File with derivatives.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-n</span></code>, <code class="docutils literal notranslate"><span class="pre">--netcdf</span></code>: File with netCDF info from a Cosmo or Icon simulation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-o</span></code>, <code class="docutils literal notranslate"><span class="pre">--outdir</span></code>: Path to store plots and transformed data if available.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-r</span></code>, <code class="docutils literal notranslate"><span class="pre">--rotate</span></code>: Use this if longitudes and latitudes have to be rotated on the csv file.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-i</span></code>, <code class="docutils literal notranslate"><span class="pre">--input_config</span></code>: Config file that tells which plots to generate. Default plots are S and T with dzeta each.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-t</span></code>, <code class="docutils literal notranslate"><span class="pre">--trajectory</span></code>: A list of trajectories to consider here. Using a selected number of trajectories makes plots easier to read. If -1 is used, all trajectories will be plotted.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--resolution</span></code>: Resolution for the background maps. Default is <code class="docutils literal notranslate"><span class="pre">f</span></code>. You may need to install basemap-data-hires first for this or choose a lower resolution.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-m</span></code>, <code class="docutils literal notranslate"><span class="pre">--max_time</span></code>: Maximum time to plot in seconds.</p></li>
+</ul>
+<span class="target" id="module-scripts.plot_trajectories"></span><dl class="class">
+<dt id="scripts.plot_trajectories.Configuration">
+<em class="property">class </em><code class="sig-prename descclassname">scripts.plot_trajectories.</code><code class="sig-name descname">Configuration</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_trajectories.Configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configuration for plotting several images. May be extended with
+information such as dpi.</p>
+<dl class="attribute">
+<dt id="scripts.plot_trajectories.Configuration.net_params">
+<code class="sig-name descname">net_params</code><a class="headerlink" href="#scripts.plot_trajectories.Configuration.net_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of output parameters to plot with information from a netCDF
+file from a Cosmo or ICON simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>list of string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="scripts.plot_trajectories.Configuration.deriv_params">
+<code class="sig-name descname">deriv_params</code><a class="headerlink" href="#scripts.plot_trajectories.Configuration.deriv_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Each tuple is a combination of input and output parameters to
+plot the corresponding derivative.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>list of tuples of string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="scripts.plot_trajectories.Configuration.load_config">
+<code class="sig-name descname">load_config</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_trajectories.Configuration.load_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load configuration file and set members. If path is None, a
+default configuration is loaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – Json file with dictionary for all attributes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="scripts.plot_trajectories.plot_traj_nc">
+<code class="sig-prename descclassname">scripts.plot_trajectories.</code><code class="sig-name descname">plot_traj_nc</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">out_param</em>, <em class="sig-param">res</em>, <em class="sig-param">n_traj=903</em>, <em class="sig-param">trajs=None</em>, <em class="sig-param">max_time=None</em>, <em class="sig-param">path='pics/'</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_trajectories.plot_traj_nc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot trajectories from an ICON or Cosmo simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – A dataframe with columns “lon”, “lat” and various out parameters
+as columns.</p></li>
+<li><p><strong>out_param</strong> (<em>string</em>) – Output parameter to use plot as “QR”.</p></li>
+<li><p><strong>res</strong> (<em>string</em>) – Resolution for background map. Needs basemap-data-hires
+for “f” and “h”.</p></li>
+<li><p><strong>n_traj</strong> (<em>int</em>) – Number of trajectories in df.</p></li>
+<li><p><strong>trajs</strong> (<em>list of int</em>) – List of trajectories to plot.</p></li>
+<li><p><strong>max_time</strong> (<em>float</em>) – Maximum time to plot in seconds.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="scripts.plot_trajectories.plot_weather_deriv">
+<code class="sig-prename descclassname">scripts.plot_trajectories.</code><code class="sig-name descname">plot_weather_deriv</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">in_param</em>, <em class="sig-param">out_param</em>, <em class="sig-param">res</em>, <em class="sig-param">path='pics/'</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_trajectories.plot_weather_deriv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot derivatives along a trajectory given an input and output parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns “in_param”, “out_param”, “LONGITUDE”,
+“LATITUDE”, “trajectory”, “deriv”.</p></li>
+<li><p><strong>in_param</strong> (<em>string</em>) – Input parameter to plot such as “dzeta”.</p></li>
+<li><p><strong>out_param</strong> (<em>string</em>) – Output parameter to plot such as “qr”.</p></li>
+<li><p><strong>res</strong> (<em>string</em>) – Resolution for background map. Needs basemap-data-hires
+for “f” and “h”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataframe with added “xm” and “ym” columns used for plotting
+with mercator projection.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pandas.Dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="scripts.plot_trajectories.transform_df">
+<code class="sig-prename descclassname">scripts.plot_trajectories.</code><code class="sig-name descname">transform_df</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">net_df</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_trajectories.transform_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add columns LONGITUDE and LATITUDE to df coming from net_df.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe from a csv file with information about derivatives.</p></li>
+<li><p><strong>net_df</strong> (<em>pandas.Dataframe</em>) – Dataframe from a netCDF file with results from a Cosmo or ICON
+simulation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataframe with columns “deriv”, “in_param”, “out_param”,
+“timestep”, “trajectory”, “LONGITUDE”, “LATITUDE”.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pandas.Dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="executing.html" class="btn btn-neutral float-right" title="Executing Scripts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="plot_many_traj.html" class="btn btn-neutral float-left" title="plot_many_traj" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
