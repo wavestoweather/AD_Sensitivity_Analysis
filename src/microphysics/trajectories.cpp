@@ -632,7 +632,10 @@ int main(int argc, char** argv)
     outfile_refs.close();
 
     // Append the initial values and write headers
-    outfile << "timestep,trajectory,LONGITUDE,LATITUDE,MAP,"
+    outfile << "timestep,trajectory,LONGITUDE,LATITUDE,"
+#if defined WCB || defined WCB2
+        << "MAP,"
+#endif
         << "p,T,w,S,qc,qr,qv,Nc,Nr,Nv,qi,Ni,vi,"
         << "qs,Ns,qg,Ng,qh,Nh,qiout,qsout,qrout,qgout,qhout,"
         << "latent_heat,latent_cool,Niout,Nsout,Nrout,Ngout,Nhout\n";
@@ -662,7 +665,7 @@ int main(int argc, char** argv)
             << "trajectory,"
             << "LONGITUDE,"
             << "LATITUDE,"
-#ifdef WCB
+#if defined WCB || defined WCB2
             << "MAP,"
 #endif
             << "da_1,"
