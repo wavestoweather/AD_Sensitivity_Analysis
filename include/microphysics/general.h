@@ -93,6 +93,64 @@ void print_constants(model_constants_t &cc)
 	    << "Scaling factor: " << cc.scaling_fact << "\n"
 	    << std::endl;
 }
+
+/**
+ * Print all given input parameters
+ *
+ * @param in Struct where the input parameters are stored.
+ */
+void print_input_parameters(input_parameters_t &in)
+{
+  std::cout << "\n"
+	    << "Technical input parameters:\n"
+	    << "---------------------------\n"
+        << "Time to integrate: " << in.t_end_prime << " Second\n"
+        << "Timestep: " << in.dt_prime << " Second\n"
+	    << "Snapshot index: " << in.snapshot_index << "\n"
+        << "Name of output file: " << in.OUTPUT_FILENAME << "\n"
+	    << "Scaling factor: " << in.scaling_fact << "\n"
+        << "Name of input file: " << in.INPUT_FILENAME << "\n"
+        << "Start over at each timestep of a trajectory?: " << in.start_over << "\n"
+        << "Fix temperature, vertical velocity and pressure at each substep?: " << in.fixed_iteration << "\n"
+        << "Auto type for rain evaporation (1, 2, 3): " << in.auto_type << "\n"
+        << "Trajectory used: " << in.traj
+        << std::endl;
+}
+
+/**
+ * Display a help message on how to use this program.
+ */
+void display_usage()
+{
+
+  std::cout << "\n"
+	    << "USAGE of the program in water cloud mode:\n"
+	    << "Invoke the program on the command line with\n"
+	    << "$ ./main PARAMETERS\n"
+	    << "where PARAMETERS are the following parameters:\n"
+	    << "-f: Time to integrate in seconds. "
+        << "If higher than number of entries from input file, then it stops early\n"
+	    << "-i: Snapshot index.\n"
+	    << "-b: Scaling factor.\n"
+	    << "-d: Timestep in seconds for a substep between each new trajectory input.\n"
+	    << "-o: Name of the output file.\n"
+        << "-l: Path and name of input file.\n"
+        << "-s: Start over at each timestep of a trajectory.\n"
+        << "-t: Set pressure, temperature and vertical velocity fixed at each substep.\n"
+        << "-a: Set auto type (1=KB, 2=KK, 3=SB).\n"
+        << "-r: Set index of trajectory.\n"
+	    << "-?: This help message.\n"
+	    << std::endl;
+}
+
+/**
+ * Display an error message when command line arguments are faulty.
+ */
+void display_error_on_command_line()
+{
+  std::cout << "==> ERROR: An error occured while dealing with the command line arguments!"
+	    << std::endl;
+}
 /** @} */ // end of group general
 
 #endif

@@ -213,6 +213,8 @@ void init_nc_parameters(
     nc.n_timesteps = n_timesteps;
     nc.w.resize(2);
     nc.z.resize(4);
+    nc.lat.resize(2);
+    nc.lon.resize(2);
 }
 
 
@@ -227,11 +229,16 @@ void load_nc_parameters_var(
     nc_parameters_t &nc,
     netCDF::NcFile &datafile)
 {
+#ifdef WCB2
+    nc.lat_var      = datafile.getVar("latitude");
+    nc.lon_var      = datafile.getVar("longitude");
+#else
     nc.lat_var      = datafile.getVar("lat");
     nc.lon_var      = datafile.getVar("lon");
+#endif
     nc.z_var        = datafile.getVar("z");
 
-#ifdef WCB
+#if defined WCB || defined WCB2
     nc.p_var        = datafile.getVar("P");
     nc.t_var        = datafile.getVar("T");
     nc.qc_var       = datafile.getVar("QC");
@@ -240,12 +247,6 @@ void load_nc_parameters_var(
     nc.qi_var       = datafile.getVar("QI");
     nc.qs_var       = datafile.getVar("QS");
     nc.time_rel_var = datafile.getVar("time");
-    // specific humidity
-    nc.S_var        = datafile.getVar("RELHUM");
-    // Flag wether an effective ascent region is reached
-    nc.ascent_flag_var = datafile.getVar("MAP");
-    // Potential vorticity (German: Wirbelstaerke)
-    // nc.pot_vortic   = datafile.getVar("POT_VORTIC")
 #else
     nc.p_var        = datafile.getVar("p");
     nc.t_var        = datafile.getVar("t");
@@ -266,6 +267,38 @@ void load_nc_parameters_var(
     nc.QRout_var    = datafile.getVar("QRout");
     nc.QGout_var    = datafile.getVar("QGout");
 #endif
+#ifdef WCB
+    // specific humidity
+    nc.S_var        = datafile.getVar("RELHUM");
+    // Flag wether an effective ascent region is reached
+    nc.ascent_flag_var = datafile.getVar("MAP");
+    // Potential vorticity (German: Wirbelstaerke)
+    // nc.pot_vortic   = datafile.getVar("POT_VORTIC")
+#endif
+#ifdef WCB2
+    nc.qg_var       = datafile.getVar("QG");
+    nc.QIin_var     = datafile.getVar("QI_IN");
+    nc.QSin_var     = datafile.getVar("QS_IN");
+    nc.QRin_var     = datafile.getVar("QR_IN");
+    nc.QGin_var     = datafile.getVar("QG_IN");
+    nc.QIout_var    = datafile.getVar("QI_OUT");
+    nc.QSout_var    = datafile.getVar("QS_OUT");
+    nc.QRout_var    = datafile.getVar("QR_OUT");
+    nc.QGout_var    = datafile.getVar("QG_OUT");
+
+    nc.NIin_var     = datafile.getVar("NI_IN");
+    nc.NSin_var     = datafile.getVar("NS_IN");
+    nc.NRin_var     = datafile.getVar("NR_IN");
+    nc.NGin_var     = datafile.getVar("NG_IN");
+    nc.NIout_var    = datafile.getVar("NI_OUT");
+    nc.NSout_var    = datafile.getVar("NS_OUT");
+    nc.NRout_var    = datafile.getVar("NR_OUT");
+    nc.NGout_var    = datafile.getVar("NG_OUT");
+    // Flag wether an effective ascent region is reached
+    nc.ascent_flag_var = datafile.getVar("WCB_flag");
+    // 2h ascent rate after Oertel et al. (2019)
+    nc.dp2h_var     = datafile.getVar("dp2h");
+#endif
 }
 
 /**
@@ -285,26 +318,33 @@ void load_nc_parameters(
     nc_parameters_t &nc,
     std::vector<size_t> &startp,
     std::vector<size_t> &countp,
-    reference_quantities_t &ref_quant)
+    reference_quantities_t &ref_quant,
+    uint64_t num_sub_steps)
 {
     // startp[0] <- trajectory id
     // startp[1] <- timestep
 
-    nc.lat_var.getVar(startp, countp, &nc.lat);
-    nc.lon_var.getVar(startp, countp, &nc.lon);
-#ifdef WCB
+
+#if defined WCB || defined WCB2
     countp[0]++;
     countp[0]++;
     nc.z_var.getVar(startp, countp, nc.z.data());
+    nc.lat_var.getVar(startp, countp, nc.lat.data());
+    nc.lon_var.getVar(startp, countp, nc.lon.data());
     countp[0]--;
     countp[0]--;
-    nc.ascent_flag_var.getVar(startp, countp, &nc.ascent_flag);
 #else
     countp[1]++;
     countp[1]++;
     nc.z_var.getVar(startp, countp, nc.z.data());
+    nc.lat_var.getVar(startp, countp, nc.lat.data());
+    nc.lon_var.getVar(startp, countp, nc.lon.data());
     countp[1]--;
     countp[1]--;
+#endif
+
+#if defined WCB || defined WCB2
+    nc.ascent_flag_var.getVar(startp, countp, &nc.ascent_flag);
 #endif
 
     nc.t_var.getVar(startp, countp, &nc.t);
@@ -318,8 +358,10 @@ void load_nc_parameters(
 
     double psat_prime = saturation_pressure_water(nc.t);
 
+#if !defined WCB2
     // We are reading in hPa. Convert to Pa
     nc.p        *= 100;
+#endif
     nc.p        /= ref_quant.pref;
     nc.t        /= ref_quant.Tref;
     nc.qc       /= ref_quant.qref;
@@ -328,9 +370,8 @@ void load_nc_parameters(
     nc.qi       /= ref_quant.qref;
     nc.qs       /= ref_quant.qref;
 
-#if !defined(WCB)
+#if !defined WCB
     nc.S = 1.0;
-    nc.w_var.getVar(startp, countp, nc.w.data());
     nc.qg_var.getVar(startp, countp, &nc.qg);
     nc.QIin_var.getVar(startp, countp, &nc.QIin);
     nc.QSin_var.getVar(startp, countp, &nc.QSin);
@@ -340,13 +381,6 @@ void load_nc_parameters(
     nc.QSout_var.getVar(startp, countp, &nc.QSout);
     nc.QRout_var.getVar(startp, countp, &nc.QRout);
     nc.QGout_var.getVar(startp, countp, &nc.QGout);
-    countp[1]++;
-    nc.w_var.getVar(startp, countp, nc.w.data());
-    countp[1]--;
-
-    nc.w[0]     /= ref_quant.wref;
-    nc.w[1]     /= ref_quant.wref;
-    nc.dw = nc.w[1] - nc.w[0];
 
     nc.qg       /= ref_quant.qref;
     nc.QRin     /= ref_quant.qref;
@@ -357,6 +391,17 @@ void load_nc_parameters(
     nc.QSout    /= ref_quant.qref;
     nc.QGin     /= ref_quant.qref;
     nc.QGout    /= ref_quant.qref;
+#endif
+
+#if !defined WCB && !defined WCB2
+    nc.w_var.getVar(startp, countp, nc.w.data());
+    countp[1]++;
+    nc.w_var.getVar(startp, countp, nc.w.data());
+    countp[1]--;
+
+    nc.w[0]     /= ref_quant.wref;
+    nc.w[1]     /= ref_quant.wref;
+    nc.dw = nc.w[1] - nc.w[0];
 
     // I am not sure why, but those values can be negative...
     nc.QRin     = abs(nc.QRin);
@@ -367,20 +412,31 @@ void load_nc_parameters(
     nc.QSout    = abs(nc.QSout);
     nc.QGin     = abs(nc.QGin);
     nc.QGout    = abs(nc.QGout);
-#else
+#elif defined WCB
     nc.qc /= 1.0e6;
     nc.qr /= 1.0e6;
     nc.qv /= 1.0e6;
     nc.qi /= 1.0e6;
     nc.qs /= 1.0e6;
-    // Calculate w by getting the z-coordinates and divide it by 20 seconds
+    // Calculate w by getting the z-coordinates
+    // and divide it by the amount of substeps
     nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
     nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
     nc.S_var.getVar(startp, countp, &nc.S);
     nc.S /= 100; // to percentage
     // we do not change w
     nc.dw = 0;
+#else
+    // WCB 2
+    // Calculate w by getting the z-coordinates
+    // and divide it by the amount of substeps
+    nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
+    nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
+    nc.dw = 0; // We do not interpolate w for now
 #endif
+
+    nc.dlat = (nc.lat[1] - nc.lat[0]) / num_sub_steps;
+    nc.dlon = (nc.lon[1] - nc.lon[0]) / num_sub_steps;
 }
 
 
@@ -463,31 +519,6 @@ void init_global_args(global_args_t &arg)
   arg.traj_string = nullptr;
 }
 
-
-/**
- * Print all given input parameters
- *
- * @param in Struct where the input parameters are stored.
- */
-void print_input_parameters(input_parameters_t &in)
-{
-  std::cout << "\n"
-	    << "Technical input parameters:\n"
-	    << "---------------------------\n"
-        << "Time to integrate: " << in.t_end_prime << " Second\n"
-        << "Timestep: " << in.dt_prime << " Second\n"
-	    << "Snapshot index: " << in.snapshot_index << "\n"
-        << "Name of output file: " << in.OUTPUT_FILENAME << "\n"
-	    << "Scaling factor: " << in.scaling_fact << "\n"
-        << "Name of input file: " << in.INPUT_FILENAME << "\n"
-        << "Start over at each timestep of a trajectory?: " << in.start_over << "\n"
-        << "Fix temperature, vertical velocity and pressure at each substep?: " << in.fixed_iteration << "\n"
-        << "Auto type for rain evaporation (1, 2, 3): " << in.auto_type << "\n"
-        << "Trajectory used: " << in.traj
-        << std::endl;
-}
-
-
 /**
  * Set the input parameters with the data from the global arguments.
  *
@@ -546,44 +577,6 @@ void set_input_from_arguments(global_args_t &arg ,
   }
 }
 
-
-/**
- * Display a help message on how to use this program.
- */
-void display_usage()
-{
-
-  std::cout << "\n"
-	    << "USAGE of the program in water cloud mode:\n"
-	    << "Invoke the program on the command line with\n"
-	    << "$ ./main PARAMETERS\n"
-	    << "where PARAMETERS are the following parameters:\n"
-	    << "-f: Time to integrate in seconds. "
-        << "If higher than number of entries from input file, then it stops early\n"
-	    << "-i: Snapshot index.\n"
-	    << "-b: Scaling factor.\n"
-	    << "-d: Timestep in seconds for a substep between each new trajectory input.\n"
-	    << "-o: Name of the output file.\n"
-        << "-l: Path and name of input file.\n"
-        << "-s: Start over at each timestep of a trajectory.\n"
-        << "-t: Set pressure, temperature and vertical velocity fixed at each substep.\n"
-        << "-a: Set auto type (1=KB, 2=KK, 3=SB).\n"
-        << "-r: Set index of trajectory.\n"
-	    << "-?: This help message.\n"
-	    << std::endl;
-}
-
-
-/**
- * Display an error message when command line arguments are faulty.
- */
-void display_error_on_command_line()
-{
-  std::cout << "==> ERROR: An error occured while dealing with the command line arguments!"
-	    << std::endl;
-}
-
-
 /**
  * Setup the cloud autoconversion parameters.
  *
@@ -609,7 +602,6 @@ void setup_cloud_autoconversion(
         cloud_k_sc = kc_autocon * pc.c_z;
     }
 }
-
 
 /**
  * Setup for bulk sedimentation velocity.

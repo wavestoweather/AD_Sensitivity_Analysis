@@ -466,9 +466,7 @@ int main(int argc, char** argv)
 
     // Collect the initial values in a separated vector
     // Storage:
-    // y = [p, T, w, S, qc, qr, qv]
-    // two moment scheme
-    // y = [p, T, w, S, qc, qr, qv, Nc, Nr, Nv, qi, Ni, vi, qs, Ns, qg, Ng
+    // See constants.h for storage order
     std::vector<double> y_init(num_comp);
     nc_parameters_t nc_params;
 
@@ -507,16 +505,17 @@ int main(int argc, char** argv)
 
         std::vector<size_t> startp, countp;
         // wcb files have a different ordering
-#ifdef WCB
-        startp.push_back(0); // trajectory id
-        startp.push_back(input.traj); // time
+#if defined WCB || defined WCB2
+        startp.push_back(0); // time
+        startp.push_back(input.traj); // trajectory id
 #else
         startp.push_back(input.traj); // trajectory id
         startp.push_back(1); // time (where time == 0 only has zeros)
 #endif
         countp.push_back(1);
         countp.push_back(1);
-        load_nc_parameters(nc_params, startp, countp, ref_quant);
+        load_nc_parameters(nc_params, startp, countp,
+                           ref_quant, cc.num_sub_steps);
 
         y_init[p_idx] = nc_params.p;
         y_init[T_idx] = nc_params.t;
@@ -536,12 +535,26 @@ int main(int argc, char** argv)
 #endif
 
         y_init[qh_idx] = 0.0; // hail that is not in the trajectory
+
+        y_init[qh_out_idx] = 0.0;
+        y_init[Nh_out_idx] = 0.0;
+#ifdef WCB2
+        y_init[qi_out_idx] = nc_params.QIin;
+        y_init[qs_out_idx] = nc_params.QSin;
+        y_init[qr_out_idx] = nc_params.QRin;
+        y_init[qg_out_idx] = nc_params.QGin;
+
+        y_init[Ni_out_idx] = nc_params.NIin;
+        y_init[Ns_out_idx] = nc_params.NSin;
+        y_init[Nr_out_idx] = nc_params.NRin;
+        y_init[Ng_out_idx] = nc_params.NGin;
+#else
         // We initialize the sedimentation with 0 for the stepper
         y_init[qi_out_idx] = 0.0;
         y_init[qs_out_idx] = 0.0;
         y_init[qr_out_idx] = 0.0;
         y_init[qg_out_idx] = 0.0;
-        y_init[qh_out_idx] = 0.0;
+#endif
 
     } catch(netCDF::exceptions::NcException& e)
     {
@@ -622,15 +635,7 @@ int main(int argc, char** argv)
     outfile << "timestep,trajectory,LONGITUDE,LATITUDE,MAP,"
         << "p,T,w,S,qc,qr,qv,Nc,Nr,Nv,qi,Ni,vi,"
         << "qs,Ns,qg,Ng,qh,Nh,qiout,qsout,qrout,qgout,qhout,"
-        << "latent_heat,latent_cool\n";
-
-    // for(uint32_t traj=0; traj<nc_params.n_trajectories; ++traj)
-    // {
-    //     outfile << time_old << "," << traj << ",";
-    //     for(int ii = 0 ; ii < num_comp; ii++)
-    //         outfile << y_single_old[traj][ii] <<
-    //             ((ii == num_comp-1) ? "\n" : ",");
-    // }
+        << "latent_heat,latent_cool,Niout,Nsout,Nrout,Ngout,Nhout\n";
 
     // CODIPACK: BEGIN
     std::string basename = "_diff_";
@@ -969,7 +974,7 @@ int main(int argc, char** argv)
 
         // Loop over every timestep that is fixed to 20 s
         std::vector<size_t> startp, countp;
-#ifdef WCB
+#if defined WCB || defined WCB2
         startp.push_back(1);          // time
         startp.push_back(input.traj); // trajectory
 #else
@@ -983,7 +988,7 @@ int main(int argc, char** argv)
         for(uint32_t t=0; t<cc.num_steps; ++t) //
         {
             // bool written = false;
-#ifdef WCB
+#if defined WCB || defined WCB2
             startp[0] = t;
 #else
             startp[1] = t+1; //  * nc_params.n_trajectories
@@ -991,7 +996,8 @@ int main(int argc, char** argv)
 
             netCDF::NcFile datafile(global_args.input_file, netCDF::NcFile::read);
             load_nc_parameters_var(nc_params, datafile);
-            load_nc_parameters(nc_params, startp, countp, ref_quant);
+            load_nc_parameters(nc_params, startp, countp,
+                               ref_quant, cc.num_sub_steps);
 
             // Set values from a given trajectory
             if(t==0 || input.start_over)
@@ -1042,7 +1048,14 @@ int main(int argc, char** argv)
                 }
 #endif
 
-                outfile << (t*cc.num_sub_steps)*cc.dt << "," << input.traj << ",";
+#if defined WCB || defined WCB2
+                outfile << (t*cc.num_sub_steps)*cc.dt << "," << input.traj << ","
+                        << nc_params.lon[0] << "," << nc_params.lat[0] << ","
+                        << nc_params.ascent_flag << ",";
+#else
+                outfile << (t*cc.num_sub_steps)*cc.dt << "," << input.traj << ","
+                        << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
+#endif
                 for(int ii = 0 ; ii < num_comp; ii++)
                     outfile << y_single_old[ii] <<
                         ((ii == num_comp-1) ? "\n" : ",");
@@ -1050,7 +1063,16 @@ int main(int argc, char** argv)
 
                 for(int ii = 0 ; ii < num_comp ; ii++)
                 {
-                    out_diff[ii] << t*cc.num_sub_steps*cc.dt << "," << input.traj << ",";
+#if defined WCB || defined WCB2
+                    out_diff[ii] << t*cc.num_sub_steps*cc.dt << "," << input.traj << ","
+                                    << nc_params.lon[0] << ","
+                                    << nc_params.lat[0] << ","
+                                    << nc_params.ascent_flag << ",";
+#else
+                    out_diff[ii] << t*cc.num_sub_steps*cc.dt << "," << input.traj << ","
+                                    << nc_params.lon[0] << ","
+                                    << nc_params.lat[0] << ",";
+#endif
                     for(int jj = 0 ; jj < num_par ; jj++)
                         out_diff[ii] << 0.0
                             << ((jj==num_par-1) ? "\n" : ",");
@@ -1193,13 +1215,15 @@ int main(int argc, char** argv)
                 if( 0 == (sub + t*cc.num_sub_steps) % input.snapshot_index)
                 {
                     // Write the results to the output file
-#ifdef WCB
+#if defined WCB || defined WCB2
                     outfile << time_new << "," << input.traj << ","
-                            << nc_params.lon << "," << nc_params.lat << ","
+                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                            << (nc_params.lat[0] + sub*nc_params.dlat) << ","
                             << nc_params.ascent_flag << ",";
 #else
                     outfile << time_new << "," << input.traj << ","
-                            << nc_params.lon << "," << nc_params.lat << ",";
+                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                            << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #endif
                     for(int ii = 0 ; ii < num_comp; ii++)
                         outfile << y_single_new[ii]
@@ -1208,15 +1232,15 @@ int main(int argc, char** argv)
                     // CODIPACK: BEGIN
                     for(int ii = 0 ; ii < num_comp ; ii++)
                     {
-#ifdef WCB
+#if defined WCB || defined WCB2
                         out_diff[ii] << time_new << "," << input.traj << ","
-                                     << nc_params.lon << ","
-                                     << nc_params.lat << ","
+                                     << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                                     << (nc_params.lat[0] + sub*nc_params.dlat) << ","
                                      << nc_params.ascent_flag << ",";
 #else
                         out_diff[ii] << time_new << "," << input.traj << ","
-                                     << nc_params.lon << ","
-                                     << nc_params.lat << ",";
+                                     << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                                     << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #endif
                         for(int jj = 0 ; jj < num_par ; jj++)
                             out_diff[ii] << y_diff[ii][jj]

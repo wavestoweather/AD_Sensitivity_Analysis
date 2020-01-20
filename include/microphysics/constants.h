@@ -41,7 +41,12 @@
 #define qh_out_idx 23       /*!< Hail mixing ratio precipitation index */
 #define lat_heat_idx 24     /*!< Latent heating index */
 #define lat_cool_idx 25     /*!< Latent cooling index */
-#define num_comp 26         /*!< Number of output elements of a model */
+#define Ni_out_idx 26       /*!< Ice particles precipitation index */
+#define Ns_out_idx 27       /*!< Snow particles ratio precipitation index */
+#define Nr_out_idx 28       /*!< Rain droplets ratio precipitation index */
+#define Ng_out_idx 29       /*!< Graupel particles ratio precipitation index */
+#define Nh_out_idx 30       /*!< Hail particles ratio precipitation index */
+#define num_comp 31         /*!< Number of output elements of a model */
 // Those are for a different vector
 #define qi_in_idx 0         /*!< Ice input index for another vector */
 #define qs_in_idx 1         /*!< Snow input index for another vector */
