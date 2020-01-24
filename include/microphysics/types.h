@@ -524,14 +524,16 @@ struct nc_parameters_t{
     double  t, p, time_rel,
             qc, qr, qi, qs, qg, qv, S, dw, dlat, dlon,
             QIin, QSin, QRin, QGin, QIout, QSout, QRout, QGout,
-            NIin, NSin, NRin, NGin, NIout, NSout, NRout, NGout, dp2h;
+            NIin, NSin, NRin, NGin, NIout, NSout, NRout, NGout, dp2h,
+            Nc, Nr, Ni, Ns, Ng;
     bool ascent_flag;
     NcVar   lat_var, lon_var, z_var, t_var, p_var, w_var, time_rel_var,
             qc_var, qr_var, qi_var, qs_var, qg_var, qv_var, S_var,
             QIin_var, QSin_var, QRin_var, QGin_var, QIout_var, QSout_var,
             QRout_var, QGout_var, ascent_flag_var,
             NIin_var, NSin_var, NRin_var, NGin_var, NIout_var, NSout_var,
-            NRout_var, NGout_var, dp2h_var;
+            NRout_var, NGout_var, dp2h_var,
+            Nc_var, Nr_var, Ni_var, Ns_var, Ng_var;
 };
 
 

@@ -175,6 +175,9 @@ int main(int argc, char** argv)
     const uint64_t n_lookup_highres = 10000;
     const uint64_t n_lookup_hr_dummy = 10;
 
+    const uint64_t start_step = 8800/20; // 10000/20;
+
+
     // ==================================================
     // Define the reference quantities
     // ==================================================
@@ -539,22 +542,40 @@ int main(int argc, char** argv)
         y_init[qh_out_idx] = 0.0;
         y_init[Nh_out_idx] = 0.0;
 #ifdef WCB2
-        y_init[qi_out_idx] = nc_params.QIin;
-        y_init[qs_out_idx] = nc_params.QSin;
-        y_init[qr_out_idx] = nc_params.QRin;
-        y_init[qg_out_idx] = nc_params.QGin;
+        y_init[qi_out_idx] = nc_params.QIout;
+        y_init[qs_out_idx] = nc_params.QSout;
+        y_init[qr_out_idx] = nc_params.QRout;
+        y_init[qg_out_idx] = nc_params.QGout;
 
-        y_init[Ni_out_idx] = nc_params.NIin;
-        y_init[Ns_out_idx] = nc_params.NSin;
-        y_init[Nr_out_idx] = nc_params.NRin;
-        y_init[Ng_out_idx] = nc_params.NGin;
+        y_init[Ni_out_idx] = nc_params.NIout;
+        y_init[Ns_out_idx] = nc_params.NSout;
+        y_init[Nr_out_idx] = nc_params.NRout;
+        y_init[Ng_out_idx] = nc_params.NGout;
+
+        y_init[Ni_idx] = nc_params.Ni;
+        y_init[Ns_idx] = nc_params.Ns;
+        y_init[Nr_idx] = nc_params.Nr;
+        y_init[Ng_idx] = nc_params.Ng;
+        y_init[Nc_idx] = nc_params.Nc;
 #else
         // We initialize the sedimentation with 0 for the stepper
         y_init[qi_out_idx] = 0.0;
         y_init[qs_out_idx] = 0.0;
         y_init[qr_out_idx] = 0.0;
         y_init[qg_out_idx] = 0.0;
+
+        y_init[Ni_out_idx] = 0;
+        y_init[Ns_out_idx] = 0;
+        y_init[Nr_out_idx] = 0;
+        y_init[Ng_out_idx] = 0;
+
+        y_init[Ni_idx] = 0;
+        y_init[Ns_idx] = 0;
+        y_init[Nr_idx] = 0;
+        y_init[Ng_idx] = 0;
+        y_init[Nc_idx] = 0;
 #endif
+        y_init[Nv_idx] = 0;
 
     } catch(netCDF::exceptions::NcException& e)
     {
@@ -572,11 +593,8 @@ int main(int argc, char** argv)
     // Print the input parameters
     print_input_parameters(input);
 
-    // CODIPACK: BEGIN
-    const uint32_t num_inflows = 4;
     // Hold the derivatives of all components
     std::vector< std::array<double, num_par > >  y_diff(num_comp);
-    // CODIPACK: END
 
     // Allocate vectors for the single solution with unperturbed
     // parameter and assign initial values
@@ -988,7 +1006,7 @@ int main(int argc, char** argv)
         countp.push_back(1);
         countp.push_back(1);
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
-        for(uint32_t t=0; t<cc.num_steps; ++t) //
+        for(uint32_t t=start_step; t< (start_step + cc.num_steps); ++t) //
         {
             // bool written = false;
 #if defined WCB || defined WCB2
@@ -1013,14 +1031,33 @@ int main(int argc, char** argv)
                 y_single_old[qv_idx] = nc_params.qv;    // qv
                 y_single_old[qi_idx] = nc_params.qi;    // qi
                 y_single_old[qs_idx] = nc_params.qs;    // qs
+#if !defined(WCB)
+                y_single_old[qg_idx] = nc_params.qg;    // qg
+#else
+                if(t==0)
+                    y_single_old[qg_idx] = 0;
+#endif
 
                 if(t==0)
                 {
                     y_single_old[qh_idx] = 0.0; // qh. We don't have hail in the trajectoris
                     y_single_old[Nh_idx] = 0.0; // Nh. We don't have hail in the trajectoris
                 }
+                codi::RealReverse denom = 0;
+#ifdef WCB2
+                y_single_old[Nc_idx] = nc_params.Nc;
+                y_single_old[Nr_idx] = nc_params.Nr;
+                y_single_old[Ng_idx] = nc_params.Ng;
+                y_single_old[Ni_idx] = nc_params.Ni;
+                y_single_old[Ns_idx] = nc_params.Ns;
 
-                codi::RealReverse denom = (cc.cloud.max_x - cc.cloud.min_x) / 2.0 + cc.cloud.min_x;
+                y_single_old[Nr_out_idx] = nc_params.NRout;
+                y_single_old[Ng_out_idx] = nc_params.NGout;
+                y_single_old[Ni_out_idx] = nc_params.NIout;
+                y_single_old[Ns_out_idx] = nc_params.NSout;
+
+#else
+                denom = (cc.cloud.max_x - cc.cloud.min_x) / 2.0 + cc.cloud.min_x;
                 y_single_old[Nc_idx] = y_single_old[qc_idx] * ref_quant.qref / (denom); //*10e2);  // Nc
                 denom = (cc.rain.max_x - cc.rain.min_x) / 2 + cc.rain.min_x;
                 y_single_old[Nr_idx] = y_single_old[qr_idx] * ref_quant.qref / (denom); //*10e2);  // Nr
@@ -1030,7 +1067,9 @@ int main(int argc, char** argv)
                 y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
                 denom = (cc.snow.max_x - cc.snow.min_x) / 2.0 + cc.snow.min_x;
                 y_single_old[Ns_idx] = y_single_old[qs_idx] * ref_quant.qref / (denom); //*10e2); // Ns
-
+                denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
+                y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
+#endif
                 cc.Nc_prime = y_single_old[Nc_idx];
 
                 cc.rho_a_prime = compute_rhoa(nc_params.p*ref_quant.pref,//*100,
@@ -1038,18 +1077,8 @@ int main(int argc, char** argv)
                 y_single_old[w_idx]  = nc_params.w[0]; // w
                 cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
 
-#if !defined(WCB)
-
-                y_single_old[qg_idx] = nc_params.qg;// qg
-                denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
-                y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
-#else
-                if(t==0)
-                {
-                    y_single_old[qg_idx] = 0; // qg
-                    y_single_old[Ng_idx] = 0;
-                }
-#endif
+                denom = cc.cloud.min_x / 2.0;
+                y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
 
 #if defined WCB || defined WCB2
                 outfile << (t*cc.num_sub_steps)*cc.dt << "," << input.traj << ","
@@ -1092,8 +1121,18 @@ int main(int argc, char** argv)
                 inflow[qr_in_idx] = 0;
                 inflow[qg_in_idx] = 0;
 #endif
+#if defined(FLUX) && defined(WCB2)
+                inflow[Ni_in_idx] = nc_params.NIin;
+                inflow[Ns_in_idx] = nc_params.NSin;
+                inflow[Nr_in_idx] = nc_params.NRin;
+                inflow[Ng_in_idx] = nc_params.NGin;
+#else
+                inflow[Ni_in_idx] = 0;
+                inflow[Ns_in_idx] = 0;
+                inflow[Nr_in_idx] = 0;
+                inflow[Ng_in_idx] = 0;
+#endif
             }
-            double in_qr = 0.0;
             // Iterate over each substep
             for(uint32_t sub=1; sub<cc.num_sub_steps; ++sub) // cc.num_sub_steps
             {
@@ -1111,7 +1150,14 @@ int main(int argc, char** argv)
                 y_single_old[qs_idx] += inflow[qs_in_idx]/cc.num_sub_steps;
                 y_single_old[qr_idx] += inflow[qr_in_idx]/cc.num_sub_steps;
                 y_single_old[qg_idx] += inflow[qg_in_idx]/cc.num_sub_steps;
-                in_qr += (inflow[qr_in_idx]/cc.num_sub_steps).getValue();
+                y_single_old[Ni_idx] += inflow[Ni_in_idx]/cc.num_sub_steps;
+                y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
+                y_single_old[Nr_idx] += inflow[Nr_in_idx]/cc.num_sub_steps;
+                y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
+#ifdef TRACE
+                std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps
+                    << ", Nr " << inflow[Nr_in_idx]/cc.num_sub_steps << "\n";
+#endif
 
                 // Dimensional coefficients
                 tape.registerInput(cc.a1_prime);    // Autoconversion

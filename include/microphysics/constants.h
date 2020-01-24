@@ -52,6 +52,11 @@
 #define qs_in_idx 1         /*!< Snow input index for another vector */
 #define qr_in_idx 2         /*!< Rain input index for another vector */
 #define qg_in_idx 3         /*!< Graupel input index for another vector */
+#define Ni_in_idx 4         /*!< Ice input index for another vector */
+#define Ns_in_idx 5         /*!< Snow input index for another vector */
+#define Nr_in_idx 6         /*!< Rain input index for another vector */
+#define Ng_in_idx 7         /*!< Graupel input index for another vector */
+#define num_inflows 8       /*!< Number of parameters for inflowing stuff */
 
 #define num_par 44*6+17     /*!< Number of gradients */
 
@@ -507,7 +512,7 @@ codi::RealReverse kc_autocon = 9.44e9;
  * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
  * at \f$23 \text{km}\f$.
  */
-codi::RealReverse inv_z = 1.0/1000.0;
+codi::RealReverse inv_z = 1.0/388.0;
 
 /** @} */ // end of group constants
 

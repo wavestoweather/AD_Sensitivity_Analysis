@@ -30,7 +30,7 @@ scratch: build $(TARGETS_SCRATCH)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
-	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) $(TIMESTEPPER) $(SEASON) $(FLUX) $(SOURCE) -o $@ -c $<
+	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) $(TIMESTEPPER) $(SEASON) -DTRACE $(FLUX) $(SOURCE) -o $@ -c $<
 
 $(TARGETS): $(OBJECTS)
 	@mkdir -p $(@D)
