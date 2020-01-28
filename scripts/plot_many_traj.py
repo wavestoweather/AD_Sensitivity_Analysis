@@ -390,9 +390,10 @@ def plot_weather_deriv(df, in_param, out_param, filename=None):
     return df_tmp
 
 
-def plot_traj_nc(df, out_param, filename=None, trajs=None, max_time=None):
+def plot_traj(df, out_param, filename=None, trajs=None, max_time=None,
+        lat_key="lat", lon_key="lon"):
     """
-    Plot the trajectories of a netCDF file.
+    Plot the output parameters of a simulation of trajectories.
 
     Parameters
     ----------
@@ -408,7 +409,7 @@ def plot_traj_nc(df, out_param, filename=None, trajs=None, max_time=None):
         Maximum time to plot.
     """
     df_tmp = df.copy()
-    n_traj = 903
+    n_traj = 1
     n_rows = len(df_tmp.index)
     if not trajs is None:
         idx = []
@@ -417,13 +418,16 @@ def plot_traj_nc(df, out_param, filename=None, trajs=None, max_time=None):
         df_tmp = df.iloc[idx]
 #     df_tmp = df.dropna()
     if not max_time is None:
-        df_tmp = df_tmp.loc[df_tmp["time"] <= max_time]
+        try:
+            df_tmp = df_tmp.loc[df_tmp["time"] <= max_time]
+        except:
+            df_tmp = df_tmp.loc[df_tmp["timestep"] <= max_time]
     n_rows = len(df_tmp.index)
 
-    llon = df_tmp["lon"].min() -5
-    ulon = df_tmp["lon"].max() + 5
-    llat = df_tmp["lat"].min() - 5
-    ulat = df_tmp["lat"].max() + 5
+    llon = df_tmp[lon_key].min() -5
+    ulon = df_tmp[lon_key].max() + 5
+    llat = df_tmp[lat_key].min() - 5
+    ulat = df_tmp[lat_key].max() + 5
     # You may change resolution to "h" or "f" for higher resolutions
     # but you need to install basemap-data-hires first
     my_map = Basemap(projection="merc",
@@ -432,27 +436,17 @@ def plot_traj_nc(df, out_param, filename=None, trajs=None, max_time=None):
                     urcrnrlon=ulon, urcrnrlat=ulat) # max longitude and latitude
 
     my_map.bluemarble()
-    xs, ys = my_map(np.asarray(df_tmp.lon), np.asarray(df_tmp.lat))
+    xs, ys = my_map(np.asarray(df_tmp[lon_key].values), np.asarray(df_tmp[lat_key].values))
     xs = xs.tolist()
     ys = ys.tolist()
 
-    color = []
     cmap = matplotlib.cm.get_cmap('Spectral')
-    min_vals = []
-    max_vals = []
-    if not trajs is None:
-        n_traj = len(trajs)
-    for i in range(n_traj):
-        df_tmp2 = df_tmp.iloc[np.arange(i, n_rows, n_traj)]
-        min_vals.append(df_tmp2[out_param].min())
-        max_vals.append(df_tmp2[out_param].max())
+    sc = my_map.scatter(xs, ys, c=df_tmp[out_param], cmap=cmap)
+    plt.colorbar(sc)
 
-    for i, c in enumerate(df_tmp[out_param]):
-        color.append(cmap((c-min_vals[i%n_traj]) / (max_vals[i%n_traj]-min_vals[i%n_traj])))
-
-    my_map.scatter(xs, ys, color=color, s=6)
     if filename is not None:
         plt.savefig(filename, dpi=300)
+    plt.show()
 
 
 if __name__ == "__main__":
