@@ -27,12 +27,15 @@ ascent every :math:`20 \text{s}`, the timestep size of the netCDF file. Those va
 except for ascent, are not fixed while calculating the microphysics.
 The timestep for the microphysics is :math:`0.01 \text{s}`. We capture the results and
 derivatives every 250 timesteps (:math:`=2.5 \text{s}`).
-
 We can plot all the following plots with:
 
 .. code-block: bash
 
     python plot_many_traj.py -i data/ -t 0
+
+
+Ice Mixing Ratio
+----------------
 
 Let's take a look at the ice mixing ratio :math:`q_{\text{ice}}`:
 
@@ -116,8 +119,78 @@ the gas constant for dry air :math:`R_a` via
 
 The saturation vapor pressure :math:`p_{S, v}` can be calculated with Murphy2005_.
 
+Cloud Droplet Mixing Ratio
+--------------------------
+
+.. figure:: ../gfx/results/qc_1.png
+    :align: center
+    :figclass: align-center
 
 
+.. figure:: ../gfx/results/qc_2.png
+    :align: center
+    :figclass: align-center
+
+
+.. figure:: ../gfx/results/qc_3.png
+    :align: center
+    :figclass: align-center
+
+
+.. figure:: ../gfx/results/qc_4.png
+    :align: center
+    :figclass: align-center
+
+
+Rain Droplet Mixing Ratio
+--------------------------
+
+.. figure:: ../gfx/results/qr_1.png
+    :align: center
+    :figclass: align-center
+
+
+.. figure:: ../gfx/results/qr_2.png
+    :align: center
+    :figclass: align-center
+
+
+.. figure:: ../gfx/results/qr_3.png
+    :align: center
+    :figclass: align-center
+
+
+.. figure:: ../gfx/results/qr_4.png
+    :align: center
+    :figclass: align-center
+
+
+Water Vapor Mixing Ratio
+--------------------------
+
+.. figure:: ../gfx/results/qv_1.png
+    :align: center
+    :figclass: align-center
+
+
+.. figure:: ../gfx/results/qv_2.png
+    :align: center
+    :figclass: align-center
+
+
+.. figure:: ../gfx/results/qv_3.png
+    :align: center
+    :figclass: align-center
+
+
+.. figure:: ../gfx/results/qv_4.png
+    :align: center
+    :figclass: align-center
+
+
+
+References
+----------
 
 .. [Oertel2019] Oertel, A., Boettcher, M., Joos, H., Sprenger, M., and Wernli, H.,
     "Potential vorticity structure of embedded convection in a warm conveyor
