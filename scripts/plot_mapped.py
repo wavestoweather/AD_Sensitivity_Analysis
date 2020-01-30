@@ -241,10 +241,10 @@ if __name__ == "__main__":
             help='''Rotate longitude and latitude coordinates. For
             the derivatives, we assume pol_lat=90.0 and pollon=0.0 if
             no netCDF file is given.''')
-    parser.add_argument("--input_param", nargs='+', type=str, default="dzeta",
+    parser.add_argument("--input_param", nargs='+', type=str, default=None,
             help='''A list of input parameters of the model to plot such
             as "dzeta" or "dbeta_r".''')
-    parser.add_argument("--output_param", nargs='+', type=str, default="T",
+    parser.add_argument("--output_param", nargs='+', type=str, default=None,
             help='''A list of output parameters of the model to plot such
             as "T", "qr" or "p".''')
     parser.add_argument("--max_time", type=float, default=None,

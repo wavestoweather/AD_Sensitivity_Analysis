@@ -26,7 +26,11 @@ Welcome to AD with ICON and Processing Results' documentation!
    groups/types
    groups/general
 
+.. toctree::
+   :maxdepth: 4
+   :caption: Example Results
 
+   results/traj0
 
 .. toctree::
    :maxdepth: 4
