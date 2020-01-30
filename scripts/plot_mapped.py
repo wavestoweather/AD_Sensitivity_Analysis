@@ -13,8 +13,13 @@ from scipy import stats
 import sys
 import os
 
+try:
+    import latexify
+except:
+    import scripts.latexify as latexify
 
-def plot_ratio_deriv_line(df_dict, out_params=None):
+
+def plot_ratio_deriv_line(df_dict, out_params=None, mapped=True, in_params=None, **kwargs):
     """
     Plot derivative ratios of one trajectory. The x-axis is the timesteps,
     the y-axis are the derivative ratios. Add a bar for flagged timesteps.
@@ -25,49 +30,76 @@ def plot_ratio_deriv_line(df_dict, out_params=None):
         A dictionary of pandas.Dataframe with key the output parameter.
         Dataframes have columns trajectory, timestep, out_param, in_param,
         deriv, ratio_deriv and optionally MAP.
+    out_params : list of string
+        List of keys to plot the derivatives for.
+    mapped : boolean
+        If true: plot the region, where "MAP" is true, ie where the wcb
+        criterion is fullfilled.
+    in_params : list of string
+        Plot only the derivatives with respect to those in this list.
+    kwargs : dict
+        Keyword arguments are passed down to matplotlib.axes.Axes.plot() for
+        the derivative plots.
     """
     if out_params is None:
         out_params = df_dict.keys()
     for out_param in out_params:
         df = df_dict[out_param]
+        if df is None:
+            continue
         if df.empty:
             continue
 
-        min_time = df.timestep.unique().min()
-        max_time = df.timestep.unique().max()
-        dt = (max_time - min_time + 19) / 20
-        x_ticks = np.arange(min_time, max_time + 19, dt)
+        def plot_helper(df):
+            min_time = df.timestep.unique().min()
+            max_time = df.timestep.unique().max()
+            dt = (max_time - min_time + 19) / 20
+            x_ticks = np.arange(min_time, max_time + 19, dt)
 
-        _, ax = plt.subplots()
+            _, ax = plt.subplots()
 
-        ax = sns.lineplot(x="timestep", y="ratio_deriv",
-                          data=df, hue="in_param", ax=ax)
-        ax.set_title("Deriv. ratio of {}".format(out_param))
-        ax.set_xticks(x_ticks)
+            ax = sns.lineplot(x="timestep", y="ratio_deriv",
+                            data=df, hue="in_param", ax=ax, **kwargs)
+            ax.set_title("Deriv. Ratio of {}".format(latexify.parse_word(out_param)))
+            ax.set_xticks(x_ticks)
 
-        # Plot the area that had been flagged
-        df_mapped = df[df.MAP == True]
-        if not df_mapped.empty:
-            min_y = df["ratio_deriv"].min()
-            max_y = df["ratio_deriv"].max()
-            ax.fill_between(df_mapped["timestep"], 0, 1,
-                facecolor="khaki", alpha=0.5)
+            # Change labels to latex versions
+            legend = ax.get_legend()
+            _, labels = ax.get_legend_handles_labels()
+            for t, old in zip(legend.texts, labels):
+                t.set_text(latexify.parse_word(old))
+            ax.set_ylabel("Derivative ratio")
 
-        i = 0
-        save = ("pics/line_" + out_param
-                + "_" + "{:03d}".format(i) + ".png")
-        while os.path.isfile(save):
-            i = i+1
-            save = ("pics/_line_" + out_param
+            # Plot the area that had been flagged
+            if mapped:
+                df_mapped = df[df.MAP == True]
+                if not df_mapped.empty:
+                    min_y = df["ratio_deriv"].min()
+                    max_y = df["ratio_deriv"].max()
+                    ax.fill_between(df_mapped["timestep"], min_y, max_y,
+                        facecolor="khaki", alpha=0.3)
+
+            i = 0
+            save = ("pics/line_" + out_param
                     + "_" + "{:03d}".format(i) + ".png")
+            while os.path.isfile(save):
+                i = i+1
+                save = ("pics/_line_" + out_param
+                        + "_" + "{:03d}".format(i) + ".png")
 
-        print("Saving to " + save)
-        plt.show()
-        plt.savefig(save, dpi=300)
-        plt.close()
+            print("Saving to " + save)
+            plt.show()
+            plt.savefig(save, dpi=300)
+            plt.close()
+
+        if in_params is None:
+            plot_helper(df)
+        else:
+            df_this = df.loc[df["in_param"].isin(in_params)]
+            plot_helper(df_this)
 
 
-def plot_res_line(df, out_param, dots=False):
+def plot_res_line(df, out_param, dots=False, mapped=True, **kwargs):
     """
     Plot results for an out_param of one trajectory. The x-axis is the timesteps,
     the y-axis is the parameter. Add a bar for flagged timesteps.
@@ -80,6 +112,11 @@ def plot_res_line(df, out_param, dots=False):
         The out_param to plot
     dots : Bool
         Plot dots every 20 seconds
+    mapped : boolean
+        If true: plot the region, where "MAP" is true, ie where the wcb
+        criterion is fullfilled.
+    kwargs : dict
+        Keyword arguments are passed down to matplotlib.axes.Axes.plot().
     """
     min_time = df.timestep.unique().min()
     max_time = df.timestep.unique().max()
@@ -89,17 +126,18 @@ def plot_res_line(df, out_param, dots=False):
     _, ax = plt.subplots()
 
     ax = sns.lineplot(x="timestep", y=out_param,
-                        data=df, hue="MAP", ax=ax)
+                        data=df, hue="MAP", ax=ax, **kwargs)
     ax.set_title("Simulation of {}".format(out_param))
     ax.set_xticks(x_ticks)
 
     # Plot the area that had been flagged
-    df_mapped = df[df.MAP == True]
-    if not df_mapped.empty:
-        min_y = df["ratio_deriv"].min()
-        max_y = df["ratio_deriv"].max()
-        ax.fill_between(df_mapped["timestep"], 0, 1,
-            facecolor="khaki", alpha=0.5)
+    if mapped:
+        df_mapped = df[df.MAP == True]
+        if not df_mapped.empty:
+            min_y = df[out_param].min()
+            max_y = df[out_param].max()
+            ax.fill_between(df_mapped["timestep"], min_y, max_y,
+                facecolor="khaki", alpha=0.3)
 
     # Plot dots every 20 seconds
     if dots:
@@ -123,6 +161,61 @@ def plot_res_line(df, out_param, dots=False):
     plt.show()
     plt.savefig(save, dpi=300)
     plt.close()
+
+
+def plot_same_orders(df_dict, out_params=None, mapped=True, in_params=None, **kwargs):
+    """
+    For each out_param, plot multiple figures with derivatives, where
+    each figure shows derivatives of the same order.
+    Parameters
+    ----------
+    df_dict : dic of pandas.Datafram
+        A dictionary of pandas.Dataframe with key the output parameter.
+        Dataframes have columns trajectory, timestep, out_param, in_param,
+        deriv, ratio_deriv and optionally MAP.
+    out_params : list of string
+        List of keys to plot the derivatives for.
+    mapped : boolean
+        If true: plot the region, where "MAP" is true, ie where the wcb
+        criterion is fullfilled.
+    in_params : list of string
+        Plot only the derivatives with respect to those in this list.
+    kwargs : dict
+        Keyword arguments are passed down to matplotlib.axes.Axes.plot() for
+        the derivative plots.
+    """
+    if out_params is None:
+        out_params = df_dict.keys()
+    for out_param in out_params:
+        df = df_dict[out_param]
+        if df is None:
+            continue
+        if df.empty:
+            continue
+
+        if in_params is None:
+            in_params_1 = df["in_param"].unique()
+
+        sorted_tuples = []
+        for in_p in in_params_1:
+            this_df = df.loc[df["in_param"] == in_p]
+            value = abs(this_df["ratio_deriv"].min())
+            if abs(this_df["ratio_deriv"].max()) > value:
+                value = abs(this_df["ratio_deriv"].max())
+            sorted_tuples.append((in_p, value))
+        sorted_tuples.sort(key=lambda tup: tup[1])
+        while len(sorted_tuples) > 0:
+            p, v = sorted_tuples.pop()
+            in_params_2 = [p]
+            while len(sorted_tuples) > 0 and abs(v/sorted_tuples[-1][1]) < 10:
+                p, v = sorted_tuples.pop()
+                in_params_2.append(p)
+            plot_ratio_deriv_line(
+                df_dict,
+                out_params=[out_param],
+                in_params=in_params_2,
+                mapped=True,
+                **kwargs)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=
