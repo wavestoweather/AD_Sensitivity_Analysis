@@ -85,7 +85,7 @@ def parse_word(word):
         if word == w:
             return mappings[word]
     # The first "d" shall be a derivative symbol
-    word = "\partial " + word[1::]
+    word = r"\partial " + word[1::]
 
     word = word.replace("delta_", "delta ")
     # Check for this typo

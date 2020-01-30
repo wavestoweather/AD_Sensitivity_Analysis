@@ -269,6 +269,7 @@ if __name__ == "__main__":
 
 
     rcParams['figure.figsize'] = (16,10)
+    latexify.set_size(beamer=True)
 
     df = None
     net_df = None
@@ -302,6 +303,12 @@ if __name__ == "__main__":
         if args.rotate:
             rotate_df(df, pollon, pollat, "LONGITUDE", "LATITUDE")
 
+        lon = df[df.in_param == "LONGITUDE"]["deriv"].unique()
+        lat = df[df.in_param == "LATITUDE"]["deriv"].unique()
+        # Remove entries with coordinates. We just stored them in lat and lon
+        df = df[df.in_param != "LONGITUDE"]
+        df = df[df.in_param != "LATITUDE"]
+
         ratio_dfs = {}
         for out_par in args.output_param:
             ratio_dfs[out_par] = ratio_deriv(df, out_par)
@@ -310,18 +317,26 @@ if __name__ == "__main__":
 
     # Plot data
     if net_df is not None:
-        for in_par in args.input_param:
-            for out_par in args.output_param:
-                plot_netcdf(df=net_df,
-                            in_par=in_par,
-                            out_par=out_par)
+        for out_par in args.output_param:
+            plot_res_line(df=net_df,
+                          out_param=out_par,
+                          dots=True,
+                          mapped=True)
 
     if df is not None:
-        for in_par in args.input_param:
-            for out_par in args.output_param:
-                plot_derif(df=df,
-                           in_par=in_par,
-                           out_par=out_par)
+        kwargs = {"alpha": 0.4}
+        plot_same_orders(
+            ratio_dfs,
+            out_params=args.output_param,
+            in_params=args.input_param,
+            mapped=True,
+            **kwargs)
+        # Use the following call if you want everything in one plot:
+        # plot_ratio_deriv_line(
+        #     ratio_dfs,
+        #     out_params=args.output_param,
+        #     in_params=args.input_param,
+        #     mapped=True)
 
 
 
