@@ -287,62 +287,17 @@ are used in calculating the particle diameter and hence for ice and ice
 collisions (see above), ice riming from cloud and rain particles, conversion from ice to
 graupel, vapor deposition, particle collection with snow and graupel.</p>
 <p>Formula for cloud riming rate with a particle x (<a class="reference internal" href="#seifert2006">Seifert2006</a>):</p>
-<div class="system-message">
-<p class="system-message-title">System Message: WARNING/2 (<span class="docutils literal">\begin{split}
-\frac{\partial q_i}{\partial t} |_{\text{cloud riming} \\
-= \frac{\Pi}{4} \cdot e_{\text{coll}} \cdot N_x \cdot q_c \cdot \\
-&amp;\quad ( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c \\
-&amp;\quad + \delta_{q, bb, icr} \cdot D_c^2 ) \\
-&amp;\quad \cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2 \\
-&amp;\quad - \theta_{q, ab, icr} \cdot v_x \cdot v_c \\
-&amp;\quad + \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }
-\end{split}
-
-</span>)</p>
-<p>latex exited with error
-[stdout]
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016/Debian) (preloaded format=latex)
- restricted \write18 enabled.
-entering extended mode
-(./math.tex
-LaTeX2e &lt;2017/01/01&gt; patch level 3
-Babel &lt;3.9r&gt; and hyphenation patterns for 83 language(s) loaded.
-(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
-Document Class: article 2014/09/29 v1.4h Standard LaTeX document class
-(/usr/share/texlive/texmf-dist/tex/latex/base/size12.clo))
-(/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty
-(/usr/share/texlive/texmf-dist/tex/latex/base/utf8.def
-(/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.dfu)
-(/usr/share/texlive/texmf-dist/tex/latex/base/ot1enc.dfu)
-(/usr/share/texlive/texmf-dist/tex/latex/base/omsenc.dfu)))
-(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
-For additional information on amsmath, use the `?' option.
-(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
-(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))
-(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
-(/usr/share/texlive/texmf-dist/tex/latex/amscls/amsthm.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amssymb.sty
-(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
-(/usr/share/texlive/texmf-dist/tex/latex/anyfontsize/anyfontsize.sty)
-(/usr/share/texlive/texmf-dist/tex/latex/tools/bm.sty) (./math.aux)
-(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
-(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd))
-Runaway argument?
-\begin {split} \frac {\partial q_i}{\partial t} |_{\text {cloud rimin\ETC.
-! File ended while scanning use of \split.
-&lt;inserted text&gt; 
-                \par 
-&lt;*&gt; math.tex
-            
-! Emergency stop.
-&lt;*&gt; math.tex
-            
-No pages of output.
-Transcript written on math.log.
-</p>
-</div>
-<p>The subscript “icr” stands for ice cloud riming model constants and <img class="math" src="../_images/math/02d98909b5d6acd6a7ff927d4d42790bdd407d58.png" alt="v"/>
+<div class="math">
+<p><img src="../_images/math/b56918c2e05a4f0419ea02a47040cf459dd7a227.png" alt="\begin{split}
+\frac{\partial q_i}{\partial t} |_{\text{cloud riming}}
+= \frac{\Pi}{4} \cdot e_{\text{coll}} \cdot N_x \cdot q_c \\
+\cdot ( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c
++ \delta_{q, bb, icr} \cdot D_c^2 ) \\
+\cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2
+- \theta_{q, ab, icr} \cdot v_x \cdot v_c
++ \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }
+\end{split}"/></p>
+</div><p>The subscript “icr” stands for ice cloud riming model constants and <img class="math" src="../_images/math/02d98909b5d6acd6a7ff927d4d42790bdd407d58.png" alt="v"/>
 is the particle velocity. The rain riming rate can be calculated in a similar
 way with model constants used from “irr” (ice rain riming) and properties from
 rain instead of cloud droplets.</p>

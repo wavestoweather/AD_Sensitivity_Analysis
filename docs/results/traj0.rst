@@ -151,13 +151,13 @@ Formula for cloud riming rate with a particle x (Seifert2006_):
 
 .. math::
     \begin{split}
-    \frac{\partial q_i}{\partial t} |_{\text{cloud riming} \\
-    = \frac{\Pi}{4} \cdot e_{\text{coll}} \cdot N_x \cdot q_c \cdot \\
-    &\quad ( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c \\
-    &\quad + \delta_{q, bb, icr} \cdot D_c^2 ) \\
-    &\quad \cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2 \\
-    &\quad - \theta_{q, ab, icr} \cdot v_x \cdot v_c \\
-    &\quad + \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }
+    \frac{\partial q_i}{\partial t} |_{\text{cloud riming}}
+    = \frac{\Pi}{4} \cdot e_{\text{coll}} \cdot N_x \cdot q_c \\
+    \cdot ( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c
+    + \delta_{q, bb, icr} \cdot D_c^2 ) \\
+    \cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2
+    - \theta_{q, ab, icr} \cdot v_x \cdot v_c
+    + \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }
     \end{split}
 
 The subscript "icr" stands for ice cloud riming model constants and :math:`v`
