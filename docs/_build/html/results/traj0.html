@@ -104,7 +104,14 @@
 </ul>
 <p class="caption"><span class="caption-text">Example Results</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Example Results for a Single Trajectory</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example Results for a Single Trajectory</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ice-mixing-ratio">Ice Mixing Ratio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cloud-droplet-mixing-ratio">Cloud Droplet Mixing Ratio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rain-droplet-mixing-ratio">Rain Droplet Mixing Ratio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#water-vapor-mixing-ratio">Water Vapor Mixing Ratio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
 </ul>
 <p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
 <ul>
@@ -176,7 +183,7 @@
   <div class="section" id="example-results-for-a-single-trajectory">
 <h1>Example Results for a Single Trajectory<a class="headerlink" href="#example-results-for-a-single-trajectory" title="Permalink to this headline">¶</a></h1>
 <p>If we use the data from <code class="docutils literal notranslate"><span class="pre">2mom_wcb/traj_t000000_p001.nc_wcb</span></code> for the
-trajectory with index 0 and <img class="math" src="../_images/math/b9dd55efb9954f2d446eca34c10efa7d3f7c3cbc.png" alt="83000 \text{s} \leq t \leq 93000 \text{s}"/>, we get data from within
+trajectory with index 0 and <img class="math" src="../_images/math/1e7a6c9c46ec68c998f518ffc1fe9a66a9ffd04d.png" alt="0 \text{s} \leq t \leq 187920 \text{s}"/>, we get data from within
 a region that satisfies the WCB-criterion (see Section 2.3 of <a class="reference internal" href="#oertel2019">Oertel2019</a>).
 One can execute the simulation with the following command, executed at the
 root folder of the repository:</p>
@@ -184,7 +191,7 @@ root folder of the repository:</p>
 -a <span class="m">3</span> <span class="se">\</span>
 -t <span class="m">0</span> <span class="se">\</span>
 -s <span class="m">1</span> <span class="se">\</span>
--f <span class="m">93000</span> <span class="se">\</span>
+-f <span class="m">187920</span> <span class="se">\</span>
 -d <span class="m">0</span>.01 <span class="se">\</span>
 -i <span class="m">250</span> <span class="se">\</span>
 -b <span class="m">1</span>.0 <span class="se">\</span>
@@ -193,27 +200,38 @@ root folder of the repository:</p>
 -r <span class="m">0</span>
 </pre></div>
 </div>
-<p>See the section on <a href="#id3"><span class="problematic" id="id4">Executing_</span></a> for a description of these commands. In short,
+<p>See the section on <a href="#id8"><span class="problematic" id="id9">Executing_</span></a> for a description of these commands. In short,
 we are resetting variables such as temperature, saturation, pressure and
 ascent every <img class="math" src="../_images/math/b66a2d7a7d78acb006aad5b9a77ff9e6248fa22b.png" alt="20 \text{s}"/>, the timestep size of the netCDF file. Those variables,
 except for ascent, are not fixed while calculating the microphysics.
 The timestep for the microphysics is <img class="math" src="../_images/math/1c390e43ecef70bdb901f75b931bf29b9d548614.png" alt="0.01 \text{s}"/>. We capture the results and
-derivatives every 250 timesteps (<img class="math" src="../_images/math/baf3c231d9c8a852e2e76e5c0a066ad96d5ee2df.png" alt="=2.5 \text{s}"/>).</p>
-<p>We can plot all the following plots with:</p>
+derivatives every 250 timesteps (<img class="math" src="../_images/math/baf3c231d9c8a852e2e76e5c0a066ad96d5ee2df.png" alt="=2.5 \text{s}"/>).
+We can plot all the following plots with:</p>
+<div class="section" id="ice-mixing-ratio">
+<h2>Ice Mixing Ratio<a class="headerlink" href="#ice-mixing-ratio" title="Permalink to this headline">¶</a></h2>
 <p>Let’s take a look at the ice mixing ratio <img class="math" src="../_images/math/146a6f438d070ed54d299e98a28c6ec689d3e381.png" alt="q_{\text{ice}}"/>:</p>
+<div class="align-center figure">
+<img alt="../_images/traj_qi.png" src="../_images/traj_qi.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/sim_qi_tr0.png" src="../_images/sim_qi_tr0.png" />
+</div>
 <div class="align-center figure" id="id1">
+<img alt="../_images/sim_qi.png" src="../_images/sim_qi.png" />
+<p class="caption"><span class="caption-text">Ice crystal mixing ratio for multiple trajectories.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+<div class="align-center figure" id="id2">
 <img alt="../_images/qi_1.png" src="../_images/qi_1.png" />
 <p class="caption"><span class="caption-text">Ice mixing ratio derivatives with the highest impact. The colored background
-stands for timesteps where the WCB-criterion is satisfied.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
-</div>
-<p>We can see that the minimum size for ice particles has an impact of <img class="math" src="../_images/math/61187a4e6540071208cdee5d5cd7208f11f4a244.png" alt="\mathcal{O}(10^{-13})"/>.
-The derivative can vary from negative to positive within few seconds.</p>
-<div class="align-center figure" id="id2">
-<img alt="../_images/qi_2.png" src="../_images/qi_2.png" />
-<p class="caption"><span class="caption-text">Ice mixing ratio derivatives with the second highest impact. The colored background
 stands for timesteps where the WCB-criterion is satisfied.</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
 </div>
-<p>The parameters with the second highest impact of <img class="math" src="../_images/math/8d73f362f43d93cfe7ac4cdd57702db80ca88643.png" alt="\mathcal{O}(10^{-20})"/>
+<p>We can see that the minimum size for ice particles has an impact of <img class="math" src="../_images/math/dcd89c363a228cb0105a3eb2d9ee41ee3e8cf560.png" alt="\mathcal{O}(10^{-11})"/>.</p>
+<div class="align-center figure" id="id3">
+<img alt="../_images/qi_2.png" src="../_images/qi_2.png" />
+<p class="caption"><span class="caption-text">Ice mixing ratio derivatives with the second highest impact. The colored background
+stands for timesteps where the WCB-criterion is satisfied.</span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+</div>
+<p>The parameters with the second highest impact of <img class="math" src="../_images/math/fa0ec8e2a93cd0a0ad05ec6ac4a922979f8576cc.png" alt="\mathcal{O}(10^{-21})"/>
 have largely negative derivatives. <img class="math" src="../_images/math/337d0c266f273401a17081052a08328fd9a02bf7.png" alt="z^{-1}"/> is the inverse height size
 of the air parcel, which is set to <img class="math" src="../_images/math/5e5607501ce148103ceba5f9585524af0f2b4c13.png" alt="150 \text{m}"/> for this simulation.
 The minimum size of a cloud particle is present as well. <img class="math" src="../_images/math/b3054bf637f26750821e2f79d1a5263900a90bd4.png" alt="\text{vel}_{b, \text{ice}}"/>
@@ -227,9 +245,9 @@ is used in the ice self collection (see <a class="reference internal" href="#cot
 temperature dependency).
 The collection of ice crystals after <a class="reference internal" href="#seifert2006">Seifert2006</a> Eq. 62 is implemented as follows:</p>
 <div class="math">
-<p><img src="../_images/math/8f790487b321515d3fb1d9f2f541fc36359524a6.png" alt="\frac{\partial q_i}{\partial t} |_{\text{vel}_{b, \text{ice}}} =
-- \frac{\pi}{4} e_{\text{coll}} \delta_{sc, q}
-    N_i q_i D_i^2 \sqrt{\theta_{sc, q} \text{vel}_i^2 + 2\cdot s_{\text{vel}, i}^2}"/></p>
+<p><img src="../_images/math/e419537e5ba35f4a10fc551ec7cf71288d4f69f3.png" alt="\frac{\partial q_i}{\partial t} |_{\text{vel}_{b, \text{ice}}} =
+- \frac{\pi}{4} e_{\text{coll}} \delta_{sc, q, \text{ice}}
+    N_i q_i D_i^2 \sqrt{\theta_{sc, q, \text{ice}} \text{vel}_{\text{ice}}^2 + 2\cdot s_{\text{vel}, \text{ice}}^2}"/></p>
 </div><p>with <img class="math" src="../_images/math/f51a638045d2f459a161fabee7f9393a858e3b76.png" alt="e_{\text{coll}} = \text{min}(10^{0.035 \cdot T_c - 0.7}, 0.2)"/>
 the mean efficiency, <img class="math" src="../_images/math/e6f71737b2fe88c541a2d8d3fd0ecc9810ff2292.png" alt="T_c"/> is the temperature in degree Celcius, <img class="math" src="../_images/math/a1e65dd6ea883f18f45686583a0e34bbe9a836ce.png" alt="N_i"/>
 is the amount of ice particles and <img class="math" src="../_images/math/a554e42bdccfdc2c87802f5d26d2fff6d3c72a6f.png" alt="q_i"/> the ice mixing ratio.
@@ -257,6 +275,163 @@ the gas constant for dry air <img class="math" src="../_images/math/eb04121f9ba1
 <div class="math">
 <p><img src="../_images/math/89b15b79fd8f2f560375c2a9d15c7c1f9372577e.png" alt="\rho_{a}' = \frac{ p - S \cdot p_{S, v} }{R_a \cdot T}"/></p>
 </div><p>The saturation vapor pressure <img class="math" src="../_images/math/04f2da569f3de26cf28a833a34eaf4abf2c8fe1f.png" alt="p_{S, v}"/> can be calculated with <a class="reference internal" href="#murphy2005">Murphy2005</a>.</p>
+<div class="align-center figure" id="id4">
+<img alt="../_images/qi_3.png" src="../_images/qi_3.png" />
+<p class="caption"><span class="caption-text">Ice mixing ratio derivatives with the third highest impact. The colored background
+stands for timesteps where the WCB-criterion is satisfied.</span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
+</div>
+<p>There are more derivatives with impact of <img class="math" src="../_images/math/ca61f9bc1cdbe1fbe46343ff9a0d7d3ee7fdcc62.png" alt="\mathcal{O}(10^{-24}"/>.
+The minimum size of graupel and snow particles come to have an effect.
+The parameters <img class="math" src="../_images/math/bddac6ac07bb444eb91a99442a5ebb27e1aea3b1.png" alt="\text{geo}_{a, \text{ice}}"/> and <img class="math" src="../_images/math/c6b412d5ac39d6dd2733a9c2e3d944c29cbef4e7.png" alt="\text{geo}_{b, \text{ice}}"/>
+are used in calculating the particle diameter and hence for ice and ice
+collisions (see above), ice riming from cloud and rain particles, conversion from ice to
+graupel, vapor deposition, particle collection with snow and graupel.</p>
+<p>Formula for cloud riming rate with a particle x (<a class="reference internal" href="#seifert2006">Seifert2006</a>):</p>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<span class="docutils literal">\frac{\partial q_i}{\partial t} |_{\text{cloud riming} \\
+= \frac{\Pi}{4} \cdot e_{\text{coll}} \cdot N_x \cdot q_c \cdot \\
+( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c \\
+  + \delta_{q, bb, icr} \cdot D_c^2 ) \\
+\cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2 \\
+  - \theta_{q, ab, icr} \cdot v_x \cdot v_c \\
+  + \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }</span>)</p>
+<p>latex exited with error
+[stdout]
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016/Debian) (preloaded format=latex)
+ restricted \write18 enabled.
+entering extended mode
+(./math.tex
+LaTeX2e &lt;2017/01/01&gt; patch level 3
+Babel &lt;3.9r&gt; and hyphenation patterns for 83 language(s) loaded.
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2014/09/29 v1.4h Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size12.clo))
+(/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/utf8.def
+(/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.dfu)
+(/usr/share/texlive/texmf-dist/tex/latex/base/ot1enc.dfu)
+(/usr/share/texlive/texmf-dist/tex/latex/base/omsenc.dfu)))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+(/usr/share/texlive/texmf-dist/tex/latex/anyfontsize/anyfontsize.sty)
+(/usr/share/texlive/texmf-dist/tex/latex/tools/bm.sty) (./math.aux)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd))
+Runaway argument?
+\frac {\partial q_i}{\partial t} |_{\text {cloud riming} \\ = \frac {\ETC.
+! File ended while scanning use of \split.
+&lt;inserted text&gt; 
+                \par 
+&lt;*&gt; math.tex
+            
+! Emergency stop.
+&lt;*&gt; math.tex
+            
+No pages of output.
+Transcript written on math.log.
+</p>
+</div>
+<p>The subscript “icr” stands for ice cloud riming model constants and <img class="math" src="../_images/math/02d98909b5d6acd6a7ff927d4d42790bdd407d58.png" alt="v"/>
+is the particle velocity. The rain riming rate can be calculated in a similar
+way with model constants used from “irr” (ice rain riming) and properties from
+rain instead of cloud droplets.</p>
+<p>The parameter <img class="math" src="../_images/math/dc91a60cd718a63eb90e71ccfa94f1724d84a180.png" alt="\delta_{sc, \text{ice}}"/> is part of ice ice collisions as above.</p>
+<p>The parameter <img class="math" src="../_images/math/d938848086efccc7491aafb01e19ff4d55add7ec.png" alt="\text{ven}_{a, \text{ice}}"/> is used in vapor deposition
+(<a class="reference internal" href="#seifert2006">Seifert2006</a>, Section 3.3, Equations 37 and 38).</p>
+<div class="math">
+<p><img src="../_images/math/d0a26596026bd6109a4877cea3242b4ed5c54968.png" alt="Another formula, maybe I add that later."/></p>
+</div><p>The parameters <img class="math" src="../_images/math/2def6b608ba7da6c3fefc8f292cbbdae323b2a81.png" alt="s_{c, \text{ice}}"/> and <img class="math" src="../_images/math/571a4dc1250f9018e00a212187b1aadbdcec81e5.png" alt="f_{a, \text{ice}}"/> are used in depositional
+growth of ice particles (as above) and evaporation (<a class="reference internal" href="#seifert2006">Seifert2006</a>, Equations 76, 77):</p>
+<div class="math">
+<p><img src="../_images/math/14c6b316e046c1da77e2ec3c8e1962ac5cfa5274.png" alt="Another formula"/></p>
+</div><p>The parameter <img class="math" src="../_images/math/c62c8a4a7726a5b4b5442aa624639fb456074cab.png" alt="q_{\alpha, \text{ice}}"/> is part of (TODO):</p>
+<div class="math">
+<p><img src="../_images/math/14c6b316e046c1da77e2ec3c8e1962ac5cfa5274.png" alt="Another formula"/></p>
+</div></div>
+<div class="section" id="cloud-droplet-mixing-ratio">
+<h2>Cloud Droplet Mixing Ratio<a class="headerlink" href="#cloud-droplet-mixing-ratio" title="Permalink to this headline">¶</a></h2>
+<div class="align-center figure">
+<img alt="../_images/traj_qc.png" src="../_images/traj_qc.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/sim_qc_tr0.png" src="../_images/sim_qc_tr0.png" />
+</div>
+<div class="align-center figure" id="id5">
+<img alt="../_images/sim_qc.png" src="../_images/sim_qc.png" />
+<p class="caption"><span class="caption-text">Cloud droplet mixing ratio for multiple trajectories.</span><a class="headerlink" href="#id5" title="Permalink to this image">¶</a></p>
+</div>
+<div class="align-center figure">
+<img alt="../_images/qc_1.png" src="../_images/qc_1.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qc_2.png" src="../_images/qc_2.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qc_3.png" src="../_images/qc_3.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qc_4.png" src="../_images/qc_4.png" />
+</div>
+</div>
+<div class="section" id="rain-droplet-mixing-ratio">
+<h2>Rain Droplet Mixing Ratio<a class="headerlink" href="#rain-droplet-mixing-ratio" title="Permalink to this headline">¶</a></h2>
+<div class="align-center figure">
+<img alt="../_images/traj_qr.png" src="../_images/traj_qr.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/sim_qr_tr0.png" src="../_images/sim_qr_tr0.png" />
+</div>
+<div class="align-center figure" id="id6">
+<img alt="../_images/sim_qr.png" src="../_images/sim_qr.png" />
+<p class="caption"><span class="caption-text">Rain droplet mixing ratio of multiple trajectories.</span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
+</div>
+<div class="align-center figure">
+<img alt="../_images/qr_1.png" src="../_images/qr_1.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qr_2.png" src="../_images/qr_2.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qr_3.png" src="../_images/qr_3.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qr_4.png" src="../_images/qr_4.png" />
+</div>
+</div>
+<div class="section" id="water-vapor-mixing-ratio">
+<h2>Water Vapor Mixing Ratio<a class="headerlink" href="#water-vapor-mixing-ratio" title="Permalink to this headline">¶</a></h2>
+<div class="align-center figure">
+<img alt="../_images/traj_qv.png" src="../_images/traj_qv.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/sim_qv_tr0.png" src="../_images/sim_qv_tr0.png" />
+</div>
+<div class="align-center figure" id="id7">
+<img alt="../_images/sim_qv.png" src="../_images/sim_qv.png" />
+<p class="caption"><span class="caption-text">Water vapor mixing ratio for multiple trajectories.</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
+</div>
+<div class="align-center figure">
+<img alt="../_images/qv_1.png" src="../_images/qv_1.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qv_2.png" src="../_images/qv_2.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qv_3.png" src="../_images/qv_3.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qv_4.png" src="../_images/qv_4.png" />
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <dl class="citation">
 <dt class="label" id="oertel2019"><span class="brackets">Oertel2019</span></dt>
 <dd><p>Oertel, A., Boettcher, M., Joos, H., Sprenger, M., and Wernli, H.,
@@ -287,6 +462,7 @@ Quarterly Journal of the Royal Meteorological Society, vol. 131, no. 608,
 pp. 1539–1565, 2005, doi: 10.1256/qj.04.94.</p>
 </dd>
 </dl>
+</div>
 </div>
 
 

@@ -2,7 +2,7 @@ Example Results for a Single Trajectory
 =======================================
 
 If we use the data from ``2mom_wcb/traj_t000000_p001.nc_wcb`` for the
-trajectory with index 0 and :math:`83000 \text{s} \leq t \leq 93000 \text{s}`, we get data from within
+trajectory with index 0 and :math:`0 \text{s} \leq t \leq 187920 \text{s}`, we get data from within
 a region that satisfies the WCB-criterion (see Section 2.3 of Oertel2019_).
 One can execute the simulation with the following command, executed at the
 root folder of the repository:
@@ -13,7 +13,7 @@ root folder of the repository:
     -a 3 \
     -t 0 \
     -s 1 \
-    -f 93000 \
+    -f 187920 \
     -d 0.01 \
     -i 250 \
     -b 1.0 \
@@ -39,6 +39,20 @@ Ice Mixing Ratio
 
 Let's take a look at the ice mixing ratio :math:`q_{\text{ice}}`:
 
+.. figure:: ../gfx/results/traj_qi.png
+    :align: center
+    :figclass: align-center
+
+.. figure:: ../gfx/results/sim_qi_tr0.png
+    :align: center
+    :figclass: align-center
+
+.. figure:: ../gfx/results/sim_qi.png
+    :align: center
+    :figclass: align-center
+
+    Ice crystal mixing ratio for multiple trajectories.
+
 .. figure:: ../gfx/results/qi_1.png
     :align: center
     :figclass: align-center
@@ -46,8 +60,8 @@ Let's take a look at the ice mixing ratio :math:`q_{\text{ice}}`:
     Ice mixing ratio derivatives with the highest impact. The colored background
     stands for timesteps where the WCB-criterion is satisfied.
 
-We can see that the minimum size for ice particles has an impact of :math:`\mathcal{O}(10^{-13})`.
-The derivative can vary from negative to positive within few seconds.
+We can see that the minimum size for ice particles has an impact of :math:`\mathcal{O}(10^{-11})`.
+
 
 .. figure:: ../gfx/results/qi_2.png
     :align: center
@@ -56,7 +70,7 @@ The derivative can vary from negative to positive within few seconds.
     Ice mixing ratio derivatives with the second highest impact. The colored background
     stands for timesteps where the WCB-criterion is satisfied.
 
-The parameters with the second highest impact of :math:`\mathcal{O}(10^{-20})`
+The parameters with the second highest impact of :math:`\mathcal{O}(10^{-21})`
 have largely negative derivatives. :math:`z^{-1}` is the inverse height size
 of the air parcel, which is set to :math:`150 \text{m}` for this simulation.
 The minimum size of a cloud particle is present as well. :math:`\text{vel}_{b, \text{ice}}`
@@ -76,8 +90,8 @@ The collection of ice crystals after Seifert2006_ Eq. 62 is implemented as follo
 .. math::
 
     \frac{\partial q_i}{\partial t} |_{\text{vel}_{b, \text{ice}}} =
-    - \frac{\pi}{4} e_{\text{coll}} \delta_{sc, q}
-        N_i q_i D_i^2 \sqrt{\theta_{sc, q} \text{vel}_i^2 + 2\cdot s_{\text{vel}, i}^2}
+    - \frac{\pi}{4} e_{\text{coll}} \delta_{sc, q, \text{ice}}
+        N_i q_i D_i^2 \sqrt{\theta_{sc, q, \text{ice}} \text{vel}_{\text{ice}}^2 + 2\cdot s_{\text{vel}, \text{ice}}^2}
 
 with :math:`e_{\text{coll}} = \text{min}(10^{0.035 \cdot T_c - 0.7}, 0.2)`
 the mean efficiency, :math:`T_c` is the temperature in degree Celcius, :math:`N_i`
@@ -119,8 +133,75 @@ the gas constant for dry air :math:`R_a` via
 
 The saturation vapor pressure :math:`p_{S, v}` can be calculated with Murphy2005_.
 
+.. figure:: ../gfx/results/qi_3.png
+    :align: center
+    :figclass: align-center
+
+    Ice mixing ratio derivatives with the third highest impact. The colored background
+    stands for timesteps where the WCB-criterion is satisfied.
+
+There are more derivatives with impact of :math:`\mathcal{O}(10^{-24}`.
+The minimum size of graupel and snow particles come to have an effect.
+The parameters :math:`\text{geo}_{a, \text{ice}}` and :math:`\text{geo}_{b, \text{ice}}`
+are used in calculating the particle diameter and hence for ice and ice
+collisions (see above), ice riming from cloud and rain particles, conversion from ice to
+graupel, vapor deposition, particle collection with snow and graupel.
+
+Formula for cloud riming rate with a particle x (Seifert2006_):
+
+.. math::
+
+    \frac{\partial q_i}{\partial t} |_{\text{cloud riming} \\
+    = \frac{\Pi}{4} \cdot e_{\text{coll}} \cdot N_x \cdot q_c \cdot \\
+    ( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c \\
+      + \delta_{q, bb, icr} \cdot D_c^2 ) \\
+    \cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2 \\
+      - \theta_{q, ab, icr} \cdot v_x \cdot v_c \\
+      + \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }
+
+The subscript "icr" stands for ice cloud riming model constants and :math:`v`
+is the particle velocity. The rain riming rate can be calculated in a similar
+way with model constants used from "irr" (ice rain riming) and properties from
+rain instead of cloud droplets.
+
+The parameter :math:`\delta_{sc, \text{ice}}` is part of ice ice collisions as above.
+
+The parameter :math:`\text{ven}_{a, \text{ice}}` is used in vapor deposition
+(Seifert2006_, Section 3.3, Equations 37 and 38).
+
+.. math::
+
+    Another formula, maybe I add that later.
+
+The parameters :math:`s_{c, \text{ice}}` and :math:`f_{a, \text{ice}}` are used in depositional
+growth of ice particles (as above) and evaporation (Seifert2006_, Equations 76, 77):
+
+.. math::
+    Another formula
+
+The parameter :math:`q_{\alpha, \text{ice}}` is part of (TODO):
+
+.. math::
+    Another formula
+
+
+
 Cloud Droplet Mixing Ratio
 --------------------------
+
+.. figure:: ../gfx/results/traj_qc.png
+    :align: center
+    :figclass: align-center
+
+.. figure:: ../gfx/results/sim_qc_tr0.png
+    :align: center
+    :figclass: align-center
+
+.. figure:: ../gfx/results/sim_qc.png
+    :align: center
+    :figclass: align-center
+
+    Cloud droplet mixing ratio for multiple trajectories.
 
 .. figure:: ../gfx/results/qc_1.png
     :align: center
@@ -145,6 +226,20 @@ Cloud Droplet Mixing Ratio
 Rain Droplet Mixing Ratio
 --------------------------
 
+.. figure:: ../gfx/results/traj_qr.png
+    :align: center
+    :figclass: align-center
+
+.. figure:: ../gfx/results/sim_qr_tr0.png
+    :align: center
+    :figclass: align-center
+
+.. figure:: ../gfx/results/sim_qr.png
+    :align: center
+    :figclass: align-center
+
+    Rain droplet mixing ratio of multiple trajectories.
+
 .. figure:: ../gfx/results/qr_1.png
     :align: center
     :figclass: align-center
@@ -167,6 +262,20 @@ Rain Droplet Mixing Ratio
 
 Water Vapor Mixing Ratio
 --------------------------
+
+.. figure:: ../gfx/results/traj_qv.png
+    :align: center
+    :figclass: align-center
+
+.. figure:: ../gfx/results/sim_qv_tr0.png
+    :align: center
+    :figclass: align-center
+
+.. figure:: ../gfx/results/sim_qv.png
+    :align: center
+    :figclass: align-center
+
+    Water vapor mixing ratio for multiple trajectories.
 
 .. figure:: ../gfx/results/qv_1.png
     :align: center
