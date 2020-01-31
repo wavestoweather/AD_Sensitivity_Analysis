@@ -19,6 +19,7 @@ struct reference_quantities_t{
   double qref;          /*!< Reference mixing-ratio */
   double wref;          /*!< Reference vertical velocity */
   double tref;          /*!< Reference time */
+  double zref;          /*!< Reference distances */
 
   double Nref;          /*!< DUMMY */
 };
@@ -35,7 +36,7 @@ struct particle_model_constants_t{
     codi::RealReverse b_geo;
     codi::RealReverse min_x;
     codi::RealReverse max_x;
-    codi::RealReverse sc_theta_q;
+    codi::RealReverse sc_theta_q;   /*!< For snow collision. */
     codi::RealReverse sc_delta_q;
     codi::RealReverse sc_theta_n;
     codi::RealReverse sc_delta_n;

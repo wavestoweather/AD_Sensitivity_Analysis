@@ -1188,6 +1188,67 @@ inline codi::RealReverse moment_gamma(
         * pow(tgamma( (pc.nu+1.0)/pc.mu ) / tgamma( (pc.nu+2.0)/pc.mu), n);
 }
 
+
+/**
+ * Set the constants for the cloud model from given environmental conditions.
+ *
+ * @param y Vector of initial conditions for pressure and temperature
+ * @param cc Pointer to constants from the model. On out: modified constants
+ * @param ref Pointer to reference quantities to transform between units
+ */
+void setCoefficients(
+    std::vector<codi::RealReverse> & y,
+    model_constants_t& cc,
+    reference_quantities_t& ref)
+{
+    codi::RealReverse p_prime = y[p_idx]*ref.pref;
+    codi::RealReverse T_prime = y[T_idx]*ref.Tref;
+
+    codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
+    codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
+    codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
+    codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
+    codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(Rv*T_prime)) - 1.0);
+    codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
+
+
+    cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alphar-2.0)/(A_pp + B_pp) );
+    cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alphar*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
+
+    cc.a1_prime = cc.a1_scale;	// Constant coefficient
+    cc.a2_prime = cc.a2_scale;	// Constant coefficient
+    cc.d_prime = cc.d_scale;	// Constant coefficient
+}
+
+/**
+ * Set the constants for the cloud model from given environmental conditions.
+ *
+ * @param p_prime Initial pressure in Pa
+ * @param T_prime Initial temperature in Kelvin
+ * @param cc Pointer to constants from the model. On out: modified constants
+ */
+void setCoefficients(
+    codi::RealReverse p_prime,
+    codi::RealReverse T_prime,
+    model_constants_t &cc)
+{
+  codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
+  codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
+  codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
+  codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
+  codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(Rv*T_prime)) - 1.0);
+  codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
+
+  cc.a1_prime = cc.a1_scale;	// Constant coefficient
+  cc.a2_prime = cc.a2_scale;	// Constant coefficient
+
+  cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alphar-2.0)/(A_pp + B_pp) );
+  cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alphar*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
+
+  cc.d_prime = cc.d_scale;	// Constant coefficient
+}
+
+
 /** @} */ // end of group parametrizations
 
 

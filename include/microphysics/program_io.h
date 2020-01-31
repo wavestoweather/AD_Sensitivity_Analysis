@@ -350,7 +350,9 @@ void load_nc_parameters(
 #endif
 
 #if defined WCB || defined WCB2
-    nc.ascent_flag_var.getVar(startp, countp, &nc.ascent_flag);
+    int map = 0;
+    nc.ascent_flag_var.getVar(startp, countp, &map);
+    nc.ascent_flag = (map > 0) ? true : false;
 #endif
 
     nc.t_var.getVar(startp, countp, &nc.t);

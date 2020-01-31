@@ -175,7 +175,7 @@ int main(int argc, char** argv)
     const uint64_t n_lookup_highres = 10000;
     const uint64_t n_lookup_hr_dummy = 10;
 
-    const uint64_t start_step = 8800/20; // 10000/20;
+    const uint64_t start_step = 0; //83000/20;// 8800/20; // 10000/20;
 
 
     // ==================================================
@@ -192,6 +192,7 @@ int main(int argc, char** argv)
     ref_quant.pref = 1.0e5;
     ref_quant.wref = 1.; // 10.0
     ref_quant.tref = 1.0;
+    ref_quant.zref = 1.0;
 
     ref_quant.Nref = 1.0; 	// DUMMY
 
@@ -576,6 +577,7 @@ int main(int argc, char** argv)
         y_init[Nc_idx] = 0;
 #endif
         y_init[Nv_idx] = 0;
+        y_init[z_idx] = nc_params.z[0];
 
     } catch(netCDF::exceptions::NcException& e)
     {
@@ -645,7 +647,8 @@ int main(int argc, char** argv)
 	       << ref_quant.qref << " "
 	       << ref_quant.Nref << " "
 	       << ref_quant.wref << " "
-	       << ref_quant.tref << "\n";
+	       << ref_quant.tref << " "
+           << ref_quant.zref << "\n";
     print_reference_quantities(ref_quant);
     outfile_refs.close();
 
@@ -656,7 +659,7 @@ int main(int argc, char** argv)
 #endif
         << "p,T,w,S,qc,qr,qv,Nc,Nr,Nv,qi,Ni,vi,"
         << "qs,Ns,qg,Ng,qh,Nh,qiout,qsout,qrout,qgout,qhout,"
-        << "latent_heat,latent_cool,Niout,Nsout,Nrout,Ngout,Nhout\n";
+        << "latent_heat,latent_cool,Niout,Nsout,Nrout,Ngout,Nhout,z\n";
 
     // CODIPACK: BEGIN
     std::string basename = "_diff_";
@@ -1080,6 +1083,8 @@ int main(int argc, char** argv)
                 denom = cc.cloud.min_x / 2.0;
                 y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
 
+                y_single_old[z_idx] = nc_params.z[0];
+
 #if defined WCB || defined WCB2
                 outfile << (t*cc.num_sub_steps)*cc.dt << "," << input.traj << ","
                         << nc_params.lon[0] << "," << nc_params.lat[0] << ","
@@ -1136,6 +1141,9 @@ int main(int argc, char** argv)
             // Iterate over each substep
             for(uint32_t sub=1; sub<cc.num_sub_steps; ++sub) // cc.num_sub_steps
             {
+#if defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
+                std::cout << "\n\ntimestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
+#endif
                 // Set the coefficients from the last timestep and from
                 // the input files
                 // *Should* only be necessary when parameters from the
@@ -1154,7 +1162,7 @@ int main(int argc, char** argv)
                 y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
                 y_single_old[Nr_idx] += inflow[Nr_in_idx]/cc.num_sub_steps;
                 y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
-#ifdef TRACE
+#ifdef TRACE_QR
                 std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps
                     << ", Nr " << inflow[Nr_in_idx]/cc.num_sub_steps << "\n";
 #endif
