@@ -140,7 +140,7 @@ The saturation vapor pressure :math:`p_{S, v}` can be calculated with Murphy2005
     Ice mixing ratio derivatives with the third highest impact. The colored background
     stands for timesteps where the WCB-criterion is satisfied.
 
-There are more derivatives with impact of :math:`\mathcal{O}(10^{-24}`.
+There are more derivatives with impact of :math:`\mathcal{O}(10^{-24})`.
 The minimum size of graupel and snow particles come to have an effect.
 The parameters :math:`\text{geo}_{a, \text{ice}}` and :math:`\text{geo}_{b, \text{ice}}`
 are used in calculating the particle diameter and hence for ice and ice
@@ -150,14 +150,15 @@ graupel, vapor deposition, particle collection with snow and graupel.
 Formula for cloud riming rate with a particle x (Seifert2006_):
 
 .. math::
-
+    \begin{split}
     \frac{\partial q_i}{\partial t} |_{\text{cloud riming} \\
     = \frac{\Pi}{4} \cdot e_{\text{coll}} \cdot N_x \cdot q_c \cdot \\
-    ( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c \\
-      + \delta_{q, bb, icr} \cdot D_c^2 ) \\
-    \cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2 \\
-      - \theta_{q, ab, icr} \cdot v_x \cdot v_c \\
-      + \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }
+    &\quad ( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c \\
+    &\quad + \delta_{q, bb, icr} \cdot D_c^2 ) \\
+    &\quad \cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2 \\
+    &\quad - \theta_{q, ab, icr} \cdot v_x \cdot v_c \\
+    &\quad + \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }
+    \end{split}
 
 The subscript "icr" stands for ice cloud riming model constants and :math:`v`
 is the particle velocity. The rain riming rate can be calculated in a similar

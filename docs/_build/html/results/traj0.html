@@ -280,7 +280,7 @@ the gas constant for dry air <img class="math" src="../_images/math/eb04121f9ba1
 <p class="caption"><span class="caption-text">Ice mixing ratio derivatives with the third highest impact. The colored background
 stands for timesteps where the WCB-criterion is satisfied.</span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
 </div>
-<p>There are more derivatives with impact of <img class="math" src="../_images/math/ca61f9bc1cdbe1fbe46343ff9a0d7d3ee7fdcc62.png" alt="\mathcal{O}(10^{-24}"/>.
+<p>There are more derivatives with impact of <img class="math" src="../_images/math/03e97449430dc864b6a53d42b6adb2499a1e0050.png" alt="\mathcal{O}(10^{-24})"/>.
 The minimum size of graupel and snow particles come to have an effect.
 The parameters <img class="math" src="../_images/math/bddac6ac07bb444eb91a99442a5ebb27e1aea3b1.png" alt="\text{geo}_{a, \text{ice}}"/> and <img class="math" src="../_images/math/c6b412d5ac39d6dd2733a9c2e3d944c29cbef4e7.png" alt="\text{geo}_{b, \text{ice}}"/>
 are used in calculating the particle diameter and hence for ice and ice
@@ -288,13 +288,17 @@ collisions (see above), ice riming from cloud and rain particles, conversion fro
 graupel, vapor deposition, particle collection with snow and graupel.</p>
 <p>Formula for cloud riming rate with a particle x (<a class="reference internal" href="#seifert2006">Seifert2006</a>):</p>
 <div class="system-message">
-<p class="system-message-title">System Message: WARNING/2 (<span class="docutils literal">\frac{\partial q_i}{\partial t} |_{\text{cloud riming} \\
+<p class="system-message-title">System Message: WARNING/2 (<span class="docutils literal">\begin{split}
+\frac{\partial q_i}{\partial t} |_{\text{cloud riming} \\
 = \frac{\Pi}{4} \cdot e_{\text{coll}} \cdot N_x \cdot q_c \cdot \\
-( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c \\
-  + \delta_{q, bb, icr} \cdot D_c^2 ) \\
-\cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2 \\
-  - \theta_{q, ab, icr} \cdot v_x \cdot v_c \\
-  + \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }</span>)</p>
+&amp;\quad ( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c \\
+&amp;\quad + \delta_{q, bb, icr} \cdot D_c^2 ) \\
+&amp;\quad \cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2 \\
+&amp;\quad - \theta_{q, ab, icr} \cdot v_x \cdot v_c \\
+&amp;\quad + \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }
+\end{split}
+
+</span>)</p>
 <p>latex exited with error
 [stdout]
 This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016/Debian) (preloaded format=latex)
@@ -325,7 +329,7 @@ For additional information on amsmath, use the `?' option.
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd))
 Runaway argument?
-\frac {\partial q_i}{\partial t} |_{\text {cloud riming} \\ = \frac {\ETC.
+\begin {split} \frac {\partial q_i}{\partial t} |_{\text {cloud rimin\ETC.
 ! File ended while scanning use of \split.
 &lt;inserted text&gt; 
                 \par 
