@@ -18,7 +18,7 @@ def set_size(beamer=True):
             "font.size": 20,
             "legend.fontsize": 16,
             "xtick.labelsize": 12,
-            "ytick.labelsize": 12
+            "ytick.labelsize": 16
         })
     else:
         mpl.rcParams.update({
@@ -53,6 +53,8 @@ def parse_word(word):
                  "rho", "nu", "mu", "lambda"]
     mappings = {"lat_heat": "Latent Heating",
                 "lat_cool": "Latent Cooling",
+                "latent_heat": "Latent Heating",
+                "latent_cool": "Latent Cooling",
                 "dinv_z": r"$\partial z^{-1}$",
                 "ratio_deriv": "Derivative Ratio",
                 "in_param": "Input Parameter",

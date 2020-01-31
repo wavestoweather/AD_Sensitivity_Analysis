@@ -88,8 +88,8 @@ def plot_ratio_deriv_line(df_dict, out_params=None, mapped=True, in_params=None,
                         + "_" + "{:03d}".format(i) + ".png")
 
             print("Saving to " + save)
-            plt.show()
             plt.savefig(save, dpi=300)
+            plt.show()
             plt.close()
 
         if in_params is None:
@@ -125,9 +125,29 @@ def plot_res_line(df, out_param, dots=False, mapped=True, **kwargs):
 
     _, ax = plt.subplots()
 
-    ax = sns.lineplot(x="timestep", y=out_param,
-                        data=df, hue="MAP", ax=ax, **kwargs)
-    ax.set_title("Simulation of {}".format(out_param))
+    if len(df.trajectory.unique()) > 1:
+        ax = sns.lineplot(x="timestep", y=out_param,
+                          data=df, hue="trajectory", ax=ax,
+                          palette=sns.color_palette("husl", len(df.trajectory.unique())),
+                          **kwargs)
+    else:
+        ax = sns.lineplot(x="timestep", y=out_param,
+                          data=df, ax=ax, **kwargs)
+        ax.legend(df.trajectory.unique(), title="trajectory")
+    # Plot dots every 20 seconds
+    if dots:
+        x_dots = []
+        y_dots = []
+        for time in df["timestep"]:
+            if time%20 == 0:
+                y_values = df[df.timestep == time][out_param].values
+                for y in y_values:
+                    x_dots.append(time)
+                    y_dots.append(y)
+        plt.scatter(x_dots, y_dots, marker='x', c="black")
+
+
+    ax.set_title("Simulation of {}".format(latexify.parse_word(out_param)))
     ax.set_xticks(x_ticks)
 
     # Plot the area that had been flagged
@@ -139,16 +159,6 @@ def plot_res_line(df, out_param, dots=False, mapped=True, **kwargs):
             ax.fill_between(df_mapped["timestep"], min_y, max_y,
                 facecolor="khaki", alpha=0.3)
 
-    # Plot dots every 20 seconds
-    if dots:
-        x_dots = []
-        y_dots = []
-        for time in df["timestep"]:
-            if time%20 == 0:
-                x_dots.append(time)
-                y_dots.append( df[df.timestep == time][out_param].values[0] )
-        plt.scatter(x_dots, y_dots, marker='x', c="black")
-
     i = 0
     save = ("pics/line_" + out_param
             + "_" + "{:03d}".format(i) + ".png")
@@ -158,8 +168,8 @@ def plot_res_line(df, out_param, dots=False, mapped=True, **kwargs):
                 + "_" + "{:03d}".format(i) + ".png")
 
     print("Saving to " + save)
-    plt.show()
     plt.savefig(save, dpi=300)
+    plt.show()
     plt.close()
 
 
