@@ -81,7 +81,12 @@ def parse_word(word):
                 "qsout": "Sedimentation of Snow Mixing Ratio",
                 "qiout": "Sedimentation of Ice Mixing Ratio",
                 "qgout": "Sedimentation of Graupel Mixing Ratio",
-                "qhout": "Sedimentation of Hail Mixing Ratio"}
+                "qhout": "Sedimentation of Hail Mixing Ratio",
+                "LATITUDE": "Latitude",
+                "LONGITDUE": "longitude",
+                "z": "Height z",
+                "w": "Ascend w",
+                "MAP": "Flag for WCB-criterion"}
     maps = mappings.keys()
     for w in maps:
         if word == w:

@@ -19,7 +19,8 @@ except:
     import scripts.latexify as latexify
 
 
-def plot_ratio_deriv_line(df_dict, out_params=None, mapped=True, in_params=None, **kwargs):
+def plot_ratio_deriv_line(df_dict, out_params=None, mapped=True,
+                          in_params=None, **kwargs):
     """
     Plot derivative ratios of one trajectory. The x-axis is the timesteps,
     the y-axis are the derivative ratios. Add a bar for flagged timesteps.
@@ -101,7 +102,7 @@ def plot_ratio_deriv_line(df_dict, out_params=None, mapped=True, in_params=None,
 
 def plot_res_line(df, out_param, dots=False, mapped=True, **kwargs):
     """
-    Plot results for an out_param of one trajectory. The x-axis is the timesteps,
+    Plot results for an out_param of one or more trajectories. The x-axis is the timesteps,
     the y-axis is the parameter. Add a bar for flagged timesteps.
 
     Parameters
@@ -217,14 +218,15 @@ def plot_same_orders(df_dict, out_params=None, mapped=True, in_params=None, **kw
         while len(sorted_tuples) > 0:
             p, v = sorted_tuples.pop()
             in_params_2 = [p]
-            while len(sorted_tuples) > 0 and abs(v/sorted_tuples[-1][1]) < 10:
+            while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
+                   and abs(v/sorted_tuples[-1][1]) < 10):
                 p, v = sorted_tuples.pop()
                 in_params_2.append(p)
             plot_ratio_deriv_line(
                 df_dict,
                 out_params=[out_param],
                 in_params=in_params_2,
-                mapped=True,
+                mapped=mapped,
                 **kwargs)
 
 if __name__ == "__main__":
