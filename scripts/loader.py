@@ -529,6 +529,66 @@ def load_mult_derivates_big(prefix="", suffix="", filt=False, EPSILON=1e-31,
     return df
 
 
+def load_mult_derivates_direc_dic(direc="", filt=True,
+                                  EPSILON=0.0, trajectories=[1], suffix="20160922_00"):
+    """
+    Create a dictionary with out parameters as keys and dictionaries with columns:
+    trajectory, timestep, MAP, LATITUDE, LONGITUDE
+    and a column for each in parameter such as "da_1", "da_2", "dsnow_alfa_q", ...
+    Out parameters is a string such as 'p', 'T', 'w' etc
+    MAP is an optionally
+    available flag for interesting timesteps.
+
+    Parameters
+    ----------
+    direc : string
+        A path to a directory wit a list of files to read.
+    filt : bool
+        Filter the data with values smaller than EPSILON if true.
+    EPSILON : float
+        If filt is true, filter values smaller than EPSILON out.
+    trajectories : list of int
+        A list of trajectories to read in.
+    suffix : string
+        The suffix of the filenames before '_diff_xx.txt'.
+
+    Returns
+    -------
+    dic of pandas.Dataframe
+        Pandas dataframe as described above.
+    """
+    file_list = [os.path.join(direc, f) for f in os.listdir(direc)
+                 if os.path.isfile(os.path.join(direc, f))]
+    file_list2 = []
+    for f in file_list:
+        s = f.split("traj")
+        s = s[1].split("_")
+        if int(s[0]) in trajectories:
+            file_list2.append(f)
+
+    if suffix is None:
+        example = file_list2[0]
+        i = 1
+        while "diff" in example:
+            example = file_list2[i]
+            i += 1
+        # The last 4 chars should be ".txt" now.
+        example = example[:-4]
+        example = example.split("_")
+        suffix = example[-2] + "_" + example[-1]
+
+    tmp_dict = {}
+    for f in pb(file_list2, redirect_stdout=True):
+        try:
+            out_param = params_dict2[f.split(suffix)[1]]
+            tmp_dict[out_param] = pd.read_csv(f, sep=",", index_col=False)
+            if filt:
+                tmp_dict = filter_zeros(tmp_dict, EPSILON)
+        except:
+            pass
+    return tmp_dict
+
+
 def load_mult_derivates_directory(direc="", filt=True,
                                   EPSILON=0.0, trajectories=[1], suffix="20160922_00"):
     """
@@ -575,6 +635,7 @@ def load_mult_derivates_directory(direc="", filt=True,
         i = 1
         while "diff" in example:
             example = file_list2[i]
+            i += 1
         # The last 4 chars should be ".txt" now.
         example = example[:-4]
         example = example.split("_")
@@ -583,25 +644,26 @@ def load_mult_derivates_directory(direc="", filt=True,
     for f in pb(file_list2, redirect_stdout=True):
         tmp_dict = {}
         try:
-            tmp = pd.read_csv(f, sep=",", index_col=False)
             out_param = params_dict2[f.split(suffix)[1]]
-            tmp_dict[out_param] = tmp
+            tmp_dict = {out_param: pd.read_csv(f, sep=",", index_col=False)}
+
+            s = f.split("traj")
+            s = s[1].split("_")
+            traj = int(s[0])
             if filt:
                 tmp_dict = filter_zeros(tmp_dict, EPSILON)
-            for out_param in tmp_dict.keys():
-                tmp_dict[out_param] = transform_df(tmp_dict[out_param])
-            for out_param in tmp_dict.keys():
-                n_entries = len(tmp_dict[out_param].index)
-                df = df.append(pd.DataFrame(
-                    data={"timestep": tmp_dict[out_param]["timestep"],
-                          "trajectory": [i for j in range(n_entries)],
-                          "out_param": [out_param for j in range(n_entries)],
-                          "in_param": tmp_dict[out_param]["param"],
-                          "deriv": tmp_dict[out_param]["deriv"],
-                          "MAP": tmp_dict[out_param]["MAP"],
-                          "LATITUDE": tmp_dict[out_param]["LATITUDE"],
-                          "LONGITUDE": tmp_dict[out_param]["LONGITUDE"]
-                          }), ignore_index=True)
+            tmp_dict[out_param] = transform_df(tmp_dict[out_param])
+            n_entries = len(tmp_dict[out_param].index)
+            df = df.append(pd.DataFrame(
+                data={"timestep": tmp_dict[out_param]["timestep"],
+                        "trajectory": [traj for j in range(n_entries)],
+                        "out_param": [out_param for j in range(n_entries)],
+                        "in_param": tmp_dict[out_param]["param"],
+                        "deriv": tmp_dict[out_param]["deriv"],
+                        "MAP": tmp_dict[out_param]["MAP"],
+                        "LATITUDE": tmp_dict[out_param]["LATITUDE"],
+                        "LONGITUDE": tmp_dict[out_param]["LONGITUDE"]
+                        }), ignore_index=True)
         except:
             pass
     return df

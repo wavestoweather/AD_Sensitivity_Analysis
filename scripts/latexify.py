@@ -86,7 +86,9 @@ def parse_word(word):
                 "LONGITDUE": "longitude",
                 "z": "Height z",
                 "w": "Ascend w",
-                "MAP": "Flag for WCB-criterion"}
+                "MAP": "Flag for WCB-criterion",
+                "Derivatives": "Derivatives",
+                "timestep": "Timestep"}
     maps = mappings.keys()
     for w in maps:
         if word == w:
