@@ -165,7 +165,7 @@ def plot_res_line(df, out_param, dots=False, mapped=True, **kwargs):
             + "_" + "{:03d}".format(i) + ".png")
     while os.path.isfile(save):
         i = i+1
-        save = ("pics/_line_" + out_param
+        save = ("pics/line_" + out_param
                 + "_" + "{:03d}".format(i) + ".png")
 
     print("Saving to " + save)

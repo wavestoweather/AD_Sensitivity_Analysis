@@ -164,7 +164,7 @@ class Deriv:
                         continue
                     self.data[k][deriv] = self.data[k][deriv]/denom
 
-    def plot_same_orders(self, out_params=None, mapped=True,
+    def plot_same_orders(self, out_params=None, mapped=True, scatter=False,
                          in_params=None, x_axis="timestep", **kwargs):
         """
         For each out_param, plot multiple figures with derivatives, where
@@ -177,6 +177,8 @@ class Deriv:
         mapped : boolean
             If true: plot the region, where "MAP" is true, ie where the wcb
             criterion is fullfilled.
+        scatter : boolean
+            Plot a scatter plot or a line plot.
         in_params : list of string
             Plot only the derivatives with respect to those in this list.
         x_axis : string
@@ -192,16 +194,22 @@ class Deriv:
             out_params = [out_params]
 
         def plot_helper(df, in_params, out_param, **kwargs):
-            min_time = df["timestep"].min()
-            max_time = df["timestep"].max()
+            min_time = df[x_axis].min()
+            max_time = df[x_axis].max()
             dt = (max_time - min_time + 19) / 20
             x_ticks = np.arange(min_time, max_time + 19, dt)
 
             _, ax = plt.subplots()
             df_tmp = df[in_params+[x_axis]]
             df_tmp = df_tmp.melt(x_axis, var_name="Derivatives", value_name="Derivative Ratio")
-            ax = sns.lineplot(x=x_axis, y="Derivative Ratio",
-                            data=df_tmp, hue="Derivatives", ax=ax, **kwargs)
+            if scatter:
+                ax = sns.scatterplot(x=x_axis, y="Derivative Ratio",
+                                     data=df_tmp, hue="Derivatives", ax=ax,
+                                     **kwargs)
+            else:
+                ax = sns.lineplot(x=x_axis, y="Derivative Ratio",
+                                 data=df_tmp, hue="Derivatives", ax=ax,
+                                 **kwargs)
             ax.set_title("Deriv. Ratio of {}".format(latexify.parse_word(out_param)))
             ax.set_xticks(x_ticks)
 
@@ -211,7 +219,7 @@ class Deriv:
             for t, old in zip(legend.texts, labels):
                 t.set_text(latexify.parse_word(old))
             ax.set_ylabel("Derivative ratio")
-            plt.ticklabel_format(style="scientific", axis="y")
+            plt.ticklabel_format(style="scientific", axis="y", scilimits=(0,0))
 
             # Plot the area that had been flagged
             if mapped:
@@ -221,13 +229,20 @@ class Deriv:
                     max_y = df_tmp["Derivative Ratio"].max()
                     ax.fill_between(df_mapped[x_axis], min_y, max_y,
                         facecolor="khaki", alpha=0.3)
-
+            # Change the limits for the y-axis because sometimes that
+            # can be off and it is hard to see anything.
+            min_y = df_tmp["Derivative Ratio"].min()
+            max_y = df_tmp["Derivative Ratio"].max()
+            sns.plt.ylim(min_y - min_y/10, max_y + max_y/10)
             i = 0
-            save = ("pics/line_" + x_axis + "_ " + out_param
+            prefix = "line_"
+            if scatter:
+                prefix = "scatter_"
+            save = ("pics/" + prefix + x_axis + "_ " + out_param
                     + "_" + "{:03d}".format(i) + ".png")
             while os.path.isfile(save):
                 i = i+1
-                save = ("pics/line_" + x_axis + "_ " + out_param
+                save = ("pics/" + prefix + x_axis + "_ " + out_param
                         + "_" + "{:03d}".format(i) + ".png")
 
             print("Saving to " + save)
