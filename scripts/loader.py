@@ -550,7 +550,8 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
     trajectories : list of int
         A list of trajectories to read in.
     suffix : string
-        The suffix of the filenames before '_diff_xx.txt'.
+        The suffix of the filenames before '_diff_xx.txt'. If none is
+        given, the method tries to automatically detect it.
 
     Returns
     -------

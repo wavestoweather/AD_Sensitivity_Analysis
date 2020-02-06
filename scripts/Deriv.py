@@ -20,13 +20,42 @@ from pylab import rcParams
 import os
 
 class Deriv:
+    """
+    Class that holds a dictionary of output parameters with its derivatives
+    for every timestep as pandas.Dataframe. It can operate on them, such
+    as deleting non-mapped regions and plotting the data.
 
+    Parameters
+    ----------
+    data : Dic of pd.Dataframe
+        Keys are output parameters, values are its derivatives
+        for every timestep as pandas.Dataframe.
+    n_timesteps : int
+        Number of timesteps.
+    """
     data = {}
     n_timesteps = 0
 
     def __init__(self, direc, filt=True,
                  EPSILON=0.0, trajectories=[1], suffix=None):
+        """
+        Init class by loading the data from the given path.
 
+        Parameters
+        ----------
+        direc : string
+            A path to a directory wit a list of files to read.
+        filt : bool
+            Filter the data with values smaller than EPSILON if true.
+        EPSILON : float
+            If filt is true, filter values smaller than EPSILON out.
+        trajectories : list of int
+            A list of trajectories to read in.
+        suffix : string
+            The suffix of the filenames before '_diff_xx.txt'. If none is
+            given, the method tries to automatically detect it.
+
+        """
         self.data = loader.load_mult_derivates_direc_dic(
             direc, filt, EPSILON, trajectories, suffix
         )
@@ -34,13 +63,36 @@ class Deriv:
         self.n_timesteps = len(df.index)
 
     def delete_not_mapped(self):
+        """
+        Delete all entries that are not within a mapped region, where
+        mapped usually refers to timesteps where the WCB-criterion is
+        satisfied.
+        """
         for key in self.data:
             self.data[key] = self.data[key][self.data[key]["MAP"] == True]
+        df = list(self.data.values())[0]
+        self.n_timesteps = len(df.index)
 
     def get_out_params(self):
+        """
+        Get all output parameters for which a dictionary of derivatives exists.
+
+        Returns
+        -------
+        List of string
+            Output parameters.
+        """
         return self.data.keys()
 
     def get_n_timesteps(self):
+        """
+        Get the number of timesteps of the data.
+
+        Returns
+        -------
+        int
+            Number of timesteps
+        """
         return self.n_timesteps
 
     def add_param_values(self, header, values, key=None):
@@ -60,7 +112,7 @@ class Deriv:
         if len(values) != self.n_timesteps:
             print("Cannot add column {}.".format(header))
             print("Number of timesteps needed: {} But got {}".format(
-                header, self.n_timesteps, len(values)))
+                self.n_timesteps, len(values)))
             return
         if isinstance(key, str):
             self.data[key][header] = values
@@ -134,8 +186,6 @@ class Deriv:
             Keyword arguments are passed down to matplotlib.axes.Axes.plot() for
             the derivative plots.
         """
-
-
         if out_params is None:
             out_params = self.data.keys()
         elif isinstance(out_params, str):
@@ -161,6 +211,7 @@ class Deriv:
             for t, old in zip(legend.texts, labels):
                 t.set_text(latexify.parse_word(old))
             ax.set_ylabel("Derivative ratio")
+            plt.ticklabel_format(style="scientific", axis="y")
 
             # Plot the area that had been flagged
             if mapped:
@@ -172,11 +223,11 @@ class Deriv:
                         facecolor="khaki", alpha=0.3)
 
             i = 0
-            save = ("pics/line_" + out_param
+            save = ("pics/line_" + x_axis + "_ " + out_param
                     + "_" + "{:03d}".format(i) + ".png")
             while os.path.isfile(save):
                 i = i+1
-                save = ("pics/line_" + out_param
+                save = ("pics/line_" + x_axis + "_ " + out_param
                         + "_" + "{:03d}".format(i) + ".png")
 
             print("Saving to " + save)
@@ -204,7 +255,7 @@ class Deriv:
                 value = np.abs(df[in_p].min())
                 if np.abs(df[in_p].max()) > value:
                     value = np.abs(df[in_p].max())
-                if value != 0:
+                if value != 0 and not np.isnan(value):
                     sorted_tuples.append((in_p, value))
             sorted_tuples.sort(key=lambda tup: tup[1])
 
@@ -216,5 +267,4 @@ class Deriv:
                     and np.abs(v/sorted_tuples[-1][1]) < 10):
                     p, v = sorted_tuples.pop()
                     in_params_2.append(p)
-
                 plot_helper(df, in_params=in_params_2, out_param=out_param, **kwargs)
