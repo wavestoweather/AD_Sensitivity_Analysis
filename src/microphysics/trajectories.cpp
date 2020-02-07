@@ -281,6 +281,8 @@ int main(int argc, char** argv)
     cc.cloud.mu = 1.0/3.0;
     cc.cloud.max_x = 2.6e-10;
     cc.cloud.min_x = 4.2e-15;
+    cc.cloud.min_x_act = 4.2e-15;
+    cc.cloud.min_x_nuc = 4.2e-15;
     cc.cloud.a_geo = 1.24e-1;
     cc.cloud.b_geo = 0.333333;
     cc.cloud.a_vel = 3.75e5;
@@ -303,6 +305,8 @@ int main(int argc, char** argv)
     cc.rain.mu = 0.333333;
     cc.rain.max_x = 3.0e-6;
     cc.rain.min_x = 2.6e-10;
+    cc.rain.min_x_act = 2.6e-10;
+    cc.rain.min_x_nuc = 2.6e-10;
     cc.rain.a_geo = 1.24e-1;
     cc.rain.b_geo = 0.333333;
     cc.rain.a_vel = 114.0137;
@@ -342,6 +346,8 @@ int main(int argc, char** argv)
     cc.graupel.mu = 1.0/3.0; // Not used actually?
     cc.graupel.max_x = 5.0e-4;
     cc.graupel.min_x = 1.0e-9;
+    cc.graupel.min_x_act = 1.0e-9;
+    cc.graupel.min_x_nuc = 1.0e-9;
     cc.graupel.a_geo = 1.42e-1;
     cc.graupel.b_geo = 0.314;
     cc.graupel.a_vel = 86.89371;
@@ -375,6 +381,8 @@ int main(int argc, char** argv)
     cc.hail.mu = 1.0/3.0; // Not used actually?
     cc.hail.max_x = 5.0e-4;
     cc.hail.min_x = 2.6e-9;
+    cc.hail.min_x_act= 2.6e-9;
+    cc.hail.min_x_nuc = 2.6e-9;
     cc.hail.a_geo = 0.1366;
     cc.hail.b_geo = 1.0/3.0;
     cc.hail.a_vel = 39.3;
@@ -399,6 +407,7 @@ int main(int argc, char** argv)
     cc.ice.mu = 1.0/3.0; // Not used actually?
     cc.ice.max_x = 1.0e-5;
     cc.ice.min_x = 1.0e-12;
+    cc.ice.min_x_act = 1.0e-12;
     cc.ice.a_geo = 0.835;
     cc.ice.b_geo = 0.39;
     cc.ice.a_vel = 2.77e1;
@@ -423,6 +432,8 @@ int main(int argc, char** argv)
     cc.snow.mu = 0.5; // Not used actually?
     cc.snow.max_x = 2.0e-5;
     cc.snow.min_x = 1.0e-10;
+    cc.snow.min_x_act = 1.0e-10;
+    cc.snow.min_x_nuc = 1.0e-10;
     cc.snow.a_geo = 2.4;
     cc.snow.b_geo = 0.455;
     cc.snow.a_vel = 8.8;
@@ -710,6 +721,8 @@ int main(int argc, char** argv)
             << "drain_a_geo,"
             << "drain_b_geo,"
             << "drain_min_x,"
+            << "drain_min_x_act,"
+            << "drain_min_x_nuc,"
             << "drain_max_x,"
             << "drain_sc_theta_q,"
             << "drain_sc_delta_q,"
@@ -755,6 +768,8 @@ int main(int argc, char** argv)
             << "dcloud_a_geo,"
             << "dcloud_b_geo,"
             << "dcloud_min_x,"
+            << "dcloud_min_x_act,"
+            << "dcloud_min_x_nuc,"
             << "dcloud_max_x,"
             << "dcloud_sc_theta_q,"
             << "dcloud_sc_delta_q,"
@@ -800,6 +815,8 @@ int main(int argc, char** argv)
             << "dgraupel_a_geo,"
             << "dgraupel_b_geo,"
             << "dgraupel_min_x,"
+            << "dgraupel_min_x_act,"
+            << "dgraupel_min_x_nuc,"
             << "dgraupel_max_x,"
             << "dgraupel_sc_theta_q,"
             << "dgraupel_sc_delta_q,"
@@ -845,6 +862,8 @@ int main(int argc, char** argv)
             << "dhail_a_geo,"
             << "dhail_b_geo,"
             << "dhail_min_x,"
+            << "dhail_min_x_act,"
+            << "dhail_min_x_nuc,"
             << "dhail_max_x,"
             << "dhail_sc_theta_q,"
             << "dhail_sc_delta_q,"
@@ -890,6 +909,8 @@ int main(int argc, char** argv)
             << "dice_a_geo,"
             << "dice_b_geo,"
             << "dice_min_x,"
+            << "dice_min_x_act,"
+            << "dice_min_x_nuc,"
             << "dice_max_x,"
             << "dice_sc_theta_q,"
             << "dice_sc_delta_q,"
@@ -935,6 +956,8 @@ int main(int argc, char** argv)
             << "dsnow_a_geo,"
             << "dsnow_b_geo,"
             << "dsnow_min_x,"
+            << "dsnow_min_x_act,"
+            << "dsnow_min_x_nuc,"
             << "dsnow_max_x,"
             << "dsnow_sc_theta_q,"
             << "dsnow_sc_delta_q,"

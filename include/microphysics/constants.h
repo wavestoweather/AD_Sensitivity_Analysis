@@ -59,7 +59,7 @@
 #define Ng_in_idx 7         /*!< Graupel input index for another vector */
 #define num_inflows 8       /*!< Number of parameters for inflowing stuff */
 
-#define num_par 44*6+17     /*!< Number of gradients */
+#define num_par 44*6+17+12     /*!< Number of gradients */
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -235,7 +235,7 @@ const double N_Sc = 0.71;
 /**
  * Heat conductivity of air in [J/m/s/K].
  */
-const double K_T = 2.40e-2;
+const double K_T = 2.4e-2;
 
 /**
  * Latent heat of evaporation of water (water->vapor)

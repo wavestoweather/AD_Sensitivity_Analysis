@@ -386,8 +386,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             // the rest can create new cloud droplets
             // codi::RealReverse Nc_tmp = qv_prime / cc.cloud.min_x;
             codi::RealReverse delta_n = max(max(nuc_n, 10.0e-6) - Nc, 0.0);
-            codi::RealReverse delta_q = min(delta_n * cc.cloud.min_x, qv_prime);
-            delta_n = delta_q / cc.cloud.min_x;
+            codi::RealReverse delta_q = min(delta_n * cc.cloud.min_x_act, qv_prime);
+            delta_n = delta_q / cc.cloud.min_x_act;
 
             res[Nc_idx] += delta_n;
             res[qc_idx] += delta_q;
@@ -511,12 +511,12 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             // std::cout << "SB ccn activation no bound, no max dqc " << delta_q << ", dNc " << delta_n << "\n";
 #endif
             delta_n = max(min(delta_n, N_max-Nc), 0.0);
-            delta_q = delta_n * cc.cloud.min_x;
+            delta_q = delta_n * cc.cloud.min_x_act;
 
             if(delta_q > qv)
             {
                 delta_q = qv_prime;
-                delta_n = delta_q/cc.cloud.min_x;
+                delta_n = delta_q/cc.cloud.min_x_act;
             }
             res[Nc_idx] += delta_n;
             res[qc_idx] += delta_q;
@@ -601,8 +601,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 }
             }
             codi::RealReverse delta_n = max(ndiag - n_inact, 0.0);
-            codi::RealReverse delta_q = min(delta_n * cc.ice.min_x, qv_prime);
-            delta_n = delta_q/cc.ice.min_x;
+            codi::RealReverse delta_q = min(delta_n * cc.ice.min_x_nuc, qv_prime);
+            delta_n = delta_q/cc.ice.min_x_nuc;
 
             res[qi_idx] += delta_q;
             res[Ni_idx] += delta_n;
@@ -697,7 +697,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             codi::RealReverse ri_0 = 1.0 + 0.5*sqrtkap * ren;
             codi::RealReverse ri_hom = (ri_0 * (1.0+delta) - 1.0) / bcoeff[1];
             codi::RealReverse mi_hom = (4.0/3.0 * M_PI * rho_ice) * ni_hom * ri_hom*ri_hom*ri_hom;
-            mi_hom = max(mi_hom, cc.ice.min_x);
+            mi_hom = max(mi_hom, cc.ice.min_x_nuc);
 
             codi::RealReverse delta_n = max(min(ni_hom, ni_hom_max), 0.0);
             codi::RealReverse delta_q = min(delta_n * mi_hom, qv_prime);
@@ -1456,7 +1456,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 mult_n = C_mult * mult_1 * mult_2 * rime_qr;
-                codi::RealReverse tmp = mult_n*cc.ice.min_x;
+                codi::RealReverse tmp = mult_n*cc.ice.min_x_nuc;
                 mult_q = min(rime_qr, tmp);
             }
 
@@ -1558,7 +1558,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x;
+                codi::RealReverse mult_q = mult_n * cc.ice.min_x_nuc;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice N
@@ -1607,7 +1607,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x;
+                codi::RealReverse mult_q = mult_n * cc.ice.min_x_nuc;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice N
@@ -1666,7 +1666,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                mult_q = mult_n * cc.ice.min_x;
+                mult_q = mult_n * cc.ice.min_x_nuc;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice N
@@ -1750,7 +1750,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 mult_n = C_mult * mult_1 * mult_2 * rime_qr;
-                codi::RealReverse tmp = mult_n*cc.ice.min_x;
+                codi::RealReverse tmp = mult_n*cc.ice.min_x_nuc;
                 mult_q = min(rime_qr, tmp);
             }
             if(T_prime >= tmelt)
@@ -1870,7 +1870,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x;
+                codi::RealReverse mult_q = mult_n * cc.ice.min_x_nuc;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice
@@ -1973,7 +1973,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x;
+                codi::RealReverse mult_q = mult_n * cc.ice.min_x_nuc;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice
@@ -2695,7 +2695,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         }
         sedi_icon_core(q, N, v_q_sedi, v_n_sedi, resQ, resN, resOut);
 
-        resN = max(min(N, q/pc.min_x), q/pc.max_x);
+        resN = max(min(N, q/pc.min_x_nuc), q/pc.max_x);
     };
 
     auto sedi_icon_sphere_lwf = [&](

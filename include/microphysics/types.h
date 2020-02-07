@@ -34,7 +34,22 @@ struct particle_model_constants_t{
 
     codi::RealReverse a_geo;
     codi::RealReverse b_geo;
+    /**
+     * Minimum size of particle for mean meass calculation.
+     */
     codi::RealReverse min_x;
+    /**
+     * Minimum size of particle for activation.
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    codi::RealReverse min_x_act;
+    /**
+     * Minimum size of particle for nucleation.
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    codi::RealReverse min_x_nuc;
     codi::RealReverse max_x;
     codi::RealReverse sc_theta_q;   /*!< For snow collision. */
     codi::RealReverse sc_delta_q;
@@ -81,6 +96,8 @@ struct particle_model_constants_t{
         tape.registerInput(this->a_geo);
         tape.registerInput(this->b_geo);
         tape.registerInput(this->min_x);
+        tape.registerInput(this->min_x_act);
+        tape.registerInput(this->min_x_nuc);
         tape.registerInput(this->max_x);
         tape.registerInput(this->sc_theta_q);
         tape.registerInput(this->sc_delta_q);
@@ -139,6 +156,10 @@ struct particle_model_constants_t{
         out_vec[idx] = this->b_geo.getGradient();
         idx++;
         out_vec[idx] = this->min_x.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_act.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_nuc.getGradient();
         idx++;
         out_vec[idx] = this->max_x.getGradient();
         idx++;
