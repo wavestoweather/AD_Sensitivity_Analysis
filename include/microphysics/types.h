@@ -19,6 +19,7 @@ struct reference_quantities_t{
   double qref;          /*!< Reference mixing-ratio */
   double wref;          /*!< Reference vertical velocity */
   double tref;          /*!< Reference time */
+  double zref;          /*!< Reference distances */
 
   double Nref;          /*!< DUMMY */
 };
@@ -33,9 +34,24 @@ struct particle_model_constants_t{
 
     codi::RealReverse a_geo;
     codi::RealReverse b_geo;
+    /**
+     * Minimum size of particle for mean meass calculation.
+     */
     codi::RealReverse min_x;
+    /**
+     * Minimum size of particle for activation.
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    codi::RealReverse min_x_act;
+    /**
+     * Minimum size of particle for nucleation.
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    codi::RealReverse min_x_nuc;
     codi::RealReverse max_x;
-    codi::RealReverse sc_theta_q;
+    codi::RealReverse sc_theta_q;   /*!< For snow collision. */
     codi::RealReverse sc_delta_q;
     codi::RealReverse sc_theta_n;
     codi::RealReverse sc_delta_n;
@@ -80,6 +96,8 @@ struct particle_model_constants_t{
         tape.registerInput(this->a_geo);
         tape.registerInput(this->b_geo);
         tape.registerInput(this->min_x);
+        tape.registerInput(this->min_x_act);
+        tape.registerInput(this->min_x_nuc);
         tape.registerInput(this->max_x);
         tape.registerInput(this->sc_theta_q);
         tape.registerInput(this->sc_delta_q);
@@ -138,6 +156,10 @@ struct particle_model_constants_t{
         out_vec[idx] = this->b_geo.getGradient();
         idx++;
         out_vec[idx] = this->min_x.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_act.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_nuc.getGradient();
         idx++;
         out_vec[idx] = this->max_x.getGradient();
         idx++;
@@ -524,14 +546,16 @@ struct nc_parameters_t{
     double  t, p, time_rel,
             qc, qr, qi, qs, qg, qv, S, dw, dlat, dlon,
             QIin, QSin, QRin, QGin, QIout, QSout, QRout, QGout,
-            NIin, NSin, NRin, NGin, NIout, NSout, NRout, NGout, dp2h;
+            NIin, NSin, NRin, NGin, NIout, NSout, NRout, NGout, dp2h,
+            Nc, Nr, Ni, Ns, Ng;
     bool ascent_flag;
     NcVar   lat_var, lon_var, z_var, t_var, p_var, w_var, time_rel_var,
             qc_var, qr_var, qi_var, qs_var, qg_var, qv_var, S_var,
             QIin_var, QSin_var, QRin_var, QGin_var, QIout_var, QSout_var,
             QRout_var, QGout_var, ascent_flag_var,
             NIin_var, NSin_var, NRin_var, NGin_var, NIout_var, NSout_var,
-            NRout_var, NGout_var, dp2h_var;
+            NRout_var, NGout_var, dp2h_var,
+            Nc_var, Nr_var, Ni_var, Ns_var, Ng_var;
 };
 
 

@@ -294,6 +294,12 @@ void load_nc_parameters_var(
     nc.NSout_var    = datafile.getVar("NS_OUT");
     nc.NRout_var    = datafile.getVar("NR_OUT");
     nc.NGout_var    = datafile.getVar("NG_OUT");
+
+    nc.Nc_var       = datafile.getVar("NCCLOUD");
+    nc.Nr_var       = datafile.getVar("NCRAIN");
+    nc.Ni_var       = datafile.getVar("NCICE");
+    nc.Ns_var       = datafile.getVar("NCSNOW");
+    nc.Ng_var       = datafile.getVar("NCGRAUPEL");
     // Flag wether an effective ascent region is reached
     nc.ascent_flag_var = datafile.getVar("WCB_flag");
     // 2h ascent rate after Oertel et al. (2019)
@@ -344,7 +350,9 @@ void load_nc_parameters(
 #endif
 
 #if defined WCB || defined WCB2
-    nc.ascent_flag_var.getVar(startp, countp, &nc.ascent_flag);
+    int map = 0;
+    nc.ascent_flag_var.getVar(startp, countp, &map);
+    nc.ascent_flag = (map > 0) ? true : false;
 #endif
 
     nc.t_var.getVar(startp, countp, &nc.t);
@@ -370,6 +378,45 @@ void load_nc_parameters(
     nc.qi       /= ref_quant.qref;
     nc.qs       /= ref_quant.qref;
 
+#if defined WCB2
+    nc.NRin_var.getVar(startp, countp, &nc.NRin);
+    nc.NIin_var.getVar(startp, countp, &nc.NIin);
+    nc.NSin_var.getVar(startp, countp, &nc.NSin);
+    nc.NGin_var.getVar(startp, countp, &nc.NGin);
+
+    nc.NRout_var.getVar(startp, countp, &nc.NRout);
+    nc.NIout_var.getVar(startp, countp, &nc.NIout);
+    nc.NSout_var.getVar(startp, countp, &nc.NSout);
+    nc.NGout_var.getVar(startp, countp, &nc.NGout);
+
+    nc.Nc_var.getVar(startp, countp, &nc.Nc);
+    nc.Nr_var.getVar(startp, countp, &nc.Nr);
+    nc.Ni_var.getVar(startp, countp, &nc.Ni);
+    nc.Ns_var.getVar(startp, countp, &nc.Ns);
+    nc.Ng_var.getVar(startp, countp, &nc.Ng);
+
+    nc.NRin     /= ref_quant.Nref;
+    nc.NIin     /= ref_quant.Nref;
+    nc.NSin     /= ref_quant.Nref;
+    nc.NGin     /= ref_quant.Nref;
+
+    nc.NRout    /= ref_quant.Nref;
+    nc.NIout    /= ref_quant.Nref;
+    nc.NSout    /= ref_quant.Nref;
+    nc.NGout    /= ref_quant.Nref;
+
+    nc.Nc       /= ref_quant.Nref;
+    nc.Nr       /= ref_quant.Nref;
+    nc.Ni       /= ref_quant.Nref;
+    nc.Ns       /= ref_quant.Nref;
+    nc.Ng       /= ref_quant.Nref;
+
+    nc.NRin     = abs(nc.NRin);
+    nc.NIin     = abs(nc.NIin);
+    nc.NSin     = abs(nc.NSin);
+    nc.NGin     = abs(nc.NGin);
+#endif
+
 #if !defined WCB
     nc.S = 1.0;
     nc.qg_var.getVar(startp, countp, &nc.qg);
@@ -391,6 +438,15 @@ void load_nc_parameters(
     nc.QSout    /= ref_quant.qref;
     nc.QGin     /= ref_quant.qref;
     nc.QGout    /= ref_quant.qref;
+
+    nc.QRin     = abs(nc.QRin);
+    nc.QRout    = abs(nc.QRout);
+    nc.QIin     = abs(nc.QIin);
+    nc.QIout    = abs(nc.QIout);
+    nc.QSin     = abs(nc.QSin);
+    nc.QSout    = abs(nc.QSout);
+    nc.QGin     = abs(nc.QGin);
+    nc.QGout    = abs(nc.QGout);
 #endif
 
 #if !defined WCB && !defined WCB2

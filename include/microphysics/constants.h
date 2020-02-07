@@ -46,14 +46,20 @@
 #define Nr_out_idx 28       /*!< Rain droplets ratio precipitation index */
 #define Ng_out_idx 29       /*!< Graupel particles ratio precipitation index */
 #define Nh_out_idx 30       /*!< Hail particles ratio precipitation index */
-#define num_comp 31         /*!< Number of output elements of a model */
+#define z_idx 31            /*!< Altitude */
+#define num_comp 32         /*!< Number of output elements of a model */
 // Those are for a different vector
 #define qi_in_idx 0         /*!< Ice input index for another vector */
 #define qs_in_idx 1         /*!< Snow input index for another vector */
 #define qr_in_idx 2         /*!< Rain input index for another vector */
 #define qg_in_idx 3         /*!< Graupel input index for another vector */
+#define Ni_in_idx 4         /*!< Ice input index for another vector */
+#define Ns_in_idx 5         /*!< Snow input index for another vector */
+#define Nr_in_idx 6         /*!< Rain input index for another vector */
+#define Ng_in_idx 7         /*!< Graupel input index for another vector */
+#define num_inflows 8       /*!< Number of parameters for inflowing stuff */
 
-#define num_par 44*6+17     /*!< Number of gradients */
+#define num_par 44*6+17+12     /*!< Number of gradients */
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -227,9 +233,9 @@ const double N_Sc = 0.71;
  */const double c_prime = 600;
 
 /**
- * Heat conductivity of air.
+ * Heat conductivity of air in [J/m/s/K].
  */
-const double K_T = 1; // TODO
+const double K_T = 2.4e-2;
 
 /**
  * Latent heat of evaporation of water (water->vapor)
@@ -507,8 +513,36 @@ codi::RealReverse kc_autocon = 9.44e9;
  * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
  * at \f$23 \text{km}\f$.
  */
-codi::RealReverse inv_z = 1.0/1000.0;
+codi::RealReverse inv_z = 1.0/150.0;
 
+/**
+ * ccn_activation_hdcp2 after Hande et al (2015)
+ */
+std::vector<double> a_ccn = {183230691.161, 0.10147358938,
+                                -0.2922395814, 229189886.226};
+/**
+ * ccn_activation_hdcp2 after Hande et al (2015)
+ */
+std::vector<double> b_ccn = {0.0001984051994, 4.473190485e-05,
+                                0.0001843225275, 0.0001986158191};
+/**
+ * ccn_activation_hdcp2 after Hande et al (2015)
+ */
+std::vector<double> c_ccn = {16.2420263911, 3.22011836758,
+                                13.8499423719, 16.2461600644};
+/**
+ * ccn_activation_hdcp2 after Hande et al (2015)
+ */
+std::vector<double> d_ccn = {287736034.13, 0.6258809883,
+                                0.8907491812, 360848977.55};
+
+/** Nucleation types
+ * 0: force constant cloud drop number, not implemented
+ * <6: ccn_activation_hdcp2 (Hande et al)
+ * 6: ccn_activation_sk (Segal & Khain), not implemented
+ * >6: SB (2006) from Cosmo 5.2 (cloud_nucleation(..))
+ */
+const int nuc_type = 7;
 /** @} */ // end of group constants
 
 #endif
