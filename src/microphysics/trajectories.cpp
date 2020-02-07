@@ -175,9 +175,6 @@ int main(int argc, char** argv)
     const uint64_t n_lookup_highres = 10000;
     const uint64_t n_lookup_hr_dummy = 10;
 
-    const uint64_t start_step = 0; //83000/20;// 8800/20; // 10000/20;
-
-
     // ==================================================
     // Define the reference quantities
     // ==================================================
@@ -1032,7 +1029,7 @@ int main(int argc, char** argv)
         countp.push_back(1);
         countp.push_back(1);
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
-        for(uint32_t t=start_step; t< (start_step + cc.num_steps); ++t) //
+        for(uint32_t t=0; t<cc.num_steps; ++t) //
         {
             // bool written = false;
 #if defined WCB || defined WCB2
