@@ -10,14 +10,6 @@ import os
 import xarray as xr
 
 
-Tref = 273.15
-pref = 100000
-qref = 1e-06
-Nref = 1
-wref = 1
-tref = 1
-zref = 1
-
 params_dict = {"p": "_diff_0.txt", "T": "_diff_1.txt",
                "w": "_diff_2.txt", "S": "_diff_3.txt", "qc": "_diff_4.txt",
                "qr": "_diff_5.txt", "qv": "_diff_6.txt", "Nc": "_diff_7.txt",
@@ -267,6 +259,13 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
     if refs is not None:
         change_ref = True
     if change_ref:
+        Tref = 273.15
+        pref = 100000
+        qref = 1e-06
+        Nref = 1
+        wref = 1
+        tref = 1
+        zref = 1
         if refs is not None:
             refs = np.genfromtxt(refs)
             Tref = refs[0]
@@ -562,16 +561,18 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
                  if os.path.isfile(os.path.join(direc, f))]
     file_list2 = []
     for f in file_list:
+        if "diff" not in f:
+            continue
         s = f.split("traj")
         s = s[1].split("_")
         if int(s[0]) in trajectories:
             file_list2.append(f)
 
     if suffix is None:
-        example = file_list2[0]
+        example = file_list[0]
         i = 1
         while "diff" in example:
-            example = file_list2[i]
+            example = file_list[i]
             i += 1
         # The last 4 chars should be ".txt" now.
         example = example[:-4]
@@ -580,13 +581,16 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
 
     tmp_dict = {}
     for f in pb(file_list2, redirect_stdout=True):
-        try:
-            out_param = params_dict2[f.split(suffix)[1]]
+        out_param = params_dict2[f.split(suffix)[1]]
+        # In case of multiple trajectories
+        if out_param in tmp_dict:
+            tmp_dict[out_param] = tmp_dict[out_param].append(
+                pd.read_csv(f, sep=",", index_col=False), ignore_index=True)
+        else:
             tmp_dict[out_param] = pd.read_csv(f, sep=",", index_col=False)
-            if filt:
-                tmp_dict = filter_zeros(tmp_dict, EPSILON)
-        except:
-            pass
+    if filt:
+        tmp_dict = filter_zeros(tmp_dict, EPSILON)
+
     return tmp_dict
 
 
@@ -776,6 +780,13 @@ if __name__ == "__main__":
         tref = refs[5]
     except:
         print("No file with reference values found. Using default values.")
+        Tref = 273.15
+        pref = 100000
+        qref = 1e-06
+        Nref = 1
+        wref = 1
+        tref = 1
+        zref = 1
 
     filt = True
     lo = 1

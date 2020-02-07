@@ -8,6 +8,8 @@ except:
     import scripts.latexify as latexify
 
 import numpy as np
+import pandas as pd
+from progressbar import progressbar as pb
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
@@ -37,7 +39,7 @@ class Sim:
     """
 
     def __init__(self):
-        self.data = pd.Dataframe()
+        self.data = pd.DataFrame()
         self.n_timesteps = {}
 
     def load_file(self, filename, sep=None, nrows=None,
@@ -64,10 +66,10 @@ class Sim:
         if self.data.empty:
             self.data = df
         else:
-            self.data.append(df, ignore_index=True)
+            self.data = self.data.append(df, ignore_index=True)
 
     def load_path(self, direc, sep=None, nrows=None,
-                 change_ref=True, refs=None, trajectories=None):
+                 change_ref=True, trajectories=None):
         """
         Read a csv file and init a pandas.Dataframe with
         physical (not normalized) entries.
@@ -82,34 +84,39 @@ class Sim:
             Number of rows to read from the datafile.
         change_ref : bool
             If true: Multiply all entries with reference values.
-        refs : String
-            Path to a file of references for transformation
         trajectories : List of int
             List of trajectories to load. If none is given, it will load all
             available trajectories.
         """
         file_list = [os.path.join(direc, f) for f in os.listdir(direc)
                  if os.path.isfile(os.path.join(direc, f))]
-        file_list2 = []
+        file_list2 = {}
+        ref_list = {}
         for f in file_list:
             if "diff" in f:
                 continue
             s = f.split("traj")
             s = s[1].split("_")
             if trajectories is None:
-                file_list2.append(f)
+                if "reference" in f:
+                    ref_list[int(s[0])] = f
+                    continue
+                file_list2[int(s[0])] = f
             elif int(s[0]) in trajectories:
-                file_list2.append(f)
-        for f in pb(file_list2, redirect_stdout=True):
-            try:
-                df = loader.load_output(f, sep, nrows, change_ref, refs)
-                self.n_timesteps[df.trajectory.unique()[0]] = len(df.index)
-                if self.data.empty:
-                    self.data = df
-                else:
-                    self.data.append(df, ignore_index=True)
-            except:
-                pass
+                if "reference" in f:
+                    ref_list[int(s[0])] = f
+                    continue
+                file_list2[int(s[0])] = f
+        for t in pb(file_list2, redirect_stdout=True):
+            refs = None
+            if t in ref_list:
+                refs = ref_list[t]
+            df = loader.load_output(file_list2[t], sep, nrows, change_ref, refs)
+            self.n_timesteps[df.trajectory.unique()[0]] = len(df.index)
+            if self.data.empty:
+                self.data = df
+            else:
+                self.data = self.data.append(df, ignore_index=True)
 
     def delete_not_mapped(self):
         """
@@ -121,7 +128,7 @@ class Sim:
         trajectories = self.data["trajectory"].unique()
         for t in trajectories:
             tmp = self.data[self.data["trajectory"] == t]
-            self.n_timesteps[t] = len(self.tmp.index)
+            self.n_timesteps[t] = len(tmp.index)
 
     def get_n_timesteps(self):
         """
@@ -133,6 +140,17 @@ class Sim:
             Number of timesteps (=value) for each trajectory (=key)
         """
         return self.n_timesteps
+
+    def get_sim(self, out_param):
+        """
+        Return a list of values from the simulation.
+
+        Parameters
+        ----------
+        out_param : string
+            Key value (an output parameter).
+        """
+        return self.data[out_param].tolist()
 
     def plot(self, out_params, trajectories=None, dots=False, mapped=True,
              scatter=False, x_axis="timestep", **kwargs):
@@ -162,7 +180,7 @@ class Sim:
             Keyword arguments are passed down to matplotlib.axes.Axes.plot().
         """
         def plot_helper(df, out_param, **kwargs):
-            min_time = df.[x_axis].unique().min()
+            min_time = df[x_axis].unique().min()
             max_time = df[x_axis].unique().max()
             dt = (max_time - min_time + 19) / 20
             x_ticks = np.arange(min_time, max_time + 19, dt)

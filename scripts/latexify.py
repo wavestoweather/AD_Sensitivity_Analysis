@@ -105,20 +105,30 @@ def parse_word(word):
             parts = word.split(" ")
             start = parts[0]
             parts = parts[1].split("_")
-            try:
+            if len(parts) == 4:
                 word = (start + " "
-                            + parts[2] + r"_{"
-                            + parts[1] + r", \mathrm{"
-                            + parts[0] + r"}}")
-            except:
+                        + parts[2] + r"_{"
+                        + parts[1] + r", \mathrm{"
+                        + parts[0] + r","
+                        + parts[3] + r"}}")
+
+            elif len(parts) == 3:
                 word = (start + " "
-                            + parts[1] + r"_{"
-                            + r"\mathrm{"
-                            + parts[0] + r"}}")
+                        + parts[2] + r"_{"
+                        + parts[1] + r", \mathrm{"
+                        + parts[0] + r"}}")
+            else:
+                word = (start + " "
+                        + parts[1] + r"_{"
+                        + r"\mathrm{"
+                        + parts[0] + r"}}")
+
             break
     word = r"$" + word + r"$"
     for w in no_math:
         word = word.replace(w, r"\mathrm{" + w + r"}")
     for w in math_keys:
         word = word.replace(w, "\\" + w )
+    if "nuc" in word:
+        word = word.replace("\\nuc", "nuc")
     return word

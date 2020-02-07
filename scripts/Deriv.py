@@ -196,7 +196,8 @@ class Deriv:
         def plot_helper(df, in_params, out_param, **kwargs):
             min_time = df[x_axis].min()
             max_time = df[x_axis].max()
-            dt = (max_time - min_time + 19) / 20
+            dt = (max_time - min_time) / 20
+            dt = (max_time - min_time + dt) / 20
             x_ticks = np.arange(min_time, max_time + 19, dt)
 
             _, ax = plt.subplots()
@@ -233,7 +234,7 @@ class Deriv:
             # can be off and it is hard to see anything.
             min_y = df_tmp["Derivative Ratio"].min()
             max_y = df_tmp["Derivative Ratio"].max()
-            sns.plt.ylim(min_y - min_y/10, max_y + max_y/10)
+            plt.ylim(min_y - min_y/10, max_y + max_y/10)
             i = 0
             prefix = "line_"
             if scatter:
