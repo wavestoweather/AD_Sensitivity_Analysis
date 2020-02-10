@@ -23,6 +23,11 @@ from sklearn.cluster import KMeans, SpectralClustering, DBSCAN
 from sklearn.mixture import BayesianGaussianMixture
 from sklearn.metrics import adjusted_rand_score
 
+from multiprocessing import Pool
+from itertools import repeat
+from progressbar import progressbar as pb
+
+
 class Deriv:
     """
     Class that holds a dictionary of output parameters with its derivatives
@@ -39,13 +44,19 @@ class Deriv:
     clusternames : Dic of lsit of string
         Keys are output parameters where the value is a list of column names
         that hold a clustering assignment.
+    pool : multiprocessing.Pool
+        Used to work on data in parallel
+    threads : int
+            Number of threads to use.
     """
     data = {}
     n_timesteps = 0
     cluster_names = {}
+    pool = None
+    threads = 0
 
     def __init__(self, direc, filt=True,
-                 EPSILON=0.0, trajectories=[1], suffix=None):
+                 EPSILON=0.0, trajectories=[1], suffix=None, threads=8):
         """
         Init class by loading the data from the given path.
 
@@ -62,10 +73,14 @@ class Deriv:
         suffix : string
             The suffix of the filenames before '_diff_xx.txt'. If none is
             given, the method tries to automatically detect it.
+        threads : int
+            Number of threads to use for plotting.
 
         """
+        self.pool = Pool(processes=threads)
+        self.threads = threads
         self.data = loader.load_mult_derivates_direc_dic(
-            direc, filt, EPSILON, trajectories, suffix
+            direc, filt, EPSILON, trajectories, suffix, self.pool
         )
         df = list(self.data.values())[0]
         self.n_timesteps = len(df.index)
@@ -132,6 +147,32 @@ class Deriv:
             for k in key:
                 self.data[k][header] = values
 
+    @staticmethod
+    def parallel_ratio(df, k):
+        """
+        Used to calculate ratios in parallel using multiprocessing.
+        Finds the maximum derivative for a given output parameter.
+
+        Parameters
+        ----------
+        df : pandas.Dataframe
+            The dataframw with derivatives.
+        k : The output parameter for which the derivatives are calculated for.
+
+        Returns
+        -------
+        float, string
+            Maximum absolute derivative and output parameter.
+        """
+        denom = -1.0
+        for deriv in df:
+            if deriv[0] != 'd':
+                continue
+            d = np.abs(df[deriv]).max()
+            if d > denom:
+                denom = d
+        return denom, k
+
     def calculate_ratios(self, key=None):
         """
         Calculate the ratio of the derivatives for every timestep.
@@ -158,20 +199,131 @@ class Deriv:
                 if deriv[0] != 'd':
                     continue
                 self.data[key][deriv] = self.data[key][deriv]/denom
+            return
         elif key is None:
-            for k in self.data:
-                denom = get_max_denom(self.data[k])
+            for denom, k in pb( self.pool.starmap(self.parallel_ratio,
+                zip([self.data[k] for k in self.data.keys()], self.data.keys())) ):
                 for deriv in self.data[k]:
                     if deriv[0] != 'd':
                         continue
                     self.data[k][deriv] = self.data[k][deriv]/denom
         else:
-            for k in key:
-                denom = get_max_denom(self.data[k])
+            for denom, k in pb( self.pool.starmap(self.parallel_ratio,
+                zip([self.data[k] for k in k], k)) ):
                 for deriv in self.data[k]:
                     if deriv[0] != 'd':
                         continue
                     self.data[k][deriv] = self.data[k][deriv]/denom
+
+    @staticmethod
+    def parallel_plot_orders(df, out_param, mapped, scatter,
+        in_params, x_axis, kwargs):
+        """
+        Helper method to plot in parallel.
+        """
+        def plot_helper(df, in_params, out_param, **kwargs):
+            min_time = df[x_axis].min()
+            max_time = df[x_axis].max()
+            dt1 = (max_time - min_time) / 20
+            dt = (max_time - min_time + dt1) / 20
+            x_ticks = np.arange(min_time, max_time + dt1, dt)
+
+            _, ax = plt.subplots()
+            df_tmp = df[in_params+[x_axis]]
+            df_tmp = df_tmp.melt(x_axis, var_name="Derivatives",
+                                    value_name="Derivative Ratio")
+            if scatter:
+                ax = sns.scatterplot(x=x_axis, y="Derivative Ratio",
+                                        data=df_tmp, hue="Derivatives", ax=ax, linewidth=0,
+                                        **kwargs)
+            else:
+                ax = sns.lineplot(x=x_axis, y="Derivative Ratio",
+                                    data=df_tmp, hue="Derivatives", ax=ax,
+                                    **kwargs)
+            ax.set_title("Deriv. Ratio of {}".format(latexify.parse_word(out_param)))
+            ax.set_xticks(x_ticks)
+
+            # Change labels to latex versions
+            legend = ax.get_legend()
+            _, labels = ax.get_legend_handles_labels()
+            for t, old in zip(legend.texts, labels):
+                t.set_text(latexify.parse_word(old))
+            ax.set_ylabel("Derivative ratio")
+            plt.ticklabel_format(style="scientific", axis="y", scilimits=(0,0))
+
+            # Plot the area that had been flagged
+            if mapped:
+                df_mapped = df[df.MAP == True]
+                if not df_mapped.empty:
+                    xmin = df_mapped[x_axis].min()
+                    xmax = df_mapped[x_axis].max()
+                    plt.axvspan(xmin=xmin, xmax=xmax,
+                        facecolor="khaki", alpha=0.3)
+
+            # Change the limits for the y-axis because sometimes that
+            # can be off and it is hard to see anything.
+            min_y = df_tmp["Derivative Ratio"].min()
+            max_y = df_tmp["Derivative Ratio"].max()
+            plt.ylim(min_y - min_y/10, max_y + max_y/10)
+            # The same is true for the x-axis
+            plt.xlim(x_ticks[0], x_ticks[-1])
+            i = 0
+            prefix = "line_"
+            if scatter:
+                prefix = "scatter_"
+            save = ("pics/" + prefix + x_axis + "_" + out_param
+                    + "_" + "{:03d}".format(i) + ".png")
+            while os.path.isfile(save):
+                i = i+1
+                save = ("pics/" + prefix + x_axis + "_" + out_param
+                        + "_" + "{:03d}".format(i) + ".png")
+
+            print("Saving to " + save)
+            success = False
+            for i in range(100):
+                try:
+                    plt.savefig(save, dpi=300)
+                    plt.show()
+                    plt.close()
+                except:
+                    continue
+                success = True
+                break
+            if not success:
+                print("Saving image {} failed.".format(save))
+
+        if df is None:
+            return
+        if df.empty:
+            return
+
+        if in_params is None:
+            in_params_tmp = list(df)
+            in_params = []
+            for i in range(len(in_params_tmp)):
+                if in_params_tmp[i][0] == 'd':
+                    in_params.append(in_params_tmp[i])
+
+        # Sort the derivatives
+        sorted_tuples = []
+        for in_p in in_params:
+            value = np.abs(df[in_p].min())
+            if np.abs(df[in_p].max()) > value:
+                value = np.abs(df[in_p].max())
+            if value != 0 and not np.isnan(value):
+                sorted_tuples.append((in_p, value))
+        sorted_tuples.sort(key=lambda tup: tup[1])
+
+        # Plot them
+        while len(sorted_tuples) > 0:
+            p, v = sorted_tuples.pop()
+            in_params_2 = [p]
+            while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
+                and np.abs(v/sorted_tuples[-1][1]) < 10):
+                p, v = sorted_tuples.pop()
+                in_params_2.append(p)
+            plot_helper(df, in_params=in_params_2, out_param=out_param, **kwargs)
+
 
     def plot_same_orders(self, out_params=None, mapped=True, scatter=False,
                          in_params=None, x_axis="timestep", **kwargs):
@@ -201,101 +353,86 @@ class Deriv:
             out_params = self.data.keys()
         elif isinstance(out_params, str):
             out_params = [out_params]
+        self.pool.starmap(self.parallel_plot_orders,
+            zip([self.data[p] for p in out_params],
+            out_params, repeat(mapped), repeat(scatter), repeat(in_params),
+            repeat(x_axis), repeat(kwargs)))
 
+    @staticmethod
+    def parallel_plot_mapped(df, out_param, in_params, kind, x_label, kwargs):
         def plot_helper(df, in_params, out_param, **kwargs):
-            min_time = df[x_axis].min()
-            max_time = df[x_axis].max()
-            dt1 = (max_time - min_time) / 20
-            dt = (max_time - min_time + dt1) / 20
-            x_ticks = np.arange(min_time, max_time + dt1, dt)
-
-            _, ax = plt.subplots()
-            df_tmp = df[in_params+[x_axis]]
-            df_tmp = df_tmp.melt(x_axis, var_name="Derivatives",
+            df_tmp = df[in_params+["MAP"]]
+            df_tmp = df_tmp.melt("MAP", var_name="Derivatives",
                                  value_name="Derivative Ratio")
-            if scatter:
-                ax = sns.scatterplot(x=x_axis, y="Derivative Ratio",
-                                     data=df_tmp, hue="Derivatives", ax=ax,
-                                     **kwargs)
-            else:
-                ax = sns.lineplot(x=x_axis, y="Derivative Ratio",
-                                 data=df_tmp, hue="Derivatives", ax=ax,
-                                 **kwargs)
+            df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
+            _, ax = plt.subplots()
+            g = sns.catplot(x="MAP", y="Derivative Ratio", data=df_tmp, ax=ax,
+                                hue="Derivatives", kind=kind, **kwargs)
             ax.set_title("Deriv. Ratio of {}".format(latexify.parse_word(out_param)))
-            ax.set_xticks(x_ticks)
-
-            # Change labels to latex versions
-            legend = ax.get_legend()
-            _, labels = ax.get_legend_handles_labels()
-            for t, old in zip(legend.texts, labels):
-                t.set_text(latexify.parse_word(old))
             ax.set_ylabel("Derivative ratio")
+            ax.set_xlabel(x_label)
             plt.ticklabel_format(style="scientific", axis="y", scilimits=(0,0))
 
-            # Plot the area that had been flagged
-            if mapped:
-                df_mapped = df[df.MAP == True]
-                if not df_mapped.empty:
-                    min_y = df_tmp["Derivative Ratio"].min()
-                    max_y = df_tmp["Derivative Ratio"].max()
-                    ax.fill_between(df_mapped[x_axis], min_y, max_y,
-                        facecolor="khaki", alpha=0.3)
             # Change the limits for the y-axis because sometimes that
             # can be off and it is hard to see anything.
             min_y = df_tmp["Derivative Ratio"].min()
             max_y = df_tmp["Derivative Ratio"].max()
             plt.ylim(min_y - min_y/10, max_y + max_y/10)
-            # The same is true for the x-axis
-            plt.xlim(x_ticks[0], x_ticks[-1])
+
             i = 0
-            prefix = "line_"
-            if scatter:
-                prefix = "scatter_"
-            save = ("pics/" + prefix + x_axis + "_ " + out_param
+            save = ("pics/" + kind + "_MAP_" + out_param
                     + "_" + "{:03d}".format(i) + ".png")
             while os.path.isfile(save):
                 i = i+1
-                save = ("pics/" + prefix + x_axis + "_ " + out_param
+                save = ("pics/" + kind + "_MAP_" + out_param
                         + "_" + "{:03d}".format(i) + ".png")
 
             print("Saving to " + save)
-            plt.savefig(save, dpi=300)
-            plt.show()
-            plt.close()
+            success = False
+            for i in range(100):
+                try:
+                    plt.savefig(save, dpi=300)
+                    plt.show()
+                    plt.close()
+                except:
+                    continue
+                success = True
+                break
+            if not success:
+                print("Saving image {} failed.".format(save))
 
-        for out_param in out_params:
-            df = self.data[out_param]
-            if df is None:
-                continue
-            if df.empty:
-                continue
+        if df is None:
+            return
+        if df.empty:
+            return
 
-            if in_params is None:
-                in_params_tmp = list(df)
-                in_params = []
-                for i in range(len(in_params_tmp)):
-                    if in_params_tmp[i][0] == 'd':
-                        in_params.append(in_params_tmp[i])
+        if in_params is None:
+            in_params_tmp = list(df)
+            in_params = []
+            for i in range(len(in_params_tmp)):
+                if in_params_tmp[i][0] == 'd':
+                    in_params.append(in_params_tmp[i])
 
-            # Sort the derivatives
-            sorted_tuples = []
-            for in_p in in_params:
-                value = np.abs(df[in_p].min())
-                if np.abs(df[in_p].max()) > value:
-                    value = np.abs(df[in_p].max())
-                if value != 0 and not np.isnan(value):
-                    sorted_tuples.append((in_p, value))
-            sorted_tuples.sort(key=lambda tup: tup[1])
-
-            # Plot them
-            while len(sorted_tuples) > 0:
+        # Sort the derivatives
+        sorted_tuples = []
+        for in_p in in_params:
+            value = np.abs(df[in_p].min())
+            if np.abs(df[in_p].max()) > value:
+                value = np.abs(df[in_p].max())
+            if value != 0 and not np.isnan(value):
+                sorted_tuples.append((in_p, value))
+        sorted_tuples.sort(key=lambda tup: tup[1])
+        print("Found {} tuples for {}".format(len(sorted_tuples), out_param))
+        # Plot them
+        while len(sorted_tuples) > 0:
+            p, v = sorted_tuples.pop()
+            in_params_2 = [p]
+            while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
+                and np.abs(v/sorted_tuples[-1][1]) < 10):
                 p, v = sorted_tuples.pop()
-                in_params_2 = [p]
-                while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
-                    and np.abs(v/sorted_tuples[-1][1]) < 10):
-                    p, v = sorted_tuples.pop()
-                    in_params_2.append(p)
-                plot_helper(df, in_params=in_params_2, out_param=out_param, **kwargs)
+                in_params_2.append(p)
+            plot_helper(df, in_params=in_params_2, out_param=out_param, **kwargs)
+
 
     def plot_mapped(self, out_params=None, in_params=None, kind="violin",
                     x_label="WCB criterion", **kwargs):
@@ -328,72 +465,79 @@ class Deriv:
         elif isinstance(out_params, str):
             out_params = [out_params]
 
-        def plot_helper(df, in_params, out_param, **kwargs):
-            df_tmp = df[in_params+["MAP"]]
-            df_tmp = df_tmp.melt("MAP", var_name="Derivatives",
-                                 value_name="Derivative Ratio")
-            df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
-            _, ax = plt.subplots()
-            g = sns.catplot(x="MAP", y="Derivative Ratio", data=df_tmp, ax=ax,
-                                hue="Derivatives", kind=kind, **kwargs)
-            ax.set_title("Deriv. Ratio of {}".format(latexify.parse_word(out_param)))
-            ax.set_ylabel("Derivative ratio")
-            ax.set_xlabel(x_label)
-            plt.ticklabel_format(style="scientific", axis="y", scilimits=(0,0))
+        self.pool.starmap(self.parallel_plot_mapped,
+            zip([self.data[out_param] for out_param in out_params],
+            out_params, repeat(in_params), repeat(kind), repeat(x_label),
+            repeat(kwargs)))
 
-            # Change the limits for the y-axis because sometimes that
-            # can be off and it is hard to see anything.
-            min_y = df_tmp["Derivative Ratio"].min()
-            max_y = df_tmp["Derivative Ratio"].max()
-            plt.ylim(min_y - min_y/10, max_y + max_y/10)
+        # def plot_helper(df, in_params, out_param, **kwargs):
+        #     df_tmp = df[in_params+["MAP"]]
+        #     df_tmp = df_tmp.melt("MAP", var_name="Derivatives",
+        #                          value_name="Derivative Ratio")
+        #     df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
+        #     _, ax = plt.subplots()
+        #     g = sns.catplot(x="MAP", y="Derivative Ratio", data=df_tmp, ax=ax,
+        #                         hue="Derivatives", kind=kind, **kwargs)
+        #     ax.set_title("Deriv. Ratio of {}".format(latexify.parse_word(out_param)))
+        #     ax.set_ylabel("Derivative ratio")
+        #     ax.set_xlabel(x_label)
+        #     plt.ticklabel_format(style="scientific", axis="y", scilimits=(0,0))
 
-            i = 0
-            save = ("pics/" + kind + "_MAP_ " + out_param
-                    + "_" + "{:03d}".format(i) + ".png")
-            while os.path.isfile(save):
-                i = i+1
-                save = ("pics/" + kind + "_MAP_ " + out_param
-                        + "_" + "{:03d}".format(i) + ".png")
+        #     # Change the limits for the y-axis because sometimes that
+        #     # can be off and it is hard to see anything.
+        #     min_y = df_tmp["Derivative Ratio"].min()
+        #     max_y = df_tmp["Derivative Ratio"].max()
+        #     plt.ylim(min_y - min_y/10, max_y + max_y/10)
 
-            print("Saving to " + save)
-            plt.savefig(save, dpi=300)
-            plt.show()
-            plt.close()
+        #     i = 0
+        #     save = ("pics/" + kind + "_MAP_ " + out_param
+        #             + "_" + "{:03d}".format(i) + ".png")
+        #     while os.path.isfile(save):
+        #         i = i+1
+        #         save = ("pics/" + kind + "_MAP_ " + out_param
+        #                 + "_" + "{:03d}".format(i) + ".png")
 
-        for out_param in out_params:
-            df = self.data[out_param]
-            if df is None:
-                continue
-            if df.empty:
-                continue
+        #     print("Saving to " + save)
+        #     plt.savefig(save, dpi=300)
+        #     plt.show()
+        #     plt.close()
 
-            if in_params is None:
-                in_params_tmp = list(df)
-                in_params = []
-                for i in range(len(in_params_tmp)):
-                    if in_params_tmp[i][0] == 'd':
-                        in_params.append(in_params_tmp[i])
+        # def for_loop_mapped(out_param):
+        #     df = self.data[out_param]
+        #     if df is None:
+        #         return
+        #     if df.empty:
+        #         return
 
-            # Sort the derivatives
-            sorted_tuples = []
-            for in_p in in_params:
-                value = np.abs(df[in_p].min())
-                if np.abs(df[in_p].max()) > value:
-                    value = np.abs(df[in_p].max())
-                if value != 0 and not np.isnan(value):
-                    sorted_tuples.append((in_p, value))
-            sorted_tuples.sort(key=lambda tup: tup[1])
+        #     if in_params is None:
+        #         in_params_tmp = list(df)
+        #         in_params = []
+        #         for i in range(len(in_params_tmp)):
+        #             if in_params_tmp[i][0] == 'd':
+        #                 in_params.append(in_params_tmp[i])
 
-            # Plot them
-            while len(sorted_tuples) > 0:
-                p, v = sorted_tuples.pop()
-                in_params_2 = [p]
-                while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
-                    and np.abs(v/sorted_tuples[-1][1]) < 10):
-                    p, v = sorted_tuples.pop()
-                    in_params_2.append(p)
-                print("Plotting {}, {}".format(in_params_2, out_param))
-                plot_helper(df, in_params=in_params_2, out_param=out_param, **kwargs)
+        #     # Sort the derivatives
+        #     sorted_tuples = []
+        #     for in_p in in_params:
+        #         value = np.abs(df[in_p].min())
+        #         if np.abs(df[in_p].max()) > value:
+        #             value = np.abs(df[in_p].max())
+        #         if value != 0 and not np.isnan(value):
+        #             sorted_tuples.append((in_p, value))
+        #     sorted_tuples.sort(key=lambda tup: tup[1])
+
+        #     # Plot them
+        #     while len(sorted_tuples) > 0:
+        #         p, v = sorted_tuples.pop()
+        #         in_params_2 = [p]
+        #         while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
+        #             and np.abs(v/sorted_tuples[-1][1]) < 10):
+        #             p, v = sorted_tuples.pop()
+        #             in_params_2.append(p)
+        #         plot_helper(df, in_params=in_params_2, out_param=out_param, **kwargs)
+
+        # zip(*self.pool.map(for_loop_mapped, out_params))
+
 
     def cluster(self, k, method, out_params=None, features=None,
                 new_col="cluster", truth=None):

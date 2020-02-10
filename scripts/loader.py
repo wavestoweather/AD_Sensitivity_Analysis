@@ -8,6 +8,8 @@ from progressbar import progressbar as pb
 import sys
 import os
 import xarray as xr
+from multiprocessing import Pool
+from itertools import repeat
 
 
 params_dict = {"p": "_diff_0.txt", "T": "_diff_1.txt",
@@ -528,8 +530,17 @@ def load_mult_derivates_big(prefix="", suffix="", filt=False, EPSILON=1e-31,
     return df
 
 
+def load_parallel(f, suffix):
+    """
+    A helper for load_mult_derivates_direc_dic(..) to load using multiple
+    processes.
+    """
+    out_param = params_dict2[f.split(suffix)[1]]
+    return (out_param, pd.read_csv(f, sep=",", index_col=False))
+
+
 def load_mult_derivates_direc_dic(direc="", filt=True,
-                                  EPSILON=0.0, trajectories=[1], suffix="20160922_00"):
+                                  EPSILON=0.0, trajectories=[1], suffix="20160922_00", pool=None):
     """
     Create a dictionary with out parameters as keys and dictionaries with columns:
     trajectory, timestep, MAP, LATITUDE, LONGITUDE
@@ -551,6 +562,8 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
     suffix : string
         The suffix of the filenames before '_diff_xx.txt'. If none is
         given, the method tries to automatically detect it.
+    pool : multiprocessing.Pool
+        Used to work on data in parallel
 
     Returns
     -------
@@ -580,14 +593,13 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
         suffix = example[-2] + "_" + example[-1]
 
     tmp_dict = {}
-    for f in pb(file_list2, redirect_stdout=True):
-        out_param = params_dict2[f.split(suffix)[1]]
-        # In case of multiple trajectories
+
+    for df_tuple in pb(pool.starmap(load_parallel, zip(file_list2, repeat(suffix))), redirect_stdout=True):
+        out_param, df = df_tuple
         if out_param in tmp_dict:
-            tmp_dict[out_param] = tmp_dict[out_param].append(
-                pd.read_csv(f, sep=",", index_col=False), ignore_index=True)
+            tmp_dict[out_param] = tmp_dict[out_param].append(df)
         else:
-            tmp_dict[out_param] = pd.read_csv(f, sep=",", index_col=False)
+            tmp_dict[out_param] = df
     if filt:
         tmp_dict = filter_zeros(tmp_dict, EPSILON)
 
