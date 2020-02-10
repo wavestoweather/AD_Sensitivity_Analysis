@@ -182,8 +182,9 @@ class Sim:
         def plot_helper(df, out_param, **kwargs):
             min_time = df[x_axis].unique().min()
             max_time = df[x_axis].unique().max()
-            dt = (max_time - min_time + 19) / 20
-            x_ticks = np.arange(min_time, max_time + 19, dt)
+            dt1 = (max_time - min_time) / 20
+            dt = (max_time - min_time + dt1) / 20
+            x_ticks = np.arange(min_time, max_time + dt1, dt)
 
             _, ax = plt.subplots()
 
