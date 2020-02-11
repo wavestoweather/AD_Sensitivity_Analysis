@@ -366,8 +366,36 @@ class Deriv:
                                  value_name="Derivative Ratio")
             df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
             _, ax = plt.subplots()
-            g = sns.catplot(x="MAP", y="Derivative Ratio", data=df_tmp, ax=ax,
-                                hue="Derivatives", kind=kind, **kwargs)
+            # Just a workaround. One could use sns.catplot(kind=kind) but
+            # it does not work with plt.subplots() and it does not always
+            # take any preceeding settings for matplotlib into account
+            if kind == "violin":
+                sns.violinplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                               hue="Derivatives", **kwargs)
+            elif kind == "swarm":
+                sns.swarmplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                               hue="Derivatives", **kwargs)
+            elif kind == "strip":
+                sns.stripplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                               hue="Derivatives", **kwargs)
+            elif kind == "box":
+                sns.boxplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                               hue="Derivatives", **kwargs)
+            elif kind == "boxen":
+                sns.boxenplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                               hue="Derivatives", **kwargs)
+            elif kind == "point":
+                sns.pointplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                               hue="Derivatives", **kwargs)
+            elif kind == "bar":
+                sns.barplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                               hue="Derivatives", **kwargs)
+            elif kind == "count":
+                sns.countplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                               hue="Derivatives", **kwargs)
+            else:
+                print("No such kind: {}".format(kind))
+                return
             ax.set_title("Deriv. Ratio of {}".format(latexify.parse_word(out_param)))
             ax.set_ylabel("Derivative ratio")
             ax.set_xlabel(x_label)
@@ -422,7 +450,7 @@ class Deriv:
             if value != 0 and not np.isnan(value):
                 sorted_tuples.append((in_p, value))
         sorted_tuples.sort(key=lambda tup: tup[1])
-        print("Found {} tuples for {}".format(len(sorted_tuples), out_param))
+
         # Plot them
         while len(sorted_tuples) > 0:
             p, v = sorted_tuples.pop()
@@ -464,80 +492,112 @@ class Deriv:
             out_params = self.data.keys()
         elif isinstance(out_params, str):
             out_params = [out_params]
+        if self.pool is not None:
+            self.pool.starmap(self.parallel_plot_mapped,
+                zip([self.data[out_param] for out_param in out_params],
+                out_params, repeat(in_params), repeat(kind), repeat(x_label),
+                repeat(kwargs)))
+        else:
+            def plot_helper(df, in_params, out_param, **kwargs):
+                df_tmp = df[in_params+["MAP"]]
+                print(out_param)
+                print(df_tmp)
+                df_tmp = df_tmp.melt("MAP", var_name="Derivatives",
+                                    value_name="Derivative Ratio")
+                df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
+                print(df_tmp)
+                print(df_tmp["Derivative Ratio"].unique())
+                print(df_tmp["MAP"].unique())
+                print("######################################################")
+                _, ax = plt.subplots()
+                # Just a workaround. One could use sns.catplot(kind=kind) but
+                # it does not work with plt.subplots() and it does not always
+                # take any preceeding settings for matplotlib into account
+                if kind == "violin":
+                    sns.violinplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                                hue="Derivatives", **kwargs)
+                elif kind == "swarm":
+                    sns.swarmplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                                hue="Derivatives", **kwargs)
+                elif kind == "strip":
+                    sns.stripplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                                hue="Derivatives", **kwargs)
+                elif kind == "box":
+                    sns.boxplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                                hue="Derivatives", **kwargs)
+                elif kind == "boxen":
+                    sns.boxenplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                                hue="Derivatives", **kwargs)
+                elif kind == "point":
+                    sns.pointplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                                hue="Derivatives", **kwargs)
+                elif kind == "bar":
+                    sns.barplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                                hue="Derivatives", **kwargs)
+                elif kind == "count":
+                    sns.countplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                                hue="Derivatives", **kwargs)
+                else:
+                    print("No such kind: {}".format(kind))
+                    return
 
-        self.pool.starmap(self.parallel_plot_mapped,
-            zip([self.data[out_param] for out_param in out_params],
-            out_params, repeat(in_params), repeat(kind), repeat(x_label),
-            repeat(kwargs)))
+                ax.set_title("Deriv. Ratio of {}".format(latexify.parse_word(out_param)))
+                ax.set_ylabel("Derivative ratio")
+                ax.set_xlabel(x_label)
+                plt.ticklabel_format(style="scientific", axis="y", scilimits=(0,0))
 
-        # def plot_helper(df, in_params, out_param, **kwargs):
-        #     df_tmp = df[in_params+["MAP"]]
-        #     df_tmp = df_tmp.melt("MAP", var_name="Derivatives",
-        #                          value_name="Derivative Ratio")
-        #     df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
-        #     _, ax = plt.subplots()
-        #     g = sns.catplot(x="MAP", y="Derivative Ratio", data=df_tmp, ax=ax,
-        #                         hue="Derivatives", kind=kind, **kwargs)
-        #     ax.set_title("Deriv. Ratio of {}".format(latexify.parse_word(out_param)))
-        #     ax.set_ylabel("Derivative ratio")
-        #     ax.set_xlabel(x_label)
-        #     plt.ticklabel_format(style="scientific", axis="y", scilimits=(0,0))
+                # Change the limits for the y-axis because sometimes that
+                # can be off and it is hard to see anything.
+                min_y = df_tmp["Derivative Ratio"].min()
+                max_y = df_tmp["Derivative Ratio"].max()
+                plt.ylim(min_y - min_y/10, max_y + max_y/10)
 
-        #     # Change the limits for the y-axis because sometimes that
-        #     # can be off and it is hard to see anything.
-        #     min_y = df_tmp["Derivative Ratio"].min()
-        #     max_y = df_tmp["Derivative Ratio"].max()
-        #     plt.ylim(min_y - min_y/10, max_y + max_y/10)
+                i = 0
+                save = ("pics/" + kind + "_MAP_ " + out_param
+                        + "_" + "{:03d}".format(i) + ".png")
+                while os.path.isfile(save):
+                    i = i+1
+                    save = ("pics/" + kind + "_MAP_ " + out_param
+                            + "_" + "{:03d}".format(i) + ".png")
 
-        #     i = 0
-        #     save = ("pics/" + kind + "_MAP_ " + out_param
-        #             + "_" + "{:03d}".format(i) + ".png")
-        #     while os.path.isfile(save):
-        #         i = i+1
-        #         save = ("pics/" + kind + "_MAP_ " + out_param
-        #                 + "_" + "{:03d}".format(i) + ".png")
+                print("Saving to " + save)
+                plt.savefig(save, dpi=300)
+                plt.show()
+                plt.close()
 
-        #     print("Saving to " + save)
-        #     plt.savefig(save, dpi=300)
-        #     plt.show()
-        #     plt.close()
+            for out_param in out_params:
+                df = self.data[out_param]
+                if df is None:
+                    return
+                if df.empty:
+                    return
 
-        # def for_loop_mapped(out_param):
-        #     df = self.data[out_param]
-        #     if df is None:
-        #         return
-        #     if df.empty:
-        #         return
+                if in_params is None:
+                    in_params_tmp = list(df)
+                    in_params = []
+                    for i in range(len(in_params_tmp)):
+                        if in_params_tmp[i][0] == 'd':
+                            in_params.append(in_params_tmp[i])
 
-        #     if in_params is None:
-        #         in_params_tmp = list(df)
-        #         in_params = []
-        #         for i in range(len(in_params_tmp)):
-        #             if in_params_tmp[i][0] == 'd':
-        #                 in_params.append(in_params_tmp[i])
+                # Sort the derivatives
+                sorted_tuples = []
+                for in_p in in_params:
+                    value = np.abs(df[in_p].min())
+                    if np.abs(df[in_p].max()) > value:
+                        value = np.abs(df[in_p].max())
+                    if value != 0 and not np.isnan(value):
+                        sorted_tuples.append((in_p, value))
+                sorted_tuples.sort(key=lambda tup: tup[1])
 
-        #     # Sort the derivatives
-        #     sorted_tuples = []
-        #     for in_p in in_params:
-        #         value = np.abs(df[in_p].min())
-        #         if np.abs(df[in_p].max()) > value:
-        #             value = np.abs(df[in_p].max())
-        #         if value != 0 and not np.isnan(value):
-        #             sorted_tuples.append((in_p, value))
-        #     sorted_tuples.sort(key=lambda tup: tup[1])
-
-        #     # Plot them
-        #     while len(sorted_tuples) > 0:
-        #         p, v = sorted_tuples.pop()
-        #         in_params_2 = [p]
-        #         while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
-        #             and np.abs(v/sorted_tuples[-1][1]) < 10):
-        #             p, v = sorted_tuples.pop()
-        #             in_params_2.append(p)
-        #         plot_helper(df, in_params=in_params_2, out_param=out_param, **kwargs)
-
-        # zip(*self.pool.map(for_loop_mapped, out_params))
-
+                # Plot them
+                while len(sorted_tuples) > 0:
+                    p, v = sorted_tuples.pop()
+                    in_params_2 = [p]
+                    while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
+                        and np.abs(v/sorted_tuples[-1][1]) < 10):
+                        p, v = sorted_tuples.pop()
+                        in_params_2.append(p)
+                    plot_helper(df, in_params=in_params_2, out_param=out_param, **kwargs)
 
     def cluster(self, k, method, out_params=None, features=None,
                 new_col="cluster", truth=None):
