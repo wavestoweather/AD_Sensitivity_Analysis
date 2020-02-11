@@ -19,7 +19,7 @@ from PIL import Image
 from pylab import rcParams
 import os
 
-from sklearn.cluster import KMeans, SpectralClustering, DBSCAN
+from sklearn.cluster import MiniBatchKMeans, SpectralClustering, DBSCAN
 from sklearn.mixture import BayesianGaussianMixture
 from sklearn.metrics import adjusted_rand_score
 
@@ -600,12 +600,13 @@ class Deriv:
                     plot_helper(df, in_params=in_params_2, out_param=out_param, **kwargs)
 
     def cluster(self, k, method, out_params=None, features=None,
-                new_col="cluster", truth=None):
+                new_col="cluster", truth=None, thresh=0.10):
         """
         Cluster the data where "features" are columns, "truth" can be a column
         that can be used to identify a ground truth or a list of assignments.
         If truth is given, purity and adjusted RAND index are calculated.
-        "method" can be used to choose different clustering methods.
+        "method" can be used to choose different clustering methods. Discards
+        all columns that consist of at least one NaN.
 
         Parameters
         ----------
@@ -625,6 +626,9 @@ class Deriv:
             Name of the column where the cluster assignment shall be stored.
         truth : String or list of int
             Either a column of the data or a list of assignments.
+        thresh : float
+            Threshold for dropping columns. if more than this amount of values
+            is NaN, drop that column.
 
         Returns
         -------
@@ -650,7 +654,20 @@ class Deriv:
 
         X = None
         for out_p in out_params:
-            X_tmp = self.data[out_p].as_matrix(columns=features)
+            # Remove columns with more than half of NaNs
+            df_tmp = self.data[out_p]
+            cols_to_delete = df_tmp.columns[df_tmp.isnull().sum()/len(df_tmp)  > thresh]
+            for col in cols_to_delete:
+                try:
+                    features.remove(col)
+                except:
+                    pass
+            if features == []:
+                print("No derivatives in this dataset. Returning.")
+                if method == "gaussian":
+                    return None, None, None
+                return None, None
+            X_tmp = df_tmp.as_matrix(columns=features)
             if X is None:
                 X = X_tmp
             else:
@@ -664,11 +681,21 @@ class Deriv:
                 delete_index.append(i)
         X = np.delete(X, delete_index, axis=0)
         truth = np.delete(truth, delete_index)
+        print("Shape of X {}".format(np.shape(X)))
+        if np.shape(truth) == (0,):
+            print("No derivatives in this dataset. Returning.")
+            if method == "gaussian":
+                return None, None, None
+            return None, None
 
         if method == "kmeans":
-            clustering = KMeans(n_clusters=k, copy_x=False).fit(X)
+            clustering = MiniBatchKMeans(n_clusters=k).fit(X)
         elif method == "spectral":
-            clustering = SpectralClustering(n_clusters=k).fit(X)
+            try:
+                clustering = SpectralClustering(n_clusters=k).fit(X)
+            except MemoryError:
+                print("Dataset is too large to process. Aborting.")
+                return None, None
         elif method == "gaussian":
             clustering = BayesianGaussianMixture(n_components=k).fit(X)
             labels = clustering.predict(X)
