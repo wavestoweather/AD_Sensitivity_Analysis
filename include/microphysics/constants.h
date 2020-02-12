@@ -66,6 +66,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Used for output derivatives.
+ */
+const std::string output_par_idx[32] =
+    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr", "Nv",
+     "qi", "Ni", "vi", "qs", "Ns", "qg", "Ng", "qh", "Nh",
+     "qiout", "qsout", "qrout", "qgout", "qhout",
+     "latent_heat", "latent_cool", "Niout", "Nsout", "Nrout",
+     "Ngout", "Nhout", "z"};
+
+/**
  * Universal gas constant, unit: J/(mol*K)
  * Source: http://physics.nist.gov/cuu/Constants/
  */

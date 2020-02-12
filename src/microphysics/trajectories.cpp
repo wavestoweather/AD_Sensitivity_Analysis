@@ -692,6 +692,7 @@ int main(int argc, char** argv)
         out_diff[ii]
             << "timestep,"
             << "trajectory,"
+            << "Output Parameter,"
             << "LONGITUDE,"
             << "LATITUDE,"
 #if defined WCB || defined WCB2
@@ -1311,11 +1312,13 @@ int main(int argc, char** argv)
                     {
 #if defined WCB || defined WCB2
                         out_diff[ii] << time_new << "," << input.traj << ","
+                                     << output_par_idx[ii] << ","
                                      << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                                      << (nc_params.lat[0] + sub*nc_params.dlat) << ","
                                      << nc_params.ascent_flag << ",";
 #else
                         out_diff[ii] << time_new << "," << input.traj << ","
+                                     << output_par_idx[ii] << ","
                                      << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                                      << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #endif
