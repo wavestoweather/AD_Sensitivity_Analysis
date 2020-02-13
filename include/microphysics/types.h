@@ -505,6 +505,11 @@ struct model_constants_t{
    */
   uint64_t snapshot_index;
 
+  /**
+   * Number of simulation steps before a snapshot shall stored on disk.
+   */
+  uint64_t write_index;
+
   //
   // General performance constants
   //
@@ -593,6 +598,9 @@ struct global_args_t{
 
   int traj_flag; /*!< Trajectory to use specified? */
   char* traj_string;
+
+  int write_flag; /*!< Snapshot is flushed every x iterations. */
+  char* write_string;
 };
 
 
@@ -623,6 +631,7 @@ struct input_parameters_t{
 
   uint32_t auto_type; /*!< Particle type. */
   uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
+  uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
 };
 
 /** @} */ // end of group types

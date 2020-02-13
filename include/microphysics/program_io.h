@@ -528,12 +528,13 @@ void init_input_parameters(input_parameters_t &in)
   in.fixed_iteration = true;
   in.auto_type = 1;
   in.traj = 0;
+  in.write_index = 100000;
 }
 
 /**
  * String used to parse commandline input.
  */
-static const char *optString = "f:d:i:b:o:l:s:t:a:r:?";
+static const char *optString = "w:f:d:i:b:o:l:s:t:a:r:?";
 
 
 /**
@@ -573,6 +574,9 @@ void init_global_args(global_args_t &arg)
 
   arg.traj_flag = 0;
   arg.traj_string = nullptr;
+
+  arg.write_flag = 0;
+  arg.write_string = nullptr;
 }
 
 /**
@@ -628,8 +632,14 @@ void set_input_from_arguments(global_args_t &arg ,
     in.auto_type = std::stoi(arg.auto_type_string);
   }
 
+  // Trajectory
   if(1 == arg.traj_flag){
     in.traj = std::stoi(arg.traj_string);
+  }
+
+  // Write index
+  if(1 == arg.write_flag){
+      in.write_index = std::stoi(arg.write_string);
   }
 }
 
