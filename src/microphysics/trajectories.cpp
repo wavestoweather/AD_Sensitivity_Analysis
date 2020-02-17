@@ -1131,12 +1131,16 @@ int main(int argc, char** argv)
                 for(int ii = 0 ; ii < num_comp ; ii++)
                 {
 #if defined WCB || defined WCB2
-                    out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << "," << input.traj << ","
+                    out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                                    << input.traj << ","
+                                    << output_par_idx[ii] << ","
                                     << nc_params.lon[0] << ","
                                     << nc_params.lat[0] << ","
                                     << nc_params.ascent_flag << ",";
 #else
-                    out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << "," << input.traj << ","
+                    out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                                    << input.traj << ","
+                                    << output_par_idx[ii] << ","
                                     << nc_params.lon[0] << ","
                                     << nc_params.lat[0] << ",";
 #endif
