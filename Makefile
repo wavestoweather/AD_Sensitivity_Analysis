@@ -1,7 +1,7 @@
 GCC=g++
 PCC=scorep-g++
 GCCFLAGS= --std=c++14 -pthread -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf #-DLIKWID_PERFMON #  -ffast-math
-GCCINCLUDES=-L/mnt/localscratch/lib/
+GCCINCLUDES=-I.
 TIMESTEPPER=-DRK4ICE
 ATMOFLAGS=-DCONSTANT_DROP=FALSE
 SEASON=-DSPRING
@@ -30,7 +30,7 @@ scratch: build $(TARGETS_SCRATCH)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
-	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) $(TIMESTEPPER) $(SEASON) -DTRACE $(FLUX) $(SOURCE) -o $@ -c $<
+	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) $(TIMESTEPPER) $(SEASON) $(FLUX) $(SOURCE) -o $@ -c $<
 
 $(TARGETS): $(OBJECTS)
 	@mkdir -p $(@D)
