@@ -286,7 +286,16 @@ int main(int argc, char** argv)
     cc.cloud.max_x = 2.6e-10;
     cc.cloud.min_x = 4.2e-15;
     cc.cloud.min_x_act = 4.2e-15;
-    cc.cloud.min_x_nuc = 4.2e-15;
+    cc.cloud.min_x_nuc_homo = 4.2e-15;
+    cc.cloud.min_x_nuc_hetero = 4.2e-15;
+    cc.cloud.min_x_melt = 4.2e-15;
+    cc.cloud.min_x_evap = 4.2e-15;
+    cc.cloud.min_x_freezing = 4.2e-15;
+    cc.cloud.min_x_depo = 4.2e-15;
+    cc.cloud.min_x_collision = 4.2e-15;
+    cc.cloud.min_x_collection = 4.2e-15;
+    cc.cloud.min_x_conversion = 4.2e-15;
+    cc.cloud.min_x_sedimentation = 4.2e-15;
     cc.cloud.a_geo = 1.24e-1;
     cc.cloud.b_geo = 0.333333;
     cc.cloud.a_vel = 3.75e5;
@@ -310,7 +319,16 @@ int main(int argc, char** argv)
     cc.rain.max_x = 3.0e-6;
     cc.rain.min_x = 2.6e-10;
     cc.rain.min_x_act = 2.6e-10;
-    cc.rain.min_x_nuc = 2.6e-10;
+    cc.rain.min_x_nuc_homo = 2.6e-10;
+    cc.rain.min_x_nuc_hetero = 2.6e-10;
+    cc.rain.min_x_melt = 2.6e-10;
+    cc.rain.min_x_evap = 2.6e-10;
+    cc.rain.min_x_freezing = 2.6e-10;
+    cc.rain.min_x_depo = 2.6e-10;
+    cc.rain.min_x_collision = 2.6e-10;
+    cc.rain.min_x_collection = 2.6e-10;
+    cc.rain.min_x_conversion = 2.6e-10;
+    cc.rain.min_x_sedimentation = 2.6e-10;
     cc.rain.a_geo = 1.24e-1;
     cc.rain.b_geo = 0.333333;
     cc.rain.a_vel = 114.0137;
@@ -351,7 +369,16 @@ int main(int argc, char** argv)
     cc.graupel.max_x = 5.0e-4;
     cc.graupel.min_x = 1.0e-9;
     cc.graupel.min_x_act = 1.0e-9;
-    cc.graupel.min_x_nuc = 1.0e-9;
+    cc.graupel.min_x_nuc_homo = 1.0e-9;
+    cc.graupel.min_x_nuc_hetero = 1.0e-9;
+    cc.graupel.min_x_melt = 1.0e-9;
+    cc.graupel.min_x_evap = 1.0e-9;
+    cc.graupel.min_x_freezing = 1.0e-9;
+    cc.graupel.min_x_depo = 1.0e-9;
+    cc.graupel.min_x_collision = 1.0e-9;
+    cc.graupel.min_x_collection = 1.0e-9;
+    cc.graupel.min_x_conversion = 1.0e-9;
+    cc.graupel.min_x_sedimentation = 1.0e-9;
     cc.graupel.a_geo = 1.42e-1;
     cc.graupel.b_geo = 0.314;
     cc.graupel.a_vel = 86.89371;
@@ -386,7 +413,16 @@ int main(int argc, char** argv)
     cc.hail.max_x = 5.0e-4;
     cc.hail.min_x = 2.6e-9;
     cc.hail.min_x_act= 2.6e-9;
-    cc.hail.min_x_nuc = 2.6e-9;
+    cc.hail.min_x_nuc_homo = 2.6e-9;
+    cc.hail.min_x_nuc_hetero = 2.6e-9;
+    cc.hail.min_x_melt = 2.6e-9;
+    cc.hail.min_x_evap = 2.6e-9;
+    cc.hail.min_x_freezing = 2.6e-9;
+    cc.hail.min_x_depo = 2.6e-9;
+    cc.hail.min_x_collision = 2.6e-9;
+    cc.hail.min_x_collection = 2.6e-9;
+    cc.hail.min_x_conversion = 2.6e-9;
+    cc.hail.min_x_sedimentation = 2.6e-9;
     cc.hail.a_geo = 0.1366;
     cc.hail.b_geo = 1.0/3.0;
     cc.hail.a_vel = 39.3;
@@ -412,6 +448,16 @@ int main(int argc, char** argv)
     cc.ice.max_x = 1.0e-5;
     cc.ice.min_x = 1.0e-12;
     cc.ice.min_x_act = 1.0e-12;
+    cc.ice.min_x_nuc_homo = 1.0e-12;
+    cc.ice.min_x_nuc_hetero = 1.0e-12;
+    cc.ice.min_x_melt = 1.0e-12;
+    cc.ice.min_x_evap = 1.0e-12;
+    cc.ice.min_x_freezing = 1.0e-12;
+    cc.ice.min_x_depo = 1.0e-12;
+    cc.ice.min_x_collision = 1.0e-12;
+    cc.ice.min_x_collection = 1.0e-12;
+    cc.ice.min_x_conversion = 1.0e-12;
+    cc.ice.min_x_sedimentation = 1.0e-12;
     cc.ice.a_geo = 0.835;
     cc.ice.b_geo = 0.39;
     cc.ice.a_vel = 2.77e1;
@@ -437,7 +483,16 @@ int main(int argc, char** argv)
     cc.snow.max_x = 2.0e-5;
     cc.snow.min_x = 1.0e-10;
     cc.snow.min_x_act = 1.0e-10;
-    cc.snow.min_x_nuc = 1.0e-10;
+    cc.snow.min_x_nuc_homo = 1.0e-10;
+    cc.snow.min_x_nuc_hetero = 1.0e-10;
+    cc.snow.min_x_melt = 1.0e-10;
+    cc.snow.min_x_evap = 1.0e-10;
+    cc.snow.min_x_freezing = 1.0e-10;
+    cc.snow.min_x_depo = 1.0e-10;
+    cc.snow.min_x_collision = 1.0e-10;
+    cc.snow.min_x_collection = 1.0e-10;
+    cc.snow.min_x_conversion = 1.0e-10;
+    cc.snow.min_x_sedimentation = 1.0e-10;
     cc.snow.a_geo = 2.4;
     cc.snow.b_geo = 0.455;
     cc.snow.a_vel = 8.8;
@@ -729,7 +784,17 @@ int main(int argc, char** argv)
             << "drain_b_geo,"
             << "drain_min_x,"
             << "drain_min_x_act,"
-            << "drain_min_x_nuc,"
+            << "drain_min_x_nuc_homo,"
+            << "drain_min_x_nuc_hetero,"
+            << "drain_min_x_melt,"
+            << "drain_min_x_evap,"
+            << "drain_min_x_freezing,"
+            << "drain_min_x_depo,"
+            << "drain_min_x_collision,"
+            << "drain_min_x_collection,"
+            << "drain_min_x_conversion,"
+            << "drain_min_x_sedimentation,"
+            << "drain_min_x_riming,"
             << "drain_max_x,"
             << "drain_sc_theta_q,"
             << "drain_sc_delta_q,"
@@ -771,12 +836,22 @@ int main(int argc, char** argv)
             << "drain_lambda,"
             << "drain_vsedi_min,"
             << "drain_vsedi_max,"
-            // Cloud; 44 parameters
+            // Cloud
             << "dcloud_a_geo,"
             << "dcloud_b_geo,"
             << "dcloud_min_x,"
             << "dcloud_min_x_act,"
-            << "dcloud_min_x_nuc,"
+            << "dcloud_min_x_nuc_homo,"
+            << "dcloud_min_x_nuc_hetero,"
+            << "dcloud_min_x_melt,"
+            << "dcloud_min_x_evap,"
+            << "dcloud_min_x_freezing,"
+            << "dcloud_min_x_depo,"
+            << "dcloud_min_x_collision,"
+            << "dcloud_min_x_collection,"
+            << "dcloud_min_x_conversion,"
+            << "dcloud_min_x_sedimentation,"
+            << "dcloud_min_x_riming,"
             << "dcloud_max_x,"
             << "dcloud_sc_theta_q,"
             << "dcloud_sc_delta_q,"
@@ -823,7 +898,17 @@ int main(int argc, char** argv)
             << "dgraupel_b_geo,"
             << "dgraupel_min_x,"
             << "dgraupel_min_x_act,"
-            << "dgraupel_min_x_nuc,"
+            << "dgraupel_min_x_nuc_homo,"
+            << "dgraupel_min_x_nuc_hetero,"
+            << "dgraupel_min_x_melt,"
+            << "dgraupel_min_x_evap,"
+            << "dgraupel_min_x_freezing,"
+            << "dgraupel_min_x_depo,"
+            << "dgraupel_min_x_collision,"
+            << "dgraupel_min_x_collection,"
+            << "dgraupel_min_x_conversion,"
+            << "dgraupel_min_x_sedimentation,"
+            << "dgraupel_min_x_riming,"
             << "dgraupel_max_x,"
             << "dgraupel_sc_theta_q,"
             << "dgraupel_sc_delta_q,"
@@ -870,7 +955,17 @@ int main(int argc, char** argv)
             << "dhail_b_geo,"
             << "dhail_min_x,"
             << "dhail_min_x_act,"
-            << "dhail_min_x_nuc,"
+            << "dhail_min_x_nuc_homo,"
+            << "dhail_min_x_nuc_hetero,"
+            << "dhail_min_x_melt,"
+            << "dhail_min_x_evap,"
+            << "dhail_min_x_freezing,"
+            << "dhail_min_x_depo,"
+            << "dhail_min_x_collision,"
+            << "dhail_min_x_collection,"
+            << "dhail_min_x_conversion,"
+            << "dhail_min_x_sedimentation,"
+            << "dhail_min_x_riming,"
             << "dhail_max_x,"
             << "dhail_sc_theta_q,"
             << "dhail_sc_delta_q,"
@@ -917,7 +1012,17 @@ int main(int argc, char** argv)
             << "dice_b_geo,"
             << "dice_min_x,"
             << "dice_min_x_act,"
-            << "dice_min_x_nuc,"
+            << "dice_min_x_nuc_homo,"
+            << "dice_min_x_nuc_hetero,"
+            << "dice_min_x_melt,"
+            << "dice_min_x_evap,"
+            << "dice_min_x_freezing,"
+            << "dice_min_x_depo,"
+            << "dice_min_x_collision,"
+            << "dice_min_x_collection,"
+            << "dice_min_x_conversion,"
+            << "dice_min_x_sedimentation,"
+            << "dice_min_x_riming,"
             << "dice_max_x,"
             << "dice_sc_theta_q,"
             << "dice_sc_delta_q,"
@@ -964,7 +1069,17 @@ int main(int argc, char** argv)
             << "dsnow_b_geo,"
             << "dsnow_min_x,"
             << "dsnow_min_x_act,"
-            << "dsnow_min_x_nuc,"
+            << "dsnow_min_x_nuc_homo,"
+            << "dsnow_min_x_nuc_hetero,"
+            << "dsnow_min_x_melt,"
+            << "dsnow_min_x_evap,"
+            << "dsnow_min_x_freezing,"
+            << "dsnow_min_x_depo,"
+            << "dsnow_min_x_collision,"
+            << "dsnow_min_x_collection,"
+            << "dsnow_min_x_conversion,"
+            << "dsnow_min_x_sedimentation,"
+            << "dsnow_min_x_riming,"
             << "dsnow_max_x,"
             << "dsnow_sc_theta_q,"
             << "dsnow_sc_delta_q,"
@@ -1131,12 +1246,16 @@ int main(int argc, char** argv)
                 for(int ii = 0 ; ii < num_comp ; ii++)
                 {
 #if defined WCB || defined WCB2
-                    out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << "," << input.traj << ","
+                    out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                                    << input.traj << ","
+                                    << output_par_idx[ii] << ","
                                     << nc_params.lon[0] << ","
                                     << nc_params.lat[0] << ","
                                     << nc_params.ascent_flag << ",";
 #else
-                    out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << "," << input.traj << ","
+                    out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                                    << input.traj << ","
+                                    << output_par_idx[ii] << ","
                                     << nc_params.lon[0] << ","
                                     << nc_params.lat[0] << ",";
 #endif

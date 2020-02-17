@@ -59,7 +59,7 @@
 #define Ng_in_idx 7         /*!< Graupel input index for another vector */
 #define num_inflows 8       /*!< Number of parameters for inflowing stuff */
 
-#define num_par 44*6+17+12     /*!< Number of gradients */
+#define num_par 56*6+17    /*!< Number of gradients */
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constants

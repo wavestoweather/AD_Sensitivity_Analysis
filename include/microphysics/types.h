@@ -49,7 +49,19 @@ struct particle_model_constants_t{
      * *Should* be the same as min_x but is used to distinguish the
      * influence of those processes.
      */
-    codi::RealReverse min_x_nuc;
+    codi::RealReverse min_x_nuc_homo;
+
+    codi::RealReverse min_x_nuc_hetero;
+    codi::RealReverse min_x_melt;
+    codi::RealReverse min_x_evap;
+    codi::RealReverse min_x_freezing;
+    codi::RealReverse min_x_depo;
+    codi::RealReverse min_x_collision;
+    codi::RealReverse min_x_collection;
+    codi::RealReverse min_x_conversion;
+    codi::RealReverse min_x_sedimentation;
+    codi::RealReverse min_x_riming;
+
     codi::RealReverse max_x;
     codi::RealReverse sc_theta_q;   /*!< For snow collision. */
     codi::RealReverse sc_delta_q;
@@ -97,7 +109,17 @@ struct particle_model_constants_t{
         tape.registerInput(this->b_geo);
         tape.registerInput(this->min_x);
         tape.registerInput(this->min_x_act);
-        tape.registerInput(this->min_x_nuc);
+        tape.registerInput(this->min_x_nuc_homo);
+        tape.registerInput(this->min_x_nuc_hetero);
+        tape.registerInput(this->min_x_melt);
+        tape.registerInput(this->min_x_evap);
+        tape.registerInput(this->min_x_freezing);
+        tape.registerInput(this->min_x_depo);
+        tape.registerInput(this->min_x_collision);
+        tape.registerInput(this->min_x_collection);
+        tape.registerInput(this->min_x_conversion);
+        tape.registerInput(this->min_x_sedimentation);
+        tape.registerInput(this->min_x_riming);
         tape.registerInput(this->max_x);
         tape.registerInput(this->sc_theta_q);
         tape.registerInput(this->sc_delta_q);
@@ -159,7 +181,27 @@ struct particle_model_constants_t{
         idx++;
         out_vec[idx] = this->min_x_act.getGradient();
         idx++;
-        out_vec[idx] = this->min_x_nuc.getGradient();
+        out_vec[idx] = this->min_x_nuc_homo.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_nuc_hetero.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_melt.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_evap.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_freezing.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_depo.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_collision.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_collection.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_conversion.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_sedimentation.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_riming.getGradient();
         idx++;
         out_vec[idx] = this->max_x.getGradient();
         idx++;

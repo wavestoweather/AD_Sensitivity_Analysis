@@ -601,8 +601,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 }
             }
             codi::RealReverse delta_n = max(ndiag - n_inact, 0.0);
-            codi::RealReverse delta_q = min(delta_n * cc.ice.min_x_nuc, qv_prime);
-            delta_n = delta_q/cc.ice.min_x_nuc;
+            codi::RealReverse delta_q = min(delta_n * cc.ice.min_x_nuc_hetero, qv_prime);
+            delta_n = delta_q/cc.ice.min_x_nuc_hetero;
 
             res[qi_idx] += delta_q;
             res[Ni_idx] += delta_n;
@@ -653,7 +653,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     if(ssi > s_crit && T_prime < 235.0 && Ni < ni_hom_max)
     {
         codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni,
-            cc.ice.min_x, cc.ice.max_x);
+            cc.ice.min_x_nuc_homo, cc.ice.max_x);
         codi::RealReverse r_i = pow(x_i/(4.0/3.0*M_PI*rho_ice), 1.0/3.0);
         codi::RealReverse v_th = sqrt(8.0*k_b*T_prime/(M_PI*ma_w));
         codi::RealReverse flux = alpha_d * v_th/4.0;
@@ -697,7 +697,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             codi::RealReverse ri_0 = 1.0 + 0.5*sqrtkap * ren;
             codi::RealReverse ri_hom = (ri_0 * (1.0+delta) - 1.0) / bcoeff[1];
             codi::RealReverse mi_hom = (4.0/3.0 * M_PI * rho_ice) * ni_hom * ri_hom*ri_hom*ri_hom;
-            mi_hom = max(mi_hom, cc.ice.min_x_nuc);
+            mi_hom = max(mi_hom, cc.ice.min_x_nuc_homo);
 
             codi::RealReverse delta_n = max(min(ni_hom, ni_hom_max), 0.0);
             codi::RealReverse delta_q = min(delta_n * mi_hom, qv_prime);
@@ -727,7 +727,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     // and the temperature is low enough
     if(qc_prime > 0.0 && T_c < -30.0)
     {
-        codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
+        codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_freezing, cc.cloud.max_x);
 
         codi::RealReverse delta_qi;
         codi::RealReverse delta_ni;
@@ -796,7 +796,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             dep = 0.0;
         } else
         {
-            codi::RealReverse x = particle_mean_mass(q, N, pc.min_x, pc.max_x);
+            codi::RealReverse x = particle_mean_mass(q, N, pc.min_x_depo, pc.max_x);
             codi::RealReverse d = particle_diameter(x, pc.a_geo, pc.b_geo);
             codi::RealReverse v = particle_velocity(x, pc.a_vel, pc.b_vel) * pc.rho_v;
             codi::RealReverse f_v = pc.a_f + pc.b_f * sqrt(d*v);
@@ -916,7 +916,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     }
 
     ////////////// ice-ice collisions
-    codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x, cc.ice.max_x);
+    codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_collision, cc.ice.max_x);
     codi::RealReverse D_i = particle_diameter(x_i, cc.ice.a_geo, cc.ice.b_geo);
 
     //// ice self collection
@@ -955,7 +955,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     {
         // temperature dependent sticking efficiency Lin (1983)
         codi::RealReverse e_coll = max(0.1, min(exp(0.09*(T_prime-tmelt)), 1.0));
-        codi::RealReverse x_s = particle_mean_mass(qs_prime, Ns, cc.snow.min_x, cc.snow.max_x);
+        codi::RealReverse x_s = particle_mean_mass(qs_prime, Ns, cc.snow.min_x_collection, cc.snow.max_x);
         codi::RealReverse D_s = particle_diameter(x_s, cc.snow.a_geo, cc.snow.b_geo);
         codi::RealReverse vel_s = particle_velocity(x_s, cc.snow.a_vel, cc.snow.b_vel) * cc.snow.rho_v;
 
@@ -985,11 +985,11 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     {
 
         codi::RealReverse e_coll = min(exp(0.09*T_c), 1.0);
-        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x, pc1.max_x);
+        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_collection, pc1.max_x);
         codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
         codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
 
-        codi::RealReverse x_2 = particle_mean_mass(q2, N2, pc1.min_x, pc1.max_x);
+        codi::RealReverse x_2 = particle_mean_mass(q2, N2, pc1.min_x_collection, pc1.max_x);
         codi::RealReverse d_2 = particle_diameter(x_2, pc1.a_geo, pc1.b_geo);
         codi::RealReverse v_2 = particle_velocity(x_2, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
 
@@ -1037,7 +1037,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     if(qg_prime > q_crit)
     {
         codi::RealReverse x_g = particle_mean_mass(qg_prime, Ng,
-            cc.graupel.min_x, cc.graupel.max_x);
+            cc.graupel.min_x_collection, cc.graupel.max_x);
         codi::RealReverse d_g = particle_diameter(x_g,
             cc.graupel.a_geo, cc.graupel.b_geo);
         codi::RealReverse v_g = particle_velocity(x_g,
@@ -1090,7 +1090,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     ////////////// graupel_hail_conv_wet_gamlook
     // conversion graupel to hail and hail collisions
     codi::RealReverse x_g = particle_mean_mass(qg_prime, Ng,
-            cc.graupel.min_x, cc.graupel.max_x);
+            cc.graupel.min_x_conversion, cc.graupel.max_x);
     codi::RealReverse d_g = particle_diameter(x_g,
         cc.graupel.a_geo, cc.graupel.b_geo);
     codi::RealReverse Ng_tmp = qg_prime/x_g;
@@ -1178,9 +1178,9 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         codi::RealReverse &rime_rate_qb,
         codi::RealReverse &rime_rate_nb)
     {
-        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x, pc1.max_x);
+        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
         codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
-        codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
+        codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_riming, cc.cloud.max_x);
         codi::RealReverse d_c = particle_diameter(x_c, cc.cloud.a_geo, cc.cloud.b_geo);
 
         codi::RealReverse const1 = const0 * pc1.ecoll_c;
@@ -1227,12 +1227,12 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         codi::RealReverse &rime_rate_qb,
         codi::RealReverse &rime_rate_nb)
     {
-        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x, pc1.max_x);
+        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
         codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
 
         if(qr_prime > q_crit && q1 > q_crit_r && d_1 > D_crit_r)
         {
-            codi::RealReverse x_r = particle_mean_mass(qr_prime, Nc, cc.rain.min_x, cc.rain.max_x);
+            codi::RealReverse x_r = particle_mean_mass(qr_prime, Nc, cc.rain.min_x_riming, cc.rain.max_x);
             codi::RealReverse d_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
 
             codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
@@ -1357,7 +1357,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         if(rime_rate_qc > 0.0)
         {
             codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni,
-                cc.ice.min_x, cc.ice.max_x);
+                cc.ice.min_x_riming, cc.ice.max_x);
             codi::RealReverse d_i = particle_diameter(x_i,
                 cc.ice.a_geo, cc.ice.b_geo);
             codi::RealReverse rime_q = min(rime_rate_qc, qc_prime);
@@ -1405,7 +1405,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 conv_q = min(qi_prime, conv_q);
                 codi::RealReverse qi_tmp = qi_prime+dt*res[qi_idx]/ref.qref;
                 x_i = particle_mean_mass(qi_tmp, Ni,
-                    cc.ice.min_x, cc.ice.max_x);
+                    cc.ice.min_x_conversion, cc.ice.max_x);
                 codi::RealReverse tmp = conv_q / max(x_i, x_conv);
                 codi::RealReverse conv_n = min(tmp, Ni);
 
@@ -1456,7 +1456,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 mult_n = C_mult * mult_1 * mult_2 * rime_qr;
-                codi::RealReverse tmp = mult_n*cc.ice.min_x_nuc;
+                codi::RealReverse tmp = mult_n*cc.ice.min_x_riming;
                 mult_q = min(rime_qr, tmp);
             }
 
@@ -1474,7 +1474,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 codi::RealReverse Nr_tmp = Nr*res[Nr_idx]*dt;
                 codi::RealReverse x_r = particle_mean_mass(
                     qr_tmp, Nr_tmp,
-                    cc.rain.min_x, cc.rain.max_x);
+                    cc.rain.min_x_riming, cc.rain.max_x);
                 // Ice
                 res[qi_idx] += rime_qi;
                 // Rain
@@ -1558,7 +1558,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x_nuc;
+                codi::RealReverse mult_q = mult_n * cc.ice.min_x_riming;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice N
@@ -1607,7 +1607,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x_nuc;
+                codi::RealReverse mult_q = mult_n * cc.ice.min_x_riming;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice N
@@ -1632,7 +1632,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         if(rime_rate_qc > 0.0)
         {
             codi::RealReverse x_s = particle_mean_mass(qs_prime, Ns,
-                cc.snow.min_x, cc.snow.max_x);
+                cc.snow.min_x_riming, cc.snow.max_x);
             codi::RealReverse d_s = particle_diameter(x_s,
                 cc.snow.a_geo, cc.snow.b_geo);
             codi::RealReverse rime_q = min(rime_rate_qc, qc_prime);
@@ -1666,7 +1666,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                mult_q = mult_n * cc.ice.min_x_nuc;
+                mult_q = mult_n * cc.ice.min_x_riming;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice N
@@ -1691,7 +1691,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 conv_q = min(qs_prime, conv_q);
                 codi::RealReverse qs_tmp = qs_prime+dt*res[qs_idx]/ref.qref;
                 x_s = particle_mean_mass(qs_tmp, Ns,
-                    cc.snow.min_x, cc.snow.max_x);
+                    cc.snow.min_x_riming, cc.snow.max_x);
                 codi::RealReverse tmp = conv_q / max(x_s, x_conv);
                 codi::RealReverse conv_n = min(tmp, Ns);
 
@@ -1750,7 +1750,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 mult_n = C_mult * mult_1 * mult_2 * rime_qr;
-                codi::RealReverse tmp = mult_n*cc.ice.min_x_nuc;
+                codi::RealReverse tmp = mult_n*cc.ice.min_x_riming;
                 mult_q = min(rime_qr, tmp);
             }
             if(T_prime >= tmelt)
@@ -1759,7 +1759,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 codi::RealReverse Nr_tmp = Nr*res[Nr_idx]*dt;
                 codi::RealReverse x_r = particle_mean_mass(
                     qr_tmp, Nr_tmp,
-                    cc.rain.min_x, cc.rain.max_x);
+                    cc.rain.min_x_riming, cc.rain.max_x);
 
                 // Snow
                 res[qs_idx] += rime_qs;
@@ -1814,9 +1814,9 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         particle_model_constants_t &pc1)
     {
         codi::RealReverse const1 = const0 * pc1.sc_coll_n;
-        codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
+        codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_riming, cc.cloud.max_x);
         codi::RealReverse d_c = particle_diameter(x_c, cc.cloud.a_geo, cc.cloud.b_geo);
-        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x, pc1.max_x);
+        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
         codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
 
         if(qc_prime > q_crit_c && q1 > pc1.q_crit_c
@@ -1870,7 +1870,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x_nuc;
+                codi::RealReverse mult_q = mult_n * cc.ice.min_x_riming;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice
@@ -1924,9 +1924,9 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         if(qr_prime > q_crit && q1 > q_crit)
         {
 
-            codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x, cc.rain.max_x);
+            codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_riming, cc.rain.max_x);
             codi::RealReverse d_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
-            codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x, pc1.max_x);
+            codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
             codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
 
             codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
@@ -1973,7 +1973,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x_nuc;
+                codi::RealReverse mult_q = mult_n * cc.ice.min_x_riming;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice
@@ -2071,7 +2071,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             }
         } else
         {
-            codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x, cc.rain.max_x);
+            codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_freezing, cc.rain.max_x);
             Nr_tmp = qr_prime/x_r;
             if(T_prime < T_f)
             {
@@ -2180,7 +2180,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     /////////// ice melting
     if(T_prime > tmelt && qi_prime > 0.0)
     {
-        codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x, cc.ice.max_x);
+        codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_melt, cc.ice.max_x);
         // Complete melting
         codi::RealReverse melt_q = qi_prime;
         codi::RealReverse melt_n = Ni;
@@ -2233,7 +2233,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     {
         codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
 
-        codi::RealReverse x_s = particle_mean_mass(qs_prime, Ns, cc.snow.min_x, cc.snow.max_x);
+        codi::RealReverse x_s = particle_mean_mass(qs_prime, Ns, cc.snow.min_x_melt, cc.snow.max_x);
         codi::RealReverse d_s = particle_diameter(x_s, cc.snow.a_geo, cc.snow.b_geo);
         codi::RealReverse v_s = particle_velocity(x_s, cc.snow.a_vel, cc.snow.b_vel) * cc.snow.rho_v;
 
@@ -2286,7 +2286,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     if(T_prime > tmelt && qg_prime > 0.0)
     {
         codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
-        codi::RealReverse x_g = particle_mean_mass(qg_prime, Ng, cc.graupel.min_x, cc.graupel.max_x);
+        codi::RealReverse x_g = particle_mean_mass(qg_prime, Ng, cc.graupel.min_x_melt, cc.graupel.max_x);
         codi::RealReverse d_g = particle_diameter(x_g, cc.graupel.a_geo, cc.graupel.b_geo);
         codi::RealReverse v_g = particle_velocity(x_g, cc.graupel.a_vel, cc.graupel.b_vel) * cc.graupel.rho_v;
 
@@ -2327,7 +2327,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     if(T_prime > tmelt && qh_prime > 0.0)
     {
         codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
-        codi::RealReverse x_h = particle_mean_mass(qh_prime, Nh, cc.hail.min_x, cc.hail.max_x);
+        codi::RealReverse x_h = particle_mean_mass(qh_prime, Nh, cc.hail.min_x_melt, cc.hail.max_x);
         codi::RealReverse d_h = particle_diameter(x_h, cc.hail.a_geo, cc.hail.b_geo);
         codi::RealReverse v_h = particle_velocity(x_h, cc.hail.a_vel, cc.hail.b_vel) * cc.hail.rho_v;
 
@@ -2382,7 +2382,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             codi::RealReverse g_d = 4.0*M_PI / (L_wd*L_wd
                 / (K_T * Rv * tmelt*tmelt*tmelt) + Rv*tmelt /(D_v * p_sat));
 
-            codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x, pc1.max_x);
+            codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_evap, pc1.max_x);
             codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
             codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
 
@@ -2438,7 +2438,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         codi::RealReverse k_a = 6.0 + 25 * pow(9.59, -1.7);
         codi::RealReverse x_s_i = 1.0/cc.cloud.max_x;
         codi::RealReverse x_c = particle_mean_mass(
-            qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
+            qc_prime, Nc, cc.cloud.min_x_conversion, cc.cloud.max_x);
         // Using Beheng 1994
         codi::RealReverse au = k_a * pow(x_c*1e3, 3.3) * pow(qc_prime*1e3, 1.4) * 1e3;
         au = min(qc_prime/cc.dt, au);
@@ -2479,7 +2479,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             const double k_1 = 6.0e2;
             const double k_2 = 0.68;
             codi::RealReverse x_c = particle_mean_mass(
-                qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
+                qc_prime, Nc, cc.cloud.min_x_conversion, cc.cloud.max_x);
             codi::RealReverse au = cloud_k_au * qc_prime*qc_prime
                                     * x_c*x_c * cc.cloud.rho_v;
             codi::RealReverse tau = min(max(1.0-qc_prime/
@@ -2513,7 +2513,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             codi::RealReverse ac = k_r * qc_prime * qr_prime * phi;
             ac = min(qc_prime, ac);
             codi::RealReverse x_c = particle_mean_mass(
-                qc_prime, Nc, cc.cloud.min_x, cc.cloud.max_x);
+                qc_prime, Nc, cc.cloud.min_x_conversion, cc.cloud.max_x);
             res[qr_idx] += ac;
             res[qc_idx] -= ac;
             res[Nc_idx] -= min(Nc, x_c);
@@ -2530,7 +2530,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     // Seifert and Beheng (2001)
     if(qr_prime > 0)
     {
-        codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x, cc.rain.max_x);
+        codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_collection, cc.rain.max_x);
         codi::RealReverse D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
         // Parameters based on Seifert (2008)
         codi::RealReverse sc = 4.33 * Nr * qr_prime * cc.rain.rho_v; // rhain%rho_v(i, k)
@@ -2552,7 +2552,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         // Equation (A2) of 10.1175/2008JAS2586.1
         codi::RealReverse g_d = 2*M_PI /
             ( (R_v*T_prime)/(D_v*p_sat) + (L_wd*L_wd)/(K_T*R_v*T_prime*T_prime) );
-        codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x, cc.rain.max_x);
+        codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_evap, cc.rain.max_x);
         codi::RealReverse D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
 
         codi::RealReverse mue;
@@ -2681,7 +2681,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
         if(q > q_crit)
         {
-            codi::RealReverse x = particle_mean_mass(q, N, pc.min_x, pc.max_x);
+            codi::RealReverse x = particle_mean_mass(q, N, pc.min_x_sedimentation, pc.max_x);
             codi::RealReverse lam = pow(pc.lambda*x, pc.b_vel);
             codi::RealReverse v_n = max(pc.alfa_n * lam, pc.vsedi_min);
             codi::RealReverse v_q = max(pc.alfa_q * lam, pc.vsedi_min);
@@ -2695,7 +2695,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         }
         sedi_icon_core(q, N, v_q_sedi, v_n_sedi, resQ, resN, resOut);
 
-        resN = max(min(N, q/pc.min_x_nuc), q/pc.max_x);
+        resN = max(min(N, q/pc.min_x_sedimentation), q/pc.max_x);
     };
 
     auto sedi_icon_sphere_lwf = [&](
@@ -2706,7 +2706,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
     if(qr_prime > q_crit)
     {
-        codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x, cc.rain.max_x);
+        codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_sedimentation, cc.rain.max_x);
         codi::RealReverse D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
         codi::RealReverse mue = (qc_prime >= q_crit)
             ? (cc.rain.nu+1.0)/cc.rain.b_geo - 1.0
