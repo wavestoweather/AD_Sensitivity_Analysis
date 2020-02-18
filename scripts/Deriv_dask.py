@@ -269,7 +269,7 @@ class Deriv_dask:
             # can be off and it is hard to see anything.
             min_y = df_tmp["Derivative Ratio"].min()
             max_y = df_tmp["Derivative Ratio"].max()
-            plt.ylim(min_y - min_y/10, max_y + max_y/10)
+            plt.ylim(min_y, max_y)
             # The same is true for the x-axis
             plt.xlim(x_ticks[0], x_ticks[-1])
             i = 0

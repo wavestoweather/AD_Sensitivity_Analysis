@@ -537,6 +537,9 @@ def load_parallel(f, suffix):
     """
     out_param = params_dict2[f.split(suffix)[1]]
     return (out_param, pd.read_csv(f, sep=",", index_col=False))
+    # return (out_param, pd.read_csv(f, sep=",", index_col=False,
+    #     dtype={"timestep": "double", "trajectory": "int64",
+    #            "MAP": "bool", "LONGITUDE": "double", "LATITUDE": "double"}))
 
 
 def load_mult_derivates_direc_dic(direc="", filt=True,
@@ -584,7 +587,7 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
     if suffix is None:
         example = file_list[0]
         i = 1
-        while "diff" in example:
+        while "diff" in example or "reference" in example:
             example = file_list[i]
             i += 1
         # The last 4 chars should be ".txt" now.

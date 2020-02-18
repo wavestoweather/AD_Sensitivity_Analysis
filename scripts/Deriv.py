@@ -86,6 +86,20 @@ class Deriv:
         self.n_timesteps = len(df.index)
         self.cluster_names = {}
 
+    def to_parquet(self, f_name):
+        import dask.dataframe as dd
+
+        tmp_df = None
+        for k in self.data:
+            if tmp_df is not None:
+                tmp_df = tmp_df.append(self.data[k], ignore_index=True)
+            else:
+                tmp_df = self.data[k]
+
+        append = os.path.isfile(f_name + ".parquet")
+
+        dd.from_pandas(tmp_df, chunksize=3000000).to_parquet(f_name + ".parquet", append=append)
+
     def delete_not_mapped(self):
         """
         Delete all entries that are not within a mapped region, where
@@ -119,33 +133,23 @@ class Deriv:
         """
         return self.n_timesteps
 
-    def add_param_values(self, header, values, key=None):
+    def add_param_values(self, df):
         """
-        Add to dataframe with key key another column header with the values.
+        Add to dataframe a column header with the values.
 
         Parameters
         ----------
-        header : string
-            The name of the new column
-        values : List
-            The values to add. Must have the same size as the dataframes.
-        key : string or list of strings
-            The key of the dataframe. If None is given, the procedure
-            is applied on all dataframes.
+        df : pandas.Dataframe
+            Dataframe with output parameters of simulation
+
         """
-        if len(values) != self.n_timesteps:
-            print("Cannot add column {}.".format(header))
-            print("Number of timesteps needed: {} But got {}".format(
-                self.n_timesteps, len(values)))
-            return
-        if isinstance(key, str):
-            self.data[key][header] = values
-        elif key is None:
-            for k in self.data:
-                self.data[k][header] = values
-        else:
-            for k in key:
-                self.data[k][header] = values
+        cols = []
+        for col in df:
+            if col in ["LONGITUDE", "LATITUDE", "MAP"]:
+                continue
+            cols.append(col)
+        print("Appending {}".format(cols))
+        self.data = self.data.merge(df[cols], how='right')
 
     @staticmethod
     def parallel_ratio(df, k):

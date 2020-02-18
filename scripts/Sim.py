@@ -153,7 +153,7 @@ class Sim:
         return self.data[out_param].tolist()
 
     def plot(self, out_params, trajectories=None, dots=False, mapped=True,
-             scatter=False, x_axis="timestep", **kwargs):
+             scatter=False, x_axis="timestep", percentile=None, **kwargs):
         """
         Plot results for an out_param of one or more trajectories.
         The x-axis is the timesteps or any other output parameter,
@@ -168,17 +168,27 @@ class Sim:
         dots : Bool
             Plot dots every 20 seconds ie the datapoints from the
             Cosmo or ICON simulation.
+            Is set to False if percentile is given.
         mapped : boolean
             If true: plot the region, where "MAP" is true, ie where the wcb
             criterion is fullfilled.
         scatter : boolean
             Plot a scatter plot or a line plot.
+            Is set to False if percentile is given.
         x_axis : string
             The column to use as x-axis. Can be either "timestep" or
             "out_param" or an output parameter.
+        percentile : int
+            If None: Plot different trajectories as distinct lines.
+            If value : Plot a mean trajectory and given percentile
+            (kexword "ci" from seaborn).
+            If percentile is given, dots and scatter is deactivated.
         kwargs : dict
             Keyword arguments are passed down to matplotlib.axes.Axes.plot().
         """
+        if percentile is not None:
+            dots = False
+            scatter = False
         def plot_helper(df, out_param, **kwargs):
             min_time = df[x_axis].unique().min()
             max_time = df[x_axis].unique().max()
@@ -189,13 +199,28 @@ class Sim:
             _, ax = plt.subplots()
 
             if len(df.trajectory.unique()) > 1:
-                ax = sns.lineplot(x=x_axis, y=out_param,
-                                data=df, hue="trajectory", ax=ax,
-                                palette=sns.color_palette("husl", len(df.trajectory.unique())),
-                                **kwargs)
+                if percentile is not None:
+                    ax = sns.lineplot(x=x_axis, y=out_param, ci=percentile,
+                                    data=df, ax=ax, err_style="band",
+                                    estimator="mean",
+                                    **kwargs)
+                elif scatter:
+                    ax = sns.scatterplot(x=x_axis, y=out_param,
+                                    data=df, hue="trajectory", ax=ax,
+                                    palette=sns.color_palette("husl", len(df.trajectory.unique())),
+                                    **kwargs)
+                else:
+                    ax = sns.lineplot(x=x_axis, y=out_param, ci=None,
+                                    data=df, hue="trajectory", ax=ax,
+                                    palette=sns.color_palette("husl", len(df.trajectory.unique())),
+                                    **kwargs)
             else:
-                ax = sns.lineplot(x=x_axis, y=out_param,
-                                data=df, ax=ax, **kwargs)
+                if scatter:
+                    ax = sns.scatterplot(x=x_axis, y=out_param,
+                                    data=df, ax=ax, **kwargs)
+                else:
+                    ax = sns.lineplot(x=x_axis, y=out_param, ci=None,
+                                    data=df, ax=ax, **kwargs)
                 ax.legend(df.trajectory.unique(), title="trajectory")
             # Plot dots every 20 seconds
             if dots:
