@@ -13,9 +13,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import cm
 
-from iris.analysis.cartography import rotate_pole
-from mpl_toolkits.basemap import Basemap
-from PIL import Image
 from pylab import rcParams
 import os
 
@@ -149,7 +146,8 @@ class Deriv:
                 continue
             cols.append(col)
         print("Appending {}".format(cols))
-        self.data = self.data.merge(df[cols], how='right')
+        for k in self.data:
+            self.data[k] = self.data[k].merge(df[cols], how='right')
 
     @staticmethod
     def parallel_ratio(df, k):

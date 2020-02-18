@@ -1,4 +1,4 @@
-from iris.analysis.cartography import rotate_pole
+# from iris.analysis.cartography import rotate_pole
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
@@ -580,7 +580,7 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
         if "diff" not in f:
             continue
         s = f.split("traj")
-        s = s[1].split("_")
+        s = s[-1].split("_")
         if int(s[0]) in trajectories:
             file_list2.append(f)
 
@@ -706,13 +706,14 @@ def rotate_df(df, pollon, pollat, lon="LONGITUDE", lat="LATITUDE"):
     lat : String
         "LATITUDE" for derivative dataframe, "lat" for netCDF dataframe.
     """
-    lat_v, lon_v = rotate_pole(
-                           np.asarray(df[lon].tolist()),
-                           np.asarray(df[lat].tolist()),
-                           pole_lon=pollon,
-                           pole_lat=pollat)
-    df[lon] = lon_v
-    df[lat] = lat_v
+    # lat_v, lon_v = rotate_pole(
+    #                        np.asarray(df[lon].tolist()),
+    #                        np.asarray(df[lat].tolist()),
+    #                        pole_lon=pollon,
+    #                        pole_lat=pollat)
+    # df[lon] = lon_v
+    # df[lat] = lat_v
+    print("Not available")
 
 
 def norm_deriv(df):

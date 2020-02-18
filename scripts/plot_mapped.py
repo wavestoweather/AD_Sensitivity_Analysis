@@ -1,6 +1,4 @@
 from argparse import ArgumentParser
-from iris.analysis.cartography import rotate_pole
-from mpl_toolkits.basemap import Basemap
 from PIL import Image
 
 import seaborn as sns

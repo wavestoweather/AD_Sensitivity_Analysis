@@ -13,11 +13,12 @@ Contents
 - **doc:** Documentation. Type `make html` to create a HTML documentation (recommended) and `make latexpdf` to create a pdf documentation with Latex.
 
 
-Python Prerequisites
+Python and Plotting Prerequisites
 ---------------------
 
 - [Iris](https://github.com/SciTools/iris) (Recommended to install via conda or from source)
 - [pandas](https://pandas.pydata.org/)
+- [DASK](https://dask.org/)
 - [progressbar2](https://pypi.org/project/progressbar2/)
 - [seaborn](https://seaborn.pydata.org/)
 - [matplotlib](https://matplotlib.org/)
@@ -25,6 +26,10 @@ Python Prerequisites
 - [matplotlib toolkits](https://matplotlib.org/1.4.3/mpl_toolkits/index.html)
 - [netCDF4](https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 - [pillow, formerly known as PIL](https://pillow.readthedocs.io/en/stable/)
+- [xarray, formerly known as xray](http://xarray.pydata.org/en/stable/)
+- [GEOS](https://github.com/libgeos/geos)
+- [cartopy](https://scitools.org.uk/cartopy/docs/latest/)
+- [scikit-learn](https://scikit-learn.org/stable/)
 
 Docs Prerequisites
 -------------------------

@@ -88,7 +88,7 @@ def parse_word(word):
                 "w": "Ascend w",
                 "MAP": "Flag for WCB-criterion",
                 "Derivatives": "Derivatives",
-                "timestep": "Timestep"
+                "timestep": "Timestep",
                 "dmin_x_nuc_hetero": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{hetero}}",
                 "dmin_x_nuc_homo": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{homo}}",
                 "dmin_x_melt": r"$\partial x_{\mathrm{min},\mathrm{melt}}",

@@ -15,9 +15,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import cm
 
-from iris.analysis.cartography import rotate_pole
-from mpl_toolkits.basemap import Basemap
-from PIL import Image
 from pylab import rcParams
 import os
 
@@ -96,7 +93,7 @@ class Sim:
             if "diff" in f:
                 continue
             s = f.split("traj")
-            s = s[1].split("_")
+            s = s[-1].split("_")
             if trajectories is None:
                 if "reference" in f:
                     ref_list[int(s[0])] = f
