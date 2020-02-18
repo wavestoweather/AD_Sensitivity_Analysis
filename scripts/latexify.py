@@ -88,7 +88,18 @@ def parse_word(word):
                 "w": "Ascend w",
                 "MAP": "Flag for WCB-criterion",
                 "Derivatives": "Derivatives",
-                "timestep": "Timestep"}
+                "timestep": "Timestep"
+                "dmin_x_nuc_hetero": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{hetero}}",
+                "dmin_x_nuc_homo": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{homo}}",
+                "dmin_x_melt": r"$\partial x_{\mathrm{min},\mathrm{melt}}",
+                "dmin_x_evap": r"$\partial x_{\mathrm{min},\mathrm{evap}}",
+                "dmin_x_freezing": r"$\partial x_{\mathrm{min},\mathrm{freezing}}",
+                "dmin_x_depo": r"$\partial x_{\mathrm{min},\mathrm{depo}}",
+                "dmin_x_collision": r"$\partial x_{\mathrm{min},\mathrm{collision}}",
+                "dmin_x_collection": r"$\partial x_{\mathrm{min},\mathrm{collection}}",
+                "dmin_x_conversion": r"$\partial x_{\mathrm{min},\mathrm{conversion}}",
+                "dmin_x_sedimentation": r"$\partial x_{\mathrm{min},\mathrm{sedimentation}}",
+                "dmin_x_riming": r"$\partial x_{\mathrm{min},\mathrm{riming}}"}
     maps = mappings.keys()
     for w in maps:
         if word == w:
