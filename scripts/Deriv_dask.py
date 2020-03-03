@@ -825,7 +825,7 @@ class Deriv_dask:
     def plot_two_ds(self, in_params, out_params, x_axis="timestep", mapped=True,
             trajectories=None, scatter=False, n_plots=None, percentile=None,
             frac=None, min_x=None, max_x=None, nth=None,
-            scatter_deriv=False, line_deriv=False, prefix=None, **kwargs):
+            scatter_deriv=False, line_deriv=False, prefix=None, c=False,**kwargs):
             """
             Plot two plots in two rows. At the top: Output parameter.
             At the bottom: Derivative with respect to that output parameter.
@@ -931,18 +931,25 @@ class Deriv_dask:
                         sorted_tuples.append((in_p, value))
                 sorted_tuples.sort(key=lambda tup: tup[1])
 
-                def plot_helper(df, in_params, **kwargs):
+                def plot_helper(df, in_params, prefix, **kwargs):
                     # following https://holoviz.org/tutorial/Composing_Plots.html
                     t = timer()
                     df_tmp = df[in_params+[x_axis]]
                     df_tmp = df_tmp.melt(x_axis, var_name="Derivatives",
                                         value_name="Derivative Ratio")
                     df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
-
-                    param_plot = df.hvplot.scatter(
+                    if c:
+                        param_plot = df.hvplot.scatter(
+                            x=x_axis,
+                            y=out_par,
+                            c="trajectory",
+                            title="Values of of {}".format(latexify.parse_word(out_par)),
+                            label=None
+                            )
+                    else:
+                        param_plot = df.hvplot.scatter(
                         x=x_axis,
                         y=out_par,
-                        c="trajectory",
                         title="Values of of {}".format(latexify.parse_word(out_par)),
                         label=None
                         )
@@ -970,7 +977,7 @@ class Deriv_dask:
                         opts.Layout(fig_size=400)
                     ).cols(1)
                     both_plots = both_plots.opts(sublabel_format="", tight=True)
-                    param_opts = param_plot.opts(xaxis="bare", alpha=1.0)
+                    param_opts = param_plot.opts(xaxis="bare")#, alpha=1.0)
 
                     renderer = hv.Store.renderers['matplotlib'].instance(
                         fig='png', dpi=300)
@@ -1003,7 +1010,7 @@ class Deriv_dask:
                         and np.abs(v/sorted_tuples[-1][1]) < 10):
                         p, v = sorted_tuples.pop()
                         in_params_2.append(p)
-                    plot_helper(df_tmp_out, in_params=in_params_2, **kwargs)
+                    plot_helper(df_tmp_out, in_params=in_params_2, prefix=prefix, **kwargs)
                     i += 1
 
 
