@@ -1,4 +1,4 @@
-from iris.analysis.cartography import rotate_pole
+# from iris.analysis.cartography import rotate_pole
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
@@ -234,9 +234,7 @@ def transform_df2(df, net_df, n_traj=903, traj_timestep=20):
     return pd.DataFrame.from_dict(new_dic)
 
 
-def load_mult_derivates_direc_dic(direc="", filt=True,
-                                  EPSILON=0.0, trajectories=[1],
-                                  suffix="20160922_00", parquet=True):
+def load_mult_derivates_direc_dic(direc="", parquet=True, columns=None):
     """
     Create a dictionary with out parameters as keys and dictionaries with columns:
     trajectory, timestep, MAP, LATITUDE, LONGITUDE
@@ -249,17 +247,10 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
     ----------
     direc : string
         A path to a directory wit a list of files to read.
-    filt : bool
-        Filter the data with values smaller than EPSILON if true.
-    EPSILON : float
-        If filt is true, filter values smaller than EPSILON out.
-    trajectories : list of int
-        A list of trajectories to read in.
-    suffix : string
-        The suffix of the filenames before '_diff_xx.txt'. If none is
-        given, the method tries to automatically detect it.
     parquet : boolean
         If true: Load a series of preprocessed parquet files, else load *.txt files.
+    columns : list of strings
+        Specify the columns to load.
 
     Returns
     -------
@@ -267,7 +258,7 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
         Pandas dataframe as described above.
     """
     if parquet:
-        df = pd.read_parquet(direc + "/*.parquet")
+        df = pd.read_parquet(direc + "/", columns=columns)
     else:
         df = pd.read_csv(direc + "/*diff*", assume_missing=True) # , blocksize="8GB"
     return df
@@ -290,13 +281,14 @@ def rotate_df(df, pollon, pollat, lon="LONGITUDE", lat="LATITUDE"):
     lat : String
         "LATITUDE" for derivative dataframe, "lat" for netCDF dataframe.
     """
-    lat_v, lon_v = rotate_pole(
-                           np.asarray(df[lon].tolist()),
-                           np.asarray(df[lat].tolist()),
-                           pole_lon=pollon,
-                           pole_lat=pollat)
-    df[lon] = lon_v
-    df[lat] = lat_v
+    # lat_v, lon_v = rotate_pole(
+    #                        np.asarray(df[lon].tolist()),
+    #                        np.asarray(df[lat].tolist()),
+    #                        pole_lon=pollon,
+    #                        pole_lat=pollat)
+    # df[lon] = lon_v
+    # df[lat] = lat_v
+    print("Not implemented")
 
 
 def norm_deriv(df):
