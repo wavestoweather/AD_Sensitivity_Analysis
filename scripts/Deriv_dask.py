@@ -977,7 +977,10 @@ class Deriv_dask:
                         opts.Layout(fig_size=400)
                     ).cols(1)
                     both_plots = both_plots.opts(sublabel_format="", tight=True)
-                    param_opts = param_plot.opts(xaxis="bare")#, alpha=1.0)
+                    if c:
+                        param_opts = param_plot.opts(xaxis="bare", alpha=1.0)
+                    else:
+                        param_opts = param_plot.opts(xaxis="bare")
 
                     renderer = hv.Store.renderers['matplotlib'].instance(
                         fig='png', dpi=300)
