@@ -15,7 +15,7 @@ module load lang/Python/3.7.4-GCCcore-8.3.0
 source ../plot_env/bin/activate
 
 INPUT_FILENAME="/lustre/project/m2_zdvresearch/mahieron/wcb_traj_flag_deriv_mult_min2/wcb_tra_ratio_concat"
-
+OUTPUT_PATH="/lustre/project/m2_zdvresearch/mahieron/wcb_traj_flag_deriv_mult_min2/pics/"
 NODE_TASKS="32"
 my_srun="srun -n1 -N1 --exclusive --cpu-bind=cores"
 my_parallel="parallel -j $NODE_TASKS --no-notice --delay .2"
@@ -23,4 +23,4 @@ KEYS=(Misc Rain Cloud Graupel Hail Ice Snow)
 OUT_PARAMS=(p T w S qc qr qv Nc Nr Nv qi Ni vi qs Ns qg Ng qh Nh qiout qsout qrout qgout qhout latent_heat latent_cool Niout Nsout Nrout Ngout Nhout)
 
 # There are 217 combinations
-$my_parallel "$my_srun python plot_mogon.py ${INPUT_FILENAME} {1} {2}" ::: ${KEYS[@]} ::: ${OUT_PARAMS[@]}
+$my_parallel "$my_srun python plot_mogon.py ${INPUT_FILENAME} {1} {2} ${OUTPUT_PATH}" ::: ${KEYS[@]} ::: ${OUT_PARAMS[@]}

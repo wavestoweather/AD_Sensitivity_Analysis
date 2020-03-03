@@ -825,7 +825,8 @@ class Deriv_dask:
     def plot_two_ds(self, in_params, out_params, x_axis="timestep", mapped=True,
             trajectories=None, scatter=False, n_plots=None, percentile=None,
             frac=None, min_x=None, max_x=None, nth=None,
-            scatter_deriv=False, line_deriv=False, prefix=None, c=False,**kwargs):
+            scatter_deriv=False, line_deriv=False, prefix=None, c=False,
+            plot_path="pics/", **kwargs):
             """
             Plot two plots in two rows. At the top: Output parameter.
             At the bottom: Derivative with respect to that output parameter.
@@ -991,11 +992,11 @@ class Deriv_dask:
                         prefix = "plt_1line_"
                         if scatter:
                             prefix = "plt_1scatter_"
-                    save = ("pics/" + prefix + x_axis + "_" + out_par
+                    save = (plot_path + prefix + x_axis + "_" + out_par
                             + "_" + "{:03d}".format(i))
                     while os.path.isfile(save + ".png"):
                         i = i+1
-                        save = ("pics/" + prefix + x_axis + "_" + out_par
+                        save = (plot_path + prefix + x_axis + "_" + out_par
                                 + "_" + "{:03d}".format(i))
 
                     print("Saving to " + save + ".png")
@@ -1018,7 +1019,8 @@ class Deriv_dask:
 
 
     def plot_histo(self, in_params, out_params, x_axis="timestep",
-            trajectories=None, hex=True, logz=True, prefix=None, **kwargs):
+            trajectories=None, hex=True, logz=True, prefix=None,
+            plot_path="pics/", **kwargs):
             """
             Plot two plots in two rows. At the top: Output parameter.
             At the bottom: Derivative with respect to that output parameter.
@@ -1137,11 +1139,11 @@ class Deriv_dask:
                         prefix = "hex_"
                         if hex:
                             prefix = "hex_"
-                    save = ("pics/" + prefix + x_axis + "_" + out_par
+                    save = (plot_path + prefix + x_axis + "_" + out_par
                             + "_" + "{:03d}".format(i))
                     while os.path.isfile(save + ".png"):
                         i = i+1
-                        save = ("pics/" + prefix + x_axis + "_" + out_par
+                        save = (plot_path + prefix + x_axis + "_" + out_par
                                 + "_" + "{:03d}".format(i))
 
                     print("Saving to " + save + ".png")

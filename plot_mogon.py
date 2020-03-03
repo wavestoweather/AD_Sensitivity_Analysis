@@ -105,6 +105,7 @@ in_params_dic = {"Misc":
 direc_path = sys.argv[1]
 key =  sys.argv[2]
 out_params = [sys.argv[3]]
+out_path = sys.argv[4]
 
 print("Plotting for {} with input ".format(key, sys.argv[3]))
 in_params = in_params_dic[key]
@@ -135,6 +136,7 @@ data.plot_two_ds(
     percentile=None,
     line_deriv=True,
     prefix=key,
+    plot_path=out_path
     **kwargs
 )
 t2 = timer()
