@@ -30,6 +30,9 @@ Python and Plotting Prerequisites
 - [GEOS](https://github.com/libgeos/geos)
 - [cartopy](https://scitools.org.uk/cartopy/docs/latest/)
 - [scikit-learn](https://scikit-learn.org/stable/)
+- [datashader](https://datashader.org/index.html)
+- [holoviews](http://holoviews.org/)
+- [hvplot](https://hvplot.holoviz.org/)
 
 Docs Prerequisites
 -------------------------
