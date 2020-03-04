@@ -19,6 +19,7 @@ Python and Plotting Prerequisites
 - [Iris](https://github.com/SciTools/iris) (Recommended to install via conda or from source)
 - [pandas](https://pandas.pydata.org/)
 - [DASK](https://dask.org/)
+- [dask_ml](https://dask-ml.readthedocs.io/en/latest/)
 - [progressbar2](https://pypi.org/project/progressbar2/)
 - [seaborn](https://seaborn.pydata.org/)
 - [matplotlib](https://matplotlib.org/)
