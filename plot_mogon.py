@@ -136,7 +136,7 @@ data.plot_two_ds(
     percentile=None,
     line_deriv=True,
     prefix=key,
-    plot_path=out_path
+    plot_path=out_path,
     **kwargs
 )
 t2 = timer()
