@@ -315,7 +315,7 @@ class Deriv_dask:
         kind : String
             Can bei either of "swarm", "violin" (both recommended, but swarm
             may take long for many datapoints) or
-            “point”, “bar”, “strip”, “box”, or “boxen”. Is passed
+            "point", "bar", "strip", "box", or "boxen". Is passed
             to seaborn.catplot(..).
         x_label : String
             This will be plotted on the x-axis.
