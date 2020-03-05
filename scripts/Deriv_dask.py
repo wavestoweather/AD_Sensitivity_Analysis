@@ -915,6 +915,7 @@ class Deriv_dask:
             from holoviews import opts
             import holoviews as hv
             from timeit import default_timer as timer
+            from holoviews.operation import histogram as hv_histo
             hv.extension('matplotlib')
             # hv.extension('bokeh')
 
@@ -972,10 +973,12 @@ class Deriv_dask:
                         title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
                         label=None
                         )
-                    if hist:
-                        layout = param_hist_plot + deriv_plot
-                    else:
-                        layout = param_plot + deriv_plot
+                    print(deriv_plot)
+                    # if hist:
+                    #     # deriv_hist_plot = deriv_plot.hist(dimension=["Derivative Ratio"], bins=bins)
+                    #     layout = param_hist_plot + deriv_hist_plot
+                    # else:
+                    layout = param_plot + deriv_plot
 
                     both_plots = layout.opts(
                         opts.Scatter(aspect=3.2,
