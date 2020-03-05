@@ -824,8 +824,8 @@ class Deriv_dask:
 
     def plot_two_ds(self, in_params, out_params, x_axis="timestep", mapped=True,
             trajectories=None, scatter=False, n_plots=None, percentile=None,
-            frac=None, min_x=None, max_x=None, nth=None,
-            scatter_deriv=False, line_deriv=False, prefix=None, c=False,
+            frac=None, min_x=None, max_x=None, nth=None, hist=False,
+            scatter_deriv=False, line_deriv=False, prefix=None, c=False, bins=50,
             plot_path="pics/", **kwargs):
             """
             Plot two plots in two rows. At the top: Output parameter.
@@ -939,7 +939,17 @@ class Deriv_dask:
                     df_tmp = df_tmp.melt(x_axis, var_name="Derivatives",
                                         value_name="Derivative Ratio")
                     df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
-                    if c:
+                    if hist:
+                        df_group = df[[x_axis, out_par, "trajectory"]]
+                        param_plot = df_group.hvplot.scatter(
+                            x=x_axis,
+                            y=out_par,
+                            title="Values of of {}".format(latexify.parse_word(out_par)),
+                            label=None
+                            )
+                        param_hist_plot = param_plot.hist(dimension=[x_axis, out_par], bins=bins)
+
+                    elif c:
                         param_plot = df.hvplot.scatter(
                             x=x_axis,
                             y=out_par,
@@ -962,8 +972,10 @@ class Deriv_dask:
                         title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
                         label=None
                         )
-
-                    layout = param_plot + deriv_plot
+                    if hist:
+                        layout = param_hist_plot + deriv_plot
+                    else:
+                        layout = param_plot + deriv_plot
 
                     both_plots = layout.opts(
                         opts.Scatter(aspect=3.2,
@@ -978,7 +990,9 @@ class Deriv_dask:
                         opts.Layout(fig_size=400)
                     ).cols(1)
                     both_plots = both_plots.opts(sublabel_format="", tight=True)
-                    if c:
+                    if hist:
+                        param_opts = param_plot.opts(xaxis="bare", alpha=0.1)
+                    elif c:
                         param_opts = param_plot.opts(xaxis="bare", alpha=1.0)
                     else:
                         param_opts = param_plot.opts(xaxis="bare")
@@ -1158,5 +1172,6 @@ class Deriv_dask:
                         p, v = sorted_tuples.pop()
                         in_params_2.append(p)
                     plot_helper(df_tmp_out, in_params=in_params_2, **kwargs)
+
 
 ## Idea: https://www.holoviews.org/user_guide/Linking_Plots.html
