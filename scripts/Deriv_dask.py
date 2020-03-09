@@ -103,10 +103,7 @@ class Deriv_dask:
         mapped usually refers to timesteps where the WCB-criterion is
         satisfied.
         """
-        for key in self.data:
-            self.data[key] = self.data[key][self.data[key]["MAP"] == True]
-        df = list(self.data.values())[0].compute()
-        self.n_timesteps = len(df.index)
+        self.data = self.data[self.data["MAP"] == True]
 
     def get_out_params(self):
         """
@@ -973,12 +970,12 @@ class Deriv_dask:
                         title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
                         label=None
                         )
-                    print(deriv_plot)
-                    # if hist:
+                    # print(deriv_plot)
+                    if hist:
                     #     # deriv_hist_plot = deriv_plot.hist(dimension=["Derivative Ratio"], bins=bins)
-                    #     layout = param_hist_plot + deriv_hist_plot
-                    # else:
-                    layout = param_plot + deriv_plot
+                        layout = param_hist_plot + deriv_plot
+                    else:
+                        layout = param_plot + deriv_plot
 
                     both_plots = layout.opts(
                         opts.Scatter(aspect=3.2,
@@ -988,7 +985,7 @@ class Deriv_dask:
                             fontsize=self.font_dic,
                             show_grid=True,
                             show_legend=True,
-                            fig_latex=True,
+                            fig_latex=False,
                             **kwargs),
                         opts.Layout(fig_size=400)
                     ).cols(1)

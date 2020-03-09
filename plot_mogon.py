@@ -111,7 +111,7 @@ print("Plotting for {} with input ".format(key, sys.argv[3]))
 in_params = in_params_dic[key]
 
 columns = ["timestep", "Output Parameter", "trajectory"] + in_params + out_params
-if "p" not in out_params:
+if "p" not in columns:
     columns += ["p"]
 
 t = timer()
@@ -137,6 +137,7 @@ data.plot_two_ds(
     line_deriv=True,
     prefix=key,
     plot_path=out_path,
+    hist=True,
     **kwargs
 )
 t2 = timer()

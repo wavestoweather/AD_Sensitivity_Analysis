@@ -12,7 +12,7 @@ def set_size(beamer=True):
     """
     if beamer:
         mpl.rcParams.update({
-            "text.usetex": True,
+            "text.usetex": False,
             "font.family": "serif",
             "axes.labelsize": 20,
             "font.size": 20,
@@ -22,7 +22,7 @@ def set_size(beamer=True):
         })
     else:
         mpl.rcParams.update({
-            "text.usetex": True,
+            "text.usetex": False,
             "font.family": "serif",
             "axes.labelsize": 10,
             "font.size": 10,
