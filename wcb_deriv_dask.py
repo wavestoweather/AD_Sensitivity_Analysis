@@ -7,13 +7,13 @@ import sys
 
 rcParams['figure.figsize'] = (16,10)
 latexify.set_size(beamer=True)
-kwargs = {"alpha": 0.4}
+kwargs = {"alpha": 0.3}
 trajectories = None # [0, 1, 2, 3, 4, 5]
 # out_params = ["qi", "qs", "qg", "qh", "qv", "qc", "qr", "p", "T", "S"]
 # in_params = None
 # S variant
 out_params = ["S", "qi", "qs", "qg", "qh", "qv", "qc", "qr", "p"]
-out_params = ["S", "p"]
+out_params = ["qc", "S", "p"]
 in_params_dic = {"Misc":
             ["da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma",
             "dbeta_c", "dbeta_r", "ddelta1", "ddelta2", "dzeta",
@@ -98,7 +98,7 @@ in_params_dic = {"Misc":
             "dsnow_c_s", "dsnow_a_f", "dsnow_b_f", "dsnow_alfa_n",
             "dsnow_alfa_q", "dsnow_lambda", "dsnow_vsedi_min",
             "dsnow_vsedi_max"]}
-for key in in_params_dic.keys():
+for key in ["Misc"]:
     print("Plotting for {}".format(key))
     in_params = in_params_dic[key]
 # in_params = ["dcloud_min_x_act",
@@ -242,9 +242,26 @@ for key in in_params_dic.keys():
     # t2 = timer()
     # print("Plot two done in {}s\n".format(t2-t))
     # ################
+    # t = timer()
+    # # # Works so far but not interesting
+    # data.data = data.data.loc[data.data["p"] <= 34100]
+    # data.data = data.data.loc[data.data["p"] >= 34075]
+    # data.plot_andrew(
+    #     group="Output Parameter",
+    #     out_params=out_params,
+    #     params=in_params + out_params,
+    #     trajectories=None,
+    #     prefix=key,
+    #     sort=False,
+    #     plot_path="pics/andrew_"
+    # )
+    # t2 = timer()
+    # print("Plot Andrew done in {}s\n".format(t2-t))
+
+
     t = timer()
     # # Works so far
-
+    # Recommended
     data.plot_two_ds(
         in_params=in_params,
         out_params=out_params,
@@ -253,16 +270,42 @@ for key in in_params_dic.keys():
         trajectories=trajectories,
         scatter=False,
         frac=None,
-        percentile=None,
-        # min_x=20000,
-        # max_x=40000,
-        # nth=10000,
+        percentile=[25, 50, 75], # 25, 75 is interquantile range.
         line_deriv=True,
-        prefix=key,
+        prefix=key + "_perc_",
+        hist=False,
+        errorband=False,
+        # min_x=34751.9,
+        # max_x=34752.1,
+        plot_path="pics/two_",
         **kwargs
     )
     t2 = timer()
     print("Plot two (p) done in {}s\n".format(t2-t))
+
+
+    # t = timer()
+    # Not recommended
+    # data.plot_two_ds(
+    #     in_params=in_params,
+    #     out_params=out_params,
+    #     x_axis="p",
+    #     mapped=False,
+    #     trajectories=trajectories,
+    #     scatter=False,
+    #     frac=None,
+    #     percentile=None,
+    #     line_deriv=True,
+    #     prefix=key + "_err_",
+    #     hist=False,
+    #     errorband=True,
+    #     min_x=34750,
+    #     max_x=34753,
+    #     plot_path="pics/two_",
+    #     **kwargs
+    # )
+    # t2 = timer()
+    # print("Plot two (p) done in {}s\n".format(t2-t))
 
     # t = timer()
     # # Works so far

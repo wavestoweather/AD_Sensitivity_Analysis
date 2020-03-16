@@ -64,8 +64,9 @@ class Deriv_dask:
     cluster_names = {}
     threads = 0
     font_dic = {}
+    backend = "matplotlib"
 
-    def __init__(self, direc, parquet=True, columns=None):
+    def __init__(self, direc, parquet=True, columns=None, backend="matplotlib"):
         """
         Init class by loading the data from the given path.
 
@@ -77,8 +78,9 @@ class Deriv_dask:
             If true: Load a series of preprocessed parquet files,
             else load *.txt files.
         columns : list of strings
-        Specify the columns to load.
-
+            Specify the columns to load.
+        backend : String
+            Either matplotlib or bokeh
         """
         self.data = dask_loader.load_mult_derivates_direc_dic(
             direc, parquet, columns
@@ -93,6 +95,7 @@ class Deriv_dask:
             "yticks": 16,
             "legend": 16
         }
+        self.backend = backend
 
     def to_parquet(self, f_name):
         pd.to_parquet(self.data, f_name + ".parquet")
@@ -822,8 +825,8 @@ class Deriv_dask:
     def plot_two_ds(self, in_params, out_params, x_axis="timestep", mapped=True,
             trajectories=None, scatter=False, n_plots=None, percentile=None,
             frac=None, min_x=None, max_x=None, nth=None, hist=False,
-            scatter_deriv=False, line_deriv=False, prefix=None, c=False, bins=50,
-            plot_path="pics/", **kwargs):
+            scatter_deriv=False, line_deriv=False, prefix=None, c=False,
+            errorband=False, bins=50, plot_path="pics/", **kwargs):
             """
             Plot two plots in two rows. At the top: Output parameter.
             At the bottom: Derivative with respect to that output parameter.
@@ -835,7 +838,7 @@ class Deriv_dask:
             ----------
             in_params : list of string
                 Plot the derivatives with respect to those in this list.
-            out_param : list of string
+            out_params : list of string
                 List of keys to plot the derivatives for.
             x_axis : string
                 The column to use as x-axis. Can be either "timestep" or
@@ -851,11 +854,11 @@ class Deriv_dask:
             n_plots : int
                 Plot only that many plots. If None is given, plot every possible
                 plot.
-            percentile : int
-                If None: Plot different trajectories as distinct lines.
-                If value : Plot a mean trajectory and given percentile
-                (kexword "ci" from seaborn).
-                If percentile is given, dots and scatter is deactivated.
+            percentile : list of int
+                Plot the given percentiles along with the spread if
+                errorband is not given. Not implemented yet
+            errorband : Bool
+                Plot an errorband (spread) using the standard deviation and min/max values.
             frac : float
                 Sample a given fraction of rows. Deactivates "nth".
             nth : int
@@ -909,11 +912,19 @@ class Deriv_dask:
 
             import hvplot.dask # adds hvplot method to dask objects
             import hvplot.pandas
+            import hvplot
             from holoviews import opts
             import holoviews as hv
             from timeit import default_timer as timer
             from holoviews.operation import histogram as hv_histo
-            hv.extension('matplotlib')
+            import pandas
+            # Hotfix
+            # matplotlib.rcParams['agg.path.chunksize'] = 9e16
+
+            # matplotlib.rcParams['agg.path.chunksize'] = 0
+            # matplotlib.rcParams.update( matplotlib.rc_params() )
+
+            hv.extension(self.backend)
             # hv.extension('bokeh')
 
             for out_par in out_params:
@@ -937,18 +948,140 @@ class Deriv_dask:
                     df_tmp = df_tmp.melt(x_axis, var_name="Derivatives",
                                         value_name="Derivative Ratio")
                     df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
-                    if hist:
-                        df_group = df[[x_axis, out_par, "trajectory"]]
-                        param_plot = df_group.hvplot.scatter(
-                            x=x_axis,
-                            y=out_par,
-                            title="Values of of {}".format(latexify.parse_word(out_par)),
-                            label=None
-                            )
-                        param_hist_plot = param_plot.hist(dimension=[x_axis, out_par], bins=bins)
 
+                    if percentile is not None:
+                        # print("Select values.")
+                        if out_par == x_axis:
+                            df_group = df[[x_axis, "trajectory"]]
+                        else:
+                            df_group = df[[x_axis, out_par, "trajectory"]]
+                        x_values = np.sort(df_group[x_axis].unique())
+                        # print("Selecting done.")
+                        percentiles = []
+                        min_vals = []
+                        max_vals = []
+                        # print("Getting percentiles")
+                        for val in x_values:
+                            df_tmp2 = df_group.loc[df_group[x_axis] == val]
+                            min_vals.append(df_tmp2[out_par].min())
+                            max_vals.append(df_tmp2[out_par].max())
+
+                            # percentiles.append( df_tmp2.array.percentile() )
+
+                            percentiles.append(np.percentile(
+                                df_tmp2[out_par], percentile, axis=0))
+                        # print("Getting percentiles done")
+                        pandas_df = {
+                            x_axis: x_values,
+                            "Min": min_vals,
+                            "Max": max_vals}
+                        percentiles = np.transpose(percentiles)
+                        p_list = []
+                        for i, perc in enumerate(percentile):
+                            pandas_df["{}. Percentile".format(perc)] = percentiles[i]
+                            p_list.append("{}. Percentile".format(perc))
+
+                        # print("Percentiles shape: {}".format(np.shape(percentiles)))
+                        # print("Plot percentiles.")
+                        # for key in pandas_df:
+                        #     print("{}: {}".format(key, len(pandas_df[key])))
+                        pandas_df = pandas.DataFrame(pandas_df)
+                        # perc_plot = pandas_df.hvplot(x=x_axis, y=p_list,
+                        #     value_label=latexify.parse_word(out_par))
+                        # print("Plot area.")
+                        # param_plot = perc_plot.hvplot.area(
+                        #     x=x_axis, y="Min", y2="Max", alpha=0.2)
+                        # print("Plots created")
+                        print(pandas_df.describe())
+
+                        df_min_max = df_group.groupby([x_axis, "trajectory"])[out_par].mean().groupby(x_axis).agg([np.min, np.max])
+                        # print(df_min_max.describe())
+                        # print(p_list)
+                        # print(pandas_df.head(100))
+                        param_plot = (
+                            df_min_max.hvplot.area(
+                                x=x_axis,
+                                y="amin",
+                                y2="amax",
+                                alpha=0.5,
+                                value_label=latexify.parse_word(out_par),
+                                title="Values of of {}".format(latexify.parse_word(out_par)),
+                                label="Spread",
+                                color="grey")
+                            * pandas_df.hvplot.line(
+                                x=x_axis,
+                                y=p_list,
+                                value_label=latexify.parse_word(out_par),
+                                **kwargs)
+                        )
+
+                        # df_tmp2 = df_group.melt()
+                        # percentiles = df.array.percentile(df_group[out_par], percentile, axis=)
+                        # for perc in percentile:
+                        #     df_group["{}.Percentile".format(perc)] = (
+                        #         df.array.percentile(df_group[out_par], perc))
+
+
+                        # param_plot = df_group.hvplot.scatter(
+                        #     x=x_axis,
+                        #     y=out_par,
+                        #     title="Values of of {}".format(latexify.parse_word(out_par)),
+                        #     label=None
+                        #     )
+                    elif errorband:
+                        # print("Current limit {}".format(matplotlib.rcParams['agg.path.chunksize']))
+                        df_group = df[[x_axis, out_par, "trajectory"]]
+                        df_min_max = df_group.groupby([x_axis, "trajectory"])[out_par].mean().groupby(x_axis).agg([np.min, np.max])
+                        df_std = df_group.groupby([x_axis, "trajectory"])[out_par].mean().groupby(x_axis).agg([lambda x: -1*np.std(x)+np.mean(x), lambda x: np.std(x)+np.mean(x)])
+                        df_mean = df_group.groupby(x_axis)[out_par].mean()
+                        # print(df_min_max.describe())
+                        # print(df_std.describe())
+                        # print(df_mean.describe())
+                        param_plot = (
+                            df_min_max.hvplot.area(
+                                x=x_axis,
+                                y="amin",
+                                y2="amax",
+                                alpha=0.5,
+                                value_label=latexify.parse_word(out_par),
+                                label="Spread")
+                                # color="grey")
+                            * df_mean.hvplot()
+                            * df_std.hvplot.area(
+                                x=x_axis,
+                                y="<lambda_0>",
+                                y2="<lambda_1>",
+                                alpha=0.3,
+                                value_label=latexify.parse_word(out_par),
+                                label="sd")
+                                # color="grey")
+                        )
+                        # Alternative with Spread? (maybe faster)
+                        # param_plot = (
+                        #     df_min_max.hvplot.area(
+                        #         x=x_axis,
+                        #         y="amin",
+                        #         y2="amax",
+                        #         alpha=0.3,
+                        #         value_label=latexify.parse_word(out_par),
+                        #         label="Spread")
+                        #         # color="blue")
+                        #     * df_mean.hvplot()
+                        #     * df_mean.hvplot.Spread(
+                        #         x=x_axis,
+                        #         y=out_par,
+                        #         err=,
+                        #         alpha=0.2,
+                        #         value_label=latexify.parse_word(out_par),
+                        #         label="sd")
+                        #         # color="blue")
+                        # )
                     elif c:
-                        param_plot = df.hvplot.scatter(
+                        if out_par == x_axis:
+                            df_group = df[[x_axis, "trajectory"]]
+                        else:
+                            df_group = df[[x_axis, out_par, "trajectory"]]
+                        param_plot = df_group.hvplot.scatter(
                             x=x_axis,
                             y=out_par,
                             c="trajectory",
@@ -956,12 +1089,19 @@ class Deriv_dask:
                             label=None
                             )
                     else:
-                        param_plot = df.hvplot.scatter(
+                        if out_par == x_axis:
+                            df_group = df[[x_axis, "trajectory"]]
+                        else:
+                            df_group = df[[x_axis, out_par, "trajectory"]]
+                        param_plot = df_group.hvplot.scatter(
                         x=x_axis,
                         y=out_par,
                         title="Values of of {}".format(latexify.parse_word(out_par)),
                         label=None
                         )
+
+                    if hist:
+                        param_hist_plot = param_plot.hist(dimension=[x_axis, out_par], bins=bins)
 
                     deriv_plot = df_tmp.hvplot.scatter(
                         x=x_axis,
@@ -977,18 +1117,62 @@ class Deriv_dask:
                     else:
                         layout = param_plot + deriv_plot
 
-                    both_plots = layout.opts(
-                        opts.Scatter(aspect=3.2,
-                            xticks=20,
-                            xaxis="bottom",
-                            s=5,
-                            fontsize=self.font_dic,
-                            show_grid=True,
-                            show_legend=True,
-                            fig_latex=False,
-                            **kwargs),
-                        opts.Layout(fig_size=400)
-                    ).cols(1)
+                    if errorband:
+                        both_plots = layout.opts(
+                            opts.Area(aspect=3.2,
+                                edgecolor=None, # or linewidth=0
+                                xticks=20,
+                                xaxis="bottom",
+                                fontsize=self.font_dic,
+                                show_grid=True,
+                                show_legend=True,
+                                fig_latex=False),
+                            opts.Scatter(aspect=3.2,
+                                xticks=20,
+                                xaxis="bottom",
+                                s=5,
+                                fontsize=self.font_dic,
+                                show_grid=True,
+                                show_legend=True,
+                                fig_latex=False,
+                                **kwargs),
+                            opts.Layout(fig_size=400)
+                        ).cols(1)
+                    elif percentile is not None:
+                        both_plots = layout.opts(
+                            opts.Area(aspect=3.2,
+                                edgecolor=None, # or linewidth=0
+                                xticks=20,
+                                xaxis="bottom",
+                                fontsize=self.font_dic,
+                                show_grid=True,
+                                show_legend=True,
+                                fig_latex=False),
+                            opts.Scatter(aspect=3.2,
+                                xticks=20,
+                                xaxis="bottom",
+                                s=5,
+                                fontsize=self.font_dic,
+                                show_grid=True,
+                                show_legend=True,
+                                fig_latex=False,
+                                **kwargs),
+                            opts.Layout(fig_size=400)
+                        ).cols(1)
+                    else:
+                        both_plots = layout.opts(
+                            opts.Scatter(aspect=3.2,
+                                xticks=20,
+                                xaxis="bottom",
+                                s=5,
+                                fontsize=self.font_dic,
+                                show_grid=True,
+                                show_legend=True,
+                                fig_latex=False,
+                                **kwargs),
+                            opts.Layout(fig_size=400)
+                        ).cols(1)
+
                     both_plots = both_plots.opts(sublabel_format="", tight=True)
                     if hist:
                         param_opts = param_plot.opts(xaxis="bare", alpha=0.1)
@@ -997,7 +1181,8 @@ class Deriv_dask:
                     else:
                         param_opts = param_plot.opts(xaxis="bare")
 
-                    renderer = hv.Store.renderers['matplotlib'].instance(
+
+                    renderer = hv.Store.renderers[self.backend].instance(
                         fig='png', dpi=300)
                     latexify.set_size(True)
 
@@ -1013,14 +1198,24 @@ class Deriv_dask:
                         save = (plot_path + prefix + x_axis + "_" + out_par
                                 + "_" + "{:03d}".format(i))
 
-                    print("Saving to " + save + ".png")
-                    renderer.save(both_plots, save)
-                    t2 = timer()
-                    print("Saving done in {}s".format(t2-t))
+
+                    if self.backend == "bokeh":
+                        print("Plotting")
+                        hvplot.show(both_plots)
+                        t2 = timer()
+                        print("Plotting done in {}s".format(t2-t))
+                    else:
+                        print("Saving to " + save + ".png")
+                        renderer.save(both_plots, save)
+                        t2 = timer()
+                        from IPython.display import Image, display
+                        display(Image(save + ".png", width=1600))
+                        print("Saving done in {}s".format(t2-t))
 
                 i = 0
                 if n_plots is None:
                     n_plots = 9999999
+                print("Creating {} plots".format(n_plots))
                 while len(sorted_tuples) > 0 and i < n_plots:
                     p, v = sorted_tuples.pop()
                     in_params_2 = [p]
@@ -1032,42 +1227,39 @@ class Deriv_dask:
                     i += 1
 
 
-    def plot_histo(self, in_params, out_params, x_axis="timestep",
-            trajectories=None, hex=True, logz=True, prefix=None,
-            plot_path="pics/", **kwargs):
+    def plot_andrew(self, group, out_params, params, plot_path="pics/",
+                    prefix=None, sort=False, trajectories=None, **kwargs):
             """
-            Plot two plots in two rows. At the top: Output parameter.
-            At the bottom: Derivative with respect to that output parameter.
-            If multiple parameters are given, another plot is created for each
-            output parameter and another plot is created for every gradient of
-            different order.
+            Plot an Andrew plot where group is used to colorize every
+            datapoint, params consists of the column names to be used.
+            The dimensions are sorted by their magnitude. If sort is True,
+            only dimensions of the same magnitude are used together.
 
             Parameters
             ----------
-            in_params : list of string
-                Plot the derivatives with respect to those in this list.
-            out_param : list of string
-                List of keys to plot the derivatives for.
-            x_axis : string
-                The column to use as x-axis. Can be either "timestep" or
-                an output parameter or a derivative.
+            group : string
+                Group the datapoints according to this group, i.e. trajectory or p
+            out_params : list of string
+                List of output parameters for whose derivatives are used.
+            params : list of string
+                List of columns used for the observations.
+            plot_path : string
+                # Path to folder for saving the pictures.
+            sort : boolean
+                Sort the derivatives and plot Andrew curves only for those
+                which are in the same order of magnitude.
             trajectories : int
                 The index of the trajectories to plot. If None is given, all
                 trajectories will be plotted.
-            hex : boolean
-                Plot a hex plot or a (not implemented).
-            n_plots : int
-                Plot only that many plots. If None is given, plot every possible
-                plot.
-            logz : bool
-                Map color to a log scale colorbar.
-            prefix : string
-                Prefix to add to the filename.
             kwargs : dict
                 Keyword arguments are passed down matplotlib.
             """
-            df = self.data
-
+            all_cols = params + [group]
+            if "trajectory" not in all_cols:
+                all_cols.append("trajectory")
+            if "Output Parameter" not in all_cols:
+                all_cols.append("Output Parameter")
+            df = self.data[all_cols]
             if trajectories is not None:
                 df = df.loc[df.trajectory.isin(trajectories)]
 
@@ -1082,96 +1274,103 @@ class Deriv_dask:
             import hvplot.pandas
             from holoviews import opts
             import holoviews as hv
-            hv.extension('matplotlib')
+            from timeit import default_timer as timer
+            hv.extension(self.backend)
 
             for out_par in out_params:
                 df_tmp_out = df.loc[df["Output Parameter"] == out_par]
 
-                # Sort the derivatives
-                sorted_tuples = []
-                for in_p in in_params:
-                    value = np.abs(df_tmp_out[in_p].min())
-                    max_val = np.abs(df_tmp_out[in_p].max())
-                    if max_val > value:
-                        value = max_val
-                    if value != 0 and not np.isnan(value):
-                        sorted_tuples.append((in_p, value))
-                sorted_tuples.sort(key=lambda tup: tup[1])
+                if sort:
+                    # Sort the derivatives
+                    sorted_tuples = []
+                    for in_p in in_params:
+                        value = np.abs(df_tmp_out[in_p].min())
+                        max_val = np.abs(df_tmp_out[in_p].max())
+                        if max_val > value:
+                            value = max_val
+                        if value != 0 and not np.isnan(value):
+                            sorted_tuples.append((in_p, value))
+                    sorted_tuples.sort(key=lambda tup: tup[1])
 
-                def plot_helper(df, in_params, **kwargs):
+                def plot_helper(df, params, prefix, **kwargs):
+                    t = timer()
+                    df_tmp = df[params+[group]]
+                    alpha = 0.5
+                    # if "alpha" in kwargs:
+                    #     alpha = kwargs["alpha"]
+                    samples = 200
+                    if "samples" in kwargs:
+                        samples = kwargs["samples"]
+                    colormap = None
+                    if "colormap" in kwargs:
+                        colormap = kwargs["colormap"]
 
+                    print(df_tmp.head())
+                    print(df_tmp.describe())
 
-                    plots = []
-                    if hex:
-                        for in_param in in_params:
-                            df_tmp = df[[in_param]+[x_axis]]
-                            df_tmp = df_tmp.melt(x_axis, var_name="Derivatives",
-                                                value_name="Derivative Ratio")
-                            title = "Derivatives of {}".format(in_param.replace("_", " "))
+                    # plot = df_tmp.hvplot.andrews_curves(
+                    #     class_column=group,
+                    #     samples=samples,
+                    #     alpha=alpha,
+                    #     colormap=colormap
+                    # )
+                    # plot_layout = plot.opts(
+                    #     opts.Curve(aspect=3.2,
+                    #         xticks=20,
+                    #         fontsize=self.font_dic,
+                    #         show_grid=True,
+                    #         show_legend=True,
+                    #         fig_latex=True),
+                    #     opts.Layout(fig_size=400)
+                    # )
+                    # Works using bokeh and less than 4000 datapoints
+                    plot = hvplot.andrews_curves(
+                        data=df_tmp,
+                        class_column=group,
+                        # samples=samples,
+                        # alpha=alpha,
+                        # colormap=colormap
+                    )
+                    plot_layout = plot.opts(
+                        opts.Curve(aspect=3.2,
+                            xticks=20,
+                            fontsize=self.font_dic,
+                            show_grid=True,
+                            show_legend=True),
+                            # fig_latex=False),
+                        # opts.Layout(fig_size=400)
+                    )
 
-                            plots.append(df_tmp.hvplot.hexbin(
-                                    x=x_axis,
-                                    y="Derivative Ratio",
-                                    logz=logz,
-                                    title=title))
-                    n_cols = int(np.sqrt(len(plots)))
-                    if n_cols*n_cols < len(plots):
-                        n_cols += 1
-
-                    print("Got {} plots".format(len(plots)))
-
-                    if len(plots) > 1:
-                        layout = plots[0]
-                        for i in range(len(plots)-1):
-                            layout += plots[i+1]
-                        all_plots = layout.opts(
-                                opts.HexTiles(
-                                    aspect=1,
-                                    fontsize=self.font_dic,
-                                    show_legend=True,
-                                    fig_latex=True,
-                                    **kwargs),
-                                opts.Layout(fig_size=400)
-                            ).cols(n_cols)
-                        all_plots = all_plots.opts(sublabel_format="", tight=True)
-                    else:
-                        all_plots = (plots[0]).opts(
-                                opts.HexTiles(
-                                    aspect=1,
-                                    fontsize=self.font_dic,
-                                    show_legend=True,
-                                    fig_latex=True,
-                                    fig_size=400,
-                                    **kwargs)
-                            )
-                    renderer = hv.Store.renderers['matplotlib'].instance(
+                    renderer = hv.Store.renderers[self.backend].instance(
                         fig='png', dpi=300)
                     latexify.set_size(True)
 
                     i = 0
                     if prefix is None:
-                        prefix = "hex_"
-                        if hex:
-                            prefix = "hex_"
-                    save = (plot_path + prefix + x_axis + "_" + out_par
+                        prefix = "andrew_"
+                    save = (plot_path + prefix
                             + "_" + "{:03d}".format(i))
                     while os.path.isfile(save + ".png"):
                         i = i+1
-                        save = (plot_path + prefix + x_axis + "_" + out_par
+                        save = (plot_path + prefix
                                 + "_" + "{:03d}".format(i))
 
                     print("Saving to " + save + ".png")
-                    renderer.save(all_plots, save)
-                    print("Saving finished")
+                    renderer.save(plot, save)
+                    t2 = timer()
+                    print("Saving done in {}s".format(t2-t))
 
-                while len(sorted_tuples) > 0:
-                    p, v = sorted_tuples.pop()
-                    in_params_2 = [p]
-                    while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
-                        and np.abs(v/sorted_tuples[-1][1]) < 10):
+                if sort:
+                    while len(sorted_tuples) > 0:
                         p, v = sorted_tuples.pop()
-                        in_params_2.append(p)
-                    plot_helper(df_tmp_out, in_params=in_params_2, **kwargs)
+                        in_params_2 = [p]
+                        while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
+                            and np.abs(v/sorted_tuples[-1][1]) < 10):
+                            p, v = sorted_tuples.pop()
+                            in_params_2.append(p)
+                        plot_helper(df_tmp_out, params=in_params_2, **kwargs)
+                else:
+                    plot_helper(df_tmp_out, params=params, prefix=prefix, **kwargs)
 
 
 ## Idea: https://www.holoviews.org/user_guide/Linking_Plots.html
