@@ -970,7 +970,7 @@ class Deriv_dask:
                         p_dic["amin"] = "Min"
                         p_dic["amax"] = "Max"
                         df_min_max = df_min_max.rename(columns=p_dic)
-                        
+                                                
                         # Plot
                         param_plot = (
                             df_min_max.hvplot.area(
@@ -1054,7 +1054,6 @@ class Deriv_dask:
                         label=None
                     )
                     
-                        
                     if hist:
                         layout = param_hist_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
                     else:
@@ -1074,15 +1073,36 @@ class Deriv_dask:
                     if self.backend == "bokeh":
                         scatter_kwargs["size"] = 5
                     else:
-                        scatter_kwargs["s"] = 5
+                        scatter_kwargs["s"] = 8
 
                     if self.backend == "matplotlib":
                         area_kwargs["edgecolor"] = None
+                        area_kwargs["color"] = "black"
+                        for k in kwargs:
+                            area_kwargs[k] = kwargs[k]
 
 
-                    layout_dic = {}
+                    layout_kwargs = {}
                     if self.backend == "matplotlib":
-                        layout_dic["fig_size"] = 400
+                        layout_kwargs["fig_size"] = 400
+                        
+                   # Matplotlib uses a horrible colormap as default...
+                    curve_kwargs = kwargs.copy()
+                    if self.backend == "matplotlib":
+                        if len(percentile) <= 10:
+                            curve_kwargs["color"] = hv.Cycle("tab10")
+                        elif len(percentile) <= 20:
+                            curve_kwargs["color"] = hv.Cycle("tab20")
+                        # More seems convoluted to me
+#                         else:
+#                             curve_kwargs["color"] = hv.Cycle("viridis")
+                    else:
+                        if len(percentile) <= 10:
+                            curve_kwargs["color"] = hv.Cycle("Category10")
+                        elif len(percentile) <= 20:
+                            curve_kwargs["color"] = hv.Cycle("Category20")
+#                         else:
+#                             curve_kwargs["color"] = "viridis" # "colorcet"
                  
                     if errorband:
                         both_plots = layout.opts(
@@ -1093,7 +1113,6 @@ class Deriv_dask:
                                 show_grid=True,
                                 show_legend=True,
                                 **area_kwargs),
-
                             opts.Scatter(
                                 xticks=20,
                                 xaxis="bottom",
@@ -1101,7 +1120,7 @@ class Deriv_dask:
                                 show_grid=True,
                                 show_legend=True,
                                 **scatter_kwargs),
-                            opts.Layout(layout_dic)
+                            opts.Layout(**layout_kwargs)
                         ).cols(1)
                     elif percentile is not None:
                         both_plots = layout.opts(
@@ -1119,7 +1138,8 @@ class Deriv_dask:
                                 show_grid=True,
                                 show_legend=True,
                                 **scatter_kwargs),
-                            opts.Layout(layout_dic)
+                            opts.Curve(**curve_kwargs),
+                            opts.Layout(**layout_kwargs)
                         ).cols(1)
                     else:
                         both_plots = layout.opts(
@@ -1130,7 +1150,7 @@ class Deriv_dask:
                                 show_grid=True,
                                 show_legend=True,
                                 **scatter_kwargs),
-                            opts.Layout(layout_dic)
+                            opts.Layout(**layout_kwargs)
                         ).cols(1)
 
                     if self.backend == "matplotlib":
