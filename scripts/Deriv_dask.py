@@ -950,93 +950,50 @@ class Deriv_dask:
                     df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
 
                     if percentile is not None:
-                        # print("Select values.")
+
                         if out_par == x_axis:
-                            df_group = df[[x_axis, "trajectory"]]
+                            print("x-axis and y-axis are the same. Cannot plot that with percentiles!")
+                            return
                         else:
-                            df_group = df[[x_axis, out_par, "trajectory"]]
-                        x_values = np.sort(df_group[x_axis].unique())
-                        # print("Selecting done.")
-                        percentiles = []
-                        min_vals = []
-                        max_vals = []
-                        # print("Getting percentiles")
-                        for val in x_values:
-                            df_tmp2 = df_group.loc[df_group[x_axis] == val]
-                            min_vals.append(df_tmp2[out_par].min())
-                            max_vals.append(df_tmp2[out_par].max())
+                            df_group = df[[x_axis, out_par]]
 
-                            # percentiles.append( df_tmp2.array.percentile() )
-
-                            percentiles.append(np.percentile(
-                                df_tmp2[out_par], percentile, axis=0))
-                        # print("Getting percentiles done")
-                        pandas_df = {
-                            x_axis: x_values,
-                            "Min": min_vals,
-                            "Max": max_vals}
-                        percentiles = np.transpose(percentiles)
+                        # Group for min, max and percentiles
+                        funcs = [np.min, np.max] + [lambda x, perc=perc: np.percentile(x, perc, axis=0) for perc in percentile]
+                        df_min_max = df_group.groupby(x_axis).agg(funcs)[out_par]
+            
+                        # Rename the columns
                         p_list = []
+                        p_dic = {}
                         for i, perc in enumerate(percentile):
-                            pandas_df["{}. Percentile".format(perc)] = percentiles[i]
                             p_list.append("{}. Percentile".format(perc))
-
-                        # print("Percentiles shape: {}".format(np.shape(percentiles)))
-                        # print("Plot percentiles.")
-                        # for key in pandas_df:
-                        #     print("{}: {}".format(key, len(pandas_df[key])))
-                        pandas_df = pandas.DataFrame(pandas_df)
-                        # perc_plot = pandas_df.hvplot(x=x_axis, y=p_list,
-                        #     value_label=latexify.parse_word(out_par))
-                        # print("Plot area.")
-                        # param_plot = perc_plot.hvplot.area(
-                        #     x=x_axis, y="Min", y2="Max", alpha=0.2)
-                        # print("Plots created")
-                        print(pandas_df.describe())
-
-                        df_min_max = df_group.groupby([x_axis, "trajectory"])[out_par].mean().groupby(x_axis).agg([np.min, np.max])
-                        # print(df_min_max.describe())
-                        # print(p_list)
-                        # print(pandas_df.head(100))
+                            p_dic["<lambda_{}>".format(i)] = p_list[-1]
+                        p_dic["amin"] = "Min"
+                        p_dic["amax"] = "Max"
+                        df_min_max = df_min_max.rename(columns=p_dic)
+                        
+                        # Plot
                         param_plot = (
                             df_min_max.hvplot.area(
                                 x=x_axis,
-                                y="amin",
-                                y2="amax",
+                                y="Min",
+                                y2="Max",
                                 alpha=0.5,
                                 value_label=latexify.parse_word(out_par),
                                 title="Values of of {}".format(latexify.parse_word(out_par)),
                                 label="Spread",
                                 color="grey")
-                            * pandas_df.hvplot.line(
+                            * df_min_max.hvplot.line(
                                 x=x_axis,
                                 y=p_list,
                                 value_label=latexify.parse_word(out_par),
                                 **kwargs)
                         )
-
-                        # df_tmp2 = df_group.melt()
-                        # percentiles = df.array.percentile(df_group[out_par], percentile, axis=)
-                        # for perc in percentile:
-                        #     df_group["{}.Percentile".format(perc)] = (
-                        #         df.array.percentile(df_group[out_par], perc))
-
-
-                        # param_plot = df_group.hvplot.scatter(
-                        #     x=x_axis,
-                        #     y=out_par,
-                        #     title="Values of of {}".format(latexify.parse_word(out_par)),
-                        #     label=None
-                        #     )
                     elif errorband:
-                        # print("Current limit {}".format(matplotlib.rcParams['agg.path.chunksize']))
                         df_group = df[[x_axis, out_par, "trajectory"]]
                         df_min_max = df_group.groupby([x_axis, "trajectory"])[out_par].mean().groupby(x_axis).agg([np.min, np.max])
                         df_std = df_group.groupby([x_axis, "trajectory"])[out_par].mean().groupby(x_axis).agg([lambda x: -1*np.std(x)+np.mean(x), lambda x: np.std(x)+np.mean(x)])
                         df_mean = df_group.groupby(x_axis)[out_par].mean()
-                        # print(df_min_max.describe())
-                        # print(df_std.describe())
-                        # print(df_mean.describe())
+
                         param_plot = (
                             df_min_max.hvplot.area(
                                 x=x_axis,
@@ -1056,26 +1013,6 @@ class Deriv_dask:
                                 label="sd")
                                 # color="grey")
                         )
-                        # Alternative with Spread? (maybe faster)
-                        # param_plot = (
-                        #     df_min_max.hvplot.area(
-                        #         x=x_axis,
-                        #         y="amin",
-                        #         y2="amax",
-                        #         alpha=0.3,
-                        #         value_label=latexify.parse_word(out_par),
-                        #         label="Spread")
-                        #         # color="blue")
-                        #     * df_mean.hvplot()
-                        #     * df_mean.hvplot.Spread(
-                        #         x=x_axis,
-                        #         y=out_par,
-                        #         err=,
-                        #         alpha=0.2,
-                        #         value_label=latexify.parse_word(out_par),
-                        #         label="sd")
-                        #         # color="blue")
-                        # )
                     elif c:
                         if out_par == x_axis:
                             df_group = df[[x_axis, "trajectory"]]
@@ -1094,13 +1031,19 @@ class Deriv_dask:
                         else:
                             df_group = df[[x_axis, out_par, "trajectory"]]
                         param_plot = df_group.hvplot.scatter(
-                        x=x_axis,
-                        y=out_par,
-                        title="Values of of {}".format(latexify.parse_word(out_par)),
-                        label=None
+                            x=x_axis,
+                            y=out_par,
+                            title="Values of of {}".format(latexify.parse_word(out_par)),
+                            label=None
                         )
-
+                        
+                    layout_kwargs = {}
+                    if self.backend == "bokeh":
+                        layout_kwargs["width"] = 1600
+                        layout_kwargs["height"] = 500
+                        
                     if hist:
+                        param_plot.opts(**layout_kwargs)
                         param_hist_plot = param_plot.hist(dimension=[x_axis, out_par], bins=bins)
 
                     deriv_plot = df_tmp.hvplot.scatter(
@@ -1109,71 +1052,89 @@ class Deriv_dask:
                         by="Derivatives",
                         title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
                         label=None
-                        )
-                    # print(deriv_plot)
+                    )
+                    
+                        
                     if hist:
-                    #     # deriv_hist_plot = deriv_plot.hist(dimension=["Derivative Ratio"], bins=bins)
-                        layout = param_hist_plot + deriv_plot
+                        layout = param_hist_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
                     else:
-                        layout = param_plot + deriv_plot
+                        layout = param_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
 
+                    opts_arg = {}
+                    if self.backend == "matplotlib":
+                        opts_arg["aspect"] = 3.2
+                        opts_arg["fig_latex"] = False
+
+                    scatter_kwargs = opts_arg.copy()
+                    area_kwargs = opts_arg.copy()
+
+                    for k in kwargs:
+                        scatter_kwargs[k] = kwargs[k]
+
+                    if self.backend == "bokeh":
+                        scatter_kwargs["size"] = 5
+                    else:
+                        scatter_kwargs["s"] = 5
+
+                    if self.backend == "matplotlib":
+                        area_kwargs["edgecolor"] = None
+
+
+                    layout_dic = {}
+                    if self.backend == "matplotlib":
+                        layout_dic["fig_size"] = 400
+                 
                     if errorband:
                         both_plots = layout.opts(
-                            opts.Area(aspect=3.2,
-                                edgecolor=None, # or linewidth=0
+                            opts.Area(
                                 xticks=20,
                                 xaxis="bottom",
                                 fontsize=self.font_dic,
                                 show_grid=True,
                                 show_legend=True,
-                                fig_latex=False),
-                            opts.Scatter(aspect=3.2,
+                                **area_kwargs),
+
+                            opts.Scatter(
                                 xticks=20,
                                 xaxis="bottom",
-                                s=5,
                                 fontsize=self.font_dic,
                                 show_grid=True,
                                 show_legend=True,
-                                fig_latex=False,
-                                **kwargs),
-                            opts.Layout(fig_size=400)
+                                **scatter_kwargs),
+                            opts.Layout(layout_dic)
                         ).cols(1)
                     elif percentile is not None:
                         both_plots = layout.opts(
-                            opts.Area(aspect=3.2,
-                                edgecolor=None, # or linewidth=0
+                            opts.Area(
                                 xticks=20,
                                 xaxis="bottom",
                                 fontsize=self.font_dic,
                                 show_grid=True,
                                 show_legend=True,
-                                fig_latex=False),
-                            opts.Scatter(aspect=3.2,
+                                **area_kwargs),
+                            opts.Scatter(
                                 xticks=20,
                                 xaxis="bottom",
-                                s=5,
                                 fontsize=self.font_dic,
                                 show_grid=True,
                                 show_legend=True,
-                                fig_latex=False,
-                                **kwargs),
-                            opts.Layout(fig_size=400)
+                                **scatter_kwargs),
+                            opts.Layout(layout_dic)
                         ).cols(1)
                     else:
                         both_plots = layout.opts(
-                            opts.Scatter(aspect=3.2,
+                            opts.Scatter(
                                 xticks=20,
                                 xaxis="bottom",
-                                s=5,
                                 fontsize=self.font_dic,
                                 show_grid=True,
                                 show_legend=True,
-                                fig_latex=False,
-                                **kwargs),
-                            opts.Layout(fig_size=400)
+                                **scatter_kwargs),
+                            opts.Layout(layout_dic)
                         ).cols(1)
 
-                    both_plots = both_plots.opts(sublabel_format="", tight=True)
+                    if self.backend == "matplotlib":
+                        both_plots = both_plots.opts(sublabel_format="", tight=True)
                     if hist:
                         param_opts = param_plot.opts(xaxis="bare", alpha=0.1)
                     elif c:
@@ -1197,7 +1158,6 @@ class Deriv_dask:
                         i = i+1
                         save = (plot_path + prefix + x_axis + "_" + out_par
                                 + "_" + "{:03d}".format(i))
-
 
                     if self.backend == "bokeh":
                         print("Plotting")
@@ -1321,7 +1281,7 @@ class Deriv_dask:
                     #         show_grid=True,
                     #         show_legend=True,
                     #         fig_latex=True),
-                    #     opts.Layout(fig_size=400)
+                    #     opts.Layout(fig_size=400) 
                     # )
                     # Works using bokeh and less than 4000 datapoints
                     plot = hvplot.andrews_curves(
