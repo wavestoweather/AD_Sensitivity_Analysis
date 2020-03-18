@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=mplot2
-#SBATCH --output=logs/mplot2_%A_%a.out
-#SBATCH --error=logs/mplot2_%A_%a.err
+#SBATCH --job-name=mplot2M
+#SBATCH --output=logs/mplot2M_%A.out
+#SBATCH --error=logs/mplot2M_%A.err
 #SBATCH --time=24:00:00
 #SBATCH -p parallel
 #SBATCH --nodes=1
 #SBATCH --ntasks=10
 #SBATCH --ntasks-per-node=10 # Maximum number of jobs per node. Need this limit due to RAM
 #SBATCH -A m2_zdvresearch
-#SBATCH --mem=220G
+#SBATCH --mem-per-cpu=4G
 #SBATCH -C broadwell
 
 module load tools/parallel/20170622
@@ -17,9 +17,9 @@ source ../plot_env/bin/activate
 
 INPUT_FILENAME="/lustre/project/m2_zdvresearch/mahieron/wcb_traj_flag_deriv_mult_min2/tmp_concat"
 OUTPUT_PATH="/lustre/project/m2_zdvresearch/mahieron/wcb_traj_flag_deriv_mult_min2/pics/mapped_"
-my_srun="srun -n1 -N1 --exclusive --cpu-bind=cores --mem-per-cpu=22G"
-my_parallel="parallel -j 10 --no-notice --delay .2 --joblog logs/massive_runtask.log"
-KEYS=(Misc Rain Cloud Graupel Hail Ice Snow)
+my_srun="srun -n1 -N1 --exclusive --cpu-bind=cores"
+my_parallel="parallel -j 20 --no-notice --delay .2 --joblog logs/massive_runtask_2.log"
+KEYS=(Misc)
 OUT_PARAMS=(p T w S qc qr qv Nc Nr Nv qi Ni vi qs Ns qg Ng qh Nh qiout qsout qrout qgout qhout latent_heat latent_cool Niout Nsout Nrout Ngout Nhout)
 
 # There are 217 combinations

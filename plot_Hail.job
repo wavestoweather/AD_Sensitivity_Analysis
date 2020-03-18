@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=mplot2
-#SBATCH --output=logs/mplot2_%A_%a.out
-#SBATCH --error=logs/mplot2_%A_%a.err
+#SBATCH --job-name=mplot2H
+#SBATCH --output=logs/mplot2H_%A_%a.out
+#SBATCH --error=logs/mplot2H_%A_%a.err
 #SBATCH --time=24:00:00
 #SBATCH -p parallel
 #SBATCH --nodes=1
@@ -19,7 +19,7 @@ INPUT_FILENAME="/lustre/project/m2_zdvresearch/mahieron/wcb_traj_flag_deriv_mult
 OUTPUT_PATH="/lustre/project/m2_zdvresearch/mahieron/wcb_traj_flag_deriv_mult_min2/pics/mapped_"
 my_srun="srun -n1 -N1 --exclusive --cpu-bind=cores --mem-per-cpu=22G"
 my_parallel="parallel -j 10 --no-notice --delay .2 --joblog logs/massive_runtask.log"
-KEYS=(Misc Rain Cloud Graupel Hail Ice Snow)
+KEYS=(Hail)
 OUT_PARAMS=(p T w S qc qr qv Nc Nr Nv qi Ni vi qs Ns qg Ng qh Nh qiout qsout qrout qgout qhout latent_heat latent_cool Niout Nsout Nrout Ngout Nhout)
 
 # There are 217 combinations
