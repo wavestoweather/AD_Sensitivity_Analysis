@@ -536,6 +536,7 @@ def load_parallel(f, suffix):
     processes.
     """
     out_param = params_dict2[f.split(suffix)[1]]
+    print("Loading from {}".format(f))
     return (out_param, pd.read_csv(f, sep=",", index_col=False))
     # return (out_param, pd.read_csv(f, sep=",", index_col=False,
     #     dtype={"timestep": "double", "trajectory": "int64",
@@ -594,7 +595,7 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
         example = example[:-4]
         example = example.split("_")
         suffix = example[-2] + "_" + example[-1]
-
+    print("Found suffix: {}".format(suffix))
     tmp_dict = {}
 
     for df_tuple in pb(pool.starmap(load_parallel, zip(file_list2, repeat(suffix))), redirect_stdout=True):

@@ -34,6 +34,7 @@ Python and Plotting Prerequisites
 - [datashader](https://datashader.org/index.html)
 - [holoviews](http://holoviews.org/)
 - [hvplot](https://hvplot.holoviz.org/)
+- [fastparquet](https://github.com/dask/fastparquet)
 
 Docs Prerequisites
 -------------------------
