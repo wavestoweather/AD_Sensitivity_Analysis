@@ -101,13 +101,13 @@ in_params_dic = {"Misc":
             "dsnow_c_s", "dsnow_a_f", "dsnow_b_f", "dsnow_alfa_n",
             "dsnow_alfa_q", "dsnow_lambda", "dsnow_vsedi_min",
             "dsnow_vsedi_max"]}
-
+# /data/project/wcb/wcb_complete
 direc_path = sys.argv[1]
 key =  sys.argv[2]
 out_params = [sys.argv[3]]
 out_path = sys.argv[4]
 
-print("Plotting for {} with input ".format(key, sys.argv[3]))
+print("Plotting for {} with input {}".format(key, sys.argv[3]))
 in_params = in_params_dic[key]
 
 columns = ["timestep", "Output Parameter", "trajectory"] + in_params + out_params
@@ -123,7 +123,7 @@ data = Deriv_dask(
 t2 = timer()
 print("Loading done in {}s".format(t2-t))
 
-print("Got trajectories: {}".format(data.data["trajectory"].unique().compute()))
+print("Got trajectories: \n{}".format(data.data["trajectory"].unique().compute()))
 t = timer()
 data.plot_two_ds(
     in_params=in_params,
@@ -133,11 +133,31 @@ data.plot_two_ds(
     trajectories=trajectories,
     scatter=False,
     frac=None,
-    percentile=None,
+    percentile=None, # [25, 50, 75],
     line_deriv=True,
     prefix=key,
     plot_path=out_path,
-    hist=True,
+    hist=[True, False],
+    **kwargs
+)
+t2 = timer()
+print("Plot two (p) done in {}s\n".format(t2-t))
+
+print("Got trajectories: \n{}".format(data.data["trajectory"].unique().compute()))
+t = timer()
+data.plot_two_ds(
+    in_params=in_params,
+    out_params=out_params,
+    x_axis="p",
+    mapped=True,
+    trajectories=trajectories,
+    scatter=False,
+    frac=None,
+    percentile=None, # [25, 50, 75],
+    line_deriv=True,
+    prefix=key,
+    plot_path=out_path,
+    hist=[True, False],
     **kwargs
 )
 t2 = timer()
