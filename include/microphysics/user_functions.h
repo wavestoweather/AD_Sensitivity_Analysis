@@ -416,6 +416,16 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         // cloud_nucleation(..) from Cosmo 5.2
         // There are different cases. For this sumulation, we choose
         // HUCM continental case (Texas CCN)HUCM continental case (Texas CCN)
+        // From COSMO 5.2 S = 100 * s_w(...)
+        // where s_w = e_v/e_ws(T_2mom) - 1.0
+        // e_v = q * T_2mom * r_v
+        // q = qv * rho 
+        // rho = total density of moist air (kg/m3) = (p * p_pertubation) / (r_d * T * (1.0+ (r_v/r_d - 1)*q_v - q_c - (q_r + q_s)))
+        // Using gas law rho = p/r_d*tv, r_d gas constant of dry air, pp pressure pertubation
+        // T_2mom = T    (I think)
+        // r_v = gas constant for water vapour
+        // r_d = gas constant for dry air
+        // e_ws = saturation pressure over water = e_3 * EXP (A_w * (t_ - T_3) / (t_ - B_w))
         double N_ccn = 1260e06;
         double N_max = 3000e06;
         double N_min =  300e02; // e06?
