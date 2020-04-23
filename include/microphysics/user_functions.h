@@ -1257,7 +1257,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                     + coeffs.theta_n_bb * v_r*v_r
                     + pc1.s_vel*pc1.s_vel);
 
-            rime_rate_nb = M_PI/4.0 * N1 * Nc
+            rime_rate_nb = M_PI/4.0 * N1 * Nr
                 * (coeffs.delta_n_aa * d_1*d_1
                     + coeffs.delta_n_ab * d_1*d_r
                     + coeffs.delta_n_bb * d_r*d_r)
