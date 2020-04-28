@@ -18,6 +18,13 @@
  * @{
  */
 
+codi::RealReverse trunc(codi::RealReverse x)
+{
+    int left = x.getValue();
+    codi::RealReverse r = left;
+    r.setGradient(x.getGradient());
+    return r;
+}
 
 /**
  * This function evaluates the RHS function of the ODE. It uses the 1 moment
@@ -290,6 +297,9 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse Ng = y[Ng_idx];
     codi::RealReverse qh = y[qh_idx];
     codi::RealReverse Nh = y[Nh_idx];
+    codi::RealReverse n_inact = y[n_inact_idx];
+    codi::RealReverse depo = y[depo_idx];
+    codi::RealReverse sub = y[sub_idx];
 
     for(auto &r: res) r = 0;
 
@@ -419,7 +429,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         // From COSMO 5.2 S = 100 * s_w(...)
         // where s_w = e_v/e_ws(T_2mom) - 1.0
         // e_v = q * T_2mom * r_v
-        // q = qv * rho 
+        // q = qv * rho
         // rho = total density of moist air (kg/m3) = (p * p_pertubation) / (r_d * T * (1.0+ (r_v/r_d - 1)*q_v - q_c - (q_r + q_s)))
         // Using gas law rho = p/r_d*tv, r_d gas constant of dry air, pp pressure pertubation
         // T_2mom = T    (I think)
@@ -567,11 +577,11 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 //     "A parametrization of cirrus cloud formation: Homogenous
 //     freezing of supercooled aerosols" by B. Kaercher and
 //     U. Lohmann 2002 (KL02 hereafter)
-    
+
 //     "Physically based parameterization of cirrus cloud formation
 //     for use in global atmospheric models" by B. Kaercher, J. Hendricks
 //     and U. Lohmann 2006 (KHL06 hereafter)
-    
+
 //     and Phillips et al. (2008) with extensions
     //
     // implementation by Carmen Koehler and AS
@@ -582,10 +592,12 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
     codi::RealReverse delta_n_a = 0.0;
     bool ndiag_mask = false;
+
+    // use_prog_in?
+    bool use_prog_in = false;
     if(use_hdcp2_het)
     {
-        // TODO: This comes from the macro physical part from which I don't have any data
-        codi::RealReverse n_inact = 0.0;
+
         if(T_prime < T_nuc && T_prime > 180.0 && ssi > 1.0 && n_inact < ni_het_max)
         {
 
@@ -640,10 +652,107 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         // heterogeneous nucleation using Phillips et al.
         // ice_nucleation_het_philips
         // TODO
+        // nucleation type 7; initial number density of dust/soot/organics [1/m3]
+        double na_dust;
+        double na_soot;
+        double na_orga;
+        if(nuc_type == 6)
+        {
+            na_dust = 160e4;
+            na_soot = 30e6;
+            na_orga = 0.0;
+        } else if(nuc_type == 7)
+        {
+            na_dust = 160e4;
+            na_soot = 25e6;
+            na_orga = 30e6;
+        } else if(nuc_type == 8)
+        {
+            na_dust = 70e4;
+            na_soot = 0.0;
+            na_orga = 0.0;
+        }
+
+        const double EPSILON = 1.0e-20;
+        codi::RealReverse S_si = qv_prime * Rv * T_prime / p_sat_ice;
+        if(T_prime < T_nuc && T_prime > 180.0 && S_si > 1.0
+          && n_inact < ni_het_max)
+        {
+            codi::RealReverse x_t = (274.0 - T_prime) / t_tstep;
+            x_t = min(x_t, t_tmax-1);
+            int tt = (int) x_t.getValue() - 1;
+
+            std::vector<codi::RealReverse> infrac(3);
+            if(qc_prime > EPSILON)
+            {
+                // Immersion freezing at water saturation
+                infrac[0] = ( trunc(x_t)+1.0-x_t ) * afrac_dust[98][tt]
+                    + ( x_t-trunc(x_t) ) * afrac_dust[98][tt+1];
+                infrac[1] = ( trunc(x_t)+1.0-x_t ) * afrac_soot[98][tt]
+                    + ( x_t-trunc(x_t) ) * afrac_soot[98][tt+1];
+                infrac[2] = ( trunc(x_t)+1.0-x_t ) * afrac_orga[98][tt]
+                    + ( x_t-trunc(x_t) ) * afrac_orga[98][tt+1];
+            } else
+            {
+                // deposition nucleation below water saturation
+                // Indices for 2D look-up tables
+                codi::RealReverse x_s = 100.0*(S_si-1.0) / s_sstep;
+                x_s = min(x_s, s_smax-1);
+                int ss = std::max(0, (int) (x_s.getValue()-1) );
+                codi::RealReverse S_sr = max(1.0, trunc(x_s));
+                infrac[0] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
+                    * afrac_dust[ss][tt]
+                    + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
+                    * afrac_dust[ss][tt+1]
+                    + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
+                    * afrac_dust[ss+1][tt]
+                    + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
+                    * afrac_dust[ss+1][tt+1];
+                infrac[1] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
+                    * afrac_soot[ss][tt]
+                    + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
+                    * afrac_dust[ss][tt+1]
+                    + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
+                    * afrac_soot[ss+1][tt]
+                    + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
+                    * afrac_soot[ss+1][tt+1];
+                infrac[2] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
+                    * afrac_orga[ss][tt]
+                    + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
+                    * afrac_orga[ss][tt+1]
+                    + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
+                    * afrac_orga[ss+1][tt]
+                    + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
+                    * afrac_dust[ss+1][tt+1];
+            }
+            codi::RealReverse ndiag = infrac[0] + na_soot*infrac[1] + na_orga*infrac[2];
+            codi::RealReverse ndiag_dust;
+            codi::RealReverse ndiag_all;
+            if(use_prog_in)
+            {
+                // Not implemented
+                // n_inpot replaces n_dust
+                // ndiag = n_inpot * ndiag;
+                // ndiag_dust = n_inpot*infrac[0];
+                // ndiag_all = ndiag;
+            } else
+            {
+                ndiag = na_dust * ndiag;
+            }
+            ndiag = min(ndiag, ni_het_max);
+            codi::RealReverse delta_n = max(ndiag-n_inact, 0.0);
+            // TODO: Check if min_x or min_x_nuc
+            codi::RealReverse delta_q = min(delta_n*cc.ice.min_x, qv_prime);
+            delta_n = delta_q/cc.ice.min_x;
+            res[Ni_idx] += delta_n;
+            res[qi_idx] += delta_q;
+            res[qv_idx] -= delta_q;
+            res[n_inact_idx] += delta_n;
+            res[depo_idx] += delta_q;
+        }
 
     } // end Phillips
-    // use_prog_in?
-    bool use_prog_in = false;
+
     if(use_prog_in)
     {
         // Stuff that is being done with n_inpot
@@ -915,6 +1024,34 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             dep_rate_ice += dep_ice;
             dep_rate_snow += dep_snow;
 
+            if(dep_ice > 0)
+            {
+                res[depo_idx] += dep_ice;
+            } else
+            {
+                res[sub_idx] += dep_ice;
+            }
+            if(dep_snow > 0)
+            {
+                res[depo_idx] += dep_snow;
+            } else
+            {
+                res[sub_idx] += dep_snow;
+            }
+            if(dep_graupel > 0)
+            {
+                res[depo_idx] += dep_graupel;
+            } else
+            {
+                res[sub_idx] += dep_graupel;
+            }
+            if(dep_hail > 0)
+            {
+                res[depo_idx] += dep_hail;
+            } else
+            {
+                res[sub_idx] += dep_hail;
+            }
             codi::RealReverse delta_e = latent_heat_melt(T_prime) * dep_sum / specific_heat_ice(T_prime);
             // Sublimation, cooling
             if(dep_sum > 0.0)

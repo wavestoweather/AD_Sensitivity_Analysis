@@ -649,6 +649,10 @@ int main(int argc, char** argv)
         y_init[Nv_idx] = 0;
         y_init[z_idx] = nc_params.z[0];
 
+        y_init[n_inact_idx] = 0;
+        y_init[depo_idx] = 0;
+        y_init[sub_idx] = 0;
+
     } catch(netCDF::exceptions::NcException& e)
     {
         std::cout << e.what() << std::endl;
@@ -730,7 +734,7 @@ int main(int argc, char** argv)
 #endif
         << "p,T,w,S,qc,qr,qv,Nc,Nr,Nv,qi,Ni,vi,"
         << "qs,Ns,qg,Ng,qh,Nh,qiout,qsout,qrout,qgout,qhout,"
-        << "latent_heat,latent_cool,Niout,Nsout,Nrout,Ngout,Nhout,z\n";
+        << "latent_heat,latent_cool,Niout,Nsout,Nrout,Ngout,Nhout,z,Inactive,deposition,sublimination\n";
 
     // CODIPACK: BEGIN
     std::string basename = "_diff_";
