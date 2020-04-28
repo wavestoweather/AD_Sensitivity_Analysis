@@ -434,11 +434,11 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         // Parameter for exp decrease of CCN with height
         double z_nccn = 99999;
 
-        codi::RealReverse S_percentage = s_sw*100;
+        // codi::RealReverse S_percentage = s_sw*100;
         //     saturation_pressure_ice(T_prime)/saturation_pressure_water_icon(T_prime) * (S+1.0);
         // S_percentage *= 100;
-        S_percentage = (S-1)*100;
-        S_percentage = p_sat_ice/p_sat * (S-1) * 100;
+        // S_percentage = (S-1)*100;
+        codi::RealReverse S_percentage = s_sw * 100;
 
         // In contrast to Seifert & Beheng, we do not approximate dS/dt via
         // w dS/dz but calculate dS/dt
