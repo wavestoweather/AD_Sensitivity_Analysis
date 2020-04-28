@@ -553,6 +553,12 @@ std::vector<double> d_ccn = {287736034.13, 0.6258809883,
  * >6: SB (2006) from Cosmo 5.2 (cloud_nucleation(..))
  */
 const int nuc_type = 7;
+
+/** Use nucleation based either on Hande et al. (true)
+ * or Phillips et al. (false). This *should* depend
+ * on the nucleation type.
+ */
+const bool use_hdcp2_het = true; // Depends on nucleation type
 /** @} */ // end of group constants
 
 #endif

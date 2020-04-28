@@ -563,23 +563,23 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     }
 
     ////////////// ice_nucleation_homhet
-    // Homogeneous and heterogeneous ice nucleation based on
-    // "A parametrization of cirrus cloud formation: Homogenous
-    // freezing of supercooled aerosols" by B. Kaercher and
-    // U. Lohmann 2002 (KL02 hereafter)
-    //
-    // "Physically based parameterization of cirrus cloud formation
-    // for use in global atmospheric models" by B. Kaercher, J. Hendricks
-    // and U. Lohmann 2006 (KHL06 hereafter)
-    //
-    // and Phillips et al. (2008) with extensions
+//     Homogeneous and heterogeneous ice nucleation based on
+//     "A parametrization of cirrus cloud formation: Homogenous
+//     freezing of supercooled aerosols" by B. Kaercher and
+//     U. Lohmann 2002 (KL02 hereafter)
+    
+//     "Physically based parameterization of cirrus cloud formation
+//     for use in global atmospheric models" by B. Kaercher, J. Hendricks
+//     and U. Lohmann 2006 (KHL06 hereafter)
+    
+//     and Phillips et al. (2008) with extensions
     //
     // implementation by Carmen Koehler and AS
     // modified for C++ and Codipack by Maicon Hieronymus
 
     // heterogeneous nucleation using Hande et al.
     // ice_nucleation_het_hdcp2
-    bool use_hdcp2_het = true; // Depends on nucleation type
+
     codi::RealReverse delta_n_a = 0.0;
     bool ndiag_mask = false;
     if(use_hdcp2_het)
