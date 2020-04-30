@@ -52,7 +52,7 @@ class Deriv:
     pool = None
     threads = 0
 
-    def __init__(self, direc, filt=True,
+    def __init__(self, direc, filt=True, file_list=None,
                  EPSILON=0.0, trajectories=[1], suffix=None, threads=8):
         """
         Init class by loading the data from the given path.
@@ -77,13 +77,19 @@ class Deriv:
         self.pool = Pool(processes=threads)
         self.threads = threads
         self.data = loader.load_mult_derivates_direc_dic(
-            direc, filt, EPSILON, trajectories, suffix, self.pool
+            direc=direc, 
+            filt=filt, 
+            EPSILON=EPSILON, 
+            trajectories=trajectories, 
+            suffix=suffix, 
+            pool=self.pool, 
+            file_list2=file_list
         )
         df = list(self.data.values())[0]
         self.n_timesteps = len(df.index)
         self.cluster_names = {}
 
-    def to_parquet(self, f_name):
+    def to_parquet(self, f_name, compression):
         import dask.dataframe as dd
 
         tmp_df = None
@@ -95,7 +101,7 @@ class Deriv:
 
         append = os.path.isfile(f_name + ".parquet")
 
-        dd.from_pandas(tmp_df, chunksize=3000000).to_parquet(f_name + ".parquet", append=append)
+        dd.from_pandas(tmp_df, chunksize=3000000).to_parquet(f_name + ".parquet", append=append, ignore_divisions=append, compression=compression)
 
     def delete_not_mapped(self):
         """
