@@ -672,7 +672,7 @@ class Deriv_dask:
 
         for out_par in out_params:
             df_tmp_out = df.loc[df["Output Parameter"] == out_par]
-
+            t = timer()
             # Sort the derivatives
             if sort:
                 sorted_tuples = []
@@ -684,13 +684,17 @@ class Deriv_dask:
                     if value != 0 and not np.isnan(value):
                         sorted_tuples.append((in_p, value))
                 sorted_tuples.sort(key=lambda tup: tup[1])
-
+            t2 = timer()
+            print("Sorting done in {} s".format(t2-t), flush=True)
             def plot_helper(df, in_params, prefix, **kwargs):
                 # following https://holoviz.org/tutorial/Composing_Plots.html
                 t = timer()
                 df_tmp = df[in_params+[x_axis]]
                 df_tmp = df_tmp.melt(x_axis, var_name="Derivatives",
                                     value_name="Derivative Ratio")
+                t2 = timer()
+                print("Melting done in {} s".format(t2-t), flush=True)
+                t = timer()
                 if log[1]:
                     df_tmp["Derivative Ratio"] = df_tmp["Derivative Ratio"].apply(lambda x: np.log(np.abs(x)))
                     # Remove zero entries (-inf)
@@ -998,14 +1002,15 @@ class Deriv_dask:
                     i = i+1
                     save = (plot_path + prefix + x_axis + "_" + out_par
                             + "_" + "{:03d}".format(i))
-
+                t2 = timer()
+                print("Everything else done in {} s".format(t2-t), flush=True)
                 if self.backend == "bokeh":
-                    print("Plotting")
+                    print("Plotting", flush=True)
                     hvplot.show(both_plots)
                     t2 = timer()
-                    print("Plotting done in {}s".format(t2-t))
+                    print("Plotting done in {}s".format(t2-t), flush=True)
                 else:
-                    print("Saving to " + save + ".png")
+                    print("Saving to " + save + ".png", flush=True)
                     renderer.save(both_plots, save)
                     t2 = timer()
                     try:
@@ -1013,7 +1018,7 @@ class Deriv_dask:
                         display(Image(save + ".png", width=1600))
                     except:
                         pass
-                    print("Saving done in {}s".format(t2-t))
+                    print("Saving done in {}s".format(t2-t), flush=True)
             if sort:
                 i = 0
                 if n_plots is None:
@@ -1029,7 +1034,9 @@ class Deriv_dask:
                     plot_helper(df_tmp_out, in_params=in_params_2, prefix=prefix, **kwargs)
                     i += 1
             else:
-                plot_helper(df_tmp_out, in_params=in_params, prefix=prefix, **kwargs)
+                # Plot for every input parameter
+                for in_param in in_params:
+                    plot_helper(df_tmp_out, in_params=[in_param], prefix=prefix + "_" + in_param, **kwargs)
 
     def plot_two_ds_2(self, in_params, out_params, x_axis="timestep", mapped=True,
         trajectories=None, scatter=False, n_plots=None, percentile=None,
