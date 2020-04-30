@@ -56,7 +56,10 @@ params_dict2 = {"_diff_0.txt": "p",
                "_diff_28.txt": "Nrout",
                "_diff_29.txt": "Ngout",
                "_diff_30.txt": "Nhout",
-               "_diff_31.txt": "z"}
+               "_diff_31.txt": "z",
+               "_diff_32.txt": "n_inact",
+               "_diff_33.txt": "depo",
+               "_diff_34.txt": "sub"}
 
 
 def filter_zeros(df_dict, EPSILON=1e-31):
@@ -536,14 +539,14 @@ def load_parallel(f, suffix):
     processes.
     """
     out_param = params_dict2[f.split(suffix)[1]]
-    print("Loading from {}".format(f))
+#     print("Loading from {}".format(f))
     return (out_param, pd.read_csv(f, sep=",", index_col=False))
     # return (out_param, pd.read_csv(f, sep=",", index_col=False,
     #     dtype={"timestep": "double", "trajectory": "int64",
     #            "MAP": "bool", "LONGITUDE": "double", "LATITUDE": "double"}))
 
 
-def load_mult_derivates_direc_dic(direc="", filt=True,
+def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
                                   EPSILON=0.0, trajectories=[1], suffix="20160922_00", pool=None):
     """
     Create a dictionary with out parameters as keys and dictionaries with columns:
@@ -574,16 +577,18 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
     dic of pandas.Dataframe
         Pandas dataframe as described above.
     """
-    file_list = [os.path.join(direc, f) for f in os.listdir(direc)
-                 if os.path.isfile(os.path.join(direc, f))]
-    file_list2 = []
-    for f in file_list:
-        if "diff" not in f:
-            continue
-        s = f.split("traj")
-        s = s[-1].split("_")
-        if int(s[0]) in trajectories:
-            file_list2.append(f)
+    if file_list2 is None:
+        file_list = [os.path.join(direc, f) for f in os.listdir(direc)
+                     if os.path.isfile(os.path.join(direc, f))]
+        file_list2 = []
+        for f in file_list:
+            if "diff" not in f:
+                continue
+            s = f.split("traj")
+            s = s[-1].split("_")
+            if int(s[0]) in trajectories:
+                file_list2.append(f)
+    
 
     if suffix is None:
         example = file_list[0]
@@ -595,7 +600,7 @@ def load_mult_derivates_direc_dic(direc="", filt=True,
         example = example[:-4]
         example = example.split("_")
         suffix = example[-2] + "_" + example[-1]
-    print("Found suffix: {}".format(suffix))
+        print("Found suffix: {}".format(suffix))
     tmp_dict = {}
 
     for df_tuple in pb(pool.starmap(load_parallel, zip(file_list2, repeat(suffix))), redirect_stdout=True):
