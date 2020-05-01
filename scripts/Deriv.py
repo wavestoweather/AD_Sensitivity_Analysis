@@ -74,7 +74,10 @@ class Deriv:
             Number of threads to use for plotting.
 
         """
-        self.pool = Pool(processes=threads)
+        if threads is None:
+            self.pool = None
+        else:
+            self.pool = Pool(processes=threads)
         self.threads = threads
         self.data = loader.load_mult_derivates_direc_dic(
             direc=direc, 
