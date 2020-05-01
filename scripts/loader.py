@@ -602,17 +602,32 @@ def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
         suffix = example[-2] + "_" + example[-1]
         print("Found suffix: {}".format(suffix))
     tmp_dict = {}
+    
+    if pool is None:
+        for f in file_list2:
+            out_param = params_dict2[f.split(suffix)[1]]
+            df = pd.read_csv(f, sep=",", index_col=False)
+            if out_param in tmp_dict:
+                tmp_dict[out_param] = tmp_dict[out_param].append(df)
+            else:
+                tmp_dict[out_param] = df
+        if filt:
+            tmp_dict = filter_zeros(tmp_dict, EPSILON)
 
-    for df_tuple in pb(pool.starmap(load_parallel, zip(file_list2, repeat(suffix))), redirect_stdout=True):
-        out_param, df = df_tuple
-        if out_param in tmp_dict:
-            tmp_dict[out_param] = tmp_dict[out_param].append(df)
-        else:
-            tmp_dict[out_param] = df
-    if filt:
-        tmp_dict = filter_zeros(tmp_dict, EPSILON)
+        return tmp_dict
+            
+    else:
 
-    return tmp_dict
+        for df_tuple in pb(pool.starmap(load_parallel, zip(file_list2, repeat(suffix))), redirect_stdout=True):
+            out_param, df = df_tuple
+            if out_param in tmp_dict:
+                tmp_dict[out_param] = tmp_dict[out_param].append(df)
+            else:
+                tmp_dict[out_param] = df
+        if filt:
+            tmp_dict = filter_zeros(tmp_dict, EPSILON)
+
+        return tmp_dict
 
 
 def load_mult_derivates_directory(direc="", filt=True,

@@ -154,7 +154,7 @@ class Deriv:
             if col in ["LONGITUDE", "LATITUDE", "MAP"]:
                 continue
             cols.append(col)
-        print("Appending {}".format(cols))
+#         print("Appending {}".format(cols))
         for k in self.data:
             self.data[k] = self.data[k].merge(df[cols], how='right')
 
@@ -212,19 +212,35 @@ class Deriv:
                 self.data[key][deriv] = self.data[key][deriv]/denom
             return
         elif key is None:
-            for denom, k in pb( self.pool.starmap(self.parallel_ratio,
-                zip([self.data[k] for k in self.data.keys()], self.data.keys())) ):
-                for deriv in self.data[k]:
-                    if deriv[0] != 'd':
-                        continue
-                    self.data[k][deriv] = self.data[k][deriv]/denom
+            if self.pool is None:
+                for k in self.data.keys():
+                    denom = get_max_denom(self.data[k])
+                    for deriv in self.data[k]:
+                        if deriv[0] != 'd':
+                            continue
+                        self.data[k][deriv] = self.data[k][deriv]/denom
+            else:
+                for denom, k in pb( self.pool.starmap(self.parallel_ratio,
+                    zip([self.data[k] for k in self.data.keys()], self.data.keys())) ):
+                    for deriv in self.data[k]:
+                        if deriv[0] != 'd':
+                            continue
+                        self.data[k][deriv] = self.data[k][deriv]/denom
         else:
-            for denom, k in pb( self.pool.starmap(self.parallel_ratio,
-                zip([self.data[k] for k in k], k)) ):
-                for deriv in self.data[k]:
-                    if deriv[0] != 'd':
-                        continue
-                    self.data[k][deriv] = self.data[k][deriv]/denom
+            if self.pool is None:
+                for k in key:
+                    denom = get_max_denom(self.data[k])
+                    for deriv in self.data[k]:
+                        if deriv[0] != 'd':
+                            continue
+                        self.data[k][deriv] = self.data[k][deriv]/denom
+            else:
+                for denom, k in pb( self.pool.starmap(self.parallel_ratio,
+                    zip([self.data[k] for k in key], key)) ):
+                    for deriv in self.data[k]:
+                        if deriv[0] != 'd':
+                            continue
+                        self.data[k][deriv] = self.data[k][deriv]/denom
 
     @staticmethod
     def parallel_plot_orders(df, out_param, mapped, scatter,
