@@ -14,7 +14,8 @@
 # module load devel/Boost/1.70.0-gompi-2019a-Python-2.7.16
 # module load numlib/GSL/2.5-GCCcore-8.3.0
 
-
+# In case I forgot to purge any loaded modules
+# module purge
 module load tools/parallel/20181122
 module load numlib/GSL/2.5-GCCcore-6.4.0
 module load data/netCDF-C++4/4.3.0-foss-2018a
@@ -36,9 +37,10 @@ TARGET_TIME="187940.0"
 WRITE_INDEX="5000"
 # Number of tasks per node
 NODE_TASKS="32"
-scontrol show hostnames > list_of_nodes
+scontrol show hostnames > /tmp/list_of_nodes
 
 # Create directories on all nodes (sbcast does not work for some reason...)
+pdsh -w $SLURM_JOB_NODELIST mkdir -p /tmp/build/apps/src/microphysics/
 pdsh -w $SLURM_JOB_NODELIST cp /home/mahieron/process_plot_scripts/dmin_wetgrowth_lookup.dat /tmp/dmin_wetgrowth_lookup.dat
 pdsh -w $SLURM_JOB_NODELIST cp /home/mahieron/process_plot_scripts/build/apps/src/microphysics/trajectories /tmp/build/apps/src/microphysics/trajectories
 pdsh -w $SLURM_JOB_NODELIST cd /tmp
