@@ -38,6 +38,12 @@ WRITE_INDEX="5000"
 NODE_TASKS="32"
 scontrol show hostnames > list_of_nodes
 
+# Create directories on all nodes
+pdsh -w $SLURM_JOB_NODELIST mkdir -p /tmp/build/apps/src/microphysics/
+sbcast dmin_wetgrowth_lookup.dat /tmp/dmin_wetgrowth_lookup.dat
+sbcast build/apps/src/microphysics/trajectories /tmp/apps/src/microphysics/trajectories
+pdsh -w $SLURM_JOB_NODELIST cd /tmp
+
 # parameterize parallel
 my_parallel="parallel --sshloginfile list_of_nodes -j $NODE_TASKS --no-notice --delay .2"
 # see https://rcc.uchicago.edu/docs/tutorials/kicp-tutorials/running-jobs.html
