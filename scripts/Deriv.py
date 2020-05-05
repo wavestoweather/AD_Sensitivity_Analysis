@@ -103,7 +103,7 @@ class Deriv:
                 tmp_df = self.data[k]
 
         append = not os.listdir(f_name)
-
+        append = not append
         dd.from_pandas(tmp_df, chunksize=3000000).to_parquet(f_name, append=append, ignore_divisions=append, compression=compression)
 
     def delete_not_mapped(self):

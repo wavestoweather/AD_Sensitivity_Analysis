@@ -99,6 +99,7 @@ class Deriv_dask:
 
     def to_parquet(self, f_name, compression="snappy"):
         append = not os.listdir(f_name)
+        append = not append
         pd.to_parquet(self.data, f_name, append=append, ignore_divisions=append, compression=compression)
 
     def delete_not_mapped(self):
