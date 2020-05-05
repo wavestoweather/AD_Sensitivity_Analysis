@@ -181,6 +181,7 @@ int main(int argc, char** argv)
     const uint64_t n_lookup = 2000;
     const uint64_t n_lookup_highres = 10000;
     const uint64_t n_lookup_hr_dummy = 10;
+    int traj_id;
 
     // ==================================================
     // Define the reference quantities
@@ -543,11 +544,11 @@ int main(int argc, char** argv)
     // See constants.h for storage order
     std::vector<double> y_init(num_comp);
     nc_parameters_t nc_params;
-
+    size_t lenp;
     try
     {
         int dimid, ncid;
-        size_t lenp, n_timesteps;
+        size_t n_timesteps;
         // Get the amount of trajectories
         nc_open(global_args.input_file, NC_NOWRITE, &ncid);
 #ifdef WCB
@@ -1148,7 +1149,7 @@ int main(int argc, char** argv)
               << "Output name:\t" << input.OUTPUT_FILENAME << "\n"
               << "start_over:\t" << input.start_over << "\n"
               << "fixed_iter:\t" << input.fixed_iteration << "\n\n";
-
+    std::vector<int> ids(lenp);
     // Loop for timestepping: BEGIN
     // ==================================================
     // Read the trajectory file
@@ -1185,7 +1186,11 @@ int main(int argc, char** argv)
             load_nc_parameters_var(nc_params, datafile);
             load_nc_parameters(nc_params, startp, countp,
                                ref_quant, cc.num_sub_steps);
-
+            
+            netCDF::NcVar id_var;
+            id_var = datafile.getVar("id");
+            id_var.getVar(ids.data());
+            traj_id = ids[input.traj];
             // Set values from a given trajectory
             if(t==0 || input.start_over)
             {
@@ -1249,11 +1254,11 @@ int main(int argc, char** argv)
                 y_single_old[z_idx] = nc_params.z[0];
 
 #if defined WCB || defined WCB2
-                out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << input.traj << ","
+                out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
                         << nc_params.lon[0] << "," << nc_params.lat[0] << ","
                         << nc_params.ascent_flag << ",";
 #else
-                out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << input.traj << ","
+                out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
                         << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
 #endif
                 for(int ii = 0 ; ii < num_comp; ii++)
@@ -1265,14 +1270,14 @@ int main(int argc, char** argv)
                 {
 #if defined WCB || defined WCB2
                     out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
-                                    << input.traj << ","
+                                    << traj_id << ","
                                     << output_par_idx[ii] << ","
                                     << nc_params.lon[0] << ","
                                     << nc_params.lat[0] << ","
                                     << nc_params.ascent_flag << ",";
 #else
                     out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
-                                    << input.traj << ","
+                                    << traj_id << ","
                                     << output_par_idx[ii] << ","
                                     << nc_params.lon[0] << ","
                                     << nc_params.lat[0] << ",";
@@ -1441,12 +1446,12 @@ int main(int argc, char** argv)
                 {
                     // Write the results to the output file
 #if defined WCB || defined WCB2
-                    out_tmp << time_new << "," << input.traj << ","
+                    out_tmp << time_new << "," << traj_id << ","
                             << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                             << (nc_params.lat[0] + sub*nc_params.dlat) << ","
                             << nc_params.ascent_flag << ",";
 #else
-                    out_tmp << time_new << "," << input.traj << ","
+                    out_tmp << time_new << "," << traj_id << ","
                             << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                             << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #endif
@@ -1463,13 +1468,13 @@ int main(int argc, char** argv)
                     for(int ii = 0 ; ii < num_comp ; ii++)
                     {
 #if defined WCB || defined WCB2
-                        out_diff_tmp[ii] << time_new << "," << input.traj << ","
+                        out_diff_tmp[ii] << time_new << "," << traj_id << ","
                                      << output_par_idx[ii] << ","
                                      << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                                      << (nc_params.lat[0] + sub*nc_params.dlat) << ","
                                      << nc_params.ascent_flag << ",";
 #else
-                        out_diff_tmp[ii] << time_new << "," << input.traj << ","
+                        out_diff_tmp[ii] << time_new << "," << traj_id << ","
                                      << output_par_idx[ii] << ","
                                      << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                                      << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
