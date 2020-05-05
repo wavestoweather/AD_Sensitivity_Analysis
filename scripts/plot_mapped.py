@@ -117,6 +117,7 @@ def plot_res_line(df, out_param, dots=False, mapped=True, **kwargs):
     kwargs : dict
         Keyword arguments are passed down to matplotlib.axes.Axes.plot().
     """
+    df = df.compute()
     min_time = df.timestep.unique().min()
     max_time = df.timestep.unique().max()
     dt = (max_time - min_time + 19) / 20
