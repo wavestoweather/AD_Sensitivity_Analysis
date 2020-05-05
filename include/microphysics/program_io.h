@@ -304,7 +304,6 @@ void load_nc_parameters_var(
     nc.ascent_flag_var = datafile.getVar("WCB_flag");
     // 2h ascent rate after Oertel et al. (2019)
     nc.dp2h_var     = datafile.getVar("dp2h");
-    nc.id_var       = datafile.getVar("id");
     nc.conv_400_var = datafile.getVar("conv_400");
     nc.conv_600_var = datafile.getVar("conv_600");
     nc.slan_400_var = datafile.getVar("slan_400");
@@ -421,7 +420,6 @@ void load_nc_parameters(
     nc.NSin     = abs(nc.NSin);
     nc.NGin     = abs(nc.NGin);
     
-    nc.id_var.getVar(startp, countp, &nc.id);
     // Some additional flags for convective and
     // slantwise trajectories
     nc.conv_400_var.getVar(startp, countp, &map);

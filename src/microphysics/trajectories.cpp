@@ -1441,7 +1441,7 @@ int main(int argc, char** argv)
                 {
                     // Write the results to the output file
 #if defined WCB || defined WCB2
-                    out_tmp << time_new << "," << nc_params.id << ","
+                    out_tmp << time_new << "," << input.traj << ","
                             << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                             << (nc_params.lat[0] + sub*nc_params.dlat) << ","
                             << nc_params.ascent_flag << ",";
