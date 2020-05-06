@@ -572,7 +572,8 @@ class Deriv_dask:
         frac=None, min_x=None, max_x=None, nth=None, hist=[False, False],
         hexbin=[False, False], log=[False, False], sort=True,
         scatter_deriv=False, line_deriv=False, prefix=None, c=False, compute=False,
-        errorband=False, bins=50, plot_path="pics/", fig_type='svg', **kwargs):
+        errorband=False, bins=50, plot_path="pics/", fig_type='svg', 
+        datashade=True, **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
         At the bottom: Derivative with respect to that output parameter.
@@ -698,10 +699,11 @@ class Deriv_dask:
                 print("Melting done in {} s".format(t2-t), flush=True)
                 t = timer()
                 if log[1]:
-                    df_tmp["Derivative Ratio"] = df_tmp["Derivative Ratio"].apply(lambda x: np.log(np.abs(x)))
+                    df_tmp["Derivative Ratio"] = da.log(da.fabs(df_tmp["Derivative Ratio"]))
+#                     df_tmp["Derivative Ratio"] = df_tmp["Derivative Ratio"].apply(lambda x: np.log(np.abs(x)))
                     # Remove zero entries (-inf)
                     df_tmp = df_tmp[~da.isinf(df_tmp["Derivative Ratio"])]
-                df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
+                df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word, meta=("Derivatives", "object"))
 
                 if percentile is not None:
 
@@ -711,7 +713,9 @@ class Deriv_dask:
                     else:
                         df_group = df[[x_axis, out_par]]
                     if log[0]:
-                        df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
+                        # Apply should be more expensive
+                        df_group[out_par] = da.log(da.fabs(df_group[out_par]))
+#                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
                         # Remove zero entries (-inf)
                         df_group = df_group[~da.isinf(df_group[out_par])]
 
@@ -749,7 +753,9 @@ class Deriv_dask:
                 elif errorband:
                     df_group = df[[x_axis, out_par, "trajectory"]]
                     if log[0]:
-                        df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
+                        # Apply should be more expensive
+                        df_group[out_par] = da.log(da.fabs(df_group[out_par]))
+#                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
                     df_min_max = df_group.groupby([x_axis, "trajectory"])[out_par].mean().groupby(x_axis).agg([np.min, np.max])
                     df_std = df_group.groupby([x_axis, "trajectory"])[out_par].mean().groupby(x_axis).agg([lambda x: -1*np.std(x)+np.mean(x), lambda x: np.std(x)+np.mean(x)])
                     df_mean = df_group.groupby(x_axis)[out_par].mean()
@@ -779,13 +785,16 @@ class Deriv_dask:
                     else:
                         df_group = df[[x_axis, out_par, "trajectory"]]
                     if log[0]:
-                        df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
+                        # Apply should be more expensive
+                        df_group[out_par] = da.log(da.fabs(df_group[out_par]))
+#                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
                     param_plot = df_group.hvplot.scatter(
                         x=x_axis,
                         y=out_par,
                         c="trajectory",
                         title="Values of of {}".format(latexify.parse_word(out_par)),
-                        label=None
+                        label=None,
+                        datashade=datashade
                         )
                 elif hexbin[0]:
                     if out_par == x_axis:
@@ -793,7 +802,9 @@ class Deriv_dask:
                     else:
                         df_group = df[[x_axis, out_par, "trajectory"]]
                     if log[0]:
-                        df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
+                        # Apply should be more expensive
+                        df_group[out_par] = da.log(da.fabs(df_group[out_par]))
+#                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
                     param_plot = df_group.hvplot.hexbin(
                         x=x_axis,
                         y=out_par,
@@ -810,12 +821,15 @@ class Deriv_dask:
                     else:
                         df_group = df[[x_axis, out_par, "trajectory"]]
                     if log[0]:
-                        df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
+                        # Apply should be more expensive
+                         df_group[out_par] = da.log(da.fabs(df_group[out_par]))
+#                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
                     param_plot = df_group.hvplot.scatter(
                         x=x_axis,
                         y=out_par,
                         title="Values of of {}".format(latexify.parse_word(out_par)),
-                        label=None
+                        label=None,
+                        datashade=datashade
                     )
 
                 layout_kwargs = {}
@@ -826,9 +840,9 @@ class Deriv_dask:
                 if hist[0]:
                     param_plot.opts(**layout_kwargs)
                     param_hist_plot = param_plot.hist(dimension=[x_axis, out_par], bins=bins, range=[0, 10000])
-                
-
+                                    
                 if hexbin[1]:
+                    
                     deriv_plot = df_tmp.hvplot.hexbin(
                         x=x_axis,
                         y="Derivative Ratio",
@@ -849,6 +863,7 @@ class Deriv_dask:
                         by="Derivatives",
                         title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
                         label=None, 
+                        datashade=datashade
 #                         datashade=True # Useful for bokeh images, I guess
                     )
                   # Does not work: Rectangle object has no property dimension  

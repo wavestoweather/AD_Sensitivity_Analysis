@@ -28,27 +28,40 @@ filt = False
 EPSILON = 0.0
 ncpus = None
 c_this = False
-trajectories = np.arange(63) 
 file_list = []
 for f in os.listdir(direc_path):
     file_list.append(os.path.join(direc_path, f))
 file_list = np.sort(file_list)
 
-for traj in trajectories:
-    idx = np.argwhere(["traj{}_".format(traj) in f for f in file_list]).flatten()
+# wcb#####_traj#_MAP_t#####_p###
+# where # is a number.
+processed_trajectories = []
+for f_this in file_list:
+    if "diff" in f_this or "reference" in f_this:
+        continue
+    prefix = f_this.split(".tx")[0]
+    if prefix in processed_trajectories:
+        print("{} already processed. Continue".format(prefix))
+        continue
+    processed_trajectories.append(prefix)
+    idx = np.argwhere([prefix in f for f in file_list]).flatten()
     if len(idx) == 0:
-        break
+        print("Did not find {}".format(prefix))
     files = file_list[idx]
     t = timer()
     load_f = []
     ref = ""
     sim = " "
+    traj = -1
     for f in files:
         if "diff" in f:
             load_f.append(f)
         else:
             if "reference" in f:
                 ref = f
+                traj = f.split("_traj")[1]
+                traj = traj.split("_MAP")[0]
+                traj = int(traj)
             else:
                 sim = f
                 suffix = f[:-4]
@@ -61,7 +74,8 @@ for traj in trajectories:
                           file_list=load_f,
                           suffix=suffix,
                           threads=ncpus)
-    
+#     print("FOund reference: {}".format(ref))
+#     print("Found sim: {}".format(sim))
     df_sim_mapped = Sim()
     df_sim_mapped.load_file(
         filename=sim,
@@ -86,4 +100,5 @@ for traj in trajectories:
     t2 = timer()
     print("Saving done in {} s".format(t2-t))
     
+print("Done with following trajectories:\n{}".format(processed_trajectories))
 print("Finished")
