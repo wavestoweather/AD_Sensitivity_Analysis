@@ -62,7 +62,7 @@ params_dict2 = {"_diff_0.txt": "p",
                "_diff_34.txt": "sub"}
 deriv_type_dic = {
     "timestep": np.float64,
-     "trajectory": np.float64,
+     "trajectory": np.uint32,
      "Output Parameter": "category",
      "LONGITUDE": np.float64,
      "LATITUDE": np.float64,
@@ -625,7 +625,7 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
     """
     type_dic = {      
         "timestep": np.float64, 
-        "trajectory": np.int64, 
+        "trajectory": np.uint32, 
         "LONGITUDE": np.float64, 
         "LATITUDE": np.float64, 
         "MAP": np.float64, 
