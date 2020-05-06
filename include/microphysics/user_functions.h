@@ -447,8 +447,9 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         // codi::RealReverse S_percentage = s_sw*100;
         //     saturation_pressure_ice(T_prime)/saturation_pressure_water_icon(T_prime) * (S+1.0);
         // S_percentage *= 100;
-        // S_percentage = (S-1)*100;
-        codi::RealReverse S_percentage = s_sw * 100;
+        // oversaturation in percentage
+        codi::RealReverse S_percentage = (S-1)*100;
+        // codi::RealReverse S_percentage = s_sw * 100;
 
         // In contrast to Seifert & Beheng, we do not approximate dS/dt via
         // w dS/dz but calculate dS/dt
@@ -493,6 +494,25 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             + (C7*qr_delta1 + C8*qr_delta2)*min(S-1.0,0.0) );
         codi::RealReverse dS = (S/p)*dp - (S/qv)*( 1.0 - (qv/(C15+qv)) )*( C9*qc_third*(S-1.0)
             + (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0) ) - C16*(S/(T*T))*dT;
+
+#ifdef TRACE_SAT
+        std::cout << "Saturation (CCN activation) dS: " << dS
+                  << ", times dt: " << dS * dt
+                  << ", Evaporation: " << (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0)
+                  << ", Condensation: " << C9*qc_third*(S-1.0)
+                  << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
+                  << ", First part: " << (S/p)*res[p_idx]
+                  << ", Middle part: " << - (S/qv)*( 1.0 - (qv/(C15+qv)) )
+                  << ", S_percentage: " << S_percentage
+                  << ", S: " << S
+                  << ", e_d: " << e_d
+                  << ", qv_prime: " << qv_prime
+                  << ", Rv: " << Rv
+                  << ", T_prime " << T_prime
+                  << ", p_sat: " << p_sat
+                  << ", s_sw = e_d/p_sat - 1: " << s_sw
+                  << "\n";
+#endif
         // dS *= dt;
         // codi::RealReverse dSdz_w = w_prime *
 #ifdef TRACE_QC
@@ -3012,6 +3032,16 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     }
     res[S_idx] = (S/p)*res[p_idx] - (S/qv)*( 1.0 - (qv/(C15+qv)) )*( C9*qc_third*(S-1.0)
         + (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0) ) - C16*(S/(T*T))*res[T_idx];
+#ifdef TRACE_SAT
+    std::cout << "End: dS " << res[S_idx]
+              << ", times dt: " << res[S_idx] * dt
+              << ", Evaporation: " << (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0)
+              << ", Condensation: " << C9*qc_third*(S-1.0)
+              << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
+              << ", First part: " << (S/p)*res[p_idx]
+              << ", Middle part: " << - (S/qv)*( 1.0 - (qv/(C15+qv)) )
+              << "\n";
+#endif
 #ifdef TRACE_QC
     std::cout << "End dqc " << res[qc_idx] << ", dNc " << res[Nc_idx] << "\n";
     std::cout << "End: res[S] " << res[S_idx] << "\n\n";
