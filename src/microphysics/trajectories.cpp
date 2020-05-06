@@ -1480,9 +1480,9 @@ int main(int argc, char** argv)
                                      << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #endif
 #if defined WCB2
-                        out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
-                                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                                << nc_params.slan_600 << ",";
+                        out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                                     << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                                     << nc_params.slan_600 << ",";
 #endif
                         for(int jj = 0 ; jj < num_par ; jj++)
                             out_diff_tmp[ii] << y_diff[ii][jj]
