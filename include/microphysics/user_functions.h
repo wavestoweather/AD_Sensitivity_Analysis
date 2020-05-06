@@ -242,6 +242,21 @@ void Press_Temp(
     + (C7*qr_delta1 + C8*qr_delta2)*min(S-1.0,0.0) );
 }
 
+/**
+ * Calculates saturation adjustement as in ICON.
+ * It corrects the temperature, specific humidity (qv),
+ * the cloud water content and pressure for condensation and
+ * evaporation.
+ * From ICON:
+ * Saturation adjustment at constant total density (adjustment of T and p accordingly)
+ * assuming chemical equilibrium of water and vapor. For the heat capacity of
+ * of the total system (dry air, vapor, and hydrometeors) the value of dry air
+ * is taken, which is a common approximation and introduces only a small error.
+ */
+void saturation_adj()
+{
+
+}
 
 /**
  * This function evaluates the RHS function of the ODE. It uses the 2 moment
@@ -362,17 +377,18 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse qg_prime = ref.qref * qg;
     codi::RealReverse qh_prime = ref.qref * qh;
     codi::RealReverse z_prime = ref.zref * z;
-
+    // TODO: Check p_sat and e_d
+    // Values seem off...
     codi::RealReverse T_c = T_prime - tmelt;
     codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
     codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime);
     codi::RealReverse ssi = qv_prime * Rv * T_prime / p_sat_ice;
     codi::RealReverse D_vtp = diffusivity(T_prime, p_prime);
     codi::RealReverse e_d = qv_prime * Rv * T_prime; // Could use R_v as well. The difference is minor
-    codi::RealReverse s_sw = e_d / p_sat - 1.0; // super saturation over water
+    codi::RealReverse s_sw = S - 1.0;
+    // codi::RealReverse s_sw = e_d / p_sat - 1.0; // super saturation over water
     codi::RealReverse s_si = e_d / p_sat_ice - 1.0; // super saturation over ice
     const double EPSILON = 1.0e-20;
-
 
     ////////////// ccn_activation_hdcp2
     if(nuc_type == 0)
@@ -511,6 +527,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                   << ", T_prime " << T_prime
                   << ", p_sat: " << p_sat
                   << ", s_sw = e_d/p_sat - 1: " << s_sw
+                  << ", S calculated: " << e_d/p_sat
                   << "\n";
 #endif
         // dS *= dt;

@@ -596,6 +596,10 @@ int main(int argc, char** argv)
         y_init[T_idx] = nc_params.t;
 
         y_init[S_idx] = nc_params.S;
+#ifdef SAT_CALC
+        y_init[S_idx] = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+#endif
         y_init[qc_idx] = nc_params.qc;
         y_init[qr_idx] = nc_params.qr;
         y_init[qv_idx] = nc_params.qv;
@@ -1186,7 +1190,7 @@ int main(int argc, char** argv)
             load_nc_parameters_var(nc_params, datafile);
             load_nc_parameters(nc_params, startp, countp,
                                ref_quant, cc.num_sub_steps);
-            
+
             netCDF::NcVar id_var;
             id_var = datafile.getVar("id");
             id_var.getVar(ids.data());
@@ -1197,6 +1201,10 @@ int main(int argc, char** argv)
                 y_single_old[p_idx]  = nc_params.p;     // p
                 y_single_old[T_idx]  = nc_params.t;     // T
                 y_single_old[S_idx]  = nc_params.S;     // S
+#ifdef SAT_CALC
+                y_single_old[S_idx]  = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+                    / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+#endif
                 y_single_old[qc_idx] = nc_params.qc;    // qc
                 y_single_old[qr_idx] = nc_params.qr;    // qr
                 y_single_old[qv_idx] = nc_params.qv;    // qv
