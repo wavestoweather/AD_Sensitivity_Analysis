@@ -257,7 +257,7 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, columns=None):
     dic of pandas.Dataframe
         Pandas dataframe as described above.
     """
-    if parquet:
+    if parquet: 
         df = pd.read_parquet(direc + "/", columns=columns)
     else:
         df = pd.read_csv(direc + "/*diff*", assume_missing=True) # , blocksize="8GB"
