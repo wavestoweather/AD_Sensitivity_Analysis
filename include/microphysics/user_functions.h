@@ -419,7 +419,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[qc_idx] += delta_q;
             res[qv_idx] -= delta_q;
 #ifdef TRACE_QC
-            std::cout << "Ascent dqc " << delta_q << ", dNc " << delta_n
+            if(abs(delta_q) > 0)
+                std::cout << "Ascent dqc " << delta_q << ", dNc " << delta_n
                     << ", nuc_n " << nuc_n << ", Nc " << Nc << ", rest " << 10.0e-6 << "\n";
 #endif
 #ifdef TRACE_QV
@@ -601,7 +602,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             std::cout << "SB ccn activation dqv " << -delta_q << "\n";
 #endif
 #ifdef TRACE_QC
-            std::cout << "SB ccn activation dqc " << delta_q << ", dNc "
+            if(abs(delta_q) > 0)
+                std::cout << "SB ccn activation dqc " << delta_q << ", dNc "
                     //   << ((res[Nc_idx]*dt + Nc > N_max) ? (N_max - Nc)/dt : (N_min - Nc)/dt)
                       << " or res " << res[Nc_idx]
                       << ", dt " << dt << ", N_max " << N_max << "\n";
@@ -786,6 +788,12 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[qv_idx] -= delta_q;
             res[n_inact_idx] += delta_n;
             res[depo_idx] += delta_q;
+#ifdef TRACE_QV
+            std::cout << "Phillips nucleation dqv: " << -delta_q << "\n";
+#endif
+#ifdef TRACE_QI
+            std::cout << "Phillips nucleation dqi: " << delta_q << ", dNi: " << delta_n << "\n";
+#endif
         }
 
     } // end Phillips
@@ -916,7 +924,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         res[qc_idx] -= delta_qi;
         res[Nc_idx] -= delta_ni;
 #ifdef TRACE_QC
-        std::cout << "cloud freeze dqc " << -delta_qi << ", dNc " << -delta_ni << "\n";
+        if(abs(delta_qi) > 0)
+            std::cout << "cloud freeze dqc " << -delta_qi << ", dNc " << -delta_ni << "\n";
 #endif
 #ifdef TRACE_QI
         std::cout << "cloud freeze dqi " << delta_qi << ", dNi " << delta_ni << "\n";
@@ -1055,7 +1064,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             std::cout << "Depos growth dqh " << dep_hail << "\n";
 #endif
 #ifdef TRACE_QV
-        std::cout << "Depos growth dqv " << -dep_sum << "\n";
+            std::cout << "Depos growth dqv " << -dep_sum << "\n";
 #endif
 
             dep_rate_ice += dep_ice;
@@ -1477,6 +1486,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[Nc_idx] -= rime_n;
 
 #ifdef TRACE_QC
+            if(abs(rime_q) > 0)
             std::cout << "ice riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QI
@@ -1554,7 +1564,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             // Cloud N
             res[Nc_idx] -= rime_n;
 #ifdef TRACE_QC
-            std::cout << "ice cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
+            if(abs(rime_q) > 0)
+                std::cout << "ice cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QI
             std::cout << "ice cloud riming dqi " << rime_q << "\n";
@@ -1722,7 +1733,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             // Cloud N
             res[Nc_idx] -= rime_n;
 #ifdef TRACE_QC
-            std::cout << "Snow riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
+            if(abs(rime_q) > 0)
+                std::cout << "Snow riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QS
             std::cout << "Snow riming dqs " << rime_q << "\n";
@@ -1829,7 +1841,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             // Cloud N
             res[Nc_idx] -= rime_n;
 #ifdef TRACE_QC
-            std::cout << "snow depos dqc " << -rime_q << ", dNc " << -rime_n << "\n";
+            if(abs(rime_q) > 0)
+                std::cout << "snow depos dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QS
             std::cout << "snow depos dqs " << rime_q << "\n";
@@ -2036,7 +2049,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             // Cloud N
             res[Nc_idx] -= rime_n;
 #ifdef TRACE_QC
-            std::cout << "Particle cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
+            if(abs(rime_q) > 0)
+                std::cout << "Particle cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
             codi::RealReverse delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
             // Sublimination, cooling
@@ -2399,7 +2413,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             // Cloud N
             res[Nc_idx] += melt_n;
 #ifdef TRACE_QC
-            std::cout << "ice melting dqc " << melt_q << ", dNc " << melt_n << "\n";
+            if(abs(melt_q) > 0)
+                std::cout << "ice melting dqc " << melt_q << ", dNc " << melt_n << "\n";
 #endif
         }
 
@@ -2631,7 +2646,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         res[Nc_idx] -= au*x_s_i*2.0;
         res[qc_idx] -= au;
 #ifdef TRACE_QC
-        std::cout << "autoconversion dqc " << -au << ", dNc " << -au*x_s_i*2.0 << "\n";
+        if(abs(au) > 0)
+            std::cout << "autoconversion dqc " << -au << ", dNc " << -au*x_s_i*2.0 << "\n";
 #endif
 #ifdef TRACE_QR
         std::cout << "autoconversion dqr " << au << ", dNr " << au*x_s_i << "\n";
@@ -2648,7 +2664,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             std::cout << "accretionKB dqr " << ac << "\n";
 #endif
 #ifdef TRACE_QC
-            std::cout << "accretionKB dqc " << -ac << "\n";
+            if(abs(ac) > 0)
+                std::cout << "accretionKB dqc " << -ac << "\n";
 #endif
         }
     } else if(auto_type == 2)
@@ -2679,7 +2696,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[qc_idx] -= au;
             res[Nc_idx] -= min(Nc, sc);
 #ifdef TRACE_QC
-            std::cout << "type 3 dqc " << -au << ", dNc " << -min(Nc, sc) << "\n";
+            if(abs(au) > 0)
+                std::cout << "type 3 dqc " << -au << ", dNc " << -min(Nc, sc) << "\n";
 #endif
 #ifdef TRACE_QR
             std::cout << "type 3 dqr " << au << ", dNr " << au / cc.cloud.max_x << "\n";
@@ -2702,7 +2720,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             res[qc_idx] -= ac;
             res[Nc_idx] -= min(Nc, x_c);
 #ifdef TRACE_QC
-            std::cout << "accretionSB dqc " << -ac << ", dNc " << -min(Nc, x_c) << "\n";
+            if(abs(ac) > 0)
+                std::cout << "accretionSB dqc " << -ac << ", dNc " << -min(Nc, x_c) << "\n";
 #endif
 #ifdef TRACE_QR
             std::cout << "accretionSB dqr " << ac << "\n";
@@ -3060,9 +3079,11 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
               << "\n";
 #endif
 #ifdef TRACE_QC
-    std::cout << "End dqc " << res[qc_idx] << ", dNc " << res[Nc_idx] << "\n";
-    std::cout << "End: res[S] " << res[S_idx] << "\n\n";
-
+    if(abs(res[qc_idx]) > 0)
+    {
+        std::cout << "End dqc " << res[qc_idx] << ", dNc " << res[Nc_idx] << "\n";
+        std::cout << "End: res[S] " << res[S_idx] << "\n\n";
+    }
 #endif
 }
 

@@ -1269,6 +1269,11 @@ int main(int argc, char** argv)
                 out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
                         << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
 #endif
+#if defined WCB2
+                out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                        << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                        << nc_params.slan_600 << ",";
+#endif
                 for(int ii = 0 ; ii < num_comp; ii++)
                     out_tmp << y_single_old[ii] <<
                         ((ii == num_comp-1) ? "\n" : ",");
@@ -1289,6 +1294,11 @@ int main(int argc, char** argv)
                                     << output_par_idx[ii] << ","
                                     << nc_params.lon[0] << ","
                                     << nc_params.lat[0] << ",";
+#endif
+#if defined WCB2
+                    out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                                     << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                                     << nc_params.slan_600 << ",";
 #endif
                     for(int jj = 0 ; jj < num_par ; jj++)
                         out_diff_tmp[ii] << 0.0
@@ -1322,7 +1332,7 @@ int main(int argc, char** argv)
             for(uint32_t sub=1; sub<cc.num_sub_steps; ++sub) // cc.num_sub_steps
             {
 #if defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
-                std::cout << "\n\ntimestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
+                std::cout << "timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
 #endif
                 // Set the coefficients from the last timestep and from
                 // the input files
