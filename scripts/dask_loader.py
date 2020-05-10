@@ -56,7 +56,10 @@ params_dict2 = {"_diff_0.txt": "p",
                "_diff_28.txt": "Nrout",
                "_diff_29.txt": "Ngout",
                "_diff_30.txt": "Nhout",
-               "_diff_31.txt": "z"}
+               "_diff_31.txt": "z",
+               "_diff_32.txt": "n_inact",
+               "_diff_33.txt": "depo",
+               "_diff_34.txt": "sub"}
 
 
 def filter_zeros(df_dict, EPSILON=1e-31):

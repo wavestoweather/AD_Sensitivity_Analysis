@@ -197,7 +197,7 @@ class Deriv:
         def get_max_denom(df):
             denom = -1.0
             for deriv in df:
-                if deriv[0] != 'd':
+                if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                     continue
                 d = np.abs(df[deriv]).max()
                 if d > denom:
@@ -207,7 +207,7 @@ class Deriv:
         if isinstance(key, str):
             denom = get_max_denom(self.data[key])
             for deriv in self.data[key]:
-                if deriv[0] != 'd':
+                if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                     continue
                 self.data[key][deriv] = self.data[key][deriv]/denom
             return
@@ -216,14 +216,14 @@ class Deriv:
                 for k in self.data.keys():
                     denom = get_max_denom(self.data[k])
                     for deriv in self.data[k]:
-                        if deriv[0] != 'd':
+                        if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                             continue
                         self.data[k][deriv] = self.data[k][deriv]/denom
             else:
                 for denom, k in pb( self.pool.starmap(self.parallel_ratio,
                     zip([self.data[k] for k in self.data.keys()], self.data.keys())) ):
                     for deriv in self.data[k]:
-                        if deriv[0] != 'd':
+                        if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                             continue
                         self.data[k][deriv] = self.data[k][deriv]/denom
         else:
@@ -231,14 +231,14 @@ class Deriv:
                 for k in key:
                     denom = get_max_denom(self.data[k])
                     for deriv in self.data[k]:
-                        if deriv[0] != 'd':
+                        if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                             continue
                         self.data[k][deriv] = self.data[k][deriv]/denom
             else:
                 for denom, k in pb( self.pool.starmap(self.parallel_ratio,
                     zip([self.data[k] for k in key], key)) ):
                     for deriv in self.data[k]:
-                        if deriv[0] != 'd':
+                        if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                             continue
                         self.data[k][deriv] = self.data[k][deriv]/denom
 
