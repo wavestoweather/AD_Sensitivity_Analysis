@@ -24,6 +24,7 @@ from timeit import default_timer as timer
 
 direc_path = "/lustre/project/m2_zdvresearch/mahieron/wcb_conv_slan"
 store_path = "/lustre/project/m2_zdvresearch/mahieron/wcb_conv_slan_parquet"
+store_path = "/lustre/project/m2_zdvresearch/mahieron/wcb_conv_slan_parquet_interm2"
 filt = False
 EPSILON = 0.0
 ncpus = None
@@ -32,10 +33,13 @@ file_list = []
 for f in os.listdir(direc_path):
     file_list.append(os.path.join(direc_path, f))
 file_list = np.sort(file_list)
+print("Running for {} trajectories".format(len(file_list)))
 
 # wcb#####_traj#_MAP_t#####_p###
 # where # is a number.
 processed_trajectories = []
+failed_trajectories = []
+
 for f_this in file_list:
     if "diff" in f_this or "reference" in f_this:
         continue
@@ -43,6 +47,7 @@ for f_this in file_list:
     if prefix in processed_trajectories:
         print("{} already processed. Continue".format(prefix))
         continue
+    
     processed_trajectories.append(prefix)
     idx = np.argwhere([prefix in f for f in file_list]).flatten()
     if len(idx) == 0:
@@ -67,6 +72,7 @@ for f_this in file_list:
                 suffix = f[:-4]
                 suffix = suffix.split("_")
                 suffix = suffix[-2] + "_" + suffix[-1]
+                
     df_dic_mapped = Deriv(direc=direc_path,
                           filt=filt,
                           EPSILON=EPSILON,
@@ -74,8 +80,8 @@ for f_this in file_list:
                           file_list=load_f,
                           suffix=suffix,
                           threads=ncpus)
-#     print("FOund reference: {}".format(ref))
-#     print("Found sim: {}".format(sim))
+    print("Found reference: {}".format(ref))
+    print("Found sim: {}".format(sim))
     df_sim_mapped = Sim()
     df_sim_mapped.load_file(
         filename=sim,
@@ -84,6 +90,7 @@ for f_this in file_list:
         refs=ref)
     t2 = timer()
     print("Loading done in {} s".format(t2-t))
+    
     print("Get ratio of data")
     t = timer()
     df_dic_mapped.calculate_ratios()
@@ -96,9 +103,14 @@ for f_this in file_list:
     print("Adding finished in {} s".format(t2-t))
     print("Saving as parquet")
     t = timer()
-    df_dic_mapped.to_parquet(store_path, compression="snappy")
+    try:
+        df_dic_mapped.to_parquet(store_path, compression="snappy")
+    except:
+        print("FAILED: {}".format(prefix))
+        failed_trajectories.append(prefix)
     t2 = timer()
     print("Saving done in {} s".format(t2-t))
     
 print("Done with following trajectories:\n{}".format(processed_trajectories))
+print("Failed the following trajectories:\n{}".format(failed_trajectories))
 print("Finished")

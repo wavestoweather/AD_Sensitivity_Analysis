@@ -567,7 +567,7 @@ class Deriv_dask:
             sorted_tuples.sort(key=lambda tup: tup[1])
             return sorted_tuples
 
-    def plot_two_ds(self, in_params, out_params, x_axis="timestep", mapped=True,
+    def plot_two_ds(self, in_params, out_params, x_axis="timestep", mapped=None,
         trajectories=None, scatter=False, n_plots=None, percentile=None,
         frac=None, min_x=None, max_x=None, nth=None, hist=[False, False],
         hexbin=[False, False], log=[False, False], sort=True,
@@ -593,9 +593,9 @@ class Deriv_dask:
         x_axis : string
             The column to use as x-axis. Can be either "timestep" or
             an output parameter or a derivative.
-        mapped : boolean
-            If true: plot the region, where "MAP" is true, ie where the wcb
-            criterion is fullfilled.
+        mapped : string
+            Column name which has to be true such as conv_400, slan_400,
+            conv_600, slan_600.
         trajectories : int
             The index of the trajectories to plot. If None is given, all
             trajectories will be plotted.
@@ -654,12 +654,14 @@ class Deriv_dask:
             df = df.loc[df[x_axis] <= max_x]
         if trajectories is not None:
             df = df.loc[df.trajectory.isin(trajectories)]
-        if mapped:
-            df = df.loc[df.MAP == True]
+        if mapped is not None:
+            df = df.loc[df[mapped]]
+        df = df.loc[df["Output Parameter"].isin(out_params)]
+        all_params = list(set(["Output Parameter", "trajectory"] + in_params + [x_axis] + out_params))
         if compute:
-            df = df.loc[df["Output Parameter"].isin(out_params)].compute()
+            df = df[all_params].compute()
         else:
-            df = df.loc[df["Output Parameter"].isin(out_params)]
+            df = df[all_params]
         import hvplot.dask # adds hvplot method to dask objects
         import hvplot.pandas
         import hvplot
@@ -703,7 +705,7 @@ class Deriv_dask:
 #                     df_tmp["Derivative Ratio"] = df_tmp["Derivative Ratio"].apply(lambda x: np.log(np.abs(x)))
                     # Remove zero entries (-inf)
                     df_tmp = df_tmp[~da.isinf(df_tmp["Derivative Ratio"])]
-                df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word, meta=("Derivatives", "object"))
+                df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word) # , meta=("Derivatives", "object")
 
                 if percentile is not None:
 

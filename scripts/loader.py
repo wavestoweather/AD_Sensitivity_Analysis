@@ -62,7 +62,7 @@ params_dict2 = {"_diff_0.txt": "p",
                "_diff_34.txt": "sub"}
 deriv_type_dic = {
     "timestep": np.float64,
-     "trajectory": np.uint32,
+     "trajectory": np.uint64,
      "Output Parameter": "category",
      "LONGITUDE": np.float64,
      "LATITUDE": np.float64,
@@ -625,7 +625,7 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
     """
     type_dic = {      
         "timestep": np.float64, 
-        "trajectory": np.uint32, 
+        "trajectory": np.uint64, 
         "LONGITUDE": np.float64, 
         "LATITUDE": np.float64, 
         "MAP": np.bool_, 
@@ -1017,10 +1017,16 @@ def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
         print("Found suffix: {}".format(suffix))
     tmp_dict = {}
     
+    def booler(x):
+#         if x != "0" and x != "1":
+#             print(x)
+        return np.bool_(x)
+    def inter(x):
+        return np.uint32(x)
     if pool is None:
         for f in file_list2:
             out_param = params_dict2[f.split(suffix)[1]]
-            df = pd.read_csv(f, sep=",", index_col=False, dtype=deriv_type_dic)
+            df = pd.read_csv(f, sep=",", index_col=False, dtype=deriv_type_dic)#, converters={"conv_400": booler, "conv_600": booler, "slan_400": booler, "slan_600": booler, "dp2h": booler, "trajectory": inter})
             if out_param in tmp_dict:
                 tmp_dict[out_param] = tmp_dict[out_param].append(df)
             else:
