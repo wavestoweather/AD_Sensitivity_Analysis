@@ -3,7 +3,6 @@
 
 #include "codi.hpp"
 #include <cmath>
-#include "physical_parameterizations.h"
 #include "types.h"
 
 /** @defgroup constants Constants
