@@ -17,15 +17,29 @@
 int main(int argc, char** argv)
 {
     std::vector<codi::RealReverse> y(2);
-    uint32_t n1 = 50;
-    uint32_t n2 = 50;
-    uint32_t n3 = 0;
-    // if(argc > 1)
-    //     n1 = (uint32_t) argv[1];
-    // if(argc > 2)
-    //     n2 = (uint32_t) argv[2];
-    // if(argc > 3)
-    //     n3 = (uint32_t) argv[3];
+    uint32_t n1 = 500;
+    uint32_t n2 = 500;
+    codi::RealReverse min_1 = 0.0;
+    codi::RealReverse min_2 = 180.0;
+    codi::RealReverse max_1 = 0.1;
+    codi::RealReverse max_2 = T_nuc;
+    codi::RealReverse qc = 0.0;
+
+    if(argc > 1)
+        n1 = std::stoi(argv[1]);
+    if(argc > 2)
+        n2 = std::stoi(argv[2]);
+    if(argc > 3)
+        min_2 = std::stod(argv[3]);
+    if(argc > 4)
+        max_2 = std::stod(argv[4]);
+    if(argc > 5)
+        min_1 = std::stod(argv[5]);
+    if(argc > 6)
+        max_1 = std::stod(argv[6]);
+    if(argc > 7)
+        qc = std::stod(argv[7]);
+
 
     reference_quantities_t ref_quant;
 
@@ -34,28 +48,18 @@ int main(int argc, char** argv)
 
     model_constants_t cc;
     cc.ice.min_x = 1.0e-12;
-    codi::RealReverse qc = n3;
-    std::string out_filename = "scan_qv_T_ice_activation.csv";
-    std::ofstream outfile;
-    outfile.open(out_filename);
 
-    if( !outfile.is_open() )
-    {
-        std::cout << "ERROR while opening the outputfile. Aborting." << std::endl;
-        return 1;
-    }
-    outfile << "qv,T,delta_n,delta_q\n";
+    std::cout << "qv,T,delta_n,delta_q\n";
 
     for(uint32_t i=0; i<n1; i++)
     {
-        codi::RealReverse qv = 0.0 + 0.1/n1 * i;
+        codi::RealReverse qv = min_1 + max_1/n1 * i;
         for(uint32_t j=0; j<n2; j++)
         {
-            codi::RealReverse T = 180.0 + (T_nuc-180.0)/n2 * j;
+            codi::RealReverse T = min_2 + (max_2-min_2)/n2 * j;
             y[0] = y[1] = 0.0;
             ice_activation(qc, qv, T, y, ref_quant, cc);
-            outfile << qv << "," << T << "," << y[0].getValue() << "," << y[1].getValue() << "\n";
+            std::cout << qv << "," << T << "," << y[0].getValue() << "," << y[1].getValue() << "\n";
         }
     }
-    outfile.close();
 }
