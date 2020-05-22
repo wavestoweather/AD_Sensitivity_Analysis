@@ -419,7 +419,7 @@ void load_nc_parameters(
     nc.NIin     = abs(nc.NIin);
     nc.NSin     = abs(nc.NSin);
     nc.NGin     = abs(nc.NGin);
-    
+
     // Some additional flags for convective and
     // slantwise trajectories
     nc.conv_400_var.getVar(startp, countp, &map);
@@ -523,7 +523,7 @@ void init_input_parameters(input_parameters_t &in)
   // Numerics
   in.t_end_prime = 100.0;	// Seconds
   in.dt_prime = 0.01;		// Seconds
-  in.snapshot_index = 1000;
+  in.snapshot_index = 200;
   in.dt_traject = 20;       // Seconds; fixed from paper
   // Filename for output
 #if defined(RK4)
@@ -542,8 +542,8 @@ void init_input_parameters(input_parameters_t &in)
   // Scaling factor
   in.scaling_fact = 1.0;	// No scaling
   in.start_over = true;
-  in.fixed_iteration = true;
-  in.auto_type = 1;
+  in.fixed_iteration = false;
+  in.auto_type = 3;
   in.traj = 0;
   in.write_index = 100000;
 }
@@ -660,47 +660,7 @@ void set_input_from_arguments(global_args_t &arg ,
   }
 }
 
-/**
- * Setup the cloud autoconversion parameters.
- *
- * @param pc Model constants for a certain particle type.
- */
-void setup_cloud_autoconversion(
-    particle_model_constants_t &pc)
-{
-    auto nu = pc.nu + 1.0;
-    auto mu = pc.mu;
-    if(pc.mu == 1.0)
-    {
-        cloud_k_au = kc_autocon / pc.max_x * 0.05
-            * (nu+1.0)*(nu+3.0) / pow(nu, 2);
-        cloud_k_sc = kc_autocon * (nu+1.0)/(nu);
-    } else
-    {
-        cloud_k_au = kc_autocon / pc.max_x * 0.05
-            * (2.0 * tgamma((nu+3.0)/mu)
-            * tgamma((nu+1.0)/mu) * pow(tgamma((nu)/mu), 2)
-            - 1.0 * pow(tgamma((nu+2.0)/mu), 2) * pow(tgamma((nu)/mu), 2))
-            / pow(tgamma((nu+1.0)/mu), 4);
-        cloud_k_sc = kc_autocon * pc.c_z;
-    }
-}
 
-/**
- * Setup for bulk sedimentation velocity.
- *
- * @param pc Model constants for a certain particle type.
- */
-void setup_bulk_sedi(
-    particle_model_constants_t &pc)
-{
-    pc.alfa_n = pc.a_vel * tgamma( (pc.nu+pc.b_vel+1.0)/pc.mu )
-        / tgamma( (pc.nu+1.0)/pc.mu);
-    pc.alfa_q = pc.a_vel * tgamma( (pc.nu+pc.b_vel+2.0)/pc.mu )
-        / tgamma( (pc.nu+2.0)/pc.mu );
-    pc.lambda = tgamma( (pc.nu+1.0)/pc.mu )
-        / tgamma( (pc.nu+2.0)/pc.mu );
-}
 
 /** @} */ // end of group io
 

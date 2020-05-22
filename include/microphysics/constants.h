@@ -890,6 +890,17 @@ std::vector<std::vector<double> > afrac_soot = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.37e-07, 2.76e-05, 8.66e-05, 0.000127, 0.000172, 0.000235, 0.000321, 0.000442, 0.000567, 0.000625, 0.000691, 0.000763, 0.000844, 0.000934, 0.00103, 0.00115, 0.00127, 0.0014, 0.00155, 0.00172, 0.0019, 0.0021, 0.00231},
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
+
+/**
+ * Structure to hold the new equidistant lookup table for
+ * graupel wetgrowth diameter
+ */
+table_t ltabdminwgg;
+gamma_table_t table_g1, table_g2, table_r1, table_r2, table_r3;
+
+const uint64_t n_lookup = 2000;
+const uint64_t n_lookup_highres = 10000;
+const uint64_t n_lookup_hr_dummy = 10;
 /** @} */ // end of group constants
 
 #endif

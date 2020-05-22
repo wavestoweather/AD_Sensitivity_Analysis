@@ -259,6 +259,197 @@ void saturation_adj()
 }
 
 /**
+ * Heterogeneous nucleation using Hande et al.
+ */
+template<class float_t>
+void ice_activation_hande(
+    float_t &qc_prime,
+    float_t &qv_prime,
+    float_t &T_prime,
+    float_t &ssi,
+    float_t &delta_n_a,
+    float_t &n_inact,
+    bool &ndiag_mask,
+    std::vector<float_t> &res,
+    model_constants_t &cc
+)
+{
+    if(T_prime < T_nuc && T_prime > 180.0 && ssi > 1.0 && n_inact < ni_het_max)
+    {
+
+        const double EPSILON = 1.0e-20;
+        codi::RealReverse ndiag = 0.0;
+        if(qc_prime > EPSILON)
+        {
+            T_prime = max(T_prime, 237.1501);
+            if(T_prime < 261.15)
+            {
+                ndiag = nim_imm * exp(-alf_imm
+                    * exp(bet_imm*log(T_prime-237.15)));
+            }
+        } else
+        {
+            // Hande et al. scheme, Eq. (3) with (2) and (1)
+            codi::RealReverse T_tmp = max(T_prime, 220.001);
+            if(T_tmp < 253.0)
+            {
+                ndiag = nin_dep * exp(-alf_dep
+                    * exp(bet_dep*log(T_tmp - 220.0)));
+                ndiag = ndiag * (a_dep * atan(b_dep*(ssi-1.0)+c_dep)+d_dep);
+            }
+        }
+        codi::RealReverse delta_n = max(ndiag - n_inact, 0.0);
+        codi::RealReverse delta_q = min(delta_n * cc.ice.min_x_nuc_hetero, qv_prime);
+        delta_n = delta_q/cc.ice.min_x_nuc_hetero;
+
+        res[qi_idx] += delta_q;
+        res[Ni_idx] += delta_n;
+        res[qv_idx] -= delta_q;
+#ifdef TRACE_QV
+        std::cout << "heterogeneous nucleation dqv " << -delta_q << "\n";
+#endif
+#ifdef TRACE_QI
+        std::cout << "heterogeneous nucleation dqi " << delta_q << ", dNi " << delta_n << "\n";
+#endif
+        n_inact += delta_n;
+        delta_n_a = delta_n;
+
+        // latent heating and cooling
+        codi::RealReverse delta_e = latent_heat_melt(T_prime) * delta_q / specific_heat_ice(T_prime);
+        // Sublimation, cooling
+        if(delta_q < 0.0)
+            res[lat_cool_idx] += delta_e;
+        // Deposition, heating
+        else
+            res[lat_heat_idx] += delta_e;
+    }
+}
+
+
+/**
+ * Heterogeneous nucleation using Phillips et al. (2008)
+ */
+template<class float_t>
+void ice_activation_phillips(
+    float_t &qc_prime,
+    float_t &qv_prime,
+    float_t &T_prime,
+    float_t &p_sat_ice,
+    float_t &ssi,
+    float_t &n_inact,
+    bool &use_prog_in,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    // initial number density of dust/soot/organics [1/m3]
+    double na_dust;
+    double na_soot;
+    double na_orga;
+    if(nuc_type == 6)
+    {
+        na_dust = 160e4;
+        na_soot = 30e6;
+        na_orga = 0.0;
+    } else if(nuc_type == 7)
+    {
+        // Standard values
+        na_dust = 160e4;
+        na_soot = 25e6;
+        na_orga = 30e6;
+    } else if(nuc_type == 8)
+    {
+        na_dust = 70e4;
+        na_soot = 0.0;
+        na_orga = 0.0;
+    }
+
+    const double EPSILON = 1.0e-20;
+
+    if(T_prime < T_nuc && T_prime > 180.0 && ssi > 1.0
+        && n_inact < ni_het_max)
+    {
+        float_t x_t = (274.0 - T_prime) / t_tstep;
+        x_t = min(x_t, t_tmax-1);
+        int tt = (int) x_t.getValue() - 1;
+
+        std::vector<float_t> infrac(3);
+        if(qc_prime > EPSILON)
+        {
+            // Immersion freezing at water saturation
+            infrac[0] = ( trunc(x_t)+1.0-x_t ) * afrac_dust[98][tt]
+                + ( x_t-trunc(x_t) ) * afrac_dust[98][tt+1];
+            infrac[1] = ( trunc(x_t)+1.0-x_t ) * afrac_soot[98][tt]
+                + ( x_t-trunc(x_t) ) * afrac_soot[98][tt+1];
+            infrac[2] = ( trunc(x_t)+1.0-x_t ) * afrac_orga[98][tt]
+                + ( x_t-trunc(x_t) ) * afrac_orga[98][tt+1];
+        } else
+        {
+            // deposition nucleation below water saturation
+            // Indices for 2D look-up tables
+            float_t x_s = 100.0*(ssi-1.0) / s_sstep;
+            x_s = min(x_s, s_smax-1);
+            int ss = std::max(0, (int) (x_s.getValue()-1) );
+            float_t S_sr = max(1.0, trunc(x_s));
+            infrac[0] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
+                * afrac_dust[ss][tt]
+                + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
+                * afrac_dust[ss][tt+1]
+                + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
+                * afrac_dust[ss+1][tt]
+                + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
+                * afrac_dust[ss+1][tt+1];
+            infrac[1] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
+                * afrac_soot[ss][tt]
+                + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
+                * afrac_dust[ss][tt+1]
+                + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
+                * afrac_soot[ss+1][tt]
+                + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
+                * afrac_soot[ss+1][tt+1];
+            infrac[2] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
+                * afrac_orga[ss][tt]
+                + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
+                * afrac_orga[ss][tt+1]
+                + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
+                * afrac_orga[ss+1][tt]
+                + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
+                * afrac_dust[ss+1][tt+1];
+        }
+        float_t ndiag = infrac[0] + na_soot*infrac[1] + na_orga*infrac[2];
+        float_t ndiag_dust;
+        float_t ndiag_all;
+        if(use_prog_in)
+        {
+            // Not implemented
+            // n_inpot replaces n_dust
+            // ndiag = n_inpot * ndiag;
+            // ndiag_dust = n_inpot*infrac[0];
+            // ndiag_all = ndiag;
+        } else
+        {
+            ndiag = na_dust * ndiag;
+        }
+
+        ndiag = min(ndiag, ni_het_max);
+        float_t delta_n = max(ndiag-n_inact, 0.0);
+        // TODO: Check if min_x or min_x_nuc
+        float_t delta_q = min(delta_n*cc.ice.min_x, qv_prime);
+        delta_n = delta_q/cc.ice.min_x;
+        res[Ni_idx] += delta_n;
+        res[qi_idx] += delta_q;
+        res[qv_idx] -= delta_q;
+        res[n_inact_idx] += delta_n;
+        res[depo_idx] += delta_q;
+#ifdef TRACE_QV
+        std::cout << "Phillips nucleation dqv: " << -delta_q << "\n";
+#endif
+#ifdef TRACE_QI
+        std::cout << "Phillips nucleation dqi: " << delta_q << ", dNi: " << delta_n << "\n";
+#endif
+    }
+}
+
+/**
  * This function evaluates the RHS function of the ODE. It uses the 2 moment
  * cloud scheme after Seifert and Beheng (2006),
  * see https://doi.org/10.1007/s00703-005-0112-4
@@ -636,167 +827,13 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     bool use_prog_in = false;
     if(use_hdcp2_het)
     {
-
-        if(T_prime < T_nuc && T_prime > 180.0 && ssi > 1.0 && n_inact < ni_het_max)
-        {
-
-            const double EPSILON = 1.0e-20;
-            codi::RealReverse ndiag = 0.0;
-            if(qc_prime > EPSILON)
-            {
-                T_prime = max(T_prime, 237.1501);
-                if(T_prime < 261.15)
-                {
-                    ndiag = nim_imm * exp(-alf_imm
-                        * exp(bet_imm*log(T_prime-237.15)));
-                }
-            } else
-            {
-                // Hande et al. scheme, Eq. (3) with (2) and (1)
-                codi::RealReverse T_tmp = max(T_prime, 220.001);
-                if(T_tmp < 253.0)
-                {
-                    ndiag = nin_dep * exp(-alf_dep
-                        * exp(bet_dep*log(T_tmp - 220.0)));
-                    ndiag = ndiag * (a_dep * atan(b_dep*(ssi-1.0)+c_dep)+d_dep);
-                }
-            }
-            codi::RealReverse delta_n = max(ndiag - n_inact, 0.0);
-            codi::RealReverse delta_q = min(delta_n * cc.ice.min_x_nuc_hetero, qv_prime);
-            delta_n = delta_q/cc.ice.min_x_nuc_hetero;
-
-            res[qi_idx] += delta_q;
-            res[Ni_idx] += delta_n;
-            res[qv_idx] -= delta_q;
-#ifdef TRACE_QV
-            std::cout << "heterogeneous nucleation dqv " << -delta_q << "\n";
-#endif
-#ifdef TRACE_QI
-            std::cout << "heterogeneous nucleation dqi " << delta_q << ", dNi " << delta_n << "\n";
-#endif
-            n_inact += delta_n;
-            delta_n_a = delta_n;
-
-            // latent heating and cooling
-            codi::RealReverse delta_e = latent_heat_melt(T_prime) * delta_q / specific_heat_ice(T_prime);
-            // Sublimation, cooling
-            if(delta_q < 0.0)
-                res[lat_cool_idx] += delta_e;
-            // Deposition, heating
-            else
-                res[lat_heat_idx] += delta_e;
-        }
-    }  else // end Hande
+        ice_activation_hande(qc_prime, qv_prime, T_prime, ssi, delta_n_a,
+            n_inact, ndiag_mask, res, cc);
+    }  else
     {
-        // heterogeneous nucleation using Phillips et al.
-        // ice_nucleation_het_philips
-        // TODO
-        // nucleation type 7; initial number density of dust/soot/organics [1/m3]
-        double na_dust;
-        double na_soot;
-        double na_orga;
-        if(nuc_type == 6)
-        {
-            na_dust = 160e4;
-            na_soot = 30e6;
-            na_orga = 0.0;
-        } else if(nuc_type == 7)
-        {
-            na_dust = 160e4;
-            na_soot = 25e6;
-            na_orga = 30e6;
-        } else if(nuc_type == 8)
-        {
-            na_dust = 70e4;
-            na_soot = 0.0;
-            na_orga = 0.0;
-        }
-
-        const double EPSILON = 1.0e-20;
-        codi::RealReverse S_si = qv_prime * Rv * T_prime / p_sat_ice;
-        if(T_prime < T_nuc && T_prime > 180.0 && S_si > 1.0
-          && n_inact < ni_het_max)
-        {
-            codi::RealReverse x_t = (274.0 - T_prime) / t_tstep;
-            x_t = min(x_t, t_tmax-1);
-            int tt = (int) x_t.getValue() - 1;
-
-            std::vector<codi::RealReverse> infrac(3);
-            if(qc_prime > EPSILON)
-            {
-                // Immersion freezing at water saturation
-                infrac[0] = ( trunc(x_t)+1.0-x_t ) * afrac_dust[98][tt]
-                    + ( x_t-trunc(x_t) ) * afrac_dust[98][tt+1];
-                infrac[1] = ( trunc(x_t)+1.0-x_t ) * afrac_soot[98][tt]
-                    + ( x_t-trunc(x_t) ) * afrac_soot[98][tt+1];
-                infrac[2] = ( trunc(x_t)+1.0-x_t ) * afrac_orga[98][tt]
-                    + ( x_t-trunc(x_t) ) * afrac_orga[98][tt+1];
-            } else
-            {
-                // deposition nucleation below water saturation
-                // Indices for 2D look-up tables
-                codi::RealReverse x_s = 100.0*(S_si-1.0) / s_sstep;
-                x_s = min(x_s, s_smax-1);
-                int ss = std::max(0, (int) (x_s.getValue()-1) );
-                codi::RealReverse S_sr = max(1.0, trunc(x_s));
-                infrac[0] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
-                    * afrac_dust[ss][tt]
-                    + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
-                    * afrac_dust[ss][tt+1]
-                    + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
-                    * afrac_dust[ss+1][tt]
-                    + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
-                    * afrac_dust[ss+1][tt+1];
-                infrac[1] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
-                    * afrac_soot[ss][tt]
-                    + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
-                    * afrac_dust[ss][tt+1]
-                    + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
-                    * afrac_soot[ss+1][tt]
-                    + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
-                    * afrac_soot[ss+1][tt+1];
-                infrac[2] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
-                    * afrac_orga[ss][tt]
-                    + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
-                    * afrac_orga[ss][tt+1]
-                    + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
-                    * afrac_orga[ss+1][tt]
-                    + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
-                    * afrac_dust[ss+1][tt+1];
-            }
-            codi::RealReverse ndiag = infrac[0] + na_soot*infrac[1] + na_orga*infrac[2];
-            codi::RealReverse ndiag_dust;
-            codi::RealReverse ndiag_all;
-            if(use_prog_in)
-            {
-                // Not implemented
-                // n_inpot replaces n_dust
-                // ndiag = n_inpot * ndiag;
-                // ndiag_dust = n_inpot*infrac[0];
-                // ndiag_all = ndiag;
-            } else
-            {
-                ndiag = na_dust * ndiag;
-            }
-            ndiag = min(ndiag, ni_het_max);
-            codi::RealReverse delta_n = max(ndiag-n_inact, 0.0);
-            // TODO: Check if min_x or min_x_nuc
-            codi::RealReverse delta_q = min(delta_n*cc.ice.min_x, qv_prime);
-            delta_n = delta_q/cc.ice.min_x;
-            res[Ni_idx] += delta_n;
-            res[qi_idx] += delta_q;
-            res[qv_idx] -= delta_q;
-            res[n_inact_idx] += delta_n;
-            res[depo_idx] += delta_q;
-#ifdef TRACE_QV
-            std::cout << "Phillips nucleation dqv: " << -delta_q << "\n";
-#endif
-#ifdef TRACE_QI
-            std::cout << "Phillips nucleation dqi: " << delta_q << ", dNi: " << delta_n << "\n";
-#endif
-        }
-
-    } // end Phillips
+        ice_activation_phillips(qc_prime, qv_prime, T_prime,
+            p_sat_ice, ssi, n_inact, use_prog_in, res, cc);
+    }
 
     if(use_prog_in)
     {
