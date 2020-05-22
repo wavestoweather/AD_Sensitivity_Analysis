@@ -253,10 +253,357 @@ void Press_Temp(
  * of the total system (dry air, vapor, and hydrometeors) the value of dry air
  * is taken, which is a common approximation and introduces only a small error.
  */
-void saturation_adj()
+void saturation_adj(
+)
 {
 
 }
+
+
+/**
+ * CCN activation after Hande et al 2015.
+ */
+template<class float_t>
+void ccn_act_hande(
+    float_t &p_prime,
+    float_t &w_prime,
+    float_t &T_prime,
+    float_t &qv_prime,
+    float_t &qc_prime,
+    float_t &Nc,
+    const double &EPSILON,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    // non maritime case
+    if(qc_prime > EPSILON && w_prime > 0.0)
+    {
+        float_t acoeff = a_ccn[0] * atan(b_ccn[0] * p_prime - c_ccn[0]) + d_ccn[0];
+        float_t bcoeff = a_ccn[1] * atan(b_ccn[1] * p_prime - c_ccn[1]) + d_ccn[1];
+        float_t ccoeff = a_ccn[2] * atan(b_ccn[2] * p_prime - c_ccn[2]) + d_ccn[2];
+        float_t dcoeff = a_ccn[3] * atan(b_ccn[3] * p_prime - c_ccn[3]) + d_ccn[3];
+        // concentration of ccn
+        float_t nuc_n = acoeff * atan(bcoeff * log(w_prime) + ccoeff) + dcoeff;
+
+        // we need to substract the already "used" ccn in cloud droplets
+        // the rest can create new cloud droplets
+        // float_t Nc_tmp = qv_prime / cc.cloud.min_x;
+        float_t delta_n = max(max(nuc_n, 10.0e-6) - Nc, 0.0);
+        float_t delta_q = min(delta_n * cc.cloud.min_x_act, qv_prime);
+        delta_n = delta_q / cc.cloud.min_x_act;
+
+        res[Nc_idx] += delta_n;
+        res[qc_idx] += delta_q;
+        res[qv_idx] -= delta_q;
+#ifdef TRACE_QC
+        if(abs(delta_q) > 0)
+            std::cout << "Ascent dqc " << delta_q << ", dNc " << delta_n
+                << ", nuc_n " << nuc_n << ", Nc " << Nc << ", rest " << 10.0e-6 << "\n";
+#endif
+#ifdef TRACE_QV
+        std::cout << "Ascent dqv " << -delta_q << "\n";
+#endif
+
+        float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
+        // Evaporation
+        if(delta_q < 0.0)
+            res[lat_cool_idx] += delta_e;
+        else
+            res[lat_heat_idx] += delta_q;
+    }
+}
+
+
+/**
+ * CCN activation after Seifert & Beheng (2006):
+ * cloud_nucleation(..) from Cosmo 5.2
+ * There are different cases. For this sumulation, we choose
+ * HUCM continental case (Texas CCN)HUCM continental case (Texas CCN)
+ * From COSMO 5.2 S = 100 * s_w(...)
+ * where s_w = e_v/e_ws(T_2mom) - 1.0
+ * e_v = q * T_2mom * r_v
+ * q = qv * rho
+ * rho = total density of moist air (kg/m3) = (p * p_pertubation) / (r_d * T * (1.0+ (r_v/r_d - 1)*q_v - q_c - (q_r + q_s)))
+ * Using gas law rho = p/r_d*tv, r_d gas constant of dry air, pp pressure pertubation
+ * T_2mom = T    (I think)
+ * r_v = gas constant for water vapour
+ * r_d = gas constant for dry air
+ * e_ws = saturation pressure over water = e_3 * EXP (A_w * (t_ - T_3) / (t_ - B_w))
+ */
+template<class float_t>
+void ccn_act_seifert(
+    float_t &p_prime,
+    float_t &p,
+    float_t &T_prime,
+    float_t &T,
+    float_t &qv_prime,
+    float_t &qv,
+    float_t &qc_prime,
+    float_t &qc,
+    float_t &Nc,
+    float_t &qr,
+    float_t &z_prime,
+    const double &dt,
+    float_t &w,
+    float_t &S,
+    float_t &psat_prime,
+    const reference_quantities_t &ref,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    double N_ccn = 1260e06;
+    double N_max = 3000e06;
+    double N_min =  300e02; // e06?
+    double S_max = 20.000; // in percentage
+    double k_ccn = 0.308;
+    // Parameter for exp decrease of CCN with height
+    double z_nccn = 99999;
+
+    // float_t S_percentage = s_sw*100;
+    //     saturation_pressure_ice(T_prime)/saturation_pressure_water_icon(T_prime) * (S+1.0);
+    // S_percentage *= 100;
+    // oversaturation in percentage
+    float_t S_percentage = (S-1)*100;
+    // float_t S_percentage = s_sw * 100;
+
+    // In contrast to Seifert & Beheng, we do not approximate dS/dt via
+    // w dS/dz but calculate dS/dt
+    float_t qsat_prime = Epsilon*( psat_prime/(p_prime - psat_prime) );
+    float_t p_div_T_prime = p_prime / T_prime;
+    float_t cpv_prime = specific_heat_water_vapor(T_prime);
+    float_t cpa_prime = specific_heat_dry_air(T_prime);
+    float_t cpl_prime = specific_heat_water(T_prime);
+    float_t rhow_prime = density_water(T_prime);
+    float_t L_prime = latent_heat_water(T_prime);
+    float_t H_prime =
+        1.0/(((L_prime/(Rv*T_prime)) - 1.0)
+        *(L_prime/(thermal_conductivity_dry_air(T_prime)*T_prime))
+        + ((Rv*T_prime)/(cc.alpha_d*diffusivity(T_prime,p_prime)*psat_prime)));
+    float_t c_prime =
+        4.0*M_PI*H_prime*pow((3.0/(4.0*M_PI*rhow_prime))
+        *cc.Nc_prime*cc.Nc_prime , 1.0/3.0);
+    float_t qc_third = pow(qc , 1.0/3.0);
+    float_t qr_delta1 = pow(qr , cc.delta1);
+    float_t qr_delta2 = pow(qr , cc.delta2);
+
+    float_t C1 = (ref.tref*gravity_acc*ref.wref)/(Ra*ref.Tref);
+    float_t C2 = ((1.0-Epsilon)*ref.qref)/Epsilon;
+    float_t C3 = (cpv_prime*ref.qref)/cpa_prime;
+    float_t C4 = (cpl_prime*ref.qref)/cpa_prime;
+    float_t C5 = (gravity_acc*ref.wref*ref.tref)/(ref.Tref*cpa_prime);
+    float_t C6 = (ref.tref*L_prime*c_prime*pow(ref.qref,1.0/3.0))/(ref.Tref*cpa_prime);
+    float_t C7 = (ref.tref*L_prime*cc.e1_prime
+        *pow(ref.qref,cc.delta1))/(ref.Tref*cpa_prime);
+    float_t C8 = (ref.tref*L_prime*cc.e2_prime
+        *pow(ref.qref,cc.delta2))/(ref.Tref*cpa_prime);
+    // float_t B = ref.tref*nc.QRin;
+    float_t C9 = (ref.tref*c_prime)/pow(ref.qref , 2.0/3.0);
+    float_t C12 = ref.tref*cc.e1_prime*pow(ref.qref , cc.delta1-1.0);
+    float_t C13 = ref.tref*cc.e2_prime*pow(ref.qref , cc.delta2-1.0);
+    float_t C15 = Epsilon/ref.qref;
+    float_t C16 = L_prime/(Rv*ref.Tref);
+
+    float_t dp = -( C1/(1.0 + C2*(qv/(1.0 + qv_prime))) )*( (p*w)/T );
+    float_t dT = ( 1.0/(1.0 + C3*qv + C4*(qc + qr)) )*( -C5*w + C6*qc_third*(S-1.0)
+        + (C7*qr_delta1 + C8*qr_delta2)*min(S-1.0,0.0) );
+    float_t dS = (S/p)*dp - (S/qv)*( 1.0 - (qv/(C15+qv)) )*( C9*qc_third*(S-1.0)
+        + (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0) ) - C16*(S/(T*T))*dT;
+
+#ifdef TRACE_SAT
+    std::cout << "Saturation (CCN activation) dS: " << dS
+                << ", times dt: " << dS * dt
+                << ", Evaporation: " << (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0)
+                << ", Condensation: " << C9*qc_third*(S-1.0)
+                << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
+                << ", First part: " << (S/p)*res[p_idx]
+                << ", Middle part: " << - (S/qv)*( 1.0 - (qv/(C15+qv)) )
+                << ", S_percentage: " << S_percentage
+                << ", S: " << S
+                << ", e_d: " << e_d
+                << ", qv_prime: " << qv_prime
+                << ", Rv: " << Rv
+                << ", T_prime " << T_prime
+                << ", p_sat: " << p_sat
+                << ", s_sw = e_d/p_sat - 1: " << s_sw
+                << ", S calculated: " << e_d/p_sat
+                << "\n";
+#endif
+    // dS *= dt;
+    // float_t dSdz_w = w_prime *
+#ifdef TRACE_QC
+    // std::cout << "dS " << dS << ", s_perc " << S_percentage << ", S " << S
+    //           << ", S_max " << S_max << ", T " << T << ", T_prime "
+    //           << T_prime << ", T_f " << T_f << "\n";
+    // std::cout << "N_ccn " << N_ccn << ", k_ccn " << k_ccn
+    //           << ", pow(S, k-1) " << pow(S_percentage, k_ccn-1.0)
+    //           << ", N*k*s^k-1 " << N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0)
+    //           << "\n";
+    // std::cout << "Nc " << Nc << "\n";
+    // std::cout << "supersat: " << p_sat_ice/p_sat * (S-1)
+    //           << ", s_sw " << s_sw
+    //           << ", e_d/e_sat " << qv_prime * R_v * T_prime / saturation_pressure_water_icon(T_prime) - 1.0
+    //           << ", e_d/e_sat 2: " << qv_prime * Rv * T_prime / saturation_pressure_water_icon(T_prime) - 1.0
+    //           << ", qv to S " << convert_qv_to_S(p_prime, T_prime, qv_prime) << "\n";
+#endif
+    if(S_percentage > 0.0 && dS >= 0.0 && S_percentage <= S_max && T_prime >= T_f)
+    {
+        float_t delta_n = 0;
+        float_t delta_q = 0;
+
+        if(z_prime <= z_nccn)
+        {
+            delta_n = N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0) * dS;
+        } else
+        {
+            delta_n = ( N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0) * dS
+                - N_ccn/z_nccn * pow(S_percentage, k_ccn) )
+                * exp( (z_nccn - z_prime)/z_nccn );
+        }
+#ifdef TRACE_QV
+        // std::cout << "SB ccn activation no bound, no max dqv " << -delta_q << "\n";
+#endif
+#ifdef TRACE_QC
+        // std::cout << "SB ccn activation no bound, no max dqc " << delta_q << ", dNc " << delta_n << "\n";
+#endif
+        delta_n = max(min(delta_n, N_max-Nc), 0.0);
+        delta_q = delta_n * cc.cloud.min_x_act;
+
+        if(delta_q > qv)
+        {
+            delta_q = qv_prime;
+            delta_n = delta_q/cc.cloud.min_x_act;
+        }
+        res[Nc_idx] += delta_n;
+        res[qc_idx] += delta_q;
+        res[qv_idx] -= delta_q;
+#ifdef TRACE_QV
+        // std::cout << "SB ccn activation no bound dqv " << -delta_q << "\n";
+#endif
+#ifdef TRACE_QC
+        // std::cout << "SB ccn activation no bound dqc " << delta_q << ", dNc " << delta_n << "\n";
+        // std::cout << "SB ccn activation before Nc " << Nc << " res[Nc] " << res[Nc_idx]
+        //           << "\nres*dt + Nc " <<  res[Nc_idx]*dt + Nc  << " > "
+        //           << N_max << " ? " <<  (res[Nc_idx]*dt + Nc > N_max)
+        //           << "\nN_min: " << N_min << ", with true: "
+        //           << (N_min - Nc)*dt << "\n";
+#endif
+        // Hard upper and lower limits
+        if(res[Nc_idx]*dt + Nc > N_max)
+        {
+            res[Nc_idx] = (N_max - Nc)/dt;
+        } else if(res[Nc_idx]*dt + Nc < N_min)
+        {
+            res[Nc_idx] = (N_min - Nc)/dt;
+        }
+#ifdef TRACE_QV
+        std::cout << "SB ccn activation dqv " << -delta_q << "\n";
+#endif
+#ifdef TRACE_QC
+        if(abs(delta_q) > 0)
+            std::cout << "SB ccn activation dqc " << delta_q << ", dNc "
+                //   << ((res[Nc_idx]*dt + Nc > N_max) ? (N_max - Nc)/dt : (N_min - Nc)/dt)
+                    << " or res " << res[Nc_idx]
+                    << ", dt " << dt << ", N_max " << N_max << "\n";
+#endif
+    }
+}
+
+/**
+ * (optional) homogenous nucleation using KHL06
+ */
+template<class float_t>
+void ice_nuc_hom(
+    float_t &T_prime,
+    float_t &w_prime,
+    float_t &p_prime,
+    float_t &qv_prime,
+    float_t &qi_prime,
+    float_t &Ni,
+    float_t &ssi,
+    float_t &p_sat_ice,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    float_t s_crit = 2.349 - T_prime * (1.0/259.0);
+    const double r_0 = 0.25e-6;         // aerosol particle radius prior to freezing
+    const double alpha_d = 0.5;         // deposition coefficient (KL02; Spichtinger & Gierens 2009)
+    const double M_w = 18.01528e-3;     // molecular mass of water [kg/mol]
+    const double M_a = 28.96e-3;        // molecular mass of air [kg/mol]
+    const double ma_w = M_w/N_avo;      // mass of water molecule [kg]
+    const double svol = ma_w / rho_ice; // specific volume of a water molecule in ice
+
+    if(ssi > s_crit && T_prime < 235.0 && Ni < ni_hom_max)
+    {
+        float_t x_i = particle_mean_mass(qi_prime, Ni,
+            cc.ice.min_x_nuc_homo, cc.ice.max_x);
+        float_t r_i = pow(x_i/(4.0/3.0*M_PI*rho_ice), 1.0/3.0);
+        float_t v_th = sqrt(8.0*k_b*T_prime/(M_PI*ma_w));
+        float_t flux = alpha_d * v_th/4.0;
+        float_t n_sat = p_sat_ice/(k_b*T_prime);
+
+        // coeffs of supersaturation equation
+        std::vector<float_t> acoeff(3);
+        acoeff[0] = (L_ed * grav) / (cp * Rv * T_prime*T_prime) - grav/(Ra * T_prime);
+        acoeff[1] = 1.0/n_sat;
+        acoeff[2] = (L_ed*L_ed * M_w * ma_w)/(cp * p_prime * T_prime * M_a);
+
+        // coeffs of depositional growth equation
+        std::vector<float_t> bcoeff(2);
+        bcoeff[0] = flux * svol * n_sat * (ssi - 1.0);
+        bcoeff[1] = flux/diffusivity(T_prime, p_prime);
+
+        // pre-existing ice crystals included as reduced updraft speed
+        float_t ri_dot = bcoeff[0] / (1.0 + bcoeff[1] * r_i);
+        float_t R_ik = (4.0*M_PI) / svol * Ni * r_i*r_i * ri_dot;
+        float_t w_pre = max(0.0, (acoeff[1] + acoeff[2] * ssi)/(acoeff[0]*ssi)*R_ik); // KHL06 Eq. 19
+
+        // homogenous nucleation event
+        if(w_prime > w_pre)
+        {
+            float_t cool = grav / cp*w_prime;
+            float_t ctau = T_prime * (0.004*T_prime - 2.0) + 304.4;
+            float_t tau = 1.0/(ctau*cool);
+            float_t delta = bcoeff[1] * r_0;
+            float_t phi = acoeff[0]*ssi / (acoeff[1]+acoeff[2]*ssi) * (w_prime - w_pre);
+
+            // monodisperse approximation following KHL06
+            float_t kappa = 2.0 * bcoeff[0]*bcoeff[1]*tau/((1.0+delta)*(1.0+delta));
+            float_t sqrtkap = sqrt(kappa);
+            float_t ren = 3.0*sqrtkap / (2.0 + sqrt(1.0+9.0*kappa/M_PI));
+            float_t R_imfc = 4.0 * M_PI * bcoeff[0]/(bcoeff[1]*bcoeff[1]) / svol;
+            float_t R_im = R_imfc / (1.0+delta) * (delta*delta - 1.0
+                + (1.0+0.5*kappa*(1.0+delta)*(1.0+delta)) * ren/sqrtkap);
+
+            // number concentration and radius of ice particles
+            float_t ni_hom = phi/R_im;
+            float_t ri_0 = 1.0 + 0.5*sqrtkap * ren;
+            float_t ri_hom = (ri_0 * (1.0+delta) - 1.0) / bcoeff[1];
+            float_t mi_hom = (4.0/3.0 * M_PI * rho_ice) * ni_hom * ri_hom*ri_hom*ri_hom;
+            mi_hom = max(mi_hom, cc.ice.min_x_nuc_homo);
+
+            float_t delta_n = max(min(ni_hom, ni_hom_max), 0.0);
+            float_t delta_q = min(delta_n * mi_hom, qv_prime);
+
+            res[Ni_idx] += delta_n;
+            res[qi_idx] += delta_q;
+            res[qv_idx] -= delta_q;
+#ifdef TRACE_QV
+            std::cout << "KHL06 dqv " << -delta_q << "\n";
+#endif
+#ifdef TRACE_QI
+            std::cout << "KHL06 dqi " << delta_q << ", dNi " << delta_n << "\n";
+#endif
+            float_t delta_e = latent_heat_melt(T_prime) * delta_q / specific_heat_ice(T_prime);
+            // Sublimation, cooling
+            if(delta_q < 0.0)
+                res[lat_cool_idx] += delta_e;
+            // Deposition, heating
+            else
+                res[lat_heat_idx] += delta_e;
+        }
+    }
+}
+
 
 /**
  * Heterogeneous nucleation using Hande et al.
@@ -589,217 +936,17 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     else if(nuc_type < 6)
     {
         // Hande et al 2015
-        // non maritime case
-        if(qc_prime > EPSILON && w_prime > 0.0)
-        {
-            codi::RealReverse acoeff = a_ccn[0] * atan(b_ccn[0] * p_prime - c_ccn[0]) + d_ccn[0];
-            codi::RealReverse bcoeff = a_ccn[1] * atan(b_ccn[1] * p_prime - c_ccn[1]) + d_ccn[1];
-            codi::RealReverse ccoeff = a_ccn[2] * atan(b_ccn[2] * p_prime - c_ccn[2]) + d_ccn[2];
-            codi::RealReverse dcoeff = a_ccn[3] * atan(b_ccn[3] * p_prime - c_ccn[3]) + d_ccn[3];
-            // concentration of ccn
-            codi::RealReverse nuc_n = acoeff * atan(bcoeff * log(w_prime) + ccoeff) + dcoeff;
+        ccn_act_hande(p_prime, w_prime, T_prime, qv_prime, qc_prime, Nc,
+            EPSILON, res, cc);
 
-            // we need to substract the already "used" ccn in cloud droplets
-            // the rest can create new cloud droplets
-            // codi::RealReverse Nc_tmp = qv_prime / cc.cloud.min_x;
-            codi::RealReverse delta_n = max(max(nuc_n, 10.0e-6) - Nc, 0.0);
-            codi::RealReverse delta_q = min(delta_n * cc.cloud.min_x_act, qv_prime);
-            delta_n = delta_q / cc.cloud.min_x_act;
-
-            res[Nc_idx] += delta_n;
-            res[qc_idx] += delta_q;
-            res[qv_idx] -= delta_q;
-#ifdef TRACE_QC
-            if(abs(delta_q) > 0)
-                std::cout << "Ascent dqc " << delta_q << ", dNc " << delta_n
-                    << ", nuc_n " << nuc_n << ", Nc " << Nc << ", rest " << 10.0e-6 << "\n";
-#endif
-#ifdef TRACE_QV
-            std::cout << "Ascent dqv " << -delta_q << "\n";
-#endif
-
-            codi::RealReverse delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
-            // Evaporation
-            if(delta_q < 0.0)
-                res[lat_cool_idx] += delta_e;
-            else
-                res[lat_heat_idx] += delta_q;
-        }
     } else if(nuc_type == 6)
     {
 
     } else
     {
-        // Seifert & Beheng (2006):
-        // cloud_nucleation(..) from Cosmo 5.2
-        // There are different cases. For this sumulation, we choose
-        // HUCM continental case (Texas CCN)HUCM continental case (Texas CCN)
-        // From COSMO 5.2 S = 100 * s_w(...)
-        // where s_w = e_v/e_ws(T_2mom) - 1.0
-        // e_v = q * T_2mom * r_v
-        // q = qv * rho
-        // rho = total density of moist air (kg/m3) = (p * p_pertubation) / (r_d * T * (1.0+ (r_v/r_d - 1)*q_v - q_c - (q_r + q_s)))
-        // Using gas law rho = p/r_d*tv, r_d gas constant of dry air, pp pressure pertubation
-        // T_2mom = T    (I think)
-        // r_v = gas constant for water vapour
-        // r_d = gas constant for dry air
-        // e_ws = saturation pressure over water = e_3 * EXP (A_w * (t_ - T_3) / (t_ - B_w))
-        double N_ccn = 1260e06;
-        double N_max = 3000e06;
-        double N_min =  300e02; // e06?
-        double S_max = 20.000; // in percentage
-        double k_ccn = 0.308;
-        // Parameter for exp decrease of CCN with height
-        double z_nccn = 99999;
-
-        // codi::RealReverse S_percentage = s_sw*100;
-        //     saturation_pressure_ice(T_prime)/saturation_pressure_water_icon(T_prime) * (S+1.0);
-        // S_percentage *= 100;
-        // oversaturation in percentage
-        codi::RealReverse S_percentage = (S-1)*100;
-        // codi::RealReverse S_percentage = s_sw * 100;
-
-        // In contrast to Seifert & Beheng, we do not approximate dS/dt via
-        // w dS/dz but calculate dS/dt
-        codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
-        codi::RealReverse qsat_prime = Epsilon*( psat_prime/(p_prime - psat_prime) );
-        codi::RealReverse p_div_T_prime = p_prime / T_prime;
-        codi::RealReverse cpv_prime = specific_heat_water_vapor(T_prime);
-        codi::RealReverse cpa_prime = specific_heat_dry_air(T_prime);
-        codi::RealReverse cpl_prime = specific_heat_water(T_prime);
-        codi::RealReverse rhow_prime = density_water(T_prime);
-        codi::RealReverse L_prime = latent_heat_water(T_prime);
-        codi::RealReverse H_prime =
-            1.0/(((L_prime/(Rv*T_prime)) - 1.0)
-            *(L_prime/(thermal_conductivity_dry_air(T_prime)*T_prime))
-            + ((Rv*T_prime)/(cc.alpha_d*diffusivity(T_prime,p_prime)*psat_prime)));
-        codi::RealReverse c_prime =
-            4.0*M_PI*H_prime*pow((3.0/(4.0*M_PI*rhow_prime))
-            *cc.Nc_prime*cc.Nc_prime , 1.0/3.0);
-        codi::RealReverse qc_third = pow(qc , 1.0/3.0);
-        codi::RealReverse qr_delta1 = pow(qr , cc.delta1);
-        codi::RealReverse qr_delta2 = pow(qr , cc.delta2);
-
-        codi::RealReverse C1 = (ref.tref*gravity_acc*ref.wref)/(Ra*ref.Tref);
-        codi::RealReverse C2 = ((1.0-Epsilon)*ref.qref)/Epsilon;
-        codi::RealReverse C3 = (cpv_prime*ref.qref)/cpa_prime;
-        codi::RealReverse C4 = (cpl_prime*ref.qref)/cpa_prime;
-        codi::RealReverse C5 = (gravity_acc*ref.wref*ref.tref)/(ref.Tref*cpa_prime);
-        codi::RealReverse C6 = (ref.tref*L_prime*c_prime*pow(ref.qref,1.0/3.0))/(ref.Tref*cpa_prime);
-        codi::RealReverse C7 = (ref.tref*L_prime*cc.e1_prime
-            *pow(ref.qref,cc.delta1))/(ref.Tref*cpa_prime);
-        codi::RealReverse C8 = (ref.tref*L_prime*cc.e2_prime
-            *pow(ref.qref,cc.delta2))/(ref.Tref*cpa_prime);
-        // codi::RealReverse B = ref.tref*nc.QRin;
-        codi::RealReverse C9 = (ref.tref*c_prime)/pow(ref.qref , 2.0/3.0);
-        codi::RealReverse C12 = ref.tref*cc.e1_prime*pow(ref.qref , cc.delta1-1.0);
-        codi::RealReverse C13 = ref.tref*cc.e2_prime*pow(ref.qref , cc.delta2-1.0);
-        codi::RealReverse C15 = Epsilon/ref.qref;
-        codi::RealReverse C16 = L_prime/(Rv*ref.Tref);
-
-        codi::RealReverse dp = -( C1/(1.0 + C2*(qv/(1.0 + qv_prime))) )*( (p*w)/T );
-        codi::RealReverse dT = ( 1.0/(1.0 + C3*qv + C4*(qc + qr)) )*( -C5*w + C6*qc_third*(S-1.0)
-            + (C7*qr_delta1 + C8*qr_delta2)*min(S-1.0,0.0) );
-        codi::RealReverse dS = (S/p)*dp - (S/qv)*( 1.0 - (qv/(C15+qv)) )*( C9*qc_third*(S-1.0)
-            + (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0) ) - C16*(S/(T*T))*dT;
-
-#ifdef TRACE_SAT
-        std::cout << "Saturation (CCN activation) dS: " << dS
-                  << ", times dt: " << dS * dt
-                  << ", Evaporation: " << (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0)
-                  << ", Condensation: " << C9*qc_third*(S-1.0)
-                  << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
-                  << ", First part: " << (S/p)*res[p_idx]
-                  << ", Middle part: " << - (S/qv)*( 1.0 - (qv/(C15+qv)) )
-                  << ", S_percentage: " << S_percentage
-                  << ", S: " << S
-                  << ", e_d: " << e_d
-                  << ", qv_prime: " << qv_prime
-                  << ", Rv: " << Rv
-                  << ", T_prime " << T_prime
-                  << ", p_sat: " << p_sat
-                  << ", s_sw = e_d/p_sat - 1: " << s_sw
-                  << ", S calculated: " << e_d/p_sat
-                  << "\n";
-#endif
-        // dS *= dt;
-        // codi::RealReverse dSdz_w = w_prime *
-#ifdef TRACE_QC
-        // std::cout << "dS " << dS << ", s_perc " << S_percentage << ", S " << S
-        //           << ", S_max " << S_max << ", T " << T << ", T_prime "
-        //           << T_prime << ", T_f " << T_f << "\n";
-        // std::cout << "N_ccn " << N_ccn << ", k_ccn " << k_ccn
-        //           << ", pow(S, k-1) " << pow(S_percentage, k_ccn-1.0)
-        //           << ", N*k*s^k-1 " << N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0)
-        //           << "\n";
-        // std::cout << "Nc " << Nc << "\n";
-        // std::cout << "supersat: " << p_sat_ice/p_sat * (S-1)
-        //           << ", s_sw " << s_sw
-        //           << ", e_d/e_sat " << qv_prime * R_v * T_prime / saturation_pressure_water_icon(T_prime) - 1.0
-        //           << ", e_d/e_sat 2: " << qv_prime * Rv * T_prime / saturation_pressure_water_icon(T_prime) - 1.0
-        //           << ", qv to S " << convert_qv_to_S(p_prime, T_prime, qv_prime) << "\n";
-#endif
-        if(S_percentage > 0.0 && dS >= 0.0 && S_percentage <= S_max && T_prime >= T_f)
-        {
-            codi::RealReverse delta_n = 0;
-            codi::RealReverse delta_q = 0;
-
-            if(z_prime <= z_nccn)
-            {
-                delta_n = N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0) * dS;
-            } else
-            {
-                delta_n = ( N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0) * dS
-                    - N_ccn/z_nccn * pow(S_percentage, k_ccn) )
-                    * exp( (z_nccn - z_prime)/z_nccn );
-            }
-#ifdef TRACE_QV
-            // std::cout << "SB ccn activation no bound, no max dqv " << -delta_q << "\n";
-#endif
-#ifdef TRACE_QC
-            // std::cout << "SB ccn activation no bound, no max dqc " << delta_q << ", dNc " << delta_n << "\n";
-#endif
-            delta_n = max(min(delta_n, N_max-Nc), 0.0);
-            delta_q = delta_n * cc.cloud.min_x_act;
-
-            if(delta_q > qv)
-            {
-                delta_q = qv_prime;
-                delta_n = delta_q/cc.cloud.min_x_act;
-            }
-            res[Nc_idx] += delta_n;
-            res[qc_idx] += delta_q;
-            res[qv_idx] -= delta_q;
-#ifdef TRACE_QV
-            // std::cout << "SB ccn activation no bound dqv " << -delta_q << "\n";
-#endif
-#ifdef TRACE_QC
-            // std::cout << "SB ccn activation no bound dqc " << delta_q << ", dNc " << delta_n << "\n";
-            // std::cout << "SB ccn activation before Nc " << Nc << " res[Nc] " << res[Nc_idx]
-            //           << "\nres*dt + Nc " <<  res[Nc_idx]*dt + Nc  << " > "
-            //           << N_max << " ? " <<  (res[Nc_idx]*dt + Nc > N_max)
-            //           << "\nN_min: " << N_min << ", with true: "
-            //           << (N_min - Nc)*dt << "\n";
-#endif
-            // Hard upper and lower limits
-            if(res[Nc_idx]*dt + Nc > N_max)
-            {
-                res[Nc_idx] = (N_max - Nc)/dt;
-            } else if(res[Nc_idx]*dt + Nc < N_min)
-            {
-                res[Nc_idx] = (N_min - Nc)/dt;
-            }
-#ifdef TRACE_QV
-            std::cout << "SB ccn activation dqv " << -delta_q << "\n";
-#endif
-#ifdef TRACE_QC
-            if(abs(delta_q) > 0)
-                std::cout << "SB ccn activation dqc " << delta_q << ", dNc "
-                    //   << ((res[Nc_idx]*dt + Nc > N_max) ? (N_max - Nc)/dt : (N_min - Nc)/dt)
-                      << " or res " << res[Nc_idx]
-                      << ", dt " << dt << ", N_max " << N_max << "\n";
-#endif
-        }
+        // Seifert & Beheng (2006)
+        ccn_act_seifert(p_prime, p, T_prime, T, qv_prime, qv, qc_prime, qc,
+            Nc, qr, z_prime, dt, w, S, p_sat, ref, res, cc);
     }
 
     ////////////// ice_nucleation_homhet
@@ -843,84 +990,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     }
 
     // (optional) homogenous nucleation using KHL06
-    codi::RealReverse s_crit = 2.349 - T_prime * (1.0/259.0);
-    const double r_0 = 0.25e-6;         // aerosol particle radius prior to freezing
-    const double alpha_d = 0.5;         // deposition coefficient (KL02; Spichtinger & Gierens 2009)
-    const double M_w = 18.01528e-3;     // molecular mass of water [kg/mol]
-    const double M_a = 28.96e-3;        // molecular mass of air [kg/mol]
-    const double ma_w = M_w/N_avo;      // mass of water molecule [kg]
-    const double svol = ma_w / rho_ice; // specific volume of a water molecule in ice
-
-    if(ssi > s_crit && T_prime < 235.0 && Ni < ni_hom_max)
-    {
-        codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni,
-            cc.ice.min_x_nuc_homo, cc.ice.max_x);
-        codi::RealReverse r_i = pow(x_i/(4.0/3.0*M_PI*rho_ice), 1.0/3.0);
-        codi::RealReverse v_th = sqrt(8.0*k_b*T_prime/(M_PI*ma_w));
-        codi::RealReverse flux = alpha_d * v_th/4.0;
-        codi::RealReverse n_sat = p_sat_ice/(k_b*T_prime);
-
-        // coeffs of supersaturation equation
-        std::vector<codi::RealReverse> acoeff(3);
-        acoeff[0] = (L_ed * grav) / (cp * Rv * T_prime*T_prime) - grav/(Ra * T_prime);
-        acoeff[1] = 1.0/n_sat;
-        acoeff[2] = (L_ed*L_ed * M_w * ma_w)/(cp * p_prime * T_prime * M_a);
-
-        // coeffs of depositional growth equation
-        std::vector<codi::RealReverse> bcoeff(2);
-        bcoeff[0] = flux * svol * n_sat * (ssi - 1.0);
-        bcoeff[1] = flux/diffusivity(T_prime, p_prime);
-
-        // pre-existing ice crystals included as reduced updraft speed
-        codi::RealReverse ri_dot = bcoeff[0] / (1.0 + bcoeff[1] * r_i);
-        codi::RealReverse R_ik = (4.0*M_PI) / svol * Ni * r_i*r_i * ri_dot;
-        codi::RealReverse w_pre = max(0.0, (acoeff[1] + acoeff[2] * ssi)/(acoeff[0]*ssi)*R_ik); // KHL06 Eq. 19
-
-        // homogenous nucleation event
-        if(w_prime > w_pre)
-        {
-            codi::RealReverse cool = grav / cp*w_prime;
-            codi::RealReverse ctau = T_prime * (0.004*T_prime - 2.0) + 304.4;
-            codi::RealReverse tau = 1.0/(ctau*cool);
-            codi::RealReverse delta = bcoeff[1] * r_0;
-            codi::RealReverse phi = acoeff[0]*ssi / (acoeff[1]+acoeff[2]*ssi) * (w_prime - w_pre);
-
-            // monodisperse approximation following KHL06
-            codi::RealReverse kappa = 2.0 * bcoeff[0]*bcoeff[1]*tau/((1.0+delta)*(1.0+delta));
-            codi::RealReverse sqrtkap = sqrt(kappa);
-            codi::RealReverse ren = 3.0*sqrtkap / (2.0 + sqrt(1.0+9.0*kappa/M_PI));
-            codi::RealReverse R_imfc = 4.0 * M_PI * bcoeff[0]/(bcoeff[1]*bcoeff[1]) / svol;
-            codi::RealReverse R_im = R_imfc / (1.0+delta) * (delta*delta - 1.0
-                + (1.0+0.5*kappa*(1.0+delta)*(1.0+delta)) * ren/sqrtkap);
-
-            // number concentration and radius of ice particles
-            codi::RealReverse ni_hom = phi/R_im;
-            codi::RealReverse ri_0 = 1.0 + 0.5*sqrtkap * ren;
-            codi::RealReverse ri_hom = (ri_0 * (1.0+delta) - 1.0) / bcoeff[1];
-            codi::RealReverse mi_hom = (4.0/3.0 * M_PI * rho_ice) * ni_hom * ri_hom*ri_hom*ri_hom;
-            mi_hom = max(mi_hom, cc.ice.min_x_nuc_homo);
-
-            codi::RealReverse delta_n = max(min(ni_hom, ni_hom_max), 0.0);
-            codi::RealReverse delta_q = min(delta_n * mi_hom, qv_prime);
-
-            res[Ni_idx] += delta_n;
-            res[qi_idx] += delta_q;
-            res[qv_idx] -= delta_q;
-#ifdef TRACE_QV
-            std::cout << "KHL06 dqv " << -delta_q << "\n";
-#endif
-#ifdef TRACE_QI
-            std::cout << "KHL06 dqi " << delta_q << ", dNi " << delta_n << "\n";
-#endif
-            codi::RealReverse delta_e = latent_heat_melt(T_prime) * delta_q / specific_heat_ice(T_prime);
-            // Sublimation, cooling
-            if(delta_q < 0.0)
-                res[lat_cool_idx] += delta_e;
-            // Deposition, heating
-            else
-                res[lat_heat_idx] += delta_e;
-        }
-    }
+    ice_nuc_hom(T_prime, w_prime, p_prime, qv_prime,
+        qi_prime, Ni, ssi, p_sat_ice, res, cc);
 
     ////////////// cloud_freeze
     // Homogeneous freezing of cloud droplets
