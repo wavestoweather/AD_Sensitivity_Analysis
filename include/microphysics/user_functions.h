@@ -2436,8 +2436,8 @@ void snow_riming(
         // ice cloud riming
         if(rime_rate_qc > 0.0)
         {
-            codi::RealReverse rime_q = min(qc_prime, rime_rate_qc);
-            codi::RealReverse rime_n = min(Nc, rime_rate_nc);
+            float_t rime_q = min(qc_prime, rime_rate_qc);
+            float_t rime_n = min(Nc, rime_rate_nc);
             // Snow
             res[qs_idx] += rime_q;
             // Cloud
@@ -2452,7 +2452,7 @@ void snow_riming(
 #ifdef TRACE_QS
             std::cout << "Snow riming dqs " << rime_q << "\n";
 #endif
-            codi::RealReverse delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
+            float_t delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
             // Melting, cooling
             if(rime_q < 0.0)
                 res[lat_cool_idx] += delta_e;
@@ -2462,12 +2462,12 @@ void snow_riming(
 
             if(T_prime < tmelt && ice_multiplication)
             {
-                codi::RealReverse mult_1 = (T_prime - T_mult_min)*const3;
-                codi::RealReverse mult_2 = (T_prime - T_mult_max)*const4;
+                float_t mult_1 = (T_prime - T_mult_min)*const3;
+                float_t mult_2 = (T_prime - T_mult_max)*const4;
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
-                codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x_riming;
+                float_t mult_n = C_mult * mult_1 * mult_2 * rime_q;
+                float_t mult_q = mult_n * cc.ice.min_x_riming;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice N
@@ -2487,8 +2487,8 @@ void snow_riming(
         // snow rain riming
         if(rime_rate_qr > 0.0)
         {
-            codi::RealReverse rime_q = min(rime_rate_qr, qr_prime);
-            codi::RealReverse rime_n = min(Nr, rime_rate_nr);
+            float_t rime_q = min(rime_rate_qr, qr_prime);
+            float_t rime_n = min(Nr, rime_rate_nr);
             // Snow
             res[qs_idx] += rime_q;
             // Rain
@@ -2501,7 +2501,7 @@ void snow_riming(
 #ifdef TRACE_QS
             std::cout << "Snow rain riming dqs " << rime_q << "\n";
 #endif
-            codi::RealReverse delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
+            float_t delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
             // Melting, cooling
             if(rime_q < 0.0)
                 res[lat_cool_idx] += delta_e;
@@ -2511,12 +2511,12 @@ void snow_riming(
 
             if(T_prime < tmelt && ice_multiplication)
             {
-                codi::RealReverse mult_1 = (T_prime - T_mult_min)*const3;
-                codi::RealReverse mult_2 = (T_prime - T_mult_max)*const4;
+                float_t mult_1 = (T_prime - T_mult_min)*const3;
+                float_t mult_2 = (T_prime - T_mult_max)*const4;
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
-                codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x_riming;
+                float_t mult_n = C_mult * mult_1 * mult_2 * rime_q;
+                float_t mult_q = mult_n * cc.ice.min_x_riming;
                 mult_q = min(rime_q, mult_q);
 
                 // Ice N
@@ -2540,12 +2540,12 @@ void snow_riming(
         // snow cloud riming
         if(rime_rate_qc > 0.0)
         {
-            codi::RealReverse x_s = particle_mean_mass(qs_prime, Ns,
+            float_t x_s = particle_mean_mass(qs_prime, Ns,
                 cc.snow.min_x_riming, cc.snow.max_x);
-            codi::RealReverse d_s = particle_diameter(x_s,
+            float_t d_s = particle_diameter(x_s,
                 cc.snow.a_geo, cc.snow.b_geo);
-            codi::RealReverse rime_q = min(rime_rate_qc, qc_prime);
-            codi::RealReverse rime_n = min(rime_rate_nc, Nc);
+            float_t rime_q = min(rime_rate_qc, qc_prime);
+            float_t rime_n = min(rime_rate_nc, Nc);
             // Snow
             res[qs_idx] += rime_q;
             // Cloud
@@ -2560,7 +2560,7 @@ void snow_riming(
 #ifdef TRACE_QS
             std::cout << "snow depos dqs " << rime_q << "\n";
 #endif
-            codi::RealReverse delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
+            float_t delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
             // Melting, cooling
             if(rime_q < 0.0)
                 res[lat_cool_idx] += delta_e;
@@ -2568,14 +2568,14 @@ void snow_riming(
             else
                 res[lat_heat_idx] += delta_e;
 
-            codi::RealReverse mult_q = 0.0;
+            float_t mult_q = 0.0;
             if(T_prime < tmelt && ice_multiplication)
             {
-                codi::RealReverse mult_1 = (T_prime - T_mult_min)*const3;
-                codi::RealReverse mult_2 = (T_prime - T_mult_max)*const4;
+                float_t mult_1 = (T_prime - T_mult_min)*const3;
+                float_t mult_2 = (T_prime - T_mult_max)*const4;
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
-                codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
+                float_t mult_n = C_mult * mult_1 * mult_2 * rime_q;
                 mult_q = mult_n * cc.ice.min_x_riming;
                 mult_q = min(rime_q, mult_q);
 
@@ -2596,14 +2596,14 @@ void snow_riming(
             // Conversion snow -> graupel
             if(d_s > D_conv_sg)
             {
-                codi::RealReverse conv_q = (rime_q - mult_q)
+                float_t conv_q = (rime_q - mult_q)
                     / (const5*(M_PI/6.0 * rho_ice * d_s*d_s*d_s/x_s -1.0));
                 conv_q = min(qs_prime, conv_q);
-                codi::RealReverse qs_tmp = qs_prime+dt*res[qs_idx];
+                float_t qs_tmp = qs_prime+dt*res[qs_idx];
                 x_s = particle_mean_mass(qs_tmp, Ns,
                     cc.snow.min_x_riming, cc.snow.max_x);
-                codi::RealReverse tmp = conv_q / max(x_s, x_conv);
-                codi::RealReverse conv_n = min(tmp, Ns);
+                float_t tmp = conv_q / max(x_s, x_conv);
+                float_t conv_n = min(tmp, Ns);
 
                 // Snow
                 res[qs_idx] -= conv_q;
@@ -2625,9 +2625,9 @@ void snow_riming(
         // Snow rain riming
         if(rime_rate_qs > 0.0)
         {
-            codi::RealReverse rime_qs = min(rime_rate_qs, qs_prime);
-            codi::RealReverse rime_qr = min(rime_rate_qr, qr_prime);
-            codi::RealReverse rime_n = min(min(rime_rate_nr, Nr), Ns);
+            float_t rime_qs = min(rime_rate_qs, qs_prime);
+            float_t rime_qr = min(rime_rate_qr, qr_prime);
+            float_t rime_n = min(min(rime_rate_nr, Nr), Ns);
 
             // Snow
             res[qs_idx] -= rime_qs;
@@ -2643,7 +2643,7 @@ void snow_riming(
 #ifdef TRACE_QS
             std::cout << "snow rain riming 2 dqs " << -rime_qs << ", dNs " << -rime_n << "\n";
 #endif
-            codi::RealReverse delta_e = latent_heat_melt(T_prime) * rime_qr / specific_heat_ice(T_prime);
+            float_t delta_e = latent_heat_melt(T_prime) * rime_qr / specific_heat_ice(T_prime);
             // Melting, cooling
             if(rime_qr < 0.0)
                 res[lat_cool_idx] += delta_e;
@@ -2651,23 +2651,23 @@ void snow_riming(
             else
                 res[lat_heat_idx] += delta_e;
 
-            codi::RealReverse mult_q = 0.0;
-            codi::RealReverse mult_n = 0.0;
+            float_t mult_q = 0.0;
+            float_t mult_n = 0.0;
             if(T_prime < tmelt && ice_multiplication)
             {
-                codi::RealReverse mult_1 = (T_prime - T_mult_min)*const3;
-                codi::RealReverse mult_2 = (T_prime - T_mult_max)*const4;
+                float_t mult_1 = (T_prime - T_mult_min)*const3;
+                float_t mult_2 = (T_prime - T_mult_max)*const4;
                 mult_1 = max( 0.0, min(mult_1, 1.0));
                 mult_2 = max( 0.0, min(mult_2, 1.0));
                 mult_n = C_mult * mult_1 * mult_2 * rime_qr;
-                codi::RealReverse tmp = mult_n*cc.ice.min_x_riming;
+                float_t tmp = mult_n*cc.ice.min_x_riming;
                 mult_q = min(rime_qr, tmp);
             }
             if(T_prime >= tmelt)
             {
-                codi::RealReverse qr_tmp = qr_prime+dt*res[qr_idx];
-                codi::RealReverse Nr_tmp = Nr*res[Nr_idx]*dt;
-                codi::RealReverse x_r = particle_mean_mass(
+                float_t qr_tmp = qr_prime+dt*res[qr_idx];
+                float_t Nr_tmp = Nr*res[Nr_idx]*dt;
+                float_t x_r = particle_mean_mass(
                     qr_tmp, Nr_tmp,
                     cc.rain.min_x_riming, cc.rain.max_x);
 
@@ -2685,7 +2685,7 @@ void snow_riming(
 #ifdef TRACE_QS
                 std::cout << "More melting dqs " << rime_qs << ", dNs " << rime_n << "\n";
 #endif
-                codi::RealReverse delta_e = latent_heat_melt(T_prime) * rime_qr
+                float_t delta_e = latent_heat_melt(T_prime) * rime_qr
                                             / specific_heat_ice(T_prime);
                 // Melting, cooling
                 if(rime_qr > 0.0)
@@ -2717,6 +2717,438 @@ void snow_riming(
 }
 
 
+/**
+ *
+ */
+template<class float_t>
+void particle_cloud_riming(
+    float_t &qc_prime,
+    float_t &Nc,
+    float_t &T_prime,
+    float_t &q1,
+    float_t &N1,
+    float_t &resq,
+    float_t &resn,
+    collection_model_constants_t &coeffs,
+    particle_model_constants_t &pc1,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    float_t const1 = const0 * pc1.sc_coll_n;
+    float_t x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_riming, cc.cloud.max_x);
+    float_t d_c = particle_diameter(x_c, cc.cloud.a_geo, cc.cloud.b_geo);
+    float_t x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
+    float_t d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
+
+    if(qc_prime > q_crit_c && q1 > pc1.q_crit_c
+        && d_1 > pc1.d_crit_c && d_c > D_crit_c)
+    {
+        float_t v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
+        float_t v_c = particle_velocity(x_c, cc.cloud.a_vel, cc.cloud.b_vel) * cc.cloud.rho_v;
+
+        float_t e_coll_n = min(pc1.ecoll_c, max(const1*(d_c-D_crit_c), ecoll_min));
+        float_t e_coll_q = e_coll_n;
+
+        float_t rime_n = M_PI/4.0 * e_coll_n * N1 * Nc
+            * (coeffs.delta_n_aa * d_1 * d_1
+                + coeffs.delta_n_ab * d_1 * d_c
+                + coeffs.delta_n_bb * d_c * d_c)
+            * sqrt(coeffs.theta_n_aa * v_1 * v_1
+                - coeffs.theta_n_ab * v_1 * v_c
+                + coeffs.theta_n_bb * v_c * v_c);
+        float_t rime_q = M_PI/4.0 * e_coll_q * N1 * qc_prime
+            * (coeffs.delta_q_aa * d_1 * d_1
+                + coeffs.delta_q_ab * d_1 * d_c
+                + coeffs.delta_q_bb * d_c * d_c)
+            * sqrt(coeffs.theta_q_aa * v_1 * v_1
+                - coeffs.theta_q_ab * v_1 * v_c
+                + coeffs.theta_q_bb * v_c * v_c);
+        rime_q = min(qc_prime, rime_q);
+        rime_n = min(Nc, rime_n);
+
+        resq += rime_q;
+        // Cloud
+        res[qc_idx] -= rime_q;
+
+        // Cloud N
+        res[Nc_idx] -= rime_n;
+#ifdef TRACE_QC
+        if(abs(rime_q) > 0)
+            std::cout << "Particle cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
+#endif
+        float_t delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
+        // Sublimination, cooling
+        if(rime_q < 0.0)
+            res[lat_cool_idx] += delta_e;
+        // Deposition, heating
+        else
+            res[lat_heat_idx] += delta_e;
+
+        // ice multiplication based on Hallet and Mossop
+        if(T_prime < tmelt && ice_multiplication)
+        {
+            float_t mult_1 = (T_prime - T_mult_min)*const3;
+            float_t mult_2 = (T_prime - T_mult_max)*const4;
+            mult_1 = max( 0.0, min(mult_1, 1.0));
+            mult_2 = max( 0.0, min(mult_2, 1.0));
+            float_t mult_n = C_mult * mult_1 * mult_2 * rime_q;
+            float_t mult_q = mult_n * cc.ice.min_x_riming;
+            mult_q = min(rime_q, mult_q);
+
+            // Ice
+            res[qi_idx] += mult_q;
+            // Ice N
+            res[Ni_idx] += mult_n;
+            resq -= mult_q;
+#ifdef TRACE_QI
+            std::cout << "Particle cloud riming dqi " << mult_q << ", dNi " << mult_n << "\n";
+#endif
+        }
+
+        // Enhancement of melting
+        if(T_prime > tmelt && enhanced_melting)
+        {
+            float_t melt_q = (T_prime-tmelt)*const5*rime_q;
+            float_t melt_n = melt_q/x_1;
+
+            melt_q = min(q1, melt_q);
+            melt_n = min(N1, melt_n);
+
+            resq -= melt_q;
+            resn -= melt_n;
+            // Rain
+            res[qr_idx] += melt_q;
+            // Rain N
+            res[Nr_idx] += melt_n;
+#ifdef TRACE_QR
+            std::cout << "enhancement of melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+#endif
+            float_t delta_e = latent_heat_melt(T_prime) * melt_q
+                                        / specific_heat_ice(T_prime);
+            // Melting, cooling
+            if(melt_q > 0.0)
+                res[lat_cool_idx] -= delta_e;
+            // Freezing, heating
+            else
+                res[lat_heat_idx] -= delta_e;
+        }
+    }
+}
+
+
+/**
+ *
+ */
+template<class float_t>
+void particle_rain_riming(
+    float_t &qr_prime,
+    float_t &Nr,
+    float_t &T_prime,
+    float_t &q1,
+    float_t &N1,
+    float_t &resq,
+    float_t &resn,
+    collection_model_constants_t &coeffs,
+    particle_model_constants_t &pc1,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    if(qr_prime > q_crit && q1 > q_crit)
+    {
+
+        float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_riming, cc.rain.max_x);
+        float_t d_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
+        float_t x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
+        float_t d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
+
+        float_t v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
+        float_t v_r = particle_velocity(x_r, cc.rain.a_vel, cc.rain.b_vel) * cc.rain.rho_v;
+
+        float_t rime_n = M_PI/4.0 * N1 * Nr
+            * (coeffs.delta_n_aa * d_1 * d_1
+                + coeffs.delta_n_ab * d_1 * d_r
+                + coeffs.delta_n_bb * d_r * d_r)
+            * sqrt(coeffs.theta_n_aa * v_1 * v_1
+                - coeffs.theta_n_ab * v_1 * v_r
+                + coeffs.theta_n_bb * v_r * v_r);
+        float_t rime_q = M_PI/4.0 * N1 * qr_prime
+            * (coeffs.delta_q_aa * d_1 * d_1
+                + coeffs.delta_q_ab * d_1 * d_r
+                + coeffs.delta_q_bb * d_r * d_r)
+            * sqrt(coeffs.theta_q_aa * v_1 * v_1
+                - coeffs.theta_q_ab * v_1 * v_r
+                + coeffs.theta_q_bb * v_r * v_r);
+        rime_q = min(qr_prime, rime_q);
+        rime_n = min(Nr, rime_n);
+
+        resq += rime_q;
+        // Rain
+        res[qr_idx] -= rime_q;
+        // Rain N
+        res[Nr_idx] -= rime_n;
+#ifdef TRACE_QR
+        std::cout << "particle rain riming dqr " << -rime_q << ", dNr " << -rime_n << "\n";
+#endif
+        float_t delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
+        // Melting, cooling
+        if(rime_q < 0.0)
+            res[lat_cool_idx] += delta_e;
+        // Freezing, heating
+        else
+            res[lat_heat_idx] += delta_e;
+
+        // ice multiplication based on Hallet and Mossop
+        if(T_prime < tmelt && ice_multiplication)
+        {
+            float_t mult_1 = (T_prime - T_mult_min)*const3;
+            float_t mult_2 = (T_prime - T_mult_max)*const4;
+            mult_1 = max( 0.0, min(mult_1, 1.0));
+            mult_2 = max( 0.0, min(mult_2, 1.0));
+            float_t mult_n = C_mult * mult_1 * mult_2 * rime_q;
+            float_t mult_q = mult_n * cc.ice.min_x_riming;
+            mult_q = min(rime_q, mult_q);
+
+            // Ice
+            res[qi_idx] += mult_q;
+            // Ice N
+            res[Ni_idx] += mult_n;
+#ifdef TRACE_QI
+        std::cout << "particle rain riming dqi " << mult_q << ", dNi " << mult_n << "\n";
+#endif
+            resq -= mult_q;
+        }
+
+        // Enhancement of melting
+        if(T_prime > tmelt && enhanced_melting)
+        {
+            float_t melt_q = (T_prime-tmelt)*const5*rime_q;
+            float_t melt_n = melt_q/x_1;
+
+            melt_q = min(q1, melt_q);
+            melt_n = min(N1, melt_n);
+
+            resq -= melt_q;
+            resn -= melt_n;
+            // Rain
+            res[qr_idx] += melt_q;
+            // Rain N
+            res[Nr_idx] += melt_n;
+#ifdef TRACE_QR
+            std::cout << "particle rain riming enhancement dqr " << melt_q << ", dNr " << melt_n << "\n";
+#endif
+            float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
+            // Melting, cooling
+            if(melt_q > 0.0)
+                res[lat_cool_idx] -= delta_e;
+            // Freezing, heating
+            else
+                res[lat_heat_idx] -= delta_e;
+        }
+    }
+}
+
+
+/**
+ * Freezing of rain and conversion to ice, graupel, hail
+ */
+template<class float_t>
+void rain_freeze(
+    float_t &qr_prime,
+    float_t &Nr,
+    float_t &T_prime,
+    const double &dt,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    if(T_prime < T_freeze)
+    {
+        float_t xmax_ice = pow( pow(D_rainfrz_ig/cc.rain.a_geo, 1.0/cc.rain.b_geo), cc.rain.mu );
+        float_t xmax_gr  = pow( pow(D_rainfrz_gh/cc.rain.a_geo, 1.0/cc.rain.b_geo), cc.rain.mu );
+        float_t fr_q, fr_n, fr_n_i, fr_q_i, fr_n_g, fr_q_g, fr_n_h,
+            fr_q_h, fr_n_tmp, fr_q_tmp;
+        fr_q = fr_n = fr_n_i = fr_q_i = fr_n_g = fr_q_g = fr_n_h =
+            fr_q_h = fr_n_tmp = fr_q_tmp = 0.0;
+        float_t Nr_tmp = Nr;
+        if(qr_prime <= q_crit_fr)
+        {
+            if(T_prime < T_f) // instantaneous freezing
+            {
+                fr_q = fr_q_i = qr_prime;
+                fr_n = fr_n_i = Nr;
+                fr_n_tmp = fr_q_tmp = 1.0;
+            }
+        } else
+        {
+            float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_freezing, cc.rain.max_x);
+            Nr_tmp = qr_prime/x_r;
+            if(T_prime < T_f)
+            {
+                // Not sure if this branch makes too much sense
+                fr_q = qr_prime;
+                fr_n = Nr_tmp;
+                float_t lam = pow(rain_g1/rain_g2*x_r, -cc.rain.mu);
+                float_t N0 = cc.rain.mu * Nr_tmp * pow(lam, rain_nm1) / rain_g1;
+                float_t tmp = lam*xmax_ice;
+                fr_n_i = N0/pow(cc.rain.mu*lam, rain_nm1) * table_r1.look_lo(tmp);
+                fr_q_i = N0/pow(cc.rain.mu*lam, rain_nm2) * table_r2.look_lo(tmp);
+                tmp = lam*xmax_gr;
+                fr_n_i = N0/pow(cc.rain.mu*lam, rain_nm1) * table_r1.look_lo(tmp);
+                fr_n_i = N0/pow(cc.rain.mu*lam, rain_nm2) * table_r2.look_lo(tmp);
+
+                fr_n_h = fr_n - fr_n_g;
+                fr_q_h = fr_q - fr_q_g;
+                fr_n_g = fr_n_g - fr_n_i;
+                fr_q_g = fr_q_g - fr_q_i;
+                fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp);
+                fr_q_tmp = qr_prime/max(fr_q, qr_prime);
+            } else
+            {
+                // heterogeneous freezing
+                float_t j_het = max(b_HET * ( exp(a_HET * (T_prime-tmelt)) - 1.0 ), 0.0) / rho_w;
+
+                if(j_het >= 1.0e-20/dt)
+                {
+                    fr_n = j_het * qr_prime;
+                    fr_q = j_het * qr_prime * x_r * cc.rain.c_z; // rain_coeffs
+                    float_t lam = pow(cc.rain.g1/cc.rain.g2 * x_r, -cc.rain.mu);
+                    float_t N0 = cc.rain.mu * Nr_tmp * pow(lam, cc.rain.nm1) / cc.rain.g1;
+
+                    float_t tmp = lam*xmax_ice;
+                    fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
+                    fr_q_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
+
+                    tmp = lam*xmax_gr;
+                    fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
+                    fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
+
+                    fr_n_h = fr_n - fr_n_g;
+                    fr_q_h = fr_q - fr_q_g;
+                    fr_n_g = fr_n_g - fr_n_i;
+                    fr_q_g = fr_q_g - fr_q_i;
+                    fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp);
+                    fr_q_tmp = qr_prime/max(fr_q,qr_prime);
+                } else
+                {
+                    fr_n = fr_q = fr_n_i = fr_q_i = fr_n_g = fr_q_g
+                        = fr_n_h = fr_q_h = fr_n_tmp = fr_q_tmp = 0.0;
+                }
+            }
+
+            fr_n = fr_n * fr_n_tmp;
+            fr_q = fr_q * fr_q_tmp;
+            fr_n_i = fr_n_i * fr_n_tmp;
+            fr_n_g = fr_n_g * fr_n_tmp;
+            fr_n_h = fr_n_h * fr_n_tmp;
+            fr_q_i = fr_q_i * fr_q_tmp;
+            fr_q_g = fr_q_g * fr_q_tmp;
+            fr_q_h = fr_q_h * fr_q_tmp;
+        }
+        // Rain
+        res[qr_idx] -= fr_q;
+        // Rain N
+        res[Nr_idx] = Nr_tmp - fr_n;
+#ifdef TRACE_QR
+        std::cout << "Freezing dqr " << -fr_q << ", dNr " << Nr_tmp-fr_n << "\n";
+#endif
+
+        // Snow
+        res[qs_idx] += fr_q_i;
+        // Snow N
+        res[Ns_idx] += fr_n_i;
+#ifdef TRACE_QS
+        std::cout << "Freezing dqs " << fr_q_i << ", dNs " << fr_n_i << "\n";
+#endif
+
+        // Graupel
+        res[qg_idx] += fr_q_g;
+        // Graupel N
+        res[Ng_idx] += fr_n_g;
+#ifdef TRACE_QG
+        std::cout << "Freezing dqg " << fr_q_g << ", dNg " << fr_n_g << "\n";
+#endif
+
+        // Hail
+        res[qh_idx] += fr_q_h;
+        // Hail N
+        res[Nh_idx] += fr_n_h;
+#ifdef TRACE_QH
+        std::cout << "Freezing dqh " << fr_q_h << ", dNh " << fr_n_h << "\n";
+#endif
+
+        float_t delta_e = latent_heat_melt(T_prime) * fr_q
+                                    / specific_heat_ice(T_prime);
+        // Melting, cooling
+        if(fr_q < 0.0)
+            res[lat_cool_idx] += delta_e;
+        // Freezing, heating
+        else
+            res[lat_heat_idx] += delta_e;
+    }
+}
+
+
+/**
+ * Ice melts instantanuous to rain or cloud droplets.
+ */
+template<class float_t>
+void ice_melting(
+    float_t &qi_prime,
+    float_t &qi,
+    float_t &Ni,
+    float_t &T_prime,
+    const double &dt,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    float_t x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_melt, cc.ice.max_x);
+    // Complete melting
+    float_t melt_q = qi_prime / dt; // Instantanuous, hence "/dt"
+    float_t melt_n = Ni / dt;
+
+    // Remove all ice and all changes that came before due to ice processes.
+    // Makes sure, no other ice processes are called subsequently.
+    qi = 0.0;
+    qi_prime = 0.0;
+    Ni = 0;
+
+    // Ice
+    res[qi_idx] = -melt_q;
+    // Ice N
+    res[Ni_idx] = -melt_n;
+#ifdef TRACE_QI
+    std::cout << "ice melting: qi and Ni set to 0.0\n";
+#endif
+    // melt into cloud or rain
+    if(x_i > cc.cloud.max_x)
+    {
+        // Rain
+        res[qr_idx] += melt_q;
+        // Rain N
+        res[Nr_idx] += melt_n;
+#ifdef TRACE_QR
+        std::cout << "ice melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+#endif
+    } else
+    {
+        // Cloud
+        res[qc_idx] += melt_q;
+
+        // Cloud N
+        res[Nc_idx] += melt_n;
+#ifdef TRACE_QC
+        if(abs(melt_q) > 0)
+            std::cout << "ice melting dqc " << melt_q << ", dNc " << melt_n << "\n";
+#endif
+    }
+
+    float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
+    // Melting, cooling
+    if(melt_q > 0.0)
+        res[lat_cool_idx] -= delta_e;
+    // Freezing, heating
+    else
+        res[lat_heat_idx] -= delta_e;
+}
 
 /**
  * This function evaluates the RHS function of the ODE. It uses the 2 moment
@@ -2924,19 +3356,16 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
 
     ////////////// ice-ice collisions
-
     if(Ni > 0.0 && qi_prime > q_crit_i && D_i > D_crit_i)
     {
         ice_self_collection(qi_prime, Ni, x_i, D_i, T_c, res, cc);
     }
 
-    //// snow self collection
     if(qs_prime > q_crit)
     {
         snow_self_collection(qs_prime, Ns, T_prime, res, cc);
     }
 
-    // particle particle collection
     particle_particle_collection(qi_prime, Ni, qs_prime, Ns,
         qg_prime, Ng, T_prime, T_c, res, cc);
 
@@ -2946,7 +3375,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     hail_collision(qh_prime, Nh, qs_prime, Ns, qi_prime, Ni, T_c, res, cc);
 
     ////////////// Riming of ice with cloud and rain droplets and conversion to graupel
-    // ice riming
     riming_cloud_core(qc_prime, Nc, qi_prime, Ni,
         cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc);
     riming_rain_core(qr_prime, Nr, qi_prime, Ni,
@@ -2966,223 +3394,13 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         dep_rate_snow, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
         rime_rate_qs, T_prime, dt, res, cc);
 
-
-    auto particle_cloud_riming = [&](
-        codi::RealReverse &q1,
-        codi::RealReverse &N1,
-        codi::RealReverse &resq,
-        codi::RealReverse &resn,
-        collection_model_constants_t &coeffs,
-        particle_model_constants_t &pc1)
-    {
-        codi::RealReverse const1 = const0 * pc1.sc_coll_n;
-        codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_riming, cc.cloud.max_x);
-        codi::RealReverse d_c = particle_diameter(x_c, cc.cloud.a_geo, cc.cloud.b_geo);
-        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
-        codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
-
-        if(qc_prime > q_crit_c && q1 > pc1.q_crit_c
-            && d_1 > pc1.d_crit_c && d_c > D_crit_c)
-        {
-            codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
-            codi::RealReverse v_c = particle_velocity(x_c, cc.cloud.a_vel, cc.cloud.b_vel) * cc.cloud.rho_v;
-
-            codi::RealReverse e_coll_n = min(pc1.ecoll_c, max(const1*(d_c-D_crit_c), ecoll_min));
-            codi::RealReverse e_coll_q = e_coll_n;
-
-            codi::RealReverse rime_n = M_PI/4.0 * e_coll_n * N1 * Nc
-                * (coeffs.delta_n_aa * d_1 * d_1
-                    + coeffs.delta_n_ab * d_1 * d_c
-                    + coeffs.delta_n_bb * d_c * d_c)
-                * sqrt(coeffs.theta_n_aa * v_1 * v_1
-                    - coeffs.theta_n_ab * v_1 * v_c
-                    + coeffs.theta_n_bb * v_c * v_c);
-            codi::RealReverse rime_q = M_PI/4.0 * e_coll_q * N1 * qc_prime
-                * (coeffs.delta_q_aa * d_1 * d_1
-                    + coeffs.delta_q_ab * d_1 * d_c
-                    + coeffs.delta_q_bb * d_c * d_c)
-                * sqrt(coeffs.theta_q_aa * v_1 * v_1
-                    - coeffs.theta_q_ab * v_1 * v_c
-                    + coeffs.theta_q_bb * v_c * v_c);
-            rime_q = min(qc_prime, rime_q);
-            rime_n = min(Nc, rime_n);
-
-            resq += rime_q;
-            // Cloud
-            res[qc_idx] -= rime_q;
-
-            // Cloud N
-            res[Nc_idx] -= rime_n;
-#ifdef TRACE_QC
-            if(abs(rime_q) > 0)
-                std::cout << "Particle cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
-#endif
-            codi::RealReverse delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
-            // Sublimination, cooling
-            if(rime_q < 0.0)
-                res[lat_cool_idx] += delta_e;
-            // Deposition, heating
-            else
-                res[lat_heat_idx] += delta_e;
-
-            // ice multiplication based on Hallet and Mossop
-            if(T_prime < tmelt && ice_multiplication)
-            {
-                codi::RealReverse mult_1 = (T_prime - T_mult_min)*const3;
-                codi::RealReverse mult_2 = (T_prime - T_mult_max)*const4;
-                mult_1 = max( 0.0, min(mult_1, 1.0));
-                mult_2 = max( 0.0, min(mult_2, 1.0));
-                codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x_riming;
-                mult_q = min(rime_q, mult_q);
-
-                // Ice
-                res[qi_idx] += mult_q;
-                // Ice N
-                res[Ni_idx] += mult_n;
-                resq -= mult_q;
-#ifdef TRACE_QI
-                std::cout << "Particle cloud riming dqi " << mult_q << ", dNi " << mult_n << "\n";
-#endif
-            }
-
-            // Enhancement of melting
-            if(T_prime > tmelt && enhanced_melting)
-            {
-                codi::RealReverse melt_q = (T_prime-tmelt)*const5*rime_q;
-                codi::RealReverse melt_n = melt_q/x_1;
-
-                melt_q = min(q1, melt_q);
-                melt_n = min(N1, melt_n);
-
-                resq -= melt_q;
-                resn -= melt_n;
-                // Rain
-                res[qr_idx] += melt_q;
-                // Rain N
-                res[Nr_idx] += melt_n;
-#ifdef TRACE_QR
-                std::cout << "enhancement of melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-#endif
-                codi::RealReverse delta_e = latent_heat_melt(T_prime) * melt_q
-                                            / specific_heat_ice(T_prime);
-                // Melting, cooling
-                if(melt_q > 0.0)
-                    res[lat_cool_idx] -= delta_e;
-                // Freezing, heating
-                else
-                    res[lat_heat_idx] -= delta_e;
-            }
-        }
-    };
-
-    auto particle_rain_riming = [&](
-        codi::RealReverse &q1,
-        codi::RealReverse &N1,
-        codi::RealReverse &resq,
-        codi::RealReverse &resn,
-        collection_model_constants_t &coeffs,
-        particle_model_constants_t &pc1)
-    {
-        if(qr_prime > q_crit && q1 > q_crit)
-        {
-
-            codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_riming, cc.rain.max_x);
-            codi::RealReverse d_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
-            codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
-            codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
-
-            codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
-            codi::RealReverse v_r = particle_velocity(x_r, cc.rain.a_vel, cc.rain.b_vel) * cc.rain.rho_v;
-
-            codi::RealReverse rime_n = M_PI/4.0 * N1 * Nr
-                * (coeffs.delta_n_aa * d_1 * d_1
-                    + coeffs.delta_n_ab * d_1 * d_r
-                    + coeffs.delta_n_bb * d_r * d_r)
-                * sqrt(coeffs.theta_n_aa * v_1 * v_1
-                    - coeffs.theta_n_ab * v_1 * v_r
-                    + coeffs.theta_n_bb * v_r * v_r);
-            codi::RealReverse rime_q = M_PI/4.0 * N1 * qr_prime
-                * (coeffs.delta_q_aa * d_1 * d_1
-                    + coeffs.delta_q_ab * d_1 * d_r
-                    + coeffs.delta_q_bb * d_r * d_r)
-                * sqrt(coeffs.theta_q_aa * v_1 * v_1
-                    - coeffs.theta_q_ab * v_1 * v_r
-                    + coeffs.theta_q_bb * v_r * v_r);
-            rime_q = min(qr_prime, rime_q);
-            rime_n = min(Nr, rime_n);
-
-            resq += rime_q;
-            // Rain
-            res[qr_idx] -= rime_q;
-            // Rain N
-            res[Nr_idx] -= rime_n;
-#ifdef TRACE_QR
-            std::cout << "particle rain riming dqr " << -rime_q << ", dNr " << -rime_n << "\n";
-#endif
-            codi::RealReverse delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
-            // Melting, cooling
-            if(rime_q < 0.0)
-                res[lat_cool_idx] += delta_e;
-            // Freezing, heating
-            else
-                res[lat_heat_idx] += delta_e;
-
-            // ice multiplication based on Hallet and Mossop
-            if(T_prime < tmelt && ice_multiplication)
-            {
-                codi::RealReverse mult_1 = (T_prime - T_mult_min)*const3;
-                codi::RealReverse mult_2 = (T_prime - T_mult_max)*const4;
-                mult_1 = max( 0.0, min(mult_1, 1.0));
-                mult_2 = max( 0.0, min(mult_2, 1.0));
-                codi::RealReverse mult_n = C_mult * mult_1 * mult_2 * rime_q;
-                codi::RealReverse mult_q = mult_n * cc.ice.min_x_riming;
-                mult_q = min(rime_q, mult_q);
-
-                // Ice
-                res[qi_idx] += mult_q;
-                // Ice N
-                res[Ni_idx] += mult_n;
-#ifdef TRACE_QI
-            std::cout << "particle rain riming dqi " << mult_q << ", dNi " << mult_n << "\n";
-#endif
-                resq -= mult_q;
-            }
-
-            // Enhancement of melting
-            if(T_prime > tmelt && enhanced_melting)
-            {
-                codi::RealReverse melt_q = (T_prime-tmelt)*const5*rime_q;
-                codi::RealReverse melt_n = melt_q/x_1;
-
-                melt_q = min(q1, melt_q);
-                melt_n = min(N1, melt_n);
-
-                resq -= melt_q;
-                resn -= melt_n;
-                // Rain
-                res[qr_idx] += melt_q;
-                // Rain N
-                res[Nr_idx] += melt_n;
-#ifdef TRACE_QR
-                std::cout << "particle rain riming enhancement dqr " << melt_q << ", dNr " << melt_n << "\n";
-#endif
-                codi::RealReverse delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
-                // Melting, cooling
-                if(melt_q > 0.0)
-                    res[lat_cool_idx] -= delta_e;
-                // Freezing, heating
-                else
-                    res[lat_heat_idx] -= delta_e;
-            }
-        }
-    };
 #ifdef TRACE_QH
     auto qh_before = res[qh_idx];
     auto Nh_before = res[Nh_idx];
 #endif
     //// hail cloud rimin
-    particle_cloud_riming(qh_prime, Nh, res[qh_idx], res[Nh_idx], cc.coeffs_hcr, cc.rain);
+    particle_cloud_riming(qc_prime, Nc, T_prime, qh_prime, Nh,
+        res[qh_idx], res[Nh_idx], cc.coeffs_hcr, cc.rain, res, cc);
 
 #ifdef TRACE_QH
     std::cout << "hail cloud riming dqh " << res[qh_idx]-qh_before << ", dNh " << res[Nh_idx]-Nh_before << "\n";
@@ -3190,7 +3408,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     auto Nh_before = res[Nh_idx];
 #endif
     //// hail rain riming
-    particle_rain_riming(qh_prime, Nh, res[qh_idx], res[Nh_idx], cc.coeffs_hrr, cc.rain);
+    particle_rain_riming(qr_prime, Nr, T_prime, qh_prime, Nh,
+        res[qh_idx], res[Nh_idx], cc.coeffs_hrr, cc.rain, res, cc);
 #ifdef TRACE_QH
     std::cout << "hail rain riming dqh " << res[qh_idx]-qh_before << ", dNh " << res[Nh_idx]-Nh_before << "\n";
 #endif
@@ -3199,7 +3418,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     auto Ng_before = res[Ng_idx];
 #endif
     //// graupel cloud riming
-    particle_cloud_riming(qg_prime, Ng, res[qg_idx], res[Ng_idx], cc.coeffs_gcr, cc.rain);
+    particle_cloud_riming(qc_prime, Nc, T_prime, qg_prime, Ng,
+        res[qg_idx], res[Ng_idx], cc.coeffs_gcr, cc.rain, res, cc);
 
 #ifdef TRACE_QG
     std::cout << "graupel cloud riming dqg " << res[qg_idx]-qg_before << ", dNg " << res[Ng_idx]-Ng_before << "\n";
@@ -3207,204 +3427,28 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     auto Ng_before = res[Ng_idx];
 #endif
     //// graupel rain riming
-    particle_rain_riming(qg_prime, Ng, res[qg_idx], res[Ng_idx], cc.coeffs_grr, cc.rain);
+    particle_rain_riming(qr_prime, Nr, T_prime, qg_prime, Ng,
+        res[qg_idx], res[Ng_idx], cc.coeffs_grr, cc.rain, res, cc);
 #ifdef TRACE_QG
     std::cout << "graupel rain riming dqg " << res[qg_idx]-qg_before << ", dNg " << res[Ng_idx]-Ng_before << "\n";
 #endif
 
+    rain_freeze(qr_prime, Nr, T_prime, dt, res, cc);
 
-    ////////////// rain_freeze_gamlook
-    // Freezing of rain and conversion to ice, graupel, hail
-    codi::RealReverse xmax_ice = pow( pow(D_rainfrz_ig/cc.rain.a_geo, 1.0/cc.rain.b_geo), cc.rain.mu );
-    codi::RealReverse xmax_gr  = pow( pow(D_rainfrz_gh/cc.rain.a_geo, 1.0/cc.rain.b_geo), cc.rain.mu );
-    if(T_prime < T_freeze)
-    {
-        codi::RealReverse fr_q, fr_n, fr_n_i, fr_q_i, fr_n_g, fr_q_g, fr_n_h,
-            fr_q_h, fr_n_tmp, fr_q_tmp;
-        fr_q = fr_n = fr_n_i = fr_q_i = fr_n_g = fr_q_g = fr_n_h =
-            fr_q_h = fr_n_tmp = fr_q_tmp = 0.0;
-        codi::RealReverse Nr_tmp = Nr;
-        if(qr_prime <= q_crit_fr)
-        {
-            if(T_prime < T_f) // instantaneous freezing
-            {
-                fr_q = fr_q_i = qr_prime;
-                fr_n = fr_n_i = Nr;
-                fr_n_tmp = fr_q_tmp = 1.0;
-            }
-        } else
-        {
-            codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_freezing, cc.rain.max_x);
-            Nr_tmp = qr_prime/x_r;
-            if(T_prime < T_f)
-            {
-                // Not sure if this branch makes too much sense
-                fr_q = qr_prime;
-                fr_n = Nr_tmp;
-                codi::RealReverse lam = pow(rain_g1/rain_g2*x_r, -cc.rain.mu);
-                codi::RealReverse N0 = cc.rain.mu * Nr_tmp * pow(lam, rain_nm1) / rain_g1;
-                codi::RealReverse tmp = lam*xmax_ice;
-                fr_n_i = N0/pow(cc.rain.mu*lam, rain_nm1) * table_r1.look_lo(tmp);
-                fr_q_i = N0/pow(cc.rain.mu*lam, rain_nm2) * table_r2.look_lo(tmp);
-                tmp = lam*xmax_gr;
-                fr_n_i = N0/pow(cc.rain.mu*lam, rain_nm1) * table_r1.look_lo(tmp);
-                fr_n_i = N0/pow(cc.rain.mu*lam, rain_nm2) * table_r2.look_lo(tmp);
-
-                fr_n_h = fr_n - fr_n_g;
-                fr_q_h = fr_q - fr_q_g;
-                fr_n_g = fr_n_g - fr_n_i;
-                fr_q_g = fr_q_g - fr_q_i;
-                fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp);
-                fr_q_tmp = qr_prime/max(fr_q, qr_prime);
-            } else
-            {
-                // heterogeneous freezing
-                codi::RealReverse j_het = max(b_HET * ( exp(a_HET * (T_prime-tmelt)) - 1.0 ), 0.0) / rho_w;
-
-                if(j_het >= 1.0e-20/dt)
-                {
-                    fr_n = j_het * qr_prime;
-                    fr_q = j_het * qr_prime * x_r * cc.rain.c_z; // rain_coeffs
-                    codi::RealReverse lam = pow(cc.rain.g1/cc.rain.g2 * x_r, -cc.rain.mu);
-                    codi::RealReverse N0 = cc.rain.mu * Nr_tmp * pow(lam, cc.rain.nm1) / cc.rain.g1;
-
-                    codi::RealReverse tmp = lam*xmax_ice;
-                    fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
-                    fr_q_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
-
-                    tmp = lam*xmax_gr;
-                    fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
-                    fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
-
-                    fr_n_h = fr_n - fr_n_g;
-                    fr_q_h = fr_q - fr_q_g;
-                    fr_n_g = fr_n_g - fr_n_i;
-                    fr_q_g = fr_q_g - fr_q_i;
-                    fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp);
-                    fr_q_tmp = qr_prime/max(fr_q,qr_prime);
-                } else
-                {
-                    fr_n = fr_q = fr_n_i = fr_q_i = fr_n_g = fr_q_g
-                        = fr_n_h = fr_q_h = fr_n_tmp = fr_q_tmp = 0.0;
-                }
-            }
-
-            fr_n = fr_n * fr_n_tmp;
-            fr_q = fr_q * fr_q_tmp;
-            fr_n_i = fr_n_i * fr_n_tmp;
-            fr_n_g = fr_n_g * fr_n_tmp;
-            fr_n_h = fr_n_h * fr_n_tmp;
-            fr_q_i = fr_q_i * fr_q_tmp;
-            fr_q_g = fr_q_g * fr_q_tmp;
-            fr_q_h = fr_q_h * fr_q_tmp;
-        }
-        // Rain
-        res[qr_idx] -= fr_q;
-        // Rain N
-        res[Nr_idx] = Nr_tmp - fr_n;
-#ifdef TRACE_QR
-        std::cout << "Freezing dqr " << -fr_q << ", dNr " << Nr_tmp-fr_n << "\n";
-#endif
-
-        // Snow
-        res[qs_idx] += fr_q_i;
-        // Snow N
-        res[Ns_idx] += fr_n_i;
-#ifdef TRACE_QS
-        std::cout << "Freezing dqs " << fr_q_i << ", dNs " << fr_n_i << "\n";
-#endif
-
-        // Graupel
-        res[qg_idx] += fr_q_g;
-        // Graupel N
-        res[Ng_idx] += fr_n_g;
-#ifdef TRACE_QG
-        std::cout << "Freezing dqg " << fr_q_g << ", dNg " << fr_n_g << "\n";
-#endif
-
-        // Hail
-        res[qh_idx] += fr_q_h;
-        // Hail N
-        res[Nh_idx] += fr_n_h;
-#ifdef TRACE_QH
-        std::cout << "Freezing dqh " << fr_q_h << ", dNh " << fr_n_h << "\n";
-#endif
-
-        codi::RealReverse delta_e = latent_heat_melt(T_prime) * fr_q
-                                    / specific_heat_ice(T_prime);
-        // Melting, cooling
-        if(fr_q < 0.0)
-            res[lat_cool_idx] += delta_e;
-        // Freezing, heating
-        else
-            res[lat_heat_idx] += delta_e;
-    }
-
-    /////////// ice melting
     if(T_prime > tmelt && qi_prime > 0.0)
     {
-        codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_melt, cc.ice.max_x);
-        // Complete melting
-        codi::RealReverse melt_q = qi_prime;
-        codi::RealReverse melt_n = Ni;
-        qi = 0.0;
-        qi_prime = 0.0;
-        Ni = 0;
-
-        // Ice
-        res[qi_idx] = 0.0;
-        y[qi_idx] = 0.0;
-        // Ice N
-        res[Ni_idx] = 0.0;
-        y[Ni_idx] = 0.0;
-#ifdef TRACE_QI
-        std::cout << "ice melting: qi and Ni set to 0.0\n";
-#endif
-        // melt into cloud or rain
-        if(x_i > cc.cloud.max_x)
-        {
-            // Rain
-            res[qr_idx] += melt_q;
-            // Rain N
-            res[Nr_idx] += melt_n;
-#ifdef TRACE_QR
-            std::cout << "ice melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-#endif
-        } else
-        {
-            // Cloud
-            res[qc_idx] += melt_q;
-
-            // Cloud N
-            res[Nc_idx] += melt_n;
-#ifdef TRACE_QC
-            if(abs(melt_q) > 0)
-                std::cout << "ice melting dqc " << melt_q << ", dNc " << melt_n << "\n";
-#endif
-        }
-
-        codi::RealReverse delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
-        // Melting, cooling
-        if(melt_q > 0.0)
-            res[lat_cool_idx] -= delta_e;
-        // Freezing, heating
-        else
-            res[lat_heat_idx] -= delta_e;
+        ice_melting(qi_prime, qi, Ni, T_prime, dt, res, cc);
     }
 
-    /////////// snow melting
     if(T_prime > tmelt && qs_prime > 0.0)
     {
         snow_melting(qs_prime, Ns, T_prime, res, cc);
     }
 
-    ////////////// Melting of graupel and hail (either simple or LWF-based)
-    //// graupel melting
     if(T_prime > tmelt && qg_prime > 0.0)
     {
         graupel_melting(qg_prime, Ng, T_prime, res, cc);
     }
-    //// hail melting (simple)
     if(T_prime > tmelt && qh_prime > 0.0)
     {
         hail_melting(qh_prime, Nh, T_prime, res, cc);
