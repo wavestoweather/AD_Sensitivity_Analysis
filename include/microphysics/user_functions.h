@@ -2019,6 +2019,126 @@ void hail_collision(
 
 
 /**
+ * Rate of ice or snow collecting cloud droplets where values are hard
+ * coded for *rain* droplets according to COSMO comments.
+ * TODO: Check if this is actually for cloud or rain droplets
+ */
+template<class float_t>
+void riming_cloud_core(
+    float_t &qc_prime,
+    float_t &Nc,
+    codi::RealReverse &q1,
+    codi::RealReverse &N1,
+    particle_model_constants_t &pc1,
+    collection_model_constants_t &coeffs,
+    codi::RealReverse &rime_rate_qb,
+    codi::RealReverse &rime_rate_nb,
+    model_constants_t &cc)
+{
+    codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
+    codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
+    codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_riming, cc.cloud.max_x);
+    codi::RealReverse d_c = particle_diameter(x_c, cc.cloud.a_geo, cc.cloud.b_geo);
+
+    codi::RealReverse const1 = const0 * pc1.ecoll_c;
+
+    if(qc_prime > q_crit_c && q1 > pc1.q_crit_c
+        && d_c > D_crit_c && d_1 > pc1.d_crit_c)
+    {
+        codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
+        codi::RealReverse v_c = particle_velocity(x_c, cc.cloud.a_vel, cc.cloud.b_vel) * cc.cloud.rho_v;
+        codi::RealReverse tmp = const1*(d_c - D_crit_c);
+        codi::RealReverse e_coll = min(pc1.ecoll_c, max(tmp, ecoll_min));
+
+        // times dt ?
+        rime_rate_qb = M_PI/4.0 * e_coll * N1 * qc_prime
+            * (coeffs.delta_q_aa * d_1*d_1
+                + coeffs.delta_q_ab * d_1*d_c
+                + coeffs.delta_q_bb * d_c*d_c)
+            * sqrt(coeffs.theta_q_aa * v_1*v_1
+                - coeffs.theta_q_ab * v_1*v_c
+                + coeffs.theta_q_bb * v_c*v_c
+                + pc1.s_vel*pc1.s_vel);
+
+        rime_rate_nb = M_PI/4.0 * e_coll * N1 * Nc
+            * (coeffs.delta_n_aa * d_1*d_1
+                + coeffs.delta_n_ab * d_1*d_c
+                + coeffs.delta_n_bb * d_c*d_c)
+            * sqrt(coeffs.theta_n_aa * v_1*v_1
+                - coeffs.theta_n_ab * v_1*v_c
+                + coeffs.theta_n_bb * v_c*v_c
+                + pc1.s_vel*pc1.s_vel);
+    } else
+    {
+        rime_rate_qb = 0.0;
+        rime_rate_nb = 0.0;
+    }
+}
+
+
+/**
+ *
+ */
+template<class float_t>
+void riming_rain_core(
+    float_t &qr_prime,
+    float_t &Nr,
+    codi::RealReverse &q1,
+    codi::RealReverse &N1,
+    particle_model_constants_t &pc1,
+    collection_model_constants_t &coeffs,
+    codi::RealReverse &rime_rate_qa,
+    codi::RealReverse &rime_rate_qb,
+    codi::RealReverse &rime_rate_nb,
+    model_constants_t &cc)
+{
+    codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
+    codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
+
+    if(qr_prime > q_crit && q1 > q_crit_r && d_1 > D_crit_r)
+    {
+        codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_riming, cc.rain.max_x);
+        codi::RealReverse d_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
+
+        codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
+        codi::RealReverse v_r = particle_velocity(x_r, cc.rain.a_vel, cc.rain.b_vel) * cc.rain.rho_v;
+
+        // times dt ?
+        rime_rate_qb = M_PI/4.0 * N1 * qr_prime
+            * (coeffs.delta_n_aa * d_1*d_1
+                + coeffs.delta_q_ab * d_1*d_r
+                + coeffs.delta_q_bb * d_r*d_r)
+            * sqrt(coeffs.theta_n_aa * v_1*v_1
+                - coeffs.theta_q_ab * v_1*v_r
+                + coeffs.theta_q_bb * v_r*v_r
+                + pc1.s_vel*pc1.s_vel);
+
+        rime_rate_qa = M_PI/4.0 * Nr * q1
+            * (coeffs.delta_q_aa * d_1*d_1
+                + coeffs.delta_q_ba * d_1*d_r
+                + coeffs.delta_n_bb * d_r*d_r)
+            * sqrt(coeffs.theta_q_aa * v_1*v_1
+                - coeffs.theta_q_ba * v_1*v_r
+                + coeffs.theta_n_bb * v_r*v_r
+                + pc1.s_vel*pc1.s_vel);
+
+        rime_rate_nb = M_PI/4.0 * N1 * Nr
+            * (coeffs.delta_n_aa * d_1*d_1
+                + coeffs.delta_n_ab * d_1*d_r
+                + coeffs.delta_n_bb * d_r*d_r)
+            * sqrt(coeffs.theta_n_aa * v_1*v_1
+                - coeffs.theta_n_ab * v_1*v_r
+                + coeffs.theta_n_bb * v_r*v_r
+                + pc1.s_vel*pc1.s_vel);
+    } else
+    {
+        rime_rate_qa = 0.0;
+        rime_rate_qb = 0.0;
+        rime_rate_nb = 0.0;
+    }
+}
+
+/**
  * This function evaluates the RHS function of the ODE. It uses the 2 moment
  * cloud scheme after Seifert and Beheng (2006),
  * see https://doi.org/10.1007/s00703-005-0112-4
@@ -2149,6 +2269,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse s_si = e_d / p_sat_ice - 1.0; // super saturation over ice
     codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_collision, cc.ice.max_x);
     codi::RealReverse D_i = particle_diameter(x_i, cc.ice.a_geo, cc.ice.b_geo);
+    codi::RealReverse rime_rate_qc, rime_rate_qr, rime_rate_qi, rime_rate_qs;
+    codi::RealReverse rime_rate_nc, rime_rate_nr;
 
     const double EPSILON = 1.0e-20;
 
@@ -2246,117 +2368,12 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     hail_collision(qh_prime, Nh, qs_prime, Ns, qi_prime, Ni, T_c, res, cc);
 
     ////////////// Riming of ice with cloud and rain droplets and conversion to graupel
-    codi::RealReverse rime_rate_qc, rime_rate_qr, rime_rate_qi, rime_rate_qs;
-    codi::RealReverse rime_rate_nc, rime_rate_nr;
-    // riming cloud core
-    // rate of ice or snow collecting cloud droplets where values are hard
-    // coded for *rain* droplets according to COSMO comments
-    // TODO: Check if this is actually for cloud or rain droplets
-    auto riming_cloud_core = [&](
-        codi::RealReverse &q1,
-        codi::RealReverse &N1,
-        particle_model_constants_t &pc1,
-        collection_model_constants_t &coeffs,
-        codi::RealReverse &rime_rate_qb,
-        codi::RealReverse &rime_rate_nb)
-    {
-        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
-        codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
-        codi::RealReverse x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_riming, cc.cloud.max_x);
-        codi::RealReverse d_c = particle_diameter(x_c, cc.cloud.a_geo, cc.cloud.b_geo);
 
-        codi::RealReverse const1 = const0 * pc1.ecoll_c;
+    riming_cloud_core(qc_prime, Nc, qi_prime, Ni,
+        cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc);
+    riming_rain_core(qr_prime, Nr, qi_prime, Ni,
+        cc.ice, cc.coeffs_irr, rime_rate_qi, rime_rate_qr, rime_rate_nr, cc);
 
-        if(qc_prime > q_crit_c && q1 > pc1.q_crit_c
-            && d_c > D_crit_c && d_1 > pc1.d_crit_c)
-        {
-            codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
-            codi::RealReverse v_c = particle_velocity(x_c, cc.cloud.a_vel, cc.cloud.b_vel) * cc.cloud.rho_v;
-            codi::RealReverse tmp = const1*(d_c - D_crit_c);
-            codi::RealReverse e_coll = min(pc1.ecoll_c, max(tmp, ecoll_min));
-
-            // times dt ?
-            rime_rate_qb = M_PI/4.0 * e_coll * N1 * qc_prime
-                * (coeffs.delta_q_aa * d_1*d_1
-                    + coeffs.delta_q_ab * d_1*d_c
-                    + coeffs.delta_q_bb * d_c*d_c)
-                * sqrt(coeffs.theta_q_aa * v_1*v_1
-                    - coeffs.theta_q_ab * v_1*v_c
-                    + coeffs.theta_q_bb * v_c*v_c
-                    + pc1.s_vel*pc1.s_vel);
-
-            rime_rate_nb = M_PI/4.0 * e_coll * N1 * Nc
-                * (coeffs.delta_n_aa * d_1*d_1
-                    + coeffs.delta_n_ab * d_1*d_c
-                    + coeffs.delta_n_bb * d_c*d_c)
-                * sqrt(coeffs.theta_n_aa * v_1*v_1
-                    - coeffs.theta_n_ab * v_1*v_c
-                    + coeffs.theta_n_bb * v_c*v_c
-                    + pc1.s_vel*pc1.s_vel);
-        } else
-        {
-            rime_rate_qb = 0.0;
-            rime_rate_nb = 0.0;
-        }
-    };
-
-    auto riming_rain_core = [&](
-        codi::RealReverse &q1,
-        codi::RealReverse &N1,
-        particle_model_constants_t &pc1,
-        collection_model_constants_t &coeffs,
-        codi::RealReverse &rime_rate_qa,
-        codi::RealReverse &rime_rate_qb,
-        codi::RealReverse &rime_rate_nb)
-    {
-        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_riming, pc1.max_x);
-        codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
-
-        if(qr_prime > q_crit && q1 > q_crit_r && d_1 > D_crit_r)
-        {
-            codi::RealReverse x_r = particle_mean_mass(qr_prime, Nc, cc.rain.min_x_riming, cc.rain.max_x);
-            codi::RealReverse d_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
-
-            codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
-            codi::RealReverse v_r = particle_velocity(x_r, cc.rain.a_vel, cc.rain.b_vel) * cc.rain.rho_v;
-
-            // times dt ?
-            rime_rate_qb = M_PI/4.0 * N1 * qr_prime
-                * (coeffs.delta_n_aa * d_1*d_1
-                    + coeffs.delta_q_ab * d_1*d_r
-                    + coeffs.delta_q_bb * d_r*d_r)
-                * sqrt(coeffs.theta_n_aa * v_1*v_1
-                    - coeffs.theta_q_ab * v_1*v_r
-                    + coeffs.theta_q_bb * v_r*v_r
-                    + pc1.s_vel*pc1.s_vel);
-
-            rime_rate_qa = M_PI/4.0 * Nr * q1
-                * (coeffs.delta_q_aa * d_1*d_1
-                    + coeffs.delta_q_ba * d_1*d_r
-                    + coeffs.delta_n_bb * d_r*d_r)
-                * sqrt(coeffs.theta_q_aa * v_1*v_1
-                    - coeffs.theta_q_ba * v_1*v_r
-                    + coeffs.theta_n_bb * v_r*v_r
-                    + pc1.s_vel*pc1.s_vel);
-
-            rime_rate_nb = M_PI/4.0 * N1 * Nr
-                * (coeffs.delta_n_aa * d_1*d_1
-                    + coeffs.delta_n_ab * d_1*d_r
-                    + coeffs.delta_n_bb * d_r*d_r)
-                * sqrt(coeffs.theta_n_aa * v_1*v_1
-                    - coeffs.theta_n_ab * v_1*v_r
-                    + coeffs.theta_n_bb * v_r*v_r
-                    + pc1.s_vel*pc1.s_vel);
-        } else
-        {
-            rime_rate_qa = 0.0;
-            rime_rate_qb = 0.0;
-            rime_rate_nb = 0.0;
-        }
-    };
-
-    riming_cloud_core(qi_prime, Ni, cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc);
-    riming_rain_core(qi_prime, Ni, cc.ice, cc.coeffs_irr, rime_rate_qi, rime_rate_qr, rime_rate_nr);
     // ice riming
     if(dep_rate_ice > 0.0 && dep_rate_ice >= rime_rate_qc+rime_rate_qr)
     {
@@ -2603,8 +2620,10 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     }
 
     // snow riming
-    riming_cloud_core(qs_prime, Ns, cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc);
-    riming_rain_core(qs_prime, Ns, cc.snow, cc.coeffs_srr, rime_rate_qs, rime_rate_qr, rime_rate_nr);
+    riming_cloud_core(qc_prime, Nc, qs_prime, Ns,
+        cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc);
+    riming_rain_core(qr_prime, Nr, qs_prime, Ns,
+        cc.snow, cc.coeffs_srr, rime_rate_qs, rime_rate_qr, rime_rate_nr, cc);
     if(dep_rate_snow > 0.0 && dep_rate_snow >= rime_rate_qs+rime_rate_qr)
     {
 
