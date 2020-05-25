@@ -675,6 +675,8 @@ void ice_activation_hande(
 
 /**
  * Heterogeneous nucleation using Phillips et al. (2008)
+ * Implementation by Carmen Koehler and AS
+ * modified for C++ and Codipack by Maicon Hieronymus
  */
 template<class float_t>
 void ice_activation_phillips(
@@ -1573,6 +1575,449 @@ void evaporation(
     }
 }
 
+
+/**
+ * Depositional growth of all ice particles.
+ * Deposition and sublimation, where deposition rate of ice and snow are
+ * being stored.
+ */
+template<class float_t>
+void vapor_dep_relaxation(
+    float_t &qv_prime,
+    float_t &qi_prime,
+    float_t &Ni,
+    float_t &qs_prime,
+    float_t &Ns,
+    float_t &qg_prime,
+    float_t &Ng,
+    float_t &qh_prime,
+    float_t &Nh,
+    float_t &s_si,
+    float_t &p_sat_ice,
+    float_t &T_prime,
+    const double &EPSILON,
+    float_t &dep_rate_ice,
+    float_t &dep_rate_snow,
+    float_t &D_vtp,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+
+    float_t dep_ice = 0.0;
+    float_t dep_snow = 0.0;
+    float_t dep_graupel = 0.0;
+    float_t dep_hail = 0.0;
+    float_t g_i = 0.0;
+
+    auto vapor_deposition = [&](
+        float_t &q,
+        float_t &N,
+        particle_model_constants_t &pc,
+        float_t &dep)
+    {
+        if(q == 0.0)
+        {
+            dep = 0.0;
+        } else
+        {
+            float_t x = particle_mean_mass(q, N, pc.min_x_depo, pc.max_x);
+            float_t d = particle_diameter(x, pc.a_geo, pc.b_geo);
+            float_t v = particle_velocity(x, pc.a_vel, pc.b_vel) * pc.rho_v;
+            float_t f_v = pc.a_f + pc.b_f * sqrt(d*v);
+            f_v = max(f_v, pc.a_f/pc.a_ven);
+            dep = g_i * N * pc.c_s * d * f_v * s_si;
+        }
+    };
+
+    if(T_prime < tmelt)
+    {
+        g_i = 4.0*M_PI / (L_ed*L_ed / (K_T*Rv*T_prime*T_prime) + Rv*T_prime / (D_vtp*p_sat_ice));
+    }
+#ifdef TRACE_QI
+        auto qi_before = qi_prime;
+        auto Ni_before = Ni;
+#endif
+#ifdef TRACE_QS
+        auto qs_before = qs_prime;
+        auto Ns_before = Ns;
+#endif
+#ifdef TRACE_QG
+        auto qg_before = qg_prime;
+        auto Ng_before = Ng;
+#endif
+#ifdef TRACE_QH
+        auto qh_before = qh_prime;
+        auto Nh_before = Nh;
+#endif
+    vapor_deposition(qi_prime, Ni, cc.ice, dep_ice);
+    vapor_deposition(qs_prime, Ns, cc.snow, dep_snow);
+    vapor_deposition(qg_prime, Ng, cc.graupel, dep_graupel);
+    vapor_deposition(qh_prime, Nh, cc.hail, dep_hail);
+#ifdef TRACE_QI
+    std::cout << "vapor depos dqi " << qi_prime - qi_before << ", dNi "
+              << Ni - Ni_before << "\n";
+#endif
+#ifdef TRACE_QS
+    std::cout << "vapor depos dqs " << qs_prime - qs_before << ", dNs "
+              << Ns - Ns_before << "\n";
+#endif
+#ifdef TRACE_QG
+    std::cout << "vapor depos dqg " << qg_prime - qg_before << ", dNg "
+              << Ng - Ng_before << "\n";
+#endif
+#ifdef TRACE_QH
+    std::cout << "vapor depos dqh " << qh_prime - qh_before << ", dNh "
+              << Nh - Nh_before << "\n";
+#endif
+    if(T_prime < tmelt)
+    {
+        // Depositional growth based on
+        // "A New Double-Moment Microphysics Parameterization for Application in Cloud and
+        // Climate Models. Part 1: Description" by H. Morrison, J.A.Curry, V.I. Khvorostyanov
+        float_t qvsidiff = qv_prime - p_sat_ice /(Rv*T_prime);
+        if(abs(qvsidiff) > EPSILON)
+        {
+            float_t tau_i_i = qvsidiff*dep_ice;
+            float_t tau_s_i = qvsidiff*dep_snow;
+            float_t tau_g_i = qvsidiff*dep_graupel;
+            float_t tau_h_i = qvsidiff*dep_hail;
+
+            float_t xi_i = tau_i_i + tau_s_i + tau_g_i + tau_h_i;
+            // TODO: Check wether dt is needed here or not
+            float_t xfac = (xi_i < EPSILON) ?
+                (float_t) 0.0 : qvsidiff/xi_i * (1.0-exp(-xi_i));
+
+            dep_ice     = xfac * tau_i_i;
+            dep_snow    = xfac * tau_s_i;
+            dep_graupel = xfac * tau_g_i;
+            dep_hail    = xfac * tau_h_i;
+
+            // Is that even necessary?
+            if(qvsidiff < 0.0)
+            {
+                dep_ice     = max(dep_ice,      -qi_prime);
+                dep_snow    = max(dep_snow,     -qs_prime);
+                dep_graupel = max(dep_graupel,  -qg_prime);
+                dep_hail    = max(dep_hail,     -qh_prime);
+            }
+
+            float_t dep_sum = dep_ice + dep_graupel + dep_snow + dep_hail;
+
+            res[qi_idx] += dep_ice;
+            res[qs_idx] += dep_snow;
+            res[qg_idx] += dep_graupel;
+            res[qh_idx] += dep_hail;
+            res[qv_idx] -= dep_sum;
+#ifdef TRACE_QI
+            std::cout << "Depos growth dqi " << dep_ice << "\n";
+#endif
+#ifdef TRACE_QS
+            std::cout << "Depos growth dqs " << dep_snow << "\n";
+#endif
+#ifdef TRACE_QG
+            std::cout << "Depos growth dqg " << dep_graupel << "\n";
+#endif
+#ifdef TRACE_QH
+            std::cout << "Depos growth dqh " << dep_hail << "\n";
+#endif
+#ifdef TRACE_QV
+            std::cout << "Depos growth dqv " << -dep_sum << "\n";
+#endif
+
+            dep_rate_ice += dep_ice;
+            dep_rate_snow += dep_snow;
+
+            if(dep_ice > 0)
+            {
+                res[depo_idx] += dep_ice;
+            } else
+            {
+                res[sub_idx] += dep_ice;
+            }
+            if(dep_snow > 0)
+            {
+                res[depo_idx] += dep_snow;
+            } else
+            {
+                res[sub_idx] += dep_snow;
+            }
+            if(dep_graupel > 0)
+            {
+                res[depo_idx] += dep_graupel;
+            } else
+            {
+                res[sub_idx] += dep_graupel;
+            }
+            if(dep_hail > 0)
+            {
+                res[depo_idx] += dep_hail;
+            } else
+            {
+                res[sub_idx] += dep_hail;
+            }
+            float_t delta_e = latent_heat_melt(T_prime) * dep_sum / specific_heat_ice(T_prime);
+            // Sublimation, cooling
+            if(dep_sum > 0.0)
+                res[lat_cool_idx] -= delta_e;
+            // Deposition, heating
+            else
+                res[lat_heat_idx] -= delta_e;
+        }
+    }
+}
+
+
+/**
+ *
+ */
+template<class float_t>
+std::vector<float_t> particle_collection(
+    float_t &q1,
+    float_t &q2,
+    float_t &N1,
+    float_t &N2,
+    float_t &T_c,
+    collection_model_constants_t &coeffs,
+    particle_model_constants_t &pc1,
+    particle_model_constants_t &pc2)
+{
+    float_t e_coll = min(exp(0.09*T_c), 1.0);
+    float_t x_1 = particle_mean_mass(q1, N1, pc1.min_x_collection, pc1.max_x);
+    float_t d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
+    float_t v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
+
+    float_t x_2 = particle_mean_mass(q2, N2, pc1.min_x_collection, pc1.max_x);
+    float_t d_2 = particle_diameter(x_2, pc1.a_geo, pc1.b_geo);
+    float_t v_2 = particle_velocity(x_2, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
+
+    float_t coll_n = M_PI/4 * N1 * N2 * e_coll
+        * (coeffs.delta_n_aa * d_2 * d_2
+            + coeffs.delta_n_ab * d_2 * d_1
+            + coeffs.delta_n_bb * d_1 * d_1)
+        * sqrt(coeffs.theta_n_aa * v_2 * v_2
+            - coeffs.theta_n_ab * v_2 * v_1
+            + coeffs.theta_n_bb * v_1 * v_1
+            + pc1.s_vel * pc1.s_vel);
+    float_t coll_q = M_PI/4 * N1 * N2 * e_coll
+        * (coeffs.delta_q_aa * d_2 * d_2
+            + coeffs.delta_q_ab * d_2 * d_1
+            + coeffs.delta_q_bb * d_1 * d_1)
+        * sqrt(coeffs.theta_q_aa * v_2 * v_2
+            - coeffs.theta_q_ab * v_2 * v_1
+            + coeffs.theta_q_bb * v_1 * v_1
+            + pc1.s_vel * pc1.s_vel);
+    coll_n = min(N1, coll_n);
+    coll_q = min(q1, coll_q);
+    std::vector<float_t> r(2);
+    r[p_idx] = coll_n;
+    r[T_idx] = coll_q;
+    return r;
+}
+
+
+/**
+ * Ice particle collections:
+ * graupel+ice  -> graupel
+ * graupel+snow -> graupel
+ * hail+ice  -> hail
+ * hail+snow -> hail
+ * snow+ice  -> snow
+ */
+template<class float_t>
+void particle_particle_collection(
+    float_t &qi_prime,
+    float_t &Ni,
+    float_t &qs_prime,
+    float_t &Ns,
+    float_t &qg_prime,
+    float_t &Ng,
+    float_t &T_prime,
+    float_t &T_c,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    //// particle_collection snow
+    if(qi_prime > q_crit && qs_prime > q_crit)
+    {
+        std::vector<float_t> delta = particle_collection(
+            qi_prime, qs_prime, Ni, Ns, T_c, cc.coeffs_sic, cc.ice, cc.snow);
+        res[qs_idx] += delta[1];
+        res[qi_idx] -= delta[1];
+        res[Ni_idx] -= delta[0];
+#ifdef TRACE_QI
+        std::cout << "particle_collection snow dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
+#endif
+#ifdef TRACE_QS
+        std::cout << "particle_collection snow dqs" << delta[1] << "\n";
+#endif
+    }
+
+    //// graupel self collection
+    if(qg_prime > q_crit)
+    {
+        float_t x_g = particle_mean_mass(qg_prime, Ng,
+            cc.graupel.min_x_collection, cc.graupel.max_x);
+        float_t d_g = particle_diameter(x_g,
+            cc.graupel.a_geo, cc.graupel.b_geo);
+        float_t v_g = particle_velocity(x_g,
+            cc.graupel.a_vel, cc.graupel.b_vel);
+        float_t delta_n = cc.graupel.sc_coll_n
+            * Ng * Ng * d_g * d_g * v_g;
+        // sticking efficiency does only distinguish dry and wet
+        delta_n *= (T_prime > tmelt) ? ecoll_gg_wet : ecoll_gg;
+        delta_n = min(delta_n, Ng);
+        res[Ng_idx] -= delta_n;
+#ifdef TRACE_QG
+        std::cout << "graupel self collection dNg " << -delta_n << "\n";
+#endif
+    }
+
+    // particle particle collection
+    // ice and graupel collision
+    if(qi_prime > q_crit && qg_prime > q_crit)
+    {
+        std::vector<float_t> delta = particle_collection(
+            qi_prime, qg_prime, Ni, Ng, T_c, cc.coeffs_gic, cc.ice, cc.graupel);
+        res[qg_idx] += delta[1];
+        res[qi_idx] -= delta[1];
+        res[Ni_idx] -= delta[0];
+#ifdef TRACE_QG
+        std::cout << "ice-graupel collision dqg " << delta[1] << "\n";
+#endif
+#ifdef TRACE_QI
+        std::cout << "ice-graupel collision dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
+#endif
+    }
+
+    // particle particle collection
+    // snow and graupel collision
+    if(qs_prime > q_crit && qg_prime > q_crit)
+    {
+        std::vector<float_t> delta = particle_collection(
+            qs_prime, qg_prime, Ns, Ng, T_c, cc.coeffs_gsc, cc.snow, cc.graupel);
+        res[qg_idx] += delta[1];
+        res[qs_idx] -= delta[1];
+        res[Ns_idx] -= delta[0];
+#ifdef TRACE_QG
+        std::cout << "snow-graupel collision dqg " << delta[1] << "\n";
+#endif
+#ifdef TRACE_QS
+        std::cout << "snow-graupel collision dqs " << -delta[1] << ", dNs " << -delta[0] << "\n";
+#endif
+    }
+}
+
+
+/**
+ * Conversion graupel to hail and hail collisions.
+ */
+template<class float_t>
+void graupel_hail_conv(
+    float_t &qc_prime,
+    float_t &qr_prime,
+    float_t &qi_prime,
+    float_t &qg_prime,
+    float_t &Ng,
+    float_t &qh_prime,
+    float_t &Nh,
+    float_t &p_prime,
+    float_t &T_prime,
+    float_t &T_c,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    float_t x_g = particle_mean_mass(qg_prime, Ng,
+            cc.graupel.min_x_conversion, cc.graupel.max_x);
+    float_t d_g = particle_diameter(x_g,
+        cc.graupel.a_geo, cc.graupel.b_geo);
+    float_t Ng_tmp = qg_prime/x_g;
+    // supercooled liquid water = rain + cloud water
+    float_t qwa_prime = qr_prime + qc_prime;
+
+    if(qwa_prime > 1e-3 && T_c < 0 && qg_prime > q_crit_c)
+    {
+        // float_t qis = qi + qs; // TODO: Check where this comes from
+
+        float_t d_sep = wet_growth_diam(p_prime, T_prime, qwa_prime,
+            qi_prime, ltabdminwgg);
+        if(d_sep > 0.0 && d_sep < 10.0*d_g)
+        {
+            float_t xmin = pow(d_sep/cc.graupel.a_geo, 1.0/cc.graupel.b_geo);
+            float_t lam = pow(cc.graupel.g2/(cc.graupel.g1*x_g), cc.graupel.mu);
+            xmin = pow(xmin, cc.graupel.mu);
+            float_t n_0 = cc.graupel.mu * Ng * pow(cc.graupel.nm1, cc.graupel.g1);
+
+            float_t conv_n = n_0;
+            float_t conv_q = n_0;
+
+            conv_n = min(conv_n, Ng);
+            conv_q = min(conv_q, qg_prime);
+            // Graupel q, n
+            res[qg_idx] += qg_prime - conv_q;
+            res[Ng_idx] += Ng - conv_n;
+            // Hail q, n
+            res[qh_idx] += qh_prime + conv_q;
+            res[Nh_idx] += Nh + conv_n;
+#ifdef TRACE_QG
+            std::cout << "conversion graupel->hail dqg " << qg_prime - conv_q << ", dNq " << Ng - conv_n << "\n";
+#endif
+#ifdef TRACE_QH
+            std::cout << "conversion graupel->hail dqh " << qh_prime + conv_q << ", dNh " << Nh + conv_n << "\n";
+#endif
+        }
+    }
+}
+
+
+/**
+ * Hail collision with ice and snow.
+ */
+template<class float_t>
+void hail_collision(
+    float_t &qh_prime,
+    float_t &Nh,
+    float_t &qs_prime,
+    float_t &Ns,
+    float_t &qi_prime,
+    float_t &Ni,
+    float_t &T_c,
+    std::vector<float_t> &res,
+    model_constants_t &cc)
+{
+    // ice and hail
+    if(qi_prime > q_crit && qh_prime > q_crit)
+    {
+        std::vector<float_t> delta = particle_collection(
+            qi_prime, qh_prime, Ni, Nh, T_c, cc.coeffs_hic, cc.ice, cc.hail);
+        res[qh_idx] += delta[1];
+        res[qi_idx] -= delta[1];
+        res[Ni_idx] -= delta[0];
+#ifdef TRACE_QH
+        std::cout << "ice-hail collision dqh " << delta[1] << "\n";
+#endif
+#ifdef TRACE_QI
+        std::cout << "ice-hail collision dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
+#endif
+    }
+
+    // snow and hail collision
+    if(qs_prime > q_crit && qh_prime > q_crit)
+    {
+        std::vector<float_t> delta = particle_collection(
+            qs_prime, qh_prime, Ns, Nh, T_c, cc.coeffs_hsc, cc.snow, cc.hail);
+        res[qh_idx] += delta[1];
+        res[qs_idx] -= delta[1];
+        res[Ns_idx] -= delta[0];
+#ifdef TRACE_QH
+        std::cout << "snow-hail collision dqh " << delta[1] << "\n";
+#endif
+#ifdef TRACE_QS
+        std::cout << "snow-hail collision dqs " << -delta[1] << ", dNs " << -delta[0] << "\n";
+#endif
+    }
+}
+
+
 /**
  * This function evaluates the RHS function of the ODE. It uses the 2 moment
  * cloud scheme after Seifert and Beheng (2006),
@@ -1692,8 +2137,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse qg_prime = ref.qref * qg;
     codi::RealReverse qh_prime = ref.qref * qh;
     codi::RealReverse z_prime = ref.zref * z;
-    // TODO: Check p_sat and e_d
-    // Values seem off...
+    // Additional variables such as super saturation
     codi::RealReverse T_c = T_prime - tmelt;
     codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
     codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime);
@@ -1703,12 +2147,15 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse s_sw = S - 1.0;   // super saturation over water
     // codi::RealReverse s_sw = e_d / p_sat - 1.0; // super saturation over water
     codi::RealReverse s_si = e_d / p_sat_ice - 1.0; // super saturation over ice
+    codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_collision, cc.ice.max_x);
+    codi::RealReverse D_i = particle_diameter(x_i, cc.ice.a_geo, cc.ice.b_geo);
+
     const double EPSILON = 1.0e-20;
 
     ////////////// ccn_activation_hdcp2
     if(nuc_type == 0)
     {
-
+        // Not implemented
     }
     else if(nuc_type < 6)
     {
@@ -1718,7 +2165,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
     } else if(nuc_type == 6)
     {
-
+        // Not implemented
     } else
     {
         // Seifert & Beheng (2006)
@@ -1730,19 +2177,12 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 //     Homogeneous and heterogeneous ice nucleation based on
 //     "A parametrization of cirrus cloud formation: Homogenous
 //     freezing of supercooled aerosols" by B. Kaercher and
-//     U. Lohmann 2002 (KL02 hereafter)
+//     U. Lohmann 2002
 
 //     "Physically based parameterization of cirrus cloud formation
 //     for use in global atmospheric models" by B. Kaercher, J. Hendricks
-//     and U. Lohmann 2006 (KHL06 hereafter)
+//     and U. Lohmann 2006
 
-//     and Phillips et al. (2008) with extensions
-    //
-    // implementation by Carmen Koehler and AS
-    // modified for C++ and Codipack by Maicon Hieronymus
-
-    // heterogeneous nucleation using Hande et al.
-    // ice_nucleation_het_hdcp2
 
     codi::RealReverse delta_n_a = 0.0;
     bool ndiag_mask = false;
@@ -1770,183 +2210,19 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     ice_nuc_hom(T_prime, w_prime, p_prime, qv_prime,
         qi_prime, Ni, ssi, p_sat_ice, res, cc);
 
-    ////////////// cloud_freeze
     if(qc_prime > 0.0 && T_c < -30.0)
     {
         cloud_freeze_hom(qc_prime, Nc, T_prime, T_c, res, cc);
     }
-    ////////////// vapor_dep_relaxation
-    // Depositional growth of all ice particles
-    // Deposition and sublimation, where deposition rate of ice
-    // and snow are being stored
-    codi::RealReverse dep_ice = 0.0;
-    codi::RealReverse dep_snow = 0.0;
-    codi::RealReverse dep_graupel = 0.0;
-    codi::RealReverse dep_hail = 0.0;
-    codi::RealReverse g_i = 0.0;
-    codi::RealReverse s_ice = 0.0; // supersaturation over ice
 
-    auto vapor_deposition = [&](
-        codi::RealReverse &q,
-        codi::RealReverse &N,
-        particle_model_constants_t &pc,
-        codi::RealReverse &dep)
-    {
-        if(q == 0.0)
-        {
-            dep = 0.0;
-        } else
-        {
-            codi::RealReverse x = particle_mean_mass(q, N, pc.min_x_depo, pc.max_x);
-            codi::RealReverse d = particle_diameter(x, pc.a_geo, pc.b_geo);
-            codi::RealReverse v = particle_velocity(x, pc.a_vel, pc.b_vel) * pc.rho_v;
-            codi::RealReverse f_v = pc.a_f + pc.b_f * sqrt(d*v);
-            f_v = max(f_v, pc.a_f/pc.a_ven);
-            dep = g_i * N * pc.c_s * d * f_v * s_ice;
-        }
-    };
+    vapor_dep_relaxation(qv_prime, qi_prime, Ni,
+        qs_prime, Ns, qg_prime, Ng,
+        qh_prime, Nh, s_si, p_sat_ice,
+        T_prime, EPSILON, dep_rate_ice, dep_rate_snow, D_vtp, res, cc);
 
-    if(T_prime < tmelt)
-    {
-        codi::RealReverse e_d = qv_prime * Rv * T_prime;
-        s_ice = e_d/p_sat_ice - 1.0; // supersaturation over ice
-        g_i = 4.0*M_PI / (L_ed*L_ed / (K_T*Rv*T_prime*T_prime) + Rv*T_prime / (D_vtp*p_sat_ice));
-    }
-#ifdef TRACE_QI
-        auto qi_before = qi_prime;
-        auto Ni_before = Ni;
-#endif
-#ifdef TRACE_QS
-        auto qs_before = qs_prime;
-        auto Ns_before = Ns;
-#endif
-#ifdef TRACE_QG
-        auto qg_before = qg_prime;
-        auto Ng_before = Ng;
-#endif
-#ifdef TRACE_QH
-        auto qh_before = qh_prime;
-        auto Nh_before = Nh;
-#endif
-    vapor_deposition(qi_prime, Ni, cc.ice, dep_ice);
-    vapor_deposition(qs_prime, Ns, cc.snow, dep_snow);
-    vapor_deposition(qg_prime, Ng, cc.graupel, dep_graupel);
-    vapor_deposition(qh_prime, Nh, cc.hail, dep_hail);
-#ifdef TRACE_QI
-    std::cout << "vapor depos dqi " << qi_prime - qi_before << ", dNi "
-              << Ni - Ni_before << "\n";
-#endif
-#ifdef TRACE_QS
-    std::cout << "vapor depos dqs " << qs_prime - qs_before << ", dNs "
-              << Ns - Ns_before << "\n";
-#endif
-#ifdef TRACE_QG
-    std::cout << "vapor depos dqg " << qg_prime - qg_before << ", dNg "
-              << Ng - Ng_before << "\n";
-#endif
-#ifdef TRACE_QH
-    std::cout << "vapor depos dqh " << qh_prime - qh_before << ", dNh "
-              << Nh - Nh_before << "\n";
-#endif
-    if(T_prime < tmelt)
-    {
-        // Depositional growth based on
-        // "A New Double-Moment Microphysics Parameterization for Application in Cloud and
-        // Climate Models. Part 1: Description" by H. Morrison, J.A.Curry, V.I. Khvorostyanov
-        codi::RealReverse qvsidiff = qv_prime - p_sat_ice /(Rv*T_prime);
-        if(abs(qvsidiff) > EPSILON)
-        {
-            codi::RealReverse tau_i_i = qvsidiff*dep_ice;
-            codi::RealReverse tau_s_i = qvsidiff*dep_snow;
-            codi::RealReverse tau_g_i = qvsidiff*dep_graupel;
-            codi::RealReverse tau_h_i = qvsidiff*dep_hail;
-
-            codi::RealReverse xi_i = tau_i_i + tau_s_i + tau_g_i + tau_h_i;
-            // TODO: Check wether dt is needed here or not
-            codi::RealReverse xfac = (xi_i < EPSILON) ?
-                (codi::RealReverse) 0.0 : qvsidiff/xi_i * (1.0-exp(-xi_i));
-
-            dep_ice     = xfac * tau_i_i;
-            dep_snow    = xfac * tau_s_i;
-            dep_graupel = xfac * tau_g_i;
-            dep_hail    = xfac * tau_h_i;
-
-            // Is that even necessary?
-            if(qvsidiff < 0.0)
-            {
-                dep_ice     = max(dep_ice,      -qi_prime);
-                dep_snow    = max(dep_snow,     -qs_prime);
-                dep_graupel = max(dep_graupel,  -qg_prime);
-                dep_hail    = max(dep_hail,     -qh_prime);
-            }
-
-            codi::RealReverse dep_sum = dep_ice + dep_graupel + dep_snow + dep_hail;
-
-            res[qi_idx] += dep_ice;
-            res[qs_idx] += dep_snow;
-            res[qg_idx] += dep_graupel;
-            res[qh_idx] += dep_hail;
-            res[qv_idx] -= dep_sum;
-#ifdef TRACE_QI
-            std::cout << "Depos growth dqi " << dep_ice << "\n";
-#endif
-#ifdef TRACE_QS
-            std::cout << "Depos growth dqs " << dep_snow << "\n";
-#endif
-#ifdef TRACE_QG
-            std::cout << "Depos growth dqg " << dep_graupel << "\n";
-#endif
-#ifdef TRACE_QH
-            std::cout << "Depos growth dqh " << dep_hail << "\n";
-#endif
-#ifdef TRACE_QV
-            std::cout << "Depos growth dqv " << -dep_sum << "\n";
-#endif
-
-            dep_rate_ice += dep_ice;
-            dep_rate_snow += dep_snow;
-
-            if(dep_ice > 0)
-            {
-                res[depo_idx] += dep_ice;
-            } else
-            {
-                res[sub_idx] += dep_ice;
-            }
-            if(dep_snow > 0)
-            {
-                res[depo_idx] += dep_snow;
-            } else
-            {
-                res[sub_idx] += dep_snow;
-            }
-            if(dep_graupel > 0)
-            {
-                res[depo_idx] += dep_graupel;
-            } else
-            {
-                res[sub_idx] += dep_graupel;
-            }
-            if(dep_hail > 0)
-            {
-                res[depo_idx] += dep_hail;
-            } else
-            {
-                res[sub_idx] += dep_hail;
-            }
-            codi::RealReverse delta_e = latent_heat_melt(T_prime) * dep_sum / specific_heat_ice(T_prime);
-            // Sublimation, cooling
-            if(dep_sum > 0.0)
-                res[lat_cool_idx] -= delta_e;
-            // Deposition, heating
-            else
-                res[lat_heat_idx] -= delta_e;
-        }
-    }
 
     ////////////// ice-ice collisions
-    codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_collision, cc.ice.max_x);
-    codi::RealReverse D_i = particle_diameter(x_i, cc.ice.a_geo, cc.ice.b_geo);
+
     if(Ni > 0.0 && qi_prime > q_crit_i && D_i > D_crit_i)
     {
         ice_self_collection(qi_prime, Ni, x_i, D_i, T_c, res, cc);
@@ -1959,200 +2235,15 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     }
 
     // particle particle collection
+    particle_particle_collection(qi_prime, Ni, qs_prime, Ns,
+        qg_prime, Ng, T_prime, T_c, res, cc);
 
-    // graupel+ice  -> graupel
-    // graupel+snow -> graupel
-    // hail+ice  -> hail
-    // hail+snow -> hail
-    // snow+ice  -> snow
-    auto particle_collection = [&] (
-        codi::RealReverse &q1,
-        codi::RealReverse &q2,
-        codi::RealReverse &N1,
-        codi::RealReverse &N2,
-        collection_model_constants_t &coeffs,
-        particle_model_constants_t &pc1,
-        particle_model_constants_t &pc2)
-    {
+    graupel_hail_conv(qc_prime, qr_prime, qi_prime, qg_prime, Ng, qh_prime, Nh,
+        p_prime, T_prime, T_c, res, cc);
 
-        codi::RealReverse e_coll = min(exp(0.09*T_c), 1.0);
-        codi::RealReverse x_1 = particle_mean_mass(q1, N1, pc1.min_x_collection, pc1.max_x);
-        codi::RealReverse d_1 = particle_diameter(x_1, pc1.a_geo, pc1.b_geo);
-        codi::RealReverse v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
-
-        codi::RealReverse x_2 = particle_mean_mass(q2, N2, pc1.min_x_collection, pc1.max_x);
-        codi::RealReverse d_2 = particle_diameter(x_2, pc1.a_geo, pc1.b_geo);
-        codi::RealReverse v_2 = particle_velocity(x_2, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
-
-        codi::RealReverse coll_n = M_PI/4 * N1 * N2 * e_coll
-            * (coeffs.delta_n_aa * d_2 * d_2
-                + coeffs.delta_n_ab * d_2 * d_1
-                + coeffs.delta_n_bb * d_1 * d_1)
-            * sqrt(coeffs.theta_n_aa * v_2 * v_2
-                - coeffs.theta_n_ab * v_2 * v_1
-                + coeffs.theta_n_bb * v_1 * v_1
-                + pc1.s_vel * pc1.s_vel);
-        codi::RealReverse coll_q = M_PI/4 * N1 * N2 * e_coll
-            * (coeffs.delta_q_aa * d_2 * d_2
-                + coeffs.delta_q_ab * d_2 * d_1
-                + coeffs.delta_q_bb * d_1 * d_1)
-            * sqrt(coeffs.theta_q_aa * v_2 * v_2
-                - coeffs.theta_q_ab * v_2 * v_1
-                + coeffs.theta_q_bb * v_1 * v_1
-                + pc1.s_vel * pc1.s_vel);
-        coll_n = min(N1, coll_n);
-        coll_q = min(q1, coll_q);
-        std::vector<codi::RealReverse> r(2);
-        r[p_idx] = coll_n;
-        r[T_idx] = coll_q;
-        return r;
-    };
-
-    //// particle_collection snow
-    if(qi_prime > q_crit && qs_prime > q_crit)
-    {
-        std::vector<codi::RealReverse> delta = particle_collection(
-            qi_prime, qs_prime, Ni, Ns, cc.coeffs_sic, cc.ice, cc.snow);
-        res[qs_idx] += delta[1];
-        res[qi_idx] -= delta[1];
-        res[Ni_idx] -= delta[0];
-#ifdef TRACE_QI
-        std::cout << "particle_collection snow dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
-#endif
-#ifdef TRACE_QS
-        std::cout << "particle_collection snow dqs" << delta[1] << "\n";
-#endif
-    }
-
-    //// graupel self collection
-    if(qg_prime > q_crit)
-    {
-        codi::RealReverse x_g = particle_mean_mass(qg_prime, Ng,
-            cc.graupel.min_x_collection, cc.graupel.max_x);
-        codi::RealReverse d_g = particle_diameter(x_g,
-            cc.graupel.a_geo, cc.graupel.b_geo);
-        codi::RealReverse v_g = particle_velocity(x_g,
-            cc.graupel.a_vel, cc.graupel.b_vel);
-        codi::RealReverse delta_n = cc.graupel.sc_coll_n
-            * Ng * Ng * d_g * d_g * v_g;
-        // sticking efficiency does only distinguish dry and wet
-        delta_n *= (T_prime > tmelt) ? ecoll_gg_wet : ecoll_gg;
-        delta_n = min(delta_n, Ng);
-        res[Ng_idx] -= delta_n;
-#ifdef TRACE_QG
-        std::cout << "graupel self collection dNg " << -delta_n << "\n";
-#endif
-    }
-
-    // particle particle collection
-    // ice and graupel collision
-    if(qi_prime > q_crit && qg_prime > q_crit)
-    {
-        std::vector<codi::RealReverse> delta = particle_collection(
-            qi_prime, qg_prime, Ni, Ng, cc.coeffs_gic, cc.ice, cc.graupel);
-        res[qg_idx] += delta[1];
-        res[qi_idx] -= delta[1];
-        res[Ni_idx] -= delta[0];
-#ifdef TRACE_QG
-        std::cout << "ice-graupel collision dqg " << delta[1] << "\n";
-#endif
-#ifdef TRACE_QI
-        std::cout << "ice-graupel collision dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
-#endif
-    }
-
-    // particle particle collection
-    // snow and graupel collision
-    if(qs_prime > q_crit && qg_prime > q_crit)
-    {
-        std::vector<codi::RealReverse> delta = particle_collection(
-            qs_prime, qg_prime, Ns, Ng, cc.coeffs_gsc, cc.snow, cc.graupel);
-        res[qg_idx] += delta[1];
-        res[qs_idx] -= delta[1];
-        res[Ns_idx] -= delta[0];
-#ifdef TRACE_QG
-        std::cout << "snow-graupel collision dqg " << delta[1] << "\n";
-#endif
-#ifdef TRACE_QS
-        std::cout << "snow-graupel collision dqs " << -delta[1] << ", dNs " << -delta[0] << "\n";
-#endif
-    }
-
-    ////////////// graupel_hail_conv_wet_gamlook
-    // conversion graupel to hail and hail collisions
-    codi::RealReverse x_g = particle_mean_mass(qg_prime, Ng,
-            cc.graupel.min_x_conversion, cc.graupel.max_x);
-    codi::RealReverse d_g = particle_diameter(x_g,
-        cc.graupel.a_geo, cc.graupel.b_geo);
-    codi::RealReverse Ng_tmp = qg_prime/x_g;
-    // supercooled liquid water = rain + cloud water
-    codi::RealReverse qwa_prime = qr_prime + qc_prime;
-
-    if(qwa_prime > 1e-3 && T_c < 0 && qg_prime > q_crit_c)
-    {
-        codi::RealReverse qis = qi + qs;
-
-        codi::RealReverse d_sep = wet_growth_diam(p_prime, T_prime, qwa_prime,
-            qi_prime, ltabdminwgg);
-        if(d_sep > 0.0 && d_sep < 10.0*d_g)
-        {
-            codi::RealReverse xmin = pow(d_sep/cc.graupel.a_geo, 1.0/cc.graupel.b_geo);
-            codi::RealReverse lam = pow(cc.graupel.g2/(cc.graupel.g1*x_g), cc.graupel.mu);
-            xmin = pow(xmin, cc.graupel.mu);
-            codi::RealReverse n_0 = cc.graupel.mu * Ng * pow(cc.graupel.nm1, cc.graupel.g1);
-
-            codi::RealReverse conv_n = n_0;
-            codi::RealReverse conv_q = n_0;
-
-            conv_n = min(conv_n, Ng);
-            conv_q = min(conv_q, qg);
-            // Graupel q, n
-            res[qg_idx] += qg_prime - conv_q;
-            res[Ng_idx] += Ng - conv_n;
-            // Hail q, n
-            res[qh_idx] += qh_prime + conv_q;
-            res[Nh_idx] += Nh + conv_n;
-#ifdef TRACE_QG
-            std::cout << "conversion graupel->hail dqg " << qg_prime - conv_q << ", dNq " << Ng - conv_n << "\n";
-#endif
-#ifdef TRACE_QH
-            std::cout << "conversion graupel->hail dqh " << qh_prime + conv_q << ", dNh " << Nh + conv_n << "\n";
-#endif
-        }
-    }
 
     ////////////// hail collisions
-    // ice and hail
-    if(qi_prime > q_crit && qh_prime > q_crit)
-    {
-        std::vector<codi::RealReverse> delta = particle_collection(
-            qi_prime, qh_prime, Ni, Nh, cc.coeffs_hic, cc.ice, cc.hail);
-        res[qh_idx] += delta[1];
-        res[qi_idx] -= delta[1];
-        res[Ni_idx] -= delta[0];
-#ifdef TRACE_QH
-        std::cout << "ice-hail collision dqh " << delta[1] << "\n";
-#endif
-#ifdef TRACE_QI
-        std::cout << "ice-hail collision dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
-#endif
-    }
-
-    // snow and hail collision
-    if(qs_prime > q_crit && qg_prime > q_crit)
-    {
-        std::vector<codi::RealReverse> delta = particle_collection(
-            qs_prime, qh_prime, Ns, Nh, cc.coeffs_hsc, cc.snow, cc.hail);
-        res[qh_idx] += delta[1];
-        res[qs_idx] -= delta[1];
-        res[Ns_idx] -= delta[0];
-#ifdef TRACE_QH
-        std::cout << "snow-hail collision dqh " << delta[1] << "\n";
-#endif
-#ifdef TRACE_QS
-        std::cout << "snow-hail collision dqi " << -delta[1] << ", dNs " << -delta[0] << "\n";
-#endif
-    }
+    hail_collision(qh_prime, Nh, qs_prime, Ns, qi_prime, Ni, T_c, res, cc);
 
     ////////////// Riming of ice with cloud and rain droplets and conversion to graupel
     codi::RealReverse rime_rate_qc, rime_rate_qr, rime_rate_qi, rime_rate_qs;
