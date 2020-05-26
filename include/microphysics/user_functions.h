@@ -3418,9 +3418,9 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     auto qh_before = res[qh_idx];
     auto Nh_before = res[Nh_idx];
 #endif
-    //// hail cloud rimin
+    //// hail cloud riming
     particle_cloud_riming(qc_prime, Nc, T_prime, qh_prime, Nh,
-        res[qh_idx], res[Nh_idx], cc.coeffs_hcr, cc.rain, res, cc);
+        res[qh_idx], res[Nh_idx], cc.coeffs_hcr, cc.hail, res, cc);
 
 #ifdef TRACE_QH
     std::cout << "hail cloud riming dqh " << res[qh_idx]-qh_before << ", dNh " << res[Nh_idx]-Nh_before << "\n";
@@ -3429,7 +3429,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 #endif
     //// hail rain riming
     particle_rain_riming(qr_prime, Nr, T_prime, qh_prime, Nh,
-        res[qh_idx], res[Nh_idx], cc.coeffs_hrr, cc.rain, res, cc);
+        res[qh_idx], res[Nh_idx], cc.coeffs_hrr, cc.hail, res, cc);
 #ifdef TRACE_QH
     std::cout << "hail rain riming dqh " << res[qh_idx]-qh_before << ", dNh " << res[Nh_idx]-Nh_before << "\n";
 #endif
@@ -3439,7 +3439,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 #endif
     //// graupel cloud riming
     particle_cloud_riming(qc_prime, Nc, T_prime, qg_prime, Ng,
-        res[qg_idx], res[Ng_idx], cc.coeffs_gcr, cc.rain, res, cc);
+        res[qg_idx], res[Ng_idx], cc.coeffs_gcr, cc.graupel, res, cc);
 
 #ifdef TRACE_QG
     std::cout << "graupel cloud riming dqg " << res[qg_idx]-qg_before << ", dNg " << res[Ng_idx]-Ng_before << "\n";
@@ -3448,7 +3448,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 #endif
     //// graupel rain riming
     particle_rain_riming(qr_prime, Nr, T_prime, qg_prime, Ng,
-        res[qg_idx], res[Ng_idx], cc.coeffs_grr, cc.rain, res, cc);
+        res[qg_idx], res[Ng_idx], cc.coeffs_grr, cc.graupel, res, cc);
 #ifdef TRACE_QG
     std::cout << "graupel rain riming dqg " << res[qg_idx]-qg_before << ", dNg " << res[Ng_idx]-Ng_before << "\n";
 #endif

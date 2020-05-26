@@ -1475,6 +1475,7 @@ void setup_model_constants(
     cc.hail.q_crit_c = 1.0e-6;
     cc.hail.s_vel = 0.0;
     cc.hail.c_s = 1.0 / cc.hail.cap;
+    cc.hail.ecoll_c = 1.0;
     cc.hail.a_f = vent_coeff_a(cc.hail, 1);
     cc.hail.b_f = vent_coeff_b(cc.hail, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
     cc.hail.c_z = moment_gamma(cc.hail, 2);
@@ -1510,6 +1511,7 @@ void setup_model_constants(
     cc.ice.q_crit_c = 1.0e-5;
     cc.ice.s_vel = 0.05;
     cc.ice.c_s = 1.0 / cc.ice.cap;
+    cc.ice.ecoll_c = 0.80;
     cc.ice.a_f = vent_coeff_a(cc.ice, 1);
     cc.ice.b_f = vent_coeff_b(cc.ice, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
     cc.ice.c_z = moment_gamma(cc.ice, 2);
@@ -1545,6 +1547,7 @@ void setup_model_constants(
     cc.snow.q_crit_c = 1.0e-5;
     cc.snow.s_vel = 0.25;
     cc.snow.c_s = 1.0 / cc.snow.cap;
+    cc.snow.ecoll_c = 0.80;
     cc.snow.a_f = vent_coeff_a(cc.snow, 1);
     cc.snow.b_f = vent_coeff_b(cc.snow, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
     cc.snow.c_z = moment_gamma(cc.snow, 2);
