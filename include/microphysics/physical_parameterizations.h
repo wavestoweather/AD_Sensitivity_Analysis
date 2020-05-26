@@ -565,6 +565,24 @@ inline A compute_rhoa(A p,
 
 
 /**
+ * Density of moist air in \f$ \text{kg}/\text{m}^3 \f$.
+ *
+ * @param p Pressure in Pascal
+ * @param T Temperature in Kelvin
+ * @param S Saturation ratio
+ *
+ * @return Density
+ */
+template <class A>
+inline A compute_rhoh(
+    A p,
+    A T,
+    A S)
+{
+    return ( compute_pa(p, T, S)/(Ra*T) + compute_pv(T, S)/(Rv*T) );
+}
+
+/**
  * Convert saturation ratio to water vapor mixing-ratio.
  *
  * @param p Total pressure in Pascal

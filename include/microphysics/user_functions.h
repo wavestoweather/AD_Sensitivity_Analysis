@@ -3295,6 +3295,15 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse rime_rate_qc, rime_rate_qr, rime_rate_qi, rime_rate_qs;
     codi::RealReverse rime_rate_nc, rime_rate_nr;
 
+    // Update vertical velocity parameters
+    codi::RealReverse rho_inter = log(compute_rhoh(p_prime, T_prime, S)/rho_0);
+    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
+    cc.rain.rho_v = exp(-rho_vel * rho_inter);
+    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
+    cc.hail.rho_v = exp(-rho_vel * rho_inter);
+    cc.ice.rho_v = exp(-rho_vel * rho_inter);
+    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+
     const double EPSILON = 1.0e-20;
 
     ////////////// ccn_activation_hdcp2

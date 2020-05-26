@@ -216,6 +216,11 @@ const double rho_0 = 1.225;
 const double rho_vel = 0.4;
 
 /**
+ * Exponent for density correction of cloud droplets
+ */
+const double rho_vel_c = 0.2;
+
+/**
  * Density of ice in \f$\text{kg}/\text{m}^3\f$
  */
 const double rho_ice = 916.7;
