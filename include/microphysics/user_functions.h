@@ -940,54 +940,57 @@ void snow_melting(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t p_sat = saturation_pressure_water_icon(T_prime);
-
-    float_t x_s = particle_mean_mass(qs_prime, Ns, cc.snow.min_x_melt, cc.snow.max_x);
-    float_t d_s = particle_diameter(x_s, cc.snow.a_geo, cc.snow.b_geo);
-    float_t v_s = particle_velocity(x_s, cc.snow.a_vel, cc.snow.b_vel) * cc.snow.rho_v;
-
-    float_t fv_q = cc.snow.a_f + cc.snow.b_f * sqrt(v_s*d_s);
-    // From Rasmussen and Heymsfield (1987)
-    float_t fh_q = 1.05 * fv_q;
-    float_t melt = 2.0*M_PI/L_ew * d_s * Ns;
-    float_t melt_h = melt * K_T * (T_prime - tmelt);
-    float_t melt_v = melt * dv0 * L_wd/Rv * (p_sat/T_prime - p_sat_melt/tmelt);
-    float_t melt_q = (melt_h * fh_q + melt_v * fv_q);
-
-    float_t melt_n = min(max( (melt_q-qs_prime)/x_s + Ns, 0.0), Ns);
-    melt_q = min(qs_prime, max(melt_q, 0.0));
-    melt_n = min(Ns, max(melt_n, 0.0));
-
-    // Spontaneous melting at 10 C
-    if(T_prime - tmelt > 10.0)
+    if(T_prime > tmelt && qs_prime > 0.0)
     {
-        melt_q = qs_prime;
-        melt_n = Ns;
-    }
+        float_t p_sat = saturation_pressure_water_icon(T_prime);
 
-    // Snow
-    res[qs_idx] -= melt_q;
-    // Snow N
-    res[Ns_idx] -= melt_n;
-    // Rain
-    res[qr_idx] += melt_q;
-    // Rain N
-    res[Nr_idx] += melt_n;
-#ifdef TRACE_QR
-    std::cout << "snow melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-#endif
-#ifdef TRACE_QS
-    std::cout << "snow melting dqs " << -melt_q << ", dNs " << -melt_n << "\n";
-#endif
-    float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
-    // Melting, cooling
-    if(melt_q > 0.0)
-        res[lat_cool_idx] -= delta_e;
-    // Freezing, heating
-    else
-        res[lat_heat_idx] -= delta_e;
-    // TODO: Check if we need that
-    // snow%n(i,k) = MAX(snow%n(i,k), snow%q(i,k)/snow%x_max)
+        float_t x_s = particle_mean_mass(qs_prime, Ns, cc.snow.min_x_melt, cc.snow.max_x);
+        float_t d_s = particle_diameter(x_s, cc.snow.a_geo, cc.snow.b_geo);
+        float_t v_s = particle_velocity(x_s, cc.snow.a_vel, cc.snow.b_vel) * cc.snow.rho_v;
+
+        float_t fv_q = cc.snow.a_f + cc.snow.b_f * sqrt(v_s*d_s);
+        // From Rasmussen and Heymsfield (1987)
+        float_t fh_q = 1.05 * fv_q;
+        float_t melt = 2.0*M_PI/L_ew * d_s * Ns;
+        float_t melt_h = melt * K_T * (T_prime - tmelt);
+        float_t melt_v = melt * dv0 * L_wd/Rv * (p_sat/T_prime - p_sat_melt/tmelt);
+        float_t melt_q = (melt_h * fh_q + melt_v * fv_q);
+
+        float_t melt_n = min(max( (melt_q-qs_prime)/x_s + Ns, 0.0), Ns);
+        melt_q = min(qs_prime, max(melt_q, 0.0));
+        melt_n = min(Ns, max(melt_n, 0.0));
+
+        // Spontaneous melting at 10 C
+        if(T_prime - tmelt > 10.0)
+        {
+            melt_q = qs_prime;
+            melt_n = Ns;
+        }
+
+        // Snow
+        res[qs_idx] -= melt_q;
+        // Snow N
+        res[Ns_idx] -= melt_n;
+        // Rain
+        res[qr_idx] += melt_q;
+        // Rain N
+        res[Nr_idx] += melt_n;
+    #ifdef TRACE_QR
+        std::cout << "snow melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+    #endif
+    #ifdef TRACE_QS
+        std::cout << "snow melting dqs " << -melt_q << ", dNs " << -melt_n << "\n";
+    #endif
+        float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
+        // Melting, cooling
+        if(melt_q > 0.0)
+            res[lat_cool_idx] -= delta_e;
+        // Freezing, heating
+        else
+            res[lat_heat_idx] -= delta_e;
+        // TODO: Check if we need that
+        // snow%n(i,k) = MAX(snow%n(i,k), snow%q(i,k)/snow%x_max)
+    }
 }
 
 
@@ -1002,43 +1005,46 @@ void graupel_melting(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t p_sat = saturation_pressure_water_icon(T_prime);
-    float_t x_g = particle_mean_mass(qg_prime, Ng, cc.graupel.min_x_melt, cc.graupel.max_x);
-    float_t d_g = particle_diameter(x_g, cc.graupel.a_geo, cc.graupel.b_geo);
-    float_t v_g = particle_velocity(x_g, cc.graupel.a_vel, cc.graupel.b_vel) * cc.graupel.rho_v;
+    if(T_prime > tmelt && qg_prime > 0.0)
+    {
+        float_t p_sat = saturation_pressure_water_icon(T_prime);
+        float_t x_g = particle_mean_mass(qg_prime, Ng, cc.graupel.min_x_melt, cc.graupel.max_x);
+        float_t d_g = particle_diameter(x_g, cc.graupel.a_geo, cc.graupel.b_geo);
+        float_t v_g = particle_velocity(x_g, cc.graupel.a_vel, cc.graupel.b_vel) * cc.graupel.rho_v;
 
-    float_t fv_q = cc.graupel.a_f + cc.graupel.b_f * sqrt(v_g*d_g);
-    float_t fh_q = 1.05 * fv_q;
-    float_t melt = 2.0*M_PI/L_ew * d_g * Ng;
-    float_t melt_h = melt * K_T * (T_prime - tmelt);
-    float_t melt_v = melt * dv0 * L_wd/Rv * (p_sat/T_prime - p_sat_melt/tmelt);
-    float_t melt_q = (melt_h * fh_q + melt_v * fv_q);
+        float_t fv_q = cc.graupel.a_f + cc.graupel.b_f * sqrt(v_g*d_g);
+        float_t fh_q = 1.05 * fv_q;
+        float_t melt = 2.0*M_PI/L_ew * d_g * Ng;
+        float_t melt_h = melt * K_T * (T_prime - tmelt);
+        float_t melt_v = melt * dv0 * L_wd/Rv * (p_sat/T_prime - p_sat_melt/tmelt);
+        float_t melt_q = (melt_h * fh_q + melt_v * fv_q);
 
-    float_t melt_n = min(max( (melt_q-qg_prime)/x_g + Ng, 0.0), Ng);
-    melt_q = max(0.0, min(melt_q, qg_prime));
-    melt_n = max(0.0, max(melt_n, Ng));
+        float_t melt_n = min(max( (melt_q-qg_prime)/x_g + Ng, 0.0), Ng);
+        melt_q = max(0.0, min(melt_q, qg_prime));
+        melt_n = max(0.0, max(melt_n, Ng));
 
-    // Graupel
-    res[qg_idx] -= melt_q;
-    // Graupel N
-    res[Ng_idx] -= melt_n;
-    // Rain
-    res[qr_idx] += melt_q;
-    // Rain N
-    res[Nr_idx] += melt_n;
-#ifdef TRACE_QR
-    std::cout << "graupel melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-#endif
-#ifdef TRACE_QG
-    std::cout << "graupel melting dqg " << -melt_q << ", dNg " << -melt_n << "\n";
-#endif
-    float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
-    // Melting, cooling
-    if(melt_q > 0.0)
-        res[lat_cool_idx] -= delta_e;
-    // Freezing, heating
-    else
-        res[lat_heat_idx] -= delta_e;
+        // Graupel
+        res[qg_idx] -= melt_q;
+        // Graupel N
+        res[Ng_idx] -= melt_n;
+        // Rain
+        res[qr_idx] += melt_q;
+        // Rain N
+        res[Nr_idx] += melt_n;
+    #ifdef TRACE_QR
+        std::cout << "graupel melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+    #endif
+    #ifdef TRACE_QG
+        std::cout << "graupel melting dqg " << -melt_q << ", dNg " << -melt_n << "\n";
+    #endif
+        float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
+        // Melting, cooling
+        if(melt_q > 0.0)
+            res[lat_cool_idx] -= delta_e;
+        // Freezing, heating
+        else
+            res[lat_heat_idx] -= delta_e;
+    }
 }
 
 
@@ -1053,43 +1059,46 @@ void hail_melting(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t p_sat = saturation_pressure_water_icon(T_prime);
-    float_t x_h = particle_mean_mass(qh_prime, Nh, cc.hail.min_x_melt, cc.hail.max_x);
-    float_t d_h = particle_diameter(x_h, cc.hail.a_geo, cc.hail.b_geo);
-    float_t v_h = particle_velocity(x_h, cc.hail.a_vel, cc.hail.b_vel) * cc.hail.rho_v;
+    if(T_prime > tmelt && qh_prime > 0.0)
+    {
+        float_t p_sat = saturation_pressure_water_icon(T_prime);
+        float_t x_h = particle_mean_mass(qh_prime, Nh, cc.hail.min_x_melt, cc.hail.max_x);
+        float_t d_h = particle_diameter(x_h, cc.hail.a_geo, cc.hail.b_geo);
+        float_t v_h = particle_velocity(x_h, cc.hail.a_vel, cc.hail.b_vel) * cc.hail.rho_v;
 
-    float_t fv_q = cc.hail.a_f + cc.hail.b_f * sqrt(v_h*d_h);
-    float_t fh_q = 1.05 * fv_q;
-    float_t melt = 2.0*M_PI/L_ew * d_h * Nh;
-    float_t melt_h = melt * K_T * (T_prime - tmelt);
-    float_t melt_v = melt * dv0 * L_wd/Rv * (p_sat/T_prime - p_sat_melt/tmelt);
-    float_t melt_q = (melt_h * fh_q + melt_v * fv_q);
+        float_t fv_q = cc.hail.a_f + cc.hail.b_f * sqrt(v_h*d_h);
+        float_t fh_q = 1.05 * fv_q;
+        float_t melt = 2.0*M_PI/L_ew * d_h * Nh;
+        float_t melt_h = melt * K_T * (T_prime - tmelt);
+        float_t melt_v = melt * dv0 * L_wd/Rv * (p_sat/T_prime - p_sat_melt/tmelt);
+        float_t melt_q = (melt_h * fh_q + melt_v * fv_q);
 
-    float_t melt_n = min(max( (melt_q-qh_prime)/x_h + Nh, 0.0), Nh);
-    melt_q = max(0.0, min(melt_q, qh_prime));
-    melt_n = max(0.0, max(melt_n, Nh));
+        float_t melt_n = min(max( (melt_q-qh_prime)/x_h + Nh, 0.0), Nh);
+        melt_q = max(0.0, min(melt_q, qh_prime));
+        melt_n = max(0.0, max(melt_n, Nh));
 
-    // Hail
-    res[qh_idx] -= melt_q;
-    // Hail N
-    res[Nh_idx] -= melt_n;
-    // Rain
-    res[qr_idx] += melt_q;
-    // Rain N
-    res[Nr_idx] += melt_n;
-#ifdef TRACE_QR
-    std::cout << "hail melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-#endif
-#ifdef TRACE_QH
-    std::cout << "hail melting dqh " << -melt_q << ", dNh " << -melt_n << "\n";
-#endif
-    float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
-    // Melting, cooling
-    if(melt_q > 0.0)
-        res[lat_cool_idx] -= delta_e;
-    // Freezing, heating
-    else
-        res[lat_heat_idx] -= delta_e;
+        // Hail
+        res[qh_idx] -= melt_q;
+        // Hail N
+        res[Nh_idx] -= melt_n;
+        // Rain
+        res[qr_idx] += melt_q;
+        // Rain N
+        res[Nr_idx] += melt_n;
+    #ifdef TRACE_QR
+        std::cout << "hail melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+    #endif
+    #ifdef TRACE_QH
+        std::cout << "hail melting dqh " << -melt_q << ", dNh " << -melt_n << "\n";
+    #endif
+        float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
+        // Melting, cooling
+        if(melt_q > 0.0)
+            res[lat_cool_idx] -= delta_e;
+        // Freezing, heating
+        else
+            res[lat_heat_idx] -= delta_e;
+    }
 }
 
 
@@ -2986,14 +2995,14 @@ void rain_freeze(
                 // Not sure if this branch makes too much sense
                 fr_q = qr_prime;
                 fr_n = Nr_tmp;
-                float_t lam = pow(rain_g1/rain_g2*x_r, -cc.rain.mu);
-                float_t N0 = cc.rain.mu * Nr_tmp * pow(lam, rain_nm1) / rain_g1;
+                float_t lam = pow(cc.rain.g1/cc.rain.g2*x_r, -cc.rain.mu);
+                float_t N0 = cc.rain.mu * Nr_tmp * pow(lam, cc.rain.nm1) / cc.rain.g1;
                 float_t tmp = lam*xmax_ice;
-                fr_n_i = N0/pow(cc.rain.mu*lam, rain_nm1) * table_r1.look_lo(tmp);
-                fr_q_i = N0/pow(cc.rain.mu*lam, rain_nm2) * table_r2.look_lo(tmp);
+                fr_n_i = N0/pow(cc.rain.mu*lam, cc.rain.nm1) * table_r1.look_lo(tmp);
+                fr_q_i = N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
                 tmp = lam*xmax_gr;
-                fr_n_i = N0/pow(cc.rain.mu*lam, rain_nm1) * table_r1.look_lo(tmp);
-                fr_n_i = N0/pow(cc.rain.mu*lam, rain_nm2) * table_r2.look_lo(tmp);
+                fr_n_g = N0/pow(cc.rain.mu*lam, cc.rain.nm1) * table_r1.look_lo(tmp);
+                fr_q_g = N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
 
                 fr_n_h = fr_n - fr_n_g;
                 fr_q_h = fr_q - fr_q_g;
@@ -3018,8 +3027,8 @@ void rain_freeze(
                     fr_q_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
 
                     tmp = lam*xmax_gr;
-                    fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
-                    fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
+                    fr_n_g = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
+                    fr_n_g = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
 
                     fr_n_h = fr_n - fr_n_g;
                     fr_q_h = fr_q - fr_q_g;
@@ -3033,7 +3042,6 @@ void rain_freeze(
                         = fr_n_h = fr_q_h = fr_n_tmp = fr_q_tmp = 0.0;
                 }
             }
-
             fr_n = fr_n * fr_n_tmp;
             fr_q = fr_q * fr_q_tmp;
             fr_n_i = fr_n_i * fr_n_tmp;
@@ -3100,54 +3108,57 @@ void ice_melting(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_melt, cc.ice.max_x);
-    // Complete melting
-    float_t melt_q = qi_prime / dt; // Instantanuous, hence "/dt"
-    float_t melt_n = Ni / dt;
-
-    // Remove all ice and all changes that came before due to ice processes.
-    // Makes sure, no other ice processes are called subsequently.
-    qi = 0.0;
-    qi_prime = 0.0;
-    Ni = 0;
-
-    // Ice
-    res[qi_idx] = -melt_q;
-    // Ice N
-    res[Ni_idx] = -melt_n;
-#ifdef TRACE_QI
-    std::cout << "ice melting: qi and Ni set to 0.0\n";
-#endif
-    // melt into cloud or rain
-    if(x_i > cc.cloud.max_x)
+    if(T_prime > tmelt && qi_prime > 0.0)
     {
-        // Rain
-        res[qr_idx] += melt_q;
-        // Rain N
-        res[Nr_idx] += melt_n;
-#ifdef TRACE_QR
-        std::cout << "ice melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-#endif
-    } else
-    {
-        // Cloud
-        res[qc_idx] += melt_q;
+        float_t x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_melt, cc.ice.max_x);
+        // Complete melting
+        float_t melt_q = qi_prime / dt; // Instantanuous, hence "/dt"
+        float_t melt_n = Ni / dt;
 
-        // Cloud N
-        res[Nc_idx] += melt_n;
-#ifdef TRACE_QC
-        if(abs(melt_q) > 0)
-            std::cout << "ice melting dqc " << melt_q << ", dNc " << melt_n << "\n";
-#endif
+        // Remove all ice and all changes that came before due to ice processes.
+        // Makes sure, no other ice processes are called subsequently.
+        qi = 0.0;
+        qi_prime = 0.0;
+        Ni = 0;
+
+        // Ice
+        res[qi_idx] = -melt_q;
+        // Ice N
+        res[Ni_idx] = -melt_n;
+    #ifdef TRACE_QI
+        std::cout << "ice melting: qi and Ni set to 0.0\n";
+    #endif
+        // melt into cloud or rain
+        if(x_i > cc.cloud.max_x)
+        {
+            // Rain
+            res[qr_idx] += melt_q;
+            // Rain N
+            res[Nr_idx] += melt_n;
+    #ifdef TRACE_QR
+            std::cout << "ice melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+    #endif
+        } else
+        {
+            // Cloud
+            res[qc_idx] += melt_q;
+
+            // Cloud N
+            res[Nc_idx] += melt_n;
+    #ifdef TRACE_QC
+            if(abs(melt_q) > 0)
+                std::cout << "ice melting dqc " << melt_q << ", dNc " << melt_n << "\n";
+    #endif
+        }
+
+        float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
+        // Melting, cooling
+        if(melt_q > 0.0)
+            res[lat_cool_idx] -= delta_e;
+        // Freezing, heating
+        else
+            res[lat_heat_idx] -= delta_e;
     }
-
-    float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
-    // Melting, cooling
-    if(melt_q > 0.0)
-        res[lat_cool_idx] -= delta_e;
-    // Freezing, heating
-    else
-        res[lat_heat_idx] -= delta_e;
 }
 
 /**
@@ -3404,8 +3415,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
 #ifdef TRACE_QH
     std::cout << "hail cloud riming dqh " << res[qh_idx]-qh_before << ", dNh " << res[Nh_idx]-Nh_before << "\n";
-    auto qh_before = res[qh_idx];
-    auto Nh_before = res[Nh_idx];
+    qh_before = res[qh_idx];
+    Nh_before = res[Nh_idx];
 #endif
     //// hail rain riming
     particle_rain_riming(qr_prime, Nr, T_prime, qh_prime, Nh,
@@ -3423,8 +3434,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
 #ifdef TRACE_QG
     std::cout << "graupel cloud riming dqg " << res[qg_idx]-qg_before << ", dNg " << res[Ng_idx]-Ng_before << "\n";
-    auto qg_before = res[qg_idx];
-    auto Ng_before = res[Ng_idx];
+    qg_before = res[qg_idx];
+    Ng_before = res[Ng_idx];
 #endif
     //// graupel rain riming
     particle_rain_riming(qr_prime, Nr, T_prime, qg_prime, Ng,
@@ -3435,51 +3446,40 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
     rain_freeze(qr_prime, Nr, T_prime, dt, res, cc);
 
-    if(T_prime > tmelt && qi_prime > 0.0)
-    {
-        ice_melting(qi_prime, qi, Ni, T_prime, dt, res, cc);
-    }
+    ice_melting(qi_prime, qi, Ni, T_prime, dt, res, cc);
 
-    if(T_prime > tmelt && qs_prime > 0.0)
-    {
-        snow_melting(qs_prime, Ns, T_prime, res, cc);
-    }
+    snow_melting(qs_prime, Ns, T_prime, res, cc);
 
-    if(T_prime > tmelt && qg_prime > 0.0)
-    {
-        graupel_melting(qg_prime, Ng, T_prime, res, cc);
-    }
-    if(T_prime > tmelt && qh_prime > 0.0)
-    {
-        hail_melting(qh_prime, Nh, T_prime, res, cc);
-    }
+    graupel_melting(qg_prime, Ng, T_prime, res, cc);
+
+    hail_melting(qh_prime, Nh, T_prime, res, cc);
 
     ////////////// Evaporation from melting ice particles
     // TODO: Check if deposition rates are set to zero here
 
 #ifdef TRACE_QS
-    auto before = res[qs_idx]
+    auto qs_before = res[qs_idx];
 #endif
     evaporation(qv_prime, e_d, p_sat, s_sw, T_prime,
         qs_prime, Ns, res[qs_idx], cc.snow, res);
 #ifdef TRACE_QS
-    std::cout << "evaporation dqs " << res[qs_idx]-before << "\n";
+    std::cout << "evaporation dqs " << res[qs_idx]-qs_before << "\n";
 #endif
 #ifdef TRACE_QG
-    auto before = res[qg_idx]
+    qg_before = res[qg_idx];
 #endif
     evaporation(qv_prime, e_d, p_sat, s_sw, T_prime,
         qg_prime, Ng, res[qg_idx], cc.graupel, res);
 #ifdef TRACE_QG
-    std::cout << "evaporation dqg " << res[qg_idx]-before << "\n";
+    std::cout << "evaporation dqg " << res[qg_idx]-qg_before << "\n";
 #endif
 #ifdef TRACE_QI
-    auto before = res[qi_idx]
+    auto qi_before = res[qi_idx];
 #endif
     evaporation(qv_prime, e_d, p_sat, s_sw, T_prime,
         qi_prime, Ni, res[Ni_idx], cc.ice, res);
 #ifdef TRACE_QI
-    std::cout << "evaporation dqi " << res[qi_idx]-before << "\n";
+    std::cout << "evaporation dqi " << res[qi_idx]-qi_before << "\n";
 #endif
 
     ////////////// Warm rain, ie autoconversion, accretion and rain rain collision
