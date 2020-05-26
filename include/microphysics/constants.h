@@ -375,9 +375,6 @@ const bool nuc_c_type = true;
 const bool nuc_c_type = false;
 #endif
 
-double rain_nm1, rain_nm2, rain_nm3, rain_g1, rain_g2,
-    graupel_nm1, graupel_nm2, graupel_g1, graupel_g2;
-
 /**
  * Parameters for rain freeze with data of Barklie and Gokhale (PK page 350).
  */
