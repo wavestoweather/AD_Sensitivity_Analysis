@@ -7,7 +7,7 @@ Here are various scripts to plot and process data from [netCDF](https://www.unid
 Contents
 ---------
 
-- **scripts:** Python scripts to plot stuff and read files for a quick glance.
+- **scripts:** Python scripts to plot stuff and read files for a quick glance or to create parquet files from simulation output. 
 - **src:** C++ code. The two moment scheme is under "microphysics".
 - **include:** Header files.
 - **doc:** Documentation. Type `make html` to create a HTML documentation (recommended) and `make latexpdf` to create a pdf documentation with Latex.
