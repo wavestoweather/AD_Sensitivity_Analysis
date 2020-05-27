@@ -29,8 +29,8 @@ void ice_activation(
     model_constants_t &cc)
 {
     float_t T_prime  = ref.Tref * T;
-    float_t qc_prime = ref.pref * qc;
-    float_t qv_prime = ref.pref * qv;
+    float_t qc_prime = ref.qref * qc;
+    float_t qv_prime = ref.qref * qv;
     float_t p_sat_ice = saturation_pressure_ice(T_prime);
     bool use_prog_in = false;
 
@@ -125,6 +125,8 @@ void ice_activation(
         {
             ndiag = na_dust * ndiag;
         }
+        std::cout << ndiag << "," << ni_het_max << "," << n_inact << "," 
+                  << S_si << "," << T_prime << ",";
         ndiag = min(ndiag, ni_het_max);
         float_t delta_n = max(ndiag-n_inact, 0.0);
         // TODO: Check if min_x or min_x_nuc
@@ -132,7 +134,40 @@ void ice_activation(
         delta_n = delta_q/cc.ice.min_x;
         y[0] = delta_n;
         y[1] = delta_q;
+    } else 
+    {
+        std::cout << "0," << ni_het_max << "," << n_inact << "," 
+                  << S_si << "," << T_prime << ",";
     }
 }
 
+
+void ice_table_scan(
+    uint32_t x,
+    uint32_t y,
+    std::vector<double> &out)
+{
+    out[0] = afrac_dust[x][y];
+    out[1] = afrac_soot[x][y];
+    out[2] = afrac_orga[x][y];
+}
+
+template<class float_t>
+void infrac_table_scan(
+    float_t T_prime,
+    std::vector<float_t> &infrac)
+{
+    float_t x_t = (274.0 - T_prime) / t_tstep;
+    x_t = min(x_t, t_tmax-1);
+    int tt = (int) x_t.getValue() - 1;
+    std::cout << "98" << "," << x_t << ",";
+
+    // Immersion freezing at water saturation
+    infrac[0] = ( trunc(x_t)+1.0-x_t ) * afrac_dust[98][tt]
+        + ( x_t-trunc(x_t) ) * afrac_dust[98][tt+1];
+    infrac[1] = ( trunc(x_t)+1.0-x_t ) * afrac_soot[98][tt]
+        + ( x_t-trunc(x_t) ) * afrac_soot[98][tt+1];
+    infrac[2] = ( trunc(x_t)+1.0-x_t ) * afrac_orga[98][tt]
+        + ( x_t-trunc(x_t) ) * afrac_orga[98][tt+1];
+}
 #endif
