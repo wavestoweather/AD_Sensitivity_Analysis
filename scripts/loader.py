@@ -16,6 +16,7 @@ qref = 1e-06
 Nref = 1
 wref = 1
 tref = 1
+zref = 1
 
 params_dict = {"p": "_diff_0.txt", "T": "_diff_1.txt",
                "w": "_diff_2.txt", "S": "_diff_3.txt", "qc": "_diff_4.txt",
@@ -30,24 +31,43 @@ params_dict = {"p": "_diff_0.txt", "T": "_diff_1.txt",
                "qgout": "_diff_22.txt",
                "qhout": "_diff_23.txt", "latent_heat": "_diff_24.txt",
                "latent_cool": "_diff_25.txt"}
-params_dict2 = {"_diff_0.txt": "p", "_diff_1.txt": "T",
-               "_diff_2.txt": "w", "_diff_3.txt": "S", "_diff_4.txt": "qc",
-               "_diff_5.txt": "qr", "_diff_6.txt": "qv", "_diff_7.txt": "Nc",
-               "_diff_8.txt": "Nr", "_diff_9.txt": "Nv",
-               "_diff_10.txt": "qi", "_diff_11.txt": "Ni",
-               "_diff_12.txt": "vi", "_diff_13.txt": "qs",
-               "_diff_14.txt": "Ns", "_diff_15.txt": "qg",
-               "_diff_16.txt": "Ng", "_diff_17.txt": "qh",
-               "_diff_18.txt": "Nh", "_diff_19.txt": "qiout",
-               "_diff_20.txt": "qsout", "_diff_21.txt": "qrout",
+params_dict2 = {"_diff_0.txt": "p",
+               "_diff_1.txt": "T",
+               "_diff_2.txt": "w",
+               "_diff_3.txt": "S",
+               "_diff_4.txt": "qc",
+               "_diff_5.txt": "qr",
+               "_diff_6.txt": "qv",
+               "_diff_7.txt": "Nc",
+               "_diff_8.txt": "Nr",
+               "_diff_9.txt": "Nv",
+               "_diff_10.txt": "qi",
+               "_diff_11.txt": "Ni",
+               "_diff_12.txt": "vi",
+               "_diff_13.txt": "qs",
+               "_diff_14.txt": "Ns",
+               "_diff_15.txt": "qg",
+               "_diff_16.txt": "Ng",
+               "_diff_17.txt": "qh",
+               "_diff_18.txt": "Nh",
+               "_diff_19.txt": "qiout",
+               "_diff_20.txt": "qsout",
+               "_diff_21.txt": "qrout",
                "_diff_22.txt": "qgout",
-               "_diff_23.txt": "qhout", "_diff_24.txt": "latent_heat",
-               "_diff_25.txt": "latent_cool"}
+               "_diff_23.txt": "qhout",
+               "_diff_24.txt": "latent_heat",
+               "_diff_25.txt": "latent_cool",
+               "_diff_26.txt": "Niout",
+               "_diff_27.txt": "Nsout",
+               "_diff_28.txt": "Nrout",
+               "_diff_29.txt": "Ngout",
+               "_diff_30.txt": "Nhout",
+               "_diff_31.txt": "z"}
 
 
 def filter_zeros(df_dict, EPSILON=1e-31):
     """
-    Drop all columns that have zero inpact
+    Drop all columns that have zero impact
 
     Parameters
     ----------
@@ -66,10 +86,11 @@ def filter_zeros(df_dict, EPSILON=1e-31):
         zeros existed before.
     """
     key_drop = []
+    ignore_keys = ["timestep", "trajectory", "LONGITUDE", "LATITUDE", "MAP"]
     for key in df_dict:
         to_drop = []
         for column in df_dict[key]:
-            if column == "timestep" or column == "trajectory":
+            if column in ignore_keys:
                 continue
             if not (abs(df_dict[key][column]) > abs(EPSILON)).any():
                 to_drop.append(column)
@@ -80,11 +101,10 @@ def filter_zeros(df_dict, EPSILON=1e-31):
             if (df_dict[key].empty or
                 (len(df_dict[key].columns) == 1
                  and df_dict[key].columns[0] == "timestep")):
-
-                print("Dropping {} entirely.".format(key))
                 key_drop.append(key)
 
     for key in key_drop:
+        print("Dropping {} entirely.".format(key))
         del df_dict[key]
     return df_dict
 
@@ -212,7 +232,8 @@ def load_nc(inp="/mnt/localscratch/data/project/m2_jgu-tapt/o"
     return df
 
 
-def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True):
+def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
+        refs=None):
     """
     Read a csv file and return a pandas.Dataframe with
     physical (not normalized) entries.
@@ -227,6 +248,8 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True):
         Number of rows to read from the datafile.
     change_ref : bool
         If true: Multiply all entries with reference values.
+    refs : String
+        Path to a file of references for transformation
 
     Returns
     -------
@@ -241,24 +264,51 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True):
         data = pd.read_csv(filename, nrows=nrows)
     else:
         data = pd.read_csv(filename, sep=sep, nrows=nrows)
+    if refs is not None:
+        change_ref = True
     if change_ref:
-        data["p"] = data["p"]*pref/100  # We want hPa
-        data["T"] = data["T"]*Tref
-        data["w"] = data["w"]*wref
-        data["qc"] = data["qc"]*qref
-        data["qr"] = data["qr"]*qref
-        data["qs"] = data["qs"]*qref
-        data["qg"] = data["qg"]*qref
-        data["qh"] = data["qh"]*qref
-        data["qi"] = data["qi"]*qref
-        data["qv"] = data["qv"]*qref
-        data["qiout"] = data["qiout"]*qref
-        data["qsout"] = data["qsout"]*qref
-        data["qrout"] = data["qrout"]*qref
-        data["qgout"] = data["qgout"]*qref
-        data["qhout"] = data["qhout"]*qref
-        data["latent_heat"] = data["latent_heat"]*Tref
-        data["latent_cool"] = data["latent_cool"]*Tref
+        if refs is not None:
+            refs = np.genfromtxt(refs)
+            Tref = refs[0]
+            pref = refs[1]
+            qref = refs[2]
+            Nref = refs[3]
+            wref = refs[4]
+            tref = refs[5]
+            zref = refs[6]
+
+        data["timestep"]    = data["timestep"]*tref
+        data["p"]           = data["p"]*pref
+        data["T"]           = data["T"]*Tref
+        data["w"]           = data["w"]*wref
+        data["qc"]          = data["qc"]*qref
+        data["qr"]          = data["qr"]*qref
+        data["qs"]          = data["qs"]*qref
+        data["qg"]          = data["qg"]*qref
+        data["qh"]          = data["qh"]*qref
+        data["qi"]          = data["qi"]*qref
+        data["qv"]          = data["qv"]*qref
+        data["qiout"]       = data["qiout"]*qref
+        data["qsout"]       = data["qsout"]*qref
+        data["qrout"]       = data["qrout"]*qref
+        data["qgout"]       = data["qgout"]*qref
+        data["qhout"]       = data["qhout"]*qref
+        data["Nc"]          *= Nref
+        data["Nr"]          *= Nref
+        data["Ns"]          *= Nref
+        data["Ng"]          *= Nref
+        data["Nh"]          *= Nref
+        data["Ni"]          *= Nref
+        data["Nv"]          *= Nref
+        data["Niout"]       *= Nref
+        data["Nsout"]       *= Nref
+        data["Nrout"]       *= Nref
+        data["Ngout"]       *= Nref
+        data["Nhout"]       *= Nref
+        data["latent_heat"] *= Tref
+        data["latent_cool"] *= Tref
+        data["z"]           *= zref
+
     return data
 
 
@@ -266,6 +316,7 @@ def transform_df(df):
     """
     Create a new pandas.DataFrame with column "param", "timestep", "deriv"
     that can be used for plotting with seaborn.lineplot.
+    Optionally adds columns LONGITUDE, LATITUDE, MAP if available in df.
 
     Parameters
     ----------
@@ -277,13 +328,23 @@ def transform_df(df):
     pandas.Dataframe
         Transformed Dataframe.
     """
-    dicti = {"param": [], "timestep": [], "deriv": []}
+    if "MAP" in df:
+        dicti = {"param": [], "timestep": [], "deriv": [], "MAP": [],
+                 "LONGITUDE": [], "LATITUDE": []}
+    else:
+        dicti = {"param": [], "timestep": [], "deriv": []}
+
+    key_list = ["timestep", "trajectory", "LONGITUDE", "LATITUDE", "MAP"]
     for key in df:
-        if key == "timestep" or key == "trajectory":
+        if key in key_list:
             continue
         dicti["timestep"].extend(df["timestep"].tolist())
         dicti["deriv"].extend(df[key].tolist())
         dicti["param"].extend([key for i in range(len(df["timestep"]))])
+        if "MAP" in df:
+            dicti["MAP"].extend(df["MAP"].tolist())
+            dicti["LONGITUDE"].extend(df["LONGITUDE"].tolist())
+            dicti["LATITUDE"].extend(df["LATITUDE"].tolist())
     return pd.DataFrame(dicti)
 
 
@@ -472,10 +533,11 @@ def load_mult_derivates_directory(direc="", filt=True,
                                   EPSILON=0.0, trajectories=[1], suffix="20160922_00"):
     """
     Create a dataframe with columns:
-    trajectory, timestep, out_param, in_param, deriv
+    trajectory, timestep, out_param, in_param, deriv, MAP, LATITUDE, LONGITUDE
     where out_param is a string such as 'p', 'T', 'w' etc
     in_param is a string such as "da_1", "da_2", "dsnow_alfa_q", ...
-    deriv is the float derivative of the given in_param.
+    deriv is the float derivative of the given in_param. MAP is an optionally
+    available flag for interesting timesteps.
 
     Parameters
     ----------
@@ -496,9 +558,11 @@ def load_mult_derivates_directory(direc="", filt=True,
         Pandas dataframe as described above.
     """
     df = pd.DataFrame(data={"timestep": [], "trajectory": [], "out_param": [],
-                            "in_param": [], "deriv": []})
+                            "in_param": [], "deriv": [], "MAP": [],
+                            "LATITUDE": [], "LONGITUDE": []})
 
-    file_list = [f for f in os.listdir(direc) if os.path.isfile(direc.join(f))]
+    file_list = [os.path.join(direc, f) for f in os.listdir(direc)
+                 if os.path.isfile(os.path.join(direc, f))]
     file_list2 = []
     for f in file_list:
         s = f.split("traj")
@@ -514,12 +578,12 @@ def load_mult_derivates_directory(direc="", filt=True,
         # The last 4 chars should be ".txt" now.
         example = example[:-4]
         example = example.split("_")
-        suffix = example[-2] + example[-1]
+        suffix = example[-2] + "_" + example[-1]
 
     for f in pb(file_list2, redirect_stdout=True):
         tmp_dict = {}
         try:
-            tmp = pd.read_csv(f, sep=",")
+            tmp = pd.read_csv(f, sep=",", index_col=False)
             out_param = params_dict2[f.split(suffix)[1]]
             tmp_dict[out_param] = tmp
             if filt:
@@ -533,7 +597,11 @@ def load_mult_derivates_directory(direc="", filt=True,
                           "trajectory": [i for j in range(n_entries)],
                           "out_param": [out_param for j in range(n_entries)],
                           "in_param": tmp_dict[out_param]["param"],
-                          "deriv": tmp_dict[out_param]["deriv"]}), ignore_index=True)
+                          "deriv": tmp_dict[out_param]["deriv"],
+                          "MAP": tmp_dict[out_param]["MAP"],
+                          "LATITUDE": tmp_dict[out_param]["LATITUDE"],
+                          "LONGITUDE": tmp_dict[out_param]["LONGITUDE"]
+                          }), ignore_index=True)
         except:
             pass
     return df
@@ -565,32 +633,29 @@ def rotate_df(df, pollon, pollat, lon="LONGITUDE", lat="LATITUDE"):
     df[lat] = lat_v
 
 
-def norm_deriv(df, flagged=True):
+def norm_deriv(df):
     """
     Given a dataframe with columns:
-    trajectory, timestep, out_param, in_param, deriv, ratio_deriv
+    trajectory, timestep, out_param, in_param, deriv, ratio_deriv, MAP
     where out_param is a string such as 'p', 'T', 'w' etc
     in_param is a string such as "da_1", "da_2", "dsnow_alfa_q", ...
     deriv is the float derivative of the given in_param.
 
     Normalize the ratio of the derivatives for every timestep and add that
-    as another column "norm_deriv".
+    as another column "norm_deriv". The column "MAP" is used to normalize only
+        within an area (consecutive timesteps with equal flag).
 
     Parameters
     ----------
     df : pandas.Dataframe
         Dataframe with columns trajectory, timestep, out_param, in_param,
-        deriv, ratio_deriv and optionally MAP. On out: Holds another
+        deriv, ratio_deriv and MAP. On out: Holds another
         column "norm_deriv"
-    flagged : boolean
-        If flagged is true, the column "MAP" is used to normalize only
-        within an area (consecutive timesteps with equal flag)
-
     """
     print("TODO")
 
 
-def ratio_deriv(df):
+def ratio_deriv(df, out_param):
     """
     Given a dataframe with columns:
     trajectory, timestep, out_param, in_param, deriv
@@ -605,9 +670,24 @@ def ratio_deriv(df):
     ----------
     df : pandas.Dataframe
         Dataframe with columns trajectory, timestep, out_param, in_param,
-        deriv and optionally MAP. On out: Holds additional column ratio_deriv
+        deriv and optionally MAP.
+    out_param : String
+        Output parameter to calculate the ratio for
+
+    Returns
+    -------
+    pandas.Dataframe
+        Dataframe with columns trajectory, timestep, out_param, in_param,
+        deriv and optionally MAP. Also additional column ratio_deriv
     """
-    print("TODO")
+    df_out = df[df.out_param == out_param]
+    if df_out.empty:
+        print("No such output parameter: {}".format(out_param))
+        return None
+
+    denominator = np.abs(df["deriv"]).max()
+    df_out["ratio_deriv"] = df_out["deriv"]/denominator
+    return df_out
 
 
 if __name__ == "__main__":

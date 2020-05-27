@@ -1,0 +1,476 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Example Results for a Single Trajectory &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="C++ API" href="../api/library_root.html" />
+    <link rel="prev" title="General Functions" href="../groups/general.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Example Results</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example Results for a Single Trajectory</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ice-mixing-ratio">Ice Mixing Ratio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cloud-droplet-mixing-ratio">Cloud Droplet Mixing Ratio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rain-droplet-mixing-ratio">Rain Droplet Mixing Ratio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#water-vapor-mixing-ratio">Water Vapor Mixing Ratio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Example Results for a Single Trajectory</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/results/traj0.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="example-results-for-a-single-trajectory">
+<h1>Example Results for a Single Trajectory<a class="headerlink" href="#example-results-for-a-single-trajectory" title="Permalink to this headline">¶</a></h1>
+<p>If we use the data from <code class="docutils literal notranslate"><span class="pre">2mom_wcb/traj_t000000_p001.nc_wcb</span></code> for the
+trajectory with index 0 and <img class="math" src="../_images/math/1e7a6c9c46ec68c998f518ffc1fe9a66a9ffd04d.png" alt="0 \text{s} \leq t \leq 187920 \text{s}"/>, we get data from within
+a region that satisfies the WCB-criterion (see Section 2.3 of <a class="reference internal" href="#oertel2019">Oertel2019</a>).
+One can execute the simulation with the following command, executed at the
+root folder of the repository:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>build/apps/src/microphysics/./trajectories <span class="se">\</span>
+-a <span class="m">3</span> <span class="se">\</span>
+-t <span class="m">0</span> <span class="se">\</span>
+-s <span class="m">1</span> <span class="se">\</span>
+-f <span class="m">187920</span> <span class="se">\</span>
+-d <span class="m">0</span>.01 <span class="se">\</span>
+-i <span class="m">250</span> <span class="se">\</span>
+-b <span class="m">1</span>.0 <span class="se">\</span>
+-o data/wcb_sim <span class="se">\</span>
+-l 2mom_wcb/traj_t000000_p001.nc_wcb <span class="se">\</span>
+-r <span class="m">0</span>
+</pre></div>
+</div>
+<p>See the section on <a href="#id8"><span class="problematic" id="id9">Executing_</span></a> for a description of these commands. In short,
+we are resetting variables such as temperature, saturation, pressure and
+ascent every <img class="math" src="../_images/math/b66a2d7a7d78acb006aad5b9a77ff9e6248fa22b.png" alt="20 \text{s}"/>, the timestep size of the netCDF file. Those variables,
+except for ascent, are not fixed while calculating the microphysics.
+The timestep for the microphysics is <img class="math" src="../_images/math/1c390e43ecef70bdb901f75b931bf29b9d548614.png" alt="0.01 \text{s}"/>. We capture the results and
+derivatives every 250 timesteps (<img class="math" src="../_images/math/baf3c231d9c8a852e2e76e5c0a066ad96d5ee2df.png" alt="=2.5 \text{s}"/>).
+We can plot all the following plots with:</p>
+<div class="section" id="ice-mixing-ratio">
+<h2>Ice Mixing Ratio<a class="headerlink" href="#ice-mixing-ratio" title="Permalink to this headline">¶</a></h2>
+<p>Let’s take a look at the ice mixing ratio <img class="math" src="../_images/math/146a6f438d070ed54d299e98a28c6ec689d3e381.png" alt="q_{\text{ice}}"/>:</p>
+<div class="align-center figure">
+<img alt="../_images/traj_qi.png" src="../_images/traj_qi.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/sim_qi_tr0.png" src="../_images/sim_qi_tr0.png" />
+</div>
+<div class="align-center figure" id="id1">
+<img alt="../_images/sim_qi.png" src="../_images/sim_qi.png" />
+<p class="caption"><span class="caption-text">Ice crystal mixing ratio for multiple trajectories.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+<div class="align-center figure" id="id2">
+<img alt="../_images/qi_1.png" src="../_images/qi_1.png" />
+<p class="caption"><span class="caption-text">Ice mixing ratio derivatives with the highest impact. The colored background
+stands for timesteps where the WCB-criterion is satisfied.</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
+</div>
+<p>We can see that the minimum size for ice particles has an impact of <img class="math" src="../_images/math/dcd89c363a228cb0105a3eb2d9ee41ee3e8cf560.png" alt="\mathcal{O}(10^{-11})"/>.</p>
+<div class="align-center figure" id="id3">
+<img alt="../_images/qi_2.png" src="../_images/qi_2.png" />
+<p class="caption"><span class="caption-text">Ice mixing ratio derivatives with the second highest impact. The colored background
+stands for timesteps where the WCB-criterion is satisfied.</span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+</div>
+<p>The parameters with the second highest impact of <img class="math" src="../_images/math/fa0ec8e2a93cd0a0ad05ec6ac4a922979f8576cc.png" alt="\mathcal{O}(10^{-21})"/>
+have largely negative derivatives. <img class="math" src="../_images/math/337d0c266f273401a17081052a08328fd9a02bf7.png" alt="z^{-1}"/> is the inverse height size
+of the air parcel, which is set to <img class="math" src="../_images/math/5e5607501ce148103ceba5f9585524af0f2b4c13.png" alt="150 \text{m}"/> for this simulation.
+The minimum size of a cloud particle is present as well. <img class="math" src="../_images/math/b3054bf637f26750821e2f79d1a5263900a90bd4.png" alt="\text{vel}_{b, \text{ice}}"/>
+is a parameter for the vertical velocity of ice particles:</p>
+<div class="math">
+<p><img src="../_images/math/47c771df8e637baffc5dd96207658b0bab330f15.png" alt="\text{vel}_i = a_{\text{vel}} \cdot x^{b_{\text{vel}}} \cdot \rho_{\text{ice}, v}"/></p>
+</div><p>where <img class="math" src="../_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> is the particle (mean) mass in kg and <img class="math" src="../_images/math/41b555840ad5bd4f2ead1a77c15d0508824bf3a2.png" alt="a_{\text{vel}}"/> is
+another particle model constant. Those <img class="math" src="../_images/math/41b555840ad5bd4f2ead1a77c15d0508824bf3a2.png" alt="a_{\text{vel}}"/> and <img class="math" src="../_images/math/8bad5d5d99adf67030a94c32c34fd45a06f490b9.png" alt="b_{\text{vel}}"/>
+are defined for every particle type separately. This particular <img class="math" src="../_images/math/b3054bf637f26750821e2f79d1a5263900a90bd4.png" alt="\text{vel}_{b, \text{ice}}"/>
+is used in the ice self collection (see <a class="reference internal" href="#cotton1986">Cotton1986</a> or <a class="reference internal" href="#straka1989">Straka1989</a> page 53 for
+temperature dependency).
+The collection of ice crystals after <a class="reference internal" href="#seifert2006">Seifert2006</a> Eq. 62 is implemented as follows:</p>
+<div class="math">
+<p><img src="../_images/math/e419537e5ba35f4a10fc551ec7cf71288d4f69f3.png" alt="\frac{\partial q_i}{\partial t} |_{\text{vel}_{b, \text{ice}}} =
+- \frac{\pi}{4} e_{\text{coll}} \delta_{sc, q, \text{ice}}
+    N_i q_i D_i^2 \sqrt{\theta_{sc, q, \text{ice}} \text{vel}_{\text{ice}}^2 + 2\cdot s_{\text{vel}, \text{ice}}^2}"/></p>
+</div><p>with <img class="math" src="../_images/math/f51a638045d2f459a161fabee7f9393a858e3b76.png" alt="e_{\text{coll}} = \text{min}(10^{0.035 \cdot T_c - 0.7}, 0.2)"/>
+the mean efficiency, <img class="math" src="../_images/math/e6f71737b2fe88c541a2d8d3fd0ecc9810ff2292.png" alt="T_c"/> is the temperature in degree Celcius, <img class="math" src="../_images/math/a1e65dd6ea883f18f45686583a0e34bbe9a836ce.png" alt="N_i"/>
+is the amount of ice particles and <img class="math" src="../_images/math/a554e42bdccfdc2c87802f5d26d2fff6d3c72a6f.png" alt="q_i"/> the ice mixing ratio.
+<img class="math" src="../_images/math/4953116724bac9c55e78095a9f9942cc5536d154.png" alt="\delta_{sc, q}"/> and <img class="math" src="../_images/math/ca7767908ac0efd422f4b674096709aa654149ad.png" alt="\theta_{sc, q}"/> are dimensionless constants
+(depending on chosen size distributions and velocity- and diameter-mass relations
+of the colliding particles).
+<img class="math" src="../_images/math/c493811970fe3f0f8605b0cd1b63a11ad19ca165.png" alt="D_i"/> is the mean particle diameter, which is calculated with the mean
+particle mass <img class="math" src="../_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and some model constants:</p>
+<div class="math">
+<p><img src="../_images/math/c7c9ca294208c83e6f847830b60f2e9ae08bf4c9.png" alt="D_i = a_{\text{ice}, \text{geo}} \cdot x^{b_{\text{ice}, \text{geo}}}"/></p>
+</div><p><img class="math" src="../_images/math/3fa36c8dc53a8920b9056b2ef219900748bbf48c.png" alt="s_{\text{vel}, i} = 0.2 \text{m}\text{s}^{-1}"/> is the constant variance
+of the particle velocity.</p>
+<p>The parameter <img class="math" src="../_images/math/0f38c01264c2b4d437350a40609f03015f6adb53.png" alt="\lambda_{\text{ice}}"/> and <img class="math" src="../_images/math/b3054bf637f26750821e2f79d1a5263900a90bd4.png" alt="\text{vel}_{b, \text{ice}}"/>
+are used in the sedimentation process:</p>
+<div class="math">
+<p><img src="../_images/math/4a866beb2da7d6415ec304f14c381f8c4d5c4a11.png" alt="\frac{\partial q_i}{\partial t } |_{\lambda_{\text{ice}}, \text{vel}_{b, \text{ice}}} =
+- \rho_{\text{corr}} \cdot \alpha_{\text{ice}, q} \cdot \lambda_{\text{ice}}
+\cdot x^{\text{vel}_{b, \text{ice}}} \cdot q_i \cdot z^{-1}"/></p>
+</div><p>where <img class="math" src="../_images/math/d4e8396c2c11df2aff3b89a13b30432a4fb9c654.png" alt="\rho_{\text{corr}} = ( \frac{\rho_{a}'}{\rho_0} )^{-\rho_{\text{vel}}}"/> is
+used for density correction.
+The air density <img class="math" src="../_images/math/2e0a2207815dc8e9c912464d162b33334fe57f77.png" alt="\rho_0"/> is set to <img class="math" src="../_images/math/087526f4ee7909f68fc17aa2c2d4c31cfb10cbc9.png" alt="1.225"/>, the exponent <img class="math" src="../_images/math/ab66a10eda099f2bec859983fca3d781d33e39b9.png" alt="\rho_{\text{vel}}"/>
+is set to <img class="math" src="../_images/math/e22a93b9fbfa6aa82caec06a8678a89ebfb01750.png" alt="0.4"/>. The density of dry air <img class="math" src="../_images/math/b4458184cb3146e878170c73a9afbb6a801a244e.png" alt="\rho_{a}'"/> can be calculated
+using pressure, <img class="math" src="../_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/> temperature <img class="math" src="../_images/math/e8dea8254118f111b5fb20895b03528c17566f06.png" alt="T"/>, saturation <img class="math" src="../_images/math/b988975be41fd13b4d091c10202ba19374643586.png" alt="S"/> and
+the gas constant for dry air <img class="math" src="../_images/math/eb04121f9ba1e043289e2e973db0826f550defc8.png" alt="R_a"/> via</p>
+<div class="math">
+<p><img src="../_images/math/89b15b79fd8f2f560375c2a9d15c7c1f9372577e.png" alt="\rho_{a}' = \frac{ p - S \cdot p_{S, v} }{R_a \cdot T}"/></p>
+</div><p>The saturation vapor pressure <img class="math" src="../_images/math/04f2da569f3de26cf28a833a34eaf4abf2c8fe1f.png" alt="p_{S, v}"/> can be calculated with <a class="reference internal" href="#murphy2005">Murphy2005</a>.</p>
+<div class="align-center figure" id="id4">
+<img alt="../_images/qi_3.png" src="../_images/qi_3.png" />
+<p class="caption"><span class="caption-text">Ice mixing ratio derivatives with the third highest impact. The colored background
+stands for timesteps where the WCB-criterion is satisfied.</span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
+</div>
+<p>There are more derivatives with impact of <img class="math" src="../_images/math/03e97449430dc864b6a53d42b6adb2499a1e0050.png" alt="\mathcal{O}(10^{-24})"/>.
+The minimum size of graupel and snow particles come to have an effect.
+The parameters <img class="math" src="../_images/math/bddac6ac07bb444eb91a99442a5ebb27e1aea3b1.png" alt="\text{geo}_{a, \text{ice}}"/> and <img class="math" src="../_images/math/c6b412d5ac39d6dd2733a9c2e3d944c29cbef4e7.png" alt="\text{geo}_{b, \text{ice}}"/>
+are used in calculating the particle diameter and hence for ice and ice
+collisions (see above), ice riming from cloud and rain particles, conversion from ice to
+graupel, vapor deposition, particle collection with snow and graupel.</p>
+<p>Formula for cloud riming rate with a particle x (<a class="reference internal" href="#seifert2006">Seifert2006</a>):</p>
+<div class="math">
+<p><img src="../_images/math/b56918c2e05a4f0419ea02a47040cf459dd7a227.png" alt="\begin{split}
+\frac{\partial q_i}{\partial t} |_{\text{cloud riming}}
+= \frac{\Pi}{4} \cdot e_{\text{coll}} \cdot N_x \cdot q_c \\
+\cdot ( \delta_{q, aa, icr} \cdot D_x^2 + \delta_{q, ab, icr} \cdot D_x \cdot D_c
++ \delta_{q, bb, icr} \cdot D_c^2 ) \\
+\cdot \sqrt{ \theta_{q, aa, icr} \cdot v_x^2
+- \theta_{q, ab, icr} \cdot v_x \cdot v_c
++ \theta_{q, bb, icr} \cdot v_c^2 + s^2_{\text{vel}, \text{ice}} }
+\end{split}"/></p>
+</div><p>The subscript “icr” stands for ice cloud riming model constants and <img class="math" src="../_images/math/02d98909b5d6acd6a7ff927d4d42790bdd407d58.png" alt="v"/>
+is the particle velocity. The rain riming rate can be calculated in a similar
+way with model constants used from “irr” (ice rain riming) and properties from
+rain instead of cloud droplets.</p>
+<p>The parameter <img class="math" src="../_images/math/dc91a60cd718a63eb90e71ccfa94f1724d84a180.png" alt="\delta_{sc, \text{ice}}"/> is part of ice ice collisions as above.</p>
+<p>The parameter <img class="math" src="../_images/math/d938848086efccc7491aafb01e19ff4d55add7ec.png" alt="\text{ven}_{a, \text{ice}}"/> is used in vapor deposition
+(<a class="reference internal" href="#seifert2006">Seifert2006</a>, Section 3.3, Equations 37 and 38).</p>
+<div class="math">
+<p><img src="../_images/math/d0a26596026bd6109a4877cea3242b4ed5c54968.png" alt="Another formula, maybe I add that later."/></p>
+</div><p>The parameters <img class="math" src="../_images/math/2def6b608ba7da6c3fefc8f292cbbdae323b2a81.png" alt="s_{c, \text{ice}}"/> and <img class="math" src="../_images/math/571a4dc1250f9018e00a212187b1aadbdcec81e5.png" alt="f_{a, \text{ice}}"/> are used in depositional
+growth of ice particles (as above) and evaporation (<a class="reference internal" href="#seifert2006">Seifert2006</a>, Equations 76, 77):</p>
+<div class="math">
+<p><img src="../_images/math/14c6b316e046c1da77e2ec3c8e1962ac5cfa5274.png" alt="Another formula"/></p>
+</div><p>The parameter <img class="math" src="../_images/math/c62c8a4a7726a5b4b5442aa624639fb456074cab.png" alt="q_{\alpha, \text{ice}}"/> is part of (TODO):</p>
+<div class="math">
+<p><img src="../_images/math/14c6b316e046c1da77e2ec3c8e1962ac5cfa5274.png" alt="Another formula"/></p>
+</div></div>
+<div class="section" id="cloud-droplet-mixing-ratio">
+<h2>Cloud Droplet Mixing Ratio<a class="headerlink" href="#cloud-droplet-mixing-ratio" title="Permalink to this headline">¶</a></h2>
+<div class="align-center figure">
+<img alt="../_images/traj_qc.png" src="../_images/traj_qc.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/sim_qc_tr0.png" src="../_images/sim_qc_tr0.png" />
+</div>
+<div class="align-center figure" id="id5">
+<img alt="../_images/sim_qc.png" src="../_images/sim_qc.png" />
+<p class="caption"><span class="caption-text">Cloud droplet mixing ratio for multiple trajectories.</span><a class="headerlink" href="#id5" title="Permalink to this image">¶</a></p>
+</div>
+<div class="align-center figure">
+<img alt="../_images/qc_1.png" src="../_images/qc_1.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qc_2.png" src="../_images/qc_2.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qc_3.png" src="../_images/qc_3.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qc_4.png" src="../_images/qc_4.png" />
+</div>
+</div>
+<div class="section" id="rain-droplet-mixing-ratio">
+<h2>Rain Droplet Mixing Ratio<a class="headerlink" href="#rain-droplet-mixing-ratio" title="Permalink to this headline">¶</a></h2>
+<div class="align-center figure">
+<img alt="../_images/traj_qr.png" src="../_images/traj_qr.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/sim_qr_tr0.png" src="../_images/sim_qr_tr0.png" />
+</div>
+<div class="align-center figure" id="id6">
+<img alt="../_images/sim_qr.png" src="../_images/sim_qr.png" />
+<p class="caption"><span class="caption-text">Rain droplet mixing ratio of multiple trajectories.</span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
+</div>
+<div class="align-center figure">
+<img alt="../_images/qr_1.png" src="../_images/qr_1.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qr_2.png" src="../_images/qr_2.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qr_3.png" src="../_images/qr_3.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qr_4.png" src="../_images/qr_4.png" />
+</div>
+</div>
+<div class="section" id="water-vapor-mixing-ratio">
+<h2>Water Vapor Mixing Ratio<a class="headerlink" href="#water-vapor-mixing-ratio" title="Permalink to this headline">¶</a></h2>
+<div class="align-center figure">
+<img alt="../_images/traj_qv.png" src="../_images/traj_qv.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/sim_qv_tr0.png" src="../_images/sim_qv_tr0.png" />
+</div>
+<div class="align-center figure" id="id7">
+<img alt="../_images/sim_qv.png" src="../_images/sim_qv.png" />
+<p class="caption"><span class="caption-text">Water vapor mixing ratio for multiple trajectories.</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
+</div>
+<div class="align-center figure">
+<img alt="../_images/qv_1.png" src="../_images/qv_1.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qv_2.png" src="../_images/qv_2.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qv_3.png" src="../_images/qv_3.png" />
+</div>
+<div class="align-center figure">
+<img alt="../_images/qv_4.png" src="../_images/qv_4.png" />
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<dl class="citation">
+<dt class="label" id="oertel2019"><span class="brackets">Oertel2019</span></dt>
+<dd><p>Oertel, A., Boettcher, M., Joos, H., Sprenger, M., and Wernli, H.,
+“Potential vorticity structure of embedded convection in a warm conveyor
+belt and its relevance for the large-scale dynamics”, Weather Clim.
+Dynam. Discuss., <a class="reference external" href="https://doi.org/10.5194/wcd-2019-3">https://doi.org/10.5194/wcd-2019-3</a>, in review, 2019.</p>
+</dd>
+<dt class="label" id="cotton1986"><span class="brackets">Cotton1986</span></dt>
+<dd><p>F. Mimouni, J. L. Ballard, E. T. Ballard, and R. T. Cotton,
+“Necrotizing Tracheobronchitis: Case Report,” Pediatrics, vol. 77, no. 3, p. 366, Mar. 1986.</p>
+</dd>
+<dt class="label" id="straka1989"><span class="brackets">Straka1989</span></dt>
+<dd><p>J. M. Straka,
+“Hail growth in a highly glaciated central High Plains multi-cellular hailstorm,”
+Ph.D.Diss., University of Wisconsin, Madison, 1989.</p>
+</dd>
+<dt class="label" id="seifert2006"><span class="brackets">Seifert2006</span></dt>
+<dd><p>A. Seifert and K. D. Beheng,
+“A two-moment cloud microphysics parameterization for mixed-phase clouds.
+Part 1: Model description,”
+Meteorol. Atmos. Phys., vol. 92, no. 1, pp. 45–66, Feb. 2006, doi: 10.1007/s00703-005-0112-4.</p>
+</dd>
+<dt class="label" id="murphy2005"><span class="brackets">Murphy2005</span></dt>
+<dd><p>D. M. Murphy and T. Koop,
+“Review of the vapour pressures of ice and supercooled water for
+atmospheric applications,”
+Quarterly Journal of the Royal Meteorological Society, vol. 131, no. 608,
+pp. 1539–1565, 2005, doi: 10.1256/qj.04.94.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../api/library_root.html" class="btn btn-neutral float-right" title="C++ API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../groups/general.html" class="btn btn-neutral float-left" title="General Functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

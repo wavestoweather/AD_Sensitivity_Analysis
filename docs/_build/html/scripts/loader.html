@@ -102,6 +102,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">C++ API</a></li>
@@ -208,7 +212,7 @@ were too high before.</p>
 <dl class="function">
 <dt id="scripts.loader.filter_zeros">
 <code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">filter_zeros</code><span class="sig-paren">(</span><em class="sig-param">df_dict</em>, <em class="sig-param">EPSILON=1e-31</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.filter_zeros" title="Permalink to this definition">¶</a></dt>
-<dd><p>Drop all columns that have zero inpact</p>
+<dd><p>Drop all columns that have zero impact</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -312,10 +316,11 @@ higher values.</p></li>
 <dt id="scripts.loader.load_mult_derivates_directory">
 <code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_mult_derivates_directory</code><span class="sig-paren">(</span><em class="sig-param">direc='', filt=True, EPSILON=0.0, trajectories=[1], suffix='20160922_00'</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_mult_derivates_directory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a dataframe with columns:
-trajectory, timestep, out_param, in_param, deriv
+trajectory, timestep, out_param, in_param, deriv, MAP, LATITUDE, LONGITUDE
 where out_param is a string such as ‘p’, ‘T’, ‘w’ etc
 in_param is a string such as “da_1”, “da_2”, “dsnow_alfa_q”, …
-deriv is the float derivative of the given in_param.</p>
+deriv is the float derivative of the given in_param. MAP is an optionally
+available flag for interesting timesteps.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -359,7 +364,7 @@ of pole.</p>
 
 <dl class="function">
 <dt id="scripts.loader.load_output">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_output</code><span class="sig-paren">(</span><em class="sig-param">filename='sb_ice.txt'</em>, <em class="sig-param">sep=None</em>, <em class="sig-param">nrows=None</em>, <em class="sig-param">change_ref=True</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_output" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_output</code><span class="sig-paren">(</span><em class="sig-param">filename='sb_ice.txt'</em>, <em class="sig-param">sep=None</em>, <em class="sig-param">nrows=None</em>, <em class="sig-param">change_ref=True</em>, <em class="sig-param">refs=None</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_output" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a csv file and return a pandas.Dataframe with
 physical (not normalized) entries.</p>
 <dl class="field-list simple">
@@ -369,6 +374,7 @@ physical (not normalized) entries.</p>
 <li><p><strong>sep</strong> (<em>string</em>) – Separator in the file.</p></li>
 <li><p><strong>nrows</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of rows to read from the datafile.</p></li>
 <li><p><strong>change_ref</strong> (<em>bool</em>) – If true: Multiply all entries with reference values.</p></li>
+<li><p><strong>refs</strong> (<em>String</em>) – Path to a file of references for transformation</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -386,30 +392,29 @@ any dataframe from the given csv file.</p>
 
 <dl class="function">
 <dt id="scripts.loader.norm_deriv">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">norm_deriv</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">flagged=True</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.norm_deriv" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">norm_deriv</code><span class="sig-paren">(</span><em class="sig-param">df</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.norm_deriv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a dataframe with columns:
-trajectory, timestep, out_param, in_param, deriv, ratio_deriv
+trajectory, timestep, out_param, in_param, deriv, ratio_deriv, MAP
 where out_param is a string such as ‘p’, ‘T’, ‘w’ etc
 in_param is a string such as “da_1”, “da_2”, “dsnow_alfa_q”, …
 deriv is the float derivative of the given in_param.</p>
 <p>Normalize the ratio of the derivatives for every timestep and add that
-as another column “norm_deriv”.</p>
+as another column “norm_deriv”. The column “MAP” is used to normalize only</p>
+<blockquote>
+<div><p>within an area (consecutive timesteps with equal flag).</p>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns trajectory, timestep, out_param, in_param,
-deriv, ratio_deriv and optionally MAP. On out: Holds another
-column “norm_deriv”</p></li>
-<li><p><strong>flagged</strong> (<em>boolean</em>) – If flagged is true, the column “MAP” is used to normalize only
-within an area (consecutive timesteps with equal flag)</p></li>
-</ul>
+<dd class="field-odd"><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns trajectory, timestep, out_param, in_param,
+deriv, ratio_deriv and MAP. On out: Holds another
+column “norm_deriv”</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="scripts.loader.ratio_deriv">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">ratio_deriv</code><span class="sig-paren">(</span><em class="sig-param">df</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.ratio_deriv" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">ratio_deriv</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">out_param</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.ratio_deriv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a dataframe with columns:
 trajectory, timestep, out_param, in_param, deriv
 where out_param is a string such as ‘p’, ‘T’, ‘w’ etc
@@ -419,8 +424,18 @@ deriv is the float derivative of the given in_param.</p>
 as another column “ratio_deriv”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns trajectory, timestep, out_param, in_param,
-deriv and optionally MAP. On out: Holds additional column ratio_deriv</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns trajectory, timestep, out_param, in_param,
+deriv and optionally MAP.</p></li>
+<li><p><strong>out_param</strong> (<em>String</em>) – Output parameter to calculate the ratio for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataframe with columns trajectory, timestep, out_param, in_param,
+deriv and optionally MAP. Also additional column ratio_deriv</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pandas.Dataframe</p>
 </dd>
 </dl>
 </dd></dl>
@@ -446,7 +461,8 @@ deriv and optionally MAP. On out: Holds additional column ratio_deriv</p>
 <dt id="scripts.loader.transform_df">
 <code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">transform_df</code><span class="sig-paren">(</span><em class="sig-param">df</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.transform_df" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new pandas.DataFrame with column “param”, “timestep”, “deriv”
-that can be used for plotting with seaborn.lineplot.</p>
+that can be used for plotting with seaborn.lineplot.
+Optionally adds columns LONGITUDE, LATITUDE, MAP if available in df.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>df</strong> (<em>pandas.DataFrame</em>) – Dataframe where columns are the names of the parameters.</p>
