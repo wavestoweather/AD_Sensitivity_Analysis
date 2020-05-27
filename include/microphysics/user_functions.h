@@ -620,7 +620,6 @@ void ice_activation_hande(
     float_t &qv_prime,
     float_t &T_prime,
     float_t &ssi,
-    float_t &delta_n_a,
     float_t &n_inact,
     bool &ndiag_mask,
     std::vector<float_t> &res,
@@ -634,11 +633,11 @@ void ice_activation_hande(
         codi::RealReverse ndiag = 0.0;
         if(qc_prime > EPSILON)
         {
-            T_prime = max(T_prime, 237.1501);
-            if(T_prime < 261.15)
+            codi::RealReverse T_tmp = max(T_prime, 237.1501);
+            if(T_tmp < 261.15)
             {
                 ndiag = nim_imm * exp(-alf_imm
-                    * exp(bet_imm*log(T_prime-237.15)));
+                    * exp(bet_imm*log(T_tmp-237.15)));
             }
         } else
         {
@@ -665,7 +664,6 @@ void ice_activation_hande(
         std::cout << "heterogeneous nucleation dqi " << delta_q << ", dNi " << delta_n << "\n";
 #endif
         n_inact += delta_n;
-        delta_n_a = delta_n;
 
         // latent heating and cooling
         codi::RealReverse delta_e = latent_heat_melt(T_prime) * delta_q / specific_heat_ice(T_prime);
@@ -3343,15 +3341,13 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 //     for use in global atmospheric models" by B. Kaercher, J. Hendricks
 //     and U. Lohmann 2006
 
-
-    codi::RealReverse delta_n_a = 0.0;
     bool ndiag_mask = false;
 
     // use_prog_in?
     bool use_prog_in = false;
     if(use_hdcp2_het)
     {
-        ice_activation_hande(qc_prime, qv_prime, T_prime, ssi, delta_n_a,
+        ice_activation_hande(qc_prime, qv_prime, T_prime, ssi,
             n_inact, ndiag_mask, res, cc);
     }  else
     {
