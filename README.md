@@ -54,6 +54,10 @@ C++ Prerequisites
 - [Boost](https://www.boost.org/)
 - [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/)
 
+Optional Prerequisites
+----------------------
+- [GNU Parallel](https://www.gnu.org/software/parallel/)
+
 Jupyter Notebooks
 -----------------
 - **Plot_physics.ipynb:** Plot single microphysical processes with a given range
