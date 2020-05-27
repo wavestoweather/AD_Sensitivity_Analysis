@@ -309,7 +309,7 @@ void ccn_act_hande(
         if(delta_q < 0.0)
             res[lat_cool_idx] += delta_e;
         else
-            res[lat_heat_idx] += delta_q;
+            res[lat_heat_idx] += delta_e;
     }
 }
 
@@ -505,6 +505,12 @@ void ccn_act_seifert(
                     << " or res " << res[Nc_idx]
                     << ", dt " << dt << ", N_max " << N_max << "\n";
 #endif
+        float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
+        // Evaporation
+        if(delta_q < 0.0)
+            res[lat_cool_idx] += delta_e;
+        else
+            res[lat_heat_idx] += delta_e;
     }
 }
 
@@ -3579,7 +3585,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         res[T_idx] = ( 1.0/(1.0 + C3*qv + C4*(qc + qr)) )*( -C5*w + C6*qc_third*(S-1.0)
             + (C7*qr_delta1 + C8*qr_delta2)*min(S-1.0,0.0) );
         res[w_idx] += cc.dw;
-        res[lat_heat_idx] = ( 1.0/(1.0 + C3*qv + C4*(qc + qr)) ) * C6*qc_third*(S-1.0);
+        // res[lat_heat_idx] = ( 1.0/(1.0 + C3*qv + C4*(qc + qr)) ) * C6*qc_third*(S-1.0);
         res[z_idx] += res[w_idx];
     }
     res[S_idx] = (S/p)*res[p_idx] - (S/qv)*( 1.0 - (qv/(C15+qv)) )*( C9*qc_third*(S-1.0)
