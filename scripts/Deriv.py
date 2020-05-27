@@ -92,19 +92,30 @@ class Deriv:
         self.n_timesteps = len(df.index)
         self.cluster_names = {}
 
-    def to_parquet(self, f_name, compression):
+    def to_parquet(self, f_name, compression, add_columns=None, low_memory=False):
         import dask.dataframe as dd
-
-        tmp_df = None
-        for k in self.data:
-            if tmp_df is not None:
-                tmp_df = tmp_df.append(self.data[k], ignore_index=True)
-            else:
+        if low_memory:
+            for k in self.data:
                 tmp_df = self.data[k]
-
-        append = not os.listdir(f_name)
-        append = not append
-        dd.from_pandas(tmp_df, chunksize=3000000).to_parquet(f_name, append=append, ignore_divisions=append, compression=compression)
+                if add_columns is not None:
+                    for col in add_columns:
+                        tmp_df[col] = add_columns[col]
+                append = not os.listdir(f_name)
+                append = not append
+                dd.from_pandas(tmp_df, chunksize=3000000).to_parquet(f_name, append=append, ignore_divisions=append, compression=compression)
+        else:
+            tmp_df = None
+            for k in self.data:
+                if tmp_df is not None:
+                    tmp_df = tmp_df.append(self.data[k], ignore_index=True)
+                else:
+                    tmp_df = self.data[k]
+            if add_columns is not None:
+                for col in add_columns:
+                    tmp_df[col] = add_columns[col]
+            append = not os.listdir(f_name)
+            append = not append
+            dd.from_pandas(tmp_df, chunksize=3000000).to_parquet(f_name, append=append, ignore_divisions=append, compression=compression)
 
     def delete_not_mapped(self):
         """
@@ -206,6 +217,8 @@ class Deriv:
 
         if isinstance(key, str):
             denom = get_max_denom(self.data[key])
+            if denom == 0:
+                return
             for deriv in self.data[key]:
                 if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                     continue
@@ -215,6 +228,8 @@ class Deriv:
             if self.pool is None:
                 for k in self.data.keys():
                     denom = get_max_denom(self.data[k])
+                    if denom == 0:
+                        continue
                     for deriv in self.data[k]:
                         if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                             continue
@@ -222,6 +237,8 @@ class Deriv:
             else:
                 for denom, k in pb( self.pool.starmap(self.parallel_ratio,
                     zip([self.data[k] for k in self.data.keys()], self.data.keys())) ):
+                    if denom == 0:
+                        continue
                     for deriv in self.data[k]:
                         if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                             continue
@@ -230,6 +247,8 @@ class Deriv:
             if self.pool is None:
                 for k in key:
                     denom = get_max_denom(self.data[k])
+                    if denom == 0:
+                        continue
                     for deriv in self.data[k]:
                         if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                             continue
@@ -237,6 +256,8 @@ class Deriv:
             else:
                 for denom, k in pb( self.pool.starmap(self.parallel_ratio,
                     zip([self.data[k] for k in key], key)) ):
+                    if denom == 0:
+                        continue
                     for deriv in self.data[k]:
                         if deriv[0] != 'd' or deriv == "dp2h" or deriv == "depo":
                             continue
