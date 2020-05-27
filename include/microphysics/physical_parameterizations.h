@@ -10,83 +10,9 @@
 
 
 /** @defgroup parametrizations Physical Parametrizations
- * Various functions for physical parametrizations, initializing lookup tables
- * and particle collection constants.
+ * Various functions for physical parametrizations.
  * @{
  */
-
-/**
- * Structure to hold the new equidistant lookup table for
- * graupel wetgrowth diameter
- */
-table_t ltabdminwgg;
-gamma_table_t table_g1, table_g2, table_r1, table_r2, table_r3;
-
-
-/** Init lookup table for the incomplete gamma function.
- * From ICON mo_2mom_mcrph_util.f90 incgfct_lower_lookupcreate
- * Create a lookup-table for the lower incomplete gamma function
- * \f[ \text{int}(0)(x) \exp(-t) t^{a-1} \text{d}t \f]
- * with constant a from x=0 to the 99.5% value of the normalized incomplete
- * gamma function. This 99.5 % - value has been fitted
- * with high accuracy as function of a in the range a in [0;20], but can
- * safely be applied also to higher values of a. (Fit created with the
- * matlab-program "gamma_unvoll_lower_lookup.m" by Ulrich Blahak, 2008/11/13).
- *
- * The last value in the table corresponds to x = infinity, so that
- * during the reconstruction of incgfct-values from the table,
- * the x-value can safely be truncated at the maximum table x-value.
- *
- * @param t Gamma table that shall be initialized.
- * @param nl Number of bins in the table.
- * @param nl_highres Optional number of bins for the high resolution table.
- * @param a Value where the incomplete gamma function shall be interpolated around.
- */
-void init_gamma_table(
-    gamma_table_t &t,
-    const uint64_t &nl,
-    const uint64_t &nl_highres,
-    const double &a)
-{
-
-    const double c1 = 36.629433904824623;
-    const double c2 = -0.119475603955226;
-    const double c3 = 0.339332937820052;
-    const double c4 = 1.156369000458310;
-
-    t.n_bins = nl;
-    t.n_bins_highres = nl_highres;
-    t.a = a;
-
-    t.x.resize(nl);
-    t.x_highres.resize(nl_highres);
-    t.igf.resize(nl);
-    t.igf_highres.resize(nl_highres);
-
-    // Low resolution
-    // maximum x-value (99.5%)
-    t.x[t.n_bins-2] = c1 * (1.0-exp(c2*pow(a, c3))) + c4*a;
-    t.dx = t.x[t.n_bins-2] / (t.n_bins-2.0);
-    t.odx = 1.0/t.dx;
-    for(uint64_t i=0; i<t.n_bins-2; ++i)
-    {
-        t.x[i] = (i-1) * t.dx;
-        t.igf[i] = boost::math::tgamma_lower(a, t.x[i]);
-    }
-    // for x -> infinity:
-    t.x[t.n_bins-1] = (t.n_bins-1)*t.dx;
-    t.igf[t.n_bins-1] = std::tgamma(a);
-
-    // High resolution (lowest 2% of the x-values)
-    t.dx_highres = t.x[std::round(0.01*(t.n_bins-1))] / (t.n_bins_highres - 1.0);
-    t.odx_highres = 1.0/t.dx_highres;
-    for(uint64_t i=0; i<t.n_bins_highres; ++i)
-    {
-        t.x_highres[i] = (i-1) * t.dx_highres;
-        t.igf_highres[i] = boost::math::tgamma_lower(a, t.x_highres[i]);
-    }
-
-}
 
 
 /**
@@ -639,6 +565,24 @@ inline A compute_rhoa(A p,
 
 
 /**
+ * Density of moist air in \f$ \text{kg}/\text{m}^3 \f$.
+ *
+ * @param p Pressure in Pascal
+ * @param T Temperature in Kelvin
+ * @param S Saturation ratio
+ *
+ * @return Density
+ */
+template <class A>
+inline A compute_rhoh(
+    A p,
+    A T,
+    A S)
+{
+    return ( compute_pa(p, T, S)/(Ra*T) + compute_pv(T, S)/(Rv*T) );
+}
+
+/**
  * Convert saturation ratio to water vapor mixing-ratio.
  *
  * @param p Total pressure in Pascal
@@ -1066,66 +1010,6 @@ inline A coll_theta_12(
         / pow(tgamma( tmp4 ), pc2.b_vel);
 }
 
-/**
- * Initialize the constants for the particle collection using
- * Seifert & Beheng (2006) Eq. 90-93. This function is for all collections
- * except snow - rain and ice - rain collection.
- *
- * @param pc1 Model constants for a particle type that is being collected
- * @param pc2 Model constants for a particle type that collects
- * @param c Model constants for particle collection
- */
-void init_particle_collection_1(
-    particle_model_constants_t &pc1,
-    particle_model_constants_t &pc2,
-    collection_model_constants_t &c)
-{
-    c.delta_n_aa = coll_delta_11(pc1, pc2, 0);
-    c.delta_n_ab = coll_delta_12(pc1, pc2, 0);
-    c.delta_n_bb = coll_delta_22(pc1, pc2, 0);
-    c.delta_q_aa = coll_delta_11(pc1, pc2, 0);
-    c.delta_q_ab = coll_delta_12(pc1, pc2, 1);
-    c.delta_q_bb = coll_delta_22(pc1, pc2, 1);
-
-    c.theta_n_aa = coll_theta_11(pc1, pc2, 0);
-    c.theta_n_ab = coll_theta_12(pc1, pc2, 0);
-    c.theta_n_bb = coll_theta_22(pc1, pc2, 0);
-    c.theta_q_aa = coll_theta_11(pc1, pc2, 0);
-    c.theta_q_ab = coll_theta_12(pc1, pc2, 1);
-    c.theta_q_bb = coll_theta_22(pc1, pc2, 1);
-}
-
-/**
- * Initialize the constants for the particle collection using
- * Seifert & Beheng (2006) Eq. 90-93. This function is for snow - rain and
- * ice - rain collection.
- *
- * @param pc1 Model constants for a particle type that is being collected
- * @param pc2 Model constants for a particle type that collects
- * @param c Model constants for particle collection
- */
-void init_particle_collection_2(
-    particle_model_constants_t &pc1,
-    particle_model_constants_t &pc2,
-    collection_model_constants_t &c)
-{
-    c.delta_n_aa = coll_delta_11(pc1, pc2, 0);
-    c.delta_n_ab = coll_delta_12(pc1, pc2, 0);
-    c.delta_n_bb = coll_delta_22(pc1, pc2, 0);
-    c.delta_q_aa = coll_delta_11(pc1, pc2, 1);
-    c.delta_q_ab = coll_delta_12(pc1, pc2, 1);
-    c.delta_q_ba = coll_delta_12(pc2, pc1, 1);
-    c.delta_q_bb = coll_delta_22(pc1, pc2, 1);
-
-    c.theta_n_aa = coll_theta_11(pc1, pc2, 0);
-    c.theta_n_ab = coll_theta_12(pc1, pc2, 0);
-    c.theta_n_bb = coll_theta_22(pc1, pc2, 0);
-    c.theta_q_aa = coll_theta_11(pc1, pc2, 1);
-    c.theta_q_ab = coll_theta_12(pc1, pc2, 1);
-    c.theta_q_ba = coll_theta_12(pc2, pc1, 1);
-    c.theta_q_bb = coll_theta_22(pc1, pc2, 1);
-}
-
 
 /**
  * Calculate the model constant \f$a_f = \overline{a}_{\text{vent},n}\f$ of a particle model that is used
@@ -1248,6 +1132,441 @@ void setCoefficients(
   cc.d_prime = cc.d_scale;	// Constant coefficient
 }
 
+
+
+/**
+ * Setup the cloud autoconversion parameters.
+ *
+ * @param pc Model constants for a certain particle type.
+ */
+void setup_cloud_autoconversion(
+    particle_model_constants_t &pc)
+{
+    auto nu = pc.nu + 1.0;
+    auto mu = pc.mu;
+    if(pc.mu == 1.0)
+    {
+        cloud_k_au = kc_autocon / pc.max_x * 0.05
+            * (nu+1.0)*(nu+3.0) / pow(nu, 2);
+        cloud_k_sc = kc_autocon * (nu+1.0)/(nu);
+    } else
+    {
+        cloud_k_au = kc_autocon / pc.max_x * 0.05
+            * (2.0 * tgamma((nu+3.0)/mu)
+            * tgamma((nu+1.0)/mu) * pow(tgamma((nu)/mu), 2)
+            - 1.0 * pow(tgamma((nu+2.0)/mu), 2) * pow(tgamma((nu)/mu), 2))
+            / pow(tgamma((nu+1.0)/mu), 4);
+        cloud_k_sc = kc_autocon * pc.c_z;
+    }
+}
+
+/**
+ * Setup for bulk sedimentation velocity.
+ *
+ * @param pc Model constants for a certain particle type.
+ */
+void setup_bulk_sedi(
+    particle_model_constants_t &pc)
+{
+    pc.alfa_n = pc.a_vel * tgamma( (pc.nu+pc.b_vel+1.0)/pc.mu )
+        / tgamma( (pc.nu+1.0)/pc.mu);
+    pc.alfa_q = pc.a_vel * tgamma( (pc.nu+pc.b_vel+2.0)/pc.mu )
+        / tgamma( (pc.nu+2.0)/pc.mu );
+    pc.lambda = tgamma( (pc.nu+1.0)/pc.mu )
+        / tgamma( (pc.nu+2.0)/pc.mu );
+}
+
+/**
+ * Initialize the constants for the particle collection using
+ * Seifert & Beheng (2006) Eq. 90-93. This function is for all collections
+ * except snow - rain and ice - rain collection.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param pc2 Model constants for a particle type that collects
+ * @param c Model constants for particle collection
+ */
+void init_particle_collection_1(
+    particle_model_constants_t &pc1,
+    particle_model_constants_t &pc2,
+    collection_model_constants_t &c)
+{
+    c.delta_n_aa = coll_delta_11(pc1, pc2, 0);
+    c.delta_n_ab = coll_delta_12(pc1, pc2, 0);
+    c.delta_n_bb = coll_delta_22(pc1, pc2, 0);
+    c.delta_q_aa = coll_delta_11(pc1, pc2, 0);
+    c.delta_q_ab = coll_delta_12(pc1, pc2, 1);
+    c.delta_q_bb = coll_delta_22(pc1, pc2, 1);
+
+    c.theta_n_aa = coll_theta_11(pc1, pc2, 0);
+    c.theta_n_ab = coll_theta_12(pc1, pc2, 0);
+    c.theta_n_bb = coll_theta_22(pc1, pc2, 0);
+    c.theta_q_aa = coll_theta_11(pc1, pc2, 0);
+    c.theta_q_ab = coll_theta_12(pc1, pc2, 1);
+    c.theta_q_bb = coll_theta_22(pc1, pc2, 1);
+}
+
+
+/**
+ * Initialize the constants for the particle collection using
+ * Seifert & Beheng (2006) Eq. 90-93. This function is for snow - rain and
+ * ice - rain collection.
+ *
+ * @param pc1 Model constants for a particle type that is being collected
+ * @param pc2 Model constants for a particle type that collects
+ * @param c Model constants for particle collection
+ */
+void init_particle_collection_2(
+    particle_model_constants_t &pc1,
+    particle_model_constants_t &pc2,
+    collection_model_constants_t &c)
+{
+    c.delta_n_aa = coll_delta_11(pc1, pc2, 0);
+    c.delta_n_ab = coll_delta_12(pc1, pc2, 0);
+    c.delta_n_bb = coll_delta_22(pc1, pc2, 0);
+    c.delta_q_aa = coll_delta_11(pc1, pc2, 1);
+    c.delta_q_ab = coll_delta_12(pc1, pc2, 1);
+    c.delta_q_ba = coll_delta_12(pc2, pc1, 1);
+    c.delta_q_bb = coll_delta_22(pc1, pc2, 1);
+
+    c.theta_n_aa = coll_theta_11(pc1, pc2, 0);
+    c.theta_n_ab = coll_theta_12(pc1, pc2, 0);
+    c.theta_n_bb = coll_theta_22(pc1, pc2, 0);
+    c.theta_q_aa = coll_theta_11(pc1, pc2, 1);
+    c.theta_q_ab = coll_theta_12(pc1, pc2, 1);
+    c.theta_q_ba = coll_theta_12(pc2, pc1, 1);
+    c.theta_q_bb = coll_theta_22(pc1, pc2, 1);
+}
+
+
+/**
+ * Setup model constants and gamma tables.
+ */
+void setup_model_constants(
+      input_parameters_t &input,
+      model_constants_t &cc,
+      reference_quantities_t &ref_quant)
+  {
+      // Scaling factor from input
+    cc.scaling_fact = input.scaling_fact;
+
+    // Accomodation coefficient
+    cc.alpha_d = 1.0;
+
+
+    // // Performance constants for warm cloud; COSMO
+    cc.a1_scale = 1.0e-3;
+    cc.a2_scale = 1.72 / pow(Ra , 7./8.);
+    cc.e1_scale = 1.0 / sqrt(Ra);
+    cc.e2_scale = 9.1 / pow(Ra , 11./16.);
+    cc.d_scale = ( 130.0*tgamma(4.5) )/( 6.0*(1.0e3)*pow(M_PI*(8.0e6)*Ra , 1.0/8.0) );
+
+    // Performance constants for warm cloud; IFS
+    // The file constants.h also defines some constants as nar, ...
+    const double Nc = 50; 	// 50 over ocean; 300 over land
+    const double F_aut = 1.5;
+    const double F_acc = 2.0;
+    const double lambdar_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alphar);
+
+    // cc.a1_scale = (1350. * F_aut)/pow(Nc , 1.79);
+    // cc.a2_scale = 67.0 * F_acc;
+    // cc.e1_scale = 2.0 * M_PI * cc.nar * ( (0.78 * tgamma(2.0 - cc.nbr))/(lambdar_pp*lambdar_pp) );
+    // cc.e2_scale = cc.scaling_fact * 2.0 * M_PI * cc.nar * 0.31
+    //     * pow(cc.cr/cc.mu, 0.5) * pow(cc.Sc, 1.0/3.0) * pow(cc.rho0, 0.25)
+    //     * (tgamma(cc.epsilonr + cc.nbr)/pow(lambdar_pp ,cc.epsilonr));
+    // cc.d_scale = 4.0e-3;
+
+    // Inflow from above
+    cc.B_prime = 0.0; //1.0e-7;
+
+    // // Exponents of the cloud model
+    // // COSMO
+    cc.gamma = 1.0;
+    cc.betac = 1.0;
+    cc.betar = 7./8.;
+    cc.delta1 = 0.5;
+    cc.delta2 = 11./16.;
+    cc.zeta = 9./8.;
+
+    // Exponents of the cloud model
+    // IFS
+    // cc.gamma = 2.47;
+    // cc.betac = 1.15;
+    // cc.betar = 1.15;
+    // cc.delta1 = 2.0/( cc.br + 1.0 - cc.nbr );
+    // cc.delta2 = ( 0.5*cc.dr + 2.5 - cc.nbr )/( cc.br + 1.0 - cc.nbr );
+    // cc.zeta = 1.0;
+
+    // Numerics
+    cc.t_end_prime = input.t_end_prime;
+    cc.t_end = input.t_end_prime/ref_quant.tref;
+    // Time of the substeps
+
+    cc.dt = input.dt_prime/ref_quant.tref;
+    cc.dt_prime = input.dt_prime;
+    cc.dt_traject_prime = cc.dt_traject * ref_quant.tref;
+    // The trajectories are calculated with 20 s timesteps.
+    cc.num_sub_steps = (floor( 20.0/cc.dt ) < 1) ? 1 : floor( 20.0/cc.dt );
+
+    cc.snapshot_index = input.snapshot_index;
+    // Evaluate the general performance constants
+    cc.dt_half = cc.dt*0.5;
+    cc.dt_third = cc.dt/3.0;
+    cc.dt_sixth = cc.dt/6.0;
+
+    // ==================================================
+    // Set rain constants
+    // See init_2mom_scheme_once in mo_2mom_mcrph_main.f90
+    // ==================================================
+    // Cosmo5 although nue1nue1 would be okay too, I guess
+    //// Cloud
+    cc.cloud.nu = 0.0;
+    cc.cloud.mu = 1.0/3.0;
+    cc.cloud.max_x = 2.6e-10;
+    cc.cloud.min_x = 4.2e-15;
+    cc.cloud.min_x_act = 4.2e-15;
+    cc.cloud.min_x_nuc_homo = 4.2e-15;
+    cc.cloud.min_x_nuc_hetero = 4.2e-15;
+    cc.cloud.min_x_melt = 4.2e-15;
+    cc.cloud.min_x_evap = 4.2e-15;
+    cc.cloud.min_x_freezing = 4.2e-15;
+    cc.cloud.min_x_depo = 4.2e-15;
+    cc.cloud.min_x_collision = 4.2e-15;
+    cc.cloud.min_x_collection = 4.2e-15;
+    cc.cloud.min_x_conversion = 4.2e-15;
+    cc.cloud.min_x_sedimentation = 4.2e-15;
+    cc.cloud.a_geo = 1.24e-1;
+    cc.cloud.b_geo = 0.333333;
+    cc.cloud.a_vel = 3.75e5;
+    cc.cloud.b_vel = 0.666667;
+    cc.cloud.a_ven = 0.78;
+    cc.cloud.b_ven = 0.308;
+    cc.cloud.cap = 2.0;
+    cc.cloud.vsedi_max = 1.0;
+    cc.cloud.vsedi_min = 0.0;
+    cc.cloud.c_s = 1.0 / cc.cloud.cap;
+    cc.cloud.a_f = vent_coeff_a(cc.cloud, 1);
+    cc.cloud.b_f = vent_coeff_b(cc.cloud, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.cloud.c_z = moment_gamma(cc.cloud, 2);
+
+    setup_cloud_autoconversion(cc.cloud);
+    setup_bulk_sedi(cc.cloud);
+
+    //// Rain
+    cc.rain.nu = 0.0;
+    cc.rain.mu = 0.333333;
+    cc.rain.max_x = 3.0e-6;
+    cc.rain.min_x = 2.6e-10;
+    cc.rain.min_x_act = 2.6e-10;
+    cc.rain.min_x_nuc_homo = 2.6e-10;
+    cc.rain.min_x_nuc_hetero = 2.6e-10;
+    cc.rain.min_x_melt = 2.6e-10;
+    cc.rain.min_x_evap = 2.6e-10;
+    cc.rain.min_x_freezing = 2.6e-10;
+    cc.rain.min_x_depo = 2.6e-10;
+    cc.rain.min_x_collision = 2.6e-10;
+    cc.rain.min_x_collection = 2.6e-10;
+    cc.rain.min_x_conversion = 2.6e-10;
+    cc.rain.min_x_sedimentation = 2.6e-10;
+    cc.rain.a_geo = 1.24e-1;
+    cc.rain.b_geo = 0.333333;
+    cc.rain.a_vel = 114.0137;
+    cc.rain.b_vel = 0.234370;
+    cc.rain.cap = 2.0;
+
+    // From rainSBBcoeffs
+    cc.rain.alpha = 9.292;
+    cc.rain.beta = 9.623;
+    cc.rain.gamma = 6.222e2;
+    cc.rain.cmu0 = 6.0;
+    cc.rain.cmu1 = 3.0e1;
+    cc.rain.cmu2 = 1.0e3;
+    cc.rain.cmu3 = 1.1e-3;
+    cc.rain.cmu4 = 1.0;
+    cc.rain.cmu5 = 2.0;
+    rain_gfak = 1.0;
+
+    cc.rain.nm1 = (cc.rain.nu+1.0)/cc.rain.mu;
+    cc.rain.nm2 = (cc.rain.nu+2.0)/cc.rain.mu;
+    cc.rain.nm3 = (cc.rain.nu+3.0)/cc.rain.mu;
+    cc.rain.vsedi_max = 20.0;
+    cc.rain.vsedi_min = 0.1;
+    table_r1.init_gamma_table(n_lookup, n_lookup_hr_dummy, cc.rain.nm1.getValue());
+    table_r2.init_gamma_table(n_lookup, n_lookup_hr_dummy, cc.rain.nm2.getValue());
+    table_r3.init_gamma_table(n_lookup, n_lookup_hr_dummy, cc.rain.nm3.getValue());
+    cc.rain.g1 = table_r1.igf[table_r1.n_bins-1];
+    cc.rain.g2 = table_r2.igf[table_r2.n_bins-1];
+    cc.rain.c_s = 1.0 / cc.rain.cap;
+    cc.rain.a_f = vent_coeff_a(cc.rain, 1);
+    cc.rain.b_f = vent_coeff_b(cc.rain, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.rain.c_z = moment_gamma(cc.rain, 2);
+    setup_bulk_sedi(cc.rain);
+
+    //// Graupel
+    cc.graupel.nu = 1.0;
+    cc.graupel.mu = 1.0/3.0; // Not used actually?
+    cc.graupel.max_x = 5.0e-4;
+    cc.graupel.min_x = 1.0e-9;
+    cc.graupel.min_x_act = 1.0e-9;
+    cc.graupel.min_x_nuc_homo = 1.0e-9;
+    cc.graupel.min_x_nuc_hetero = 1.0e-9;
+    cc.graupel.min_x_melt = 1.0e-9;
+    cc.graupel.min_x_evap = 1.0e-9;
+    cc.graupel.min_x_freezing = 1.0e-9;
+    cc.graupel.min_x_depo = 1.0e-9;
+    cc.graupel.min_x_collision = 1.0e-9;
+    cc.graupel.min_x_collection = 1.0e-9;
+    cc.graupel.min_x_conversion = 1.0e-9;
+    cc.graupel.min_x_sedimentation = 1.0e-9;
+    cc.graupel.a_geo = 1.42e-1;
+    cc.graupel.b_geo = 0.314;
+    cc.graupel.a_vel = 86.89371;
+    cc.graupel.b_vel = 0.268325;
+    cc.graupel.a_ven = 0.78;
+    cc.graupel.b_ven = 0.308;
+    cc.graupel.cap = 2.0;
+    cc.graupel.vsedi_max = 30.0;
+    cc.graupel.vsedi_min = 0.1;
+    cc.graupel.sc_coll_n = 1.0;
+    cc.graupel.d_crit_c = 100.0e-6;
+    cc.graupel.q_crit_c = 1.0e-6;
+    cc.graupel.s_vel = 0.0;
+
+    cc.graupel.nm1 = (cc.graupel.nu+1.0)/cc.graupel.mu;
+    cc.graupel.nm2 = (cc.graupel.nu+2.0)/cc.graupel.mu;
+    codi::RealReverse a = (cc.graupel.nu+1.0)/cc.graupel.mu;
+    table_g1.init_gamma_table(n_lookup, n_lookup_hr_dummy, cc.graupel.nm1.getValue());
+    a = (cc.graupel.nu+2.0)/cc.graupel.mu;
+    table_g2.init_gamma_table(n_lookup, n_lookup_hr_dummy, cc.graupel.nm2.getValue());
+    cc.graupel.g1 = table_g1.igf[table_g1.n_bins-1];
+    cc.graupel.g2 = table_g2.igf[table_g2.n_bins-1];
+    cc.graupel.c_s = 1.0 / cc.graupel.cap;
+    cc.graupel.a_f = vent_coeff_a(cc.graupel, 1);
+    cc.graupel.b_f = vent_coeff_b(cc.graupel, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.graupel.c_z = moment_gamma(cc.graupel, 2);
+    setup_bulk_sedi(cc.graupel);
+
+    //// Hail
+    cc.hail.nu = 1.0;
+    cc.hail.mu = 1.0/3.0; // Not used actually?
+    cc.hail.max_x = 5.0e-4;
+    cc.hail.min_x = 2.6e-9;
+    cc.hail.min_x_act= 2.6e-9;
+    cc.hail.min_x_nuc_homo = 2.6e-9;
+    cc.hail.min_x_nuc_hetero = 2.6e-9;
+    cc.hail.min_x_melt = 2.6e-9;
+    cc.hail.min_x_evap = 2.6e-9;
+    cc.hail.min_x_freezing = 2.6e-9;
+    cc.hail.min_x_depo = 2.6e-9;
+    cc.hail.min_x_collision = 2.6e-9;
+    cc.hail.min_x_collection = 2.6e-9;
+    cc.hail.min_x_conversion = 2.6e-9;
+    cc.hail.min_x_sedimentation = 2.6e-9;
+    cc.hail.a_geo = 0.1366;
+    cc.hail.b_geo = 1.0/3.0;
+    cc.hail.a_vel = 39.3;
+    cc.hail.b_vel = 0.166667;
+    cc.hail.a_ven = 0.78;
+    cc.hail.b_ven = 0.308;
+    cc.hail.cap = 2.0;
+    cc.hail.vsedi_max = 30.0;
+    cc.hail.vsedi_min = 0.1;
+    cc.hail.sc_coll_n = 1.0;
+    cc.hail.d_crit_c = 100.0e-6;
+    cc.hail.q_crit_c = 1.0e-6;
+    cc.hail.s_vel = 0.0;
+    cc.hail.c_s = 1.0 / cc.hail.cap;
+    cc.hail.ecoll_c = 1.0;
+    cc.hail.a_f = vent_coeff_a(cc.hail, 1);
+    cc.hail.b_f = vent_coeff_b(cc.hail, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.hail.c_z = moment_gamma(cc.hail, 2);
+    setup_bulk_sedi(cc.hail);
+
+    //// Ice
+    cc.ice.nu = 0.0;
+    cc.ice.mu = 1.0/3.0; // Not used actually?
+    cc.ice.max_x = 1.0e-5;
+    cc.ice.min_x = 1.0e-12;
+    cc.ice.min_x_act = 1.0e-12;
+    cc.ice.min_x_nuc_homo = 1.0e-12;
+    cc.ice.min_x_nuc_hetero = 1.0e-12;
+    cc.ice.min_x_melt = 1.0e-12;
+    cc.ice.min_x_evap = 1.0e-12;
+    cc.ice.min_x_freezing = 1.0e-12;
+    cc.ice.min_x_depo = 1.0e-12;
+    cc.ice.min_x_collision = 1.0e-12;
+    cc.ice.min_x_collection = 1.0e-12;
+    cc.ice.min_x_conversion = 1.0e-12;
+    cc.ice.min_x_sedimentation = 1.0e-12;
+    cc.ice.a_geo = 0.835;
+    cc.ice.b_geo = 0.39;
+    cc.ice.a_vel = 2.77e1;
+    cc.ice.b_vel = 0.21579;
+    cc.ice.a_ven = 0.78;
+    cc.ice.b_ven = 0.308;
+    cc.ice.cap = 2.0;
+    cc.ice.vsedi_max = 3.0;
+    cc.ice.vsedi_min = 0.0;
+    cc.ice.sc_coll_n = 0.8;
+    cc.ice.d_crit_c = 150.0e-6;
+    cc.ice.q_crit_c = 1.0e-5;
+    cc.ice.s_vel = 0.05;
+    cc.ice.c_s = 1.0 / cc.ice.cap;
+    cc.ice.ecoll_c = 0.80;
+    cc.ice.a_f = vent_coeff_a(cc.ice, 1);
+    cc.ice.b_f = vent_coeff_b(cc.ice, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.ice.c_z = moment_gamma(cc.ice, 2);
+    setup_bulk_sedi(cc.ice);
+
+    //// Snow
+    cc.snow.nu = 0.0;
+    cc.snow.mu = 0.5; // Not used actually?
+    cc.snow.max_x = 2.0e-5;
+    cc.snow.min_x = 1.0e-10;
+    cc.snow.min_x_act = 1.0e-10;
+    cc.snow.min_x_nuc_homo = 1.0e-10;
+    cc.snow.min_x_nuc_hetero = 1.0e-10;
+    cc.snow.min_x_melt = 1.0e-10;
+    cc.snow.min_x_evap = 1.0e-10;
+    cc.snow.min_x_freezing = 1.0e-10;
+    cc.snow.min_x_depo = 1.0e-10;
+    cc.snow.min_x_collision = 1.0e-10;
+    cc.snow.min_x_collection = 1.0e-10;
+    cc.snow.min_x_conversion = 1.0e-10;
+    cc.snow.min_x_sedimentation = 1.0e-10;
+    cc.snow.a_geo = 2.4;
+    cc.snow.b_geo = 0.455;
+    cc.snow.a_vel = 8.8;
+    cc.snow.b_vel = 0.15;
+    cc.snow.a_ven = 0.78;
+    cc.snow.b_ven = 0.308;
+    cc.snow.cap = 2.0;
+    cc.snow.vsedi_max = 3.0;
+    cc.snow.vsedi_min = 0.1;
+    cc.snow.sc_coll_n = 0.8;
+    cc.snow.d_crit_c = 150.0e-6;
+    cc.snow.q_crit_c = 1.0e-5;
+    cc.snow.s_vel = 0.25;
+    cc.snow.c_s = 1.0 / cc.snow.cap;
+    cc.snow.ecoll_c = 0.80;
+    cc.snow.a_f = vent_coeff_a(cc.snow, 1);
+    cc.snow.b_f = vent_coeff_b(cc.snow, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.snow.c_z = moment_gamma(cc.snow, 2);
+    setup_bulk_sedi(cc.snow);
+
+    init_particle_collection_1(cc.snow, cc.cloud, cc.coeffs_scr);
+    init_particle_collection_2(cc.snow, cc.rain, cc.coeffs_srr);
+    init_particle_collection_2(cc.ice, cc.rain, cc.coeffs_irr);
+    init_particle_collection_1(cc.ice, cc.cloud, cc.coeffs_icr);
+    init_particle_collection_1(cc.hail, cc.rain, cc.coeffs_hrr);
+    init_particle_collection_1(cc.graupel, cc.rain, cc.coeffs_grr);
+    init_particle_collection_1(cc.hail, cc.cloud, cc.coeffs_hcr);
+    init_particle_collection_1(cc.graupel, cc.cloud, cc.coeffs_gcr);
+    init_particle_collection_1(cc.snow, cc.ice, cc.coeffs_sic);
+    init_particle_collection_1(cc.hail, cc.ice, cc.coeffs_hic);
+    init_particle_collection_1(cc.graupel, cc.ice, cc.coeffs_gic);
+    init_particle_collection_1(cc.hail, cc.snow, cc.coeffs_hsc);
+    init_particle_collection_1(cc.graupel, cc.snow, cc.coeffs_gsc);
+}
 
 /** @} */ // end of group parametrizations
 

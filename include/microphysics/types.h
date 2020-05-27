@@ -1,6 +1,8 @@
 #pragma once
 #include "codi.hpp"
 #include <netcdf>
+#include <boost/math/special_functions/gamma.hpp>
+
 using namespace netCDF;
 
 
@@ -49,7 +51,19 @@ struct particle_model_constants_t{
      * *Should* be the same as min_x but is used to distinguish the
      * influence of those processes.
      */
-    codi::RealReverse min_x_nuc;
+    codi::RealReverse min_x_nuc_homo;
+
+    codi::RealReverse min_x_nuc_hetero;
+    codi::RealReverse min_x_melt;
+    codi::RealReverse min_x_evap;
+    codi::RealReverse min_x_freezing;
+    codi::RealReverse min_x_depo;
+    codi::RealReverse min_x_collision;
+    codi::RealReverse min_x_collection;
+    codi::RealReverse min_x_conversion;
+    codi::RealReverse min_x_sedimentation;
+    codi::RealReverse min_x_riming;
+
     codi::RealReverse max_x;
     codi::RealReverse sc_theta_q;   /*!< For snow collision. */
     codi::RealReverse sc_delta_q;
@@ -97,7 +111,17 @@ struct particle_model_constants_t{
         tape.registerInput(this->b_geo);
         tape.registerInput(this->min_x);
         tape.registerInput(this->min_x_act);
-        tape.registerInput(this->min_x_nuc);
+        tape.registerInput(this->min_x_nuc_homo);
+        tape.registerInput(this->min_x_nuc_hetero);
+        tape.registerInput(this->min_x_melt);
+        tape.registerInput(this->min_x_evap);
+        tape.registerInput(this->min_x_freezing);
+        tape.registerInput(this->min_x_depo);
+        tape.registerInput(this->min_x_collision);
+        tape.registerInput(this->min_x_collection);
+        tape.registerInput(this->min_x_conversion);
+        tape.registerInput(this->min_x_sedimentation);
+        tape.registerInput(this->min_x_riming);
         tape.registerInput(this->max_x);
         tape.registerInput(this->sc_theta_q);
         tape.registerInput(this->sc_delta_q);
@@ -159,7 +183,27 @@ struct particle_model_constants_t{
         idx++;
         out_vec[idx] = this->min_x_act.getGradient();
         idx++;
-        out_vec[idx] = this->min_x_nuc.getGradient();
+        out_vec[idx] = this->min_x_nuc_homo.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_nuc_hetero.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_melt.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_evap.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_freezing.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_depo.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_collision.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_collection.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_conversion.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_sedimentation.getGradient();
+        idx++;
+        out_vec[idx] = this->min_x_riming.getGradient();
         idx++;
         out_vec[idx] = this->max_x.getGradient();
         idx++;
@@ -323,6 +367,8 @@ struct table_t{
     {
         return table[i*n3*n2*n1 + j*n2*n1 + k*n1 + l];
     }
+
+
 };
 
 
@@ -374,6 +420,66 @@ struct gamma_table_t{
         uint64_t iu = std::min((uint64_t) tmp, this->n_bins-2);
         uint64_t io = iu + 1;
         return this->igf[iu] + (this->igf[io] - this->igf[iu]) * this->odx*(xt-this->x[iu]);
+    }
+
+    /** Init lookup table for the incomplete gamma function.
+     * From ICON mo_2mom_mcrph_util.f90 incgfct_lower_lookupcreate
+     * Create a lookup-table for the lower incomplete gamma function
+     * \f[ \text{int}(0)(x) \exp(-t) t^{a-1} \text{d}t \f]
+     * with constant a from x=0 to the 99.5% value of the normalized incomplete
+     * gamma function. This 99.5 % - value has been fitted
+     * with high accuracy as function of a in the range a in [0;20], but can
+     * safely be applied also to higher values of a. (Fit created with the
+     * matlab-program "gamma_unvoll_lower_lookup.m" by Ulrich Blahak, 2008/11/13).
+     *
+     * The last value in the table corresponds to x = infinity, so that
+     * during the reconstruction of incgfct-values from the table,
+     * the x-value can safely be truncated at the maximum table x-value.
+     *
+     * @param nl Number of bins in the table.
+     * @param nl_highres Optional number of bins for the high resolution table.
+     * @param a Value where the incomplete gamma function shall be interpolated around.
+     */
+    void init_gamma_table(
+        const uint64_t &nl,
+        const uint64_t &nl_highres,
+        const double &a)
+    {
+        const double c1 = 36.629433904824623;
+        const double c2 = -0.119475603955226;
+        const double c3 = 0.339332937820052;
+        const double c4 = 1.156369000458310;
+
+        n_bins = nl;
+        n_bins_highres = nl_highres;
+
+        x.resize(nl);
+        x_highres.resize(nl_highres);
+        igf.resize(nl);
+        igf_highres.resize(nl_highres);
+
+        // Low resolution
+        // maximum x-value (99.5%)
+        x[n_bins-2] = c1 * (1.0-exp(c2*pow(a, c3))) + c4*a;
+        dx = x[n_bins-2] / (n_bins-2.0);
+        odx = 1.0/dx;
+        for(uint64_t i=0; i<n_bins-2; ++i)
+        {
+            x[i] = (i-1) * dx;
+            igf[i] = boost::math::tgamma_lower(a, x[i]);
+        }
+        // for x -> infinity:
+        x[n_bins-1] = (n_bins-1)*dx;
+        igf[n_bins-1] = std::tgamma(a);
+
+        // High resolution (lowest 2% of the x-values)
+        dx_highres = x[std::round(0.01*(n_bins-1))] / (n_bins_highres - 1.0);
+        odx_highres = 1.0/dx_highres;
+        for(uint64_t i=0; i<n_bins_highres; ++i)
+        {
+            x_highres[i] = (i-1) * dx_highres;
+            igf_highres[i] = boost::math::tgamma_lower(a, x_highres[i]);
+        }
     }
 };
 
@@ -505,6 +611,11 @@ struct model_constants_t{
    */
   uint64_t snapshot_index;
 
+  /**
+   * Number of simulation steps before a snapshot shall stored on disk.
+   */
+  uint64_t write_index;
+
   //
   // General performance constants
   //
@@ -532,6 +643,7 @@ struct model_constants_t{
   const double epsilonr = 0.5*dr + 2.5 - nbr;   /*!< Constants for the IFS model. */
 
   double scaling_fact; /*!< Scaling factor. */
+
 };
 
 
@@ -546,16 +658,17 @@ struct nc_parameters_t{
     double  t, p, time_rel,
             qc, qr, qi, qs, qg, qv, S, dw, dlat, dlon,
             QIin, QSin, QRin, QGin, QIout, QSout, QRout, QGout,
-            NIin, NSin, NRin, NGin, NIout, NSout, NRout, NGout, dp2h,
+            NIin, NSin, NRin, NGin, NIout, NSout, NRout, NGout,
             Nc, Nr, Ni, Ns, Ng;
-    bool ascent_flag;
+    bool ascent_flag, conv_400, conv_600, slan_400, slan_600, dp2h;
     NcVar   lat_var, lon_var, z_var, t_var, p_var, w_var, time_rel_var,
             qc_var, qr_var, qi_var, qs_var, qg_var, qv_var, S_var,
             QIin_var, QSin_var, QRin_var, QGin_var, QIout_var, QSout_var,
             QRout_var, QGout_var, ascent_flag_var,
             NIin_var, NSin_var, NRin_var, NGin_var, NIout_var, NSout_var,
             NRout_var, NGout_var, dp2h_var,
-            Nc_var, Nr_var, Ni_var, Ns_var, Ng_var;
+            Nc_var, Nr_var, Ni_var, Ns_var, Ng_var,
+            conv_400_var, conv_600_var, slan_400_var, slan_600_var;
 };
 
 
@@ -593,6 +706,9 @@ struct global_args_t{
 
   int traj_flag; /*!< Trajectory to use specified? */
   char* traj_string;
+
+  int write_flag; /*!< Snapshot is flushed every x iterations. */
+  char* write_string;
 };
 
 
@@ -623,6 +739,7 @@ struct input_parameters_t{
 
   uint32_t auto_type; /*!< Particle type. */
   uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
+  uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
 };
 
 /** @} */ // end of group types

@@ -80,6 +80,7 @@ int main(int argc, char** argv)
     }else
     {
         opt = getopt(argc, argv, optString);
+
         while(-1 != opt)
         {
             switch(opt)
@@ -144,6 +145,12 @@ int main(int argc, char** argv)
                     global_args.traj_string = optarg;
                     break;
                 }
+                case 'w':
+                {
+                    global_args.write_flag = 1;
+                    global_args.write_string = optarg;
+                    break;
+                }
                 case '?':
                 {
                     need_to_abort = true;
@@ -171,9 +178,8 @@ int main(int argc, char** argv)
     set_input_from_arguments(global_args, input);
     auto_type = input.auto_type;
     load_lookup_table(ltabdminwgg);
-    const uint64_t n_lookup = 2000;
-    const uint64_t n_lookup_highres = 10000;
-    const uint64_t n_lookup_hr_dummy = 10;
+
+    int traj_id;
 
     // ==================================================
     // Define the reference quantities
@@ -200,269 +206,8 @@ int main(int argc, char** argv)
     // Setup the model constants
     // ==================================================
     model_constants_t cc;
+    setup_model_constants(input, cc, ref_quant);
 
-    // Scaling factor from input
-    cc.scaling_fact = input.scaling_fact;
-
-    // Accomodation coefficient
-    cc.alpha_d = 1.0;
-
-
-    // // Performance constants for warm cloud; COSMO
-    cc.a1_scale = 1.0e-3;
-    cc.a2_scale = 1.72 / pow(Ra , 7./8.);
-    cc.e1_scale = 1.0 / sqrt(Ra);
-    cc.e2_scale = 9.1 / pow(Ra , 11./16.);
-    cc.d_scale = ( 130.0*tgamma(4.5) )/( 6.0*(1.0e3)*pow(M_PI*(8.0e6)*Ra , 1.0/8.0) );
-
-    // Performance constants for warm cloud; IFS
-    // The file constants.h also defines some constants as nar, ...
-    const double Nc = 50; 	// 50 over ocean; 300 over land
-    const double F_aut = 1.5;
-    const double F_acc = 2.0;
-    const double lambdar_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alphar);
-
-    // cc.a1_scale = (1350. * F_aut)/pow(Nc , 1.79);
-    // cc.a2_scale = 67.0 * F_acc;
-    // cc.e1_scale = 2.0 * M_PI * cc.nar * ( (0.78 * tgamma(2.0 - cc.nbr))/(lambdar_pp*lambdar_pp) );
-    // cc.e2_scale = cc.scaling_fact * 2.0 * M_PI * cc.nar * 0.31
-    //     * pow(cc.cr/cc.mu, 0.5) * pow(cc.Sc, 1.0/3.0) * pow(cc.rho0, 0.25)
-    //     * (tgamma(cc.epsilonr + cc.nbr)/pow(lambdar_pp ,cc.epsilonr));
-    // cc.d_scale = 4.0e-3;
-
-    // Inflow from above
-    cc.B_prime = 0.0; //1.0e-7;
-
-    // // Exponents of the cloud model
-    // // COSMO
-    cc.gamma = 1.0;
-    cc.betac = 1.0;
-    cc.betar = 7./8.;
-    cc.delta1 = 0.5;
-    cc.delta2 = 11./16.;
-    cc.zeta = 9./8.;
-
-    // Exponents of the cloud model
-    // IFS
-    // cc.gamma = 2.47;
-    // cc.betac = 1.15;
-    // cc.betar = 1.15;
-    // cc.delta1 = 2.0/( cc.br + 1.0 - cc.nbr );
-    // cc.delta2 = ( 0.5*cc.dr + 2.5 - cc.nbr )/( cc.br + 1.0 - cc.nbr );
-    // cc.zeta = 1.0;
-
-    // Numerics
-    cc.t_end_prime = input.t_end_prime;
-    cc.t_end = input.t_end_prime/ref_quant.tref;
-    // Time of the substeps
-
-    cc.dt = input.dt_prime/ref_quant.tref;
-    cc.dt_prime = input.dt_prime;
-    cc.dt_traject_prime = cc.dt_traject * ref_quant.tref;
-    // The trajectories are calculated with 20 s timesteps.
-    cc.num_sub_steps = (floor( 20.0/cc.dt ) < 1) ? 1 : floor( 20.0/cc.dt );
-
-    cc.snapshot_index = input.snapshot_index;
-    // Evaluate the general performance constants
-    cc.dt_half = cc.dt*0.5;
-    cc.dt_third = cc.dt/3.0;
-    cc.dt_sixth = cc.dt/6.0;
-
-    // ==================================================
-    // Set rain constants
-    // See init_2mom_scheme_once in mo_2mom_mcrph_main.f90
-    // ==================================================
-    // Cosmo5 although nue1nue1 would be okay too, I guess
-    //// Cloud
-    cc.cloud.nu = 0.0;
-    cc.cloud.mu = 1.0/3.0;
-    cc.cloud.max_x = 2.6e-10;
-    cc.cloud.min_x = 4.2e-15;
-    cc.cloud.min_x_act = 4.2e-15;
-    cc.cloud.min_x_nuc = 4.2e-15;
-    cc.cloud.a_geo = 1.24e-1;
-    cc.cloud.b_geo = 0.333333;
-    cc.cloud.a_vel = 3.75e5;
-    cc.cloud.b_vel = 0.666667;
-    cc.cloud.a_ven = 0.78;
-    cc.cloud.b_ven = 0.308;
-    cc.cloud.cap = 2.0;
-    cc.cloud.vsedi_max = 1.0;
-    cc.cloud.vsedi_min = 0.0;
-    cc.cloud.c_s = 1.0 / cc.cloud.cap;
-    cc.cloud.a_f = vent_coeff_a(cc.cloud, 1);
-    cc.cloud.b_f = vent_coeff_b(cc.cloud, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
-    cc.cloud.c_z = moment_gamma(cc.cloud, 2);
-
-    setup_cloud_autoconversion(cc.cloud);
-    setup_bulk_sedi(cc.cloud);
-
-    //// Rain
-    cc.rain.nu = 0.0;
-    cc.rain.mu = 0.333333;
-    cc.rain.max_x = 3.0e-6;
-    cc.rain.min_x = 2.6e-10;
-    cc.rain.min_x_act = 2.6e-10;
-    cc.rain.min_x_nuc = 2.6e-10;
-    cc.rain.a_geo = 1.24e-1;
-    cc.rain.b_geo = 0.333333;
-    cc.rain.a_vel = 114.0137;
-    cc.rain.b_vel = 0.234370;
-    cc.rain.cap = 2.0;
-
-    // From rainSBBcoeffs
-    cc.rain.alpha = 9.292;
-    cc.rain.beta = 9.623;
-    cc.rain.gamma = 6.222e2;
-    cc.rain.cmu0 = 6.0;
-    cc.rain.cmu1 = 3.0e1;
-    cc.rain.cmu2 = 1.0e3;
-    cc.rain.cmu3 = 1.1e-3;
-    cc.rain.cmu4 = 1.0;
-    cc.rain.cmu5 = 2.0;
-    rain_gfak = 1.0;
-
-    cc.rain.nm1 = (cc.rain.nu+1.0)/cc.rain.mu;
-    cc.rain.nm2 = (cc.rain.nu+2.0)/cc.rain.mu;
-    cc.rain.nm3 = (cc.rain.nu+3.0)/cc.rain.mu;
-    cc.rain.vsedi_max = 20.0;
-    cc.rain.vsedi_min = 0.1;
-    init_gamma_table(table_r1, n_lookup, n_lookup_hr_dummy, cc.rain.nm1.getValue());
-    init_gamma_table(table_r2, n_lookup, n_lookup_hr_dummy, cc.rain.nm2.getValue());
-    init_gamma_table(table_r3, n_lookup, n_lookup_hr_dummy, cc.rain.nm3.getValue());
-    cc.rain.g1 = table_r1.igf[table_r1.n_bins-1];
-    cc.rain.g2 = table_r2.igf[table_r2.n_bins-1];
-    cc.rain.c_s = 1.0 / cc.rain.cap;
-    cc.rain.a_f = vent_coeff_a(cc.rain, 1);
-    cc.rain.b_f = vent_coeff_b(cc.rain, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
-    cc.rain.c_z = moment_gamma(cc.rain, 2);
-    setup_bulk_sedi(cc.rain);
-
-    //// Graupel
-    cc.graupel.nu = 1.0;
-    cc.graupel.mu = 1.0/3.0; // Not used actually?
-    cc.graupel.max_x = 5.0e-4;
-    cc.graupel.min_x = 1.0e-9;
-    cc.graupel.min_x_act = 1.0e-9;
-    cc.graupel.min_x_nuc = 1.0e-9;
-    cc.graupel.a_geo = 1.42e-1;
-    cc.graupel.b_geo = 0.314;
-    cc.graupel.a_vel = 86.89371;
-    cc.graupel.b_vel = 0.268325;
-    cc.graupel.a_ven = 0.78;
-    cc.graupel.b_ven = 0.308;
-    cc.graupel.cap = 2.0;
-    cc.graupel.vsedi_max = 30.0;
-    cc.graupel.vsedi_min = 0.1;
-    cc.graupel.sc_coll_n = 1.0;
-    cc.graupel.d_crit_c = 100.0e-6;
-    cc.graupel.q_crit_c = 1.0e-6;
-    cc.graupel.s_vel = 0.0;
-
-    cc.graupel.nm1 = (cc.graupel.nu+1.0)/cc.graupel.mu;
-    cc.graupel.nm2 = (cc.graupel.nu+2.0)/cc.graupel.mu;
-    codi::RealReverse a = (cc.graupel.nu+1.0)/cc.graupel.mu;
-    init_gamma_table(table_g1, n_lookup, n_lookup_hr_dummy, cc.graupel.nm1.getValue());
-    a = (cc.graupel.nu+2.0)/cc.graupel.mu;
-    init_gamma_table(table_g2, n_lookup, n_lookup_hr_dummy, cc.graupel.nm2.getValue());
-    cc.graupel.g1 = table_g1.igf[table_g1.n_bins-1];
-    cc.graupel.g2 = table_g2.igf[table_g2.n_bins-1];
-    cc.graupel.c_s = 1.0 / cc.graupel.cap;
-    cc.graupel.a_f = vent_coeff_a(cc.graupel, 1);
-    cc.graupel.b_f = vent_coeff_b(cc.graupel, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
-    cc.graupel.c_z = moment_gamma(cc.graupel, 2);
-    setup_bulk_sedi(cc.graupel);
-
-    //// Hail
-    cc.hail.nu = 1.0;
-    cc.hail.mu = 1.0/3.0; // Not used actually?
-    cc.hail.max_x = 5.0e-4;
-    cc.hail.min_x = 2.6e-9;
-    cc.hail.min_x_act= 2.6e-9;
-    cc.hail.min_x_nuc = 2.6e-9;
-    cc.hail.a_geo = 0.1366;
-    cc.hail.b_geo = 1.0/3.0;
-    cc.hail.a_vel = 39.3;
-    cc.hail.b_vel = 0.166667;
-    cc.hail.a_ven = 0.78;
-    cc.hail.b_ven = 0.308;
-    cc.hail.cap = 2.0;
-    cc.hail.vsedi_max = 30.0;
-    cc.hail.vsedi_min = 0.1;
-    cc.hail.sc_coll_n = 1.0;
-    cc.hail.d_crit_c = 100.0e-6;
-    cc.hail.q_crit_c = 1.0e-6;
-    cc.hail.s_vel = 0.0;
-    cc.hail.c_s = 1.0 / cc.hail.cap;
-    cc.hail.a_f = vent_coeff_a(cc.hail, 1);
-    cc.hail.b_f = vent_coeff_b(cc.hail, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
-    cc.hail.c_z = moment_gamma(cc.hail, 2);
-    setup_bulk_sedi(cc.hail);
-
-    //// Ice
-    cc.ice.nu = 0.0;
-    cc.ice.mu = 1.0/3.0; // Not used actually?
-    cc.ice.max_x = 1.0e-5;
-    cc.ice.min_x = 1.0e-12;
-    cc.ice.min_x_act = 1.0e-12;
-    cc.ice.a_geo = 0.835;
-    cc.ice.b_geo = 0.39;
-    cc.ice.a_vel = 2.77e1;
-    cc.ice.b_vel = 0.21579;
-    cc.ice.a_ven = 0.78;
-    cc.ice.b_ven = 0.308;
-    cc.ice.cap = 2.0;
-    cc.ice.vsedi_max = 3.0;
-    cc.ice.vsedi_min = 0.0;
-    cc.ice.sc_coll_n = 0.8;
-    cc.ice.d_crit_c = 150.0e-6;
-    cc.ice.q_crit_c = 1.0e-5;
-    cc.ice.s_vel = 0.05;
-    cc.ice.c_s = 1.0 / cc.ice.cap;
-    cc.ice.a_f = vent_coeff_a(cc.ice, 1);
-    cc.ice.b_f = vent_coeff_b(cc.ice, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
-    cc.ice.c_z = moment_gamma(cc.ice, 2);
-    setup_bulk_sedi(cc.ice);
-
-    //// Snow
-    cc.snow.nu = 0.0;
-    cc.snow.mu = 0.5; // Not used actually?
-    cc.snow.max_x = 2.0e-5;
-    cc.snow.min_x = 1.0e-10;
-    cc.snow.min_x_act = 1.0e-10;
-    cc.snow.min_x_nuc = 1.0e-10;
-    cc.snow.a_geo = 2.4;
-    cc.snow.b_geo = 0.455;
-    cc.snow.a_vel = 8.8;
-    cc.snow.b_vel = 0.15;
-    cc.snow.a_ven = 0.78;
-    cc.snow.b_ven = 0.308;
-    cc.snow.cap = 2.0;
-    cc.snow.vsedi_max = 3.0;
-    cc.snow.vsedi_min = 0.1;
-    cc.snow.sc_coll_n = 0.8;
-    cc.snow.d_crit_c = 150.0e-6;
-    cc.snow.q_crit_c = 1.0e-5;
-    cc.snow.s_vel = 0.25;
-    cc.snow.c_s = 1.0 / cc.snow.cap;
-    cc.snow.a_f = vent_coeff_a(cc.snow, 1);
-    cc.snow.b_f = vent_coeff_b(cc.snow, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
-    cc.snow.c_z = moment_gamma(cc.snow, 2);
-    setup_bulk_sedi(cc.snow);
-
-    init_particle_collection_1(cc.snow, cc.cloud, cc.coeffs_scr);
-    init_particle_collection_2(cc.snow, cc.rain, cc.coeffs_srr);
-    init_particle_collection_2(cc.ice, cc.rain, cc.coeffs_irr);
-    init_particle_collection_1(cc.ice, cc.cloud, cc.coeffs_icr);
-    init_particle_collection_1(cc.hail, cc.rain, cc.coeffs_hrr);
-    init_particle_collection_1(cc.graupel, cc.rain, cc.coeffs_grr);
-    init_particle_collection_1(cc.hail, cc.cloud, cc.coeffs_hcr);
-    init_particle_collection_1(cc.graupel, cc.cloud, cc.coeffs_gcr);
-    init_particle_collection_1(cc.snow, cc.ice, cc.coeffs_sic);
-    init_particle_collection_1(cc.hail, cc.ice, cc.coeffs_hic);
-    init_particle_collection_1(cc.graupel, cc.ice, cc.coeffs_gic);
-    init_particle_collection_1(cc.hail, cc.snow, cc.coeffs_hsc);
-    init_particle_collection_1(cc.graupel, cc.snow, cc.coeffs_gsc);
 
     // ==================================================
     // Allocate the memory
@@ -481,11 +226,11 @@ int main(int argc, char** argv)
     // See constants.h for storage order
     std::vector<double> y_init(num_comp);
     nc_parameters_t nc_params;
-
+    size_t lenp;
     try
     {
         int dimid, ncid;
-        size_t lenp, n_timesteps;
+        size_t n_timesteps;
         // Get the amount of trajectories
         nc_open(global_args.input_file, NC_NOWRITE, &ncid);
 #ifdef WCB
@@ -533,6 +278,10 @@ int main(int argc, char** argv)
         y_init[T_idx] = nc_params.t;
 
         y_init[S_idx] = nc_params.S;
+#ifdef SAT_CALC
+        y_init[S_idx] = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+#endif
         y_init[qc_idx] = nc_params.qc;
         y_init[qr_idx] = nc_params.qr;
         y_init[qv_idx] = nc_params.qv;
@@ -587,6 +336,10 @@ int main(int argc, char** argv)
         y_init[Nv_idx] = 0;
         y_init[z_idx] = nc_params.z[0];
 
+        y_init[n_inact_idx] = 0;
+        y_init[depo_idx] = 0;
+        y_init[sub_idx] = 0;
+
     } catch(netCDF::exceptions::NcException& e)
     {
         std::cout << e.what() << std::endl;
@@ -628,6 +381,7 @@ int main(int argc, char** argv)
     full_filename += suffix;
 
     std::ofstream outfile;
+    std::stringstream out_tmp;
     outfile.open(full_filename);
     outfile.precision(10);
 
@@ -661,18 +415,26 @@ int main(int argc, char** argv)
     outfile_refs.close();
 
     // Append the initial values and write headers
-    outfile << "timestep,trajectory,LONGITUDE,LATITUDE,"
+    out_tmp << "timestep,trajectory,LONGITUDE,LATITUDE,"
 #if defined WCB || defined WCB2
         << "MAP,"
 #endif
+#if defined WCB2
+        << "dp2h,"
+        << "conv_400,"
+        << "conv_600,"
+        << "slan_400,"
+        << "slan_600,"
+#endif
         << "p,T,w,S,qc,qr,qv,Nc,Nr,Nv,qi,Ni,vi,"
         << "qs,Ns,qg,Ng,qh,Nh,qiout,qsout,qrout,qgout,qhout,"
-        << "latent_heat,latent_cool,Niout,Nsout,Nrout,Ngout,Nhout,z\n";
+        << "latent_heat,latent_cool,Niout,Nsout,Nrout,Ngout,Nhout,z,Inactive,deposition,sublimination\n";
 
     // CODIPACK: BEGIN
     std::string basename = "_diff_";
     std::string fname;
     std::ofstream out_diff[num_comp];
+    std::stringstream out_diff_tmp[num_comp];
 
 
     for(int ii = 0 ; ii < num_comp ; ii++)
@@ -689,7 +451,7 @@ int main(int argc, char** argv)
             std::cout << "ERROR while opening outputfile. Aborting." << std::endl;
             return 1;
         }
-        out_diff[ii]
+        out_diff_tmp[ii]
             << "timestep,"
             << "trajectory,"
             << "Output Parameter,"
@@ -697,6 +459,13 @@ int main(int argc, char** argv)
             << "LATITUDE,"
 #if defined WCB || defined WCB2
             << "MAP,"
+#endif
+#if defined WCB2
+            << "dp2h,"
+            << "conv_400,"
+            << "conv_600,"
+            << "slan_400,"
+            << "slan_600,"
 #endif
             << "da_1,"
             << "da_2,"
@@ -720,7 +489,17 @@ int main(int argc, char** argv)
             << "drain_b_geo,"
             << "drain_min_x,"
             << "drain_min_x_act,"
-            << "drain_min_x_nuc,"
+            << "drain_min_x_nuc_homo,"
+            << "drain_min_x_nuc_hetero,"
+            << "drain_min_x_melt,"
+            << "drain_min_x_evap,"
+            << "drain_min_x_freezing,"
+            << "drain_min_x_depo,"
+            << "drain_min_x_collision,"
+            << "drain_min_x_collection,"
+            << "drain_min_x_conversion,"
+            << "drain_min_x_sedimentation,"
+            << "drain_min_x_riming,"
             << "drain_max_x,"
             << "drain_sc_theta_q,"
             << "drain_sc_delta_q,"
@@ -762,12 +541,22 @@ int main(int argc, char** argv)
             << "drain_lambda,"
             << "drain_vsedi_min,"
             << "drain_vsedi_max,"
-            // Cloud; 44 parameters
+            // Cloud
             << "dcloud_a_geo,"
             << "dcloud_b_geo,"
             << "dcloud_min_x,"
             << "dcloud_min_x_act,"
-            << "dcloud_min_x_nuc,"
+            << "dcloud_min_x_nuc_homo,"
+            << "dcloud_min_x_nuc_hetero,"
+            << "dcloud_min_x_melt,"
+            << "dcloud_min_x_evap,"
+            << "dcloud_min_x_freezing,"
+            << "dcloud_min_x_depo,"
+            << "dcloud_min_x_collision,"
+            << "dcloud_min_x_collection,"
+            << "dcloud_min_x_conversion,"
+            << "dcloud_min_x_sedimentation,"
+            << "dcloud_min_x_riming,"
             << "dcloud_max_x,"
             << "dcloud_sc_theta_q,"
             << "dcloud_sc_delta_q,"
@@ -814,7 +603,17 @@ int main(int argc, char** argv)
             << "dgraupel_b_geo,"
             << "dgraupel_min_x,"
             << "dgraupel_min_x_act,"
-            << "dgraupel_min_x_nuc,"
+            << "dgraupel_min_x_nuc_homo,"
+            << "dgraupel_min_x_nuc_hetero,"
+            << "dgraupel_min_x_melt,"
+            << "dgraupel_min_x_evap,"
+            << "dgraupel_min_x_freezing,"
+            << "dgraupel_min_x_depo,"
+            << "dgraupel_min_x_collision,"
+            << "dgraupel_min_x_collection,"
+            << "dgraupel_min_x_conversion,"
+            << "dgraupel_min_x_sedimentation,"
+            << "dgraupel_min_x_riming,"
             << "dgraupel_max_x,"
             << "dgraupel_sc_theta_q,"
             << "dgraupel_sc_delta_q,"
@@ -861,7 +660,17 @@ int main(int argc, char** argv)
             << "dhail_b_geo,"
             << "dhail_min_x,"
             << "dhail_min_x_act,"
-            << "dhail_min_x_nuc,"
+            << "dhail_min_x_nuc_homo,"
+            << "dhail_min_x_nuc_hetero,"
+            << "dhail_min_x_melt,"
+            << "dhail_min_x_evap,"
+            << "dhail_min_x_freezing,"
+            << "dhail_min_x_depo,"
+            << "dhail_min_x_collision,"
+            << "dhail_min_x_collection,"
+            << "dhail_min_x_conversion,"
+            << "dhail_min_x_sedimentation,"
+            << "dhail_min_x_riming,"
             << "dhail_max_x,"
             << "dhail_sc_theta_q,"
             << "dhail_sc_delta_q,"
@@ -908,7 +717,17 @@ int main(int argc, char** argv)
             << "dice_b_geo,"
             << "dice_min_x,"
             << "dice_min_x_act,"
-            << "dice_min_x_nuc,"
+            << "dice_min_x_nuc_homo,"
+            << "dice_min_x_nuc_hetero,"
+            << "dice_min_x_melt,"
+            << "dice_min_x_evap,"
+            << "dice_min_x_freezing,"
+            << "dice_min_x_depo,"
+            << "dice_min_x_collision,"
+            << "dice_min_x_collection,"
+            << "dice_min_x_conversion,"
+            << "dice_min_x_sedimentation,"
+            << "dice_min_x_riming,"
             << "dice_max_x,"
             << "dice_sc_theta_q,"
             << "dice_sc_delta_q,"
@@ -955,7 +774,17 @@ int main(int argc, char** argv)
             << "dsnow_b_geo,"
             << "dsnow_min_x,"
             << "dsnow_min_x_act,"
-            << "dsnow_min_x_nuc,"
+            << "dsnow_min_x_nuc_homo,"
+            << "dsnow_min_x_nuc_hetero,"
+            << "dsnow_min_x_melt,"
+            << "dsnow_min_x_evap,"
+            << "dsnow_min_x_freezing,"
+            << "dsnow_min_x_depo,"
+            << "dsnow_min_x_collision,"
+            << "dsnow_min_x_collection,"
+            << "dsnow_min_x_conversion,"
+            << "dsnow_min_x_sedimentation,"
+            << "dsnow_min_x_riming,"
             << "dsnow_max_x,"
             << "dsnow_sc_theta_q,"
             << "dsnow_sc_delta_q,"
@@ -1006,7 +835,7 @@ int main(int argc, char** argv)
               << "Output name:\t" << input.OUTPUT_FILENAME << "\n"
               << "start_over:\t" << input.start_over << "\n"
               << "fixed_iter:\t" << input.fixed_iteration << "\n\n";
-
+    std::vector<int> ids(lenp);
     // Loop for timestepping: BEGIN
     // ==================================================
     // Read the trajectory file
@@ -1044,12 +873,20 @@ int main(int argc, char** argv)
             load_nc_parameters(nc_params, startp, countp,
                                ref_quant, cc.num_sub_steps);
 
+            netCDF::NcVar id_var;
+            id_var = datafile.getVar("id");
+            id_var.getVar(ids.data());
+            traj_id = ids[input.traj];
             // Set values from a given trajectory
             if(t==0 || input.start_over)
             {
                 y_single_old[p_idx]  = nc_params.p;     // p
                 y_single_old[T_idx]  = nc_params.t;     // T
                 y_single_old[S_idx]  = nc_params.S;     // S
+#ifdef SAT_CALC
+                y_single_old[S_idx]  = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+                    / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+#endif
                 y_single_old[qc_idx] = nc_params.qc;    // qc
                 y_single_old[qr_idx] = nc_params.qr;    // qr
                 y_single_old[qv_idx] = nc_params.qv;    // qv
@@ -1107,32 +944,46 @@ int main(int argc, char** argv)
                 y_single_old[z_idx] = nc_params.z[0];
 
 #if defined WCB || defined WCB2
-                outfile << (t*cc.num_sub_steps)*cc.dt << "," << input.traj << ","
+                out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
                         << nc_params.lon[0] << "," << nc_params.lat[0] << ","
                         << nc_params.ascent_flag << ",";
 #else
-                outfile << (t*cc.num_sub_steps)*cc.dt << "," << input.traj << ","
+                out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
                         << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
 #endif
+#if defined WCB2
+                out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                        << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                        << nc_params.slan_600 << ",";
+#endif
                 for(int ii = 0 ; ii < num_comp; ii++)
-                    outfile << y_single_old[ii] <<
+                    out_tmp << y_single_old[ii] <<
                         ((ii == num_comp-1) ? "\n" : ",");
 
 
                 for(int ii = 0 ; ii < num_comp ; ii++)
                 {
 #if defined WCB || defined WCB2
-                    out_diff[ii] << t*cc.num_sub_steps*cc.dt << "," << input.traj << ","
+                    out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                                    << traj_id << ","
+                                    << output_par_idx[ii] << ","
                                     << nc_params.lon[0] << ","
                                     << nc_params.lat[0] << ","
                                     << nc_params.ascent_flag << ",";
 #else
-                    out_diff[ii] << t*cc.num_sub_steps*cc.dt << "," << input.traj << ","
+                    out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                                    << traj_id << ","
+                                    << output_par_idx[ii] << ","
                                     << nc_params.lon[0] << ","
                                     << nc_params.lat[0] << ",";
 #endif
+#if defined WCB2
+                    out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                                     << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                                     << nc_params.slan_600 << ",";
+#endif
                     for(int jj = 0 ; jj < num_par ; jj++)
-                        out_diff[ii] << 0.0
+                        out_diff_tmp[ii] << 0.0
                             << ((jj==num_par-1) ? "\n" : ",");
                 }
 
@@ -1163,7 +1014,7 @@ int main(int argc, char** argv)
             for(uint32_t sub=1; sub<cc.num_sub_steps; ++sub) // cc.num_sub_steps
             {
 #if defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
-                std::cout << "\n\ntimestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
+                std::cout << "timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
 #endif
                 // Set the coefficients from the last timestep and from
                 // the input files
@@ -1290,43 +1141,67 @@ int main(int argc, char** argv)
                 // ==================================================
                 // Output if needed
                 // ==================================================
-                if( 0 == (sub + t*cc.num_sub_steps) % input.snapshot_index)
+                if( (0 == (sub + t*cc.num_sub_steps) % input.snapshot_index)
+                   || ( t == cc.num_steps-1 && sub == cc.num_sub_steps-1 ) )
                 {
                     // Write the results to the output file
 #if defined WCB || defined WCB2
-                    outfile << time_new << "," << input.traj << ","
+                    out_tmp << time_new << "," << traj_id << ","
                             << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                             << (nc_params.lat[0] + sub*nc_params.dlat) << ","
                             << nc_params.ascent_flag << ",";
 #else
-                    outfile << time_new << "," << input.traj << ","
+                    out_tmp << time_new << "," << traj_id << ","
                             << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                             << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #endif
+#if defined WCB2
+                    out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                            << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                            << nc_params.slan_600 << ",";
+#endif
                     for(int ii = 0 ; ii < num_comp; ii++)
-                        outfile << y_single_new[ii]
+                        out_tmp << y_single_new[ii]
                             << ((ii == num_comp-1) ? "\n" : ",");
 
                     // CODIPACK: BEGIN
                     for(int ii = 0 ; ii < num_comp ; ii++)
                     {
 #if defined WCB || defined WCB2
-                        out_diff[ii] << time_new << "," << input.traj << ","
+                        out_diff_tmp[ii] << time_new << "," << traj_id << ","
                                      << output_par_idx[ii] << ","
                                      << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                                      << (nc_params.lat[0] + sub*nc_params.dlat) << ","
                                      << nc_params.ascent_flag << ",";
 #else
-                        out_diff[ii] << time_new << "," << input.traj << ","
+                        out_diff_tmp[ii] << time_new << "," << traj_id << ","
                                      << output_par_idx[ii] << ","
                                      << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                                      << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #endif
+#if defined WCB2
+                        out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                                     << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                                     << nc_params.slan_600 << ",";
+#endif
                         for(int jj = 0 ; jj < num_par ; jj++)
-                            out_diff[ii] << y_diff[ii][jj]
+                            out_diff_tmp[ii] << y_diff[ii][jj]
                                 << ((jj==num_par-1) ? "\n" : ",");
                     }
                     // CODIPACK: END
+                }
+                if( (0 == (sub + t*cc.num_sub_steps) % input.write_index)
+                    || ( t == cc.num_steps-1 && sub == cc.num_sub_steps-1 ) )
+                {
+                    outfile << out_tmp.rdbuf();
+                    for(int ii = 0 ; ii < num_comp ; ii++)
+                    {
+                        out_diff[ii] << out_diff_tmp[ii].rdbuf();
+                        out_diff_tmp[ii].str( std::string() );
+                        out_diff_tmp[ii].clear();
+                    }
+                    out_tmp.str( std::string() );
+                    out_tmp.clear();
                 }
 
                 // ==================================================
