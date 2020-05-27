@@ -12,7 +12,7 @@ def set_size(beamer=True):
     """
     if beamer:
         mpl.rcParams.update({
-            "text.usetex": True,
+            "text.usetex": False,
             "font.family": "serif",
             "axes.labelsize": 20,
             "font.size": 20,
@@ -22,7 +22,7 @@ def set_size(beamer=True):
         })
     else:
         mpl.rcParams.update({
-            "text.usetex": True,
+            "text.usetex": False,
             "font.family": "serif",
             "axes.labelsize": 10,
             "font.size": 10,
@@ -86,7 +86,20 @@ def parse_word(word):
                 "LONGITDUE": "longitude",
                 "z": "Height z",
                 "w": "Ascend w",
-                "MAP": "Flag for WCB-criterion"}
+                "MAP": "Flag for WCB-criterion",
+                "Derivatives": "Derivatives",
+                "timestep": "Timestep",
+                "dmin_x_nuc_hetero": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{hetero}}",
+                "dmin_x_nuc_homo": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{homo}}",
+                "dmin_x_melt": r"$\partial x_{\mathrm{min},\mathrm{melt}}",
+                "dmin_x_evap": r"$\partial x_{\mathrm{min},\mathrm{evap}}",
+                "dmin_x_freezing": r"$\partial x_{\mathrm{min},\mathrm{freezing}}",
+                "dmin_x_depo": r"$\partial x_{\mathrm{min},\mathrm{depo}}",
+                "dmin_x_collision": r"$\partial x_{\mathrm{min},\mathrm{collision}}",
+                "dmin_x_collection": r"$\partial x_{\mathrm{min},\mathrm{collection}}",
+                "dmin_x_conversion": r"$\partial x_{\mathrm{min},\mathrm{conversion}}",
+                "dmin_x_sedimentation": r"$\partial x_{\mathrm{min},\mathrm{sedimentation}}",
+                "dmin_x_riming": r"$\partial x_{\mathrm{min},\mathrm{riming}}"}
     maps = mappings.keys()
     for w in maps:
         if word == w:
@@ -103,20 +116,30 @@ def parse_word(word):
             parts = word.split(" ")
             start = parts[0]
             parts = parts[1].split("_")
-            try:
+            if len(parts) == 4:
                 word = (start + " "
-                            + parts[2] + r"_{"
-                            + parts[1] + r", \mathrm{"
-                            + parts[0] + r"}}")
-            except:
+                        + parts[2] + r"_{"
+                        + parts[1] + r", \mathrm{"
+                        + parts[0] + r","
+                        + parts[3] + r"}}")
+
+            elif len(parts) == 3:
                 word = (start + " "
-                            + parts[1] + r"_{"
-                            + r"\mathrm{"
-                            + parts[0] + r"}}")
+                        + parts[2] + r"_{"
+                        + parts[1] + r", \mathrm{"
+                        + parts[0] + r"}}")
+            else:
+                word = (start + " "
+                        + parts[1] + r"_{"
+                        + r"\mathrm{"
+                        + parts[0] + r"}}")
+
             break
     word = r"$" + word + r"$"
     for w in no_math:
         word = word.replace(w, r"\mathrm{" + w + r"}")
     for w in math_keys:
         word = word.replace(w, "\\" + w )
+    if "nuc" in word:
+        word = word.replace("\\nuc", "nuc")
     return word
