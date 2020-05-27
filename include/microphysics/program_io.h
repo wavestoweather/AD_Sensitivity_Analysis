@@ -294,10 +294,20 @@ void load_nc_parameters_var(
     nc.NSout_var    = datafile.getVar("NS_OUT");
     nc.NRout_var    = datafile.getVar("NR_OUT");
     nc.NGout_var    = datafile.getVar("NG_OUT");
+
+    nc.Nc_var       = datafile.getVar("NCCLOUD");
+    nc.Nr_var       = datafile.getVar("NCRAIN");
+    nc.Ni_var       = datafile.getVar("NCICE");
+    nc.Ns_var       = datafile.getVar("NCSNOW");
+    nc.Ng_var       = datafile.getVar("NCGRAUPEL");
     // Flag wether an effective ascent region is reached
     nc.ascent_flag_var = datafile.getVar("WCB_flag");
     // 2h ascent rate after Oertel et al. (2019)
     nc.dp2h_var     = datafile.getVar("dp2h");
+    nc.conv_400_var = datafile.getVar("conv_400");
+    nc.conv_600_var = datafile.getVar("conv_600");
+    nc.slan_400_var = datafile.getVar("slan_400");
+    nc.slan_600_var = datafile.getVar("slan_600");
 #endif
 }
 
@@ -344,7 +354,9 @@ void load_nc_parameters(
 #endif
 
 #if defined WCB || defined WCB2
-    nc.ascent_flag_var.getVar(startp, countp, &nc.ascent_flag);
+    int map = 0;
+    nc.ascent_flag_var.getVar(startp, countp, &map);
+    nc.ascent_flag = (map > 0) ? true : false;
 #endif
 
     nc.t_var.getVar(startp, countp, &nc.t);
@@ -370,6 +382,58 @@ void load_nc_parameters(
     nc.qi       /= ref_quant.qref;
     nc.qs       /= ref_quant.qref;
 
+#if defined WCB2
+    nc.NRin_var.getVar(startp, countp, &nc.NRin);
+    nc.NIin_var.getVar(startp, countp, &nc.NIin);
+    nc.NSin_var.getVar(startp, countp, &nc.NSin);
+    nc.NGin_var.getVar(startp, countp, &nc.NGin);
+
+    nc.NRout_var.getVar(startp, countp, &nc.NRout);
+    nc.NIout_var.getVar(startp, countp, &nc.NIout);
+    nc.NSout_var.getVar(startp, countp, &nc.NSout);
+    nc.NGout_var.getVar(startp, countp, &nc.NGout);
+
+    nc.Nc_var.getVar(startp, countp, &nc.Nc);
+    nc.Nr_var.getVar(startp, countp, &nc.Nr);
+    nc.Ni_var.getVar(startp, countp, &nc.Ni);
+    nc.Ns_var.getVar(startp, countp, &nc.Ns);
+    nc.Ng_var.getVar(startp, countp, &nc.Ng);
+
+    nc.NRin     /= ref_quant.Nref;
+    nc.NIin     /= ref_quant.Nref;
+    nc.NSin     /= ref_quant.Nref;
+    nc.NGin     /= ref_quant.Nref;
+
+    nc.NRout    /= ref_quant.Nref;
+    nc.NIout    /= ref_quant.Nref;
+    nc.NSout    /= ref_quant.Nref;
+    nc.NGout    /= ref_quant.Nref;
+
+    nc.Nc       /= ref_quant.Nref;
+    nc.Nr       /= ref_quant.Nref;
+    nc.Ni       /= ref_quant.Nref;
+    nc.Ns       /= ref_quant.Nref;
+    nc.Ng       /= ref_quant.Nref;
+
+    nc.NRin     = abs(nc.NRin);
+    nc.NIin     = abs(nc.NIin);
+    nc.NSin     = abs(nc.NSin);
+    nc.NGin     = abs(nc.NGin);
+
+    // Some additional flags for convective and
+    // slantwise trajectories
+    nc.conv_400_var.getVar(startp, countp, &map);
+    nc.conv_400 = (map > 0) ? true : false;
+    nc.conv_600_var.getVar(startp, countp, &map);
+    nc.conv_600 = (map > 0) ? true : false;
+    nc.slan_400_var.getVar(startp, countp, &map);
+    nc.slan_400 = (map > 0) ? true : false;
+    nc.slan_600_var.getVar(startp, countp, &map);
+    nc.slan_600 = (map > 0) ? true : false;
+    nc.dp2h_var.getVar(startp, countp, &map);
+    nc.dp2h = (map > 0) ? true : false;
+#endif
+
 #if !defined WCB
     nc.S = 1.0;
     nc.qg_var.getVar(startp, countp, &nc.qg);
@@ -391,6 +455,15 @@ void load_nc_parameters(
     nc.QSout    /= ref_quant.qref;
     nc.QGin     /= ref_quant.qref;
     nc.QGout    /= ref_quant.qref;
+
+    nc.QRin     = abs(nc.QRin);
+    nc.QRout    = abs(nc.QRout);
+    nc.QIin     = abs(nc.QIin);
+    nc.QIout    = abs(nc.QIout);
+    nc.QSin     = abs(nc.QSin);
+    nc.QSout    = abs(nc.QSout);
+    nc.QGin     = abs(nc.QGin);
+    nc.QGout    = abs(nc.QGout);
 #endif
 
 #if !defined WCB && !defined WCB2
@@ -450,7 +523,7 @@ void init_input_parameters(input_parameters_t &in)
   // Numerics
   in.t_end_prime = 100.0;	// Seconds
   in.dt_prime = 0.01;		// Seconds
-  in.snapshot_index = 1000;
+  in.snapshot_index = 200;
   in.dt_traject = 20;       // Seconds; fixed from paper
   // Filename for output
 #if defined(RK4)
@@ -469,15 +542,16 @@ void init_input_parameters(input_parameters_t &in)
   // Scaling factor
   in.scaling_fact = 1.0;	// No scaling
   in.start_over = true;
-  in.fixed_iteration = true;
-  in.auto_type = 1;
+  in.fixed_iteration = false;
+  in.auto_type = 3;
   in.traj = 0;
+  in.write_index = 100000;
 }
 
 /**
  * String used to parse commandline input.
  */
-static const char *optString = "f:d:i:b:o:l:s:t:a:r:?";
+static const char *optString = "w:f:d:i:b:o:l:s:t:a:r:?";
 
 
 /**
@@ -517,6 +591,9 @@ void init_global_args(global_args_t &arg)
 
   arg.traj_flag = 0;
   arg.traj_string = nullptr;
+
+  arg.write_flag = 0;
+  arg.write_string = nullptr;
 }
 
 /**
@@ -572,52 +649,18 @@ void set_input_from_arguments(global_args_t &arg ,
     in.auto_type = std::stoi(arg.auto_type_string);
   }
 
+  // Trajectory
   if(1 == arg.traj_flag){
     in.traj = std::stoi(arg.traj_string);
   }
+
+  // Write index
+  if(1 == arg.write_flag){
+      in.write_index = std::stoi(arg.write_string);
+  }
 }
 
-/**
- * Setup the cloud autoconversion parameters.
- *
- * @param pc Model constants for a certain particle type.
- */
-void setup_cloud_autoconversion(
-    particle_model_constants_t &pc)
-{
-    auto nu = pc.nu + 1.0;
-    auto mu = pc.mu;
-    if(pc.mu == 1.0)
-    {
-        cloud_k_au = kc_autocon / pc.max_x * 0.05
-            * (nu+1.0)*(nu+3.0) / pow(nu, 2);
-        cloud_k_sc = kc_autocon * (nu+1.0)/(nu);
-    } else
-    {
-        cloud_k_au = kc_autocon / pc.max_x * 0.05
-            * (2.0 * tgamma((nu+3.0)/mu)
-            * tgamma((nu+1.0)/mu) * pow(tgamma((nu)/mu), 2)
-            - 1.0 * pow(tgamma((nu+2.0)/mu), 2) * pow(tgamma((nu)/mu), 2))
-            / pow(tgamma((nu+1.0)/mu), 4);
-        cloud_k_sc = kc_autocon * pc.c_z;
-    }
-}
 
-/**
- * Setup for bulk sedimentation velocity.
- *
- * @param pc Model constants for a certain particle type.
- */
-void setup_bulk_sedi(
-    particle_model_constants_t &pc)
-{
-    pc.alfa_n = pc.a_vel * tgamma( (pc.nu+pc.b_vel+1.0)/pc.mu )
-        / tgamma( (pc.nu+1.0)/pc.mu);
-    pc.alfa_q = pc.a_vel * tgamma( (pc.nu+pc.b_vel+2.0)/pc.mu )
-        / tgamma( (pc.nu+2.0)/pc.mu );
-    pc.lambda = tgamma( (pc.nu+1.0)/pc.mu )
-        / tgamma( (pc.nu+2.0)/pc.mu );
-}
 
 /** @} */ // end of group io
 

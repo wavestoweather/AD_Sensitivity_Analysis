@@ -82,6 +82,7 @@ void print_constants(model_constants_t &cc)
         << "Nondimensional final integration time: " << cc.t_end << "\n"
 	    << "Timestep: " << cc.dt_prime << " seconds\n"
 	    << "Snapshot Index: " << cc.snapshot_index << "\n"
+        << "Write Index: " << cc.write_index << "\n"
 	    << "Nondimensional timestep: " << cc.dt << "\n"
 	    << "Number of iterations: " << cc.num_steps << "\n"
         << "Number of substeps: " << cc.num_sub_steps << "\n"
@@ -139,6 +140,7 @@ void display_usage()
         << "-t: Set pressure, temperature and vertical velocity fixed at each substep.\n"
         << "-a: Set auto type (1=KB, 2=KK, 3=SB).\n"
         << "-r: Set index of trajectory.\n"
+        << "-w: Write index for the snapshots.\n"
 	    << "-?: This help message.\n"
 	    << std::endl;
 }

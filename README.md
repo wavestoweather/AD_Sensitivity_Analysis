@@ -11,6 +11,7 @@ Contents
 - **src:** C++ code. The two moment scheme is under "microphysics".
 - **include:** Header files.
 - **doc:** Documentation. Type `make html` to create a HTML documentation (recommended) and `make latexpdf` to create a pdf documentation with Latex.
+- ***.ipynb:** Jupyter Notebooks to get started. See below for more explanation.
 
 
 Python and Plotting Prerequisites
@@ -52,4 +53,43 @@ C++ Prerequisites
 - [NetCDF C++](https://github.com/Unidata/netcdf-cxx4/releases)
 - [Boost](https://www.boost.org/)
 - [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/)
+
+Optional Prerequisites
+----------------------
+- [GNU Parallel](https://www.gnu.org/software/parallel/)
+
+Jupyter Notebooks
+-----------------
+- **Plot_physics.ipynb:** Plot single microphysical processes with a given range
+of input parameters. Helpful if you want to see "what happens" and for debugging.
+- **Get_Started.ipynb:** Use this to run a simulation, do some post processing
+on the output and plot the results.
+- **Plot_netcdf.ipynb:** Plot the data from netcdf files to get an idea, what's inside.
+Or you just use Panoply.
+
+I don't want to use Jupyter
+---------------------------
+Well, that's a weird decision, but here is a way to run everything by yourself:
+You can alter the Makefile to your choice. \
+The variable `SEASON` can be set to
+`SPRING`, `SUMMER`, `AUTUMN`, `WINTER` and `SPRING95` and sets variables used
+in Hande et al. nucleation (not used by default, so you can ignore it). \
+With `FLUX` the microphysics takes incoming particles from above into account (default: on).
+Leave it empty, if you do not want to use it. \
+`SOURCE` is used to toggle different input files (default is `WCB2`; just leave it with that).
+`SAT_CALC` is set in `SOURCE` as well to calculate the saturation at every step using `qv*Rv*T/p_sat`
+with `Rv` the gas constant for water vapor and `p_sat` the
+saturation vapor pressure over a flat surface of liquid water (see `physical_parametrizations.h`).
+If it is not on, then saturation of 1 is assumed.
+
+To compile the code, simply type
+```
+make release
+```
+and your binary is under `build/apps/src/microphysics/trajectories`.
+
+You can use `./execute.sh` to execute your simulation and do post-processing
+to make the data ready for analysis.
+All necessary commandline parameters are explained there.
+
 

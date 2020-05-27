@@ -1,12 +1,12 @@
 GCC=g++
 PCC=scorep-g++
 GCCFLAGS= --std=c++14 -pthread -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf #-DLIKWID_PERFMON #  -ffast-math
-GCCINCLUDES=-L/mnt/localscratch/lib/
+GCCINCLUDES=-I.
 TIMESTEPPER=-DRK4ICE
 ATMOFLAGS=-DCONSTANT_DROP=FALSE
 SEASON=-DSPRING
 FLUX=-DFLUX
-SOURCE=-DWCB2
+SOURCE=-DWCB2 -DSAT_CALC
 
 BUILD=build
 OBJ_DIR=$(BUILD)/objects
@@ -15,8 +15,9 @@ APP_DIR=$(BUILD)/apps
 SRC=\
     $(wildcard src/microphysics/*.cpp) \
 
-SRC_SCRATCH=\
-	$(wildcard src/scratch/*.cpp) \
+SRC_SCRATCH=src/scratch/load_test.cpp
+
+SRC_SCAN=src/scratch/scan.cpp
 
 OBJECTS=$(SRC:%.cpp=$(OBJ_DIR)/%.o)
 TARGETS=$(SRC:%.cpp=$(APP_DIR)/%)
@@ -24,9 +25,14 @@ TARGETS=$(SRC:%.cpp=$(APP_DIR)/%)
 OBJECTS_SCRATCH=$(SRC_SCRATCH:%.cpp=$(OBJ_DIR)/%.o)
 TARGETS_SCRATCH=$(SRC_SCRATCH:%.cpp=$(APP_DIR)/%)
 
+OBJECTS_SCAN=$(SRC_SCAN:%.cpp=$(OBJ_DIR)/%.o)
+TARGETS_SCAN=$(SRC_SCAN:%.cpp=$(APP_DIR)/%)
+
 all: build $(TARGETS)
 
 scratch: build $(TARGETS_SCRATCH)
+
+scan: build $(TARGETS_SCAN)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
@@ -39,6 +45,11 @@ $(TARGETS): $(OBJECTS)
 $(TARGETS_SCRATCH): $(OBJECTS_SCRATCH)
 	@mkdir -p $(@D)
 	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) -o $@ $<
+
+$(TARGETS_SCAN): $(OBJECTS_SCAN)
+	@mkdir -p $(@D)
+	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) -o $@ $<
+
 
 .PHONY: all build clean debug release
 

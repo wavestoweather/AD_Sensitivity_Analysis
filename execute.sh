@@ -1,47 +1,49 @@
 #!/bin/bash
-for execute in trajectories_sb.out # trajectories_sb_noice.out trajectories_sb.out
-do
-    #
-    # Warm cloud parcel
-    #
 
-    # Environmental conditions
-    SCALING_FACTOR="1.0"
-    AUTO_TYPE="3"
-    # Timestep, general
-    OUTPUT_FILENAME="OUTPUT"
-    INPUT_FILENAME="O_WCB_all_20160922_00.nc"
-    TIMESTEP="0.01"
-    SNAPSHOT_INDEX="1"
-    TRAJ_IDX="485"
+# Set to the number of threads
+NTASKS=6
 
-    # Case 2:
-    # Downdraft with existing cloud
+# Environmental conditions
+SCALING_FACTOR="1.0"
+AUTO_TYPE="3"
+# Timestep, general, input data
+INPUT_FILENAME="/data/project/wcb/netcdf/traj_new_appended/traj_t000000_p001.nc_wcb"
+TIMESTEP="0.01"
+# Get results every SNAPSHOT_INDEX steps, in this example every 2 seconds
+SNAPSHOT_INDEX="200"
 
-    TARGET_TIME="61.0"
+# Write to disk every WRITE_INDEX steps. If you experience I/O issues,
+# then set it to a multiple of SNAPSHOT_INDEX
+WRITE_INDEX="200"
 
-    # Take trajectory input and simulate everything
-    # START_OVER="0"
-    # FIXED_ITERATION="0"
-    # ./${execute} -a ${AUTO_TYPE} -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME} -d ${TIMESTEP} -i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} -o ${OUTPUT_FILENAME} -l ${INPUT_FILENAME}
-    #####
-    # Take trajectory input every 20 seconds and simulate everything
-    OUTPUT_FILENAME="wcb61_traj${TRAJ_IDX}_start_over_20160922_00"
-    START_OVER="1"
-    FIXED_ITERATION="0"
-    ./${execute} -a ${AUTO_TYPE} -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME} -d ${TIMESTEP} -i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} -o ${OUTPUT_FILENAME} -l ${INPUT_FILENAME} -r ${TRAJ_IDX}
-    # likwid-perfctr -g DATA -C S0:0-3 -m ./${execute} -a ${AUTO_TYPE} -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME} -d ${TIMESTEP} -i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} -o ${OUTPUT_FILENAME} -l ${INPUT_FILENAME}
+# End time in seconds for the simulation. Should be lower than
+# the maximum time of the netcdf-file
+TARGET_TIME="403220"
 
-    # # Fix trajectory input every 20 seconds
-    # START_OVER="1"
-    # FIXED_ITERATION="1"
-    # OUTPUT_FILENAME="OUTPUT_start_over_fixed"
-    # ./${execute} -a ${AUTO_TYPE} -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME} -d ${TIMESTEP} -i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} -o ${OUTPUT_FILENAME} -l ${INPUT_FILENAME}
+# Where to write output files. Keep the naming convention of the files, ie
+# wcb403220_traj0_MAP...
+OUTPUT_FILENAME="/data/project/wcb/sim_results/sample_vladiana/wcb${TARGET_TIME}_traj${TRAJ_IDX}_MAP_t000000_p001"
 
-    # Set input of trajectory fixed and simulate cloud
-    # START_OVER="0"
-    # FIXED_ITERATION="1"
-    # OUTPUT_FILENAME="tmp/OUTPUT_fixed"
-    # ./${execute} -a ${AUTO_TYPE} -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME} -d ${TIMESTEP} -i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} -o ${OUTPUT_FILENAME} -l ${INPUT_FILENAME}
+# Wether to take the data from the netcdf-file every 20 seconds (=1)
+# or just use the initial conditions from the file and simulate microphysics
+# until the target time is reached (=0 not recommended)
+START_OVER="1"
 
-done
+# Fix pressure, temperature and ascent during microphysics (=1)
+# or take any changes of them into account (=0)
+FIXED_ITERATION="0"
+
+# Run the stuff (in parallel with GNU parallel)
+parallel -j ${NTASKS} --no-notice --delay .2 build/apps/src/microphysics/./trajectories -w ${WRITE_INDEX} -a ${AUTO_TYPE} \
+-t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME} -d ${TIMESTEP} \
+-i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} -o ${OUTPUT_FILENAME} \
+-l ${INPUT_FILENAME} -r {1} ::: {0..100}
+
+# Do some post processing; may use a lot of memory with default settings.
+# If your machine runs out of memory now (or during visualization),
+# try "netcdf"
+FILE_TYPE="parquet"
+INPUT_PATH="/data/project/wcb/sim_results/sample_vladiana"
+STORE_PATH="/data/project/wcb/parquet/sample_vladiana"
+
+python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH}
