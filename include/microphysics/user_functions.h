@@ -799,6 +799,14 @@ void ice_activation_phillips(
 #ifdef TRACE_QI
         std::cout << "Phillips nucleation dqi: " << delta_q << ", dNi: " << delta_n << "\n";
 #endif
+        // latent heating and cooling
+        codi::RealReverse delta_e = latent_heat_melt(T_prime) * delta_q / specific_heat_ice(T_prime);
+        // Sublimation, cooling
+        if(delta_q < 0.0)
+            res[lat_cool_idx] += delta_e;
+        // Deposition, heating
+        else
+            res[lat_heat_idx] += delta_e;
     }
 }
 

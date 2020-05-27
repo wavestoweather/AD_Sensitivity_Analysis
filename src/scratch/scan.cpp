@@ -747,6 +747,7 @@ int main(int argc, char** argv)
         codi::RealReverse T_prime_in = T_prime;
         codi::RealReverse qc_prime_in = qc_prime;
         codi::RealReverse qv_prime_in = qv_prime;
+        codi::RealReverse n_inact_in = n_inact;
 
         uint32_t used_parameter = 0;
         uint32_t used_parameter2 = 0;
@@ -768,6 +769,11 @@ int main(int argc, char** argv)
                 qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
                 used_parameter = 2;
             }
+            else if(n_inact_min != NOT_USED && n_inact_max != NOT_USED)
+            {
+                n_inact_in = i * (n_inact_max-n_inact_min) / n1 + n_inact_min;
+                used_parameter = 3;
+            }
 
             for(uint32_t j=0; j<n2; ++j)
             {
@@ -781,11 +787,18 @@ int main(int argc, char** argv)
                     qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
                     used_parameter2 = 2;
                 }
+                else if(used_parameter < 3 && n_inact_min != NOT_USED && n_inact_max != NOT_USED)
+                {
+                    n_inact_in = j * (n_inact_max-n_inact_min) / n2 + n_inact_min;
+                    used_parameter = 3;
+                }
 
                 for(uint32_t k=0; k<n3; ++k)
                 {
                     if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                         qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    else if(used_parameter2 < 3 && n_inact_min != NOT_USED && n_inact_max != NOT_USED)
+                        n_inact_in = k * (n_inact_max-n_inact_min) / n3 + n_inact_min;
 
                     for(auto& val: y)
                         val = 0;
@@ -794,10 +807,8 @@ int main(int argc, char** argv)
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
                         / saturation_pressure_water_icon(T_prime_in);
 
-
                     codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
                     codi::RealReverse ssi = qv_prime_in * Rv * T_prime_in / p_sat_ice;
-                    codi::RealReverse n_inact = 0;
                     bool ndiag_mask = false;
 
                     std::cout << qc_prime_in.getValue() << ","
@@ -807,7 +818,7 @@ int main(int argc, char** argv)
                               << qv_prime_in.getValue() << ",";
 
                     ice_activation_hande(qc_prime_in, qv_prime_in, T_prime_in,
-                        ssi, n_inact, ndiag_mask, y, cc);
+                        ssi, n_inact_in, ndiag_mask, y, cc);
 
                     std::cout << y[qi_idx].getValue() << ","
                               << y[Ni_idx].getValue() << ","
@@ -819,7 +830,90 @@ int main(int argc, char** argv)
         }
     } else if(func_name.compare("ice_activation_phillips") == 0)
     {
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse qc_prime_in = qc_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
+        codi::RealReverse n_inact_in = n_inact;
 
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        std::cout << "qc,Nc,T,S,qv,delta_qi,delta_Ni,delta_qv,"
+                  << ",delta_lat_cool,delta_lat_heat\n";
+
+        for(uint32_t i=0; i<n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(qc_min != NOT_USED && qc_max != NOT_USED)
+            {
+                qc_prime_in = i * (qc_max-qc_min) / n1 + qc_min;
+                used_parameter = 1;
+            }
+            else if(qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 2;
+            }
+            else if(n_inact_min != NOT_USED && n_inact_max != NOT_USED)
+            {
+                n_inact_in = i * (n_inact_max-n_inact_min) / n1 + n_inact_min;
+                used_parameter = 3;
+            }
+
+            for(uint32_t j=0; j<n2; ++j)
+            {
+                if(used_parameter < 1 && qc_min != NOT_USED && qc_max != NOT_USED)
+                {
+                    qc_prime_in = j * (qc_max-qc_min) / n2 + qc_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && n_inact_min != NOT_USED && n_inact_max != NOT_USED)
+                {
+                    n_inact_in = j * (n_inact_max-n_inact_min) / n2 + n_inact_min;
+                    used_parameter = 3;
+                }
+
+                for(uint32_t k=0; k<n3; ++k)
+                {
+                    if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                        qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    else if(used_parameter2 < 3 && n_inact_min != NOT_USED && n_inact_max != NOT_USED)
+                        n_inact_in = k * (n_inact_max-n_inact_min) / n3 + n_inact_min;
+
+                    for(auto& val: y)
+                        val = 0;
+                    codi::RealReverse Nc = qc_prime_in
+                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
+                        / saturation_pressure_water_icon(T_prime_in);
+
+                    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
+                    codi::RealReverse ssi = qv_prime_in * Rv * T_prime_in / p_sat_ice;
+                    bool use_prog_in = false;
+
+                    std::cout << qc_prime_in.getValue() << ","
+                              << Nc.getValue() << ","
+                              << T_prime_in.getValue() << ","
+                              << S.getValue() << ","
+                              << qv_prime_in.getValue() << ",";
+
+                    ice_activation_phillips(qc_prime_in, qv_prime_in, T_prime_in,
+                        p_sat_ice, ssi, n_inact_in, use_prog_in, y, cc);
+
+                    std::cout << y[qi_idx].getValue() << ","
+                              << y[Ni_idx].getValue() << ","
+                              << y[qv_idx].getValue() << ","
+                              << y[lat_cool_idx].getValue() << ","
+                              << y[lat_heat_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("cloud_freeze_hom") == 0)
     {
 
