@@ -661,6 +661,579 @@ void set_input_from_arguments(global_args_t &arg ,
 }
 
 
+/**
+ * Write the file with reference values ending with
+ * "__reference_values.txt" that can be read in Python with
+ * Numpy. The order is:
+ * Temperature, pressure, mixing ratio, particle number, ascent velocity,
+ * time, height.
+ *
+ * @param out_filename String with filename.
+ * @param ref_quant reference_quantities_t with all the reference values.
+ * @return Errorcode (0=no errors; 1=simulation breaking error)
+ */
+int write_reference_quantities(
+    std::string &out_filename,
+    reference_quantities_t &ref_quant)
+{
+    std::ofstream outfile_refs;
+    outfile_refs.open(out_filename + "_reference_values.txt");
+    outfile_refs.precision(10);
+
+    if( !outfile_refs.is_open() )
+    {
+        std::cout << "ERROR while opening the outputfile. Aborting." << std::endl;
+        return 1;
+    }
+
+    // Write the reference quantities
+    // Write the reference quantities
+    outfile_refs << ref_quant.Tref << " "
+	       << ref_quant.pref << " "
+	       << ref_quant.qref << " "
+	       << ref_quant.Nref << " "
+	       << ref_quant.wref << " "
+	       << ref_quant.tref << " "
+           << ref_quant.zref << "\n";
+
+    outfile_refs.close();
+    return 0;
+}
+
+
+/**
+ * Write the header for simulation results files and for files with
+ * derivatives which have "_diff_" in their name.
+ *
+ * @param out_filename String with filename.
+ * @return Errorcode (0=no errors; 1=simulation breaking error)
+ */
+int write_headers(
+    std::string &out_filename)
+{
+    std::string suffix = ".txt";
+    std::string full_filename;
+    full_filename = out_filename;
+    full_filename += suffix;
+
+    outfile.open(full_filename);
+    outfile.precision(10);
+
+    if( !outfile.is_open() )
+    {
+        std::cout << "ERROR while opening the outputfile. Aborting." << std::endl;
+        return 1;
+    }
+
+    // Append the initial values and write headers
+    out_tmp << "timestep,trajectory,LONGITUDE,LATITUDE,"
+#if defined WCB
+        << "MAP,";
+#endif
+#if defined WCB2
+        << "MAP,"
+        << "dp2h,"
+        << "conv_400,"
+        << "conv_600,"
+        << "slan_400,"
+        << "slan_600,";
+#endif
+        for(uint32_t i=0; i<output_par_idx.size(); ++i)
+            out_tmp << output_par_idx[i]  <<
+                ((i < output_par_idx.size()-1) ? "," : "\n");
+
+    std::string basename = "_diff_";
+    std::string fname;
+
+    for(int ii = 0; ii < num_comp; ii++)
+    {
+        fname = out_filename;
+        fname += basename;
+        fname += std::to_string(ii);
+        fname += suffix;
+
+        out_diff[ii].open(fname);
+        out_diff[ii].precision(10);
+        if( !out_diff[ii].is_open() )
+        {
+            std::cout << "ERROR while opening outputfile. Aborting." << std::endl;
+            return 1;
+        }
+        out_diff_tmp[ii]
+            << "timestep,"
+            << "trajectory,"
+            << "Output Parameter,"
+            << "LONGITUDE,"
+            << "LATITUDE,"
+#if defined WCB
+            << "MAP,";
+#endif
+#if defined WCB2
+            << "MAP,"
+            << "dp2h,"
+            << "conv_400,"
+            << "conv_600,"
+            << "slan_400,"
+            << "slan_600,";
+#endif
+        for(uint32_t i=0; i<output_grad_idx.size(); ++i)
+            out_diff_tmp[ii] << output_grad_idx[i]  <<
+                ((i < output_grad_idx.size()-1) ? "," : "\n");
+    } // End loop over all components
+
+    return 0;
+}
+
+
+/**
+ * Read initial values from the netcdf file and stores them to y_init.
+ * Also stores the amount of trajectories in the input file to lenp and
+ * several quantities to cc such as the number of steps to simulate and
+ * to nc_params, which is used to read from netcdf files.
+ *
+ * @param y_init Array of num_comp many doubles
+ * @param nc_params Struct used for reading netcdf files
+ * @param lenp On out: Number of trajectories available
+ * @param ref_quant Reference quantities used to change from netcdf units to
+ *                  simulation units
+ * @param input_file Path to input netcdf file as char array
+ * @param traj ID of input trajectory to read
+ * @param cc Model constants. On out: Added number of simulation steps
+ * @return Errorcode (0=no errors; 1=simulation breaking error)
+ */
+int read_init_netcdf(
+    std::vector<double> &y_init,
+    nc_parameters_t &nc_params,
+    size_t &lenp,
+    reference_quantities_t &ref_quant,
+    const char *input_file,
+    const uint32_t traj,
+    model_constants_t &cc)
+{
+    try
+    {
+        int dimid, ncid;
+        size_t n_timesteps;
+        // Get the amount of trajectories
+        nc_open(input_file, NC_NOWRITE, &ncid);
+#ifdef WCB
+        nc_inq_dimid(ncid, "ntra", &dimid);
+#else
+        nc_inq_dimid(ncid, "id", &dimid);
+#endif
+        nc_inq_dimlen(ncid, dimid, &lenp);
+        std::cout << "Number of trajectories in netCDF file: " << lenp << "\n";
+        if(lenp <= traj)
+        {
+            std::cout << "You asked for trajectory with index " << traj
+                      << " which does not exist. ABORTING.\n";
+            return 1;
+        }
+        // Get the amount of timesteps
+#ifdef WCB
+        nc_inq_dimid(ncid, "ntim", &dimid);
+#else
+        nc_inq_dimid(ncid, "time", &dimid);
+#endif
+        nc_inq_dimlen(ncid, dimid, &n_timesteps);
+        uint64_t n_timesteps_input = ceil(cc.t_end/20.0);
+
+        cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+        init_nc_parameters(nc_params, lenp, n_timesteps);
+        netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
+        load_nc_parameters_var(nc_params, datafile);
+
+        std::vector<size_t> startp, countp;
+        // wcb files have a different ordering
+#if defined WCB || defined WCB2
+        startp.push_back(0); // time
+        startp.push_back(traj); // trajectory id
+#else
+        startp.push_back(traj); // trajectory id
+        startp.push_back(1); // time (where time == 0 only has zeros)
+#endif
+        countp.push_back(1);
+        countp.push_back(1);
+        load_nc_parameters(nc_params, startp, countp,
+                           ref_quant, cc.num_sub_steps);
+
+        y_init[p_idx] = nc_params.p;
+        y_init[T_idx] = nc_params.t;
+
+        y_init[S_idx] = nc_params.S;
+#ifdef SAT_CALC
+        y_init[S_idx] = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+#endif
+        y_init[qc_idx] = nc_params.qc;
+        y_init[qr_idx] = nc_params.qr;
+        y_init[qv_idx] = nc_params.qv;
+#if defined(RK4ICE)
+        y_init[qi_idx] = nc_params.qi;
+        y_init[qs_idx] = nc_params.qs;
+#endif
+#ifdef WCB
+        y_init[w_idx] = 0;
+  #if defined(RK4ICE)
+        y_init[qg_idx] = 0;
+  #endif
+#else
+        y_init[w_idx] = nc_params.w[0];
+  #if defined(RK4ICE)
+        y_init[qg_idx] = nc_params.qg;
+  #endif
+#endif
+#if defined(RK4ICE)
+        y_init[qh_idx] = 0.0; // hail that is not in the trajectory
+        y_init[qh_out_idx] = 0.0;
+        y_init[Nh_out_idx] = 0.0;
+#endif
+#ifdef WCB2
+
+        y_init[Nr_idx] = nc_params.Nr;
+        y_init[Nc_idx] = nc_params.Nc;
+  #if defined(RK4ICE)
+        y_init[qr_out_idx] = nc_params.QRout;
+        y_init[Nr_out_idx] = nc_params.NRout;
+        y_init[qi_out_idx] = nc_params.QIout;
+        y_init[qs_out_idx] = nc_params.QSout;
+        y_init[qg_out_idx] = nc_params.QGout;
+        y_init[Ni_out_idx] = nc_params.NIout;
+        y_init[Ns_out_idx] = nc_params.NSout;
+        y_init[Ng_out_idx] = nc_params.NGout;
+        y_init[Ni_idx] = nc_params.Ni;
+        y_init[Ns_idx] = nc_params.Ns;
+        y_init[Ng_idx] = nc_params.Ng;
+  #endif
+#else
+        y_init[qr_out_idx] = 0.0;
+        y_init[Nr_out_idx] = 0;
+        y_init[Nc_idx] = 0;
+        y_init[Nr_idx] = 0;
+  #if defined(RK4ICE)
+        // We initialize the sedimentation with 0 for the stepper
+        y_init[qi_out_idx] = 0.0;
+        y_init[qs_out_idx] = 0.0;
+        y_init[qg_out_idx] = 0.0;
+        y_init[Ni_out_idx] = 0;
+        y_init[Ns_out_idx] = 0;
+        y_init[Ng_out_idx] = 0;
+        y_init[Ni_idx] = 0;
+        y_init[Ns_idx] = 0;
+        y_init[Ng_idx] = 0;
+  #endif
+#endif
+        y_init[Nv_idx] = 0;
+#if defined(RK4ICE) || defined(RK4NOICE)
+        y_init[z_idx] = nc_params.z[0];
+        y_init[n_inact_idx] = 0;
+        y_init[depo_idx] = 0;
+        y_init[sub_idx] = 0;
+#endif
+    } catch(netCDF::exceptions::NcException& e)
+    {
+        std::cout << e.what() << std::endl;
+        std::cout << "ABORTING." << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
+
+
+/**
+ * Open NETCDF file for reading and store some information in ncid, startp,
+ * countp.
+ *
+ * @param ncid On out: contains id of netcdf file (needed for closing it)
+ * @param startp On out: contains dimensions info for reading
+ * @params countp On out: contains dimensions info for reading
+ * @params input_file Char array of input file
+ */
+void open_netcdf(
+    int &ncid,
+    std::vector<size_t> &startp,
+    std::vector<size_t> &countp,
+    const char *input_file,
+    const uint32_t traj)
+{
+    nc_open(input_file, NC_NOWRITE, &ncid);
+#if defined WCB || defined WCB2
+    startp.push_back(1);          // time
+    startp.push_back(traj); // trajectory
+#else
+    startp.push_back(traj); // trajectory
+    startp.push_back(1);          // time
+#endif
+    countp.push_back(1);
+    countp.push_back(1);
+}
+
+
+/**
+ * Read from netcdf file. Alter current values used for simlation if
+ * given timestep is encountered. Writes values to output stringstream.
+ *
+ *
+ */
+void read_netcdf_write_stream(
+    const char *input_file,
+    std::vector<size_t> &startp,
+    std::vector<size_t> &countp,
+    nc_parameters_t &nc_params,
+    model_constants_t &cc,
+    input_parameters_t &input,
+    reference_quantities_t &ref_quant,
+    std::vector<codi::RealReverse> &y_single_old,
+    std::vector<codi::RealReverse> &inflow,
+    std::vector<int> &ids,
+    int &traj_id,
+    const uint32_t t)
+{
+#if defined WCB || defined WCB2
+    startp[0] = t;
+#else
+    startp[1] = t+1;
+#endif
+
+    netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
+    load_nc_parameters_var(nc_params, datafile);
+    load_nc_parameters(nc_params, startp, countp,
+                        ref_quant, cc.num_sub_steps);
+
+    netCDF::NcVar id_var;
+    id_var = datafile.getVar("id");
+    id_var.getVar(ids.data());
+    traj_id = ids[input.traj];
+    // Set values from a given trajectory
+    if(t==0 || input.start_over)
+    {
+
+        y_single_old[p_idx]  = nc_params.p;     // p
+        y_single_old[T_idx]  = nc_params.t;     // T
+        y_single_old[S_idx]  = nc_params.S;     // S
+#ifdef SAT_CALC
+        y_single_old[S_idx]  = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+#endif
+        y_single_old[qc_idx] = nc_params.qc;    // qc
+        y_single_old[qr_idx] = nc_params.qr;    // qr
+        y_single_old[qv_idx] = nc_params.qv;    // qv
+#if defined(RK4ICE)
+        y_single_old[qi_idx] = nc_params.qi;    // qi
+        y_single_old[qs_idx] = nc_params.qs;    // qs
+#endif
+#if !defined(WCB) && defined(RK4ICE)
+        y_single_old[qg_idx] = nc_params.qg;    // qg
+#elif defined(RK4ICE)
+        if(t==0)
+            y_single_old[qg_idx] = 0;
+#endif
+#if defined(RK4ICE)
+        if(t==0)
+        {
+            y_single_old[qh_idx] = 0.0; // qh. We don't have hail in the trajectoris
+            y_single_old[Nh_idx] = 0.0; // Nh. We don't have hail in the trajectoris
+        }
+#endif
+        codi::RealReverse denom = 0;
+#if defined(RK4ICE) && defined(WCB2)
+        y_single_old[Ng_idx] = nc_params.Ng;
+        y_single_old[Ni_idx] = nc_params.Ni;
+        y_single_old[Ns_idx] = nc_params.Ns;
+        y_single_old[Ng_out_idx] = nc_params.NGout;
+        y_single_old[Ni_out_idx] = nc_params.NIout;
+        y_single_old[Ns_out_idx] = nc_params.NSout;
+        y_single_old[Nr_out_idx] = nc_params.NRout;
+#endif
+#ifdef WCB2
+        y_single_old[Nc_idx] = nc_params.Nc;
+        y_single_old[Nr_idx] = nc_params.Nr;
+#else
+        denom = (cc.cloud.max_x - cc.cloud.min_x) / 2.0 + cc.cloud.min_x;
+        y_single_old[Nc_idx] = y_single_old[qc_idx] * ref_quant.qref / (denom); //*10e2);  // Nc
+        denom = (cc.rain.max_x - cc.rain.min_x) / 2 + cc.rain.min_x;
+        y_single_old[Nr_idx] = y_single_old[qr_idx] * ref_quant.qref / (denom); //*10e2);  // Nr
+        denom = cc.cloud.min_x / 2.0;
+        y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
+#if defined(RK4ICE)
+        denom = (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x;
+        y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
+        denom = (cc.snow.max_x - cc.snow.min_x) / 2.0 + cc.snow.min_x;
+        y_single_old[Ns_idx] = y_single_old[qs_idx] * ref_quant.qref / (denom); //*10e2); // Ns
+        denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
+        y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
+#endif
+#endif
+        cc.Nc_prime = y_single_old[Nc_idx];
+
+        cc.rho_a_prime = compute_rhoa(nc_params.p*ref_quant.pref,//*100,
+            nc_params.t*ref_quant.Tref, nc_params.S);
+        y_single_old[w_idx]  = nc_params.w[0]; // w
+        cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
+
+        denom = cc.cloud.min_x / 2.0;
+        y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
+#if defined(RK4ICE) || defined(RK4NOICE)
+        y_single_old[z_idx] = nc_params.z[0];
+#endif
+#if defined WCB || defined WCB2
+        out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
+                << nc_params.lon[0] << "," << nc_params.lat[0] << ","
+                << nc_params.ascent_flag << ",";
+#else
+        out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
+                << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
+#endif
+#if defined WCB2
+        out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                << nc_params.slan_600 << ",";
+#endif
+        for(int ii = 0 ; ii < num_comp; ii++)
+            out_tmp << y_single_old[ii] <<
+                ((ii == num_comp-1) ? "\n" : ",");
+
+        for(int ii = 0 ; ii < num_comp ; ii++)
+        {
+#if defined WCB || defined WCB2
+            out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                            << traj_id << ","
+                            << output_par_idx[ii] << ","
+                            << nc_params.lon[0] << ","
+                            << nc_params.lat[0] << ","
+                            << nc_params.ascent_flag << ",";
+#else
+            out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                            << traj_id << ","
+                            << output_par_idx[ii] << ","
+                            << nc_params.lon[0] << ","
+                            << nc_params.lat[0] << ",";
+#endif
+#if defined WCB2
+            out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                                << nc_params.slan_600 << ",";
+#endif
+            for(int jj = 0 ; jj < num_par ; jj++)
+                out_diff_tmp[ii] << 0.0
+                    << ((jj==num_par-1) ? "\n" : ",");
+
+        }
+
+#if defined(FLUX) && !defined(WCB)
+        inflow[qr_in_idx] = nc_params.QRin;
+  #if defined(RK4ICE)
+        inflow[qi_in_idx] = nc_params.QIin;
+        inflow[qs_in_idx] = nc_params.QSin;
+        inflow[qg_in_idx] = nc_params.QGin;
+  #endif
+#else
+        inflow[qr_in_idx] = 0;
+  #if defined(RK4ICE)
+        inflow[qi_in_idx] = 0;
+        inflow[qs_in_idx] = 0;
+        inflow[qg_in_idx] = 0;
+  #endif
+#endif
+#if defined(FLUX) && defined(WCB2)
+        inflow[Nr_in_idx] = nc_params.NRin;
+  #if defined(RK4ICE)
+        inflow[Ni_in_idx] = nc_params.NIin;
+        inflow[Ns_in_idx] = nc_params.NSin;
+        inflow[Ng_in_idx] = nc_params.NGin;
+  #endif
+#else
+        inflow[Nr_in_idx] = 0;
+  #if defined(RK4ICE)
+        inflow[Ni_in_idx] = 0;
+        inflow[Ns_in_idx] = 0;
+        inflow[Ng_in_idx] = 0;
+  #endif
+#endif
+    }
+}
+
+
+/**
+ * Store simulation results and gradients to string stream and dump it
+ * if timestep is reached to do so.
+ */
+void write_output(
+    const model_constants_t &cc,
+    const nc_parameters_t &nc_params,
+    const std::vector<codi::RealReverse> &y_single_new,
+    const std::vector< std::array<double, num_par > >  &y_diff,
+    const uint32_t sub,
+    const uint32_t t,
+    const uint32_t time_new,
+    const uint32_t traj_id,
+    const uint32_t write_index,
+    const uint32_t snapshot_index)
+{
+    if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
+        || ( t == cc.num_steps-1 && sub == cc.num_sub_steps-1 ) )
+    {
+        // Write the results to the output file
+#if defined WCB || defined WCB2
+        out_tmp << time_new << "," << traj_id << ","
+                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                << (nc_params.lat[0] + sub*nc_params.dlat) << ","
+                << nc_params.ascent_flag << ",";
+#else
+        out_tmp << time_new << "," << traj_id << ","
+                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
+#endif
+#if defined WCB2
+        out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                << nc_params.slan_600 << ",";
+#endif
+        for(int ii = 0 ; ii < num_comp; ii++)
+            out_tmp << y_single_new[ii]
+                << ((ii == num_comp-1) ? "\n" : ",");
+
+        // CODIPACK: BEGIN
+        for(int ii = 0 ; ii < num_comp ; ii++)
+        {
+#if defined WCB || defined WCB2
+            out_diff_tmp[ii] << time_new << "," << traj_id << ","
+                            << output_par_idx[ii] << ","
+                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                            << (nc_params.lat[0] + sub*nc_params.dlat) << ","
+                            << nc_params.ascent_flag << ",";
+#else
+            out_diff_tmp[ii] << time_new << "," << traj_id << ","
+                            << output_par_idx[ii] << ","
+                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                            << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
+#endif
+#if defined WCB2
+            out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                            << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                            << nc_params.slan_600 << ",";
+#endif
+            for(int jj = 0 ; jj < num_par ; jj++)
+                out_diff_tmp[ii] << y_diff[ii][jj]
+                    << ((jj==num_par-1) ? "\n" : ",");
+        }
+        // CODIPACK: END
+    }
+    if( (0 == (sub + t*cc.num_sub_steps) % write_index)
+        || ( t == cc.num_steps-1 && sub == cc.num_sub_steps-1 ) )
+    {
+        outfile << out_tmp.rdbuf();
+        for(int ii = 0 ; ii < num_comp ; ii++)
+        {
+            out_diff[ii] << out_diff_tmp[ii].rdbuf();
+            out_diff_tmp[ii].str( std::string() );
+            out_diff_tmp[ii].clear();
+        }
+        out_tmp.str( std::string() );
+        out_tmp.clear();
+    }
+}
 
 /** @} */ // end of group io
 

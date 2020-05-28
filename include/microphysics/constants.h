@@ -49,8 +49,18 @@
 #define n_inact_idx 32      /*!< Number of inactive nuclei (ie due to being activated before) */
 #define depo_idx 33         /*!< Number of deposited nuclei */
 #define sub_idx 34          /*!< Sublimination number */
+
+#if defined(RK4_ONE_MOMENT)
+#define num_comp 10         /*!< Number of output elements of a model */
+#define num_par 12          /*!< Number of gradients */
+
+#elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 35         /*!< Number of output elements of a model */
-// Those are for a different vector
+#define num_par 56*6+17     /*!< Number of gradients */
+
+#endif
+
+// Those are for an inflow vector
 #define qi_in_idx 0         /*!< Ice input index for another vector */
 #define qs_in_idx 1         /*!< Snow input index for another vector */
 #define qr_in_idx 2         /*!< Rain input index for another vector */
@@ -61,14 +71,26 @@
 #define Ng_in_idx 7         /*!< Graupel input index for another vector */
 #define num_inflows 8       /*!< Number of parameters for inflowing stuff */
 
-#define num_par 56*6+17    /*!< Number of gradients */
-
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////////////////////
 
+#if defined(RK4_ONE_MOMENT)
 /**
- * Used for output derivatives.
+ * Used for header files of output parameters.
+ */
+const std::vector<std::string> output_par_idx =
+    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr", "Nv"};
+
+/**
+ * Used for header files of gradients.
+ */
+const std::vector<std::string> output_grad_idx =
+    {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
+    "dbeta_r", "ddelta1", "ddelta2", "dzeta"};
+#elif defined(RK4ICE) || defined(RK4NOICE)
+/**
+ * Used for header files of output parameters.
  */
 const std::vector<std::string> output_par_idx =
     {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr", "Nv",
@@ -76,6 +98,115 @@ const std::vector<std::string> output_par_idx =
      "qiout", "qsout", "qrout", "qgout", "qhout",
      "latent_heat", "latent_cool", "Niout", "Nsout", "Nrout",
      "Ngout", "Nhout", "z", "Inactive", "deposition", "sublimination"};
+
+/**
+ * Used for header files of gradients.
+ */
+const std::vector<std::string> output_grad_idx =
+    {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
+    "dbeta_r", "ddelta1", "ddelta2", "dzeta", "dcc.rain_gfak", "dcloud_k_au",
+    "dcloud_k_sc", "dkc_autocon", "dinv_z",
+    // Rain
+    "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_min_x_act",
+    "drain_min_x_nuc_homo", "drain_min_x_nuc_hetero", "drain_min_x_melt",
+    "drain_min_x_evap", "drain_min_x_freezing", "drain_min_x_depo",
+    "drain_min_x_collision", "drain_min_x_collection",
+    "drain_min_x_conversion", "drain_min_x_sedimentation",
+    "drain_min_x_riming", "drain_max_x", "drain_sc_theta_q",
+    "drain_sc_delta_q", "drain_sc_theta_n", "drain_sc_delta_n",
+    "drain_s_vel", "drain_a_vel", "drain_b_vel", "drain_rho_v", "drain_c_z",
+    "drain_sc_coll_n", "drain_cmu0", "drain_cmu1", "drain_cmu2", "drain_cmu3",
+    "drain_cmu4", "drain_cmu5", "drain_alpha", "drain_beta", "drain_gamma",
+    "drain_nu", "drain_g1", "drain_g2", "drain_mu", "drain_nm1", "drain_nm2",
+    "drain_nm3", "drain_q_crit_c", "drain_d_crit_c", "drain_ecoll_c",
+    "drain_cap", "drain_a_ven", "drain_b_ven", "drain_c_s", "drain_a_f",
+    "drain_b_f", "drain_alfa_n", "drain_alfa_q", "drain_lambda",
+    "drain_vsedi_min", "drain_vsedi_max",
+    // Cloud
+    "dcloud_a_geo", "dcloud_b_geo", "dcloud_min_x", "dcloud_min_x_act",
+    "dcloud_min_x_nuc_homo", "dcloud_min_x_nuc_hetero", "dcloud_min_x_melt",
+    "dcloud_min_x_evap", "dcloud_min_x_freezing", "dcloud_min_x_depo",
+    "dcloud_min_x_collision", "dcloud_min_x_collection",
+    "dcloud_min_x_conversion", "dcloud_min_x_sedimentation",
+    "dcloud_min_x_riming", "dcloud_max_x", "dcloud_sc_theta_q",
+    "dcloud_sc_delta_q", "dcloud_sc_theta_n", "dcloud_sc_delta_n",
+    "dcloud_s_vel", "dcloud_a_vel", "dcloud_b_vel", "dcloud_rho_v",
+    "dcloud_c_z", "dcloud_sc_coll_n", "dcloud_cmu0", "dcloud_cmu1",
+    "dcloud_cmu2", "dcloud_cmu3", "dcloud_cmu4", "dcloud_cmu5",
+    "dcloud_alpha", "dcloud_beta", "dcloud_gamma", "dcloud_nu", "dcloud_g1",
+    "dcloud_g2", "dcloud_mu", "dcloud_nm1", "dcloud_nm2", "dcloud_nm3",
+    "dcloud_q_crit_c", "dcloud_d_crit_c", "dcloud_ecoll_c", "dcloud_cap",
+    "dcloud_a_ven", "dcloud_b_ven", "dcloud_c_s", "dcloud_a_f", "dcloud_b_f",
+    "dcloud_alfa_n", "dcloud_alfa_q", "dcloud_lambda", "dcloud_vsedi_min",
+    "dcloud_vsedi_max",
+    // Graupel
+    "dgraupel_a_geo", "dgraupel_b_geo", "dgraupel_min_x",
+    "dgraupel_min_x_act", "dgraupel_min_x_nuc_homo",
+    "dgraupel_min_x_nuc_hetero", "dgraupel_min_x_melt", "dgraupel_min_x_evap",
+    "dgraupel_min_x_freezing", "dgraupel_min_x_depo",
+    "dgraupel_min_x_collision", "dgraupel_min_x_collection",
+    "dgraupel_min_x_conversion", "dgraupel_min_x_sedimentation",
+    "dgraupel_min_x_riming", "dgraupel_max_x", "dgraupel_sc_theta_q",
+    "dgraupel_sc_delta_q", "dgraupel_sc_theta_n", "dgraupel_sc_delta_n",
+    "dgraupel_s_vel", "dgraupel_a_vel", "dgraupel_b_vel", "dgraupel_rho_v",
+    "dgraupel_c_z", "dgraupel_sc_coll_n", "dgraupel_cmu0", "dgraupel_cmu1",
+    "dgraupel_cmu2", "dgraupel_cmu3", "dgraupel_cmu4", "dgraupel_cmu5",
+    "dgraupel_alpha", "dgraupel_beta", "dgraupel_gamma", "dgraupel_nu",
+    "dgraupel_g1", "dgraupel_g2", "dgraupel_mu", "dgraupel_nm1",
+    "dgraupel_nm2", "dgraupel_nm3", "dgraupel_q_crit_c", "dgraupel_d_crit_c",
+    "dgraupel_ecoll_c", "dgraupel_cap", "dgraupel_a_ven", "dgraupel_b_ven",
+    "dgraupel_c_s", "dgraupel_a_f", "dgraupel_b_f", "dgraupel_alfa_n",
+    "dgraupel_alfa_q", "dgraupel_lambda", "dgraupel_vsedi_min",
+    "dgraupel_vsedi_max",
+    // Hail
+    "dhail_a_geo", "dhail_b_geo", "dhail_min_x", "dhail_min_x_act",
+    "dhail_min_x_nuc_homo", "dhail_min_x_nuc_hetero", "dhail_min_x_melt",
+    "dhail_min_x_evap", "dhail_min_x_freezing", "dhail_min_x_depo",
+    "dhail_min_x_collision", "dhail_min_x_collection",
+    "dhail_min_x_conversion", "dhail_min_x_sedimentation",
+    "dhail_min_x_riming", "dhail_max_x", "dhail_sc_theta_q",
+    "dhail_sc_delta_q", "dhail_sc_theta_n", "dhail_sc_delta_n", "dhail_s_vel",
+    "dhail_a_vel", "dhail_b_vel", "dhail_rho_v", "dhail_c_z",
+    "dhail_sc_coll_n", "dhail_cmu0", "dhail_cmu1", "dhail_cmu2", "dhail_cmu3",
+    "dhail_cmu4", "dhail_cmu5", "dhail_alpha", "dhail_beta", "dhail_gamma",
+    "dhail_nu", "dhail_g1", "dhail_g2", "dhail_mu", "dhail_nm1", "dhail_nm2",
+    "dhail_nm3", "dhail_q_crit_c", "dhail_d_crit_c", "dhail_ecoll_c",
+    "dhail_cap", "dhail_a_ven", "dhail_b_ven", "dhail_c_s", "dhail_a_f",
+    "dhail_b_f", "dhail_alfa_n", "dhail_alfa_q", "dhail_lambda",
+    "dhail_vsedi_min", "dhail_vsedi_max",
+    // Ice
+    "dice_a_geo", "dice_b_geo", "dice_min_x", "dice_min_x_act",
+    "dice_min_x_nuc_homo", "dice_min_x_nuc_hetero", "dice_min_x_melt",
+    "dice_min_x_evap", "dice_min_x_freezing", "dice_min_x_depo",
+    "dice_min_x_collision", "dice_min_x_collection", "dice_min_x_conversion",
+    "dice_min_x_sedimentation", "dice_min_x_riming", "dice_max_x",
+    "dice_sc_theta_q", "dice_sc_delta_q", "dice_sc_theta_n",
+    "dice_sc_delta_n", "dice_s_vel", "dice_a_vel", "dice_b_vel", "dice_rho_v",
+    "dice_c_z", "dice_sc_coll_n", "dice_cmu0", "dice_cmu1", "dice_cmu2",
+    "dice_cmu3", "dice_cmu4", "dice_cmu5", "dice_alpha", "dice_beta",
+    "dice_gamma", "dice_nu", "dice_g1", "dice_g2", "dice_mu", "dice_nm1",
+    "dice_nm2", "dice_nm3", "dice_q_crit_c", "dice_d_crit_c", "dice_ecoll_c",
+    "dice_cap", "dice_a_ven", "dice_b_ven", "dice_c_s", "dice_a_f",
+    "dice_b_f", "dice_alfa_n", "dice_alfa_q", "dice_lambda", "dice_vsedi_min",
+    "dice_vsedi_max",
+    // Snow
+    "dsnow_a_geo", "dsnow_b_geo", "dsnow_min_x", "dsnow_min_x_act",
+    "dsnow_min_x_nuc_homo", "dsnow_min_x_nuc_hetero", "dsnow_min_x_melt",
+    "dsnow_min_x_evap", "dsnow_min_x_freezing", "dsnow_min_x_depo",
+    "dsnow_min_x_collision", "dsnow_min_x_collection",
+    "dsnow_min_x_conversion", "dsnow_min_x_sedimentation",
+    "dsnow_min_x_riming", "dsnow_max_x", "dsnow_sc_theta_q",
+    "dsnow_sc_delta_q", "dsnow_sc_theta_n", "dsnow_sc_delta_n", "dsnow_s_vel",
+    "dsnow_a_vel", "dsnow_b_vel", "dsnow_rho_v", "dsnow_c_z",
+    "dsnow_sc_coll_n", "dsnow_cmu0", "dsnow_cmu1", "dsnow_cmu2", "dsnow_cmu3",
+    "dsnow_cmu4", "dsnow_cmu5", "dsnow_alpha", "dsnow_beta", "dsnow_gamma",
+    "dsnow_nu", "dsnow_g1", "dsnow_g2", "dsnow_mu", "dsnow_nm1", "dsnow_nm2",
+    "dsnow_nm3", "dsnow_q_crit_c", "dsnow_d_crit_c", "dsnow_ecoll_c",
+    "dsnow_cap", "dsnow_a_ven", "dsnow_b_ven", "dsnow_c_s", "dsnow_a_f",
+    "dsnow_b_f", "dsnow_alfa_n", "dsnow_alfa_q", "dsnow_lambda",
+    "dsnow_vsedi_min", "dsnow_vsedi_max"};
+#endif
+
 
 /**
  * Universal gas constant, unit: J/(mol*K)
@@ -507,47 +638,24 @@ const double bet_imm = 1.2293;           /*!< More parameters for Hande et al. n
 uint32_t auto_type = 3;
 
 /**
- * See mo_2mom_mcrph_main.f90 line 830 following of ICON.
- */
-codi::RealReverse rain_gfak = -1.0;
-
-codi::RealReverse cloud_k_au; /*!< Parameter for autoconversion Seifert & Beheng. */
-codi::RealReverse cloud_k_sc; /*!< Parameter for autoconversion Seifert & Beheng. */
-
-/**
- * Kernel for autoconversion
- */
-codi::RealReverse kc_autocon = 9.44e9;
-
-/**
- * Inverse layer thickness. Used for sedimentation.
- * In Miltenberger (2016) the trajectories start every \f$100 \text{m}\f$
- * between the surface and \f$4 \text{km}\f$ altitude using COSMO-2, which
- * uses a mean spacing of \f$388 \text{m}\f$
- * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
- * at \f$23 \text{km}\f$.
- */
-codi::RealReverse inv_z = 1.0/150.0;
-
-/**
  * ccn_activation_hdcp2 after Hande et al (2015)
  */
-std::vector<double> a_ccn = {183230691.161, 0.10147358938,
+const std::vector<double> a_ccn = {183230691.161, 0.10147358938,
                                 -0.2922395814, 229189886.226};
 /**
  * ccn_activation_hdcp2 after Hande et al (2015)
  */
-std::vector<double> b_ccn = {0.0001984051994, 4.473190485e-05,
+const std::vector<double> b_ccn = {0.0001984051994, 4.473190485e-05,
                                 0.0001843225275, 0.0001986158191};
 /**
  * ccn_activation_hdcp2 after Hande et al (2015)
  */
-std::vector<double> c_ccn = {16.2420263911, 3.22011836758,
+const std::vector<double> c_ccn = {16.2420263911, 3.22011836758,
                                 13.8499423719, 16.2461600644};
 /**
  * ccn_activation_hdcp2 after Hande et al (2015)
  */
-std::vector<double> d_ccn = {287736034.13, 0.6258809883,
+const std::vector<double> d_ccn = {287736034.13, 0.6258809883,
                                 0.8907491812, 360848977.55};
 
 /** Nucleation types
@@ -584,7 +692,7 @@ const uint32_t t_tstep = 2;
  */
 const uint32_t s_sstep = 1;
 
-std::vector<std::vector<double> > afrac_dust = {
+const std::vector<std::vector<double> > afrac_dust = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
@@ -687,7 +795,7 @@ std::vector<std::vector<double> > afrac_dust = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
 
-std::vector<std::vector<double> > afrac_orga = {
+const std::vector<std::vector<double> > afrac_orga = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
@@ -790,7 +898,7 @@ std::vector<std::vector<double> > afrac_orga = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
 
-std::vector<std::vector<double> > afrac_soot = {
+const std::vector<std::vector<double> > afrac_soot = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
@@ -903,6 +1011,15 @@ gamma_table_t table_g1, table_g2, table_r1, table_r2, table_r3;
 const uint64_t n_lookup = 2000;
 const uint64_t n_lookup_highres = 10000;
 const uint64_t n_lookup_hr_dummy = 10;
+
+/**
+ * Used for writing outputs.
+ */
+std::stringstream out_tmp;
+std::ofstream outfile;
+std::ofstream out_diff[num_comp];
+std::stringstream out_diff_tmp[num_comp];
+
 /** @} */ // end of group constants
 
 #endif

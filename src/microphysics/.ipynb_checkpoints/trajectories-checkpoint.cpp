@@ -80,7 +80,6 @@ int main(int argc, char** argv)
     }else
     {
         opt = getopt(argc, argv, optString);
-
         while(-1 != opt)
         {
             switch(opt)

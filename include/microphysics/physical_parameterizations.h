@@ -1140,23 +1140,24 @@ void setCoefficients(
  * @param pc Model constants for a certain particle type.
  */
 void setup_cloud_autoconversion(
-    particle_model_constants_t &pc)
+    particle_model_constants_t &pc,
+    model_constants_t &cc)
 {
     auto nu = pc.nu + 1.0;
     auto mu = pc.mu;
     if(pc.mu == 1.0)
     {
-        cloud_k_au = kc_autocon / pc.max_x * 0.05
+        cc.cloud_k_au = cc.kc_autocon / pc.max_x * 0.05
             * (nu+1.0)*(nu+3.0) / pow(nu, 2);
-        cloud_k_sc = kc_autocon * (nu+1.0)/(nu);
+        cc.cloud_k_sc = cc.kc_autocon * (nu+1.0)/(nu);
     } else
     {
-        cloud_k_au = kc_autocon / pc.max_x * 0.05
+        cc.cloud_k_au = cc.kc_autocon / pc.max_x * 0.05
             * (2.0 * tgamma((nu+3.0)/mu)
             * tgamma((nu+1.0)/mu) * pow(tgamma((nu)/mu), 2)
             - 1.0 * pow(tgamma((nu+2.0)/mu), 2) * pow(tgamma((nu)/mu), 2))
             / pow(tgamma((nu+1.0)/mu), 4);
-        cloud_k_sc = kc_autocon * pc.c_z;
+        cc.cloud_k_sc = cc.kc_autocon * pc.c_z;
     }
 }
 
@@ -1245,13 +1246,63 @@ void setup_model_constants(
       input_parameters_t &input,
       model_constants_t &cc,
       reference_quantities_t &ref_quant)
-  {
-      // Scaling factor from input
+{
+#if defined(RK4_ONE_MOMENT)
+    // Scaling factor from input
     cc.scaling_fact = input.scaling_fact;
 
     // Accomodation coefficient
     cc.alpha_d = 1.0;
 
+    // // Performance constants for warm cloud; COSMO
+    cc.a1_scale = 1.0e-3;
+    cc.a2_scale = 1.72 / pow(Ra , 7./8.);
+    cc.e1_scale = 1.0 / sqrt(Ra);
+    cc.e2_scale = 9.1 / pow(Ra , 11./16.);
+    cc.d_scale = ( 130.0*tgamma(4.5) )/( 6.0*(1.0e3)*pow(M_PI*(8.0e6)*Ra , 1.0/8.0) );
+
+    // Performance constants for warm cloud; IFS
+    // The file constants.h also defines some constants as nar, ...
+    const double Nc = 50; 	// 50 over ocean; 300 over land
+    const double F_aut = 1.5;
+    const double F_acc = 2.0;
+    const double lambdar_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alphar);
+
+    // Inflow from above
+    cc.B_prime = 0.0;
+
+    // // Exponents of the cloud model
+    // // COSMO
+    cc.gamma = 1.0;
+    cc.betac = 1.0;
+    cc.betar = 7./8.;
+    cc.delta1 = 0.5;
+    cc.delta2 = 11./16.;
+    cc.zeta = 9./8.;
+
+    // Numerics
+    cc.t_end_prime = input.t_end_prime;
+    cc.t_end = input.t_end_prime/ref_quant.tref;
+    // Time of the substeps
+
+    cc.dt = input.dt_prime/ref_quant.tref;
+    cc.dt_prime = input.dt_prime;
+    cc.dt_traject_prime = cc.dt_traject * ref_quant.tref;
+    // The trajectories are calculated with 20 s timesteps.
+    cc.num_sub_steps = (floor( 20.0/cc.dt ) < 1) ? 1 : floor( 20.0/cc.dt );
+
+    cc.snapshot_index = input.snapshot_index;
+    // Evaluate the general performance constants
+    cc.dt_half = cc.dt*0.5;
+    cc.dt_third = cc.dt/3.0;
+    cc.dt_sixth = cc.dt/6.0;
+
+#elif defined(RK4ICE) || defined(RK4NOICE)
+    // Scaling factor from input
+    cc.scaling_fact = input.scaling_fact;
+
+    // Accomodation coefficient
+    cc.alpha_d = 1.0;
 
     // // Performance constants for warm cloud; COSMO
     cc.a1_scale = 1.0e-3;
@@ -1348,7 +1399,7 @@ void setup_model_constants(
     cc.cloud.b_f = vent_coeff_b(cc.cloud, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
     cc.cloud.c_z = moment_gamma(cc.cloud, 2);
 
-    setup_cloud_autoconversion(cc.cloud);
+    setup_cloud_autoconversion(cc.cloud, cc);
     setup_bulk_sedi(cc.cloud);
 
     //// Rain
@@ -1383,7 +1434,7 @@ void setup_model_constants(
     cc.rain.cmu3 = 1.1e-3;
     cc.rain.cmu4 = 1.0;
     cc.rain.cmu5 = 2.0;
-    rain_gfak = 1.0;
+    cc.rain_gfak = 1.0;
 
     cc.rain.nm1 = (cc.rain.nu+1.0)/cc.rain.mu;
     cc.rain.nm2 = (cc.rain.nu+2.0)/cc.rain.mu;
@@ -1566,6 +1617,7 @@ void setup_model_constants(
     init_particle_collection_1(cc.graupel, cc.ice, cc.coeffs_gic);
     init_particle_collection_1(cc.hail, cc.snow, cc.coeffs_hsc);
     init_particle_collection_1(cc.graupel, cc.snow, cc.coeffs_gsc);
+#endif
 }
 
 /** @} */ // end of group parametrizations

@@ -491,7 +491,6 @@ struct model_constants_t{
   //
   // Physical constants warm cloud
   //
-
   double alpha_d; /*!< Accomodation coefficient */
 
   double rho_a_prime; /*!< Density of dry air */
@@ -628,6 +627,24 @@ struct model_constants_t{
   codi::RealReverse e1_scale; /*!< Performance constants warm cloud */
   codi::RealReverse e2_scale; /*!< Performance constants warm cloud */
   codi::RealReverse d_scale;  /*!< Performance constants warm cloud */
+  codi::RealReverse rain_gfak = -1.0; /*!<  See mo_2mom_mcrph_main.f90 line 830 following of ICON. */
+  codi::RealReverse cloud_k_au; /*!< Parameter for autoconversion Seifert & Beheng. */
+  codi::RealReverse cloud_k_sc; /*!< Parameter for autoconversion Seifert & Beheng. */
+
+  /**
+   * Kernel for autoconversion
+   */
+  codi::RealReverse kc_autocon = 9.44e9;
+
+  /**
+   * Inverse layer thickness. Used for sedimentation.
+   * In Miltenberger (2016) the trajectories start every \f$100 \text{m}\f$
+   * between the surface and \f$4 \text{km}\f$ altitude using COSMO-2, which
+   * uses a mean spacing of \f$388 \text{m}\f$
+   * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
+   * at \f$23 \text{km}\f$.
+   */
+  codi::RealReverse inv_z = 1.0/150.0;
 
   const double nar = 0.22;      /*!< Constants for the IFS model. */
   const double nbr = 2.2;       /*!< Constants for the IFS model. */

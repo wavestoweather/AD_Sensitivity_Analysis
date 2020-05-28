@@ -7,7 +7,7 @@ Here are various scripts to plot and process data from [netCDF](https://www.unid
 Contents
 ---------
 
-- **scripts:** Python scripts to plot stuff and read files for a quick glance.
+- **scripts:** Python scripts to plot stuff and read files for a quick glance or to create parquet files from simulation output.
 - **src:** C++ code. The two moment scheme is under "microphysics".
 - **include:** Header files.
 - **doc:** Documentation. Type `make html` to create a HTML documentation (recommended) and `make latexpdf` to create a pdf documentation with Latex.
@@ -58,18 +58,9 @@ Optional Prerequisites
 ----------------------
 - [GNU Parallel](https://www.gnu.org/software/parallel/)
 
-Jupyter Notebooks
------------------
-- **Plot_physics.ipynb:** Plot single microphysical processes with a given range
-of input parameters. Helpful if you want to see "what happens" and for debugging.
-- **Get_Started.ipynb:** Use this to run a simulation, do some post processing
-on the output and plot the results.
-- **Plot_netcdf.ipynb:** Plot the data from netcdf files to get an idea, what's inside.
-Or you just use Panoply.
 
-I don't want to use Jupyter
----------------------------
-Well, that's a weird decision, but here is a way to run everything by yourself:
+Compiling code
+---------------
 You can alter the Makefile to your choice. \
 The variable `SEASON` can be set to
 `SPRING`, `SUMMER`, `AUTUMN`, `WINTER` and `SPRING95` and sets variables used
@@ -80,16 +71,104 @@ Leave it empty, if you do not want to use it. \
 `SAT_CALC` is set in `SOURCE` as well to calculate the saturation at every step using `qv*Rv*T/p_sat`
 with `Rv` the gas constant for water vapor and `p_sat` the
 saturation vapor pressure over a flat surface of liquid water (see `physical_parametrizations.h`).
-If it is not on, then saturation of 1 is assumed.
+If it is not on, then saturation of 1 is assumed. \
+Variable `TIMESTEPPER` can be used to set the method to use (default: Runge Kutta)
+and the microphysical process (default: one moment scheme for warm clouds).
 
 To compile the code, simply type
 ```
 make release
 ```
-and your binary is under `build/apps/src/microphysics/trajectories`.
+and your binary is under `build/apps/src/microphysics/trajectories` or you
+type
+```
+make scan
+```
+to create a binary for test cases that scan different microphysical processes
+under `build/apps/src/scratch/scan`.
 
+Running a simulation
+---------------------
 You can use `./execute.sh` to execute your simulation and do post-processing
 to make the data ready for analysis.
 All necessary commandline parameters are explained there.
 
+Using Jupyter Notebooks
+-----------------------
+- **Plot_physics.ipynb:** Plot single microphysical processes with a given range
+of input parameters. Helpful if you want to see "what happens" and for debugging.
+- **Plot_sensitivities.ipynb:** Use this as a starting point to plot results
+from a simulation and to plot the sensitivities.
+- **Plot_simulation.ipynb:** Plot the data from netcdf files to get an idea, what's inside.
+Or you just use [Panoply](https://www.giss.nasa.gov/tools/panoply/) if you want something more elaborate.
 
+Adding New Phyics
+------------------
+Any user-defined functions and processes are under `include/microphysics/user_functions.h`.
+Just add your microphysics there and solve the ODE. A simple example is `RHS(..)` that
+you may copy and use for your own `my_physics(..)`.
+The datatype `codi::RealReverse` is from CODIPACK and can mostly
+be handled like `double`. \
+Next you may open `include/microphysics/rk4.h` and either copy `RK4_step(..)` as
+`my_RK4_step(..)` and make it use your function,
+or simply add pragmas around the function calls like that:
+```C++
+#ifdef MY_MICROPHYSICS
+    my_physics(k, yold, ref, cc, nc);
+#else
+    RHS(k, yold, ref, cc, nc);
+#endif
+```
+where `MY_MICROPHYSICS` is a name you give to make use of your own function during
+compile time (set `TIMESTEPPER=-DMY_MICROPHYSICS` in the Makefile).
+Note, you only need to create your own `RK4_step(..)` if the given arguments are
+not sufficient for your own needs! \
+At last, go to `src/microphysics/trajectories.cpp` and search for:
+```
+//////////////// Add any different scheme and model here
+```
+Add pragmas as before to make use of your timestepper method. If you already
+added pragmas in `rk4.h`, it is sufficient to change:
+```C++
+#if defined(RK4)
+```
+to
+```C++
+#if defined RK4 || defined MY_MICROPHYSICS
+```
+Otherwise you need to add additional lines of code, such as:
+```C++
+#if defined(MY_MICROPHYSICS)
+    my_RK4_step(..);
+#elif defined(RK4)
+```
+You can store your model constants and add new ones in the struct
+`model_constants_t`, which is located in `include/microphysics/types.h`.
+Make sure to use the type `codi::RealReverse` if you want to get
+gradients/sensitivites for this parameter. You can set some standard values there
+or, in case you need more sophisticated calculations or if you want to change
+them during simulation, use `setup_model_constants(..)` in
+`include/microphysics/physical_parametrizations.h` and change it to your needs.
+Decorate your version with pragmas as explained before.
+
+Getting Gradients for New Physics
+---------------------------------
+You successfully added parameters to `model_constants_t` and set them up.
+Go to `include/microphysics/gradient_handle.h`. The `register_everything(..)`
+registers all input parameters on a tape. Add
+```C++
+tape.registerInput(parameter);
+```
+for every parameter in your model that is stored in a `model_constants_t`. \
+In `get_gradients(..)`, add
+```C++
+y_diff[ii][idx] == cc.parameter.getGradient();
+```
+for every parameter in your model with `idx` a running variable for the parameters. \
+In `include/microphysics/constants.h` add with your own pragmas the number
+of sensitivities your looking for with `num_par` and add the number of output
+parameters with `num_comp`. You also need to add indizes of all the output
+parameters. \
+Change the contents of `output_par_idx` and `output_grad_idx` to your output
+parameters and input parameters. These vectors are used to write the headers
+of your output files.

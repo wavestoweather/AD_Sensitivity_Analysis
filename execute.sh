@@ -18,11 +18,11 @@ WRITE_INDEX="200"
 
 # End time in seconds for the simulation. Should be lower than
 # the maximum time of the netcdf-file
-TARGET_TIME="403220"
+TARGET_TIME="60"
 
 # Where to write output files. Keep the naming convention of the files, ie
 # wcb403220_traj0_MAP...
-OUTPUT_FILENAME="/data/project/wcb/sim_results/sample_vladiana/wcb${TARGET_TIME}_traj${TRAJ_IDX}_MAP_t000000_p001"
+OUTPUT_PATH="/data/project/wcb/sim_results/sample_vladiana_test/"
 
 # Wether to take the data from the netcdf-file every 20 seconds (=1)
 # or just use the initial conditions from the file and simulate microphysics
@@ -36,14 +36,16 @@ FIXED_ITERATION="0"
 # Run the stuff (in parallel with GNU parallel)
 parallel -j ${NTASKS} --no-notice --delay .2 build/apps/src/microphysics/./trajectories -w ${WRITE_INDEX} -a ${AUTO_TYPE} \
 -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME} -d ${TIMESTEP} \
--i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} -o ${OUTPUT_FILENAME} \
--l ${INPUT_FILENAME} -r {1} ::: {0..100}
+-i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} \
+-o ${OUTPUT_PATH}"wcb${TARGET_TIME}_traj{1}_MAP_t000000_p001" \
+-l ${INPUT_FILENAME} -r {1} ::: {0..3}
 
 # Do some post processing; may use a lot of memory with default settings.
 # If your machine runs out of memory now (or during visualization),
 # try "netcdf"
+# DISCLAIMER: netcdf is not yet supported!
 FILE_TYPE="parquet"
-INPUT_PATH="/data/project/wcb/sim_results/sample_vladiana"
-STORE_PATH="/data/project/wcb/parquet/sample_vladiana"
-
+INPUT_PATH="/data/project/wcb/sim_results/sample_vladiana_test"
+STORE_PATH="/data/project/wcb/parquet/sample_vladiana_test"
+cd scripts
 python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH}

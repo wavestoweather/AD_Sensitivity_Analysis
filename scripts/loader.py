@@ -1,4 +1,4 @@
-from iris.analysis.cartography import rotate_pole
+# from iris.analysis.cartography import rotate_pole
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
@@ -8,15 +8,9 @@ from progressbar import progressbar as pb
 import sys
 import os
 import xarray as xr
+from multiprocessing import Pool
+from itertools import repeat
 
-
-Tref = 273.15
-pref = 100000
-qref = 1e-06
-Nref = 1
-wref = 1
-tref = 1
-zref = 1
 
 params_dict = {"p": "_diff_0.txt", "T": "_diff_1.txt",
                "w": "_diff_2.txt", "S": "_diff_3.txt", "qc": "_diff_4.txt",
@@ -62,7 +56,376 @@ params_dict2 = {"_diff_0.txt": "p",
                "_diff_28.txt": "Nrout",
                "_diff_29.txt": "Ngout",
                "_diff_30.txt": "Nhout",
-               "_diff_31.txt": "z"}
+               "_diff_31.txt": "z",
+               "_diff_32.txt": "n_inact",
+               "_diff_33.txt": "depo",
+               "_diff_34.txt": "sub"}
+deriv_type_dic = {
+    "timestep": np.float64,
+     "trajectory": np.uint64,
+     "Output Parameter": "category",
+     "LONGITUDE": np.float64,
+     "LATITUDE": np.float64,
+     "MAP": np.bool_,
+     "dp2h": np.bool_,
+     "conv_400": np.bool_,
+     "conv_600": np.bool_,
+     "slan_400": np.bool_,
+     "slan_600": np.bool_,
+     "da_1": np.float64,
+     "da_2": np.float64,
+     "de_1": np.float64,
+     "de_2": np.float64,
+     "dd": np.float64,
+     "dN_c": np.float64,
+     "dgamma": np.float64,
+     "dbeta_c": np.float64,
+     "dbeta_r": np.float64,
+     "ddelta1": np.float64,
+     "ddelta2": np.float64,
+     "dzeta": np.float64,
+     "drain_gfak": np.float64,
+     "dcloud_k_au": np.float64,
+     "dcloud_k_sc": np.float64,
+     "dkc_autocon": np.float64,
+     "dinv_z": np.float64,
+     "drain_a_geo": np.float64,
+     "drain_b_geo": np.float64,
+     "drain_min_x": np.float64,
+     "drain_min_x_act": np.float64,
+     "drain_min_x_nuc_homo": np.float64,
+     "drain_min_x_nuc_hetero": np.float64,
+     "drain_min_x_melt": np.float64,
+     "drain_min_x_evap": np.float64,
+     "drain_min_x_freezing": np.float64,
+     "drain_min_x_depo": np.float64,
+     "drain_min_x_collision": np.float64,
+     "drain_min_x_collection": np.float64,
+     "drain_min_x_conversion": np.float64,
+     "drain_min_x_sedimentation": np.float64,
+     "drain_min_x_riming": np.float64,
+     "drain_max_x": np.float64,
+     "drain_sc_theta_q": np.float64,
+     "drain_sc_delta_q": np.float64,
+     "drain_sc_theta_n": np.float64,
+     "drain_sc_delta_n": np.float64,
+     "drain_s_vel": np.float64,
+     "drain_a_vel": np.float64,
+     "drain_b_vel": np.float64,
+     "drain_rho_v": np.float64,
+     "drain_c_z": np.float64,
+     "drain_sc_coll_n": np.float64,
+     "drain_cmu0": np.float64,
+     "drain_cmu1": np.float64,
+     "drain_cmu2": np.float64,
+     "drain_cmu3": np.float64,
+     "drain_cmu4": np.float64,
+     "drain_cmu5": np.float64,
+     "drain_alpha": np.float64,
+     "drain_beta": np.float64,
+     "drain_gamma": np.float64,
+     "drain_nu": np.float64,
+     "drain_g1": np.float64,
+     "drain_g2": np.float64,
+     "drain_mu": np.float64,
+     "drain_nm1": np.float64,
+     "drain_nm2": np.float64,
+     "drain_nm3": np.float64,
+     "drain_q_crit_c": np.float64,
+     "drain_d_crit_c": np.float64,
+     "drain_ecoll_c": np.float64,
+     "drain_cap": np.float64,
+     "drain_a_ven": np.float64,
+     "drain_b_ven": np.float64,
+     "drain_c_s": np.float64,
+     "drain_a_f": np.float64,
+     "drain_b_f": np.float64,
+     "drain_alfa_n": np.float64,
+     "drain_alfa_q": np.float64,
+     "drain_lambda": np.float64,
+     "drain_vsedi_min": np.float64,
+     "drain_vsedi_max": np.float64,
+     "dcloud_a_geo": np.float64,
+     "dcloud_b_geo": np.float64,
+     "dcloud_min_x": np.float64,
+     "dcloud_min_x_act": np.float64,
+     "dcloud_min_x_nuc_homo": np.float64,
+     "dcloud_min_x_nuc_hetero": np.float64,
+     "dcloud_min_x_melt": np.float64,
+     "dcloud_min_x_evap": np.float64,
+     "dcloud_min_x_freezing": np.float64,
+     "dcloud_min_x_depo": np.float64,
+     "dcloud_min_x_collision": np.float64,
+     "dcloud_min_x_collection": np.float64,
+     "dcloud_min_x_conversion": np.float64,
+     "dcloud_min_x_sedimentation": np.float64,
+     "dcloud_min_x_riming": np.float64,
+     "dcloud_max_x": np.float64,
+     "dcloud_sc_theta_q": np.float64,
+     "dcloud_sc_delta_q": np.float64,
+     "dcloud_sc_theta_n": np.float64,
+     "dcloud_sc_delta_n": np.float64,
+     "dcloud_s_vel": np.float64,
+     "dcloud_a_vel": np.float64,
+     "dcloud_b_vel": np.float64,
+     "dcloud_rho_v": np.float64,
+     "dcloud_c_z": np.float64,
+     "dcloud_sc_coll_n": np.float64,
+     "dcloud_cmu0": np.float64,
+     "dcloud_cmu1": np.float64,
+     "dcloud_cmu2": np.float64,
+     "dcloud_cmu3": np.float64,
+     "dcloud_cmu4": np.float64,
+     "dcloud_cmu5": np.float64,
+     "dcloud_alpha": np.float64,
+     "dcloud_beta": np.float64,
+     "dcloud_gamma": np.float64,
+     "dcloud_nu": np.float64,
+     "dcloud_g1": np.float64,
+     "dcloud_g2": np.float64,
+     "dcloud_mu": np.float64,
+     "dcloud_nm1": np.float64,
+     "dcloud_nm2": np.float64,
+     "dcloud_nm3": np.float64,
+     "dcloud_q_crit_c": np.float64,
+     "dcloud_d_crit_c": np.float64,
+     "dcloud_ecoll_c": np.float64,
+     "dcloud_cap": np.float64,
+     "dcloud_a_ven": np.float64,
+     "dcloud_b_ven": np.float64,
+     "dcloud_c_s": np.float64,
+     "dcloud_a_f": np.float64,
+     "dcloud_b_f": np.float64,
+     "dcloud_alfa_n": np.float64,
+     "dcloud_alfa_q": np.float64,
+     "dcloud_lambda": np.float64,
+     "dcloud_vsedi_min": np.float64,
+     "dcloud_vsedi_max": np.float64,
+     "dgraupel_a_geo": np.float64,
+     "dgraupel_b_geo": np.float64,
+     "dgraupel_min_x": np.float64,
+     "dgraupel_min_x_act": np.float64,
+     "dgraupel_min_x_nuc_homo": np.float64,
+     "dgraupel_min_x_nuc_hetero": np.float64,
+     "dgraupel_min_x_melt": np.float64,
+     "dgraupel_min_x_evap": np.float64,
+     "dgraupel_min_x_freezing": np.float64,
+     "dgraupel_min_x_depo": np.float64,
+     "dgraupel_min_x_collision": np.float64,
+     "dgraupel_min_x_collection": np.float64,
+     "dgraupel_min_x_conversion": np.float64,
+     "dgraupel_min_x_sedimentation": np.float64,
+     "dgraupel_min_x_riming": np.float64,
+     "dgraupel_max_x": np.float64,
+     "dgraupel_sc_theta_q": np.float64,
+     "dgraupel_sc_delta_q": np.float64,
+     "dgraupel_sc_theta_n": np.float64,
+     "dgraupel_sc_delta_n": np.float64,
+     "dgraupel_s_vel": np.float64,
+     "dgraupel_a_vel": np.float64,
+     "dgraupel_b_vel": np.float64,
+     "dgraupel_rho_v": np.float64,
+     "dgraupel_c_z": np.float64,
+     "dgraupel_sc_coll_n": np.float64,
+     "dgraupel_cmu0": np.float64,
+     "dgraupel_cmu1": np.float64,
+     "dgraupel_cmu2": np.float64,
+     "dgraupel_cmu3": np.float64,
+     "dgraupel_cmu4": np.float64,
+     "dgraupel_cmu5": np.float64,
+     "dgraupel_alpha": np.float64,
+     "dgraupel_beta": np.float64,
+     "dgraupel_gamma": np.float64,
+     "dgraupel_nu": np.float64,
+     "dgraupel_g1": np.float64,
+     "dgraupel_g2": np.float64,
+     "dgraupel_mu": np.float64,
+     "dgraupel_nm1": np.float64,
+     "dgraupel_nm2": np.float64,
+     "dgraupel_nm3": np.float64,
+     "dgraupel_q_crit_c": np.float64,
+     "dgraupel_d_crit_c": np.float64,
+     "dgraupel_ecoll_c": np.float64,
+     "dgraupel_cap": np.float64,
+     "dgraupel_a_ven": np.float64,
+     "dgraupel_b_ven": np.float64,
+     "dgraupel_c_s": np.float64,
+     "dgraupel_a_f": np.float64,
+     "dgraupel_b_f": np.float64,
+     "dgraupel_alfa_n": np.float64,
+     "dgraupel_alfa_q": np.float64,
+     "dgraupel_lambda": np.float64,
+     "dgraupel_vsedi_min": np.float64,
+     "dgraupel_vsedi_max": np.float64,
+     "dhail_a_geo": np.float64,
+     "dhail_b_geo": np.float64,
+     "dhail_min_x": np.float64,
+     "dhail_min_x_act": np.float64,
+     "dhail_min_x_nuc_homo": np.float64,
+     "dhail_min_x_nuc_hetero": np.float64,
+     "dhail_min_x_melt": np.float64,
+     "dhail_min_x_evap": np.float64,
+     "dhail_min_x_freezing": np.float64,
+     "dhail_min_x_depo": np.float64,
+     "dhail_min_x_collision": np.float64,
+     "dhail_min_x_collection": np.float64,
+     "dhail_min_x_conversion": np.float64,
+     "dhail_min_x_sedimentation": np.float64,
+     "dhail_min_x_riming": np.float64,
+     "dhail_max_x": np.float64,
+     "dhail_sc_theta_q": np.float64,
+     "dhail_sc_delta_q": np.float64,
+     "dhail_sc_theta_n": np.float64,
+     "dhail_sc_delta_n": np.float64,
+     "dhail_s_vel": np.float64,
+     "dhail_a_vel": np.float64,
+     "dhail_b_vel": np.float64,
+     "dhail_rho_v": np.float64,
+     "dhail_c_z": np.float64,
+     "dhail_sc_coll_n": np.float64,
+     "dhail_cmu0": np.float64,
+     "dhail_cmu1": np.float64,
+     "dhail_cmu2": np.float64,
+     "dhail_cmu3": np.float64,
+     "dhail_cmu4": np.float64,
+     "dhail_cmu5": np.float64,
+     "dhail_alpha": np.float64,
+     "dhail_beta": np.float64,
+     "dhail_gamma": np.float64,
+     "dhail_nu": np.float64,
+     "dhail_g1": np.float64,
+     "dhail_g2": np.float64,
+     "dhail_mu": np.float64,
+     "dhail_nm1": np.float64,
+     "dhail_nm2": np.float64,
+     "dhail_nm3": np.float64,
+     "dhail_q_crit_c": np.float64,
+     "dhail_d_crit_c": np.float64,
+     "dhail_ecoll_c": np.float64,
+     "dhail_cap": np.float64,
+     "dhail_a_ven": np.float64,
+     "dhail_b_ven": np.float64,
+     "dhail_c_s": np.float64,
+     "dhail_a_f": np.float64,
+     "dhail_b_f": np.float64,
+     "dhail_alfa_n": np.float64,
+     "dhail_alfa_q": np.float64,
+     "dhail_lambda": np.float64,
+     "dhail_vsedi_min": np.float64,
+     "dhail_vsedi_max": np.float64,
+     "dice_a_geo": np.float64,
+     "dice_b_geo": np.float64,
+     "dice_min_x": np.float64,
+     "dice_min_x_act": np.float64,
+     "dice_min_x_nuc_homo": np.float64,
+     "dice_min_x_nuc_hetero": np.float64,
+     "dice_min_x_melt": np.float64,
+     "dice_min_x_evap": np.float64,
+     "dice_min_x_freezing": np.float64,
+     "dice_min_x_depo": np.float64,
+     "dice_min_x_collision": np.float64,
+     "dice_min_x_collection": np.float64,
+     "dice_min_x_conversion": np.float64,
+     "dice_min_x_sedimentation": np.float64,
+     "dice_min_x_riming": np.float64,
+     "dice_max_x": np.float64,
+     "dice_sc_theta_q": np.float64,
+     "dice_sc_delta_q": np.float64,
+     "dice_sc_theta_n": np.float64,
+     "dice_sc_delta_n": np.float64,
+     "dice_s_vel": np.float64,
+     "dice_a_vel": np.float64,
+     "dice_b_vel": np.float64,
+     "dice_rho_v": np.float64,
+     "dice_c_z": np.float64,
+     "dice_sc_coll_n": np.float64,
+     "dice_cmu0": np.float64,
+     "dice_cmu1": np.float64,
+     "dice_cmu2": np.float64,
+     "dice_cmu3": np.float64,
+     "dice_cmu4": np.float64,
+     "dice_cmu5": np.float64,
+     "dice_alpha": np.float64,
+     "dice_beta": np.float64,
+     "dice_gamma": np.float64,
+     "dice_nu": np.float64,
+     "dice_g1": np.float64,
+     "dice_g2": np.float64,
+     "dice_mu": np.float64,
+     "dice_nm1": np.float64,
+     "dice_nm2": np.float64,
+     "dice_nm3": np.float64,
+     "dice_q_crit_c": np.float64,
+     "dice_d_crit_c": np.float64,
+     "dice_ecoll_c": np.float64,
+     "dice_cap": np.float64,
+     "dice_a_ven": np.float64,
+     "dice_b_ven": np.float64,
+     "dice_c_s": np.float64,
+     "dice_a_f": np.float64,
+     "dice_b_f": np.float64,
+     "dice_alfa_n": np.float64,
+     "dice_alfa_q": np.float64,
+     "dice_lambda": np.float64,
+     "dice_vsedi_min": np.float64,
+     "dice_vsedi_max": np.float64,
+     "dsnow_a_geo": np.float64,
+     "dsnow_b_geo": np.float64,
+     "dsnow_min_x": np.float64,
+     "dsnow_min_x_act": np.float64,
+     "dsnow_min_x_nuc_homo": np.float64,
+     "dsnow_min_x_nuc_hetero": np.float64,
+     "dsnow_min_x_melt": np.float64,
+     "dsnow_min_x_evap": np.float64,
+     "dsnow_min_x_freezing": np.float64,
+     "dsnow_min_x_depo": np.float64,
+     "dsnow_min_x_collision": np.float64,
+     "dsnow_min_x_collection": np.float64,
+     "dsnow_min_x_conversion": np.float64,
+     "dsnow_min_x_sedimentation": np.float64,
+     "dsnow_min_x_riming": np.float64,
+     "dsnow_max_x": np.float64,
+     "dsnow_sc_theta_q": np.float64,
+     "dsnow_sc_delta_q": np.float64,
+     "dsnow_sc_theta_n": np.float64,
+     "dsnow_sc_delta_n": np.float64,
+     "dsnow_s_vel": np.float64,
+     "dsnow_a_vel": np.float64,
+     "dsnow_b_vel": np.float64,
+     "dsnow_rho_v": np.float64,
+     "dsnow_c_z": np.float64,
+     "dsnow_sc_coll_n": np.float64,
+     "dsnow_cmu0": np.float64,
+     "dsnow_cmu1": np.float64,
+     "dsnow_cmu2": np.float64,
+     "dsnow_cmu3": np.float64,
+     "dsnow_cmu4": np.float64,
+     "dsnow_cmu5": np.float64,
+     "dsnow_alpha": np.float64,
+     "dsnow_beta": np.float64,
+     "dsnow_gamma": np.float64,
+     "dsnow_nu": np.float64,
+     "dsnow_g1": np.float64,
+     "dsnow_g2": np.float64,
+     "dsnow_mu": np.float64,
+     "dsnow_nm1": np.float64,
+     "dsnow_nm2": np.float64,
+     "dsnow_nm3": np.float64,
+     "dsnow_q_crit_c": np.float64,
+     "dsnow_d_crit_c": np.float64,
+     "dsnow_ecoll_c": np.float64,
+     "dsnow_cap": np.float64,
+     "dsnow_a_ven": np.float64,
+     "dsnow_b_ven": np.float64,
+     "dsnow_c_s": np.float64,
+     "dsnow_a_f": np.float64,
+     "dsnow_b_f": np.float64,
+     "dsnow_alfa_n": np.float64,
+     "dsnow_alfa_q": np.float64,
+     "dsnow_lambda": np.float64,
+     "dsnow_vsedi_min": np.float64,
+     "dsnow_vsedi_max": np.float64
+}
 
 
 def filter_zeros(df_dict, EPSILON=1e-31):
@@ -260,13 +623,79 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
         "latent_heat", "latent_cool" if change_ref is True. Otherwise
         any dataframe from the given csv file.
     """
+    type_dic = {
+        "timestep": np.float64,
+        "trajectory": np.uint64,
+        "LONGITUDE": np.float64,
+        "LATITUDE": np.float64,
+        "MAP": np.bool_,
+        "dp2h": np.bool_,
+        "conv_400": np.bool_,
+        "conv_600": np.bool_,
+        "slan_400": np.bool_,
+        "slan_600": np.bool_,
+        "p": np.float64,
+        "T": np.float64,
+        "w": np.float64,
+        "S": np.float64,
+        "qc": np.float64,
+        "qr": np.float64,
+        "qv": np.float64,
+        "Nc": np.float64,
+        "Nr": np.float64,
+        "Nv": np.float64,
+        "qi": np.float64,
+        "Ni": np.float64,
+        "vi": np.float64,
+        "qs": np.float64,
+        "Ns": np.float64,
+        "qg": np.float64,
+        "Ng": np.float64,
+        "qh": np.float64,
+        "Nh": np.float64,
+        "qiout": np.float64,
+        "qsout": np.float64,
+        "qrout": np.float64,
+        "qgout": np.float64,
+        "qhout": np.float64,
+        "latent_heat": np.float64,
+        "latent_cool": np.float64,
+        "Niout": np.float64,
+        "Nsout": np.float64,
+        "Nrout": np.float64,
+        "Ngout": np.float64,
+        "Nhout": np.float64,
+        "z": np.float64,
+        "Inactive": np.float64,
+        "deposition": np.float64,
+        "sublimination": np.float64
+    }
+
     if sep is None:
-        data = pd.read_csv(filename, nrows=nrows)
+        try:
+            data = pd.read_csv(filename, nrows=nrows, dtype=type_dic)
+        except:
+            print("Reading data with pre specified data types failed.")
+            print("Restarting with automatic type detection")
+            data = pd.read_csv(filename, nrows=nrows)
     else:
-        data = pd.read_csv(filename, sep=sep, nrows=nrows)
+        try:
+            data = pd.read_csv(filename, sep=sep, nrows=nrows, dtype=type_dic)
+        except:
+            print("Reading data with pre specified data types failed.")
+            print("Restarting with automatic type detection")
+            data = pd.read_csv(filename, sep=sep, nrows=nrows)
+
     if refs is not None:
         change_ref = True
     if change_ref:
+        Tref = 273.15
+        pref = 100000
+        qref = 1e-06
+        Nref = 1
+        wref = 1
+        tref = 1
+        zref = 1
         if refs is not None:
             refs = np.genfromtxt(refs)
             Tref = refs[0]
@@ -283,31 +712,52 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
         data["w"]           = data["w"]*wref
         data["qc"]          = data["qc"]*qref
         data["qr"]          = data["qr"]*qref
-        data["qs"]          = data["qs"]*qref
-        data["qg"]          = data["qg"]*qref
-        data["qh"]          = data["qh"]*qref
-        data["qi"]          = data["qi"]*qref
+        if "qs" in data:
+            data["qs"]          = data["qs"]*qref
+        if "qg" in data:
+            data["qg"]          = data["qg"]*qref
+        if "qh" in data:
+            data["qh"]          = data["qh"]*qref
+        if "qi" in data:
+            data["qi"]          = data["qi"]*qref
         data["qv"]          = data["qv"]*qref
-        data["qiout"]       = data["qiout"]*qref
-        data["qsout"]       = data["qsout"]*qref
-        data["qrout"]       = data["qrout"]*qref
-        data["qgout"]       = data["qgout"]*qref
-        data["qhout"]       = data["qhout"]*qref
+        if "qiout" in data:
+            data["qiout"]       = data["qiout"]*qref
+        if "qsout" in data:
+            data["qsout"]       = data["qsout"]*qref
+        if "qrout" in data:
+            data["qrout"]       = data["qrout"]*qref
+        if "qgout" in data:
+            data["qgout"]       = data["qgout"]*qref
+        if "qhout" in data:
+            data["qhout"]       = data["qhout"]*qref
         data["Nc"]          *= Nref
         data["Nr"]          *= Nref
-        data["Ns"]          *= Nref
-        data["Ng"]          *= Nref
-        data["Nh"]          *= Nref
-        data["Ni"]          *= Nref
+        if "Ns" in data:
+            data["Ns"]          *= Nref
+        if "Ng" in data:
+            data["Ng"]          *= Nref
+        if "Nh" in data:
+            data["Nh"]          *= Nref
+        if "Ni" in data:
+            data["Ni"]          *= Nref
         data["Nv"]          *= Nref
-        data["Niout"]       *= Nref
-        data["Nsout"]       *= Nref
-        data["Nrout"]       *= Nref
-        data["Ngout"]       *= Nref
-        data["Nhout"]       *= Nref
-        data["latent_heat"] *= Tref
-        data["latent_cool"] *= Tref
-        data["z"]           *= zref
+        if "Niout" in data:
+            data["Niout"]       *= Nref
+        if "Nsout" in data:
+            data["Nsout"]       *= Nref
+        if "Nrout" in data:
+            data["Nrout"]       *= Nref
+        if "Ngout" in data:
+            data["Ngout"]       *= Nref
+        if "Nhout" in data:
+            data["Nhout"]       *= Nref
+        if "latent_heat" in data:
+            data["latent_heat"] *= Tref
+        if "latent_cool" in data:
+            data["latent_cool"] *= Tref
+        if "z" in data:
+            data["z"]           *= zref
 
     return data
 
@@ -529,6 +979,109 @@ def load_mult_derivates_big(prefix="", suffix="", filt=False, EPSILON=1e-31,
     return df
 
 
+def load_parallel(f, suffix):
+    """
+    A helper for load_mult_derivates_direc_dic(..) to load using multiple
+    processes.
+    """
+    out_param = params_dict2[f.split(suffix)[1]]
+#     print("Loading from {}".format(f))
+    return (out_param, pd.read_csv(f, sep=",", index_col=False, dtype=deriv_type_dic))
+    # return (out_param, pd.read_csv(f, sep=",", index_col=False,
+    #     dtype={"timestep": "double", "trajectory": "int64",
+    #            "MAP": "bool", "LONGITUDE": "double", "LATITUDE": "double"}))
+
+
+def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
+                                  EPSILON=0.0, trajectories=[1], suffix="20160922_00", pool=None):
+    """
+    Create a dictionary with out parameters as keys and dictionaries with columns:
+    trajectory, timestep, MAP, LATITUDE, LONGITUDE
+    and a column for each in parameter such as "da_1", "da_2", "dsnow_alfa_q", ...
+    Out parameters is a string such as 'p', 'T', 'w' etc
+    MAP is an optionally
+    available flag for interesting timesteps.
+
+    Parameters
+    ----------
+    direc : string
+        A path to a directory wit a list of files to read.
+    filt : bool
+        Filter the data with values smaller than EPSILON if true.
+    EPSILON : float
+        If filt is true, filter values smaller than EPSILON out.
+    trajectories : list of int
+        A list of trajectories to read in.
+    suffix : string
+        The suffix of the filenames before '_diff_xx.txt'. If none is
+        given, the method tries to automatically detect it.
+    pool : multiprocessing.Pool
+        Used to work on data in parallel
+
+    Returns
+    -------
+    dic of pandas.Dataframe
+        Pandas dataframe as described above.
+    """
+    if file_list2 is None:
+        file_list = [os.path.join(direc, f) for f in os.listdir(direc)
+                     if os.path.isfile(os.path.join(direc, f))]
+        file_list2 = []
+        for f in file_list:
+            if "diff" not in f:
+                continue
+            s = f.split("traj")
+            s = s[-1].split("_")
+            if int(s[0]) in trajectories:
+                file_list2.append(f)
+
+
+    if suffix is None:
+        example = file_list[0]
+        i = 1
+        while "diff" in example or "reference" in example:
+            example = file_list[i]
+            i += 1
+        # The last 4 chars should be ".txt" now.
+        example = example[:-4]
+        example = example.split("_")
+        suffix = example[-2] + "_" + example[-1]
+        print("Found suffix: {}".format(suffix))
+    tmp_dict = {}
+
+    def booler(x):
+#         if x != "0" and x != "1":
+#             print(x)
+        return np.bool_(x)
+    def inter(x):
+        return np.uint32(x)
+    if pool is None:
+        for f in file_list2:
+            out_param = params_dict2[f.split(suffix)[1]]
+            df = pd.read_csv(f, sep=",", index_col=False, dtype=deriv_type_dic)#, converters={"conv_400": booler, "conv_600": booler, "slan_400": booler, "slan_600": booler, "dp2h": booler, "trajectory": inter})
+            if out_param in tmp_dict:
+                tmp_dict[out_param] = tmp_dict[out_param].append(df)
+            else:
+                tmp_dict[out_param] = df
+        if filt:
+            tmp_dict = filter_zeros(tmp_dict, EPSILON)
+
+        return tmp_dict
+
+    else:
+
+        for df_tuple in pb(pool.starmap(load_parallel, zip(file_list2, repeat(suffix))), redirect_stdout=True):
+            out_param, df = df_tuple
+            if out_param in tmp_dict:
+                tmp_dict[out_param] = tmp_dict[out_param].append(df)
+            else:
+                tmp_dict[out_param] = df
+        if filt:
+            tmp_dict = filter_zeros(tmp_dict, EPSILON)
+
+        return tmp_dict
+
+
 def load_mult_derivates_directory(direc="", filt=True,
                                   EPSILON=0.0, trajectories=[1], suffix="20160922_00"):
     """
@@ -575,6 +1128,7 @@ def load_mult_derivates_directory(direc="", filt=True,
         i = 1
         while "diff" in example:
             example = file_list2[i]
+            i += 1
         # The last 4 chars should be ".txt" now.
         example = example[:-4]
         example = example.split("_")
@@ -583,25 +1137,26 @@ def load_mult_derivates_directory(direc="", filt=True,
     for f in pb(file_list2, redirect_stdout=True):
         tmp_dict = {}
         try:
-            tmp = pd.read_csv(f, sep=",", index_col=False)
             out_param = params_dict2[f.split(suffix)[1]]
-            tmp_dict[out_param] = tmp
+            tmp_dict = {out_param: pd.read_csv(f, sep=",", index_col=False)}
+
+            s = f.split("traj")
+            s = s[1].split("_")
+            traj = int(s[0])
             if filt:
                 tmp_dict = filter_zeros(tmp_dict, EPSILON)
-            for out_param in tmp_dict.keys():
-                tmp_dict[out_param] = transform_df(tmp_dict[out_param])
-            for out_param in tmp_dict.keys():
-                n_entries = len(tmp_dict[out_param].index)
-                df = df.append(pd.DataFrame(
-                    data={"timestep": tmp_dict[out_param]["timestep"],
-                          "trajectory": [i for j in range(n_entries)],
-                          "out_param": [out_param for j in range(n_entries)],
-                          "in_param": tmp_dict[out_param]["param"],
-                          "deriv": tmp_dict[out_param]["deriv"],
-                          "MAP": tmp_dict[out_param]["MAP"],
-                          "LATITUDE": tmp_dict[out_param]["LATITUDE"],
-                          "LONGITUDE": tmp_dict[out_param]["LONGITUDE"]
-                          }), ignore_index=True)
+            tmp_dict[out_param] = transform_df(tmp_dict[out_param])
+            n_entries = len(tmp_dict[out_param].index)
+            df = df.append(pd.DataFrame(
+                data={"timestep": tmp_dict[out_param]["timestep"],
+                        "trajectory": [traj for j in range(n_entries)],
+                        "out_param": [out_param for j in range(n_entries)],
+                        "in_param": tmp_dict[out_param]["param"],
+                        "deriv": tmp_dict[out_param]["deriv"],
+                        "MAP": tmp_dict[out_param]["MAP"],
+                        "LATITUDE": tmp_dict[out_param]["LATITUDE"],
+                        "LONGITUDE": tmp_dict[out_param]["LONGITUDE"]
+                        }), ignore_index=True)
         except:
             pass
     return df
@@ -624,13 +1179,14 @@ def rotate_df(df, pollon, pollat, lon="LONGITUDE", lat="LATITUDE"):
     lat : String
         "LATITUDE" for derivative dataframe, "lat" for netCDF dataframe.
     """
-    lat_v, lon_v = rotate_pole(
-                           np.asarray(df[lon].tolist()),
-                           np.asarray(df[lat].tolist()),
-                           pole_lon=pollon,
-                           pole_lat=pollat)
-    df[lon] = lon_v
-    df[lat] = lat_v
+    # lat_v, lon_v = rotate_pole(
+    #                        np.asarray(df[lon].tolist()),
+    #                        np.asarray(df[lat].tolist()),
+    #                        pole_lon=pollon,
+    #                        pole_lat=pollat)
+    # df[lon] = lon_v
+    # df[lat] = lat_v
+    print("Not available")
 
 
 def norm_deriv(df):
@@ -713,6 +1269,13 @@ if __name__ == "__main__":
         tref = refs[5]
     except:
         print("No file with reference values found. Using default values.")
+        Tref = 273.15
+        pref = 100000
+        qref = 1e-06
+        Nref = 1
+        wref = 1
+        tref = 1
+        zref = 1
 
     filt = True
     lo = 1
