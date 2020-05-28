@@ -10,7 +10,7 @@ Contents
 - **scripts:** Python scripts to plot stuff and read files for a quick glance or to create parquet files from simulation output.
 - **src:** C++ code. The two moment scheme is under "microphysics".
 - **include:** Header files.
-- **doc:** Documentation. Type `make html` to create a HTML documentation (recommended) and `make latexpdf` to create a pdf documentation with Latex.
+- **doc:** Documentation. Go in this folder and type `make html` to create a HTML documentation (recommended) and `make latexpdf` to create a pdf documentation with Latex.
 - ***.ipynb:** Jupyter Notebooks to get started. See below for more explanation.
 
 
@@ -102,7 +102,7 @@ from a simulation and to plot the sensitivities.
 - **Plot_simulation.ipynb:** Plot the data from netcdf files to get an idea, what's inside.
 Or you just use [Panoply](https://www.giss.nasa.gov/tools/panoply/) if you want something more elaborate.
 
-Adding New Phyics
+Adding New Physics
 ------------------
 Any user-defined functions and processes are under `include/microphysics/user_functions.h`.
 Just add your microphysics there and solve the ODE. A simple example is `RHS(..)` that

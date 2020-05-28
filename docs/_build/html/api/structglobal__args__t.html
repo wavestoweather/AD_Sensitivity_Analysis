@@ -21,12 +21,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -107,32 +107,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="library_root.html">C++ API</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="library_root.html#class-hierarchy">Class Hierarchy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="library_root.html#file-hierarchy">File Hierarchy</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="library_root.html#full-api">Full API</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="library_root.html#namespaces">Namespaces</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="library_root.html#classes-and-structs">Classes and Structs</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="structcollection__model__constants__t.html">Struct collection_model_constants_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structgamma__table__t.html">Struct gamma_table_t</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">Struct global_args_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structinput__parameters__t.html">Struct input_parameters_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structmodel__constants__t.html">Struct model_constants_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structnc__parameters__t.html">Struct nc_parameters_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structparticle__model__constants__t.html">Struct particle_model_constants_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structreference__quantities__t.html">Struct reference_quantities_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structtable__t.html">Struct table_t</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="library_root.html#functions">Functions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="library_root.html#variables">Variables</a></li>
-<li class="toctree-l3"><a class="reference internal" href="library_root.html#defines">Defines</a></li>
-<li class="toctree-l3"><a class="reference internal" href="library_root.html#typedefs">Typedefs</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
 </ul>
 
             
@@ -206,120 +182,131 @@
 </ul>
 <div class="section" id="struct-documentation">
 <h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<dl class="cpp struct">
 <dt id="_CPPv413global_args_t">
 <span id="_CPPv313global_args_t"></span><span id="_CPPv213global_args_t"></span><span id="global_args_t"></span><span class="target" id="structglobal__args__t"></span><em class="property">struct </em><code class="sig-name descname">global_args_t</code><a class="headerlink" href="#_CPPv413global_args_t" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Helper structure to handle command line arguments. </p>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric">Public Members</p>
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t15final_time_flagE">
 <span id="_CPPv3N13global_args_t15final_time_flagE"></span><span id="_CPPv2N13global_args_t15final_time_flagE"></span><span id="global_args_t::final_time_flag__i"></span><span class="target" id="structglobal__args__t_1add5a21d7e5f6bc9fad65d0429845d3e6"></span>int <code class="sig-name descname">final_time_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t15final_time_flagE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Using a final simulation time? </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t17final_time_stringE">
 <span id="_CPPv3N13global_args_t17final_time_stringE"></span><span id="_CPPv2N13global_args_t17final_time_stringE"></span><span id="global_args_t::final_time_string__cP"></span><span class="target" id="structglobal__args__t_1a7ad59620dea849b9bf65e0f2756a2b1d"></span>char *<code class="sig-name descname">final_time_string</code><a class="headerlink" href="#_CPPv4N13global_args_t17final_time_stringE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t13timestep_flagE">
 <span id="_CPPv3N13global_args_t13timestep_flagE"></span><span id="_CPPv2N13global_args_t13timestep_flagE"></span><span id="global_args_t::timestep_flag__i"></span><span class="target" id="structglobal__args__t_1a6ba949e67892d83116b10dd1dfdaf6e3"></span>int <code class="sig-name descname">timestep_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t13timestep_flagE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Timestep in seconds specified? </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t15timestep_stringE">
 <span id="_CPPv3N13global_args_t15timestep_stringE"></span><span id="_CPPv2N13global_args_t15timestep_stringE"></span><span id="global_args_t::timestep_string__cP"></span><span class="target" id="structglobal__args__t_1a5731da92600e0b6d79da58d10e8805c1"></span>char *<code class="sig-name descname">timestep_string</code><a class="headerlink" href="#_CPPv4N13global_args_t15timestep_stringE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t19snapshot_index_flagE">
 <span id="_CPPv3N13global_args_t19snapshot_index_flagE"></span><span id="_CPPv2N13global_args_t19snapshot_index_flagE"></span><span id="global_args_t::snapshot_index_flag__i"></span><span class="target" id="structglobal__args__t_1a3ef27f8d04ecc0068998824c41719959"></span>int <code class="sig-name descname">snapshot_index_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t19snapshot_index_flagE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Snapshot every x iterations specified? </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t21snapshot_index_stringE">
 <span id="_CPPv3N13global_args_t21snapshot_index_stringE"></span><span id="_CPPv2N13global_args_t21snapshot_index_stringE"></span><span id="global_args_t::snapshot_index_string__cP"></span><span class="target" id="structglobal__args__t_1a5a24f490ab37b8b0ac46f5c7d4263cf4"></span>char *<code class="sig-name descname">snapshot_index_string</code><a class="headerlink" href="#_CPPv4N13global_args_t21snapshot_index_stringE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t11output_flagE">
 <span id="_CPPv3N13global_args_t11output_flagE"></span><span id="_CPPv2N13global_args_t11output_flagE"></span><span id="global_args_t::output_flag__i"></span><span class="target" id="structglobal__args__t_1a9bf24e900a7908bc9264985ecd0f507f"></span>int <code class="sig-name descname">output_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t11output_flagE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Output path specified? </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t13output_stringE">
 <span id="_CPPv3N13global_args_t13output_stringE"></span><span id="_CPPv2N13global_args_t13output_stringE"></span><span id="global_args_t::output_string__cP"></span><span class="target" id="structglobal__args__t_1a44c78602bb95c92a6e8d1a31979f192f"></span>char *<code class="sig-name descname">output_string</code><a class="headerlink" href="#_CPPv4N13global_args_t13output_stringE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t10input_flagE">
 <span id="_CPPv3N13global_args_t10input_flagE"></span><span id="_CPPv2N13global_args_t10input_flagE"></span><span id="global_args_t::input_flag__i"></span><span class="target" id="structglobal__args__t_1acce184eeecdc516cf8666bb7fdb6a65f"></span>int <code class="sig-name descname">input_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t10input_flagE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Input netCDF file specified? </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t10input_fileE">
 <span id="_CPPv3N13global_args_t10input_fileE"></span><span id="_CPPv2N13global_args_t10input_fileE"></span><span id="global_args_t::input_file__cP"></span><span class="target" id="structglobal__args__t_1ad65d586efeb004dcb7a2673d2e962563"></span>char *<code class="sig-name descname">input_file</code><a class="headerlink" href="#_CPPv4N13global_args_t10input_fileE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t17scaling_fact_flagE">
 <span id="_CPPv3N13global_args_t17scaling_fact_flagE"></span><span id="_CPPv2N13global_args_t17scaling_fact_flagE"></span><span id="global_args_t::scaling_fact_flag__i"></span><span class="target" id="structglobal__args__t_1a40f35e06b1a492fe52869b67a5c4ed04"></span>int <code class="sig-name descname">scaling_fact_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t17scaling_fact_flagE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Scaling factor specified? </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t19scaling_fact_stringE">
 <span id="_CPPv3N13global_args_t19scaling_fact_stringE"></span><span id="_CPPv2N13global_args_t19scaling_fact_stringE"></span><span id="global_args_t::scaling_fact_string__cP"></span><span class="target" id="structglobal__args__t_1a56c7bd53fb61b35fd094e429e3505cab"></span>char *<code class="sig-name descname">scaling_fact_string</code><a class="headerlink" href="#_CPPv4N13global_args_t19scaling_fact_stringE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t15start_over_flagE">
 <span id="_CPPv3N13global_args_t15start_over_flagE"></span><span id="_CPPv2N13global_args_t15start_over_flagE"></span><span id="global_args_t::start_over_flag__i"></span><span class="target" id="structglobal__args__t_1a44887b0d599513481bab60e3ae61b333"></span>int <code class="sig-name descname">start_over_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t15start_over_flagE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Reload data from trajectory every few seconds? </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t17start_over_stringE">
 <span id="_CPPv3N13global_args_t17start_over_stringE"></span><span id="_CPPv2N13global_args_t17start_over_stringE"></span><span id="global_args_t::start_over_string__cP"></span><span class="target" id="structglobal__args__t_1ae95f7ade47d9e5a517cee02380de1833"></span>char *<code class="sig-name descname">start_over_string</code><a class="headerlink" href="#_CPPv4N13global_args_t17start_over_stringE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t20fixed_iteration_flagE">
 <span id="_CPPv3N13global_args_t20fixed_iteration_flagE"></span><span id="_CPPv2N13global_args_t20fixed_iteration_flagE"></span><span id="global_args_t::fixed_iteration_flag__i"></span><span class="target" id="structglobal__args__t_1afd4ac280a9ab2e824919e2799a4771b8"></span>int <code class="sig-name descname">fixed_iteration_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t20fixed_iteration_flagE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Fix p, T, w during simulation? </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t22fixed_iteration_stringE">
 <span id="_CPPv3N13global_args_t22fixed_iteration_stringE"></span><span id="_CPPv2N13global_args_t22fixed_iteration_stringE"></span><span id="global_args_t::fixed_iteration_string__cP"></span><span class="target" id="structglobal__args__t_1a75c5a5312ca4e673e096bf243f4d4a49"></span>char *<code class="sig-name descname">fixed_iteration_string</code><a class="headerlink" href="#_CPPv4N13global_args_t22fixed_iteration_stringE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t14auto_type_flagE">
 <span id="_CPPv3N13global_args_t14auto_type_flagE"></span><span id="_CPPv2N13global_args_t14auto_type_flagE"></span><span id="global_args_t::auto_type_flag__i"></span><span class="target" id="structglobal__args__t_1a25117dc088785484c57e89f9d9f4c3ab"></span>int <code class="sig-name descname">auto_type_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t14auto_type_flagE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Particle type specified? </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t16auto_type_stringE">
 <span id="_CPPv3N13global_args_t16auto_type_stringE"></span><span id="_CPPv2N13global_args_t16auto_type_stringE"></span><span id="global_args_t::auto_type_string__cP"></span><span class="target" id="structglobal__args__t_1aca372d39be794be8a70b82346f1c9690"></span>char *<code class="sig-name descname">auto_type_string</code><a class="headerlink" href="#_CPPv4N13global_args_t16auto_type_stringE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t9traj_flagE">
 <span id="_CPPv3N13global_args_t9traj_flagE"></span><span id="_CPPv2N13global_args_t9traj_flagE"></span><span id="global_args_t::traj_flag__i"></span><span class="target" id="structglobal__args__t_1a95f2375ce8fefd68407b06bfee8fa63e"></span>int <code class="sig-name descname">traj_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t9traj_flagE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Trajectory to use specified? </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13global_args_t11traj_stringE">
 <span id="_CPPv3N13global_args_t11traj_stringE"></span><span id="_CPPv2N13global_args_t11traj_stringE"></span><span id="global_args_t::traj_string__cP"></span><span class="target" id="structglobal__args__t_1a94b87066ee7bc668cc3084a854b165ed"></span>char *<code class="sig-name descname">traj_string</code><a class="headerlink" href="#_CPPv4N13global_args_t11traj_stringE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N13global_args_t10write_flagE">
+<span id="_CPPv3N13global_args_t10write_flagE"></span><span id="_CPPv2N13global_args_t10write_flagE"></span><span id="global_args_t::write_flag__i"></span><span class="target" id="structglobal__args__t_1a137ef49f0323e50ece5828f6b980d876"></span>int <code class="sig-name descname">write_flag</code><a class="headerlink" href="#_CPPv4N13global_args_t10write_flagE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Snapshot is flushed every x iterations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N13global_args_t12write_stringE">
+<span id="_CPPv3N13global_args_t12write_stringE"></span><span id="_CPPv2N13global_args_t12write_stringE"></span><span id="global_args_t::write_string__cP"></span><span class="target" id="structglobal__args__t_1a9b78ea3c20be301c29ec498d4870e32e"></span>char *<code class="sig-name descname">write_string</code><a class="headerlink" href="#_CPPv4N13global_args_t12write_stringE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 </div>

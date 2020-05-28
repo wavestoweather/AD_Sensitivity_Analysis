@@ -21,12 +21,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -185,9 +185,9 @@ as main-file, it needs three arguments:</p>
 <p>It loads the specified netCDF file with the function <code class="docutils literal notranslate"><span class="pre">load_mult_derivates_big(..)</span></code>
 and stores it as a csv file with the name
 <code class="docutils literal notranslate"><span class="pre">&quot;sb_ice_wcb272280&quot;</span> <span class="pre">+</span> <span class="pre">&quot;_&quot;</span> <span class="pre">+</span> <span class="pre">ident</span> <span class="pre">+</span> <span class="pre">&quot;_&quot;</span> <span class="pre">+</span> <span class="pre">suffix</span> <span class="pre">+</span> <span class="pre">&quot;.csv&quot;</span></code>.</p>
-<span class="target" id="module-scripts.loader"></span><dl class="function">
+<span class="target" id="module-scripts.loader"></span><dl class="py function">
 <dt id="scripts.loader.filter_high">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">filter_high</code><span class="sig-paren">(</span><em class="sig-param">df_dict</em>, <em class="sig-param">high=10.0</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.filter_high" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">filter_high</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df_dict</span></em>, <em class="sig-param"><span class="n">high</span><span class="o">=</span><span class="default_value">10.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.filter_high" title="Permalink to this definition">¶</a></dt>
 <dd><p>Drop all columns that have a suspiciously high impact.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -209,9 +209,9 @@ were too high before.</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.loader.filter_zeros">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">filter_zeros</code><span class="sig-paren">(</span><em class="sig-param">df_dict</em>, <em class="sig-param">EPSILON=1e-31</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.filter_zeros" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">filter_zeros</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df_dict</span></em>, <em class="sig-param"><span class="n">EPSILON</span><span class="o">=</span><span class="default_value">1e-31</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.filter_zeros" title="Permalink to this definition">¶</a></dt>
 <dd><p>Drop all columns that have zero impact</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -233,9 +233,9 @@ zeros existed before.</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.loader.load_derivatives">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_derivatives</code><span class="sig-paren">(</span><em class="sig-param">prefix=''</em>, <em class="sig-param">suffix=''</em>, <em class="sig-param">filt=False</em>, <em class="sig-param">EPSILON=1e-31</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_derivatives" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_derivatives</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">filt</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">EPSILON</span><span class="o">=</span><span class="default_value">1e-31</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_derivatives" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load several dataframes and store them in a dictionary where
 the key is the output parameter of a model and the columns are the
 input parameters and the values are the derivatives.</p>
@@ -252,9 +252,9 @@ input parameters and the values are the derivatives.</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.loader.load_mult_derivates">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_mult_derivates</code><span class="sig-paren">(</span><em class="sig-param">prefix=''</em>, <em class="sig-param">suffix=''</em>, <em class="sig-param">filt=False</em>, <em class="sig-param">EPSILON=1e-31</em>, <em class="sig-param">lo=0</em>, <em class="sig-param">hi=0</em>, <em class="sig-param">high=None</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_mult_derivates" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_mult_derivates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">filt</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">EPSILON</span><span class="o">=</span><span class="default_value">1e-31</span></em>, <em class="sig-param"><span class="n">lo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">hi</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">high</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_mult_derivates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a dataframe with columns:
 trajectory, timestep, out_param, in_param, deriv
 where out_param is a string such as ‘p’, ‘T’, ‘w’ etc
@@ -282,9 +282,9 @@ higher values.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.loader.load_mult_derivates_big">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_mult_derivates_big</code><span class="sig-paren">(</span><em class="sig-param">prefix=''</em>, <em class="sig-param">suffix=''</em>, <em class="sig-param">filt=False</em>, <em class="sig-param">EPSILON=1e-31</em>, <em class="sig-param">lo=0</em>, <em class="sig-param">hi=0</em>, <em class="sig-param">high=None</em>, <em class="sig-param">trajectories=None</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_mult_derivates_big" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_mult_derivates_big</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">filt</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">EPSILON</span><span class="o">=</span><span class="default_value">1e-31</span></em>, <em class="sig-param"><span class="n">lo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">hi</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">high</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">trajectories</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_mult_derivates_big" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a dataframe with columns:
 trajectory, timestep, out_param, in_param, deriv
 where out_param is a string such as ‘p’, ‘T’, ‘w’ etc
@@ -312,9 +312,39 @@ higher values.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
+<dt id="scripts.loader.load_mult_derivates_direc_dic">
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_mult_derivates_direc_dic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">direc</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">filt</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">file_list2</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">EPSILON</span><span class="o">=</span><span class="default_value">0.0</span></em>, <em class="sig-param"><span class="n">trajectories</span><span class="o">=</span><span class="default_value">[1]</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">'20160922_00'</span></em>, <em class="sig-param"><span class="n">pool</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_mult_derivates_direc_dic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dictionary with out parameters as keys and dictionaries with columns:
+trajectory, timestep, MAP, LATITUDE, LONGITUDE
+and a column for each in parameter such as “da_1”, “da_2”, “dsnow_alfa_q”, …
+Out parameters is a string such as ‘p’, ‘T’, ‘w’ etc
+MAP is an optionally
+available flag for interesting timesteps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>direc</strong> (<em>string</em>) – A path to a directory wit a list of files to read.</p></li>
+<li><p><strong>filt</strong> (<em>bool</em>) – Filter the data with values smaller than EPSILON if true.</p></li>
+<li><p><strong>EPSILON</strong> (<em>float</em>) – If filt is true, filter values smaller than EPSILON out.</p></li>
+<li><p><strong>trajectories</strong> (<em>list of int</em>) – A list of trajectories to read in.</p></li>
+<li><p><strong>suffix</strong> (<em>string</em>) – The suffix of the filenames before ‘_diff_xx.txt’. If none is
+given, the method tries to automatically detect it.</p></li>
+<li><p><strong>pool</strong> (<em>multiprocessing.Pool</em>) – Used to work on data in parallel</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Pandas dataframe as described above.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dic of pandas.Dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="scripts.loader.load_mult_derivates_directory">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_mult_derivates_directory</code><span class="sig-paren">(</span><em class="sig-param">direc='', filt=True, EPSILON=0.0, trajectories=[1], suffix='20160922_00'</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_mult_derivates_directory" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_mult_derivates_directory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">direc</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">filt</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">EPSILON</span><span class="o">=</span><span class="default_value">0.0</span></em>, <em class="sig-param"><span class="n">trajectories</span><span class="o">=</span><span class="default_value">[1]</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">'20160922_00'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_mult_derivates_directory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a dataframe with columns:
 trajectory, timestep, out_param, in_param, deriv, MAP, LATITUDE, LONGITUDE
 where out_param is a string such as ‘p’, ‘T’, ‘w’ etc
@@ -340,9 +370,9 @@ available flag for interesting timesteps.</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.loader.load_nc">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_nc</code><span class="sig-paren">(</span><em class="sig-param">inp='/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/foehn201305_case/foehn201305_warming1.nc'</em>, <em class="sig-param">get_pol=False</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_nc" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_nc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">inp</span><span class="o">=</span><span class="default_value">'/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/foehn201305_case/foehn201305_warming1.nc'</span></em>, <em class="sig-param"><span class="n">get_pol</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_nc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a netCDF file and create a pandas.Dataframe.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -362,9 +392,9 @@ of pole.</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.loader.load_output">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_output</code><span class="sig-paren">(</span><em class="sig-param">filename='sb_ice.txt'</em>, <em class="sig-param">sep=None</em>, <em class="sig-param">nrows=None</em>, <em class="sig-param">change_ref=True</em>, <em class="sig-param">refs=None</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_output" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_output</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">'sb_ice.txt'</span></em>, <em class="sig-param"><span class="n">sep</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nrows</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">change_ref</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">refs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_output" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a csv file and return a pandas.Dataframe with
 physical (not normalized) entries.</p>
 <dl class="field-list simple">
@@ -390,9 +420,16 @@ any dataframe from the given csv file.</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
+<dt id="scripts.loader.load_parallel">
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_parallel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em>, <em class="sig-param"><span class="n">suffix</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_parallel" title="Permalink to this definition">¶</a></dt>
+<dd><p>A helper for load_mult_derivates_direc_dic(..) to load using multiple
+processes.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt id="scripts.loader.norm_deriv">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">norm_deriv</code><span class="sig-paren">(</span><em class="sig-param">df</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.norm_deriv" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">norm_deriv</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.norm_deriv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a dataframe with columns:
 trajectory, timestep, out_param, in_param, deriv, ratio_deriv, MAP
 where out_param is a string such as ‘p’, ‘T’, ‘w’ etc
@@ -412,9 +449,9 @@ column “norm_deriv”</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.loader.ratio_deriv">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">ratio_deriv</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">out_param</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.ratio_deriv" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">ratio_deriv</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">out_param</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.ratio_deriv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a dataframe with columns:
 trajectory, timestep, out_param, in_param, deriv
 where out_param is a string such as ‘p’, ‘T’, ‘w’ etc
@@ -440,9 +477,9 @@ deriv and optionally MAP. Also additional column ratio_deriv</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.loader.rotate_df">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">rotate_df</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">pollon</em>, <em class="sig-param">pollat</em>, <em class="sig-param">lon='LONGITUDE'</em>, <em class="sig-param">lat='LATITUDE'</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.rotate_df" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">rotate_df</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">pollon</span></em>, <em class="sig-param"><span class="n">pollat</span></em>, <em class="sig-param"><span class="n">lon</span><span class="o">=</span><span class="default_value">'LONGITUDE'</span></em>, <em class="sig-param"><span class="n">lat</span><span class="o">=</span><span class="default_value">'LATITUDE'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.rotate_df" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rotate the longitude and latitude with the given pole coordinates.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -457,9 +494,9 @@ deriv and optionally MAP. Also additional column ratio_deriv</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.loader.transform_df">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">transform_df</code><span class="sig-paren">(</span><em class="sig-param">df</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.transform_df" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">transform_df</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.transform_df" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new pandas.DataFrame with column “param”, “timestep”, “deriv”
 that can be used for plotting with seaborn.lineplot.
 Optionally adds columns LONGITUDE, LATITUDE, MAP if available in df.</p>
@@ -476,9 +513,9 @@ Optionally adds columns LONGITUDE, LATITUDE, MAP if available in df.</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.loader.transform_df2">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">transform_df2</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">net_df</em>, <em class="sig-param">n_traj=903</em>, <em class="sig-param">traj_timestep=20</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.transform_df2" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">transform_df2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">net_df</span></em>, <em class="sig-param"><span class="n">n_traj</span><span class="o">=</span><span class="default_value">903</span></em>, <em class="sig-param"><span class="n">traj_timestep</span><span class="o">=</span><span class="default_value">20</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.transform_df2" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new pandas.DataFrame with column “deriv”, “in_param”, “out_param”,
 “timestep”, “trajectory”, “LONGITUDE” and “LATITUDE”.
 that can be used for plotting with plot_many_traj.plot_weather_deriv(..).

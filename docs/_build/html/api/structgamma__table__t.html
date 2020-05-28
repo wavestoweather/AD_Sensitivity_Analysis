@@ -21,12 +21,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -107,32 +107,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="library_root.html">C++ API</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="library_root.html#class-hierarchy">Class Hierarchy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="library_root.html#file-hierarchy">File Hierarchy</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="library_root.html#full-api">Full API</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="library_root.html#namespaces">Namespaces</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="library_root.html#classes-and-structs">Classes and Structs</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="structcollection__model__constants__t.html">Struct collection_model_constants_t</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">Struct gamma_table_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structglobal__args__t.html">Struct global_args_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structinput__parameters__t.html">Struct input_parameters_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structmodel__constants__t.html">Struct model_constants_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structnc__parameters__t.html">Struct nc_parameters_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structparticle__model__constants__t.html">Struct particle_model_constants_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structreference__quantities__t.html">Struct reference_quantities_t</a></li>
-<li class="toctree-l4"><a class="reference internal" href="structtable__t.html">Struct table_t</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="library_root.html#functions">Functions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="library_root.html#variables">Variables</a></li>
-<li class="toctree-l3"><a class="reference internal" href="library_root.html#defines">Defines</a></li>
-<li class="toctree-l3"><a class="reference internal" href="library_root.html#typedefs">Typedefs</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
 </ul>
 
             
@@ -206,7 +182,7 @@
 </ul>
 <div class="section" id="struct-documentation">
 <h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<dl class="cpp struct">
 <dt id="_CPPv413gamma_table_t">
 <span id="_CPPv313gamma_table_t"></span><span id="_CPPv213gamma_table_t"></span><span id="gamma_table_t"></span><span class="target" id="structgamma__table__t"></span><em class="property">struct </em><code class="sig-name descname">gamma_table_t</code><a class="headerlink" href="#_CPPv413gamma_table_t" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>A lookup table for the lower incomplete gamma function from ICON mo_2mom_mcrph_util.f90 at incgfct_lower_lookupcreate: <div class="math">
@@ -216,9 +192,9 @@
 <p>The last value in the table corresponds to x = infinity, so that during the reconstruction of incgfct-values from the table, the x-value can safely be truncated at the maximum table x-value. </p>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric">Public Functions</p>
-<dl class="function">
+<dl class="cpp function">
 <dt id="_CPPv4I0EN13gamma_table_t7look_loE1A1A">
-<span id="_CPPv3I0EN13gamma_table_t7look_loE1A"></span><span id="_CPPv2I0EN13gamma_table_t7look_loE1A"></span><span class="target" id="structgamma__table__t_1aa1c489b496630cb0e1e5f34c5afb3e78"></span>template&lt;class <code class="sig-name descname">A</code>&gt;<br /><a class="reference internal" href="#_CPPv4I0EN13gamma_table_t7look_loE1A1A" title="gamma_table_t::look_lo::A">A</a> <code class="sig-name descname">look_lo</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN13gamma_table_t7look_loE1A1A" title="gamma_table_t::look_lo::A">A</a> <em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN13gamma_table_t7look_loE1A1A" title="Permalink to this definition">¶</a><br /></dt>
+<span id="_CPPv3I0EN13gamma_table_t7look_loE1A"></span><span id="_CPPv2I0EN13gamma_table_t7look_loE1A"></span>template&lt;class <code class="sig-name descname">A</code>&gt;<br /><span class="target" id="structgamma__table__t_1aa1c489b496630cb0e1e5f34c5afb3e78"></span><a class="reference internal" href="#_CPPv4I0EN13gamma_table_t7look_loE1A1A" title="gamma_table_t::look_lo::A">A</a> <code class="sig-name descname">look_lo</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN13gamma_table_t7look_loE1A1A" title="gamma_table_t::look_lo::A">A</a> <em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN13gamma_table_t7look_loE1A1A" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Get the lower incomplete gamma function value for a given x coordinate.</p>
 <p><dl class="simple">
 <dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
@@ -229,70 +205,88 @@
 </p>
 </dd></dl>
 
+<dl class="cpp function">
+<dt id="_CPPv4N13gamma_table_t16init_gamma_tableERK8uint64_tRK8uint64_tRKd">
+<span id="_CPPv3N13gamma_table_t16init_gamma_tableERK8uint64_tRK8uint64_tRKd"></span><span id="_CPPv2N13gamma_table_t16init_gamma_tableERK8uint64_tRK8uint64_tRKd"></span><span id="gamma_table_t::init_gamma_table__uint64_tCR.uint64_tCR.doubleCR"></span><span class="target" id="structgamma__table__t_1a9066ed50f2fde0ff4b106ca71715d902"></span>void <code class="sig-name descname">init_gamma_table</code><span class="sig-paren">(</span><em class="property">const</em> uint64_t &amp;<em>nl</em>, <em class="property">const</em> uint64_t &amp;<em>nl_highres</em>, <em class="property">const</em> double &amp;<em>a</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13gamma_table_t16init_gamma_tableERK8uint64_tRK8uint64_tRKd" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Init lookup table for the incomplete gamma function. From ICON mo_2mom_mcrph_util.f90 incgfct_lower_lookupcreate Create a lookup-table for the lower incomplete gamma function <div class="math">
+<p><img src="../_images/math/896dcf6c98a8505dfeecf415528f8f76801d0abf.png" alt="\text{int}(0)(x) \exp(-t) t^{a-1} \text{d}t"/></p>
+</div> with constant a from x=0 to the 99.5% value of the normalized incomplete gamma function. This 99.5 % - value has been fitted with high accuracy as function of a in the range a in [0;20], but can safely be applied also to higher values of a. (Fit created with the matlab-program “gamma_unvoll_lower_lookup.m” by Ulrich Blahak, 2008/11/13).</p>
+<p>The last value in the table corresponds to x = infinity, so that during the reconstruction of incgfct-values from the table, the x-value can safely be truncated at the maximum table x-value.</p>
+<p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">nl</span></code>: Number of bins in the table. </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nl_highres</span></code>: Optional number of bins for the high resolution table. </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">a</span></code>: Value where the incomplete gamma function shall be interpolated around. </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
 </div>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric">Public Members</p>
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t6n_binsE">
 <span id="_CPPv3N13gamma_table_t6n_binsE"></span><span id="_CPPv2N13gamma_table_t6n_binsE"></span><span id="gamma_table_t::n_bins__uint64_t"></span><span class="target" id="structgamma__table__t_1a4c1c164fed0049a3824a2b20b38f0086"></span>uint64_t <code class="sig-name descname">n_bins</code><a class="headerlink" href="#_CPPv4N13gamma_table_t6n_binsE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Number of bins of the lookup table. </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t14n_bins_highresE">
 <span id="_CPPv3N13gamma_table_t14n_bins_highresE"></span><span id="_CPPv2N13gamma_table_t14n_bins_highresE"></span><span id="gamma_table_t::n_bins_highres__uint64_t"></span><span class="target" id="structgamma__table__t_1a51551e6cca87b23c5bfab89d8a3016d4"></span>uint64_t <code class="sig-name descname">n_bins_highres</code><a class="headerlink" href="#_CPPv4N13gamma_table_t14n_bins_highresE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Number of bins of the lookup table with higher resolution if desired. </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t1aE">
 <span id="_CPPv3N13gamma_table_t1aE"></span><span id="_CPPv2N13gamma_table_t1aE"></span><span id="gamma_table_t::a__double"></span><span class="target" id="structgamma__table__t_1aea508492411e22cf2478e0f65f18f01f"></span>double <code class="sig-name descname">a</code><a class="headerlink" href="#_CPPv4N13gamma_table_t1aE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Value at which the function is being fit. </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t1xE">
 <span id="_CPPv3N13gamma_table_t1xE"></span><span id="_CPPv2N13gamma_table_t1xE"></span><span id="gamma_table_t::x__std::vector:double:"></span><span class="target" id="structgamma__table__t_1af059616f0062b8989a8bca4c1a1fbadf"></span>std::vector&lt;double&gt; <code class="sig-name descname">x</code><a class="headerlink" href="#_CPPv4N13gamma_table_t1xE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>always starts at 0 and has distant dx. </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t9x_highresE">
 <span id="_CPPv3N13gamma_table_t9x_highresE"></span><span id="_CPPv2N13gamma_table_t9x_highresE"></span><span id="gamma_table_t::x_highres__std::vector:double:"></span><span class="target" id="structgamma__table__t_1ab018073f8f0b127ff625181f3436387e"></span>std::vector&lt;double&gt; <code class="sig-name descname">x_highres</code><a class="headerlink" href="#_CPPv4N13gamma_table_t9x_highresE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>as x but with higher resolution. </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t2dxE">
 <span id="_CPPv3N13gamma_table_t2dxE"></span><span id="_CPPv2N13gamma_table_t2dxE"></span><span id="gamma_table_t::dx__double"></span><span class="target" id="structgamma__table__t_1a1c66b068d01916424e2a1f6d4156b764"></span>double <code class="sig-name descname">dx</code><a class="headerlink" href="#_CPPv4N13gamma_table_t2dxE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Distance of each value in x. </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t10dx_highresE">
 <span id="_CPPv3N13gamma_table_t10dx_highresE"></span><span id="_CPPv2N13gamma_table_t10dx_highresE"></span><span id="gamma_table_t::dx_highres__double"></span><span class="target" id="structgamma__table__t_1a793ce01bc8b0d448d3240c63a07aa9de"></span>double <code class="sig-name descname">dx_highres</code><a class="headerlink" href="#_CPPv4N13gamma_table_t10dx_highresE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Distance of each value in x_highres. </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t3odxE">
 <span id="_CPPv3N13gamma_table_t3odxE"></span><span id="_CPPv2N13gamma_table_t3odxE"></span><span id="gamma_table_t::odx__double"></span><span class="target" id="structgamma__table__t_1a575e41cb675b2b9a912ba22faf1ac367"></span>double <code class="sig-name descname">odx</code><a class="headerlink" href="#_CPPv4N13gamma_table_t3odxE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>1/dx. </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t11odx_highresE">
 <span id="_CPPv3N13gamma_table_t11odx_highresE"></span><span id="_CPPv2N13gamma_table_t11odx_highresE"></span><span id="gamma_table_t::odx_highres__double"></span><span class="target" id="structgamma__table__t_1a58e0a204781e7b7a23b4103629e12d10"></span>double <code class="sig-name descname">odx_highres</code><a class="headerlink" href="#_CPPv4N13gamma_table_t11odx_highresE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>1/dx_highres. </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t3igfE">
 <span id="_CPPv3N13gamma_table_t3igfE"></span><span id="_CPPv2N13gamma_table_t3igfE"></span><span id="gamma_table_t::igf__std::vector:double:"></span><span class="target" id="structgamma__table__t_1a06fecee18c5f115e2e3fdef23ba5f161"></span>std::vector&lt;double&gt; <code class="sig-name descname">igf</code><a class="headerlink" href="#_CPPv4N13gamma_table_t3igfE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Values of the inc. gamma function at (a,x). </p>
 </dd></dl>
 
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv4N13gamma_table_t11igf_highresE">
 <span id="_CPPv3N13gamma_table_t11igf_highresE"></span><span id="_CPPv2N13gamma_table_t11igf_highresE"></span><span id="gamma_table_t::igf_highres__std::vector:double:"></span><span class="target" id="structgamma__table__t_1a7d071b08fa13b627869486a59094f5c1"></span>std::vector&lt;double&gt; <code class="sig-name descname">igf_highres</code><a class="headerlink" href="#_CPPv4N13gamma_table_t11igf_highresE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Values of the inc. gamma function at (a,x) with higher resolution. </p>

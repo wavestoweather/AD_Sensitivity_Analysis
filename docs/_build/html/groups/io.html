@@ -21,12 +21,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -181,7 +181,7 @@
 <dd><p>Functions to load data and setup and initialize structs. </p>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric">Functions</p>
-<dl class="function">
+<dl class="cpp function">
 <dt id="_CPPv417load_lookup_tableR7table_tNSt6stringE8uint32_t">
 <span id="_CPPv317load_lookup_tableR7table_tNSt6stringE8uint32_t"></span><span id="_CPPv217load_lookup_tableR7table_tNSt6stringE8uint32_t"></span><span id="load_lookup_table__table_tR.ss.uint32_t"></span><span class="target" id="group__io_1gacc114b39484d2bdefeb1efe4ed638ff0"></span>bool <code class="sig-name descname">load_lookup_table</code><span class="sig-paren">(</span><a class="reference internal" href="../api/structtable__t.html#_CPPv47table_t" title="table_t">table_t</a> &amp;<em>table</em>, std::string <em>filename</em> = &quot;dmin_wetgrowth_lookup.dat&quot;, uint32_t <em>ndT</em> = 61<span class="sig-paren">)</span><br /></dt>
 <dd><p>Based on init_dmin_wg_gr_ltab_equi(‘dmin_wetgrowth_lookup.dat’, unitnr, 61, ltabdminwgg) Loads a lookup table for calculating the growth of rain droplets or something.</p>
@@ -196,7 +196,7 @@
 </p>
 </dd></dl>
 
-<dl class="function">
+<dl class="cpp function">
 <dt id="_CPPv418init_nc_parametersR15nc_parameters_t8uint32_t8uint32_t">
 <span id="_CPPv318init_nc_parametersR15nc_parameters_t8uint32_t8uint32_t"></span><span id="_CPPv218init_nc_parametersR15nc_parameters_t8uint32_t8uint32_t"></span><span id="init_nc_parameters__nc_parameters_tR.uint32_t.uint32_t"></span><span class="target" id="group__io_1gafcb7ba4cf91ace9072d73b46909cf07f"></span>void <code class="sig-name descname">init_nc_parameters</code><span class="sig-paren">(</span><a class="reference internal" href="../api/structnc__parameters__t.html#_CPPv415nc_parameters_t" title="nc_parameters_t">nc_parameters_t</a> &amp;<em>nc</em>, uint32_t <em>n</em> = 32, uint32_t <em>n_timesteps</em> = 7922<span class="sig-paren">)</span><br /></dt>
 <dd><p>Initialize the nc parameters to default values. and allocate memory.</p>
@@ -211,7 +211,7 @@
 </p>
 </dd></dl>
 
-<dl class="function">
+<dl class="cpp function">
 <dt id="_CPPv422load_nc_parameters_varR15nc_parameters_tRN6netCDF6NcFileE">
 <span id="_CPPv322load_nc_parameters_varR15nc_parameters_tRN6netCDF6NcFileE"></span><span id="_CPPv222load_nc_parameters_varR15nc_parameters_tRN6netCDF6NcFileE"></span><span id="load_nc_parameters_var__nc_parameters_tR.netCDF::NcFileR"></span><span class="target" id="group__io_1ga9df23aaaf7c2d75fb06d9cbda9cf506a"></span>void <code class="sig-name descname">load_nc_parameters_var</code><span class="sig-paren">(</span><a class="reference internal" href="../api/structnc__parameters__t.html#_CPPv415nc_parameters_t" title="nc_parameters_t">nc_parameters_t</a> &amp;<em>nc</em>, netCDF::NcFile &amp;<em>datafile</em><span class="sig-paren">)</span><br /></dt>
 <dd><p>Load variables from the netCDF file such that data can be loaded using <a class="reference internal" href="#group__io_1ga6418d272fbbab9dce33fbbe742695588"><span class="std std-ref">load_nc_parameters()</span></a></p>
@@ -225,7 +225,7 @@
 </p>
 </dd></dl>
 
-<dl class="function">
+<dl class="cpp function">
 <dt id="_CPPv418load_nc_parametersR15nc_parameters_tRNSt6vectorI6size_tEERNSt6vectorI6size_tEER22reference_quantities_t8uint64_t">
 <span id="_CPPv318load_nc_parametersR15nc_parameters_tRNSt6vectorI6size_tEERNSt6vectorI6size_tEER22reference_quantities_t8uint64_t"></span><span id="_CPPv218load_nc_parametersR15nc_parameters_tRNSt6vectorI6size_tEERNSt6vectorI6size_tEER22reference_quantities_t8uint64_t"></span><span id="load_nc_parameters__nc_parameters_tR.std::vector:s:R.std::vector:s:R.reference_quantities_tR.uint64_t"></span><span class="target" id="group__io_1ga6418d272fbbab9dce33fbbe742695588"></span>void <code class="sig-name descname">load_nc_parameters</code><span class="sig-paren">(</span><a class="reference internal" href="../api/structnc__parameters__t.html#_CPPv415nc_parameters_t" title="nc_parameters_t">nc_parameters_t</a> &amp;<em>nc</em>, std::vector&lt;size_t&gt; &amp;<em>startp</em>, std::vector&lt;size_t&gt; &amp;<em>countp</em>, <a class="reference internal" href="../api/structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t">reference_quantities_t</a> &amp;<em>ref_quant</em>, uint64_t <em>num_sub_steps</em><span class="sig-paren">)</span><br /></dt>
 <dd><p>Load the parameters from the netCDF file where <a class="reference internal" href="#group__io_1ga9df23aaaf7c2d75fb06d9cbda9cf506a"><span class="std std-ref">load_nc_parameters_var()</span></a> must have been called beforehand.</p>
@@ -241,7 +241,7 @@
 </p>
 </dd></dl>
 
-<dl class="function">
+<dl class="cpp function">
 <dt id="_CPPv421init_input_parametersR18input_parameters_t">
 <span id="_CPPv321init_input_parametersR18input_parameters_t"></span><span id="_CPPv221init_input_parametersR18input_parameters_t"></span><span id="init_input_parameters__input_parameters_tR"></span><span class="target" id="group__io_1gac03abfac06224ad39f0ffc9462fec764"></span>void <code class="sig-name descname">init_input_parameters</code><span class="sig-paren">(</span><a class="reference internal" href="../api/structinput__parameters__t.html#_CPPv418input_parameters_t" title="input_parameters_t">input_parameters_t</a> &amp;<em>in</em><span class="sig-paren">)</span><br /></dt>
 <dd><p>Initialize the input parameters to default values.</p>
@@ -254,7 +254,7 @@
 </p>
 </dd></dl>
 
-<dl class="function">
+<dl class="cpp function">
 <dt id="_CPPv416init_global_argsR13global_args_t">
 <span id="_CPPv316init_global_argsR13global_args_t"></span><span id="_CPPv216init_global_argsR13global_args_t"></span><span id="init_global_args__global_args_tR"></span><span class="target" id="group__io_1ga972543a894103649e760f07095f6aedc"></span>void <code class="sig-name descname">init_global_args</code><span class="sig-paren">(</span><a class="reference internal" href="../api/structglobal__args__t.html#_CPPv413global_args_t" title="global_args_t">global_args_t</a> &amp;<em>arg</em><span class="sig-paren">)</span><br /></dt>
 <dd><p>Initialize global args for parsing command line arguments.</p>
@@ -267,7 +267,7 @@
 </p>
 </dd></dl>
 
-<dl class="function">
+<dl class="cpp function">
 <dt id="_CPPv424set_input_from_argumentsR13global_args_tR18input_parameters_t">
 <span id="_CPPv324set_input_from_argumentsR13global_args_tR18input_parameters_t"></span><span id="_CPPv224set_input_from_argumentsR13global_args_tR18input_parameters_t"></span><span id="set_input_from_arguments__global_args_tR.input_parameters_tR"></span><span class="target" id="group__io_1gaab68f866e7ee86dc4fd3cdd2409a88e4"></span>void <code class="sig-name descname">set_input_from_arguments</code><span class="sig-paren">(</span><a class="reference internal" href="../api/structglobal__args__t.html#_CPPv413global_args_t" title="global_args_t">global_args_t</a> &amp;<em>arg</em>, <a class="reference internal" href="../api/structinput__parameters__t.html#_CPPv418input_parameters_t" title="input_parameters_t">input_parameters_t</a> &amp;<em>in</em><span class="sig-paren">)</span><br /></dt>
 <dd><p>Set the input parameters with the data from the global arguments.</p>
@@ -281,38 +281,90 @@
 </p>
 </dd></dl>
 
-<dl class="function">
-<dt id="_CPPv426setup_cloud_autoconversionR26particle_model_constants_t">
-<span id="_CPPv326setup_cloud_autoconversionR26particle_model_constants_t"></span><span id="_CPPv226setup_cloud_autoconversionR26particle_model_constants_t"></span><span id="setup_cloud_autoconversion__particle_model_constants_tR"></span><span class="target" id="group__io_1gaf7d9a95eb6b60895c0992f1848711d5f"></span>void <code class="sig-name descname">setup_cloud_autoconversion</code><span class="sig-paren">(</span><a class="reference internal" href="../api/structparticle__model__constants__t.html#_CPPv426particle_model_constants_t" title="particle_model_constants_t">particle_model_constants_t</a> &amp;<em>pc</em><span class="sig-paren">)</span><br /></dt>
-<dd><p>Setup the cloud autoconversion parameters.</p>
+<dl class="cpp function">
+<dt id="_CPPv426write_reference_quantitiesRNSt6stringER22reference_quantities_t">
+<span id="_CPPv326write_reference_quantitiesRNSt6stringER22reference_quantities_t"></span><span id="_CPPv226write_reference_quantitiesRNSt6stringER22reference_quantities_t"></span><span id="write_reference_quantities__ssR.reference_quantities_tR"></span><span class="target" id="group__io_1gae1fdd6b9749a10404ccf774a8e6b1955"></span>int <code class="sig-name descname">write_reference_quantities</code><span class="sig-paren">(</span>std::string &amp;<em>out_filename</em>, <a class="reference internal" href="../api/structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t">reference_quantities_t</a> &amp;<em>ref_quant</em><span class="sig-paren">)</span><br /></dt>
+<dd><p>Write the file with reference values ending with “__reference_values.txt” that can be read in Python with Numpy. The order is: Temperature, pressure, mixing ratio, particle number, ascent velocity, time, height.</p>
 <p><dl class="simple">
+<dt><strong>Return</strong></dt><dd><p>Errorcode (0=no errors; 1=simulation breaking error) </p>
+</dd>
 <dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">pc</span></code>: Model constants for a certain particle type. </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">out_filename</span></code>: String with filename. </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ref_quant</span></code>: <a class="reference internal" href="types.html#structreference__quantities__t"><span class="std std-ref">reference_quantities_t</span></a> with all the reference values. </p></li>
 </ul>
 </dd>
 </dl>
 </p>
 </dd></dl>
 
-<dl class="function">
-<dt id="_CPPv415setup_bulk_sediR26particle_model_constants_t">
-<span id="_CPPv315setup_bulk_sediR26particle_model_constants_t"></span><span id="_CPPv215setup_bulk_sediR26particle_model_constants_t"></span><span id="setup_bulk_sedi__particle_model_constants_tR"></span><span class="target" id="group__io_1ga1d57b27a1c95a50623ee0d5482740804"></span>void <code class="sig-name descname">setup_bulk_sedi</code><span class="sig-paren">(</span><a class="reference internal" href="../api/structparticle__model__constants__t.html#_CPPv426particle_model_constants_t" title="particle_model_constants_t">particle_model_constants_t</a> &amp;<em>pc</em><span class="sig-paren">)</span><br /></dt>
-<dd><p>Setup for bulk sedimentation velocity.</p>
+<dl class="cpp function">
+<dt id="_CPPv413write_headersRNSt6stringE">
+<span id="_CPPv313write_headersRNSt6stringE"></span><span id="_CPPv213write_headersRNSt6stringE"></span><span id="write_headers__ssR"></span><span class="target" id="group__io_1gadab51007d566f2da441e6edbc9d2e394"></span>int <code class="sig-name descname">write_headers</code><span class="sig-paren">(</span>std::string &amp;<em>out_filename</em><span class="sig-paren">)</span><br /></dt>
+<dd><p>Write the header for simulation results files and for files with derivatives which have “_diff_” in their name.</p>
 <p><dl class="simple">
+<dt><strong>Return</strong></dt><dd><p>Errorcode (0=no errors; 1=simulation breaking error) </p>
+</dd>
 <dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">pc</span></code>: Model constants for a certain particle type. </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">out_filename</span></code>: String with filename. </p></li>
 </ul>
 </dd>
 </dl>
 </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv416read_init_netcdfRNSt6vectorIdEER15nc_parameters_tR6size_tR22reference_quantities_tPKcK8uint32_tR17model_constants_t">
+<span id="_CPPv316read_init_netcdfRNSt6vectorIdEER15nc_parameters_tR6size_tR22reference_quantities_tPKcK8uint32_tR17model_constants_t"></span><span id="_CPPv216read_init_netcdfRNSt6vectorIdEER15nc_parameters_tR6size_tR22reference_quantities_tPKcK8uint32_tR17model_constants_t"></span><span id="read_init_netcdf__std::vector:double:R.nc_parameters_tR.sR.reference_quantities_tR.cCP.uint32_tC.model_constants_tR"></span><span class="target" id="group__io_1gac4d1b3718430b948a3970a89ad143913"></span>int <code class="sig-name descname">read_init_netcdf</code><span class="sig-paren">(</span>std::vector&lt;double&gt; &amp;<em>y_init</em>, <a class="reference internal" href="../api/structnc__parameters__t.html#_CPPv415nc_parameters_t" title="nc_parameters_t">nc_parameters_t</a> &amp;<em>nc_params</em>, size_t &amp;<em>lenp</em>, <a class="reference internal" href="../api/structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t">reference_quantities_t</a> &amp;<em>ref_quant</em>, <em class="property">const</em> char *<em>input_file</em>, <em class="property">const</em> uint32_t <em>traj</em>, <a class="reference internal" href="../api/structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em><span class="sig-paren">)</span><br /></dt>
+<dd><p>Read initial values from the netcdf file and stores them to y_init. Also stores the amount of trajectories in the input file to lenp and several quantities to cc such as the number of steps to simulate and to nc_params, which is used to read from netcdf files.</p>
+<p><dl class="simple">
+<dt><strong>Return</strong></dt><dd><p>Errorcode (0=no errors; 1=simulation breaking error) </p>
+</dd>
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">y_init</span></code>: Array of num_comp many doubles </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nc_params</span></code>: Struct used for reading netcdf files </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lenp</span></code>: On out: Number of trajectories available </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ref_quant</span></code>: Reference quantities used to change from netcdf units to simulation units </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">input_file</span></code>: Path to input netcdf file as char array </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">traj</span></code>: ID of input trajectory to read </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: Model constants. On out: Added number of simulation steps </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv411open_netcdfRiRNSt6vectorI6size_tEERNSt6vectorI6size_tEEPKcK8uint32_t">
+<span id="_CPPv311open_netcdfRiRNSt6vectorI6size_tEERNSt6vectorI6size_tEEPKcK8uint32_t"></span><span id="_CPPv211open_netcdfRiRNSt6vectorI6size_tEERNSt6vectorI6size_tEEPKcK8uint32_t"></span><span id="open_netcdf__iR.std::vector:s:R.std::vector:s:R.cCP.uint32_tC"></span><span class="target" id="group__io_1gaea20c025629c3b1f7a5cf97d3467be9f"></span>void <code class="sig-name descname">open_netcdf</code><span class="sig-paren">(</span>int &amp;<em>ncid</em>, std::vector&lt;size_t&gt; &amp;<em>startp</em>, std::vector&lt;size_t&gt; &amp;<em>countp</em>, <em class="property">const</em> char *<em>input_file</em>, <em class="property">const</em> uint32_t <em>traj</em><span class="sig-paren">)</span><br /></dt>
+<dd><p>Open NETCDF file for reading and store some information in ncid, startp, countp.</p>
+<p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ncid</span></code>: On out: contains id of netcdf file (needed for closing it) </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">startp</span></code>: On out: contains dimensions info for reading  countp On out: contains dimensions info for reading  input_file Char array of input file </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv424read_netcdf_write_streamPKcRNSt6vectorI6size_tEERNSt6vectorI6size_tEER15nc_parameters_tR17model_constants_tR18input_parameters_tR22reference_quantities_tRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERNSt6vectorIiEERiK8uint32_t">
+<span id="_CPPv324read_netcdf_write_streamPKcRNSt6vectorI6size_tEERNSt6vectorI6size_tEER15nc_parameters_tR17model_constants_tR18input_parameters_tR22reference_quantities_tRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERNSt6vectorIiEERiK8uint32_t"></span><span id="_CPPv224read_netcdf_write_streamPKcRNSt6vectorI6size_tEERNSt6vectorI6size_tEER15nc_parameters_tR17model_constants_tR18input_parameters_tR22reference_quantities_tRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERNSt6vectorIiEERiK8uint32_t"></span><span id="read_netcdf_write_stream__cCP.std::vector:s:R.std::vector:s:R.nc_parameters_tR.model_constants_tR.input_parameters_tR.reference_quantities_tR.std::vector:codi::RealReverse:R.std::vector:codi::RealReverse:R.std::vector:i:R.iR.uint32_tC"></span><span class="target" id="group__io_1ga16d17ee68a1a19138345f54cb6ce55ff"></span>void <code class="sig-name descname">read_netcdf_write_stream</code><span class="sig-paren">(</span><em class="property">const</em> char *<em>input_file</em>, std::vector&lt;size_t&gt; &amp;<em>startp</em>, std::vector&lt;size_t&gt; &amp;<em>countp</em>, <a class="reference internal" href="../api/structnc__parameters__t.html#_CPPv415nc_parameters_t" title="nc_parameters_t">nc_parameters_t</a> &amp;<em>nc_params</em>, <a class="reference internal" href="../api/structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em>, <a class="reference internal" href="../api/structinput__parameters__t.html#_CPPv418input_parameters_t" title="input_parameters_t">input_parameters_t</a> &amp;<em>input</em>, <a class="reference internal" href="../api/structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t">reference_quantities_t</a> &amp;<em>ref_quant</em>, std::vector&lt;codi::RealReverse&gt; &amp;<em>y_single_old</em>, std::vector&lt;codi::RealReverse&gt; &amp;<em>inflow</em>, std::vector&lt;int&gt; &amp;<em>ids</em>, int &amp;<em>traj_id</em>, <em class="property">const</em> uint32_t <em>t</em><span class="sig-paren">)</span><br /></dt>
+<dd><p>Read from netcdf file. Alter current values used for simlation if given timestep is encountered. Writes values to output stringstream. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv412write_outputRK17model_constants_tRK15nc_parameters_tRKNSt6vectorIN4codi11RealReverseEEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tK8uint32_tK8uint32_tK8uint32_tK8uint32_t">
+<span id="_CPPv312write_outputRK17model_constants_tRK15nc_parameters_tRKNSt6vectorIN4codi11RealReverseEEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tK8uint32_tK8uint32_tK8uint32_tK8uint32_t"></span><span id="_CPPv212write_outputRK17model_constants_tRK15nc_parameters_tRKNSt6vectorIN4codi11RealReverseEEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tK8uint32_tK8uint32_tK8uint32_tK8uint32_t"></span><span id="write_output__model_constants_tCR.nc_parameters_tCR.std::vector:codi::RealReverse:CR.std::vector:std::array:double.num_par::CR.uint32_tC.uint32_tC.uint32_tC.uint32_tC.uint32_tC.uint32_tC"></span><span class="target" id="group__io_1gadf2d595bfcb23a21fae865b60d3e5e12"></span>void <code class="sig-name descname">write_output</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="../api/structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em>, <em class="property">const</em> <a class="reference internal" href="../api/structnc__parameters__t.html#_CPPv415nc_parameters_t" title="nc_parameters_t">nc_parameters_t</a> &amp;<em>nc_params</em>, <em class="property">const</em> std::vector&lt;codi::RealReverse&gt; &amp;<em>y_single_new</em>, <em class="property">const</em> std::vector&lt;std::array&lt;double, num_par&gt;&gt; &amp;<em>y_diff</em>, <em class="property">const</em> uint32_t <em>sub</em>, <em class="property">const</em> uint32_t <em>t</em>, <em class="property">const</em> uint32_t <em>time_new</em>, <em class="property">const</em> uint32_t <em>traj_id</em>, <em class="property">const</em> uint32_t <em>write_index</em>, <em class="property">const</em> uint32_t <em>snapshot_index</em><span class="sig-paren">)</span><br /></dt>
+<dd><p>Store simulation results and gradients to string stream and dump it if timestep is reached to do so. </p>
 </dd></dl>
 
 </div>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric">Variables</p>
-<dl class="member">
+<dl class="cpp var">
 <dt id="_CPPv49optString">
-<span id="_CPPv39optString"></span><span id="_CPPv29optString"></span><span id="optString__cCP"></span><span class="target" id="group__io_1ga1b7271ddd60c22960c39ae6caf4d5254"></span><em class="property">const</em> char *<code class="sig-name descname">optString</code> = &quot;f:d:i:b:o:l:s:t:a:r:?&quot;<br /></dt>
+<span id="_CPPv39optString"></span><span id="_CPPv29optString"></span><span id="optString__cCP"></span><span class="target" id="group__io_1ga1b7271ddd60c22960c39ae6caf4d5254"></span><em class="property">const</em> char *<code class="sig-name descname">optString</code> = &quot;w:f:d:i:b:o:l:s:t:a:r:?&quot;<br /></dt>
 <dd><p>String used to parse commandline input. </p>
 </dd></dl>
 

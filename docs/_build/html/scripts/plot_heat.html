@@ -21,12 +21,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -187,9 +187,9 @@ Usage:</p>
 <code class="docutils literal notranslate"><span class="pre">derivatives</span></code> to plot lineplots of either the output parameters or the derivatives.
 - <code class="docutils literal notranslate"><span class="pre">-e</span></code>. <code class="docutils literal notranslate"><span class="pre">--epsilon</span></code>: If <code class="docutils literal notranslate"><span class="pre">filter</span></code> is set to true, use this as filter threshold.
 - <code class="docutils literal notranslate"><span class="pre">-f</span></code>, <code class="docutils literal notranslate"><span class="pre">--filter</span></code>: If you load derivatives, use this to filter derivatives smaller than <code class="docutils literal notranslate"><span class="pre">epsilon</span></code>.</p>
-<span class="target" id="module-scripts.plot_heat"></span><dl class="function">
+<span class="target" id="module-scripts.plot_heat"></span><dl class="py function">
 <dt id="scripts.plot_heat.plot_heat">
-<code class="sig-prename descclassname">scripts.plot_heat.</code><code class="sig-name descname">plot_heat</code><span class="sig-paren">(</span><em class="sig-param">df_dict</em>, <em class="sig-param">prefix</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_heat.plot_heat" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.plot_heat.</code><code class="sig-name descname">plot_heat</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df_dict</span></em>, <em class="sig-param"><span class="n">prefix</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_heat.plot_heat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot a heatmap where the x-axis consists of timesteps and the y-axis
 are the input parameters of the model. The colormap corresponds to the
 derivative. Plots several heatmaps for each dataframe in df_dict.</p>
@@ -205,9 +205,9 @@ derivatives.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.plot_heat.plot_line">
-<code class="sig-prename descclassname">scripts.plot_heat.</code><code class="sig-name descname">plot_line</code><span class="sig-paren">(</span><em class="sig-param">df_dict</em>, <em class="sig-param">prefix</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_heat.plot_line" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.plot_heat.</code><code class="sig-name descname">plot_line</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df_dict</span></em>, <em class="sig-param"><span class="n">prefix</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_heat.plot_line" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot a lineplot where the x-axis consists of timesteps and the y-axis
 are the derivatives of the input parameters of the model.
 The colormap corresponds to the derivative, where brighter colors are
@@ -225,9 +225,9 @@ derivatives.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.plot_heat.plot_line_res">
-<code class="sig-prename descclassname">scripts.plot_heat.</code><code class="sig-name descname">plot_line_res</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">prefix</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_heat.plot_line_res" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.plot_heat.</code><code class="sig-name descname">plot_line_res</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">prefix</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_heat.plot_line_res" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot a lineplot where the x-axis consists of timesteps and the y-axis
 are the absolute values of the output parameters.</p>
 <dl class="field-list simple">

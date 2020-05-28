@@ -21,12 +21,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -177,6 +177,8 @@
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#pragma once</span>
 <span class="cp">#include</span> <span class="cpf">&quot;codi.hpp&quot;</span><span class="cp"></span>
 <span class="cp">#include</span> <span class="cpf">&lt;netcdf&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;boost/math/special_functions/gamma.hpp&gt;</span><span class="cp"></span>
+
 <span class="k">using</span> <span class="k">namespace</span> <span class="n">netCDF</span><span class="p">;</span>
 
 
@@ -186,6 +188,7 @@
   <span class="kt">double</span> <span class="n">qref</span><span class="p">;</span>
   <span class="kt">double</span> <span class="n">wref</span><span class="p">;</span>
   <span class="kt">double</span> <span class="n">tref</span><span class="p">;</span>
+  <span class="kt">double</span> <span class="n">zref</span><span class="p">;</span>
   <span class="kt">double</span> <span class="n">Nref</span><span class="p">;</span>
 <span class="p">};</span>
 
@@ -194,6 +197,20 @@
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">a_geo</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">b_geo</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_act</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_nuc_homo</span><span class="p">;</span>
+
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_nuc_hetero</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_melt</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_evap</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_freezing</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_depo</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_collision</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_collection</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_conversion</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_sedimentation</span><span class="p">;</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_riming</span><span class="p">;</span>
+
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">max_x</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">sc_theta_q</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">sc_delta_q</span><span class="p">;</span>
@@ -230,6 +247,18 @@
         <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">a_geo</span><span class="p">);</span>
         <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">b_geo</span><span class="p">);</span>
         <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_act</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_nuc_homo</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_nuc_hetero</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_melt</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_evap</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_freezing</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_depo</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_collision</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_collection</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_conversion</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_sedimentation</span><span class="p">);</span>
+        <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_riming</span><span class="p">);</span>
         <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">max_x</span><span class="p">);</span>
         <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">sc_theta_q</span><span class="p">);</span>
         <span class="n">tape</span><span class="p">.</span><span class="n">registerInput</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">sc_delta_q</span><span class="p">);</span>
@@ -281,6 +310,30 @@
         <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">b_geo</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
         <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
         <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_act</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_nuc_homo</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_nuc_hetero</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_melt</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_evap</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_freezing</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_depo</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_collision</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_collection</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_conversion</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_sedimentation</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
+        <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
+        <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">min_x_riming</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
         <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
         <span class="n">out_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">max_x</span><span class="p">.</span><span class="n">getGradient</span><span class="p">();</span>
         <span class="n">idx</span><span class="o">++</span><span class="p">;</span>
@@ -414,6 +467,8 @@
     <span class="p">{</span>
         <span class="k">return</span> <span class="n">table</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">n3</span><span class="o">*</span><span class="n">n2</span><span class="o">*</span><span class="n">n1</span> <span class="o">+</span> <span class="n">j</span><span class="o">*</span><span class="n">n2</span><span class="o">*</span><span class="n">n1</span> <span class="o">+</span> <span class="n">k</span><span class="o">*</span><span class="n">n1</span> <span class="o">+</span> <span class="n">l</span><span class="p">];</span>
     <span class="p">}</span>
+
+
 <span class="p">};</span>
 
 
@@ -440,6 +495,48 @@
         <span class="kt">uint64_t</span> <span class="n">io</span> <span class="o">=</span> <span class="n">iu</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
         <span class="k">return</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">igf</span><span class="p">[</span><span class="n">iu</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">igf</span><span class="p">[</span><span class="n">io</span><span class="p">]</span> <span class="o">-</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">igf</span><span class="p">[</span><span class="n">iu</span><span class="p">])</span> <span class="o">*</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">odx</span><span class="o">*</span><span class="p">(</span><span class="n">xt</span><span class="o">-</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">[</span><span class="n">iu</span><span class="p">]);</span>
     <span class="p">}</span>
+
+    <span class="kt">void</span> <span class="n">init_gamma_table</span><span class="p">(</span>
+        <span class="k">const</span> <span class="kt">uint64_t</span> <span class="o">&amp;</span><span class="n">nl</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">uint64_t</span> <span class="o">&amp;</span><span class="n">nl_highres</span><span class="p">,</span>
+        <span class="k">const</span> <span class="kt">double</span> <span class="o">&amp;</span><span class="n">a</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">const</span> <span class="kt">double</span> <span class="n">c1</span> <span class="o">=</span> <span class="mf">36.629433904824623</span><span class="p">;</span>
+        <span class="k">const</span> <span class="kt">double</span> <span class="n">c2</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.119475603955226</span><span class="p">;</span>
+        <span class="k">const</span> <span class="kt">double</span> <span class="n">c3</span> <span class="o">=</span> <span class="mf">0.339332937820052</span><span class="p">;</span>
+        <span class="k">const</span> <span class="kt">double</span> <span class="n">c4</span> <span class="o">=</span> <span class="mf">1.156369000458310</span><span class="p">;</span>
+
+        <span class="n">n_bins</span> <span class="o">=</span> <span class="n">nl</span><span class="p">;</span>
+        <span class="n">n_bins_highres</span> <span class="o">=</span> <span class="n">nl_highres</span><span class="p">;</span>
+
+        <span class="n">x</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">nl</span><span class="p">);</span>
+        <span class="n">x_highres</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">nl_highres</span><span class="p">);</span>
+        <span class="n">igf</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">nl</span><span class="p">);</span>
+        <span class="n">igf_highres</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">nl_highres</span><span class="p">);</span>
+
+        <span class="c1">// Low resolution</span>
+        <span class="c1">// maximum x-value (99.5%)</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">n_bins</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">c1</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">exp</span><span class="p">(</span><span class="n">c2</span><span class="o">*</span><span class="n">pow</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">c3</span><span class="p">)))</span> <span class="o">+</span> <span class="n">c4</span><span class="o">*</span><span class="n">a</span><span class="p">;</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">n_bins</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_bins</span><span class="o">-</span><span class="mf">2.0</span><span class="p">);</span>
+        <span class="n">odx</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">dx</span><span class="p">;</span>
+        <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">n_bins</span><span class="o">-</span><span class="mi">2</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span><span class="p">;</span>
+            <span class="n">igf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">boost</span><span class="o">::</span><span class="n">math</span><span class="o">::</span><span class="n">tgamma_lower</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+        <span class="p">}</span>
+        <span class="c1">// for x -&gt; infinity:</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">n_bins</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_bins</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span><span class="p">;</span>
+        <span class="n">igf</span><span class="p">[</span><span class="n">n_bins</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">tgamma</span><span class="p">(</span><span class="n">a</span><span class="p">);</span>
+
+        <span class="c1">// High resolution (lowest 2% of the x-values)</span>
+        <span class="n">dx_highres</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">std</span><span class="o">::</span><span class="n">round</span><span class="p">(</span><span class="mf">0.01</span><span class="o">*</span><span class="p">(</span><span class="n">n_bins</span><span class="o">-</span><span class="mi">1</span><span class="p">))]</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_bins_highres</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">);</span>
+        <span class="n">odx_highres</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">dx_highres</span><span class="p">;</span>
+        <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">n_bins_highres</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">x_highres</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx_highres</span><span class="p">;</span>
+            <span class="n">igf_highres</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">boost</span><span class="o">::</span><span class="n">math</span><span class="o">::</span><span class="n">tgamma_lower</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">x_highres</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
 <span class="p">};</span>
 
 
@@ -447,7 +544,6 @@
   <span class="c1">//</span>
   <span class="c1">// Physical constants warm cloud</span>
   <span class="c1">//</span>
-
   <span class="kt">double</span> <span class="n">alpha_d</span><span class="p">;</span>
   <span class="kt">double</span> <span class="n">rho_a_prime</span><span class="p">;</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">Nc_prime</span><span class="p">;</span>
@@ -498,6 +594,8 @@
   <span class="kt">uint64_t</span> <span class="n">num_sub_steps</span><span class="p">;</span>
   <span class="kt">uint64_t</span> <span class="n">snapshot_index</span><span class="p">;</span>
 
+  <span class="kt">uint64_t</span> <span class="n">write_index</span><span class="p">;</span>
+
   <span class="c1">//</span>
   <span class="c1">// General performance constants</span>
   <span class="c1">//</span>
@@ -509,6 +607,13 @@
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">e1_scale</span><span class="p">;</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">e2_scale</span><span class="p">;</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">d_scale</span><span class="p">;</span>
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">rain_gfak</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">cloud_k_au</span><span class="p">;</span>
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">cloud_k_sc</span><span class="p">;</span>
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">kc_autocon</span> <span class="o">=</span> <span class="mf">9.44e9</span><span class="p">;</span>
+
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">inv_z</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">150.0</span><span class="p">;</span>
+
   <span class="k">const</span> <span class="kt">double</span> <span class="n">nar</span> <span class="o">=</span> <span class="mf">0.22</span><span class="p">;</span>
   <span class="k">const</span> <span class="kt">double</span> <span class="n">nbr</span> <span class="o">=</span> <span class="mf">2.2</span><span class="p">;</span>
   <span class="k">const</span> <span class="kt">double</span> <span class="n">ar</span> <span class="o">=</span> <span class="n">M_PI</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">;</span>
@@ -532,14 +637,17 @@
     <span class="kt">double</span>  <span class="n">t</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">time_rel</span><span class="p">,</span>
             <span class="n">qc</span><span class="p">,</span> <span class="n">qr</span><span class="p">,</span> <span class="n">qi</span><span class="p">,</span> <span class="n">qs</span><span class="p">,</span> <span class="n">qg</span><span class="p">,</span> <span class="n">qv</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">dw</span><span class="p">,</span> <span class="n">dlat</span><span class="p">,</span> <span class="n">dlon</span><span class="p">,</span>
             <span class="n">QIin</span><span class="p">,</span> <span class="n">QSin</span><span class="p">,</span> <span class="n">QRin</span><span class="p">,</span> <span class="n">QGin</span><span class="p">,</span> <span class="n">QIout</span><span class="p">,</span> <span class="n">QSout</span><span class="p">,</span> <span class="n">QRout</span><span class="p">,</span> <span class="n">QGout</span><span class="p">,</span>
-            <span class="n">NIin</span><span class="p">,</span> <span class="n">NSin</span><span class="p">,</span> <span class="n">NRin</span><span class="p">,</span> <span class="n">NGin</span><span class="p">,</span> <span class="n">NIout</span><span class="p">,</span> <span class="n">NSout</span><span class="p">,</span> <span class="n">NRout</span><span class="p">,</span> <span class="n">NGout</span><span class="p">,</span> <span class="n">dp2h</span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="n">ascent_flag</span><span class="p">;</span>
+            <span class="n">NIin</span><span class="p">,</span> <span class="n">NSin</span><span class="p">,</span> <span class="n">NRin</span><span class="p">,</span> <span class="n">NGin</span><span class="p">,</span> <span class="n">NIout</span><span class="p">,</span> <span class="n">NSout</span><span class="p">,</span> <span class="n">NRout</span><span class="p">,</span> <span class="n">NGout</span><span class="p">,</span>
+            <span class="n">Nc</span><span class="p">,</span> <span class="n">Nr</span><span class="p">,</span> <span class="n">Ni</span><span class="p">,</span> <span class="n">Ns</span><span class="p">,</span> <span class="n">Ng</span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="n">ascent_flag</span><span class="p">,</span> <span class="n">conv_400</span><span class="p">,</span> <span class="n">conv_600</span><span class="p">,</span> <span class="n">slan_400</span><span class="p">,</span> <span class="n">slan_600</span><span class="p">,</span> <span class="n">dp2h</span><span class="p">;</span>
     <span class="n">NcVar</span>   <span class="n">lat_var</span><span class="p">,</span> <span class="n">lon_var</span><span class="p">,</span> <span class="n">z_var</span><span class="p">,</span> <span class="n">t_var</span><span class="p">,</span> <span class="n">p_var</span><span class="p">,</span> <span class="n">w_var</span><span class="p">,</span> <span class="n">time_rel_var</span><span class="p">,</span>
             <span class="n">qc_var</span><span class="p">,</span> <span class="n">qr_var</span><span class="p">,</span> <span class="n">qi_var</span><span class="p">,</span> <span class="n">qs_var</span><span class="p">,</span> <span class="n">qg_var</span><span class="p">,</span> <span class="n">qv_var</span><span class="p">,</span> <span class="n">S_var</span><span class="p">,</span>
             <span class="n">QIin_var</span><span class="p">,</span> <span class="n">QSin_var</span><span class="p">,</span> <span class="n">QRin_var</span><span class="p">,</span> <span class="n">QGin_var</span><span class="p">,</span> <span class="n">QIout_var</span><span class="p">,</span> <span class="n">QSout_var</span><span class="p">,</span>
             <span class="n">QRout_var</span><span class="p">,</span> <span class="n">QGout_var</span><span class="p">,</span> <span class="n">ascent_flag_var</span><span class="p">,</span>
             <span class="n">NIin_var</span><span class="p">,</span> <span class="n">NSin_var</span><span class="p">,</span> <span class="n">NRin_var</span><span class="p">,</span> <span class="n">NGin_var</span><span class="p">,</span> <span class="n">NIout_var</span><span class="p">,</span> <span class="n">NSout_var</span><span class="p">,</span>
-            <span class="n">NRout_var</span><span class="p">,</span> <span class="n">NGout_var</span><span class="p">,</span> <span class="n">dp2h_var</span><span class="p">;</span>
+            <span class="n">NRout_var</span><span class="p">,</span> <span class="n">NGout_var</span><span class="p">,</span> <span class="n">dp2h_var</span><span class="p">,</span>
+            <span class="n">Nc_var</span><span class="p">,</span> <span class="n">Nr_var</span><span class="p">,</span> <span class="n">Ni_var</span><span class="p">,</span> <span class="n">Ns_var</span><span class="p">,</span> <span class="n">Ng_var</span><span class="p">,</span>
+            <span class="n">conv_400_var</span><span class="p">,</span> <span class="n">conv_600_var</span><span class="p">,</span> <span class="n">slan_400_var</span><span class="p">,</span> <span class="n">slan_600_var</span><span class="p">;</span>
 <span class="p">};</span>
 
 
@@ -574,6 +682,9 @@
 
   <span class="kt">int</span> <span class="n">traj_flag</span><span class="p">;</span>
   <span class="kt">char</span><span class="o">*</span> <span class="n">traj_string</span><span class="p">;</span>
+
+  <span class="kt">int</span> <span class="n">write_flag</span><span class="p">;</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">write_string</span><span class="p">;</span>
 <span class="p">};</span>
 
 
@@ -593,6 +704,7 @@
   <span class="kt">double</span> <span class="n">scaling_fact</span><span class="p">;</span>
   <span class="kt">uint32_t</span> <span class="n">auto_type</span><span class="p">;</span>
   <span class="kt">uint32_t</span> <span class="n">traj</span><span class="p">;</span>
+  <span class="kt">uint32_t</span> <span class="n">write_index</span><span class="p">;</span>
 <span class="p">};</span>
  <span class="c1">// end of group types</span>
 </pre></div>

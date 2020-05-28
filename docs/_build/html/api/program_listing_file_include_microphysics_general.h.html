@@ -21,12 +21,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -225,6 +225,7 @@
         <span class="o">&lt;&lt;</span> <span class="s">&quot;Nondimensional final integration time: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">cc</span><span class="p">.</span><span class="n">t_end</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;Timestep: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt_prime</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; seconds</span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;Snapshot Index: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">cc</span><span class="p">.</span><span class="n">snapshot_index</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="o">&lt;&lt;</span> <span class="s">&quot;Write Index: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">cc</span><span class="p">.</span><span class="n">write_index</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;Nondimensional timestep: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;Number of iterations: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">cc</span><span class="p">.</span><span class="n">num_steps</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;Number of substeps: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
@@ -274,6 +275,7 @@
         <span class="o">&lt;&lt;</span> <span class="s">&quot;-t: Set pressure, temperature and vertical velocity fixed at each substep.</span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;-a: Set auto type (1=KB, 2=KK, 3=SB).</span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;-r: Set index of trajectory.</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="o">&lt;&lt;</span> <span class="s">&quot;-w: Write index for the snapshots.</span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;-?: This help message.</span><span class="se">\n</span><span class="s">&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
 <span class="p">}</span>

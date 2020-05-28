@@ -21,12 +21,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -188,169 +188,6 @@ Usage:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">--output_param</span></code>: A list of output parameters of the model to plot such as “T”, “qr” or “p”.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--max_time</span></code>: Maximum time in seconds to plot.</p></li>
 </ul>
-<span class="target" id="module-scripts.plot_many_traj"></span><dl class="function">
-<dt id="scripts.plot_many_traj.chi_squared">
-<code class="sig-prename descclassname">scripts.plot_many_traj.</code><code class="sig-name descname">chi_squared</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">out_param</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_many_traj.chi_squared" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do a chi-squared test for a given out_param along all (important)
-trajectories for each in_param.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>pandas.Dataframe</em>) – A pandas dataframe with columns
-trajectory, timestep, out_param, in_param, deriv</p></li>
-<li><p><strong>out_param</strong> (<em>string</em>) – Output parameter to get the chi-squared matrix such as “qr”.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A dictionary for each in_param as keys and a tupel with a matrix of
-chi_squared values and the p-values as result.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>dic of tuples of 2D np.ndarrays</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="scripts.plot_many_traj.correlation">
-<code class="sig-prename descclassname">scripts.plot_many_traj.</code><code class="sig-name descname">correlation</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">out_param</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_many_traj.correlation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the correlation for a given out_param along all (important)
-trajectories for each in_param.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>pandas.Dataframe</em>) – A pandas dataframe with columns
-trajectory, timestep, out_param, in_param, deriv</p></li>
-<li><p><strong>out_param</strong> (<em>string</em>) – Output parameter to get the correlation matrix for such as “qr”.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A dictionary for each in_param as keys and a correlation matrix.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>dic of 2D np.ndarrays</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="scripts.plot_many_traj.plot_avg_df">
-<code class="sig-prename descclassname">scripts.plot_many_traj.</code><code class="sig-name descname">plot_avg_df</code><span class="sig-paren">(</span><em class="sig-param">df</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_many_traj.plot_avg_df" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot a heatmap with summed and normalized derivatives where the
-x-axis is the trajectories,
-the y-axis are the input parameters and the color indicates the
-size of the derivatives. Plots for each output variable another heatmap.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns “out_param”, “in_param”, “trajectory”, “deriv”.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="scripts.plot_many_traj.plot_corr">
-<code class="sig-prename descclassname">scripts.plot_many_traj.</code><code class="sig-name descname">plot_corr</code><span class="sig-paren">(</span><em class="sig-param">dic</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_many_traj.plot_corr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot the correlation matrix.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>dic</strong> (<em>dic</em>) – Dictionary from the function “correlation”.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="scripts.plot_many_traj.plot_heat">
-<code class="sig-prename descclassname">scripts.plot_many_traj.</code><code class="sig-name descname">plot_heat</code><span class="sig-paren">(</span><em class="sig-param">df_dict</em>, <em class="sig-param">prefix</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_many_traj.plot_heat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot a heatmap where the x-axis consists of timesteps and the y-axis
-are the input parameters of the model. The colormap corresponds to the
-derivative. Plots several heatmaps for each dataframe in df_dict.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df_dict</strong> (<em>dic of pandas.Dataframe</em>) – A dictionary of pandas.Dataframe with key the output parameter
-and the columns the input parameters and values are the
-derivatives.</p></li>
-<li><p><strong>prefix</strong> (<em>string</em>) – Prefix of the filename where the plot shall be stored.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="scripts.plot_many_traj.plot_line">
-<code class="sig-prename descclassname">scripts.plot_many_traj.</code><code class="sig-name descname">plot_line</code><span class="sig-paren">(</span><em class="sig-param">df_dict</em>, <em class="sig-param">prefix</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_many_traj.plot_line" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot a lineplot where the x-axis consists of timesteps and the y-axis
-are the derivatives of the input parameters of the model.
-The colormap corresponds to the derivative, where brighter colors are
-overall more significant. Plots several lineplots for each dataframe in
-df_dict.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df_dict</strong> (<em>dic of pandas.Datafram</em>) – A dictionary of pandas.Dataframe with key the output parameter
-and the columns the input parameters and values are the
-derivatives.</p></li>
-<li><p><strong>prefix</strong> (<em>string</em>) – Prefix of the filename where the plot shall be stored.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="scripts.plot_many_traj.plot_line_res">
-<code class="sig-prename descclassname">scripts.plot_many_traj.</code><code class="sig-name descname">plot_line_res</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">prefix</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_many_traj.plot_line_res" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot a lineplot where the x-axis consists of timesteps and the y-axis
-are the absolute values of the output parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – A pandas.Dataframe with the columns the output parameters.</p></li>
-<li><p><strong>prefix</strong> (<em>string</em>) – Prefix of the filename where the plot shall be stored.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="scripts.plot_many_traj.plot_traj">
-<code class="sig-prename descclassname">scripts.plot_many_traj.</code><code class="sig-name descname">plot_traj</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">out_param</em>, <em class="sig-param">filename=None</em>, <em class="sig-param">trajs=None</em>, <em class="sig-param">max_time=None</em>, <em class="sig-param">lat_key='lat'</em>, <em class="sig-param">lon_key='lon'</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_many_traj.plot_traj" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot the output parameters of a simulation of trajectories.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns “lon” and “lat” and a column for each out_param.</p></li>
-<li><p><strong>out_param</strong> (<em>String</em>) – Parameter to plot such as “T” or “qr”.</p></li>
-<li><p><strong>filename</strong> (<em>string</em>) – Where to store the image.</p></li>
-<li><p><strong>trajs</strong> (<em>list of int</em>) – List of trajectory indices to plot.</p></li>
-<li><p><strong>max_time</strong> (<em>float</em>) – Maximum time to plot.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="scripts.plot_many_traj.plot_weather_deriv">
-<code class="sig-prename descclassname">scripts.plot_many_traj.</code><code class="sig-name descname">plot_weather_deriv</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">in_param</em>, <em class="sig-param">out_param</em>, <em class="sig-param">filename=None</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_many_traj.plot_weather_deriv" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot the derivatives of the trajectories.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns “out_param”, “in_param”, “trajectory”, “deriv”,
-“LONGITUDE” and “LATITUDE”.</p></li>
-<li><p><strong>in_param</strong> (<em>String</em>) – Input parameter of the simulation to plot, such as “dzeta” or “dbeta_r”.</p></li>
-<li><p><strong>out_param</strong> (<em>String</em>) – Output parameter of the simulation to plot, such as “S”, “T”, “qr”.</p></li>
-<li><p><strong>filename</strong> (<em>string</em>) – Where to store the image.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>df with additional columns “xm” and “ym” for projected coordinates.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>pandas.Dataframe</p>
-</dd>
-</dl>
-</dd></dl>
-
 </div>
 
 

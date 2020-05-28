@@ -21,12 +21,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
-        <script type="text/javascript" src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -185,9 +185,9 @@ Usage:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">-p</span></code>, <code class="docutils literal notranslate"><span class="pre">--param</span></code>: The out parameter to filter for.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">t</span></code>, <code class="docutils literal notranslate"><span class="pre">--trajectory</span></code>: The trajectory to filter for.</p></li>
 </ul>
-<span class="target" id="module-scripts.filter_more"></span><dl class="function">
+<span class="target" id="module-scripts.filter_more"></span><dl class="py function">
 <dt id="scripts.filter_more.filt_highest_in">
-<code class="sig-prename descclassname">scripts.filter_more.</code><code class="sig-name descname">filt_highest_in</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">out_param</em>, <em class="sig-param">n=3</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.filter_more.filt_highest_in" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.filter_more.</code><code class="sig-name descname">filt_highest_in</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">out_param</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">3</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.filter_more.filt_highest_in" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a pandas dataframe and an out_param, get the n most important
 in_params (sum over all timesteps) and discard all others. Deletes
 other out_params as well.</p>
@@ -209,9 +209,9 @@ in_param.</p>
 </dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="scripts.filter_more.get_traj">
-<code class="sig-prename descclassname">scripts.filter_more.</code><code class="sig-name descname">get_traj</code><span class="sig-paren">(</span><em class="sig-param">df</em>, <em class="sig-param">traj=1</em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.filter_more.get_traj" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.filter_more.</code><code class="sig-name descname">get_traj</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">traj</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.filter_more.get_traj" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a pandas dataframe and a trajectory number or a list of numbers,
 get only those trajectories and discard the others.</p>
 <dl class="field-list simple">
