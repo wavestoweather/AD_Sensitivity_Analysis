@@ -903,6 +903,15 @@ gamma_table_t table_g1, table_g2, table_r1, table_r2, table_r3;
 const uint64_t n_lookup = 2000;
 const uint64_t n_lookup_highres = 10000;
 const uint64_t n_lookup_hr_dummy = 10;
+
+/**
+ * Used for writing outputs.
+ */
+std::stringstream out_tmp;
+std::ofstream outfile;
+std::ofstream out_diff[num_comp];
+std::stringstream out_diff_tmp[num_comp];
+
 /** @} */ // end of group constants
 
 #endif

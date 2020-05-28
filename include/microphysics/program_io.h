@@ -661,6 +661,914 @@ void set_input_from_arguments(global_args_t &arg ,
 }
 
 
+/**
+ * Write the file with reference values ending with
+ * "__reference_values.txt" that can be read in Python with
+ * Numpy. The order is:
+ * Temperature, pressure, mixing ratio, particle number, ascent velocity,
+ * time, height.
+ *
+ * @param out_filename String with filename.
+ * @param ref_quant reference_quantities_t with all the reference values.
+ * @return Errorcode (0=no errors; 1=simulation breaking error)
+ */
+int write_reference_quantities(
+    std::string &out_filename,
+    reference_quantities_t &ref_quant)
+{
+    std::ofstream outfile_refs;
+    outfile_refs.open(out_filename + "_reference_values.txt");
+    outfile_refs.precision(10);
+
+    if( !outfile_refs.is_open() )
+    {
+        std::cout << "ERROR while opening the outputfile. Aborting." << std::endl;
+        return 1;
+    }
+
+    // Write the reference quantities
+    // Write the reference quantities
+    outfile_refs << ref_quant.Tref << " "
+	       << ref_quant.pref << " "
+	       << ref_quant.qref << " "
+	       << ref_quant.Nref << " "
+	       << ref_quant.wref << " "
+	       << ref_quant.tref << " "
+           << ref_quant.zref << "\n";
+
+    outfile_refs.close();
+    return 0;
+}
+
+
+/**
+ * Write the header for simulation results files and for files with
+ * derivatives which have "_diff_" in their name.
+ *
+ * @param out_filename String with filename.
+ * @return Errorcode (0=no errors; 1=simulation breaking error)
+ */
+int write_headers(
+    std::string &out_filename)
+{
+    std::string suffix = ".txt";
+    std::string full_filename;
+    full_filename = out_filename;
+    full_filename += suffix;
+
+    outfile.open(full_filename);
+    outfile.precision(10);
+
+    if( !outfile.is_open() )
+    {
+        std::cout << "ERROR while opening the outputfile. Aborting." << std::endl;
+        return 1;
+    }
+
+    // Append the initial values and write headers
+    out_tmp << "timestep,trajectory,LONGITUDE,LATITUDE,"
+#if defined WCB || defined WCB2
+        << "MAP,"
+#endif
+#if defined WCB2
+        << "dp2h,"
+        << "conv_400,"
+        << "conv_600,"
+        << "slan_400,"
+        << "slan_600,"
+#endif
+        << "p,T,w,S,qc,qr,qv,Nc,Nr,Nv,qi,Ni,vi,"
+        << "qs,Ns,qg,Ng,qh,Nh,qiout,qsout,qrout,qgout,qhout,"
+        << "latent_heat,latent_cool,Niout,Nsout,Nrout,Ngout,Nhout,z,Inactive,deposition,sublimination\n";
+
+    std::string basename = "_diff_";
+    std::string fname;
+
+    for(int ii = 0 ; ii < num_comp ; ii++)
+    {
+        fname = out_filename;
+        fname += basename;
+        fname += std::to_string(ii);
+        fname += suffix;
+
+        out_diff[ii].open(fname);
+        out_diff[ii].precision(10);
+        if( !out_diff[ii].is_open() )
+        {
+            std::cout << "ERROR while opening outputfile. Aborting." << std::endl;
+            return 1;
+        }
+        out_diff_tmp[ii]
+            << "timestep,"
+            << "trajectory,"
+            << "Output Parameter,"
+            << "LONGITUDE,"
+            << "LATITUDE,"
+#if defined WCB || defined WCB2
+            << "MAP,"
+#endif
+#if defined WCB2
+            << "dp2h,"
+            << "conv_400,"
+            << "conv_600,"
+            << "slan_400,"
+            << "slan_600,"
+#endif
+            << "da_1,"
+            << "da_2,"
+            << "de_1,"
+            << "de_2,"
+            << "dd,"
+            << "dN_c,"
+            << "dgamma,"
+            << "dbeta_c,"
+            << "dbeta_r,"
+            << "ddelta1,"
+            << "ddelta2,"
+            << "dzeta,"
+            << "drain_gfak,"
+            << "dcloud_k_au,"
+            << "dcloud_k_sc,"
+            << "dkc_autocon,"
+            << "dinv_z,"
+            // Rain
+            << "drain_a_geo,"
+            << "drain_b_geo,"
+            << "drain_min_x,"
+            << "drain_min_x_act,"
+            << "drain_min_x_nuc_homo,"
+            << "drain_min_x_nuc_hetero,"
+            << "drain_min_x_melt,"
+            << "drain_min_x_evap,"
+            << "drain_min_x_freezing,"
+            << "drain_min_x_depo,"
+            << "drain_min_x_collision,"
+            << "drain_min_x_collection,"
+            << "drain_min_x_conversion,"
+            << "drain_min_x_sedimentation,"
+            << "drain_min_x_riming,"
+            << "drain_max_x,"
+            << "drain_sc_theta_q,"
+            << "drain_sc_delta_q,"
+            << "drain_sc_theta_n,"
+            << "drain_sc_delta_n,"
+            << "drain_s_vel,"
+            << "drain_a_vel,"
+            << "drain_b_vel,"
+            << "drain_rho_v,"
+            << "drain_c_z,"
+            << "drain_sc_coll_n,"
+            << "drain_cmu0,"
+            << "drain_cmu1,"
+            << "drain_cmu2,"
+            << "drain_cmu3,"
+            << "drain_cmu4,"
+            << "drain_cmu5,"
+            << "drain_alpha,"
+            << "drain_beta,"
+            << "drain_gamma,"
+            << "drain_nu,"
+            << "drain_g1,"
+            << "drain_g2,"
+            << "drain_mu,"
+            << "drain_nm1,"
+            << "drain_nm2,"
+            << "drain_nm3,"
+            << "drain_q_crit_c,"
+            << "drain_d_crit_c,"
+            << "drain_ecoll_c,"
+            << "drain_cap,"
+            << "drain_a_ven,"
+            << "drain_b_ven,"
+            << "drain_c_s,"
+            << "drain_a_f,"
+            << "drain_b_f,"
+            << "drain_alfa_n,"
+            << "drain_alfa_q,"
+            << "drain_lambda,"
+            << "drain_vsedi_min,"
+            << "drain_vsedi_max,"
+            // Cloud
+            << "dcloud_a_geo,"
+            << "dcloud_b_geo,"
+            << "dcloud_min_x,"
+            << "dcloud_min_x_act,"
+            << "dcloud_min_x_nuc_homo,"
+            << "dcloud_min_x_nuc_hetero,"
+            << "dcloud_min_x_melt,"
+            << "dcloud_min_x_evap,"
+            << "dcloud_min_x_freezing,"
+            << "dcloud_min_x_depo,"
+            << "dcloud_min_x_collision,"
+            << "dcloud_min_x_collection,"
+            << "dcloud_min_x_conversion,"
+            << "dcloud_min_x_sedimentation,"
+            << "dcloud_min_x_riming,"
+            << "dcloud_max_x,"
+            << "dcloud_sc_theta_q,"
+            << "dcloud_sc_delta_q,"
+            << "dcloud_sc_theta_n,"
+            << "dcloud_sc_delta_n,"
+            << "dcloud_s_vel,"
+            << "dcloud_a_vel,"
+            << "dcloud_b_vel,"
+            << "dcloud_rho_v,"
+            << "dcloud_c_z,"
+            << "dcloud_sc_coll_n,"
+            << "dcloud_cmu0,"
+            << "dcloud_cmu1,"
+            << "dcloud_cmu2,"
+            << "dcloud_cmu3,"
+            << "dcloud_cmu4,"
+            << "dcloud_cmu5,"
+            << "dcloud_alpha,"
+            << "dcloud_beta,"
+            << "dcloud_gamma,"
+            << "dcloud_nu,"
+            << "dcloud_g1,"
+            << "dcloud_g2,"
+            << "dcloud_mu,"
+            << "dcloud_nm1,"
+            << "dcloud_nm2,"
+            << "dcloud_nm3,"
+            << "dcloud_q_crit_c,"
+            << "dcloud_d_crit_c,"
+            << "dcloud_ecoll_c,"
+            << "dcloud_cap,"
+            << "dcloud_a_ven,"
+            << "dcloud_b_ven,"
+            << "dcloud_c_s,"
+            << "dcloud_a_f,"
+            << "dcloud_b_f,"
+            << "dcloud_alfa_n,"
+            << "dcloud_alfa_q,"
+            << "dcloud_lambda,"
+            << "dcloud_vsedi_min,"
+            << "dcloud_vsedi_max,"
+            // Graupel
+            << "dgraupel_a_geo,"
+            << "dgraupel_b_geo,"
+            << "dgraupel_min_x,"
+            << "dgraupel_min_x_act,"
+            << "dgraupel_min_x_nuc_homo,"
+            << "dgraupel_min_x_nuc_hetero,"
+            << "dgraupel_min_x_melt,"
+            << "dgraupel_min_x_evap,"
+            << "dgraupel_min_x_freezing,"
+            << "dgraupel_min_x_depo,"
+            << "dgraupel_min_x_collision,"
+            << "dgraupel_min_x_collection,"
+            << "dgraupel_min_x_conversion,"
+            << "dgraupel_min_x_sedimentation,"
+            << "dgraupel_min_x_riming,"
+            << "dgraupel_max_x,"
+            << "dgraupel_sc_theta_q,"
+            << "dgraupel_sc_delta_q,"
+            << "dgraupel_sc_theta_n,"
+            << "dgraupel_sc_delta_n,"
+            << "dgraupel_s_vel,"
+            << "dgraupel_a_vel,"
+            << "dgraupel_b_vel,"
+            << "dgraupel_rho_v,"
+            << "dgraupel_c_z,"
+            << "dgraupel_sc_coll_n,"
+            << "dgraupel_cmu0,"
+            << "dgraupel_cmu1,"
+            << "dgraupel_cmu2,"
+            << "dgraupel_cmu3,"
+            << "dgraupel_cmu4,"
+            << "dgraupel_cmu5,"
+            << "dgraupel_alpha,"
+            << "dgraupel_beta,"
+            << "dgraupel_gamma,"
+            << "dgraupel_nu,"
+            << "dgraupel_g1,"
+            << "dgraupel_g2,"
+            << "dgraupel_mu,"
+            << "dgraupel_nm1,"
+            << "dgraupel_nm2,"
+            << "dgraupel_nm3,"
+            << "dgraupel_q_crit_c,"
+            << "dgraupel_d_crit_c,"
+            << "dgraupel_ecoll_c,"
+            << "dgraupel_cap,"
+            << "dgraupel_a_ven,"
+            << "dgraupel_b_ven,"
+            << "dgraupel_c_s,"
+            << "dgraupel_a_f,"
+            << "dgraupel_b_f,"
+            << "dgraupel_alfa_n,"
+            << "dgraupel_alfa_q,"
+            << "dgraupel_lambda,"
+            << "dgraupel_vsedi_min,"
+            << "dgraupel_vsedi_max,"
+            // Hail
+            << "dhail_a_geo,"
+            << "dhail_b_geo,"
+            << "dhail_min_x,"
+            << "dhail_min_x_act,"
+            << "dhail_min_x_nuc_homo,"
+            << "dhail_min_x_nuc_hetero,"
+            << "dhail_min_x_melt,"
+            << "dhail_min_x_evap,"
+            << "dhail_min_x_freezing,"
+            << "dhail_min_x_depo,"
+            << "dhail_min_x_collision,"
+            << "dhail_min_x_collection,"
+            << "dhail_min_x_conversion,"
+            << "dhail_min_x_sedimentation,"
+            << "dhail_min_x_riming,"
+            << "dhail_max_x,"
+            << "dhail_sc_theta_q,"
+            << "dhail_sc_delta_q,"
+            << "dhail_sc_theta_n,"
+            << "dhail_sc_delta_n,"
+            << "dhail_s_vel,"
+            << "dhail_a_vel,"
+            << "dhail_b_vel,"
+            << "dhail_rho_v,"
+            << "dhail_c_z,"
+            << "dhail_sc_coll_n,"
+            << "dhail_cmu0,"
+            << "dhail_cmu1,"
+            << "dhail_cmu2,"
+            << "dhail_cmu3,"
+            << "dhail_cmu4,"
+            << "dhail_cmu5,"
+            << "dhail_alpha,"
+            << "dhail_beta,"
+            << "dhail_gamma,"
+            << "dhail_nu,"
+            << "dhail_g1,"
+            << "dhail_g2,"
+            << "dhail_mu,"
+            << "dhail_nm1,"
+            << "dhail_nm2,"
+            << "dhail_nm3,"
+            << "dhail_q_crit_c,"
+            << "dhail_d_crit_c,"
+            << "dhail_ecoll_c,"
+            << "dhail_cap,"
+            << "dhail_a_ven,"
+            << "dhail_b_ven,"
+            << "dhail_c_s,"
+            << "dhail_a_f,"
+            << "dhail_b_f,"
+            << "dhail_alfa_n,"
+            << "dhail_alfa_q,"
+            << "dhail_lambda,"
+            << "dhail_vsedi_min,"
+            << "dhail_vsedi_max,"
+            // Ice
+            << "dice_a_geo,"
+            << "dice_b_geo,"
+            << "dice_min_x,"
+            << "dice_min_x_act,"
+            << "dice_min_x_nuc_homo,"
+            << "dice_min_x_nuc_hetero,"
+            << "dice_min_x_melt,"
+            << "dice_min_x_evap,"
+            << "dice_min_x_freezing,"
+            << "dice_min_x_depo,"
+            << "dice_min_x_collision,"
+            << "dice_min_x_collection,"
+            << "dice_min_x_conversion,"
+            << "dice_min_x_sedimentation,"
+            << "dice_min_x_riming,"
+            << "dice_max_x,"
+            << "dice_sc_theta_q,"
+            << "dice_sc_delta_q,"
+            << "dice_sc_theta_n,"
+            << "dice_sc_delta_n,"
+            << "dice_s_vel,"
+            << "dice_a_vel,"
+            << "dice_b_vel,"
+            << "dice_rho_v,"
+            << "dice_c_z,"
+            << "dice_sc_coll_n,"
+            << "dice_cmu0,"
+            << "dice_cmu1,"
+            << "dice_cmu2,"
+            << "dice_cmu3,"
+            << "dice_cmu4,"
+            << "dice_cmu5,"
+            << "dice_alpha,"
+            << "dice_beta,"
+            << "dice_gamma,"
+            << "dice_nu,"
+            << "dice_g1,"
+            << "dice_g2,"
+            << "dice_mu,"
+            << "dice_nm1,"
+            << "dice_nm2,"
+            << "dice_nm3,"
+            << "dice_q_crit_c,"
+            << "dice_d_crit_c,"
+            << "dice_ecoll_c,"
+            << "dice_cap,"
+            << "dice_a_ven,"
+            << "dice_b_ven,"
+            << "dice_c_s,"
+            << "dice_a_f,"
+            << "dice_b_f,"
+            << "dice_alfa_n,"
+            << "dice_alfa_q,"
+            << "dice_lambda,"
+            << "dice_vsedi_min,"
+            << "dice_vsedi_max,"
+            // Snow
+            << "dsnow_a_geo,"
+            << "dsnow_b_geo,"
+            << "dsnow_min_x,"
+            << "dsnow_min_x_act,"
+            << "dsnow_min_x_nuc_homo,"
+            << "dsnow_min_x_nuc_hetero,"
+            << "dsnow_min_x_melt,"
+            << "dsnow_min_x_evap,"
+            << "dsnow_min_x_freezing,"
+            << "dsnow_min_x_depo,"
+            << "dsnow_min_x_collision,"
+            << "dsnow_min_x_collection,"
+            << "dsnow_min_x_conversion,"
+            << "dsnow_min_x_sedimentation,"
+            << "dsnow_min_x_riming,"
+            << "dsnow_max_x,"
+            << "dsnow_sc_theta_q,"
+            << "dsnow_sc_delta_q,"
+            << "dsnow_sc_theta_n,"
+            << "dsnow_sc_delta_n,"
+            << "dsnow_s_vel,"
+            << "dsnow_a_vel,"
+            << "dsnow_b_vel,"
+            << "dsnow_rho_v,"
+            << "dsnow_c_z,"
+            << "dsnow_sc_coll_n,"
+            << "dsnow_cmu0,"
+            << "dsnow_cmu1,"
+            << "dsnow_cmu2,"
+            << "dsnow_cmu3,"
+            << "dsnow_cmu4,"
+            << "dsnow_cmu5,"
+            << "dsnow_alpha,"
+            << "dsnow_beta,"
+            << "dsnow_gamma,"
+            << "dsnow_nu,"
+            << "dsnow_g1,"
+            << "dsnow_g2,"
+            << "dsnow_mu,"
+            << "dsnow_nm1,"
+            << "dsnow_nm2,"
+            << "dsnow_nm3,"
+            << "dsnow_q_crit_c,"
+            << "dsnow_d_crit_c,"
+            << "dsnow_ecoll_c,"
+            << "dsnow_cap,"
+            << "dsnow_a_ven,"
+            << "dsnow_b_ven,"
+            << "dsnow_c_s,"
+            << "dsnow_a_f,"
+            << "dsnow_b_f,"
+            << "dsnow_alfa_n,"
+            << "dsnow_alfa_q,"
+            << "dsnow_lambda,"
+            << "dsnow_vsedi_min,"
+            << "dsnow_vsedi_max"
+            << "\n";
+    } // End loop over all components
+
+    return 0;
+}
+
+
+/**
+ * Read initial values from the netcdf file and stores them to y_init.
+ * Also stores the amount of trajectories in the input file to lenp and
+ * several quantities to cc such as the number of steps to simulate and
+ * to nc_params, which is used to read from netcdf files.
+ *
+ * @param y_init Array of num_comp many doubles
+ * @param nc_params Struct used for reading netcdf files
+ * @param lenp On out: Number of trajectories available
+ * @param ref_quant Reference quantities used to change from netcdf units to
+ *                  simulation units
+ * @param input_file Path to input netcdf file as char array
+ * @param traj ID of input trajectory to read
+ * @param cc Model constants. On out: Added number of simulation steps
+ * @return Errorcode (0=no errors; 1=simulation breaking error)
+ */
+int read_init_netcdf(
+    std::vector<double> &y_init,
+    nc_parameters_t &nc_params,
+    size_t &lenp,
+    reference_quantities_t &ref_quant,
+    const char *input_file,
+    const uint32_t traj,
+    model_constants_t &cc)
+{
+    try
+    {
+        int dimid, ncid;
+        size_t n_timesteps;
+        // Get the amount of trajectories
+        nc_open(input_file, NC_NOWRITE, &ncid);
+#ifdef WCB
+        nc_inq_dimid(ncid, "ntra", &dimid);
+#else
+        nc_inq_dimid(ncid, "id", &dimid);
+#endif
+        nc_inq_dimlen(ncid, dimid, &lenp);
+        std::cout << "Number of trajectories in netCDF file: " << lenp << "\n";
+        if(lenp <= traj)
+        {
+            std::cout << "You asked for trajectory with index " << traj
+                      << " which does not exist. ABORTING.\n";
+            return 1;
+        }
+        // Get the amount of timesteps
+#ifdef WCB
+        nc_inq_dimid(ncid, "ntim", &dimid);
+#else
+        nc_inq_dimid(ncid, "time", &dimid);
+#endif
+        nc_inq_dimlen(ncid, dimid, &n_timesteps);
+        uint64_t n_timesteps_input = ceil(cc.t_end/20.0);
+
+        cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+        init_nc_parameters(nc_params, lenp, n_timesteps);
+        netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
+        load_nc_parameters_var(nc_params, datafile);
+
+        std::vector<size_t> startp, countp;
+        // wcb files have a different ordering
+#if defined WCB || defined WCB2
+        startp.push_back(0); // time
+        startp.push_back(traj); // trajectory id
+#else
+        startp.push_back(traj); // trajectory id
+        startp.push_back(1); // time (where time == 0 only has zeros)
+#endif
+        countp.push_back(1);
+        countp.push_back(1);
+        load_nc_parameters(nc_params, startp, countp,
+                           ref_quant, cc.num_sub_steps);
+
+        y_init[p_idx] = nc_params.p;
+        y_init[T_idx] = nc_params.t;
+
+        y_init[S_idx] = nc_params.S;
+#ifdef SAT_CALC
+        y_init[S_idx] = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+#endif
+        y_init[qc_idx] = nc_params.qc;
+        y_init[qr_idx] = nc_params.qr;
+        y_init[qv_idx] = nc_params.qv;
+        y_init[qi_idx] = nc_params.qi;
+        y_init[qs_idx] = nc_params.qs;
+#ifdef WCB
+        y_init[w_idx] = 0;
+        y_init[qg_idx] = 0;
+#else
+        y_init[w_idx] = nc_params.w[0];
+        y_init[qg_idx] = nc_params.qg;
+#endif
+
+        y_init[qh_idx] = 0.0; // hail that is not in the trajectory
+
+        y_init[qh_out_idx] = 0.0;
+        y_init[Nh_out_idx] = 0.0;
+#ifdef WCB2
+        y_init[qi_out_idx] = nc_params.QIout;
+        y_init[qs_out_idx] = nc_params.QSout;
+        y_init[qr_out_idx] = nc_params.QRout;
+        y_init[qg_out_idx] = nc_params.QGout;
+
+        y_init[Ni_out_idx] = nc_params.NIout;
+        y_init[Ns_out_idx] = nc_params.NSout;
+        y_init[Nr_out_idx] = nc_params.NRout;
+        y_init[Ng_out_idx] = nc_params.NGout;
+
+        y_init[Ni_idx] = nc_params.Ni;
+        y_init[Ns_idx] = nc_params.Ns;
+        y_init[Nr_idx] = nc_params.Nr;
+        y_init[Ng_idx] = nc_params.Ng;
+        y_init[Nc_idx] = nc_params.Nc;
+#else
+        // We initialize the sedimentation with 0 for the stepper
+        y_init[qi_out_idx] = 0.0;
+        y_init[qs_out_idx] = 0.0;
+        y_init[qr_out_idx] = 0.0;
+        y_init[qg_out_idx] = 0.0;
+
+        y_init[Ni_out_idx] = 0;
+        y_init[Ns_out_idx] = 0;
+        y_init[Nr_out_idx] = 0;
+        y_init[Ng_out_idx] = 0;
+
+        y_init[Ni_idx] = 0;
+        y_init[Ns_idx] = 0;
+        y_init[Nr_idx] = 0;
+        y_init[Ng_idx] = 0;
+        y_init[Nc_idx] = 0;
+#endif
+        y_init[Nv_idx] = 0;
+        y_init[z_idx] = nc_params.z[0];
+
+        y_init[n_inact_idx] = 0;
+        y_init[depo_idx] = 0;
+        y_init[sub_idx] = 0;
+
+    } catch(netCDF::exceptions::NcException& e)
+    {
+        std::cout << e.what() << std::endl;
+        std::cout << "ABORTING." << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
+
+
+/**
+ * Open NETCDF file for reading and store some information in ncid, startp,
+ * countp.
+ *
+ * @param ncid On out: contains id of netcdf file (needed for closing it)
+ * @param startp On out: contains dimensions info for reading
+ * @params countp On out: contains dimensions info for reading
+ * @params input_file Char array of input file
+ */
+void open_netcdf(
+    int &ncid,
+    std::vector<size_t> &startp,
+    std::vector<size_t> &countp,
+    const char *input_file,
+    const uint32_t traj)
+{
+    nc_open(input_file, NC_NOWRITE, &ncid);
+#if defined WCB || defined WCB2
+    startp.push_back(1);          // time
+    startp.push_back(traj); // trajectory
+#else
+    startp.push_back(traj); // trajectory
+    startp.push_back(1);          // time
+#endif
+    countp.push_back(1);
+    countp.push_back(1);
+}
+
+
+/**
+ * Read from netcdf file. Alter current values used for simlation if
+ * given timestep is encountered. Writes values to output stringstream.
+ *
+ *
+ */
+void read_netcdf_write_stream(
+    const char *input_file,
+    std::vector<size_t> &startp,
+    std::vector<size_t> &countp,
+    nc_parameters_t &nc_params,
+    model_constants_t &cc,
+    input_parameters_t &input,
+    reference_quantities_t &ref_quant,
+    std::vector<codi::RealReverse> &y_single_old,
+    std::vector<codi::RealReverse> &inflow,
+    std::vector<int> &ids,
+    int &traj_id,
+    const uint32_t t)
+{
+#if defined WCB || defined WCB2
+    startp[0] = t;
+#else
+    startp[1] = t+1;
+#endif
+
+    netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
+    load_nc_parameters_var(nc_params, datafile);
+    load_nc_parameters(nc_params, startp, countp,
+                        ref_quant, cc.num_sub_steps);
+
+    netCDF::NcVar id_var;
+    id_var = datafile.getVar("id");
+    id_var.getVar(ids.data());
+    traj_id = ids[input.traj];
+    // Set values from a given trajectory
+    if(t==0 || input.start_over)
+    {
+
+        y_single_old[p_idx]  = nc_params.p;     // p
+        y_single_old[T_idx]  = nc_params.t;     // T
+        y_single_old[S_idx]  = nc_params.S;     // S
+#ifdef SAT_CALC
+        y_single_old[S_idx]  = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+#endif
+        y_single_old[qc_idx] = nc_params.qc;    // qc
+        y_single_old[qr_idx] = nc_params.qr;    // qr
+        y_single_old[qv_idx] = nc_params.qv;    // qv
+        y_single_old[qi_idx] = nc_params.qi;    // qi
+        y_single_old[qs_idx] = nc_params.qs;    // qs
+#if !defined(WCB)
+        y_single_old[qg_idx] = nc_params.qg;    // qg
+#else
+        if(t==0)
+            y_single_old[qg_idx] = 0;
+#endif
+
+        if(t==0)
+        {
+            y_single_old[qh_idx] = 0.0; // qh. We don't have hail in the trajectoris
+            y_single_old[Nh_idx] = 0.0; // Nh. We don't have hail in the trajectoris
+        }
+        codi::RealReverse denom = 0;
+#ifdef WCB2
+        y_single_old[Nc_idx] = nc_params.Nc;
+        y_single_old[Nr_idx] = nc_params.Nr;
+        y_single_old[Ng_idx] = nc_params.Ng;
+        y_single_old[Ni_idx] = nc_params.Ni;
+        y_single_old[Ns_idx] = nc_params.Ns;
+
+        y_single_old[Nr_out_idx] = nc_params.NRout;
+        y_single_old[Ng_out_idx] = nc_params.NGout;
+        y_single_old[Ni_out_idx] = nc_params.NIout;
+        y_single_old[Ns_out_idx] = nc_params.NSout;
+
+#else
+        denom = (cc.cloud.max_x - cc.cloud.min_x) / 2.0 + cc.cloud.min_x;
+        y_single_old[Nc_idx] = y_single_old[qc_idx] * ref_quant.qref / (denom); //*10e2);  // Nc
+        denom = (cc.rain.max_x - cc.rain.min_x) / 2 + cc.rain.min_x;
+        y_single_old[Nr_idx] = y_single_old[qr_idx] * ref_quant.qref / (denom); //*10e2);  // Nr
+        denom = cc.cloud.min_x / 2.0;
+        y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
+        denom = (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x;
+        y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
+        denom = (cc.snow.max_x - cc.snow.min_x) / 2.0 + cc.snow.min_x;
+        y_single_old[Ns_idx] = y_single_old[qs_idx] * ref_quant.qref / (denom); //*10e2); // Ns
+        denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
+        y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
+#endif
+        cc.Nc_prime = y_single_old[Nc_idx];
+
+        cc.rho_a_prime = compute_rhoa(nc_params.p*ref_quant.pref,//*100,
+            nc_params.t*ref_quant.Tref, nc_params.S);
+        y_single_old[w_idx]  = nc_params.w[0]; // w
+        cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
+
+        denom = cc.cloud.min_x / 2.0;
+        y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
+
+        y_single_old[z_idx] = nc_params.z[0];
+
+#if defined WCB || defined WCB2
+        out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
+                << nc_params.lon[0] << "," << nc_params.lat[0] << ","
+                << nc_params.ascent_flag << ",";
+#else
+        out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
+                << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
+#endif
+#if defined WCB2
+        out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                << nc_params.slan_600 << ",";
+#endif
+        for(int ii = 0 ; ii < num_comp; ii++)
+            out_tmp << y_single_old[ii] <<
+                ((ii == num_comp-1) ? "\n" : ",");
+
+        for(int ii = 0 ; ii < num_comp ; ii++)
+        {
+#if defined WCB || defined WCB2
+            out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                            << traj_id << ","
+                            << output_par_idx[ii] << ","
+                            << nc_params.lon[0] << ","
+                            << nc_params.lat[0] << ","
+                            << nc_params.ascent_flag << ",";
+#else
+            out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                            << traj_id << ","
+                            << output_par_idx[ii] << ","
+                            << nc_params.lon[0] << ","
+                            << nc_params.lat[0] << ",";
+#endif
+#if defined WCB2
+            out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                                << nc_params.slan_600 << ",";
+#endif
+            for(int jj = 0 ; jj < num_par ; jj++)
+                out_diff_tmp[ii] << 0.0
+                    << ((jj==num_par-1) ? "\n" : ",");
+
+        }
+
+#if defined(FLUX) && !defined(WCB)
+        inflow[qi_in_idx] = nc_params.QIin;
+        inflow[qs_in_idx] = nc_params.QSin;
+        inflow[qr_in_idx] = nc_params.QRin;
+        inflow[qg_in_idx] = nc_params.QGin;
+#else
+        inflow[qi_in_idx] = 0;
+        inflow[qs_in_idx] = 0;
+        inflow[qr_in_idx] = 0;
+        inflow[qg_in_idx] = 0;
+#endif
+#if defined(FLUX) && defined(WCB2)
+        inflow[Ni_in_idx] = nc_params.NIin;
+        inflow[Ns_in_idx] = nc_params.NSin;
+        inflow[Nr_in_idx] = nc_params.NRin;
+        inflow[Ng_in_idx] = nc_params.NGin;
+#else
+        inflow[Ni_in_idx] = 0;
+        inflow[Ns_in_idx] = 0;
+        inflow[Nr_in_idx] = 0;
+        inflow[Ng_in_idx] = 0;
+#endif
+    }
+}
+
+
+/**
+ * Store simulation results and gradients to string stream and dump it
+ * if timestep is reached to do so.
+ */
+void write_output(
+    const model_constants_t &cc,
+    const nc_parameters_t &nc_params,
+    const std::vector<codi::RealReverse> &y_single_new,
+    const std::vector< std::array<double, num_par > >  &y_diff,
+    const uint32_t sub,
+    const uint32_t t,
+    const uint32_t time_new,
+    const uint32_t traj_id,
+    const uint32_t write_index,
+    const uint32_t snapshot_index)
+{
+    if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
+        || ( t == cc.num_steps-1 && sub == cc.num_sub_steps-1 ) )
+    {
+        // Write the results to the output file
+#if defined WCB || defined WCB2
+        out_tmp << time_new << "," << traj_id << ","
+                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                << (nc_params.lat[0] + sub*nc_params.dlat) << ","
+                << nc_params.ascent_flag << ",";
+#else
+        out_tmp << time_new << "," << traj_id << ","
+                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
+#endif
+#if defined WCB2
+        out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                << nc_params.slan_600 << ",";
+#endif
+        for(int ii = 0 ; ii < num_comp; ii++)
+            out_tmp << y_single_new[ii]
+                << ((ii == num_comp-1) ? "\n" : ",");
+
+        // CODIPACK: BEGIN
+        for(int ii = 0 ; ii < num_comp ; ii++)
+        {
+#if defined WCB || defined WCB2
+            out_diff_tmp[ii] << time_new << "," << traj_id << ","
+                            << output_par_idx[ii] << ","
+                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                            << (nc_params.lat[0] + sub*nc_params.dlat) << ","
+                            << nc_params.ascent_flag << ",";
+#else
+            out_diff_tmp[ii] << time_new << "," << traj_id << ","
+                            << output_par_idx[ii] << ","
+                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                            << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
+#endif
+#if defined WCB2
+            out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                            << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                            << nc_params.slan_600 << ",";
+#endif
+            for(int jj = 0 ; jj < num_par ; jj++)
+                out_diff_tmp[ii] << y_diff[ii][jj]
+                    << ((jj==num_par-1) ? "\n" : ",");
+        }
+        // CODIPACK: END
+    }
+    if( (0 == (sub + t*cc.num_sub_steps) % write_index)
+        || ( t == cc.num_steps-1 && sub == cc.num_sub_steps-1 ) )
+    {
+        outfile << out_tmp.rdbuf();
+        for(int ii = 0 ; ii < num_comp ; ii++)
+        {
+            out_diff[ii] << out_diff_tmp[ii].rdbuf();
+            out_diff_tmp[ii].str( std::string() );
+            out_diff_tmp[ii].clear();
+        }
+        out_tmp.str( std::string() );
+        out_tmp.clear();
+    }
+}
 
 /** @} */ // end of group io
 

@@ -9,8 +9,6 @@
 #include <math.h>
 #include "types.h"
 
-using v_rev = std::vector<codi::RealReverse>;
-
 /** @defgroup rk Runge-Kutta 4 Method
  * This file provides the function for a single step with the
  * Runge-Kutta 4 method.
@@ -31,8 +29,8 @@ using v_rev = std::vector<codi::RealReverse>;
  * @param fixed If True: Do not change pressure, temperature and ascent (w)
  */
 void RK4_step(
-    v_rev &ynew,
-    v_rev &yold,
+    std::vector<codi::RealReverse> &ynew,
+    std::vector<codi::RealReverse> &yold,
     const reference_quantities_t& ref,
     model_constants_t& cc,
     nc_parameters_t& nc,
@@ -99,7 +97,7 @@ void RK4_step(
         for(int ii=0; ii < update_idx; ii++)
             ynew[ii] = yold[ii];
 
-} // End of method RK4_step
+}
 
 
 /**
@@ -116,8 +114,8 @@ void RK4_step(
  * @param fixed If True: Do not change pressure, temperature and ascent (w)
  */
 void RK4_step_2_no_ice(
-    v_rev &ynew,
-    v_rev &yold,
+    std::vector<codi::RealReverse> &ynew,
+    std::vector<codi::RealReverse> &yold,
     const reference_quantities_t& ref,
     model_constants_t& cc,
     nc_parameters_t& nc,
@@ -189,8 +187,8 @@ void RK4_step_2_no_ice(
  * @param fixed If True: Do not change pressure, temperature and ascent (w)
  */
 void RK4_step_2_sb_ice(
-    v_rev &ynew,
-    v_rev &yold,
+    std::vector<codi::RealReverse> &ynew,
+    std::vector<codi::RealReverse> &yold,
     const reference_quantities_t& ref,
     model_constants_t& cc,
     nc_parameters_t& nc,
