@@ -14,7 +14,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Indices of the output parameters
 ////////////////////////////////////////////////////////////////////////////////
-#if defined(RK4ICE) || defined(RK4NOICE)
 #define p_idx 0             /*!< Pressure index */
 #define T_idx 1             /*!< Temperature index */
 #define w_idx 2             /*!< Vertical acceleration index */
@@ -50,9 +49,15 @@
 #define n_inact_idx 32      /*!< Number of inactive nuclei (ie due to being activated before) */
 #define depo_idx 33         /*!< Number of deposited nuclei */
 #define sub_idx 34          /*!< Sublimination number */
-#define num_comp 35         /*!< Number of output elements of a model */
 
-#define num_par 56*6+17    /*!< Number of gradients */
+#if defined(RK4_ONE_MOMENT)
+#define num_comp 10         /*!< Number of output elements of a model */
+#define num_par 12          /*!< Number of gradients */
+
+#elif defined(RK4ICE) || defined(RK4NOICE)
+#define num_comp 35         /*!< Number of output elements of a model */
+#define num_par 56*6+17     /*!< Number of gradients */
+
 #endif
 
 // Those are for an inflow vector
@@ -70,7 +75,20 @@
 // Constants
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined(RK4ICE) || defined(RK4NOICE)
+#if defined(RK4_ONE_MOMENT)
+/**
+ * Used for header files of output parameters.
+ */
+const std::vector<std::string> output_par_idx =
+    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr", "Nv"};
+
+/**
+ * Used for header files of gradients.
+ */
+const std::vector<std::string> output_grad_idx =
+    {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
+    "dbeta_r", "ddelta1", "ddelta2", "dzeta"};
+#elif defined(RK4ICE) || defined(RK4NOICE)
 /**
  * Used for header files of output parameters.
  */

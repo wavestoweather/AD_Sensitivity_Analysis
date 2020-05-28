@@ -48,7 +48,9 @@ void RK4_step(
     //
     // Do all computations involving k1
     //
+#if defined(RK4_ONE_MOMENT)
     RHS(k, yold, ref, cc, nc); // k = k1
+#endif
 
     for(int ii = 0 ; ii < num_comp ; ii++){
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k1 for k2
@@ -62,7 +64,9 @@ void RK4_step(
     //
     // Do all computations involving k2
     //
+#if defined(RK4_ONE_MOMENT)
     RHS(k, ytmp, ref, cc, nc); // k = k2
+#endif
 
     for(int ii = 0 ; ii < num_comp ; ii++){
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k2 for k3
@@ -75,7 +79,9 @@ void RK4_step(
     //
     // Do all computations involving k3
     //
+#if defined(RK4_ONE_MOMENT)
     RHS(k, ytmp, ref, cc, nc); // k = k3
+#endif
 
     for(int ii = 0 ; ii < num_comp ; ii++){
         ytmp[ii] = yold[ii] + cc.dt*k[ii]; // y_0 + dt*k3 for k4
@@ -88,7 +94,9 @@ void RK4_step(
     //
     // Do all computations involving k4
     //
+#if defined(RK4_ONE_MOMENT)
     RHS(k, ytmp, ref, cc, nc); // k = k4
+#endif
 
     for(int ii = 0 ; ii < num_comp ; ii++)
         ynew[ii] += cc.dt_sixth*k[ii];

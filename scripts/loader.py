@@ -623,58 +623,69 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
         "latent_heat", "latent_cool" if change_ref is True. Otherwise
         any dataframe from the given csv file.
     """
-    type_dic = {      
-        "timestep": np.float64, 
-        "trajectory": np.uint64, 
-        "LONGITUDE": np.float64, 
-        "LATITUDE": np.float64, 
-        "MAP": np.bool_, 
-        "dp2h": np.bool_, 
-        "conv_400": np.bool_, 
-        "conv_600": np.bool_, 
-        "slan_400": np.bool_, 
+    type_dic = {
+        "timestep": np.float64,
+        "trajectory": np.uint64,
+        "LONGITUDE": np.float64,
+        "LATITUDE": np.float64,
+        "MAP": np.bool_,
+        "dp2h": np.bool_,
+        "conv_400": np.bool_,
+        "conv_600": np.bool_,
+        "slan_400": np.bool_,
         "slan_600": np.bool_,
-        "p": np.float64, 
-        "T": np.float64, 
-        "w": np.float64, 
-        "S": np.float64, 
-        "qc": np.float64, 
-        "qr": np.float64, 
-        "qv": np.float64, 
-        "Nc": np.float64, 
-        "Nr": np.float64, 
-        "Nv": np.float64, 
-        "qi": np.float64, 
-        "Ni": np.float64, 
-        "vi": np.float64, 
-        "qs": np.float64, 
-        "Ns": np.float64, 
-        "qg": np.float64, 
-        "Ng": np.float64, 
-        "qh": np.float64, 
-        "Nh": np.float64, 
-        "qiout": np.float64, 
-        "qsout": np.float64, 
-        "qrout": np.float64, 
-        "qgout": np.float64, 
-        "qhout": np.float64, 
-        "latent_heat": np.float64, 
-        "latent_cool": np.float64, 
-        "Niout": np.float64, 
-        "Nsout": np.float64, 
-        "Nrout": np.float64, 
-        "Ngout": np.float64, 
-        "Nhout": np.float64, 
-        "z": np.float64, 
-        "Inactive": np.float64, 
-        "deposition": np.float64, 
+        "p": np.float64,
+        "T": np.float64,
+        "w": np.float64,
+        "S": np.float64,
+        "qc": np.float64,
+        "qr": np.float64,
+        "qv": np.float64,
+        "Nc": np.float64,
+        "Nr": np.float64,
+        "Nv": np.float64,
+        "qi": np.float64,
+        "Ni": np.float64,
+        "vi": np.float64,
+        "qs": np.float64,
+        "Ns": np.float64,
+        "qg": np.float64,
+        "Ng": np.float64,
+        "qh": np.float64,
+        "Nh": np.float64,
+        "qiout": np.float64,
+        "qsout": np.float64,
+        "qrout": np.float64,
+        "qgout": np.float64,
+        "qhout": np.float64,
+        "latent_heat": np.float64,
+        "latent_cool": np.float64,
+        "Niout": np.float64,
+        "Nsout": np.float64,
+        "Nrout": np.float64,
+        "Ngout": np.float64,
+        "Nhout": np.float64,
+        "z": np.float64,
+        "Inactive": np.float64,
+        "deposition": np.float64,
         "sublimination": np.float64
     }
-    
+
     if sep is None:
-        data = pd.read_csv(filename, nrows=nrows, dtype=type_dic)
+        try:
+            data = pd.read_csv(filename, nrows=nrows, dtype=type_dic)
+        except:
+            print("Reading data with pre specified data types failed.")
+            print("Restarting with automatic type detection")
+            data = pd.read_csv(filename, nrows=nrows)
     else:
-        data = pd.read_csv(filename, sep=sep, nrows=nrows, dtype=type_dic)
+        try:
+            data = pd.read_csv(filename, sep=sep, nrows=nrows, dtype=type_dic)
+        except:
+            print("Reading data with pre specified data types failed.")
+            print("Restarting with automatic type detection")
+            data = pd.read_csv(filename, sep=sep, nrows=nrows)
+
     if refs is not None:
         change_ref = True
     if change_ref:
@@ -701,31 +712,52 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
         data["w"]           = data["w"]*wref
         data["qc"]          = data["qc"]*qref
         data["qr"]          = data["qr"]*qref
-        data["qs"]          = data["qs"]*qref
-        data["qg"]          = data["qg"]*qref
-        data["qh"]          = data["qh"]*qref
-        data["qi"]          = data["qi"]*qref
+        if "qs" in data:
+            data["qs"]          = data["qs"]*qref
+        if "qg" in data:
+            data["qg"]          = data["qg"]*qref
+        if "qh" in data:
+            data["qh"]          = data["qh"]*qref
+        if "qi" in data:
+            data["qi"]          = data["qi"]*qref
         data["qv"]          = data["qv"]*qref
-        data["qiout"]       = data["qiout"]*qref
-        data["qsout"]       = data["qsout"]*qref
-        data["qrout"]       = data["qrout"]*qref
-        data["qgout"]       = data["qgout"]*qref
-        data["qhout"]       = data["qhout"]*qref
+        if "qiout" in data:
+            data["qiout"]       = data["qiout"]*qref
+        if "qsout" in data:
+            data["qsout"]       = data["qsout"]*qref
+        if "qrout" in data:
+            data["qrout"]       = data["qrout"]*qref
+        if "qgout" in data:
+            data["qgout"]       = data["qgout"]*qref
+        if "qhout" in data:
+            data["qhout"]       = data["qhout"]*qref
         data["Nc"]          *= Nref
         data["Nr"]          *= Nref
-        data["Ns"]          *= Nref
-        data["Ng"]          *= Nref
-        data["Nh"]          *= Nref
-        data["Ni"]          *= Nref
+        if "Ns" in data:
+            data["Ns"]          *= Nref
+        if "Ng" in data:
+            data["Ng"]          *= Nref
+        if "Nh" in data:
+            data["Nh"]          *= Nref
+        if "Ni" in data:
+            data["Ni"]          *= Nref
         data["Nv"]          *= Nref
-        data["Niout"]       *= Nref
-        data["Nsout"]       *= Nref
-        data["Nrout"]       *= Nref
-        data["Ngout"]       *= Nref
-        data["Nhout"]       *= Nref
-        data["latent_heat"] *= Tref
-        data["latent_cool"] *= Tref
-        data["z"]           *= zref
+        if "Niout" in data:
+            data["Niout"]       *= Nref
+        if "Nsout" in data:
+            data["Nsout"]       *= Nref
+        if "Nrout" in data:
+            data["Nrout"]       *= Nref
+        if "Ngout" in data:
+            data["Ngout"]       *= Nref
+        if "Nhout" in data:
+            data["Nhout"]       *= Nref
+        if "latent_heat" in data:
+            data["latent_heat"] *= Tref
+        if "latent_cool" in data:
+            data["latent_cool"] *= Tref
+        if "z" in data:
+            data["z"]           *= zref
 
     return data
 
@@ -1002,7 +1034,7 @@ def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
             s = s[-1].split("_")
             if int(s[0]) in trajectories:
                 file_list2.append(f)
-    
+
 
     if suffix is None:
         example = file_list[0]
@@ -1016,7 +1048,7 @@ def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
         suffix = example[-2] + "_" + example[-1]
         print("Found suffix: {}".format(suffix))
     tmp_dict = {}
-    
+
     def booler(x):
 #         if x != "0" and x != "1":
 #             print(x)
@@ -1035,7 +1067,7 @@ def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
             tmp_dict = filter_zeros(tmp_dict, EPSILON)
 
         return tmp_dict
-            
+
     else:
 
         for df_tuple in pb(pool.starmap(load_parallel, zip(file_list2, repeat(suffix))), redirect_stdout=True):

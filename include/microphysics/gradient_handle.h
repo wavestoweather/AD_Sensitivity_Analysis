@@ -27,7 +27,24 @@ void register_everything(
     codi::RealReverse::TapeType &tape,
     model_constants_t &cc)
 {
-#if defined(RK4ICE) || defined(RK4NOICE)
+#if defined(RK4_ONE_MOMENT)
+    // Dimensional coefficients
+    tape.registerInput(cc.a1_prime);    // Autoconversion
+    tape.registerInput(cc.a2_prime);    // Accretion
+    tape.registerInput(cc.e1_prime);    // Evaporation
+    tape.registerInput(cc.e2_prime);    // Evaporation
+    tape.registerInput(cc.d_prime);     // Sedimentation
+    tape.registerInput(cc.Nc_prime);    // Concentration of cloud droplets
+
+    // Exponents
+    tape.registerInput(cc.gamma);       // Autoconversion
+    tape.registerInput(cc.betac);       // Accretion
+    tape.registerInput(cc.betar);       // Accretion
+    tape.registerInput(cc.delta1);      // Evaporation
+    tape.registerInput(cc.delta2);      // Evaporation
+    tape.registerInput(cc.zeta);        // Sedimentation
+
+#elif defined(RK4ICE) || defined(RK4NOICE)
     // Dimensional coefficients
     tape.registerInput(cc.a1_prime);    // Autoconversion
     tape.registerInput(cc.a2_prime);    // Accretion
@@ -77,7 +94,23 @@ void get_gradients(
         y_single_new[ii].setGradient(1.0);
         tape.evaluate();
 
-#if defined(RK4ICE) || defined(RK4NOICE)
+#if defined(RK4_ONE_MOMENT)
+        y_diff[ii][0] = cc.a1_prime.getGradient();
+        y_diff[ii][1] = cc.a2_prime.getGradient();
+        y_diff[ii][2] = cc.e1_prime.getGradient();
+        y_diff[ii][3] = cc.e2_prime.getGradient();
+        y_diff[ii][4] = cc.d_prime.getGradient();
+
+        y_diff[ii][5] = cc.gamma.getGradient();
+        y_diff[ii][6] = cc.betac.getGradient();
+        y_diff[ii][7] = cc.betar.getGradient();
+        y_diff[ii][8] = cc.delta1.getGradient();
+        y_diff[ii][9] = cc.delta2.getGradient();
+        y_diff[ii][10] = cc.zeta.getGradient();
+
+        y_diff[ii][11] = cc.Nc_prime.getGradient();
+
+#elif defined(RK4ICE) || defined(RK4NOICE)
         y_diff[ii][0] = cc.a1_prime.getGradient();
         y_diff[ii][1] = cc.a2_prime.getGradient();
         y_diff[ii][2] = cc.e1_prime.getGradient();

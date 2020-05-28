@@ -491,7 +491,6 @@ struct model_constants_t{
   //
   // Physical constants warm cloud
   //
-
   double alpha_d; /*!< Accomodation coefficient */
 
   double rho_a_prime; /*!< Density of dry air */

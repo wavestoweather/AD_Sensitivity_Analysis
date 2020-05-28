@@ -776,11 +776,9 @@ int write_headers(
             << "slan_400,"
             << "slan_600,";
 #endif
-#if defined(RK4ICE) || defined(RK4NOICE)
         for(uint32_t i=0; i<output_grad_idx.size(); ++i)
-            out_tmp << output_grad_idx[i]  <<
+            out_diff_tmp[ii] << output_grad_idx[i]  <<
                 ((i < output_grad_idx.size()-1) ? "," : "\n");
-#endif
     } // End loop over all components
 
     return 0;
@@ -870,61 +868,68 @@ int read_init_netcdf(
         y_init[qc_idx] = nc_params.qc;
         y_init[qr_idx] = nc_params.qr;
         y_init[qv_idx] = nc_params.qv;
+#if defined(RK4ICE)
         y_init[qi_idx] = nc_params.qi;
         y_init[qs_idx] = nc_params.qs;
+#endif
 #ifdef WCB
         y_init[w_idx] = 0;
+  #if defined(RK4ICE)
         y_init[qg_idx] = 0;
+  #endif
 #else
         y_init[w_idx] = nc_params.w[0];
+  #if defined(RK4ICE)
         y_init[qg_idx] = nc_params.qg;
+  #endif
 #endif
-
+#if defined(RK4ICE)
         y_init[qh_idx] = 0.0; // hail that is not in the trajectory
-
         y_init[qh_out_idx] = 0.0;
         y_init[Nh_out_idx] = 0.0;
+#endif
 #ifdef WCB2
+
+        y_init[Nr_idx] = nc_params.Nr;
+        y_init[Nc_idx] = nc_params.Nc;
+  #if defined(RK4ICE)
+        y_init[qr_out_idx] = nc_params.QRout;
+        y_init[Nr_out_idx] = nc_params.NRout;
         y_init[qi_out_idx] = nc_params.QIout;
         y_init[qs_out_idx] = nc_params.QSout;
-        y_init[qr_out_idx] = nc_params.QRout;
         y_init[qg_out_idx] = nc_params.QGout;
-
         y_init[Ni_out_idx] = nc_params.NIout;
         y_init[Ns_out_idx] = nc_params.NSout;
-        y_init[Nr_out_idx] = nc_params.NRout;
         y_init[Ng_out_idx] = nc_params.NGout;
-
         y_init[Ni_idx] = nc_params.Ni;
         y_init[Ns_idx] = nc_params.Ns;
-        y_init[Nr_idx] = nc_params.Nr;
         y_init[Ng_idx] = nc_params.Ng;
-        y_init[Nc_idx] = nc_params.Nc;
+  #endif
 #else
+        y_init[qr_out_idx] = 0.0;
+        y_init[Nr_out_idx] = 0;
+        y_init[Nc_idx] = 0;
+        y_init[Nr_idx] = 0;
+  #if defined(RK4ICE)
         // We initialize the sedimentation with 0 for the stepper
         y_init[qi_out_idx] = 0.0;
         y_init[qs_out_idx] = 0.0;
-        y_init[qr_out_idx] = 0.0;
         y_init[qg_out_idx] = 0.0;
-
         y_init[Ni_out_idx] = 0;
         y_init[Ns_out_idx] = 0;
-        y_init[Nr_out_idx] = 0;
         y_init[Ng_out_idx] = 0;
-
         y_init[Ni_idx] = 0;
         y_init[Ns_idx] = 0;
-        y_init[Nr_idx] = 0;
         y_init[Ng_idx] = 0;
-        y_init[Nc_idx] = 0;
+  #endif
 #endif
         y_init[Nv_idx] = 0;
+#if defined(RK4ICE) || defined(RK4NOICE)
         y_init[z_idx] = nc_params.z[0];
-
         y_init[n_inact_idx] = 0;
         y_init[depo_idx] = 0;
         y_init[sub_idx] = 0;
-
+#endif
     } catch(netCDF::exceptions::NcException& e)
     {
         std::cout << e.what() << std::endl;
@@ -1014,33 +1019,36 @@ void read_netcdf_write_stream(
         y_single_old[qc_idx] = nc_params.qc;    // qc
         y_single_old[qr_idx] = nc_params.qr;    // qr
         y_single_old[qv_idx] = nc_params.qv;    // qv
+#if defined(RK4ICE)
         y_single_old[qi_idx] = nc_params.qi;    // qi
         y_single_old[qs_idx] = nc_params.qs;    // qs
-#if !defined(WCB)
+#endif
+#if !defined(WCB) && defined(RK4ICE)
         y_single_old[qg_idx] = nc_params.qg;    // qg
-#else
+#elif defined(RK4ICE)
         if(t==0)
             y_single_old[qg_idx] = 0;
 #endif
-
+#if defined(RK4ICE)
         if(t==0)
         {
             y_single_old[qh_idx] = 0.0; // qh. We don't have hail in the trajectoris
             y_single_old[Nh_idx] = 0.0; // Nh. We don't have hail in the trajectoris
         }
+#endif
         codi::RealReverse denom = 0;
-#ifdef WCB2
-        y_single_old[Nc_idx] = nc_params.Nc;
-        y_single_old[Nr_idx] = nc_params.Nr;
+#if defined(RK4ICE) && defined(WCB2)
         y_single_old[Ng_idx] = nc_params.Ng;
         y_single_old[Ni_idx] = nc_params.Ni;
         y_single_old[Ns_idx] = nc_params.Ns;
-
-        y_single_old[Nr_out_idx] = nc_params.NRout;
         y_single_old[Ng_out_idx] = nc_params.NGout;
         y_single_old[Ni_out_idx] = nc_params.NIout;
         y_single_old[Ns_out_idx] = nc_params.NSout;
-
+        y_single_old[Nr_out_idx] = nc_params.NRout;
+#endif
+#ifdef WCB2
+        y_single_old[Nc_idx] = nc_params.Nc;
+        y_single_old[Nr_idx] = nc_params.Nr;
 #else
         denom = (cc.cloud.max_x - cc.cloud.min_x) / 2.0 + cc.cloud.min_x;
         y_single_old[Nc_idx] = y_single_old[qc_idx] * ref_quant.qref / (denom); //*10e2);  // Nc
@@ -1048,12 +1056,14 @@ void read_netcdf_write_stream(
         y_single_old[Nr_idx] = y_single_old[qr_idx] * ref_quant.qref / (denom); //*10e2);  // Nr
         denom = cc.cloud.min_x / 2.0;
         y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
+#if defined(RK4ICE)
         denom = (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x;
         y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
         denom = (cc.snow.max_x - cc.snow.min_x) / 2.0 + cc.snow.min_x;
         y_single_old[Ns_idx] = y_single_old[qs_idx] * ref_quant.qref / (denom); //*10e2); // Ns
         denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
         y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
+#endif
 #endif
         cc.Nc_prime = y_single_old[Nc_idx];
 
@@ -1064,9 +1074,9 @@ void read_netcdf_write_stream(
 
         denom = cc.cloud.min_x / 2.0;
         y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
-
+#if defined(RK4ICE) || defined(RK4NOICE)
         y_single_old[z_idx] = nc_params.z[0];
-
+#endif
 #if defined WCB || defined WCB2
         out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
                 << nc_params.lon[0] << "," << nc_params.lat[0] << ","
@@ -1112,26 +1122,34 @@ void read_netcdf_write_stream(
         }
 
 #if defined(FLUX) && !defined(WCB)
+        inflow[qr_in_idx] = nc_params.QRin;
+  #if defined(RK4ICE)
         inflow[qi_in_idx] = nc_params.QIin;
         inflow[qs_in_idx] = nc_params.QSin;
-        inflow[qr_in_idx] = nc_params.QRin;
         inflow[qg_in_idx] = nc_params.QGin;
+  #endif
 #else
+        inflow[qr_in_idx] = 0;
+  #if defined(RK4ICE)
         inflow[qi_in_idx] = 0;
         inflow[qs_in_idx] = 0;
-        inflow[qr_in_idx] = 0;
         inflow[qg_in_idx] = 0;
+  #endif
 #endif
 #if defined(FLUX) && defined(WCB2)
+        inflow[Nr_in_idx] = nc_params.NRin;
+  #if defined(RK4ICE)
         inflow[Ni_in_idx] = nc_params.NIin;
         inflow[Ns_in_idx] = nc_params.NSin;
-        inflow[Nr_in_idx] = nc_params.NRin;
         inflow[Ng_in_idx] = nc_params.NGin;
+  #endif
 #else
+        inflow[Nr_in_idx] = 0;
+  #if defined(RK4ICE)
         inflow[Ni_in_idx] = 0;
         inflow[Ns_in_idx] = 0;
-        inflow[Nr_in_idx] = 0;
         inflow[Ng_in_idx] = 0;
+  #endif
 #endif
     }
 }

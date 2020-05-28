@@ -73,7 +73,7 @@ with `Rv` the gas constant for water vapor and `p_sat` the
 saturation vapor pressure over a flat surface of liquid water (see `physical_parametrizations.h`).
 If it is not on, then saturation of 1 is assumed. \
 Variable `TIMESTEPPER` can be used to set the method to use (default: Runge Kutta)
-and the microphysical process (default: 2 moment scheme).
+and the microphysical process (default: one moment scheme for warm clouds).
 
 To compile the code, simply type
 ```

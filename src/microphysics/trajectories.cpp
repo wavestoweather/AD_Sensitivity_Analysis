@@ -18,15 +18,7 @@
 
 #include <netcdf>
 
-#ifdef RK4
-#include "include/microphysics/rk4.h"
-#endif
-
-#ifdef RK4NOICE
-#include "include/microphysics/rk4.h"
-#endif
-
-#ifdef RK4ICE
+#if defined(RK4) || defined(RK4NOICE) || defined(RK4ICE) || defined(RK4_ONE_MOMENT)
 #include "include/microphysics/rk4.h"
 #endif
 
@@ -298,14 +290,16 @@ int main(int argc, char** argv)
                 tape.setActive();
 
                 //	 Add the inflow
+                y_single_old[qr_idx] += inflow[qr_in_idx]/cc.num_sub_steps;
+                y_single_old[Nr_idx] += inflow[Nr_in_idx]/cc.num_sub_steps;
+#if defined(RK4ICE)
                 y_single_old[qi_idx] += inflow[qi_in_idx]/cc.num_sub_steps;
                 y_single_old[qs_idx] += inflow[qs_in_idx]/cc.num_sub_steps;
-                y_single_old[qr_idx] += inflow[qr_in_idx]/cc.num_sub_steps;
                 y_single_old[qg_idx] += inflow[qg_in_idx]/cc.num_sub_steps;
                 y_single_old[Ni_idx] += inflow[Ni_in_idx]/cc.num_sub_steps;
                 y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
-                y_single_old[Nr_idx] += inflow[Nr_in_idx]/cc.num_sub_steps;
                 y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
+#endif
 #ifdef TRACE_QR
                 std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps
                     << ", Nr " << inflow[Nr_in_idx]/cc.num_sub_steps << "\n";
@@ -322,7 +316,7 @@ int main(int argc, char** argv)
     //             implicit_euler_step(y_single_new, y_single_old, num_comp, ref_quant, cc);
     // #endif
 
-#if defined(RK4)
+#if defined(RK4) || defined(RK4_ONE_MOMENT)
                 RK4_step(y_single_new, y_single_old, ref_quant, cc,
                     nc_params, input.fixed_iteration);
 #elif defined(RK4NOICE)

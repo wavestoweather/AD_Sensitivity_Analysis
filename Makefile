@@ -2,7 +2,7 @@ GCC=g++
 PCC=scorep-g++
 GCCFLAGS= --std=c++14 -pthread -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf #-DLIKWID_PERFMON #  -ffast-math
 GCCINCLUDES=-I.
-TIMESTEPPER=-DRK4ICE
+TIMESTEPPER=-DRK4_ONE_MOMENT
 ATMOFLAGS=-DCONSTANT_DROP=FALSE
 SEASON=-DSPRING
 FLUX=-DFLUX

@@ -1,5 +1,5 @@
 import os
-import sys 
+import sys
 sys.path.append(os.getcwd())
 
 from loader import load_mult_derivates_directory
@@ -35,7 +35,7 @@ for f_this in file_list:
     if prefix in processed_trajectories:
         print("{} already processed. Continue".format(prefix))
         continue
-    
+
     processed_trajectories.append(prefix)
     idx = np.argwhere([prefix in f for f in file_list]).flatten()
     if len(idx) == 0:
@@ -60,7 +60,7 @@ for f_this in file_list:
                 suffix = f[:-4]
                 suffix = suffix.split("_")
                 suffix = suffix[-2] + "_" + suffix[-1]
-                
+
     df_dic_mapped = Deriv(direc=direc_path,
                           filt=filt,
                           EPSILON=EPSILON,
@@ -78,7 +78,7 @@ for f_this in file_list:
         refs=ref)
     t2 = timer()
     print("Loading done in {} s".format(t2-t))
-    
+
     print("Get ratio of data")
     t = timer()
     df_dic_mapped.calculate_ratios()
@@ -99,12 +99,13 @@ for f_this in file_list:
         else:
             print("No such file format: {}".format(file_type))
             failed_trajectories.append(prefix)
-    except:
+    except Exception as e:
         print("FAILED: {}".format(prefix))
+        print(str(e))
         failed_trajectories.append(prefix)
     t2 = timer()
     print("Saving done in {} s".format(t2-t))
-    
+
 print("Done with following trajectories:\n{}".format(processed_trajectories))
 print("Failed the following trajectories:\n{}".format(failed_trajectories))
 print("Finished")
