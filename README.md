@@ -113,7 +113,7 @@ be handled like `double`. \
 Next you may open `include/microphysics/rk4.h` and either copy `RK4_step(..)` as
 `my_RK4_step(..)` and make it use your function,
 or simply add pragmas around the function calls like that:
-```
+```C++
 #ifdef MY_MICROPHYSICS
     my_physics(k, yold, ref, cc, nc);
 #else
@@ -130,15 +130,15 @@ At last, go to `src/microphysics/trajectories.cpp` and search for:
 ```
 Add pragmas as before to make use of your timestepper method. If you already
 added pragmas in `rk4.h`, it is sufficient to change:
-```
+```C++
 #if defined(RK4)
 ```
 to
-```
+```C++
 #if defined RK4 || defined MY_MICROPHYSICS
 ```
 Otherwise you need to add additional lines of code, such as:
-```
+```C++
 #if defined(MY_MICROPHYSICS)
     my_RK4_step(..);
 #elif defined(RK4)
@@ -157,12 +157,12 @@ Getting Gradients for New Physics
 You successfully added parameters to `model_constants_t` and set them up.
 Go to `include/microphysics/gradient_handle.h`. The `register_everything(..)`
 registers all input parameters on a tape. Add
-```
+```C++
 tape.registerInput(parameter);
 ```
 for every parameter in your model that is stored in a `model_constants_t`. \
 In `get_gradients(..)`, add
-```
+```C++
 y_diff[ii][idx] == cc.parameter.getGradient();
 ```
 for every parameter in your model with `idx` a running variable for the parameters. \
