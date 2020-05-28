@@ -87,21 +87,20 @@ make scan
 to create a binary for test cases that scan different microphysical processes
 under `build/apps/src/scratch/scan`.
 
+Running a simulation
+---------------------
+You can use `./execute.sh` to execute your simulation and do post-processing
+to make the data ready for analysis.
+All necessary commandline parameters are explained there.
+
 Using Jupyter Notebooks
 -----------------------
 - **Plot_physics.ipynb:** Plot single microphysical processes with a given range
 of input parameters. Helpful if you want to see "what happens" and for debugging.
-- **Get_started.ipynb:** Use this to run a simulation, do some post processing
-on the output and plot the results.
-- **Plot_netcdf.ipynb:** Plot the data from netcdf files to get an idea, what's inside.
-Or you just use Panoply if you want something more elaborate.
-
-I don't want to use Jupyter
----------------------------
-Well, that's a weird decision, but here is a way to run everything by yourself: \
-You can use `./execute.sh` to execute your simulation and do post-processing
-to make the data ready for analysis.
-All necessary commandline parameters are explained there.
+- **Plot_sensitivities.ipynb:** Use this as a starting point to plot results
+from a simulation and to plot the sensitivities.
+- **Plot_simulation.ipynb:** Plot the data from netcdf files to get an idea, what's inside.
+Or you just use [Panoply](https://www.giss.nasa.gov/tools/panoply/) if you want something more elaborate.
 
 Adding New Phyics
 ------------------

@@ -43,6 +43,7 @@ parallel -j ${NTASKS} --no-notice --delay .2 build/apps/src/microphysics/./traje
 # Do some post processing; may use a lot of memory with default settings.
 # If your machine runs out of memory now (or during visualization),
 # try "netcdf"
+# DISCLAIMER: netcdf is not yet supported!
 FILE_TYPE="parquet"
 INPUT_PATH="/data/project/wcb/sim_results/sample_vladiana_test"
 STORE_PATH="/data/project/wcb/parquet/sample_vladiana_test"
