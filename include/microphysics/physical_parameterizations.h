@@ -1140,23 +1140,24 @@ void setCoefficients(
  * @param pc Model constants for a certain particle type.
  */
 void setup_cloud_autoconversion(
-    particle_model_constants_t &pc)
+    particle_model_constants_t &pc,
+    model_constants_t &cc)
 {
     auto nu = pc.nu + 1.0;
     auto mu = pc.mu;
     if(pc.mu == 1.0)
     {
-        cloud_k_au = kc_autocon / pc.max_x * 0.05
+        cc.cloud_k_au = cc.kc_autocon / pc.max_x * 0.05
             * (nu+1.0)*(nu+3.0) / pow(nu, 2);
-        cloud_k_sc = kc_autocon * (nu+1.0)/(nu);
+        cc.cloud_k_sc = cc.kc_autocon * (nu+1.0)/(nu);
     } else
     {
-        cloud_k_au = kc_autocon / pc.max_x * 0.05
+        cc.cloud_k_au = cc.kc_autocon / pc.max_x * 0.05
             * (2.0 * tgamma((nu+3.0)/mu)
             * tgamma((nu+1.0)/mu) * pow(tgamma((nu)/mu), 2)
             - 1.0 * pow(tgamma((nu+2.0)/mu), 2) * pow(tgamma((nu)/mu), 2))
             / pow(tgamma((nu+1.0)/mu), 4);
-        cloud_k_sc = kc_autocon * pc.c_z;
+        cc.cloud_k_sc = cc.kc_autocon * pc.c_z;
     }
 }
 
@@ -1245,7 +1246,8 @@ void setup_model_constants(
       input_parameters_t &input,
       model_constants_t &cc,
       reference_quantities_t &ref_quant)
-  {
+{
+#if defined(RK4ICE) || defined(RK4NOICE)
       // Scaling factor from input
     cc.scaling_fact = input.scaling_fact;
 
@@ -1348,7 +1350,7 @@ void setup_model_constants(
     cc.cloud.b_f = vent_coeff_b(cc.cloud, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
     cc.cloud.c_z = moment_gamma(cc.cloud, 2);
 
-    setup_cloud_autoconversion(cc.cloud);
+    setup_cloud_autoconversion(cc.cloud, cc);
     setup_bulk_sedi(cc.cloud);
 
     //// Rain
@@ -1383,7 +1385,7 @@ void setup_model_constants(
     cc.rain.cmu3 = 1.1e-3;
     cc.rain.cmu4 = 1.0;
     cc.rain.cmu5 = 2.0;
-    rain_gfak = 1.0;
+    cc.rain_gfak = 1.0;
 
     cc.rain.nm1 = (cc.rain.nu+1.0)/cc.rain.mu;
     cc.rain.nm2 = (cc.rain.nu+2.0)/cc.rain.mu;
@@ -1566,6 +1568,7 @@ void setup_model_constants(
     init_particle_collection_1(cc.graupel, cc.ice, cc.coeffs_gic);
     init_particle_collection_1(cc.hail, cc.snow, cc.coeffs_hsc);
     init_particle_collection_1(cc.graupel, cc.snow, cc.coeffs_gsc);
+#endif
 }
 
 /** @} */ // end of group parametrizations

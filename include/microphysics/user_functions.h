@@ -1181,7 +1181,7 @@ void auto_conversion_sb(
         const double k_2 = 0.68;
         float_t x_c = particle_mean_mass(
             qc_prime, Nc, cc.cloud.min_x_conversion, cc.cloud.max_x);
-        float_t au = cloud_k_au * qc_prime*qc_prime
+        float_t au = cc.cloud_k_au * qc_prime*qc_prime
                                 * x_c*x_c * cc.cloud.rho_v;
         float_t tau = min(max(1.0-qc_prime/
                                 (qc_prime+qr_prime+EPSILON), EPSILON), 0.9);
@@ -1189,7 +1189,7 @@ void auto_conversion_sb(
         au *= (1.0 + phi/pow(1.0-tau, 2));
         au = max(min(qc_prime, au), 0.0);
 
-        float_t sc = cloud_k_sc * qc_prime*qc_prime * cc.cloud.rho_v;
+        float_t sc = cc.cloud_k_sc * qc_prime*qc_prime * cc.cloud.rho_v;
 
         res[qr_idx] += au;
         res[Nr_idx] += au / cc.cloud.max_x;
@@ -1307,8 +1307,8 @@ void rain_evaporation_sb(
         );
     float_t gamma_eva;
     // D_br = 1.1e-3 from ICON
-    if(rain_gfak > 0.0)
-        gamma_eva = rain_gfak * (1.1e-3/D_r) * exp(-0.2*mue);
+    if(cc.rain_gfak > 0.0)
+        gamma_eva = cc.rain_gfak * (1.1e-3/D_r) * exp(-0.2*mue);
     else
         gamma_eva = 1.0;
 
@@ -1389,19 +1389,19 @@ void sedimentation_explicit(
         float_t v_nv = v_n_sedi;
         float_t v_qv = v_q_sedi;  // percentage how much trickles down
         // Assuming v_nv, v_qv is negative
-        float_t c_nv = -v_nv * inv_z;//  * dt; // times inverse of layer thickness...
-        float_t c_qv = -v_qv * inv_z;//  * dt;
+        float_t c_nv = -v_nv * cc.inv_z;//  * dt; // times inverse of layer thickness...
+        float_t c_qv = -v_qv * cc.inv_z;//  * dt;
         cmax_tmp = max(cmax_tmp, c_qv);
 
         // TODO: Check why we should multiply with dt here. That *should* be
         // handled outside in rk4.h or at least I thought so.
         float_t s_nv = 0.0;
         if(c_nv <= 1.0)
-            s_nv = v_nv*N*inv_z;
+            s_nv = v_nv*N*cc.inv_z;
 
         float_t s_qv = 0.0;
         if(c_qv <= 1.0)
-            s_qv = v_qv*q*inv_z;
+            s_qv = v_qv*q*cc.inv_z;
 
         // abs is used for paranoia reasons and should never be needed
         resN -= abs(s_nv);
@@ -3767,8 +3767,8 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
             );
         codi::RealReverse gamma_eva;
         // D_br = 1.1e-3 from ICON
-        if(rain_gfak > 0.0)
-            gamma_eva = rain_gfak * (1.1e-3/D_r) * exp(-0.2*mue);
+        if(cc.rain_gfak > 0.0)
+            gamma_eva = cc.rain_gfak * (1.1e-3/D_r) * exp(-0.2*mue);
         else
             gamma_eva = 1.0;
 

@@ -14,6 +14,7 @@
 #include "include/microphysics/program_io.h"
 #include "include/microphysics/constants.h"
 #include "include/microphysics/general.h"
+#include "include/microphysics/gradient_handle.h"
 
 #include <netcdf>
 
@@ -292,8 +293,8 @@ int main(int argc, char** argv)
                 // *Should* only be necessary when parameters from the
                 // trajectory are used as start point
                 setCoefficients(y_single_old, cc, ref_quant);
-                // CODIPACK: BEGIN
 
+                // CODIPACK
                 tape.setActive();
 
                 //	 Add the inflow
@@ -309,36 +310,8 @@ int main(int argc, char** argv)
                 std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps
                     << ", Nr " << inflow[Nr_in_idx]/cc.num_sub_steps << "\n";
 #endif
+                register_everything(tape, cc);
 
-                // Dimensional coefficients
-                tape.registerInput(cc.a1_prime);    // Autoconversion
-                tape.registerInput(cc.a2_prime);    // Accretion
-                tape.registerInput(cc.e1_prime);    // Evaporation
-                tape.registerInput(cc.e2_prime);    // Evaporation
-                tape.registerInput(cc.d_prime);     // Sedimentation
-                tape.registerInput(cc.Nc_prime);    // Concentration of cloud droplets
-
-                // Exponents
-                tape.registerInput(cc.gamma);       // Autoconversion
-                tape.registerInput(cc.betac);       // Accretion
-                tape.registerInput(cc.betar);       // Accretion
-                tape.registerInput(cc.delta1);      // Evaporation
-                tape.registerInput(cc.delta2);      // Evaporation
-                tape.registerInput(cc.zeta);        // Sedimentation
-
-                // ICON parameters
-                tape.registerInput(rain_gfak);
-                tape.registerInput(cloud_k_au);
-                tape.registerInput(cloud_k_sc);
-                tape.registerInput(kc_autocon);
-                tape.registerInput(inv_z);
-                cc.rain.register_input(tape);
-                cc.cloud.register_input(tape);
-                cc.hail.register_input(tape);
-                cc.ice.register_input(tape);
-                cc.snow.register_input(tape);
-                cc.graupel.register_input(tape);
-                // CODIPACK: END
 //////////////// Add any different scheme and model here
     // I did not check if those two methods still work with CODIPACK
     // #if defined(EXPLICIT_EULER)
@@ -352,56 +325,15 @@ int main(int argc, char** argv)
 #if defined(RK4)
                 RK4_step(y_single_new, y_single_old, ref_quant, cc,
                     nc_params, input.fixed_iteration);
-#endif
-#if defined(RK4NOICE)
+#elif defined(RK4NOICE)
                 RK4_step_2_no_ice(y_single_new, y_single_old, ref_quant, cc,
                     nc_params, input.fixed_iteration);
-#endif
-#if defined(RK4ICE)
+#elif defined(RK4ICE)
                 RK4_step_2_sb_ice(y_single_new, y_single_old, ref_quant, cc,
                     nc_params, input.fixed_iteration);
 #endif
                 // CODIPACK: BEGIN
-                for(int ii = 0 ; ii < num_comp ; ii++)
-                    tape.registerOutput(y_single_new[ii]);
-
-                tape.setPassive();
-                for(int ii = 0 ; ii < num_comp ; ii++)
-                {
-                    y_single_new[ii].setGradient(1.0);
-                    tape.evaluate();
-
-                    y_diff[ii][0] = cc.a1_prime.getGradient();
-                    y_diff[ii][1] = cc.a2_prime.getGradient();
-                    y_diff[ii][2] = cc.e1_prime.getGradient();
-                    y_diff[ii][3] = cc.e2_prime.getGradient();
-                    y_diff[ii][4] = cc.d_prime.getGradient();
-
-                    y_diff[ii][5] = cc.gamma.getGradient();
-                    y_diff[ii][6] = cc.betac.getGradient();
-                    y_diff[ii][7] = cc.betar.getGradient();
-                    y_diff[ii][8] = cc.delta1.getGradient();
-                    y_diff[ii][9] = cc.delta2.getGradient();
-                    y_diff[ii][10] = cc.zeta.getGradient();
-
-                    y_diff[ii][11] = cc.Nc_prime.getGradient();
-
-                    y_diff[ii][12] = rain_gfak.getGradient();
-                    y_diff[ii][13] = cloud_k_au.getGradient();
-                    y_diff[ii][14] = cloud_k_sc.getGradient();
-                    y_diff[ii][15] = kc_autocon.getGradient();
-                    y_diff[ii][16] = inv_z.getGradient();
-
-                    uint64_t idx = 17;
-                    cc.rain.get_gradient(y_diff[ii], idx);
-                    cc.cloud.get_gradient(y_diff[ii], idx);
-                    cc.graupel.get_gradient(y_diff[ii], idx);
-                    cc.hail.get_gradient(y_diff[ii], idx);
-                    cc.ice.get_gradient(y_diff[ii], idx);
-                    cc.snow.get_gradient(y_diff[ii], idx);
-                    tape.clearAdjoints();
-                }
-                tape.reset();
+                get_gradients(y_single_new, y_diff, cc, tape);
                 // CODIPACK: END
 
                 // Time update
