@@ -419,7 +419,7 @@ int main(int argc, char** argv)
         std::cout << "qc,Nc,T,S,qv,p,w,delta_qc,delta_Nc,delta_qv,"
                   << ",delta_lat_cool,delta_lat_heat\n";
 
-        for(uint32_t i=0; i<n1; ++i)
+        for(uint32_t i=0; i<=n1; ++i)
         {
             if(temp_min != NOT_USED && temp_max != NOT_USED)
                 T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
@@ -444,7 +444,7 @@ int main(int argc, char** argv)
                 used_parameter = 4;
             }
 
-            for(uint32_t j=0; j<n2; ++j)
+            for(uint32_t j=0; j<=n2; ++j)
             {
                 if(used_parameter < 1 && qc_min != NOT_USED && qc_max != NOT_USED)
                 {
@@ -467,7 +467,7 @@ int main(int argc, char** argv)
                     used_parameter2 = 4;
                 }
 
-                for(uint32_t k=0; k<n3; ++k)
+                for(uint32_t k=0; k<=n3; ++k)
                 {
                     if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                         qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
@@ -518,7 +518,7 @@ int main(int argc, char** argv)
         std::cout << "qc,Nc,T,S,qv,p,w,z,qr,Nr,delta_qc,delta_Nc,delta_qv,"
                   << ",delta_lat_cool,delta_lat_heat\n";
 
-        for(uint32_t i=0; i<n1; ++i)
+        for(uint32_t i=0; i<=n1; ++i)
         {
             if(temp_min != NOT_USED && temp_max != NOT_USED)
                 T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
@@ -553,7 +553,7 @@ int main(int argc, char** argv)
                 used_parameter = 6;
             }
 
-            for(uint32_t j=0; j<n2; ++j)
+            for(uint32_t j=0; j<=n2; ++j)
             {
                 if(used_parameter < 1 && qc_min != NOT_USED && qc_max != NOT_USED)
                 {
@@ -586,7 +586,7 @@ int main(int argc, char** argv)
                     used_parameter2 = 6;
                 }
 
-                for(uint32_t k=0; k<n3; ++k)
+                for(uint32_t k=0; k<=n3; ++k)
                 {
                     if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                         qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
@@ -652,7 +652,7 @@ int main(int argc, char** argv)
         std::cout << "qi,Ni,T,S,qv,p,w,delta_qi,delta_Ni,delta_qv,"
                   << ",delta_lat_cool,delta_lat_heat\n";
 
-        for(uint32_t i=0; i<n1; ++i)
+        for(uint32_t i=0; i<=n1; ++i)
         {
             if(temp_min != NOT_USED && temp_max != NOT_USED)
                 T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
@@ -677,7 +677,7 @@ int main(int argc, char** argv)
                 used_parameter = 4;
             }
 
-            for(uint32_t j=0; j<n2; ++j)
+            for(uint32_t j=0; j<=n2; ++j)
             {
                 if(used_parameter < 1 && qi_min != NOT_USED && qi_max != NOT_USED)
                 {
@@ -700,7 +700,7 @@ int main(int argc, char** argv)
                     used_parameter2 = 4;
                 }
 
-                for(uint32_t k=0; k<n3; ++k)
+                for(uint32_t k=0; k<=n3; ++k)
                 {
                     if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                         qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
@@ -755,7 +755,7 @@ int main(int argc, char** argv)
         std::cout << "qc,Nc,T,S,S_si,qv,delta_qi,delta_Ni,delta_qv,"
                   << "delta_lat_cool,delta_lat_heat\n";
 
-        for(uint32_t i=0; i<n1; ++i)
+        for(uint32_t i=0; i<=n1; ++i)
         {
             if(temp_min != NOT_USED && temp_max != NOT_USED)
                 T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
@@ -775,7 +775,7 @@ int main(int argc, char** argv)
                 used_parameter = 3;
             }
 
-            for(uint32_t j=0; j<n2; ++j)
+            for(uint32_t j=0; j<=n2; ++j)
             {
                 if(used_parameter < 1 && qc_min != NOT_USED && qc_max != NOT_USED)
                 {
@@ -793,7 +793,7 @@ int main(int argc, char** argv)
                     used_parameter = 3;
                 }
 
-                for(uint32_t k=0; k<n3; ++k)
+                for(uint32_t k=0; k<=n3; ++k)
                 {
                     if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                         qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
@@ -845,7 +845,7 @@ int main(int argc, char** argv)
         std::cout << "qc,Nc,T,S,qv,delta_qi,delta_Ni,delta_qv,"
                   << ",delta_lat_cool,delta_lat_heat\n";
 
-        for(uint32_t i=0; i<n1; ++i)
+        for(uint32_t i=0; i<=n1; ++i)
         {
             if(temp_min != NOT_USED && temp_max != NOT_USED)
                 T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
@@ -865,7 +865,7 @@ int main(int argc, char** argv)
                 used_parameter = 3;
             }
 
-            for(uint32_t j=0; j<n2; ++j)
+            for(uint32_t j=0; j<=n2; ++j)
             {
                 if(used_parameter < 1 && qc_min != NOT_USED && qc_max != NOT_USED)
                 {
@@ -883,7 +883,7 @@ int main(int argc, char** argv)
                     used_parameter = 3;
                 }
 
-                for(uint32_t k=0; k<n3; ++k)
+                for(uint32_t k=0; k<=n3; ++k)
                 {
                     if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                         qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
@@ -928,7 +928,7 @@ int main(int argc, char** argv)
         std::cout << "qc,Nc,T,delta_qi,delta_Ni,delta_qc,delta_Nc,"
                   << "delta_lat_cool,delta_lat_heat\n";
 
-        for(uint32_t i=0; i<n1; ++i)
+        for(uint32_t i=0; i<=n1; ++i)
         {
             if(temp_min != NOT_USED && temp_max != NOT_USED)
                 T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
@@ -938,7 +938,7 @@ int main(int argc, char** argv)
                 used_parameter = 1;
             }
 
-            for(uint32_t j=0; j<n2; ++j)
+            for(uint32_t j=0; j<=n2; ++j)
             {
                 if(used_parameter < 1 && qc_min != NOT_USED && qc_max != NOT_USED)
                     qc_prime_in = j * (qc_max-qc_min) / n2 + qc_min;
@@ -975,10 +975,10 @@ int main(int argc, char** argv)
         uint32_t used_parameter = 0;
         uint32_t used_parameter2 = 0;
 
-        std::cout << "qi,Ni,T,x_i,D_i,qv,p,S,delta_qi,delta_Ni,delta_qs,delta_Ns,"
+        std::cout << "qi,Ni,T,qv,p,S,delta_qi,delta_Ni,delta_qs,delta_Ns,"
                   << "delta_lat_cool,delta_lat_heat\n";
 
-        for(uint32_t i=0; i<n1; ++i)
+        for(uint32_t i=0; i<=n1; ++i)
         {
             if(temp_min != NOT_USED && temp_max != NOT_USED)
                 T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
@@ -998,7 +998,7 @@ int main(int argc, char** argv)
                 used_parameter = 3;
             }
 
-            for(uint32_t j=0; j<n2; ++j)
+            for(uint32_t j=0; j<=n2; ++j)
             {
                 if(used_parameter < 1 && qi_min != NOT_USED && qi_max != NOT_USED)
                 {
@@ -1016,7 +1016,7 @@ int main(int argc, char** argv)
                     used_parameter2 = 3;
                 }
 
-                for(uint32_t k=0; k<n3; ++k)
+                for(uint32_t k=0; k<=n3; ++k)
                 {
                     if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                         qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
@@ -1029,11 +1029,6 @@ int main(int argc, char** argv)
                     codi::RealReverse Ni = qi_prime_in
                         / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
 
-                    codi::RealReverse x_i = particle_mean_mass(qi_prime_in, Ni,
-                        cc.ice.min_x_collision, cc.ice.max_x);
-                    codi::RealReverse D_i = particle_diameter(x_i,
-                        cc.ice.a_geo, cc.ice.b_geo);
-
                     codi::RealReverse T_c = T_prime_in - tmelt;
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
                             / saturation_pressure_water_icon(T_prime_in);
@@ -1044,13 +1039,11 @@ int main(int argc, char** argv)
                     std::cout << qi_prime_in.getValue() << ","
                             << Ni.getValue() << ","
                             << T_prime_in.getValue() << ","
-                            << x_i.getValue() << ","
-                            << D_i.getValue() << ","
                             << qv_prime_in.getValue() << ","
                             << p_prime_in.getValue() << ","
                             << S.getValue() << ",";
 
-                    ice_self_collection(qi_prime_in, Ni, x_i, D_i, T_c, y, cc);
+                    ice_self_collection(qi_prime_in, Ni, T_c, y, cc);
 
                     std::cout << y[qi_idx].getValue() << ","
                                 << y[Ni_idx].getValue() << ","
@@ -1063,16 +1056,301 @@ int main(int argc, char** argv)
         }
     } else if(func_name.compare("snow_self_collection") == 0)
     {
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse qs_prime_in = qs_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
 
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        std::cout << "qs,Ns,T,qv,p,S,delta_Ns\n";
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(qs_min != NOT_USED && qs_max != NOT_USED)
+            {
+                qs_prime_in = i * (qs_max-qs_min) / n1 + qs_min;
+                used_parameter = 1;
+            }
+            else if(qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                    qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                    used_parameter = 2;
+            }
+            else if(p_min != NOT_USED && p_max != NOT_USED)
+            {
+                p_prime_in = i * (p_max-p_min) / n1 + p_min;
+                used_parameter = 3;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qs_min != NOT_USED && qs_max != NOT_USED)
+                {
+                    qs_prime_in = j * (qs_max-qs_min) / n2 + qs_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                        qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                        used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                {
+                    p_prime_in = j * (p_max-p_min) / n2 + p_min;
+                    used_parameter2 = 3;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                        qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    else if(used_parameter2 < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                        p_prime_in = k * (p_max-p_min) / n3 + p_min;
+
+                    for(auto& val: y)
+                        val = 0;
+
+                    codi::RealReverse Ns = qs_prime_in
+                        / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
+
+                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
+                            / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
+                        T_prime_in, S)/rho_0);
+                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+
+                    std::cout << qs_prime_in.getValue() << ","
+                            << Ns.getValue() << ","
+                            << T_prime_in.getValue() << ","
+                            << qv_prime_in.getValue() << ","
+                            << p_prime_in.getValue() << ","
+                            << S.getValue() << ",";
+
+                    snow_self_collection(qs_prime_in, Ns, T_prime, y, cc);
+
+                    std::cout << y[Ns_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("graupel_melting") == 0)
     {
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse qg_prime_in = qg_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
 
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        std::cout << "qg,Ng,T,qv,p,S,delta_qg,delta_Ng,"
+                  << "delta_qr,delta_Nr,delta_lat_cool,delta_lat_heat\n";
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(qg_min != NOT_USED && qg_max != NOT_USED)
+            {
+                qg_prime_in = i * (qg_max-qg_min) / n1 + qg_min;
+                used_parameter = 1;
+            }
+            else if(qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                    qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                    used_parameter = 2;
+            }
+            else if(p_min != NOT_USED && p_max != NOT_USED)
+            {
+                p_prime_in = i * (p_max-p_min) / n1 + p_min;
+                used_parameter = 3;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qg_min != NOT_USED && qg_max != NOT_USED)
+                {
+                    qg_prime_in = j * (qg_max-qg_min) / n2 + qg_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                        qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                        used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                {
+                    p_prime_in = j * (p_max-p_min) / n2 + p_min;
+                    used_parameter2 = 3;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                        qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    else if(used_parameter2 < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                        p_prime_in = k * (p_max-p_min) / n3 + p_min;
+
+                    for(auto& val: y)
+                        val = 0;
+
+                    codi::RealReverse Ng = qg_prime_in
+                        / ( (cc.graupel.max_x - cc.graupel.min_x)/2 + cc.graupel.min_x );
+
+                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
+                            / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
+                        T_prime_in, S)/rho_0);
+                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
+
+                    std::cout << qg_prime_in.getValue() << ","
+                            << Ng.getValue() << ","
+                            << T_prime_in.getValue() << ","
+                            << qv_prime_in.getValue() << ","
+                            << p_prime_in.getValue() << ","
+                            << S.getValue() << ",";
+
+                    graupel_melting(qg_prime_in, Ng, T_prime_in, y, cc);
+
+                    std::cout << y[qg_idx].getValue() << ","
+                              << y[Ng_idx].getValue() << ","
+                              << y[qr_idx].getValue() << ","
+                              << y[Nr_idx].getValue() << ","
+                              << y[lat_cool_idx].getValue() << ","
+                              << y[lat_heat_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("hail_melting") == 0)
     {
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse qh_prime_in = qh_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
 
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        std::cout << "qh,Nh,T,qv,p,S,delta_qh,delta_Nh,"
+                  << "delta_qr,delta_Nr,delta_lat_cool,delta_lat_heat\n";
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(qh_min != NOT_USED && qh_max != NOT_USED)
+            {
+                qh_prime_in = i * (qh_max-qh_min) / n1 + qh_min;
+                used_parameter = 1;
+            }
+            else if(qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                    qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                    used_parameter = 2;
+            }
+            else if(p_min != NOT_USED && p_max != NOT_USED)
+            {
+                p_prime_in = i * (p_max-p_min) / n1 + p_min;
+                used_parameter = 3;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qh_min != NOT_USED && qh_max != NOT_USED)
+                {
+                    qh_prime_in = j * (qh_max-qh_min) / n2 + qh_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                        qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                        used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                {
+                    p_prime_in = j * (p_max-p_min) / n2 + p_min;
+                    used_parameter2 = 3;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                        qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    else if(used_parameter2 < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                        p_prime_in = k * (p_max-p_min) / n3 + p_min;
+
+                    for(auto& val: y)
+                        val = 0;
+
+                    codi::RealReverse Nh = qh_prime_in
+                        / ( (cc.hail.max_x - cc.hail.min_x)/2 + cc.hail.min_x );
+
+                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
+                            / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
+                        T_prime_in, S)/rho_0);
+                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
+
+                    std::cout << qh_prime_in.getValue() << ","
+                            << Nh.getValue() << ","
+                            << T_prime_in.getValue() << ","
+                            << qv_prime_in.getValue() << ","
+                            << p_prime_in.getValue() << ","
+                            << S.getValue() << ",";
+
+                    hail_melting(qh_prime_in, Nh, T_prime_in, y, cc);
+
+                    std::cout << y[qh_idx].getValue() << ","
+                              << y[Nh_idx].getValue() << ","
+                              << y[qr_idx].getValue() << ","
+                              << y[Nr_idx].getValue() << ","
+                              << y[lat_cool_idx].getValue() << ","
+                              << y[lat_heat_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("auto_conversion_kb") == 0)
     {
+        codi::RealReverse qc_prime_in = qc_prime;
+        codi::RealReverse qr_prime_in = qr_prime;
+        std::cout << "qc,Nc,qr,delta_qr,delta_Nr,delta_qc,delta_Nc\n";
 
+        uint32_t used_parameter = 0;
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(qc_min != NOT_USED && qc_max != NOT_USED)
+                qc_prime_in = i * (qc_max-qc_min) / n1 + qc_min;
+            else if (qr_min != NOT_USED && qr_max != NOT_USED)
+            {
+                qr_prime_in = i * (qr_max-qr_min) / n1 + qr_min;
+                used_parameter = 1;
+            }
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qr_min != NOT_USED && qr_max != NOT_USED)
+                    qr_prime_in = j * (qr_max-qr_min) / n2 + qr_min;
+
+                for(auto& val: y)
+                    val = 0;
+
+                codi::RealReverse Nc = qc_prime_in
+                    / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                std::cout << qc_prime_in.getValue() << ","
+                          << Nc.getValue() << ","
+                          << qr_prime_in.getValue() << ",";
+
+                auto_conversion_kb(qc_prime_in, Nc, qr_prime_in, y, cc);
+
+                std::cout << y[qr_idx].getValue() << ","
+                          << y[Nr_idx].getValue() << ","
+                          << y[qc_idx].getValue() << ","
+                          << y[Nc_idx].getValue() << "\n";
+            }
+        }
     } else if(func_name.compare("auto_conversion_sb") == 0)
     {
 
@@ -1163,7 +1441,7 @@ int main(int argc, char** argv)
         std::cout << "qc,Nc,T,S,qv,delta_qc,delta_Nc,delta_q" << q2
                   << ",delta_N" << q2 << ","
                   << "delta_qi,delta_Ni,delta_qr,delta_Nr,delta_lat_cool,delta_lat_heat\n";
-        for(uint32_t i=0; i<n1; ++i)
+        for(uint32_t i=0; i<=n1; ++i)
         {
             if(temp_min != NOT_USED && temp_max != NOT_USED)
                 T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
@@ -1188,7 +1466,7 @@ int main(int argc, char** argv)
                 used_parameter = 4;
             }
 
-            for(uint32_t j=0; j<n2; ++j)
+            for(uint32_t j=0; j<=n2; ++j)
             {
                 if(used_parameter < 1 && qc_min != NOT_USED && qc_max != NOT_USED)
                 {
@@ -1211,7 +1489,7 @@ int main(int argc, char** argv)
                     used_parameter2 = 4;
                 }
 
-                for(uint32_t k=0; k<n3; ++k)
+                for(uint32_t k=0; k<=n3; ++k)
                 {
                     if(used_parameter2 < 2 && q2_min != NOT_USED && q2_max != NOT_USED)
                         q2_prime_in = k * (q2_max-q2_min) / n3 + q2_min;
@@ -1303,7 +1581,7 @@ int main(int argc, char** argv)
         std::cout << "qr,Nr,T,S,qv,delta_qr,delta_Nr,delta_q" << q2
                   << ",delta_N" << q2 << ","
                   << "delta_qi,delta_Ni,delta_lat_cool,delta_lat_heat\n";
-        for(uint32_t i=0; i<n1; ++i)
+        for(uint32_t i=0; i<=n1; ++i)
         {
 
             if(temp_min != NOT_USED && temp_max != NOT_USED)
@@ -1329,7 +1607,7 @@ int main(int argc, char** argv)
                 used_parameter = 4;
             }
 
-            for(uint32_t j=0; j<n2; ++j)
+            for(uint32_t j=0; j<=n2; ++j)
             {
                 if(used_parameter < 1 && qr_min != NOT_USED && qr_max != NOT_USED)
                 {
@@ -1352,7 +1630,7 @@ int main(int argc, char** argv)
                     used_parameter2 = 4;
                 }
 
-                for(uint32_t k=0; k<n3; ++k)
+                for(uint32_t k=0; k<=n3; ++k)
                 {
                     if(used_parameter2 < 2 && q2_min != NOT_USED && q2_max != NOT_USED)
                         q2_prime_in = k * (q2_max-q2_min) / n3 + q2_min;
@@ -1400,14 +1678,20 @@ int main(int argc, char** argv)
         codi::RealReverse qr_prime_in = qr_prime;
         std::cout << "qr,Nr,T,dt,delta_qr,delta_Nr,delta_qs,delta_Ns,"
                   << "delta_qg,delta_Ng,delta_qh,delta_Nh,delta_lat_cool,delta_lat_heat\n";
-        for(uint32_t i=0; i<n1; ++i)
+        uint32_t used_parameter = 0;
+        for(uint32_t i=0; i<=n1; ++i)
         {
             if(temp_min != NOT_USED && temp_max != NOT_USED)
                 T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
-
-            for(uint32_t j=0; j<n2; ++j)
+            else if(qr_min != NOT_USED && qr_max != NOT_USED)
             {
-                if(qr_min != NOT_USED && qr_max != NOT_USED)
+                qr_prime_in = i * (qr_max-qr_min) / n1 + qr_min;
+                used_parameter = 1;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qr_min != NOT_USED && qr_max != NOT_USED)
                     qr_prime_in = j * (qr_max-qr_min) / n2 + qr_min;
 
                 for(auto& val: y)
@@ -1432,14 +1716,20 @@ int main(int argc, char** argv)
         codi::RealReverse qi_prime_in = qi_prime;
         std::cout << "qi,Ni,T,dt,delta_qi,delta_Ni,delta_qr,delta_Nr,"
                   << "delta_qc,delta_Nc,delta_lat_cool,delta_lat_heat\n";
-        for(uint32_t i=0; i<n1; ++i)
+        uint32_t used_parameter = 0;
+        for(uint32_t i=0; i<=n1; ++i)
         {
             if(temp_min != NOT_USED && temp_max != NOT_USED)
                 T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
-
-            for(uint32_t j=0; j<n2; ++j)
+            else if(qi_min != NOT_USED && qi_max != NOT_USED)
             {
-                if(qi_min != NOT_USED && qi_max != NOT_USED)
+                qi_prime_in = i * (qi_max-qi_min) / n1 + qi_min;
+                used_parameter = 1;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qi_min != NOT_USED && qi_max != NOT_USED)
                     qi_prime_in = j * (qi_max-qi_min) / n2 + qi_min;
 
                 codi::RealReverse qi_in = qi_prime_in/ref_quant.qref;
@@ -1461,63 +1751,4 @@ int main(int argc, char** argv)
         std::cout << "No such method: " << func_name << "\n";
         return 1;
     }
-
-
-//     if(std::strcmp("ice_table", argv[1]) == 0)
-//     {
-//         std::cout << "x,y,dust,soot,orga\n";
-//         for(uint32_t i=0; i<n1; i++)
-//         {
-//             for(uint32_t j=0; j<n2; j++)
-//             {
-//                 // Not implemented yet
-// //                 ice_table_scan(i, j, y);
-//                 std::cout << i << "," << j << ","
-//                           << y[0] << "," << y[1] << "," << y[2] << "\n";
-//             }
-//         }
-//     }
-//     else if(std::strcmp("ice_act_phillips", argv[1]) == 0)
-//     {
-
-//         bool use_prog_in = false;
-//         std::cout << "inact,Sat_ice,T,qv,delta_ni,delta_qi\n";
-//         for(uint32_t i=0; i<n1; i++)
-//         {
-//             codi::RealReverse qv = min_1 + (max_1-min_1)/n1 * i;
-//             for(uint32_t j=0; j<n2; j++)
-//             {
-//                 codi::RealReverse T = min_2 + (max_2-min_2)/n2 * j;
-//                 codi::RealReverse p_sat_ice = saturation_pressure_ice(T);
-//                 codi::RealReverse ssi = qv * Rv * T / p_sat_ice;
-//                 codi::RealReverse n_inact = 0;
-//                 y[qi_idx] = y[Ni_idx] = 0.0;
-//                 ice_activation_phillips(qc, qv, T, p_sat_ice, ssi,
-//                     n_inact, use_prog_in, y, cc);
-//                 std::cout << n_inact << ","
-//                           << ssi << ","
-//                           << T << ","
-//                           << qv << ","
-//                           << y[qi_idx].getValue() << ","
-//                           << y[Ni_idx].getValue() << "\n";
-//             }
-//         }
-//     }
-//     else if(std::strcmp("infrac_scan", argv[1]) == 0)
-//     {
-//         std::cout << "x,y,T,dust,soot,orga\n";
-//         for(uint32_t i=0; i<n1; i++)
-//         {
-//             codi::RealReverse T = min_1 + (max_1-min_1)/n1 * i;
-//             // Not implemented yet
-// //             infrac_table_scan(T, y);
-//             std::cout << T.getValue() << "," << y[0].getValue()
-//                       << "," << y[1].getValue() << "," << y[2].getValue() << "\n";
-//         }
-//     }
-//     else
-//     {
-//         std::cout << "No such method: " << argv[1] << "\n";
-//         return 1;
-//     }
 }

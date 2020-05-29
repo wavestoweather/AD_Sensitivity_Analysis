@@ -883,14 +883,16 @@ template<class float_t>
 void ice_self_collection(
     float_t &qi_prime,
     float_t &Ni,
-    float_t &x_i,
-    float_t &D_i,
     float_t &T_c,
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
+    codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_collision, cc.ice.max_x);
+    codi::RealReverse D_i = particle_diameter(x_i, cc.ice.a_geo, cc.ice.b_geo);
     if(Ni > 0.0 && qi_prime > q_crit_i && D_i > D_crit_i)
     {
+
+
         float_t x_conv_i = pow(D_conv_i/cc.snow.a_geo, 1.0/cc.snow.b_geo);
         // efficiency depends on temperature here (Cotton et al 1986)
         // also Straka 1989, page 53
@@ -931,18 +933,21 @@ void snow_self_collection(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    // temperature dependent sticking efficiency Lin (1983)
-    float_t e_coll = max(0.1, min(exp(0.09*(T_prime-tmelt)), 1.0));
-    float_t x_s = particle_mean_mass(qs_prime, Ns, cc.snow.min_x_collection, cc.snow.max_x);
-    float_t D_s = particle_diameter(x_s, cc.snow.a_geo, cc.snow.b_geo);
-    float_t vel_s = particle_velocity(x_s, cc.snow.a_vel, cc.snow.b_vel) * cc.snow.rho_v;
+    if(qs_prime > q_crit)
+    {
+        // temperature dependent sticking efficiency Lin (1983)
+        float_t e_coll = max(0.1, min(exp(0.09*(T_prime-tmelt)), 1.0));
+        float_t x_s = particle_mean_mass(qs_prime, Ns, cc.snow.min_x_collection, cc.snow.max_x);
+        float_t D_s = particle_diameter(x_s, cc.snow.a_geo, cc.snow.b_geo);
+        float_t vel_s = particle_velocity(x_s, cc.snow.a_vel, cc.snow.b_vel) * cc.snow.rho_v;
 
-    res[Ns_idx] -= M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
-        * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel);
+        res[Ns_idx] -= M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
+            * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel);
 #ifdef TRACE_QS
-    std::cout << "snow self collection dNs " << - (M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
-        * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel)) << "\n";
+        std::cout << "snow self collection dNs " << - (M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
+            * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel)) << "\n";
 #endif
+    }
 }
 
 
@@ -992,12 +997,12 @@ void snow_melting(
         res[qr_idx] += melt_q;
         // Rain N
         res[Nr_idx] += melt_n;
-    #ifdef TRACE_QR
+#ifdef TRACE_QR
         std::cout << "snow melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-    #endif
-    #ifdef TRACE_QS
+#endif
+#ifdef TRACE_QS
         std::cout << "snow melting dqs " << -melt_q << ", dNs " << -melt_n << "\n";
-    #endif
+#endif
         float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
         // Melting, cooling
         if(melt_q > 0.0)
@@ -1048,12 +1053,12 @@ void graupel_melting(
         res[qr_idx] += melt_q;
         // Rain N
         res[Nr_idx] += melt_n;
-    #ifdef TRACE_QR
+#ifdef TRACE_QR
         std::cout << "graupel melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-    #endif
-    #ifdef TRACE_QG
+#endif
+#ifdef TRACE_QG
         std::cout << "graupel melting dqg " << -melt_q << ", dNg " << -melt_n << "\n";
-    #endif
+#endif
         float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
         // Melting, cooling
         if(melt_q > 0.0)
@@ -3307,8 +3312,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse s_sw = S - 1.0;   // super saturation over water
     // codi::RealReverse s_sw = e_d / p_sat - 1.0; // super saturation over water
     codi::RealReverse s_si = e_d / p_sat_ice - 1.0; // super saturation over ice
-    codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_collision, cc.ice.max_x);
-    codi::RealReverse D_i = particle_diameter(x_i, cc.ice.a_geo, cc.ice.b_geo);
+
     codi::RealReverse rime_rate_qc, rime_rate_qr, rime_rate_qi, rime_rate_qs;
     codi::RealReverse rime_rate_nc, rime_rate_nr;
 
@@ -3388,12 +3392,9 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
 
     ////////////// ice-ice collisions
-    ice_self_collection(qi_prime, Ni, x_i, D_i, T_c, res, cc);
+    ice_self_collection(qi_prime, Ni, T_c, res, cc);
 
-    if(qs_prime > q_crit)
-    {
-        snow_self_collection(qs_prime, Ns, T_prime, res, cc);
-    }
+    snow_self_collection(qs_prime, Ns, T_prime, res, cc);
 
     particle_particle_collection(qi_prime, Ni, qs_prime, Ns,
         qg_prime, Ng, T_prime, T_c, res, cc);
