@@ -1250,18 +1250,21 @@ void rain_self_collection_sb(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_collection, cc.rain.max_x);
-    float_t D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
-    // Parameters based on Seifert (2008)
-    float_t sc = 4.33 * Nr * qr_prime * cc.rain.rho_v; // rhain%rho_v(i, k)
-    // Breakup Seifert (2008), Eq. A13
-    float_t breakup = 0.0;
-    if(D_r > 0.30e-3)
-        breakup = sc * (1.0e+3 * (D_r - 1.10e-3) + 1.0);
-    res[Nr_idx] -= min(Nr, sc-breakup);
+    if(qr_prime > 0)
+    {
+        float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_collection, cc.rain.max_x);
+        float_t D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
+        // Parameters based on Seifert (2008)
+        float_t sc = 4.33 * Nr * qr_prime * cc.rain.rho_v; // rhain%rho_v(i, k)
+        // Breakup Seifert (2008), Eq. A13
+        float_t breakup = 0.0;
+        if(D_r > 0.30e-3)
+            breakup = sc * (1.0e+3 * (D_r - 1.10e-3) + 1.0);
+        res[Nr_idx] -= min(Nr, sc-breakup);
 #ifdef TRACE_QR
-    std::cout << "breakup dNr " << -min(Nr, sc-breakup) << "\n";
+        std::cout << "breakup dNr " << -min(Nr, sc-breakup) << "\n";
 #endif
+    }
 }
 
 
@@ -1273,7 +1276,7 @@ void rain_evaporation_sb(
     float_t &qr_prime,
     float_t &Nr,
     float_t &qv_prime,
-    float_t &Nv,
+    float_t &qc_prime,
     float_t &T_prime,
     float_t &p_prime,
     float_t &s_sw,
@@ -1281,74 +1284,76 @@ void rain_evaporation_sb(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t D_v = diffusivity(T_prime, p_prime);
-    // Equation (A2) of 10.1175/2008JAS2586.1
-    float_t g_d = 2*M_PI /
-        ( (R_v*T_prime)/(D_v*p_sat) + (L_wd*L_wd)/(K_T*R_v*T_prime*T_prime) );
-    float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_evap, cc.rain.max_x);
-    float_t D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
+    if(s_sw < 0.0 && qr_prime > 0.0 && qc_prime < q_crit)
+    {
+        float_t D_v = diffusivity(T_prime, p_prime);
+        // Equation (A2) of 10.1175/2008JAS2586.1
+        float_t g_d = 2*M_PI /
+            ( (R_v*T_prime)/(D_v*p_sat) + (L_wd*L_wd)/(K_T*R_v*T_prime*T_prime) );
+        float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_evap, cc.rain.max_x);
+        float_t D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
 
-    float_t mue;
-    // Equation 20 of Seifert (2008)
-    if(D_v <= cc.rain.cmu3)
-        mue = cc.rain.cmu0 * tanh( pow(4.0*cc.rain.cmu2*(D_v-cc.rain.cmu3),
-            cc.rain.cmu5)) + cc.rain.cmu4;
-    else
-        mue = cc.rain.cmu1 * tanh( pow(cc.rain.cmu2*(D_v-cc.rain.cmu3),
-            cc.rain.cmu5)) + cc.rain.cmu4;
-    // Equation A8
-    float_t lambda = pow(
-        M_PI/6.0*rho_w*(mue+3.0)*(mue+2.0)*(mue+1.0)/x_r, 1.0/3.0);
+        float_t mue;
+        // Equation 20 of Seifert (2008)
+        if(D_v <= cc.rain.cmu3)
+            mue = cc.rain.cmu0 * tanh( pow(4.0*cc.rain.cmu2*(D_v-cc.rain.cmu3),
+                cc.rain.cmu5)) + cc.rain.cmu4;
+        else
+            mue = cc.rain.cmu1 * tanh( pow(cc.rain.cmu2*(D_v-cc.rain.cmu3),
+                cc.rain.cmu5)) + cc.rain.cmu4;
+        // Equation A8
+        float_t lambda = pow(
+            M_PI/6.0*rho_w*(mue+3.0)*(mue+2.0)*(mue+1.0)/x_r, 1.0/3.0);
 
-    // Approximation of Gamma(mue+5/2) / Gamma(mue+2)
-    float_t gamma_approx = 0.1357940435E+01
-        + mue * (0.3033273220E+00
-        + mue * (-0.1299313363E-01
-        + mue * (0.4002257774E-03
-        - mue * 0.4856703981E-05)));
-    // ventilation factor (A7) with (A5) and (A9)
-    // Approximation for terminal fall velocity of raindrops
-    float_t f_v = a_v + b_v * pow(N_Sc, 1.0/3.0) * gamma_approx
-        * sqrt(a_prime/kin_visc_air * cc.rain.rho_v/lambda)
-        * (1.0 - 0.5 * (b_prime/a_prime) * pow(lambda/(c_prime+lambda), (mue+2.5))
-            - 0.125 * pow(b_prime/a_prime, 2.0) * pow(lambda/(2*c_prime+lambda), (mue+2.5))
-            - 1.0/16.0 * pow(b_prime/a_prime, 3.0) * pow(lambda/(3*c_prime+lambda), (mue+2.5))
-            - 5.0/127.0 * pow(b_prime/a_prime, 4.0) * pow(lambda/(4*c_prime+lambda), (mue+2.5))
-        );
-    float_t gamma_eva;
-    // D_br = 1.1e-3 from ICON
-    if(cc.rain_gfak > 0.0)
-        gamma_eva = cc.rain_gfak * (1.1e-3/D_r) * exp(-0.2*mue);
-    else
-        gamma_eva = 1.0;
+        // Approximation of Gamma(mue+5/2) / Gamma(mue+2)
+        float_t gamma_approx = 0.1357940435E+01
+            + mue * (0.3033273220E+00
+            + mue * (-0.1299313363E-01
+            + mue * (0.4002257774E-03
+            - mue * 0.4856703981E-05)));
+        // ventilation factor (A7) with (A5) and (A9)
+        // Approximation for terminal fall velocity of raindrops
+        float_t f_v = a_v + b_v * pow(N_Sc, 1.0/3.0) * gamma_approx
+            * sqrt(a_prime/kin_visc_air * cc.rain.rho_v/lambda)
+            * (1.0 - 0.5 * (b_prime/a_prime) * pow(lambda/(c_prime+lambda), (mue+2.5))
+                - 0.125 * pow(b_prime/a_prime, 2.0) * pow(lambda/(2*c_prime+lambda), (mue+2.5))
+                - 1.0/16.0 * pow(b_prime/a_prime, 3.0) * pow(lambda/(3*c_prime+lambda), (mue+2.5))
+                - 5.0/127.0 * pow(b_prime/a_prime, 4.0) * pow(lambda/(4*c_prime+lambda), (mue+2.5))
+            );
+        float_t gamma_eva;
+        // D_br = 1.1e-3 from ICON
+        if(cc.rain_gfak > 0.0)
+            gamma_eva = cc.rain_gfak * (1.1e-3/D_r) * exp(-0.2*mue);
+        else
+            gamma_eva = 1.0;
 
-    // Equation A5 with A9
-    float_t delta_qv = g_d * Nr * (mue+1.0) / lambda * f_v * s_sw; // (mue+1.0) / lambda *
-    float_t delta_nv = gamma_eva * delta_qv/x_r;
+        // Equation A5 with A9
+        float_t delta_qv = g_d * Nr * (mue+1.0) / lambda * f_v * s_sw; // (mue+1.0) / lambda *
+        float_t delta_nv = gamma_eva * delta_qv/x_r;
 
-    delta_qv = max(-delta_qv, 0.0);
-    delta_nv = max(-delta_nv, 0.0);
-    delta_qv = min(delta_qv, qv_prime);
-    delta_nv = min(delta_nv, Nv);
+        delta_qv = max(-delta_qv, 0.0);
+        delta_nv = max(-delta_nv, 0.0);
+        delta_qv = min(delta_qv, qv_prime);
 
-    res[qv_idx] += delta_qv;
-    res[qr_idx] -= delta_qv;
-    res[Nr_idx] -= delta_nv;
-    // evap -= delta_qv
+        res[qv_idx] += delta_qv;
+        res[qr_idx] -= delta_qv;
+        res[Nr_idx] -= delta_nv;
+        // evap -= delta_qv
 #ifdef TRACE_QR
-    std::cout << "rain evaporation after Seifert (2008) dqr " << -delta_qv << ", dNr " << -delta_nv << "\n";
+        std::cout << "rain evaporation after Seifert (2008) dqr " << -delta_qv << ", dNr " << -delta_nv << "\n";
 #endif
 #ifdef TRACE_QV
-    std::cout << "rain evaporation after Seifert (2008) dqv " << delta_qv << "\n";
+        std::cout << "rain evaporation after Seifert (2008) dqv " << delta_qv << "\n";
 #endif
-    float_t delta_e = latent_heat_evap(T_prime) * delta_qv
-        / specific_heat_water_vapor(T_prime);
-    // Evaporation, cooling
-    if(delta_qv > 0.0)
-        res[lat_cool_idx] -= delta_e;
-    // Deposition, heating
-    else
-        res[lat_heat_idx] -= delta_e;
+        float_t delta_e = latent_heat_evap(T_prime) * delta_qv
+            / specific_heat_water_vapor(T_prime);
+        // Evaporation, cooling
+        if(delta_qv > 0.0)
+            res[lat_cool_idx] -= delta_e;
+        // Deposition, heating
+        else
+            res[lat_heat_idx] -= delta_e;
+    }
 }
 
 
@@ -3514,16 +3519,10 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         auto_conversion_sb(qc_prime, Nc, qr_prime, res, cc);
     }
 
-    if(qr_prime > 0)
-    {
-        rain_self_collection_sb(qr_prime, Nr, res, cc);
-    }
+    rain_self_collection_sb(qr_prime, Nr, res, cc);
 
-    if(s_sw < 0.0 && qr_prime > 0.0 && qc_prime < q_crit)
-    {
-        rain_evaporation_sb(qr_prime, Nr, qv_prime, Nv,
-            T_prime, p_prime, s_sw, p_sat, res, cc);
-    }
+    rain_evaporation_sb(qr_prime, Nr, qv_prime, qc_prime,
+        T_prime, p_prime, s_sw, p_sat, res, cc);
 
     sedimentation_explicit(qc_prime, qr_prime, Nr,
         qs_prime, Ns, qi_prime, Ni,

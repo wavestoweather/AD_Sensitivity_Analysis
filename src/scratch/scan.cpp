@@ -1353,13 +1353,273 @@ int main(int argc, char** argv)
         }
     } else if(func_name.compare("auto_conversion_sb") == 0)
     {
+        codi::RealReverse qc_prime_in = qc_prime;
+        codi::RealReverse qr_prime_in = qr_prime;
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
 
+        std::cout << "qc,Nc,qr,T,p,qv,delta_qr,delta_Nr,delta_qc,delta_Nc\n";
+
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(qc_min != NOT_USED && qc_max != NOT_USED)
+            {
+                qc_prime_in = i * (qc_max-qc_min) / n1 + qc_min;
+                used_parameter = 1;
+            }
+            else if (qr_min != NOT_USED && qr_max != NOT_USED)
+            {
+                qr_prime_in = i * (qr_max-qr_min) / n1 + qr_min;
+                used_parameter = 2;
+            }
+             else if(qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                    qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                    used_parameter = 3;
+            }
+            else if(p_min != NOT_USED && p_max != NOT_USED)
+            {
+                p_prime_in = i * (p_max-p_min) / n1 + p_min;
+                used_parameter = 4;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qc_min != NOT_USED && qc_max != NOT_USED)
+                {
+                    qc_prime_in = j * (qc_max-qc_min) / n2 + qc_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && qr_min != NOT_USED && qr_max != NOT_USED)
+                {
+                    qr_prime_in = j * (qr_max-qr_min) / n2 + qr_min;
+                    used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                        qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                        used_parameter2 = 3;
+                }
+                else if(used_parameter < 4 && p_min != NOT_USED && p_max != NOT_USED)
+                {
+                    p_prime_in = j * (p_max-p_min) / n2 + p_min;
+                    used_parameter2 = 4;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && qr_min != NOT_USED && qr_max != NOT_USED)
+                        qr_prime_in = k * (qr_max-qr_min) / n3 + qr_min;
+                    else if(used_parameter2 < 3 && qv_min != NOT_USED && qv_max != NOT_USED)
+                        qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    else if(used_parameter2 < 4 && p_min != NOT_USED && p_max != NOT_USED)
+                        p_prime_in = k * (p_max-p_min) / n3 + p_min;
+
+                    for(auto& val: y)
+                        val = 0;
+
+                    codi::RealReverse Nc = qc_prime_in
+                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
+                                / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
+                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
+
+                    std::cout << qc_prime_in.getValue() << ","
+                            << Nc.getValue() << ","
+                            << qr_prime_in.getValue() << ","
+                            << T_prime_in.getValue() << ","
+                            << p_prime_in.getValue() << ","
+                            << qv_prime_in.getValue() << ",";
+
+                    auto_conversion_sb(qc_prime_in, Nc, qr_prime_in, y, cc);
+
+                    std::cout << y[qr_idx].getValue() << ","
+                            << y[Nr_idx].getValue() << ","
+                            << y[qc_idx].getValue() << ","
+                            << y[Nc_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("rain_self_collection_sb") == 0)
     {
+        codi::RealReverse qr_prime_in = qr_prime;
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
 
+        std::cout << "qr,Nr,T,p,qv,delta_Nr\n";
+
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(qr_min != NOT_USED && qr_max != NOT_USED)
+            {
+                qr_prime_in = i * (qr_max-qr_min) / n1 + qr_min;
+                used_parameter = 1;
+            }
+            else if (qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 2;
+            }
+            else if(p_min != NOT_USED && p_max != NOT_USED)
+            {
+                p_prime_in = i * (p_max-p_min) / n1 + p_min;
+                used_parameter = 3;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qr_min != NOT_USED && qr_max != NOT_USED)
+                {
+                    qr_prime_in = j * (qr_max-qr_min) / n2 + qr_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                {
+                    p_prime_in = j * (p_max-p_min) / n2 + p_min;
+                    used_parameter2 = 3;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                        qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    else if(used_parameter2 < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                        p_prime_in = k * (p_max-p_min) / n3 + p_min;
+
+                    for(auto& val: y)
+                        val = 0;
+
+                    codi::RealReverse Nr = qr_prime_in
+                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
+                                / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
+                        T_prime_in, S)/rho_0);
+                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
+
+                    std::cout << qr_prime_in.getValue() << ","
+                              << Nr.getValue() << ","
+                              << T_prime_in.getValue() << ","
+                              << p_prime_in.getValue() << ","
+                              << qv_prime_in.getValue() << ",";
+
+                    rain_self_collection_sb(qr_prime_in, Nr, y, cc);
+
+                    std::cout << y[Nr_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("rain_evaporation_sb") == 0)
     {
+        codi::RealReverse qr_prime_in = qr_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse p_prime_in = p_prime;
 
+        std::cout << "qr,Nr,T,p,qv,s_sw,p_sat,delta_qv,delta_qr,delta_Nr,"
+                  << "delta_lat_cool,delta_lat_heat\n";
+
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(qr_min != NOT_USED && qr_max != NOT_USED)
+            {
+                qr_prime_in = i * (qr_max-qr_min) / n1 + qr_min;
+                used_parameter = 1;
+            }
+            else if (qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 2;
+            }
+            else if(p_min != NOT_USED && p_max != NOT_USED)
+            {
+                p_prime_in = i * (p_max-p_min) / n1 + p_min;
+                used_parameter = 3;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qr_min != NOT_USED && qr_max != NOT_USED)
+                {
+                    qr_prime_in = j * (qr_max-qr_min) / n2 + qr_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                {
+                    p_prime_in = j * (p_max-p_min) / n2 + p_min;
+                    used_parameter2 = 3;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
+                        qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    else if(used_parameter2 < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                        p_prime_in = k * (p_max-p_min) / n3 + p_min;
+
+                    for(auto& val: y)
+                        val = 0;
+
+                    codi::RealReverse Nr = qr_prime_in
+                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
+                                / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse s_sw = S - 1.0;
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
+                        T_prime_in, S)/rho_0);
+                    codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime_in);
+                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
+
+                    std::cout << qr_prime_in.getValue() << ","
+                              << Nr.getValue() << ","
+                              << T_prime_in.getValue() << ","
+                              << p_prime_in.getValue() << ","
+                              << qv_prime_in.getValue() << ","
+                              << s_sw.getValue() << ","
+                              << p_sat.getValue() << ",";
+                    // Needs to be smaller than q_crit in order to trigger
+                    // the process without any further involvement of
+                    // the overall process. Hence we set it to zero:
+                    qc_prime = 0;
+                    rain_evaporation_sb(qr_prime_in, Nr, qv_prime_in, qc_prime,
+                        T_prime_in, p_prime_in, s_sw, p_sat, y, cc);
+
+                    std::cout << y[qv_idx].getValue() << ","
+                              << y[qr_idx].getValue() << ","
+                              << y[Nr_idx].getValue() << ","
+                              << y[lat_cool_idx].getValue() << ","
+                              << y[lat_heat_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("sedimentation_explicit") == 0)
     {
 
