@@ -601,7 +601,7 @@ void ice_nuc_hom(
 #endif
             float_t delta_e = latent_heat_melt(T_prime) * delta_q / specific_heat_ice(T_prime);
             // Sublimation, cooling
-            if(delta_q < 0.0)
+            if(delta_e < 0.0)
                 res[lat_cool_idx] += delta_e;
             // Deposition, heating
             else
@@ -824,52 +824,55 @@ void cloud_freeze_hom(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_freezing, cc.cloud.max_x);
+    if(qc_prime > 0.0 && T_c < -30.0)
+    {
+        float_t x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_freezing, cc.cloud.max_x);
 
-    float_t delta_qi;
-    float_t delta_ni;
-    float_t j_hom;
-    // instantaneous freezing for temperatures below -50 °C
-    if(T_c < -50.0)
-    {
-        delta_qi = qc_prime;
-        delta_ni = Nc;
-    } else
-    {
-        if(T_c > -30.0)
-            j_hom = 1.0e6 / rho_w * pow(10,
-                -7.63-2.996*(T_c+30.0));
-        else
-            j_hom = 1.0e6 / rho_w * pow(10,
-                - 243.4
-                - 14.75 * T_c
-                - 0.307 * T_c * T_c
-                - 0.00287 * T_c * T_c * T_c
-                - 0.0000102 * pow(T_c, 4));
-        delta_ni = j_hom * qc_prime;
-        delta_qi = j_hom * qc_prime * x_c * cc.cloud.c_z;
-        delta_ni = min(delta_ni, Nc);
-        delta_qi = min(delta_qi, qc_prime);
-    }
-    res[qi_idx] += delta_qi;
-    res[Ni_idx] += delta_ni;
-    // Remove cloud droplets
-    res[qc_idx] -= delta_qi;
-    res[Nc_idx] -= delta_ni;
+        float_t delta_qi;
+        float_t delta_ni;
+        // instantaneous freezing for temperatures below -50 °C
+        if(T_c < -50.0)
+        {
+            delta_qi = qc_prime;
+            delta_ni = Nc;
+        } else
+        {
+            float_t j_hom;
+            if(T_c > -30.0)
+                j_hom = 1.0e6 / rho_w * pow(10,
+                    -7.63-2.996*(T_c+30.0));
+            else
+                j_hom = 1.0e6 / rho_w * pow(10,
+                    - 243.4
+                    - 14.75 * T_c
+                    - 0.307 * T_c * T_c
+                    - 0.00287 * T_c * T_c * T_c
+                    - 0.0000102 * pow(T_c, 4));
+            delta_ni = j_hom * qc_prime;
+            delta_qi = j_hom * qc_prime * x_c * cc.cloud.c_z;
+            delta_ni = min(delta_ni, Nc);
+            delta_qi = min(delta_qi, qc_prime);
+        }
+        res[qi_idx] += delta_qi;
+        res[Ni_idx] += delta_ni;
+        // Remove cloud droplets
+        res[qc_idx] -= delta_qi;
+        res[Nc_idx] -= delta_ni;
 #ifdef TRACE_QC
-    if(abs(delta_qi) > 0)
-        std::cout << "cloud freeze dqc " << -delta_qi << ", dNc " << -delta_ni << "\n";
+        if(abs(delta_qi) > 0)
+            std::cout << "cloud freeze dqc " << -delta_qi << ", dNc " << -delta_ni << "\n";
 #endif
 #ifdef TRACE_QI
-    std::cout << "cloud freeze dqi " << delta_qi << ", dNi " << delta_ni << "\n";
+        std::cout << "cloud freeze dqi " << delta_qi << ", dNi " << delta_ni << "\n";
 #endif
-    float_t delta_e = latent_heat_melt(T_prime) * delta_qi / specific_heat_ice(T_prime);
-    // Melting, cooling
-    if(delta_qi < 0.0)
-        res[lat_cool_idx] += delta_e;
-    // Freezing, heating
-    else
-        res[lat_heat_idx] += delta_e;
+        float_t delta_e = latent_heat_melt(T_prime) * delta_qi / specific_heat_ice(T_prime);
+        // Melting, cooling
+        if(delta_qi < 0.0)
+            res[lat_cool_idx] += delta_e;
+        // Freezing, heating
+        else
+            res[lat_heat_idx] += delta_e;
+    }
 }
 
 
@@ -886,33 +889,35 @@ void ice_self_collection(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
+    if(Ni > 0.0 && qi_prime > q_crit_i && D_i > D_crit_i)
+    {
+        float_t x_conv_i = pow(D_conv_i/cc.snow.a_geo, 1.0/cc.snow.b_geo);
+        // efficiency depends on temperature here (Cotton et al 1986)
+        // also Straka 1989, page 53
+        float_t e_coll = min(pow(10, 0.035*T_c-0.7), 0.2);
+        float_t vel_i = particle_velocity(x_i, cc.ice.a_vel, cc.ice.b_vel) * cc.ice.rho_v;
 
-    float_t x_conv_i = pow(D_conv_i/cc.snow.a_geo, 1.0/cc.snow.b_geo);
-    // efficiency depends on temperature here (Cotton et al 1986)
-    // also Straka 1989, page 53
-    float_t e_coll = min(pow(10, 0.035*T_c-0.7), 0.2);
-    float_t vel_i = particle_velocity(x_i, cc.ice.a_vel, cc.ice.b_vel) * cc.ice.rho_v;
+        float_t delta_n = M_PI/4.0 * e_coll * cc.ice.sc_delta_n
+            * Ni * Ni * D_i * D_i * sqrt(
+                cc.ice.sc_theta_n * vel_i * vel_i + 2.0 * cc.ice.s_vel * cc.ice.s_vel);
+        float_t delta_q = M_PI/4.0 * e_coll * cc.ice.sc_delta_q
+            * Ni * qi_prime * D_i * D_i * sqrt(
+                cc.ice.sc_theta_q * vel_i * vel_i + 2.0 * cc.ice.s_vel * cc.ice.s_vel);
 
-    float_t delta_n = M_PI/4.0 * e_coll * cc.ice.sc_delta_n
-        * Ni * Ni * D_i * D_i * sqrt(
-            cc.ice.sc_theta_n * vel_i * vel_i + 2.0 * cc.ice.s_vel * cc.ice.s_vel);
-    float_t delta_q = M_PI/4.0 * e_coll * cc.ice.sc_delta_q
-        * Ni * qi_prime * D_i * D_i * sqrt(
-            cc.ice.sc_theta_q * vel_i * vel_i + 2.0 * cc.ice.s_vel * cc.ice.s_vel);
+        delta_q = min(delta_q, qi_prime);
+        delta_n = min(min( delta_n, delta_q/x_conv_i), Ni);
 
-    delta_q = min(delta_q, qi_prime);
-    delta_n = min(min( delta_n, delta_q/x_conv_i), Ni);
-
-    res[qi_idx] -= delta_q;
-    res[qs_idx] += delta_q;
-    res[Ni_idx] -= delta_n;
-    res[Ns_idx] += delta_n/2.0;
+        res[qi_idx] -= delta_q;
+        res[qs_idx] += delta_q;
+        res[Ni_idx] -= delta_n;
+        res[Ns_idx] += delta_n/2.0;
 #ifdef TRACE_QI
-    std::cout << "ice self colletion dqi " << -delta_q << ", dNi " << -delta_n << "\n";
+        std::cout << "ice self colletion dqi " << -delta_q << ", dNi " << -delta_n << "\n";
 #endif
 #ifdef TRACE_QS
-    std::cout << "ice self colletion dqs " << delta_q << ", dNs " << delta_n/2.0 << "\n";
+        std::cout << "ice self colletion dqs " << delta_q << ", dNs " << delta_n/2.0 << "\n";
 #endif
+    }
 }
 
 /**
@@ -3374,10 +3379,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     ice_nuc_hom(T_prime, w_prime, p_prime, qv_prime,
         qi_prime, Ni, ssi, p_sat_ice, res, cc);
 
-    if(qc_prime > 0.0 && T_c < -30.0)
-    {
-        cloud_freeze_hom(qc_prime, Nc, T_prime, T_c, res, cc);
-    }
+    cloud_freeze_hom(qc_prime, Nc, T_prime, T_c, res, cc);
 
     vapor_dep_relaxation(qv_prime, qi_prime, Ni,
         qs_prime, Ns, qg_prime, Ng,
@@ -3386,10 +3388,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
 
     ////////////// ice-ice collisions
-    if(Ni > 0.0 && qi_prime > q_crit_i && D_i > D_crit_i)
-    {
-        ice_self_collection(qi_prime, Ni, x_i, D_i, T_c, res, cc);
-    }
+    ice_self_collection(qi_prime, Ni, x_i, D_i, T_c, res, cc);
 
     if(qs_prime > q_crit)
     {
