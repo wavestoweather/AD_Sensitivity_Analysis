@@ -417,7 +417,7 @@ int main(int argc, char** argv)
         uint32_t used_parameter2 = 0;
 
         std::cout << "qc,Nc,T,S,qv,p,w,delta_qc,delta_Nc,delta_qv,"
-                  << ",delta_lat_cool,delta_lat_heat\n";
+                  << "delta_lat_cool,delta_lat_heat\n";
 
         for(uint32_t i=0; i<=n1; ++i)
         {
@@ -516,7 +516,7 @@ int main(int argc, char** argv)
         uint32_t used_parameter2 = 0;
 
         std::cout << "qc,Nc,T,S,qv,p,w,z,qr,Nr,delta_qc,delta_Nc,delta_qv,"
-                  << ",delta_lat_cool,delta_lat_heat\n";
+                  << "delta_lat_cool,delta_lat_heat\n";
 
         for(uint32_t i=0; i<=n1; ++i)
         {
@@ -650,7 +650,7 @@ int main(int argc, char** argv)
         uint32_t used_parameter2 = 0;
 
         std::cout << "qi,Ni,T,S,qv,p,w,delta_qi,delta_Ni,delta_qv,"
-                  << ",delta_lat_cool,delta_lat_heat\n";
+                  << "delta_lat_cool,delta_lat_heat\n";
 
         for(uint32_t i=0; i<=n1; ++i)
         {
@@ -843,7 +843,7 @@ int main(int argc, char** argv)
         uint32_t used_parameter2 = 0;
 
         std::cout << "qc,Nc,T,S,qv,delta_qi,delta_Ni,delta_qv,"
-                  << ",delta_lat_cool,delta_lat_heat\n";
+                  << "delta_lat_cool,delta_lat_heat\n";
 
         for(uint32_t i=0; i<=n1; ++i)
         {
@@ -989,8 +989,8 @@ int main(int argc, char** argv)
             }
             else if(qv_min != NOT_USED && qv_max != NOT_USED)
             {
-                    qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
-                    used_parameter = 2;
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 2;
             }
             else if(p_min != NOT_USED && p_max != NOT_USED)
             {
@@ -1007,8 +1007,8 @@ int main(int argc, char** argv)
                 }
                 else if(used_parameter < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                 {
-                        qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
-                        used_parameter2 = 2;
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 2;
                 }
                 else if(used_parameter < 3 && p_min != NOT_USED && p_max != NOT_USED)
                 {
@@ -1077,8 +1077,8 @@ int main(int argc, char** argv)
             }
             else if(qv_min != NOT_USED && qv_max != NOT_USED)
             {
-                    qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
-                    used_parameter = 2;
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 2;
             }
             else if(p_min != NOT_USED && p_max != NOT_USED)
             {
@@ -1095,8 +1095,8 @@ int main(int argc, char** argv)
                 }
                 else if(used_parameter < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                 {
-                        qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
-                        used_parameter2 = 2;
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 2;
                 }
                 else if(used_parameter < 3 && p_min != NOT_USED && p_max != NOT_USED)
                 {
@@ -1160,8 +1160,8 @@ int main(int argc, char** argv)
             }
             else if(qv_min != NOT_USED && qv_max != NOT_USED)
             {
-                    qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
-                    used_parameter = 2;
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 2;
             }
             else if(p_min != NOT_USED && p_max != NOT_USED)
             {
@@ -1178,8 +1178,8 @@ int main(int argc, char** argv)
                 }
                 else if(used_parameter < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                 {
-                        qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
-                        used_parameter2 = 2;
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 2;
                 }
                 else if(used_parameter < 3 && p_min != NOT_USED && p_max != NOT_USED)
                 {
@@ -1248,8 +1248,8 @@ int main(int argc, char** argv)
             }
             else if(qv_min != NOT_USED && qv_max != NOT_USED)
             {
-                    qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
-                    used_parameter = 2;
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 2;
             }
             else if(p_min != NOT_USED && p_max != NOT_USED)
             {
@@ -1266,8 +1266,8 @@ int main(int argc, char** argv)
                 }
                 else if(used_parameter < 2 && qv_min != NOT_USED && qv_max != NOT_USED)
                 {
-                        qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
-                        used_parameter2 = 2;
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 2;
                 }
                 else if(used_parameter < 3 && p_min != NOT_USED && p_max != NOT_USED)
                 {
@@ -1380,8 +1380,8 @@ int main(int argc, char** argv)
             }
              else if(qv_min != NOT_USED && qv_max != NOT_USED)
             {
-                    qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
-                    used_parameter = 3;
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 3;
             }
             else if(p_min != NOT_USED && p_max != NOT_USED)
             {
@@ -1403,8 +1403,8 @@ int main(int argc, char** argv)
                 }
                 else if(used_parameter < 3 && qv_min != NOT_USED && qv_max != NOT_USED)
                 {
-                        qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
-                        used_parameter2 = 3;
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 3;
                 }
                 else if(used_parameter < 4 && p_min != NOT_USED && p_max != NOT_USED)
                 {
@@ -1622,7 +1622,185 @@ int main(int argc, char** argv)
         }
     } else if(func_name.compare("sedimentation_explicit") == 0)
     {
+        codi::RealReverse qc_prime_in = qc_prime;
+        codi::RealReverse qr_prime_in = qr_prime;
+        codi::RealReverse qs_prime_in = qs_prime;
+        codi::RealReverse qi_prime_in = qi_prime;
+        codi::RealReverse qh_prime_in = qh_prime;
+        codi::RealReverse qg_prime_in = qg_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
+        codi::RealReverse T_prime_in = T_prime;
 
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        std::cout << "T,S,qv,qc,qr,Nr,qs,Ns,qi,Ni,qh,Nh,qg,Ng,p,"
+                  << "delta_qr,delta_Nr,delta_qi,delta_Ni,"
+                  << "delta_qs,delta_Ns,delta_qg,delta_Ng,"
+                  << "delta_qh,delta_Nh,"
+                  << "delta_lat_cool,delta_lat_heat\n";
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(qs_min != NOT_USED && qs_max != NOT_USED)
+                qs_prime_in = i * (qs_max-qs_min) / n1 + qs_min;
+            else if(qc_min != NOT_USED && qc_max != NOT_USED)
+            {
+                qc_prime_in = i * (qc_max-qc_min) / n1 + qc_min;
+                used_parameter = 1;
+            }
+            else if(qi_min != NOT_USED && qi_max != NOT_USED)
+            {
+                qi_prime_in = i * (qi_max-qi_min) / n1 + qi_min;
+                used_parameter = 2;
+            }
+            else if(p_min != NOT_USED && p_max != NOT_USED)
+            {
+                p_prime_in = i * (p_max-p_min) / n1 + p_min;
+                used_parameter = 3;
+            }
+            else if(qr_min != NOT_USED && qr_max != NOT_USED)
+            {
+                qr_prime_in = i * (qr_max-qr_min) / n1 + qr_min;
+                used_parameter = 4;
+            }
+            else if(qh_min != NOT_USED && qh_max != NOT_USED)
+            {
+                qh_prime_in = i * (qh_max-qh_min) / n1 + qh_min;
+                used_parameter = 5;
+            }
+            else if(qg_min != NOT_USED && qg_max != NOT_USED)
+            {
+                qg_prime_in = i * (qg_max-qg_min) / n1 + qg_min;
+                used_parameter = 6;
+            }
+            else if(qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 7;
+            }
+            else if(temp_min != NOT_USED && temp_max != NOT_USED)
+            {
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+                used_parameter = 8;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qc_min != NOT_USED && qc_max != NOT_USED)
+                {
+                    qc_prime_in = j * (qc_max-qc_min) / n2 + qc_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && qi_min != NOT_USED && qi_max != NOT_USED)
+                {
+                    qi_prime_in = j * (qi_max-qi_min) / n2 + qi_min;
+                    used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                {
+                    p_prime_in = j * (p_max-p_min) / n2 + p_min;
+                    used_parameter2 = 3;
+                }
+                else if(used_parameter < 4 && qr_min != NOT_USED && qr_max != NOT_USED)
+                {
+                    qr_prime_in = j * (qr_max-qr_min) / n2 + qr_min;
+                    used_parameter2 = 4;
+                }
+                else if(used_parameter < 5 && qh_min != NOT_USED && qh_max != NOT_USED)
+                {
+                    qh_prime_in = j * (qh_max-qh_min) / n2 + qh_min;
+                    used_parameter2 = 5;
+                }
+                else if(used_parameter < 6 && qg_min != NOT_USED && qg_max != NOT_USED)
+                {
+                    qg_prime_in = j * (qg_max-qg_min) / n2 + qg_min;
+                    used_parameter2 = 6;
+                }
+                else if(used_parameter < 7 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 7;
+                }
+                else if(used_parameter < 8 && temp_min != NOT_USED && temp_max != NOT_USED)
+                {
+                    T_prime_in = j * (temp_max-temp_min) / n2 + temp_min;
+                    used_parameter2 = 8;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && qi_min != NOT_USED && qi_max != NOT_USED)
+                        qi_prime_in = k * (qi_max-qi_min) / n3 + qi_min;
+                    else if(used_parameter2 < 3 && p_min != NOT_USED && p_max != NOT_USED)
+                        p_prime_in = k * (p_max-p_min) / n3 + p_min;
+                    else if(used_parameter2 < 4 && qr_min != NOT_USED && qr_max != NOT_USED)
+                        qr_prime_in = k * (qr_max-qr_min) / n3 + qr_min;
+                    else if(used_parameter2 < 5 && qh_min != NOT_USED && qh_max != NOT_USED)
+                        qh_prime_in = k * (qh_max-qh_min) / n3 + qh_min;
+                    else if(used_parameter2 < 6 && qg_min != NOT_USED && qg_max != NOT_USED)
+                        qg_prime_in = k * (qg_max-qg_min) / n3 + qg_min;
+                    else if(used_parameter2 < 7 && qv_min != NOT_USED && qv_max != NOT_USED)
+                        qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    if(used_parameter2 < 8 && temp_min != NOT_USED && temp_max != NOT_USED)
+                        T_prime_in = k * (temp_max-temp_min) / n3 + temp_min;
+
+                    for(auto& val: y)
+                        val = 0;
+
+                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
+                                / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse Nr = qr_prime_in
+                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                    codi::RealReverse Ns = qs_prime_in
+                        / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
+                    codi::RealReverse Ni = qi_prime_in
+                        / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
+                    codi::RealReverse Nh = qh_prime_in
+                        / ( (cc.hail.max_x - cc.hail.min_x)/2 + cc.hail.min_x );
+                    codi::RealReverse Ng = qg_prime_in
+                        / ( (cc.graupel.max_x - cc.graupel.min_x)/2 + cc.graupel.min_x );
+
+                    std::cout << T_prime_in.getValue() << ","
+                              << S.getValue() << ","
+                              << qv_prime_in.getValue() << ","
+                              << qc_prime_in.getValue() << ","
+                              << qr_prime_in.getValue() << ","
+                              << Nr.getValue() << ","
+                              << qs_prime_in.getValue() << ","
+                              << Ns.getValue() << ","
+                              << qi_prime_in.getValue() << ","
+                              << Ni.getValue() << ","
+                              << qh_prime_in.getValue() << ","
+                              << Nh.getValue() << ","
+                              << qg_prime_in.getValue() << ","
+                              << Ng.getValue() << ","
+                              << p_prime_in.getValue() << ",";
+
+                    cc.rho_a_prime = compute_rhoa(p_prime_in,
+                        T_prime_in, S);
+
+                    sedimentation_explicit(T_prime_in, S,
+                        qc_prime_in, qr_prime_in, Nr,
+                        qs_prime_in, Ns, qi_prime_in, Ni, qh_prime_in, Nh,
+                        qg_prime_in, Ng, p_prime_in, y, cc);
+
+                    std::cout << y[qr_idx].getValue() << ","
+                              << y[Nr_idx].getValue() << ","
+                              << y[qi_idx].getValue() << ","
+                              << y[Ni_idx].getValue() << ","
+                              << y[qs_idx].getValue() << ","
+                              << y[Ns_idx].getValue() << ","
+                              << y[qg_idx].getValue() << ","
+                              << y[Ng_idx].getValue() << ","
+                              << y[qh_idx].getValue() << ","
+                              << y[Nh_idx].getValue() << ","
+                              << y[lat_cool_idx].getValue() << ","
+                              << y[lat_heat_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("evaporation") == 0)
     {
 

@@ -1362,6 +1362,8 @@ void rain_evaporation_sb(
  */
 template<class float_t>
 void sedimentation_explicit(
+    float_t &T_prime,
+    float_t &S,
     float_t &qc_prime,
     float_t &qr_prime,
     float_t &Nr,
@@ -1381,13 +1383,18 @@ void sedimentation_explicit(
     // using an explicit flux-form semi-lagrangian scheme (actually used after the microphysics)
     //// sedi_icon_rain
     float_t cmax = 0.0;
-    float_t p_prime_pascal = p_prime*100;
 
     // using compute_rhoa(p_prime,T_prime,S) instead of cc.rho_a_prime makes
     // next to no difference
-    float_t rhocorr = pow(cc.rho_a_prime/rho_0, -rho_vel);
+    float_t rhocorr = pow(compute_rhoa(p_prime,T_prime,S)/rho_0, -rho_vel);
     float_t v_n_sedi = 0.0;
     float_t v_q_sedi = 0.0;
+#ifdef TRACE_QS
+    std::cout << "\nrhocorr: " << rhocorr
+              << "\nrho_a_prime: " << compute_rhoa(p_prime,T_prime,S)
+              << "\nrho_0: " << rho_0
+              << "\nrho_vel: " << rho_vel << "\n";
+#endif
 
     auto sedi_icon_core = [&](
         float_t &q,
@@ -1399,8 +1406,6 @@ void sedimentation_explicit(
         float_t &resOut)
     {
         float_t cmax_tmp = cmax;
-        float_t q_flux = 0.0;
-        float_t n_flux = 0.0;
         float_t v_nv = v_n_sedi;
         float_t v_qv = v_q_sedi;  // percentage how much trickles down
         // Assuming v_nv, v_qv is negative
@@ -1424,6 +1429,11 @@ void sedimentation_explicit(
         resOut -= abs(s_qv);
         cmax = cmax_tmp;
         // precrate = -abs(s_sq);
+#ifdef TRACE_QS
+        std::cout << "\n\ns_qv: " << s_qv << "\nc_qv: " << c_qv
+            << "\nv_qv: " << v_qv << "\nq: " << q << "\ninv_z: "
+            << cc.inv_z << "\n";
+#endif
     };
 
     auto sedi_icon_sphere = [&](
@@ -1451,6 +1461,17 @@ void sedimentation_explicit(
             v_n_sedi -= v_n;
             v_q_sedi -= v_q;
         }
+#ifdef TRACE_QS
+    std::cout << "\n\nv_q_sedi: " << v_q_sedi << "\nq: " << q
+              << "\nrhocorr: " << rhocorr
+              << "\nvsedi_max: " << pc.vsedi_max
+              << "\nalfa_q: " << pc.alfa_q
+            //   << "\nlam: " << pow(pc.lambda*particle_mean_mass(q, N, pc.min_x_sedimentation, pc.max_x), pc.b_vel)
+              << "\nvsedi_min: " << pc.vsedi_min
+              << "\nlambda: " << pc.lambda
+              << "\nb_vel: " << pc.b_vel << "\n";
+            //   << "\nx: " << particle_mean_mass(q, N, pc.min_x_sedimentation, pc.max_x) << "\n";
+#endif
         sedi_icon_core(q, N, v_q_sedi, v_n_sedi, resQ, resN, resOut);
 
         resN = max(min(N, q/pc.min_x_sedimentation), q/pc.max_x);
@@ -3524,7 +3545,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     rain_evaporation_sb(qr_prime, Nr, qv_prime, qc_prime,
         T_prime, p_prime, s_sw, p_sat, res, cc);
 
-    sedimentation_explicit(qc_prime, qr_prime, Nr,
+    sedimentation_explicit(T_prime, S,
+        qc_prime, qr_prime, Nr,
         qs_prime, Ns, qi_prime, Ni,
         qh_prime, Nh, qg_prime, Ng,
         p_prime, res, cc);
