@@ -752,7 +752,7 @@ int main(int argc, char** argv)
         uint32_t used_parameter = 0;
         uint32_t used_parameter2 = 0;
 
-        std::cout << "qc,Nc,T,S,qv,delta_qi,delta_Ni,delta_qv,"
+        std::cout << "qc,Nc,T,S,S_si,qv,delta_qi,delta_Ni,delta_qv,"
                   << "delta_lat_cool,delta_lat_heat\n";
 
         for(uint32_t i=0; i<n1; ++i)
@@ -811,10 +811,13 @@ int main(int argc, char** argv)
                     codi::RealReverse ssi = qv_prime_in * Rv * T_prime_in / p_sat_ice;
                     bool ndiag_mask = false;
 
+                    codi::RealReverse n_inact_tmp = n_inact_in;
+
                     std::cout << qc_prime_in.getValue() << ","
                               << Nc.getValue() << ","
                               << T_prime_in.getValue() << ","
                               << S.getValue() << ","
+                              << ssi.getValue() << ","
                               << qv_prime_in.getValue() << ",";
 
                     ice_activation_hande(qc_prime_in, qv_prime_in, T_prime_in,
@@ -825,6 +828,7 @@ int main(int argc, char** argv)
                               << y[qv_idx].getValue() << ","
                               << y[lat_cool_idx].getValue() << ","
                               << y[lat_heat_idx].getValue() << "\n";
+                    n_inact_in = n_inact_tmp;
                 }
             }
         }
