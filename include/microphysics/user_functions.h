@@ -2011,10 +2011,6 @@ void graupel_hail_conv(
         float_t d_sep = wet_growth_diam(p_prime, T_prime, qwa_prime,
             qi_prime, ltabdminwgg);
 
-#ifdef TRACE_DEBUG
-        std::cout << "\nd_sep: " << d_sep
-                  << "\nd_g: " << d_g << "\n";
-#endif
         if(d_sep > 0.0 && d_sep < 10.0*d_g)
         {
             float_t xmin = pow(d_sep/cc.graupel.a_geo, 1.0/cc.graupel.b_geo);
@@ -2036,14 +2032,6 @@ void graupel_hail_conv(
             // Hail q, n
             res[qh_idx] += conv_q;
             res[Nh_idx] += conv_n;
-
-#ifdef TRACE_DEBUG
-            std::cout << "\nlam: " << lam
-                      << "\nxmin: " << xmin
-                      << "\nn_0: " << n_0
-                      << "\ncc.graupel.mu: " << cc.graupel.mu
-                      << "\ncc.graupel.nm2: " << cc.graupel.nm2 << "\n";
-#endif
 
 #ifdef TRACE_QG
             std::cout << "conversion graupel->hail dqg " << - conv_q << ", dNq " << - conv_n << "\n";
