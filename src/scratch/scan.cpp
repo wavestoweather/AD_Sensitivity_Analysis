@@ -1941,10 +1941,363 @@ int main(int argc, char** argv)
         }
     } else if(func_name.compare("vapor_dep_relaxation") == 0)
     {
+        codi::RealReverse qc_prime_in = qc_prime;
+        codi::RealReverse qr_prime_in = qr_prime;
+        codi::RealReverse qs_prime_in = qs_prime;
+        codi::RealReverse qi_prime_in = qi_prime;
+        codi::RealReverse qh_prime_in = qh_prime;
+        codi::RealReverse qg_prime_in = qg_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
+        codi::RealReverse T_prime_in = T_prime;
 
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        std::cout << "qv,qi,Ni,qs,Ns,qg,Ng,qh,Nh,S_si,p_sat_ice,T,p,"
+                  << "delta_qi,delta_qs,delta_qg,delta_qh,delta_qv,"
+                  << "delta_deposition,delta_sublimination,"
+                  << "delta_dep_rate_ice,delta_dep_rate_snow,"
+                  << "delta_lat_cool,delta_lat_heat\n";
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(qs_min != NOT_USED && qs_max != NOT_USED)
+                qs_prime_in = i * (qs_max-qs_min) / n1 + qs_min;
+            else if(qi_min != NOT_USED && qi_max != NOT_USED)
+            {
+                qi_prime_in = i * (qi_max-qi_min) / n1 + qi_min;
+                used_parameter = 1;
+            }
+            else if(p_min != NOT_USED && p_max != NOT_USED)
+            {
+                p_prime_in = i * (p_max-p_min) / n1 + p_min;
+                used_parameter = 2;
+            }
+            else if(qh_min != NOT_USED && qh_max != NOT_USED)
+            {
+                qh_prime_in = i * (qh_max-qh_min) / n1 + qh_min;
+                used_parameter = 3;
+            }
+            else if(qg_min != NOT_USED && qg_max != NOT_USED)
+            {
+                qg_prime_in = i * (qg_max-qg_min) / n1 + qg_min;
+                used_parameter = 4;
+            }
+            else if(qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 5;
+            }
+            else if(temp_min != NOT_USED && temp_max != NOT_USED)
+            {
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+                used_parameter = 6;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qi_min != NOT_USED && qi_max != NOT_USED)
+                {
+                    qi_prime_in = j * (qi_max-qi_min) / n2 + qi_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && p_min != NOT_USED && p_max != NOT_USED)
+                {
+                    p_prime_in = j * (p_max-p_min) / n2 + p_min;
+                    used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && qh_min != NOT_USED && qh_max != NOT_USED)
+                {
+                    qh_prime_in = j * (qh_max-qh_min) / n2 + qh_min;
+                    used_parameter2 = 3;
+                }
+                else if(used_parameter < 4 && qg_min != NOT_USED && qg_max != NOT_USED)
+                {
+                    qg_prime_in = j * (qg_max-qg_min) / n2 + qg_min;
+                    used_parameter2 = 4;
+                }
+                else if(used_parameter < 5 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 5;
+                }
+                else if(used_parameter < 6 && temp_min != NOT_USED && temp_max != NOT_USED)
+                {
+                    T_prime_in = j * (temp_max-temp_min) / n2 + temp_min;
+                    used_parameter2 = 6;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && p_min != NOT_USED && p_max != NOT_USED)
+                        p_prime_in = k * (p_max-p_min) / n3 + p_min;
+                    else if(used_parameter2 < 3 && qh_min != NOT_USED && qh_max != NOT_USED)
+                        qh_prime_in = k * (qh_max-qh_min) / n3 + qh_min;
+                    else if(used_parameter2 < 4 && qg_min != NOT_USED && qg_max != NOT_USED)
+                        qg_prime_in = k * (qg_max-qg_min) / n3 + qg_min;
+                    else if(used_parameter2 < 5 && qv_min != NOT_USED && qv_max != NOT_USED)
+                        qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    if(used_parameter2 < 6 && temp_min != NOT_USED && temp_max != NOT_USED)
+                        T_prime_in = k * (temp_max-temp_min) / n3 + temp_min;
+
+                    for(auto& val: y)
+                        val = 0;
+
+                    codi::RealReverse Ns = qs_prime_in
+                        / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
+                    codi::RealReverse Ni = qi_prime_in
+                        / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
+                    codi::RealReverse Nh = qh_prime_in
+                        / ( (cc.hail.max_x - cc.hail.min_x)/2 + cc.hail.min_x );
+                    codi::RealReverse Ng = qg_prime_in
+                        / ( (cc.graupel.max_x - cc.graupel.min_x)/2 + cc.graupel.min_x );
+                    codi::RealReverse D_vtp = diffusivity(T_prime_in, p_prime_in);
+
+                    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
+                    codi::RealReverse e_d = qv_prime_in * Rv * T_prime_in;
+                    codi::RealReverse s_si = e_d / p_sat_ice - 1.0;
+
+                    codi::RealReverse dep_rate_snow, dep_rate_ice;
+                    dep_rate_snow = dep_rate_ice = 0;
+
+                    std::cout << qv_prime_in.getValue() << ","
+                              << qi_prime_in.getValue() << ","
+                              << Ni.getValue() << ","
+                              << qs_prime_in.getValue() << ","
+                              << Ns.getValue() << ","
+                              << qg_prime_in.getValue() << ","
+                              << Ng.getValue() << ","
+                              << qh_prime_in.getValue() << ","
+                              << Nh.getValue() << ","
+                              << s_si.getValue() << ","
+                              << p_sat_ice.getValue() << ","
+                              << T_prime_in.getValue() << ","
+                              << p_prime_in.getValue() << ",";
+
+                    vapor_dep_relaxation(qv_prime_in,
+                        qi_prime_in, Ni, qs_prime_in, Ns,
+                        qg_prime_in, Ng, qh_prime_in, Nh,
+                        s_si, p_sat_ice, T_prime_in, EPSILON,
+                        dep_rate_ice, dep_rate_snow,
+                        D_vtp, y, cc);
+
+                    std::cout << y[qi_idx].getValue() << ","
+                              << y[qs_idx].getValue() << ","
+                              << y[qg_idx].getValue() << ","
+                              << y[qh_idx].getValue() << ","
+                              << y[qv_idx].getValue() << ","
+                              << y[depo_idx].getValue() << ","
+                              << y[sub_idx].getValue() << ","
+                              << dep_rate_ice.getValue() << ","
+                              << dep_rate_snow.getValue() << ","
+                              << y[lat_cool_idx].getValue() << ","
+                              << y[lat_heat_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("particle_collection") == 0)
     {
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        codi::RealReverse q2_prime_in, q2_min, q2_max, q1_prime_in, q1_min, q1_max;
+        codi::RealReverse avg_size1, avg_size2;
+        uint32_t q2_idx, N2_idx, q1_idx, N1_idx;
+        char q2 = 'f';
+        char q1 = 'f';
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+        collection_model_constants_t *coeffs;
+        particle_model_constants_t *pc1, *pc2;
 
+        if(qi_prime != NOT_USED || qi_min != NOT_USED || qi_prime != NOT_USED)
+        {
+            q1 = 'i';
+            q1_min = qi_min;
+            q1_max = qi_max;
+            q1_prime_in = qi_prime;
+            avg_size1 = (cc.ice.max_x - cc.ice.min_x) / 2 + cc.ice.min_x;
+            q1_idx = qi_idx;
+            N1_idx = Ni_idx;
+            pc1 = &cc.ice;
+
+            if(qh_prime != NOT_USED || qh_min != NOT_USED || qh_prime != NOT_USED)
+            {
+                q2 = 'h';
+                q2_min = qh_min;
+                q2_max = qh_max;
+                q2_prime_in = qh_prime;
+                avg_size2 = (cc.hail.max_x - cc.hail.min_x) / 2 + cc.hail.min_x;
+                q2_idx = qh_idx;
+                N2_idx = Nh_idx;
+                pc2 = &cc.hail;
+                coeffs = &cc.coeffs_hic;
+            }
+            else if(qs_prime != NOT_USED || qs_min != NOT_USED || qs_prime != NOT_USED)
+            {
+                q2 = 's';
+                q2_min = qs_min;
+                q2_max = qs_max;
+                q2_prime_in = qs_prime;
+                avg_size2 = (cc.snow.max_x - cc.snow.min_x) / 2 + cc.snow.min_x;
+                q2_idx = qs_idx;
+                N2_idx = Ns_idx;
+                pc2 = &cc.snow;
+                coeffs = &cc.coeffs_sic;
+            }
+            else if(qg_prime != NOT_USED || qg_min != NOT_USED || qg_prime != NOT_USED)
+            {
+                q2 = 'g';
+                q2_min = qg_min;
+                q2_max = qg_max;
+                q2_prime_in = qg_prime;
+                avg_size2 = (cc.graupel.max_x - cc.graupel.min_x) / 2 + cc.graupel.min_x;
+                q2_idx = qg_idx;
+                N2_idx = Ng_idx;
+                pc2 = &cc.graupel;
+                coeffs = &cc.coeffs_gic;
+            }
+        } else if(qs_prime != NOT_USED || qs_min != NOT_USED || qs_prime != NOT_USED)
+        {
+            q1 = 's';
+            q1_min = qs_min;
+            q1_max = qs_max;
+            q1_prime_in = qs_prime;
+            avg_size1 = (cc.snow.max_x - cc.snow.min_x) / 2 + cc.snow.min_x;
+            q1_idx = qs_idx;
+            N1_idx = Ns_idx;
+            pc1 = &cc.snow;
+
+            if(qh_prime != NOT_USED || qh_min != NOT_USED || qh_prime != NOT_USED)
+            {
+                q2 = 'h';
+                q2_min = qh_min;
+                q2_max = qh_max;
+                q2_prime_in = qh_prime;
+                avg_size2 = (cc.hail.max_x - cc.hail.min_x) / 2 + cc.hail.min_x;
+                q2_idx = qh_idx;
+                N2_idx = Nh_idx;
+                pc2 = &cc.hail;
+                coeffs = &cc.coeffs_hsc;
+            }
+            else if(qg_prime != NOT_USED || qg_min != NOT_USED || qg_prime != NOT_USED)
+            {
+                q2 = 'g';
+                q2_min = qg_min;
+                q2_max = qg_max;
+                q2_prime_in = qg_prime;
+                avg_size2 = (cc.graupel.max_x - cc.graupel.min_x) / 2 + cc.graupel.min_x;
+                q2_idx = qg_idx;
+                N2_idx = Ng_idx;
+                pc2 = &cc.graupel;
+                coeffs = &cc.coeffs_gsc;
+            }
+        }
+
+        if(q2 == 'f' || q1 == 'f')
+        {
+            std::cout << "particle_collection needs either ice with hail "
+                      << ", snow or graupel or snow woth hail or graupel"
+                      <<  "\nABORTING!\n";
+            return 1;
+        }
+
+        std::cout << "p,T,S,qv,q" << q1 << ",N" << q1 << ",q" << q2 << ",N" << q2 << ","
+                  << "delta_q" << q1 << ",delta_q" << q2 << ",delta_N"
+                  << q1 << "\n";
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 1;
+            }
+            else if(q1_min != NOT_USED && q1_max != NOT_USED)
+            {
+                q1_prime_in = i * (q1_max-q1_min) / n1 + q1_min;
+                used_parameter = 2;
+            }
+            else if(q2_min != NOT_USED && q2_max != NOT_USED)
+            {
+                q2_prime_in = i * (q2_max-q2_min) / n1 + q2_min;
+                used_parameter = 3;
+            }
+            else if(p_min != NOT_USED && p_max != NOT_USED)
+            {
+                p_prime_in = i * (p_max-p_min) / n1 + p_min;
+                used_parameter = 4;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && q1_min != NOT_USED && q1_max != NOT_USED)
+                {
+                    q1_prime_in = j * (q1_max-q1_min) / n2 + q1_min;
+                    used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && q2_min != NOT_USED && q2_max != NOT_USED)
+                {
+                    q2_prime_in = j * (q2_max-q2_min) / n2 + q2_min;
+                    used_parameter2 = 3;
+                }
+                else if(used_parameter < 4 && p_min != NOT_USED && p_max != NOT_USED)
+                {
+                    p_prime_in = j * (p_max-p_min) / n2 + p_min;
+                    used_parameter2 = 4;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && q1_min != NOT_USED && q1_max != NOT_USED)
+                        q1_prime_in = k * (q1_max-q1_min) / n3 + q1_min;
+                    else if(used_parameter2 < 3 && q2_min != NOT_USED && q2_max != NOT_USED)
+                        q2_prime_in = k * (q2_max-q2_min) / n3 + q2_min;
+                    else if(used_parameter2 < 4 && p_min != NOT_USED && p_max != NOT_USED)
+                        p_prime_in = k * (p_max-p_min) / n3 + p_min;
+
+                    for(auto& val: y)
+                        val = 0;
+                    codi::RealReverse N1 = q1_prime_in / avg_size1;
+                    codi::RealReverse N2 = q2_prime_in / avg_size2;
+                    // Update vertical velocity parameters
+                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
+                        / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
+                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
+                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
+                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
+                    cc.hail.rho_v = exp(-rho_vel * rho_inter);
+                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
+                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+                    std::cout << p_prime_in.getValue() << ","
+                              << T_prime_in.getValue() << ","
+                              << S.getValue() << ","
+                              << qv_prime_in.getValue() << ","
+                              << q1_prime_in.getValue() << ","
+                              << N1.getValue() << ","
+                              << q2_prime_in.getValue() << ","
+                              << N2.getValue() << ",";
+                    codi::RealReverse T_c = T_prime_in - tmelt;
+
+                    std::vector<codi::RealReverse> res = particle_collection(
+                        q1_prime_in, q2_prime_in, N1, N2, T_c,
+                        *coeffs, *pc1, *pc2);
+
+                    std::cout << -res[1].getValue() << ","
+                              << res[1].getValue() << ","
+                              << -res[0].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("particle_particle_collection") == 0)
     {
 
@@ -1980,7 +2333,7 @@ int main(int argc, char** argv)
         uint32_t used_parameter2 = 0;
         collection_model_constants_t *coeffs;
         particle_model_constants_t *pc;
-        if(qg_prime != NOT_USED || qg_min != NOT_USED)
+        if(qg_prime != NOT_USED || qg_min != NOT_USED || qg != NOT_USED)
         {
             q2 = 'g';
             q2_min = qg_min;
@@ -1992,7 +2345,7 @@ int main(int argc, char** argv)
             coeffs = &cc.coeffs_gcr;
             pc = &cc.graupel;
         }
-        else if(qh_prime != NOT_USED || qh_min != NOT_USED)
+        else if(qh_prime != NOT_USED || qh_min != NOT_USED || qh != NOT_USED)
         {
             q2 = 'h';
             q2_min = qh_min;
@@ -2121,7 +2474,7 @@ int main(int argc, char** argv)
         uint32_t used_parameter2 = 0;
         collection_model_constants_t *coeffs;
         particle_model_constants_t *pc;
-        if(qg_prime != NOT_USED || qg_min != NOT_USED)
+        if(qg_prime != NOT_USED || qg_min != NOT_USED || qg != NOT_USED)
         {
             q2 = 'g';
             q2_min = qg_min;
@@ -2133,7 +2486,7 @@ int main(int argc, char** argv)
             coeffs = &cc.coeffs_grr;
             pc = &cc.graupel;
         }
-        else if(qh_prime != NOT_USED || qh_min != NOT_USED)
+        else if(qh_prime != NOT_USED || qh_min != NOT_USED || qh != NOT_USED)
         {
             q2 = 'h';
             q2_min = qh_min;

@@ -1828,7 +1828,16 @@ void vapor_dep_relaxation(
 
 
 /**
+ * Particle collection for ice particles such as:
+ * graupel+ice  -> graupel
+ * graupel+snow -> graupel
+ * hail+ice  -> hail
+ * hail+snow -> hail
+ * snow+ice  -> snow
+ * This function does only one of these.
  *
+ * @return Vector of two float_t with the change in particle number (0)
+ * and change in mass mixing ratio (1)
  */
 template<class float_t>
 std::vector<float_t> particle_collection(
@@ -1858,7 +1867,7 @@ std::vector<float_t> particle_collection(
             - coeffs.theta_n_ab * v_2 * v_1
             + coeffs.theta_n_bb * v_1 * v_1
             + pc1.s_vel * pc1.s_vel);
-    float_t coll_q = M_PI/4 * N1 * N2 * e_coll
+    float_t coll_q = M_PI/4 * q1 * N2 * e_coll
         * (coeffs.delta_q_aa * d_2 * d_2
             + coeffs.delta_q_ab * d_2 * d_1
             + coeffs.delta_q_bb * d_1 * d_1)
@@ -1869,19 +1878,20 @@ std::vector<float_t> particle_collection(
     coll_n = min(N1, coll_n);
     coll_q = min(q1, coll_q);
     std::vector<float_t> r(2);
-    r[p_idx] = coll_n;
-    r[T_idx] = coll_q;
+    r[0] = coll_n;
+    r[1] = coll_q;
     return r;
 }
 
 
 /**
- * Ice particle collections:
+ * Ice particle collections for the following processes:
  * graupel+ice  -> graupel
  * graupel+snow -> graupel
  * hail+ice  -> hail
  * hail+snow -> hail
  * snow+ice  -> snow
+ * All those processes are done in this function.
  */
 template<class float_t>
 void particle_particle_collection(
