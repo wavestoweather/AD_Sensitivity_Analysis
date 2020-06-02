@@ -1392,6 +1392,9 @@ void sedimentation_explicit(
 #ifdef TRACE_QS
     std::cout << "\nrhocorr: " << rhocorr
               << "\nrho_a_prime: " << compute_rhoa(p_prime,T_prime,S)
+              << "\np_prime: " << p_prime
+              << "\nT_prime: " << T_prime
+              << "\nS: " << S
               << "\nrho_0: " << rho_0
               << "\nrho_vel: " << rho_vel << "\n";
 #endif
