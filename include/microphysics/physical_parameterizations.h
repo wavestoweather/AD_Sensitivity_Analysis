@@ -824,6 +824,20 @@ A wet_growth_diam(
         h4[0] = h3[0] + (h3[2]-h3[0])   * table.odx3 * (qw_lok-table.x3[ku]);
         h4[1] = h3[1] + (h3[3] - h3[1]) * table.odx3 * (qw_lok-table.x3[ku]);
         dmin_loc = h4[0] + (h4[1]-h4[0]) * table.odx4 * (qi_lok-table.x4[lu]);
+#ifdef TRACE_GROWTH
+        std::cout << "\nh4_0: " << h4[0]
+                  << "\nh4_1: " << h4[1]
+                  << "\ntable.odx1: " << table.odx1
+                  << "\ntable.odx2: " << table.odx2
+                  << "\ntable.odx3: " << table.odx3
+                  << "\ntable.odx4: " << table.odx4
+                  << "\nku: " << ku
+                  << "\nlu: " << lu
+                  << "\niu: " << iu
+                  << "\nlo: " << lo
+                  << "\nju: " << ju
+                  << "\njo: " << jo << "\n";
+#endif
 
     }
     return dmin_loc;

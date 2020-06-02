@@ -2010,29 +2010,46 @@ void graupel_hail_conv(
 
         float_t d_sep = wet_growth_diam(p_prime, T_prime, qwa_prime,
             qi_prime, ltabdminwgg);
+
+#ifdef TRACE_DEBUG
+        std::cout << "\nd_sep: " << d_sep
+                  << "\nd_g: " << d_g << "\n";
+#endif
         if(d_sep > 0.0 && d_sep < 10.0*d_g)
         {
             float_t xmin = pow(d_sep/cc.graupel.a_geo, 1.0/cc.graupel.b_geo);
             float_t lam = pow(cc.graupel.g2/(cc.graupel.g1*x_g), cc.graupel.mu);
             xmin = pow(xmin, cc.graupel.mu);
-            float_t n_0 = cc.graupel.mu * Ng * pow(cc.graupel.nm1, cc.graupel.g1);
+            float_t n_0 = cc.graupel.mu * Ng * pow(lam, cc.graupel.nm1)/cc.graupel.g1;
+            float_t lam_xmin = lam*xmin;
 
-            float_t conv_n = n_0;
-            float_t conv_q = n_0;
+            float_t conv_n = n_0 / (cc.graupel.mu * pow(lam, cc.graupel.nm1))
+                * table_g1.look_up(lam_xmin);
+            float_t conv_q = n_0 / (cc.graupel.mu * pow(lam, cc.graupel.nm2))
+                * table_g2.look_up(lam_xmin);
 
             conv_n = min(conv_n, Ng);
             conv_q = min(conv_q, qg_prime);
             // Graupel q, n
-            res[qg_idx] += qg_prime - conv_q;
-            res[Ng_idx] += Ng - conv_n;
+            res[qg_idx] -= conv_q;
+            res[Ng_idx] -= conv_n;
             // Hail q, n
-            res[qh_idx] += qh_prime + conv_q;
-            res[Nh_idx] += Nh + conv_n;
+            res[qh_idx] += conv_q;
+            res[Nh_idx] += conv_n;
+
+#ifdef TRACE_DEBUG
+            std::cout << "\nlam: " << lam
+                      << "\nxmin: " << xmin
+                      << "\nn_0: " << n_0
+                      << "\ncc.graupel.mu: " << cc.graupel.mu
+                      << "\ncc.graupel.nm2: " << cc.graupel.nm2 << "\n";
+#endif
+
 #ifdef TRACE_QG
-            std::cout << "conversion graupel->hail dqg " << qg_prime - conv_q << ", dNq " << Ng - conv_n << "\n";
+            std::cout << "conversion graupel->hail dqg " << - conv_q << ", dNq " << - conv_n << "\n";
 #endif
 #ifdef TRACE_QH
-            std::cout << "conversion graupel->hail dqh " << qh_prime + conv_q << ", dNh " << Nh + conv_n << "\n";
+            std::cout << "conversion graupel->hail dqh " <<  conv_q << ", dNh " << conv_n << "\n";
 #endif
         }
     }

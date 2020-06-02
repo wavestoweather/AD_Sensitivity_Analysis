@@ -416,10 +416,28 @@ struct gamma_table_t{
     {
         A xt = max(min(x, this->x[this->n_bins-1]), 0.0);
         double tmp = xt.getValue()*this->odx;
-        tmp = floor(tmp) + 1;
+        tmp = floor(tmp);
         uint64_t iu = std::min((uint64_t) tmp, this->n_bins-2);
         uint64_t io = iu + 1;
         return this->igf[iu] + (this->igf[io] - this->igf[iu]) * this->odx*(xt-this->x[iu]);
+    }
+
+    /**
+     * Get the upper incomplete gamma function value for a given x coordinate.
+     *
+     * @param x Coordinate at which to evaluate the gamma function.
+     */
+    template <class A>
+    A look_up(A x)
+    {
+        A xt = max(min(x, this->x[this->n_bins-1]), 0.0);
+        double tmp = xt.getValue()*this->odx;
+        tmp = floor(tmp) ;
+        uint64_t iu = std::min((uint64_t) tmp, this->n_bins-2);
+        uint64_t io = iu + 1;
+        A lookup = this->igf[this->n_bins-1] - this->igf[iu]
+            - (this->igf[io] - this->igf[iu]) * this->odx*(xt-this->x[iu]);
+        return max(lookup, codi::RealReverse(0.0));
     }
 
     /** Init lookup table for the incomplete gamma function.

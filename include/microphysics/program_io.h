@@ -136,7 +136,7 @@ bool load_lookup_table(
         double maxT = Tvec_wg_g_loc[Tvec_wg_g_loc.size()-1];
         table.dx1 = table.x1[1] - table.x1[0];
         table.odx1 = 1.0/table.dx1;
-        table.dx2 = table.x2[1] - table.x2[0];
+        table.dx2 = (maxT-minT)/(ndT-1.0);
         table.odx2 = 1.0/table.dx2;
         table.dx3 = table.x3[1] - table.x3[0];
         table.odx3 = 1.0/table.dx3;
