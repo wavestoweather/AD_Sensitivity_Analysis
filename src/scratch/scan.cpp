@@ -2828,13 +2828,475 @@ int main(int argc, char** argv)
         }
     } else if(func_name.compare("riming_rain_core") == 0)
     {
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse qr_prime_in = qr_prime;
+        codi::RealReverse qv_prime_in = qv_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        codi::RealReverse q2_prime_in, q2_min, q2_max;
+        codi::RealReverse avg_size;
+        uint32_t q2_idx, N2_idx;
+        char q2 = 'f';
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+        collection_model_constants_t *coeffs;
+        particle_model_constants_t *pc;
+        if(qs_prime != NOT_USED || qs_min != NOT_USED || qs_prime != NOT_USED)
+        {
+            q2 = 's';
+            q2_min = qs_min;
+            q2_max = qs_max;
+            q2_prime_in = qs_prime;
+            avg_size = (cc.snow.max_x - cc.snow.min_x) / 2 + cc.snow.min_x;
+            q2_idx = qs_idx;
+            N2_idx = Ns_idx;
+            coeffs = &cc.coeffs_scr;
+            pc = &cc.snow;
+        }
+        else if(qi_prime != NOT_USED || qi_min != NOT_USED || qi_prime != NOT_USED)
+        {
+            q2 = 'i';
+            q2_min = qi_min;
+            q2_max = qi_max;
+            q2_prime_in = qi_prime;
+            avg_size = (cc.ice.max_x - cc.ice.min_x) / 2 + cc.ice.min_x;
+            q2_idx = qi_idx;
+            N2_idx = Ni_idx;
+            coeffs = &cc.coeffs_icr;
+            pc = &cc.ice;
+        }
 
+        if(q2 == 'f')
+        {
+            std::cout << "riming_rain_core needs either ice "
+                     <<  "or snow particles\nABORTING!\n";
+            return 1;
+        }
+        std::cout << "qr,Nr,T,S,p,qv,q" << q2 << ",N" << q2
+                  << ",delta_rime_rate_q" << q2
+                  << ",delta_rime_rate_qr,delta_rime_rate_Nr\n";
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(qr_min != NOT_USED && qr_max != NOT_USED)
+            {
+                qr_prime_in = i * (qr_max-qr_min) / n1 + qr_min;
+                used_parameter = 1;
+            }
+            else if(q2_min != NOT_USED && q2_max != NOT_USED)
+            {
+                q2_prime_in = i * (q2_max-q2_min) / n1 + q2_min;
+                used_parameter = 2;
+            }
+            else if(qv_min != NOT_USED && qv_max != NOT_USED)
+            {
+                qv_prime_in = i * (qv_max-qv_min) / n1 + qv_min;
+                used_parameter = 3;
+            }
+            else if(p_min != NOT_USED && p_max != NOT_USED)
+            {
+                p_prime_in = i * (p_max-p_min) / n1 + p_min;
+                used_parameter = 4;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qr_min != NOT_USED && qr_max != NOT_USED)
+                {
+                    qr_prime_in = j * (qr_max-qr_min) / n2 + qr_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && q2_min != NOT_USED && q2_max != NOT_USED)
+                {
+                    q2_prime_in = j * (q2_max-q2_min) / n2 + q2_min;
+                    used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && qv_min != NOT_USED && qv_max != NOT_USED)
+                {
+                    qv_prime_in = j * (qv_max-qv_min) / n2 + qv_min;
+                    used_parameter2 = 3;
+                }
+                else if(used_parameter < 4 && p_min != NOT_USED && p_max != NOT_USED)
+                {
+                    p_prime_in = j * (p_max-p_min) / n2 + p_min;
+                    used_parameter2 = 4;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && q2_min != NOT_USED && q2_max != NOT_USED)
+                        q2_prime_in = k * (q2_max-q2_min) / n3 + q2_min;
+                    else if(used_parameter2 < 3 && qv_min != NOT_USED && qv_max != NOT_USED)
+                        qv_prime_in = k * (qv_max-qv_min) / n3 + qv_min;
+                    else if(used_parameter2 < 4 && p_min != NOT_USED && p_max != NOT_USED)
+                        p_prime_in = k * (p_max-p_min) / n3 + p_min;
+
+                    for(auto& val: y)
+                        val = 0;
+                    codi::RealReverse Nr = qr_prime_in
+                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                    codi::RealReverse N2 = q2_prime_in / avg_size;
+                    // Update vertical velocity parameters
+                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
+                        / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
+                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
+                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
+                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
+                    cc.hail.rho_v = exp(-rho_vel * rho_inter);
+                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
+                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+                    std::cout << qr_prime_in.getValue() << ","
+                              << Nr.getValue() << ","
+                              << T_prime_in.getValue() << ","
+                              << S.getValue() << ","
+                              << p_prime_in.getValue() << ","
+                              << qv_prime_in.getValue() << ","
+                              << q2_prime_in.getValue() << ","
+                              << N2.getValue() << ",";
+
+                    codi::RealReverse rime_rate_qa, rime_rate_qb, rime_rate_nb;
+                    rime_rate_qa = rime_rate_qb = rime_rate_nb = 0;
+
+                    riming_rain_core(qr_prime_in, Nr, q2_prime_in, N2,
+                        *pc, *coeffs, rime_rate_qa, rime_rate_qb,
+                        rime_rate_nb, cc);
+
+                    std::cout << rime_rate_qa.getValue() << ","
+                              << rime_rate_qb.getValue() << ","
+                              << rime_rate_nb.getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("ice_riming") == 0)
     {
+        codi::RealReverse qc_prime_in = qc_prime;
+        codi::RealReverse qr_prime_in = qr_prime;
+        codi::RealReverse qi_prime_in = qi_prime;
+        codi::RealReverse dep_rate_ice_in = dep_ice;
+        codi::RealReverse rime_rate_qc_in = rime_qc;
+        codi::RealReverse rime_rate_qr_in = rime_qr;
+        codi::RealReverse rime_rate_qi_in = rime_qi;
+        codi::RealReverse T_prime_in = T_prime;
 
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        std::cout << "qc,Nc,qr,Nr,qi,Ni,dep_rate_ice,rime_rate_qc,"
+                  << "rime_rate_nc,rime_rate_qr,rime_rate_nr,"
+                  << "rime_rate_qi,T,dt,"
+                  << "delta_qc,delta_Nc,delta_qi,delta_Ni,"
+                  << "delta_qr,delta_Nr,delta_qs,delta_qg,delta_Ng,"
+                  << "delta_lat_cool_idx,delta_lat_heat_idx\n";
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(qc_min != NOT_USED && qc_max != NOT_USED)
+                qc_prime_in = i * (qc_max-qc_min) / n1 + qc_min;
+            else if(qi_min != NOT_USED && qi_max != NOT_USED)
+            {
+                qi_prime_in = i * (qi_max-qi_min) / n1 + qi_min;
+                used_parameter = 1;
+            }
+            else if(qr_min != NOT_USED && qr_max != NOT_USED)
+            {
+                qr_prime_in = i * (qr_max-qr_min) / n1 + qr_min;
+                used_parameter = 2;
+            }
+            else if(dep_ice_min != NOT_USED && dep_ice_max != NOT_USED)
+            {
+                dep_rate_ice_in = i * (dep_ice_max-dep_ice_min) / n1 + dep_ice_min;
+                used_parameter = 3;
+            }
+            else if(rime_qc_min != NOT_USED && rime_qc_max != NOT_USED)
+            {
+                rime_rate_qc_in = i * (rime_qc_max-rime_qc_min) / n1 + rime_qc_min;
+                used_parameter = 4;
+            }
+            else if(temp_min != NOT_USED && temp_max != NOT_USED)
+            {
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+                used_parameter = 5;
+            }
+            else if(rime_qr_min != NOT_USED && rime_qr_max != NOT_USED)
+            {
+                rime_rate_qr_in = i * (rime_qr_max-rime_qr_min) / n1 + rime_qr_min;
+                used_parameter = 6;
+            }
+            else if(rime_qi_min != NOT_USED && rime_qi_max != NOT_USED)
+            {
+                rime_rate_qi_in = i * (rime_qi_max-rime_qi_min) / n1 + rime_qi_min;
+                used_parameter = 7;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qi_min != NOT_USED && qi_max != NOT_USED)
+                {
+                    qi_prime_in = j * (qi_max-qi_min) / n2 + qi_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && qr_min != NOT_USED && qr_max != NOT_USED)
+                {
+                    qr_prime_in = j * (qr_max-qr_min) / n2 + qr_min;
+                    used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && dep_ice_min != NOT_USED && dep_ice_max != NOT_USED)
+                {
+                    dep_rate_ice_in = j * (dep_ice_max-dep_ice_min) / n2 + dep_ice_min;
+                    used_parameter2 = 3;
+                }
+                else if(used_parameter < 4 && rime_qc_min != NOT_USED && rime_qc_max != NOT_USED)
+                {
+                    rime_rate_qc_in = j * (rime_qc_max-rime_qc_min) / n2 + rime_qc_min;
+                    used_parameter2 = 4;
+                }
+                else if(used_parameter < 5 && temp_min != NOT_USED && temp_max != NOT_USED)
+                {
+                    T_prime_in = j * (temp_max-temp_min) / n2 + temp_min;
+                    used_parameter2 = 5;
+                }
+                else if(used_parameter < 6 && rime_qr_min != NOT_USED && rime_qr_max != NOT_USED)
+                {
+                    rime_rate_qr_in = j * (rime_qr_max-rime_qr_min) / n2 + rime_qr_min;
+                    used_parameter2 = 6;
+                }
+                else if(used_parameter < 4 && rime_qi_min != NOT_USED && rime_qi_max != NOT_USED)
+                {
+                    rime_rate_qi_in = j * (rime_qi_max-rime_qi_min) / n2 + rime_qi_min;
+                    used_parameter2 = 7;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && qr_min != NOT_USED && qr_max != NOT_USED)
+                        qr_prime_in = k * (qr_max-qr_min) / n3 + qr_min;
+                    else if(used_parameter2 < 3 && dep_ice_min != NOT_USED && dep_ice_max != NOT_USED)
+                        dep_rate_ice_in = k * (dep_ice_max-dep_ice_min) / n3 + dep_ice_min;
+                    else if(used_parameter2 < 4 && rime_qc_min != NOT_USED && rime_qc_max != NOT_USED)
+                        rime_rate_qc_in = k * (rime_qc_max-rime_qc_min) / n3 + rime_qc_min;
+                    if(used_parameter2 < 5 && temp_min != NOT_USED && temp_max != NOT_USED)
+                        T_prime_in = k * (temp_max-temp_min) / n3 + temp_min;
+                    else if(used_parameter2 < 6 && rime_qr_min != NOT_USED && rime_qr_max != NOT_USED)
+                        rime_rate_qr_in = k * (rime_qr_max-rime_qr_min) / n3 + rime_qr_min;
+                    else if(used_parameter2 < 7 && rime_qi_min != NOT_USED && rime_qi_max != NOT_USED)
+                        rime_rate_qi_in = k * (rime_qi_max-rime_qi_min) / n3 + rime_qi_min;
+
+                    for(auto& val: y)
+                        val = 0;
+
+                    codi::RealReverse Nc = qc_prime_in
+                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                    codi::RealReverse Nr = qr_prime_in
+                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                    codi::RealReverse Ni = qi_prime_in
+                        / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
+
+                    codi::RealReverse rime_rate_nc = rime_rate_qc_in
+                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                    codi::RealReverse rime_rate_nr = rime_rate_qr_in
+                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+
+                    std::cout << qc_prime_in.getValue() << ","
+                              << Nc.getValue() << ","
+                              << qr_prime_in.getValue() << ","
+                              << Nr.getValue() << ","
+                              << qi_prime_in.getValue() << ","
+                              << Ni.getValue() << ","
+                              << dep_rate_ice_in.getValue() << ","
+                              << rime_rate_qc_in.getValue() << ","
+                              << rime_rate_nc.getValue() << ","
+                              << rime_rate_qr_in.getValue() << ","
+                              << rime_rate_nr.getValue() << ","
+                              << rime_rate_qi_in.getValue() << ","
+                              << T_prime_in.getValue() << ","
+                              << cc.dt_prime << ",";
+
+                    ice_riming(qc_prime_in, Nc, qr_prime_in, Nr,
+                        qi_prime_in, Ni, dep_rate_ice_in, rime_rate_qc_in,
+                        rime_rate_nc, rime_rate_qr_in, rime_rate_nr,
+                        rime_rate_qi_in, T_prime_in, cc.dt_prime, y, cc);
+
+                    std::cout << y[qc_idx].getValue() << ","
+                              << y[Nc_idx].getValue() << ","
+                              << y[qi_idx].getValue() << ","
+                              << y[Ni_idx].getValue() << ","
+                              << y[qr_idx].getValue() << ","
+                              << y[Nr_idx].getValue() << ","
+                              << y[qs_idx].getValue() << ","
+                              << y[qg_idx].getValue() << ","
+                              << y[Ng_idx].getValue() << ","
+                              << y[lat_cool_idx].getValue() << ","
+                              << y[lat_heat_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("snow_riming") == 0)
     {
+        codi::RealReverse qc_prime_in = qc_prime;
+        codi::RealReverse qr_prime_in = qr_prime;
+        codi::RealReverse qs_prime_in = qs_prime;
+        codi::RealReverse dep_rate_snow_in = dep_snow;
+        codi::RealReverse rime_rate_qc_in = rime_qc;
+        codi::RealReverse rime_rate_qr_in = rime_qr;
+        codi::RealReverse rime_rate_qs_in = rime_qs;
+        codi::RealReverse T_prime_in = T_prime;
 
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        std::cout << "qc,Nc,qr,Nr,qs,Ns,dep_rate_snow,rime_rate_qc,"
+                  << "rime_rate_nc,rime_rate_qr,rime_rate_nr,"
+                  << "rime_rate_qs,T,dt,"
+                  << "delta_qc,delta_Nc,delta_qi,delta_Ni,"
+                  << "delta_qr,delta_Nr,delta_qs,delta_Ns,"
+                  << "delta_qg,delta_Ng,"
+                  << "delta_lat_cool_idx,delta_lat_heat_idx\n";
+
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(qc_min != NOT_USED && qc_max != NOT_USED)
+                qc_prime_in = i * (qc_max-qc_min) / n1 + qc_min;
+            else if(qs_min != NOT_USED && qs_max != NOT_USED)
+            {
+                qs_prime_in = i * (qs_max-qs_min) / n1 + qs_min;
+                used_parameter = 1;
+            }
+            else if(qr_min != NOT_USED && qr_max != NOT_USED)
+            {
+                qr_prime_in = i * (qr_max-qr_min) / n1 + qr_min;
+                used_parameter = 2;
+            }
+            else if(dep_snow_min != NOT_USED && dep_snow_max != NOT_USED)
+            {
+                dep_rate_snow_in = i * (dep_snow_max-dep_snow_min) / n1 + dep_snow_min;
+                used_parameter = 3;
+            }
+            else if(rime_qc_min != NOT_USED && rime_qc_max != NOT_USED)
+            {
+                rime_rate_qc_in = i * (rime_qc_max-rime_qc_min) / n1 + rime_qc_min;
+                used_parameter = 4;
+            }
+            else if(temp_min != NOT_USED && temp_max != NOT_USED)
+            {
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+                used_parameter = 5;
+            }
+            else if(rime_qr_min != NOT_USED && rime_qr_max != NOT_USED)
+            {
+                rime_rate_qr_in = i * (rime_qr_max-rime_qr_min) / n1 + rime_qr_min;
+                used_parameter = 6;
+            }
+            else if(rime_qs_min != NOT_USED && rime_qs_max != NOT_USED)
+            {
+                rime_rate_qs_in = i * (rime_qs_max-rime_qs_min) / n1 + rime_qs_min;
+                used_parameter = 7;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && qs_min != NOT_USED && qs_max != NOT_USED)
+                {
+                    qs_prime_in = j * (qs_max-qs_min) / n2 + qs_min;
+                    used_parameter2 = 1;
+                }
+                else if(used_parameter < 2 && qr_min != NOT_USED && qr_max != NOT_USED)
+                {
+                    qr_prime_in = j * (qr_max-qr_min) / n2 + qr_min;
+                    used_parameter2 = 2;
+                }
+                else if(used_parameter < 3 && dep_snow_min != NOT_USED && dep_snow_max != NOT_USED)
+                {
+                    dep_rate_snow_in = j * (dep_snow_max-dep_snow_min) / n2 + dep_snow_min;
+                    used_parameter2 = 3;
+                }
+                else if(used_parameter < 4 && rime_qc_min != NOT_USED && rime_qc_max != NOT_USED)
+                {
+                    rime_rate_qc_in = j * (rime_qc_max-rime_qc_min) / n2 + rime_qc_min;
+                    used_parameter2 = 4;
+                }
+                else if(used_parameter < 5 && temp_min != NOT_USED && temp_max != NOT_USED)
+                {
+                    T_prime_in = j * (temp_max-temp_min) / n2 + temp_min;
+                    used_parameter2 = 5;
+                }
+                else if(used_parameter < 6 && rime_qr_min != NOT_USED && rime_qr_max != NOT_USED)
+                {
+                    rime_rate_qr_in = j * (rime_qr_max-rime_qr_min) / n2 + rime_qr_min;
+                    used_parameter2 = 6;
+                }
+                else if(used_parameter < 4 && rime_qs_min != NOT_USED && rime_qs_max != NOT_USED)
+                {
+                    rime_rate_qs_in = j * (rime_qs_max-rime_qs_min) / n2 + rime_qs_min;
+                    used_parameter2 = 7;
+                }
+
+                for(uint32_t k=0; k<=n3; ++k)
+                {
+                    if(used_parameter2 < 2 && qr_min != NOT_USED && qr_max != NOT_USED)
+                        qr_prime_in = k * (qr_max-qr_min) / n3 + qr_min;
+                    else if(used_parameter2 < 3 && dep_snow_min != NOT_USED && dep_snow_max != NOT_USED)
+                        dep_rate_snow_in = k * (dep_snow_max-dep_snow_min) / n3 + dep_snow_min;
+                    else if(used_parameter2 < 4 && rime_qc_min != NOT_USED && rime_qc_max != NOT_USED)
+                        rime_rate_qc_in = k * (rime_qc_max-rime_qc_min) / n3 + rime_qc_min;
+                    if(used_parameter2 < 5 && temp_min != NOT_USED && temp_max != NOT_USED)
+                        T_prime_in = k * (temp_max-temp_min) / n3 + temp_min;
+                    else if(used_parameter2 < 6 && rime_qr_min != NOT_USED && rime_qr_max != NOT_USED)
+                        rime_rate_qr_in = k * (rime_qr_max-rime_qr_min) / n3 + rime_qr_min;
+                    else if(used_parameter2 < 7 && rime_qs_min != NOT_USED && rime_qs_max != NOT_USED)
+                        rime_rate_qs_in = k * (rime_qs_max-rime_qs_min) / n3 + rime_qs_min;
+
+                    for(auto& val: y)
+                        val = 0;
+
+                    codi::RealReverse Nc = qc_prime_in
+                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                    codi::RealReverse Nr = qr_prime_in
+                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                    codi::RealReverse Ns = qs_prime_in
+                        / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
+
+                    codi::RealReverse rime_rate_nc = rime_rate_qc_in
+                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                    codi::RealReverse rime_rate_nr = rime_rate_qr_in
+                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+
+                    std::cout << qc_prime_in.getValue() << ","
+                              << Nc.getValue() << ","
+                              << qr_prime_in.getValue() << ","
+                              << Nr.getValue() << ","
+                              << qs_prime_in.getValue() << ","
+                              << Ns.getValue() << ","
+                              << dep_rate_snow_in.getValue() << ","
+                              << rime_rate_qc_in.getValue() << ","
+                              << rime_rate_nc.getValue() << ","
+                              << rime_rate_qr_in.getValue() << ","
+                              << rime_rate_nr.getValue() << ","
+                              << rime_rate_qs_in.getValue() << ","
+                              << T_prime_in.getValue() << ","
+                              << cc.dt_prime << ",";
+
+                    snow_riming(qc_prime_in, Nc, qr_prime_in, Nr,
+                        qs_prime_in, Ns, dep_rate_snow_in, rime_rate_qc_in,
+                        rime_rate_nc, rime_rate_qr_in, rime_rate_nr,
+                        rime_rate_qs_in, T_prime_in, cc.dt_prime, y, cc);
+
+                    std::cout << y[qc_idx].getValue() << ","
+                              << y[Nc_idx].getValue() << ","
+                              << y[qi_idx].getValue() << ","
+                              << y[Ni_idx].getValue() << ","
+                              << y[qr_idx].getValue() << ","
+                              << y[Nr_idx].getValue() << ","
+                              << y[qs_idx].getValue() << ","
+                              << y[Ns_idx].getValue() << ","
+                              << y[qg_idx].getValue() << ","
+                              << y[Ng_idx].getValue() << ","
+                              << y[lat_cool_idx].getValue() << ","
+                              << y[lat_heat_idx].getValue() << "\n";
+                }
+            }
+        }
     } else if(func_name.compare("particle_cloud_riming") == 0)
     {
         codi::RealReverse T_prime_in = T_prime;

@@ -2152,7 +2152,7 @@ void riming_cloud_core(
 
 
 /**
- *
+ * Riming of rain droplets with ice or snow particles.
  */
 template<class float_t>
 void riming_rain_core(
@@ -2178,7 +2178,6 @@ void riming_rain_core(
         float_t v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
         float_t v_r = particle_velocity(x_r, cc.rain.a_vel, cc.rain.b_vel) * cc.rain.rho_v;
 
-        // times dt ?
         rime_rate_qb = M_PI/4.0 * N1 * qr_prime
             * (coeffs.delta_n_aa * d_1*d_1
                 + coeffs.delta_q_ab * d_1*d_r
@@ -2433,7 +2432,7 @@ void ice_riming(
             if(T_prime >= tmelt)
             {
                 float_t qr_tmp = qr_prime+dt*res[qr_idx];
-                float_t Nr_tmp = Nr*res[Nr_idx]*dt;
+                float_t Nr_tmp = Nr+res[Nr_idx]*dt;
                 float_t x_r = particle_mean_mass(
                     qr_tmp, Nr_tmp,
                     cc.rain.min_x_riming, cc.rain.max_x);
