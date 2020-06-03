@@ -824,6 +824,20 @@ A wet_growth_diam(
         h4[0] = h3[0] + (h3[2]-h3[0])   * table.odx3 * (qw_lok-table.x3[ku]);
         h4[1] = h3[1] + (h3[3] - h3[1]) * table.odx3 * (qw_lok-table.x3[ku]);
         dmin_loc = h4[0] + (h4[1]-h4[0]) * table.odx4 * (qi_lok-table.x4[lu]);
+#ifdef TRACE_GROWTH
+        std::cout << "\nh4_0: " << h4[0]
+                  << "\nh4_1: " << h4[1]
+                  << "\ntable.odx1: " << table.odx1
+                  << "\ntable.odx2: " << table.odx2
+                  << "\ntable.odx3: " << table.odx3
+                  << "\ntable.odx4: " << table.odx4
+                  << "\nku: " << ku
+                  << "\nlu: " << lu
+                  << "\niu: " << iu
+                  << "\nlo: " << lo
+                  << "\nju: " << ju
+                  << "\njo: " << jo << "\n";
+#endif
 
     }
     return dmin_loc;
@@ -933,7 +947,7 @@ inline A coll_theta(
     particle_model_constants_t &pc1,
     const uint64_t n)
 {
-    A tmp1 = (2.0*pc1.b_vel+2.0*pc1.b_geo+pc1.nu+1.0)/pc1.mu;
+    A tmp1 = (2.0*pc1.b_vel+2.0*pc1.b_geo+pc1.nu+1.0+n)/pc1.mu;
     A tmp2 = (2.0*pc1.b_geo+pc1.nu+1.0+n)/pc1.mu;
     A tmp3 = (pc1.nu+1.0)/pc1.mu;
     A tmp4 = (pc1.nu+2.0)/pc1.mu;
@@ -1617,6 +1631,33 @@ void setup_model_constants(
     init_particle_collection_1(cc.graupel, cc.ice, cc.coeffs_gic);
     init_particle_collection_1(cc.hail, cc.snow, cc.coeffs_hsc);
     init_particle_collection_1(cc.graupel, cc.snow, cc.coeffs_gsc);
+
+    // Setup graupel, snow and ice selfcollection
+
+    cc.graupel.sc_coll_n = M_PI/8.0
+        * (2.0*coll_delta_11(cc.graupel, cc.graupel, 0)
+           + coll_delta_12(cc.graupel, cc.graupel, 0))
+        * sqrt((2.0*coll_theta_11(cc.graupel, cc.graupel, 0)
+           - coll_theta_12(cc.graupel, cc.graupel, 0)));
+
+
+    cc.snow.sc_delta_n = (2.0*coll_delta_11(cc.snow, cc.snow, 0)
+        + coll_delta_12(cc.snow, cc.snow, 0));
+    cc.snow.sc_theta_n = (2.0*coll_theta_11(cc.snow, cc.snow, 0)
+        - coll_theta_12(cc.snow, cc.snow, 0));
+
+    cc.ice.sc_delta_n = coll_delta_11(cc.ice, cc.ice, 0)
+        + coll_delta_12(cc.ice, cc.ice, 0)
+        + coll_delta_22(cc.ice, cc.ice, 0);
+    cc.ice.sc_delta_q = coll_delta_11(cc.ice, cc.ice, 0)
+        + coll_delta_12(cc.ice, cc.ice, 1)
+        + coll_delta_22(cc.ice, cc.ice, 1);
+    cc.ice.sc_theta_n = coll_theta_11(cc.ice, cc.ice, 0)
+        - coll_theta_12(cc.ice, cc.ice, 0)
+        + coll_theta_22(cc.ice, cc.ice, 0);
+    cc.ice.sc_theta_q = coll_theta_11(cc.ice, cc.ice, 0)
+        - coll_theta_12(cc.ice, cc.ice, 1)
+        + coll_theta_22(cc.ice, cc.ice, 1);
 #endif
 }
 

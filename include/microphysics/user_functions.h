@@ -601,7 +601,7 @@ void ice_nuc_hom(
 #endif
             float_t delta_e = latent_heat_melt(T_prime) * delta_q / specific_heat_ice(T_prime);
             // Sublimation, cooling
-            if(delta_q < 0.0)
+            if(delta_e < 0.0)
                 res[lat_cool_idx] += delta_e;
             // Deposition, heating
             else
@@ -824,52 +824,55 @@ void cloud_freeze_hom(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_freezing, cc.cloud.max_x);
+    if(qc_prime > 0.0 && T_c < -30.0)
+    {
+        float_t x_c = particle_mean_mass(qc_prime, Nc, cc.cloud.min_x_freezing, cc.cloud.max_x);
 
-    float_t delta_qi;
-    float_t delta_ni;
-    float_t j_hom;
-    // instantaneous freezing for temperatures below -50 °C
-    if(T_c < -50.0)
-    {
-        delta_qi = qc_prime;
-        delta_ni = Nc;
-    } else
-    {
-        if(T_c > -30.0)
-            j_hom = 1.0e6 / rho_w * pow(10,
-                -7.63-2.996*(T_c+30.0));
-        else
-            j_hom = 1.0e6 / rho_w * pow(10,
-                - 243.4
-                - 14.75 * T_c
-                - 0.307 * T_c * T_c
-                - 0.00287 * T_c * T_c * T_c
-                - 0.0000102 * pow(T_c, 4));
-        delta_ni = j_hom * qc_prime;
-        delta_qi = j_hom * qc_prime * x_c * cc.cloud.c_z;
-        delta_ni = min(delta_ni, Nc);
-        delta_qi = min(delta_qi, qc_prime);
-    }
-    res[qi_idx] += delta_qi;
-    res[Ni_idx] += delta_ni;
-    // Remove cloud droplets
-    res[qc_idx] -= delta_qi;
-    res[Nc_idx] -= delta_ni;
+        float_t delta_qi;
+        float_t delta_ni;
+        // instantaneous freezing for temperatures below -50 °C
+        if(T_c < -50.0)
+        {
+            delta_qi = qc_prime;
+            delta_ni = Nc;
+        } else
+        {
+            float_t j_hom;
+            if(T_c > -30.0)
+                j_hom = 1.0e6 / rho_w * pow(10,
+                    -7.63-2.996*(T_c+30.0));
+            else
+                j_hom = 1.0e6 / rho_w * pow(10,
+                    - 243.4
+                    - 14.75 * T_c
+                    - 0.307 * T_c * T_c
+                    - 0.00287 * T_c * T_c * T_c
+                    - 0.0000102 * pow(T_c, 4));
+            delta_ni = j_hom * qc_prime;
+            delta_qi = j_hom * qc_prime * x_c * cc.cloud.c_z;
+            delta_ni = min(delta_ni, Nc);
+            delta_qi = min(delta_qi, qc_prime);
+        }
+        res[qi_idx] += delta_qi;
+        res[Ni_idx] += delta_ni;
+        // Remove cloud droplets
+        res[qc_idx] -= delta_qi;
+        res[Nc_idx] -= delta_ni;
 #ifdef TRACE_QC
-    if(abs(delta_qi) > 0)
-        std::cout << "cloud freeze dqc " << -delta_qi << ", dNc " << -delta_ni << "\n";
+        if(abs(delta_qi) > 0)
+            std::cout << "cloud freeze dqc " << -delta_qi << ", dNc " << -delta_ni << "\n";
 #endif
 #ifdef TRACE_QI
-    std::cout << "cloud freeze dqi " << delta_qi << ", dNi " << delta_ni << "\n";
+        std::cout << "cloud freeze dqi " << delta_qi << ", dNi " << delta_ni << "\n";
 #endif
-    float_t delta_e = latent_heat_melt(T_prime) * delta_qi / specific_heat_ice(T_prime);
-    // Melting, cooling
-    if(delta_qi < 0.0)
-        res[lat_cool_idx] += delta_e;
-    // Freezing, heating
-    else
-        res[lat_heat_idx] += delta_e;
+        float_t delta_e = latent_heat_melt(T_prime) * delta_qi / specific_heat_ice(T_prime);
+        // Melting, cooling
+        if(delta_qi < 0.0)
+            res[lat_cool_idx] += delta_e;
+        // Freezing, heating
+        else
+            res[lat_heat_idx] += delta_e;
+    }
 }
 
 
@@ -880,39 +883,43 @@ template<class float_t>
 void ice_self_collection(
     float_t &qi_prime,
     float_t &Ni,
-    float_t &x_i,
-    float_t &D_i,
     float_t &T_c,
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
+    codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_collision, cc.ice.max_x);
+    codi::RealReverse D_i = particle_diameter(x_i, cc.ice.a_geo, cc.ice.b_geo);
+    if(Ni > 0.0 && qi_prime > q_crit_i && D_i > D_crit_i)
+    {
 
-    float_t x_conv_i = pow(D_conv_i/cc.snow.a_geo, 1.0/cc.snow.b_geo);
-    // efficiency depends on temperature here (Cotton et al 1986)
-    // also Straka 1989, page 53
-    float_t e_coll = min(pow(10, 0.035*T_c-0.7), 0.2);
-    float_t vel_i = particle_velocity(x_i, cc.ice.a_vel, cc.ice.b_vel) * cc.ice.rho_v;
 
-    float_t delta_n = M_PI/4.0 * e_coll * cc.ice.sc_delta_n
-        * Ni * Ni * D_i * D_i * sqrt(
-            cc.ice.sc_theta_n * vel_i * vel_i + 2.0 * cc.ice.s_vel * cc.ice.s_vel);
-    float_t delta_q = M_PI/4.0 * e_coll * cc.ice.sc_delta_q
-        * Ni * qi_prime * D_i * D_i * sqrt(
-            cc.ice.sc_theta_q * vel_i * vel_i + 2.0 * cc.ice.s_vel * cc.ice.s_vel);
+        float_t x_conv_i = pow(D_conv_i/cc.snow.a_geo, 1.0/cc.snow.b_geo);
+        // efficiency depends on temperature here (Cotton et al 1986)
+        // also Straka 1989, page 53
+        float_t e_coll = min(pow(10, 0.035*T_c-0.7), 0.2);
+        float_t vel_i = particle_velocity(x_i, cc.ice.a_vel, cc.ice.b_vel) * cc.ice.rho_v;
 
-    delta_q = min(delta_q, qi_prime);
-    delta_n = min(min( delta_n, delta_q/x_conv_i), Ni);
+        float_t delta_n = M_PI/4.0 * e_coll * cc.ice.sc_delta_n
+            * Ni * Ni * D_i * D_i * sqrt(
+                cc.ice.sc_theta_n * vel_i * vel_i + 2.0 * cc.ice.s_vel * cc.ice.s_vel);
+        float_t delta_q = M_PI/4.0 * e_coll * cc.ice.sc_delta_q
+            * Ni * qi_prime * D_i * D_i * sqrt(
+                cc.ice.sc_theta_q * vel_i * vel_i + 2.0 * cc.ice.s_vel * cc.ice.s_vel);
 
-    res[qi_idx] -= delta_q;
-    res[qs_idx] += delta_q;
-    res[Ni_idx] -= delta_n;
-    res[Ns_idx] += delta_n/2.0;
+        delta_q = min(delta_q, qi_prime);
+        delta_n = min(min( delta_n, delta_q/x_conv_i), Ni);
+
+        res[qi_idx] -= delta_q;
+        res[qs_idx] += delta_q;
+        res[Ni_idx] -= delta_n;
+        res[Ns_idx] += delta_n/2.0;
 #ifdef TRACE_QI
-    std::cout << "ice self colletion dqi " << -delta_q << ", dNi " << -delta_n << "\n";
+        std::cout << "ice self colletion dqi " << -delta_q << ", dNi " << -delta_n << "\n";
 #endif
 #ifdef TRACE_QS
-    std::cout << "ice self colletion dqs " << delta_q << ", dNs " << delta_n/2.0 << "\n";
+        std::cout << "ice self colletion dqs " << delta_q << ", dNs " << delta_n/2.0 << "\n";
 #endif
+    }
 }
 
 /**
@@ -926,18 +933,21 @@ void snow_self_collection(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    // temperature dependent sticking efficiency Lin (1983)
-    float_t e_coll = max(0.1, min(exp(0.09*(T_prime-tmelt)), 1.0));
-    float_t x_s = particle_mean_mass(qs_prime, Ns, cc.snow.min_x_collection, cc.snow.max_x);
-    float_t D_s = particle_diameter(x_s, cc.snow.a_geo, cc.snow.b_geo);
-    float_t vel_s = particle_velocity(x_s, cc.snow.a_vel, cc.snow.b_vel) * cc.snow.rho_v;
+    if(qs_prime > q_crit)
+    {
+        // temperature dependent sticking efficiency Lin (1983)
+        float_t e_coll = max(0.1, min(exp(0.09*(T_prime-tmelt)), 1.0));
+        float_t x_s = particle_mean_mass(qs_prime, Ns, cc.snow.min_x_collection, cc.snow.max_x);
+        float_t D_s = particle_diameter(x_s, cc.snow.a_geo, cc.snow.b_geo);
+        float_t vel_s = particle_velocity(x_s, cc.snow.a_vel, cc.snow.b_vel) * cc.snow.rho_v;
 
-    res[Ns_idx] -= M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
-        * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel);
+        res[Ns_idx] -= M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
+            * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel);
 #ifdef TRACE_QS
-    std::cout << "snow self collection dNs " << - (M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
-        * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel)) << "\n";
+        std::cout << "snow self collection dNs " << - (M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
+            * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel)) << "\n";
 #endif
+    }
 }
 
 
@@ -987,12 +997,12 @@ void snow_melting(
         res[qr_idx] += melt_q;
         // Rain N
         res[Nr_idx] += melt_n;
-    #ifdef TRACE_QR
+#ifdef TRACE_QR
         std::cout << "snow melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-    #endif
-    #ifdef TRACE_QS
+#endif
+#ifdef TRACE_QS
         std::cout << "snow melting dqs " << -melt_q << ", dNs " << -melt_n << "\n";
-    #endif
+#endif
         float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
         // Melting, cooling
         if(melt_q > 0.0)
@@ -1043,12 +1053,12 @@ void graupel_melting(
         res[qr_idx] += melt_q;
         // Rain N
         res[Nr_idx] += melt_n;
-    #ifdef TRACE_QR
+#ifdef TRACE_QR
         std::cout << "graupel melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-    #endif
-    #ifdef TRACE_QG
+#endif
+#ifdef TRACE_QG
         std::cout << "graupel melting dqg " << -melt_q << ", dNg " << -melt_n << "\n";
-    #endif
+#endif
         float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
         // Melting, cooling
         if(melt_q > 0.0)
@@ -1240,18 +1250,21 @@ void rain_self_collection_sb(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_collection, cc.rain.max_x);
-    float_t D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
-    // Parameters based on Seifert (2008)
-    float_t sc = 4.33 * Nr * qr_prime * cc.rain.rho_v; // rhain%rho_v(i, k)
-    // Breakup Seifert (2008), Eq. A13
-    float_t breakup = 0.0;
-    if(D_r > 0.30e-3)
-        breakup = sc * (1.0e+3 * (D_r - 1.10e-3) + 1.0);
-    res[Nr_idx] -= min(Nr, sc-breakup);
+    if(qr_prime > 0)
+    {
+        float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_collection, cc.rain.max_x);
+        float_t D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
+        // Parameters based on Seifert (2008)
+        float_t sc = 4.33 * Nr * qr_prime * cc.rain.rho_v; // rhain%rho_v(i, k)
+        // Breakup Seifert (2008), Eq. A13
+        float_t breakup = 0.0;
+        if(D_r > 0.30e-3)
+            breakup = sc * (1.0e+3 * (D_r - 1.10e-3) + 1.0);
+        res[Nr_idx] -= min(Nr, sc-breakup);
 #ifdef TRACE_QR
-    std::cout << "breakup dNr " << -min(Nr, sc-breakup) << "\n";
+        std::cout << "breakup dNr " << -min(Nr, sc-breakup) << "\n";
 #endif
+    }
 }
 
 
@@ -1263,7 +1276,7 @@ void rain_evaporation_sb(
     float_t &qr_prime,
     float_t &Nr,
     float_t &qv_prime,
-    float_t &Nv,
+    float_t &qc_prime,
     float_t &T_prime,
     float_t &p_prime,
     float_t &s_sw,
@@ -1271,74 +1284,76 @@ void rain_evaporation_sb(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t D_v = diffusivity(T_prime, p_prime);
-    // Equation (A2) of 10.1175/2008JAS2586.1
-    float_t g_d = 2*M_PI /
-        ( (R_v*T_prime)/(D_v*p_sat) + (L_wd*L_wd)/(K_T*R_v*T_prime*T_prime) );
-    float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_evap, cc.rain.max_x);
-    float_t D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
+    if(s_sw < 0.0 && qr_prime > 0.0 && qc_prime < q_crit)
+    {
+        float_t D_v = diffusivity(T_prime, p_prime);
+        // Equation (A2) of 10.1175/2008JAS2586.1
+        float_t g_d = 2*M_PI /
+            ( (R_v*T_prime)/(D_v*p_sat) + (L_wd*L_wd)/(K_T*R_v*T_prime*T_prime) );
+        float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_evap, cc.rain.max_x);
+        float_t D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
 
-    float_t mue;
-    // Equation 20 of Seifert (2008)
-    if(D_v <= cc.rain.cmu3)
-        mue = cc.rain.cmu0 * tanh( pow(4.0*cc.rain.cmu2*(D_v-cc.rain.cmu3),
-            cc.rain.cmu5)) + cc.rain.cmu4;
-    else
-        mue = cc.rain.cmu1 * tanh( pow(cc.rain.cmu2*(D_v-cc.rain.cmu3),
-            cc.rain.cmu5)) + cc.rain.cmu4;
-    // Equation A8
-    float_t lambda = pow(
-        M_PI/6.0*rho_w*(mue+3.0)*(mue+2.0)*(mue+1.0)/x_r, 1.0/3.0);
+        float_t mue;
+        // Equation 20 of Seifert (2008)
+        if(D_v <= cc.rain.cmu3)
+            mue = cc.rain.cmu0 * tanh( pow(4.0*cc.rain.cmu2*(D_v-cc.rain.cmu3),
+                cc.rain.cmu5)) + cc.rain.cmu4;
+        else
+            mue = cc.rain.cmu1 * tanh( pow(cc.rain.cmu2*(D_v-cc.rain.cmu3),
+                cc.rain.cmu5)) + cc.rain.cmu4;
+        // Equation A8
+        float_t lambda = pow(
+            M_PI/6.0*rho_w*(mue+3.0)*(mue+2.0)*(mue+1.0)/x_r, 1.0/3.0);
 
-    // Approximation of Gamma(mue+5/2) / Gamma(mue+2)
-    float_t gamma_approx = 0.1357940435E+01
-        + mue * (0.3033273220E+00
-        + mue * (-0.1299313363E-01
-        + mue * (0.4002257774E-03
-        - mue * 0.4856703981E-05)));
-    // ventilation factor (A7) with (A5) and (A9)
-    // Approximation for terminal fall velocity of raindrops
-    float_t f_v = a_v + b_v * pow(N_Sc, 1.0/3.0) * gamma_approx
-        * sqrt(a_prime/kin_visc_air * cc.rain.rho_v/lambda)
-        * (1.0 - 0.5 * (b_prime/a_prime) * pow(lambda/(c_prime+lambda), (mue+2.5))
-            - 0.125 * pow(b_prime/a_prime, 2.0) * pow(lambda/(2*c_prime+lambda), (mue+2.5))
-            - 1.0/16.0 * pow(b_prime/a_prime, 3.0) * pow(lambda/(3*c_prime+lambda), (mue+2.5))
-            - 5.0/127.0 * pow(b_prime/a_prime, 4.0) * pow(lambda/(4*c_prime+lambda), (mue+2.5))
-        );
-    float_t gamma_eva;
-    // D_br = 1.1e-3 from ICON
-    if(cc.rain_gfak > 0.0)
-        gamma_eva = cc.rain_gfak * (1.1e-3/D_r) * exp(-0.2*mue);
-    else
-        gamma_eva = 1.0;
+        // Approximation of Gamma(mue+5/2) / Gamma(mue+2)
+        float_t gamma_approx = 0.1357940435E+01
+            + mue * (0.3033273220E+00
+            + mue * (-0.1299313363E-01
+            + mue * (0.4002257774E-03
+            - mue * 0.4856703981E-05)));
+        // ventilation factor (A7) with (A5) and (A9)
+        // Approximation for terminal fall velocity of raindrops
+        float_t f_v = a_v + b_v * pow(N_Sc, 1.0/3.0) * gamma_approx
+            * sqrt(a_prime/kin_visc_air * cc.rain.rho_v/lambda)
+            * (1.0 - 0.5 * (b_prime/a_prime) * pow(lambda/(c_prime+lambda), (mue+2.5))
+                - 0.125 * pow(b_prime/a_prime, 2.0) * pow(lambda/(2*c_prime+lambda), (mue+2.5))
+                - 1.0/16.0 * pow(b_prime/a_prime, 3.0) * pow(lambda/(3*c_prime+lambda), (mue+2.5))
+                - 5.0/127.0 * pow(b_prime/a_prime, 4.0) * pow(lambda/(4*c_prime+lambda), (mue+2.5))
+            );
+        float_t gamma_eva;
+        // D_br = 1.1e-3 from ICON
+        if(cc.rain_gfak > 0.0)
+            gamma_eva = cc.rain_gfak * (1.1e-3/D_r) * exp(-0.2*mue);
+        else
+            gamma_eva = 1.0;
 
-    // Equation A5 with A9
-    float_t delta_qv = g_d * Nr * (mue+1.0) / lambda * f_v * s_sw; // (mue+1.0) / lambda *
-    float_t delta_nv = gamma_eva * delta_qv/x_r;
+        // Equation A5 with A9
+        float_t delta_qv = g_d * Nr * (mue+1.0) / lambda * f_v * s_sw; // (mue+1.0) / lambda *
+        float_t delta_nv = gamma_eva * delta_qv/x_r;
 
-    delta_qv = max(-delta_qv, 0.0);
-    delta_nv = max(-delta_nv, 0.0);
-    delta_qv = min(delta_qv, qv_prime);
-    delta_nv = min(delta_nv, Nv);
+        delta_qv = max(-delta_qv, 0.0);
+        delta_nv = max(-delta_nv, 0.0);
+        delta_qv = min(delta_qv, qv_prime);
 
-    res[qv_idx] += delta_qv;
-    res[qr_idx] -= delta_qv;
-    res[Nr_idx] -= delta_nv;
-    // evap -= delta_qv
+        res[qv_idx] += delta_qv;
+        res[qr_idx] -= delta_qv;
+        res[Nr_idx] -= delta_nv;
+        // evap -= delta_qv
 #ifdef TRACE_QR
-    std::cout << "rain evaporation after Seifert (2008) dqr " << -delta_qv << ", dNr " << -delta_nv << "\n";
+        std::cout << "rain evaporation after Seifert (2008) dqr " << -delta_qv << ", dNr " << -delta_nv << "\n";
 #endif
 #ifdef TRACE_QV
-    std::cout << "rain evaporation after Seifert (2008) dqv " << delta_qv << "\n";
+        std::cout << "rain evaporation after Seifert (2008) dqv " << delta_qv << "\n";
 #endif
-    float_t delta_e = latent_heat_evap(T_prime) * delta_qv
-        / specific_heat_water_vapor(T_prime);
-    // Evaporation, cooling
-    if(delta_qv > 0.0)
-        res[lat_cool_idx] -= delta_e;
-    // Deposition, heating
-    else
-        res[lat_heat_idx] -= delta_e;
+        float_t delta_e = latent_heat_evap(T_prime) * delta_qv
+            / specific_heat_water_vapor(T_prime);
+        // Evaporation, cooling
+        if(delta_qv > 0.0)
+            res[lat_cool_idx] -= delta_e;
+        // Deposition, heating
+        else
+            res[lat_heat_idx] -= delta_e;
+    }
 }
 
 
@@ -1347,6 +1362,8 @@ void rain_evaporation_sb(
  */
 template<class float_t>
 void sedimentation_explicit(
+    float_t &T_prime,
+    float_t &S,
     float_t &qc_prime,
     float_t &qr_prime,
     float_t &Nr,
@@ -1366,13 +1383,21 @@ void sedimentation_explicit(
     // using an explicit flux-form semi-lagrangian scheme (actually used after the microphysics)
     //// sedi_icon_rain
     float_t cmax = 0.0;
-    float_t p_prime_pascal = p_prime*100;
 
     // using compute_rhoa(p_prime,T_prime,S) instead of cc.rho_a_prime makes
     // next to no difference
-    float_t rhocorr = pow(cc.rho_a_prime/rho_0, -rho_vel);
+    float_t rhocorr = pow(compute_rhoa(p_prime,T_prime,S)/rho_0, -rho_vel);
     float_t v_n_sedi = 0.0;
     float_t v_q_sedi = 0.0;
+#ifdef TRACE_QS
+    std::cout << "\nrhocorr: " << rhocorr
+              << "\nrho_a_prime: " << compute_rhoa(p_prime,T_prime,S)
+              << "\np_prime: " << p_prime
+              << "\nT_prime: " << T_prime
+              << "\nS: " << S
+              << "\nrho_0: " << rho_0
+              << "\nrho_vel: " << rho_vel << "\n";
+#endif
 
     auto sedi_icon_core = [&](
         float_t &q,
@@ -1384,8 +1409,6 @@ void sedimentation_explicit(
         float_t &resOut)
     {
         float_t cmax_tmp = cmax;
-        float_t q_flux = 0.0;
-        float_t n_flux = 0.0;
         float_t v_nv = v_n_sedi;
         float_t v_qv = v_q_sedi;  // percentage how much trickles down
         // Assuming v_nv, v_qv is negative
@@ -1409,6 +1432,11 @@ void sedimentation_explicit(
         resOut -= abs(s_qv);
         cmax = cmax_tmp;
         // precrate = -abs(s_sq);
+#ifdef TRACE_QS
+        std::cout << "\n\ns_qv: " << s_qv << "\nc_qv: " << c_qv
+            << "\nv_qv: " << v_qv << "\nq: " << q << "\ninv_z: "
+            << cc.inv_z << "\n";
+#endif
     };
 
     auto sedi_icon_sphere = [&](
@@ -1436,6 +1464,17 @@ void sedimentation_explicit(
             v_n_sedi -= v_n;
             v_q_sedi -= v_q;
         }
+#ifdef TRACE_QS
+    std::cout << "\n\nv_q_sedi: " << v_q_sedi << "\nq: " << q
+              << "\nrhocorr: " << rhocorr
+              << "\nvsedi_max: " << pc.vsedi_max
+              << "\nalfa_q: " << pc.alfa_q
+            //   << "\nlam: " << pow(pc.lambda*particle_mean_mass(q, N, pc.min_x_sedimentation, pc.max_x), pc.b_vel)
+              << "\nvsedi_min: " << pc.vsedi_min
+              << "\nlambda: " << pc.lambda
+              << "\nb_vel: " << pc.b_vel << "\n";
+            //   << "\nx: " << particle_mean_mass(q, N, pc.min_x_sedimentation, pc.max_x) << "\n";
+#endif
         sedi_icon_core(q, N, v_q_sedi, v_n_sedi, resQ, resN, resOut);
 
         resN = max(min(N, q/pc.min_x_sedimentation), q/pc.max_x);
@@ -1789,7 +1828,16 @@ void vapor_dep_relaxation(
 
 
 /**
+ * Particle collection for ice particles such as:
+ * graupel+ice  -> graupel
+ * graupel+snow -> graupel
+ * hail+ice  -> hail
+ * hail+snow -> hail
+ * snow+ice  -> snow
+ * This function does only one of these.
  *
+ * @return Vector of two float_t with the change in particle number (0)
+ * and change in mass mixing ratio (1)
  */
 template<class float_t>
 std::vector<float_t> particle_collection(
@@ -1819,7 +1867,7 @@ std::vector<float_t> particle_collection(
             - coeffs.theta_n_ab * v_2 * v_1
             + coeffs.theta_n_bb * v_1 * v_1
             + pc1.s_vel * pc1.s_vel);
-    float_t coll_q = M_PI/4 * N1 * N2 * e_coll
+    float_t coll_q = M_PI/4 * q1 * N2 * e_coll
         * (coeffs.delta_q_aa * d_2 * d_2
             + coeffs.delta_q_ab * d_2 * d_1
             + coeffs.delta_q_bb * d_1 * d_1)
@@ -1830,19 +1878,20 @@ std::vector<float_t> particle_collection(
     coll_n = min(N1, coll_n);
     coll_q = min(q1, coll_q);
     std::vector<float_t> r(2);
-    r[p_idx] = coll_n;
-    r[T_idx] = coll_q;
+    r[0] = coll_n;
+    r[1] = coll_q;
     return r;
 }
 
 
 /**
- * Ice particle collections:
+ * Ice particle collections for the following processes:
  * graupel+ice  -> graupel
  * graupel+snow -> graupel
  * hail+ice  -> hail
  * hail+snow -> hail
  * snow+ice  -> snow
+ * All those processes are done in this function.
  */
 template<class float_t>
 void particle_particle_collection(
@@ -1961,29 +2010,34 @@ void graupel_hail_conv(
 
         float_t d_sep = wet_growth_diam(p_prime, T_prime, qwa_prime,
             qi_prime, ltabdminwgg);
+
         if(d_sep > 0.0 && d_sep < 10.0*d_g)
         {
             float_t xmin = pow(d_sep/cc.graupel.a_geo, 1.0/cc.graupel.b_geo);
             float_t lam = pow(cc.graupel.g2/(cc.graupel.g1*x_g), cc.graupel.mu);
             xmin = pow(xmin, cc.graupel.mu);
-            float_t n_0 = cc.graupel.mu * Ng * pow(cc.graupel.nm1, cc.graupel.g1);
+            float_t n_0 = cc.graupel.mu * Ng * pow(lam, cc.graupel.nm1)/cc.graupel.g1;
+            float_t lam_xmin = lam*xmin;
 
-            float_t conv_n = n_0;
-            float_t conv_q = n_0;
+            float_t conv_n = n_0 / (cc.graupel.mu * pow(lam, cc.graupel.nm1))
+                * table_g1.look_up(lam_xmin);
+            float_t conv_q = n_0 / (cc.graupel.mu * pow(lam, cc.graupel.nm2))
+                * table_g2.look_up(lam_xmin);
 
             conv_n = min(conv_n, Ng);
             conv_q = min(conv_q, qg_prime);
             // Graupel q, n
-            res[qg_idx] += qg_prime - conv_q;
-            res[Ng_idx] += Ng - conv_n;
+            res[qg_idx] -= conv_q;
+            res[Ng_idx] -= conv_n;
             // Hail q, n
-            res[qh_idx] += qh_prime + conv_q;
-            res[Nh_idx] += Nh + conv_n;
+            res[qh_idx] += conv_q;
+            res[Nh_idx] += conv_n;
+
 #ifdef TRACE_QG
-            std::cout << "conversion graupel->hail dqg " << qg_prime - conv_q << ", dNq " << Ng - conv_n << "\n";
+            std::cout << "conversion graupel->hail dqg " << - conv_q << ", dNq " << - conv_n << "\n";
 #endif
 #ifdef TRACE_QH
-            std::cout << "conversion graupel->hail dqh " << qh_prime + conv_q << ", dNh " << Nh + conv_n << "\n";
+            std::cout << "conversion graupel->hail dqh " <<  conv_q << ", dNh " << conv_n << "\n";
 #endif
         }
     }
@@ -2098,7 +2152,7 @@ void riming_cloud_core(
 
 
 /**
- *
+ * Riming of rain droplets with ice or snow particles.
  */
 template<class float_t>
 void riming_rain_core(
@@ -2124,7 +2178,6 @@ void riming_rain_core(
         float_t v_1 = particle_velocity(x_1, pc1.a_vel, pc1.b_vel) * pc1.rho_v;
         float_t v_r = particle_velocity(x_r, cc.rain.a_vel, cc.rain.b_vel) * cc.rain.rho_v;
 
-        // times dt ?
         rime_rate_qb = M_PI/4.0 * N1 * qr_prime
             * (coeffs.delta_n_aa * d_1*d_1
                 + coeffs.delta_q_ab * d_1*d_r
@@ -2379,7 +2432,7 @@ void ice_riming(
             if(T_prime >= tmelt)
             {
                 float_t qr_tmp = qr_prime+dt*res[qr_idx];
-                float_t Nr_tmp = Nr*res[Nr_idx]*dt;
+                float_t Nr_tmp = Nr+res[Nr_idx]*dt;
                 float_t x_r = particle_mean_mass(
                     qr_tmp, Nr_tmp,
                     cc.rain.min_x_riming, cc.rain.max_x);
@@ -3302,8 +3355,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse s_sw = S - 1.0;   // super saturation over water
     // codi::RealReverse s_sw = e_d / p_sat - 1.0; // super saturation over water
     codi::RealReverse s_si = e_d / p_sat_ice - 1.0; // super saturation over ice
-    codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, cc.ice.min_x_collision, cc.ice.max_x);
-    codi::RealReverse D_i = particle_diameter(x_i, cc.ice.a_geo, cc.ice.b_geo);
+
     codi::RealReverse rime_rate_qc, rime_rate_qr, rime_rate_qi, rime_rate_qs;
     codi::RealReverse rime_rate_nc, rime_rate_nr;
 
@@ -3374,10 +3426,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     ice_nuc_hom(T_prime, w_prime, p_prime, qv_prime,
         qi_prime, Ni, ssi, p_sat_ice, res, cc);
 
-    if(qc_prime > 0.0 && T_c < -30.0)
-    {
-        cloud_freeze_hom(qc_prime, Nc, T_prime, T_c, res, cc);
-    }
+    cloud_freeze_hom(qc_prime, Nc, T_prime, T_c, res, cc);
 
     vapor_dep_relaxation(qv_prime, qi_prime, Ni,
         qs_prime, Ns, qg_prime, Ng,
@@ -3386,15 +3435,9 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
 
     ////////////// ice-ice collisions
-    if(Ni > 0.0 && qi_prime > q_crit_i && D_i > D_crit_i)
-    {
-        ice_self_collection(qi_prime, Ni, x_i, D_i, T_c, res, cc);
-    }
+    ice_self_collection(qi_prime, Ni, T_c, res, cc);
 
-    if(qs_prime > q_crit)
-    {
-        snow_self_collection(qs_prime, Ns, T_prime, res, cc);
-    }
+    snow_self_collection(qs_prime, Ns, T_prime, res, cc);
 
     particle_particle_collection(qi_prime, Ni, qs_prime, Ns,
         qg_prime, Ng, T_prime, T_c, res, cc);
@@ -3514,18 +3557,13 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         auto_conversion_sb(qc_prime, Nc, qr_prime, res, cc);
     }
 
-    if(qr_prime > 0)
-    {
-        rain_self_collection_sb(qr_prime, Nr, res, cc);
-    }
+    rain_self_collection_sb(qr_prime, Nr, res, cc);
 
-    if(s_sw < 0.0 && qr_prime > 0.0 && qc_prime < q_crit)
-    {
-        rain_evaporation_sb(qr_prime, Nr, qv_prime, Nv,
-            T_prime, p_prime, s_sw, p_sat, res, cc);
-    }
+    rain_evaporation_sb(qr_prime, Nr, qv_prime, qc_prime,
+        T_prime, p_prime, s_sw, p_sat, res, cc);
 
-    sedimentation_explicit(qc_prime, qr_prime, Nr,
+    sedimentation_explicit(T_prime, S,
+        qc_prime, qr_prime, Nr,
         qs_prime, Ns, qi_prime, Ni,
         qh_prime, Nh, qg_prime, Ng,
         p_prime, res, cc);

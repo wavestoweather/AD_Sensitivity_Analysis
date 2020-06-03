@@ -17,46 +17,49 @@ Contents
 Python and Plotting Prerequisites
 ---------------------
 
-- [Iris](https://github.com/SciTools/iris) (Recommended to install via conda or from source)
-- [pandas](https://pandas.pydata.org/)
-- [DASK](https://dask.org/)
-- [dask_ml](https://dask-ml.readthedocs.io/en/latest/)
-- [progressbar2](https://pypi.org/project/progressbar2/)
-- [seaborn](https://seaborn.pydata.org/)
-- [matplotlib](https://matplotlib.org/)
-- [scipy](https://www.scipy.org/)
+- [Python3](https://www.python.org/) (Tested with v3.7.6)
+- [Iris](https://github.com/SciTools/iris) (Recommended to install via conda or from source; Tested with v2.4.0)
+- [pandas](https://pandas.pydata.org/) (Tested with v1.0.1)
+- [DASK](https://dask.org/) (Tested with v2.16.0)
+- [dask_ml](https://dask-ml.readthedocs.io/en/latest/) (Tested with v1.2.0)
+- [progressbar2](https://pypi.org/project/progressbar2/) (Tested with v3.37.1)
+- [seaborn](https://seaborn.pydata.org/) (Tested with v0.10.0)
+- [matplotlib](https://matplotlib.org/) (Tested with v3.1.3)
+- [scipy](https://www.scipy.org/) (Tested with v1.4.1)
 - [matplotlib toolkits](https://matplotlib.org/1.4.3/mpl_toolkits/index.html)
-- [netCDF4](https://unidata.github.io/netcdf4-python/netCDF4/index.html)
-- [pillow, formerly known as PIL](https://pillow.readthedocs.io/en/stable/)
-- [xarray, formerly known as xray](http://xarray.pydata.org/en/stable/)
-- [GEOS](https://github.com/libgeos/geos)
-- [cartopy](https://scitools.org.uk/cartopy/docs/latest/)
-- [scikit-learn](https://scikit-learn.org/stable/)
-- [datashader](https://datashader.org/index.html)
-- [holoviews](http://holoviews.org/)
-- [hvplot](https://hvplot.holoviz.org/)
-- [fastparquet](https://github.com/dask/fastparquet)
+- [netCDF4](https://unidata.github.io/netcdf4-python/netCDF4/index.html) (Tested with v1.5.3)
+- [pillow, formerly known as PIL](https://pillow.readthedocs.io/en/stable/) (Tested with v7.0.0)
+- [xarray, formerly known as xray](http://xarray.pydata.org/en/stable/) (Tested with v0.15.0)
+- [GEOS](https://github.com/libgeos/geos) (Tested with v3.7.1)
+- [cartopy](https://scitools.org.uk/cartopy/docs/latest/) (Tested with v0.17.0)
+- [scikit-learn](https://scikit-learn.org/stable/) (Tested with v0.22.1)
+- [datashader](https://datashader.org/index.html) (Tested with v0.10.0)
+- [holoviews](http://holoviews.org/) (Tested with v1.13.2)
+- [hvplot](https://hvplot.holoviz.org/) (Tested with v0.5.2)
+- [fastparquet](https://github.com/dask/fastparquet) (Tested with v0.3.3)
 
 Docs Prerequisites
 -------------------------
-- [Sphinx](http://www.sphinx-doc.org/en/master/)
-- [Read the Docs Sphinx Theme](https://sphinx-rtd-theme.readthedocs.io/en/stable/)
-- [recommonmark](https://www.sphinx-doc.org/en/master/usage/markdown.html) to use Markdown
-- [Doxygen](http://www.doxygen.nl/index.html)
-- [Exhale](https://exhale.readthedocs.io/en/latest/overview.html)
-- [Breathe](https://breathe.readthedocs.io/en/latest/)
+- [Sphinx](http://www.sphinx-doc.org/en/master/) (Tested with v 1.4.9-2)
+- [Read the Docs Sphinx Theme](https://sphinx-rtd-theme.readthedocs.io/en/stable/) (Tested with v0.1.8-1)
+- [recommonmark](https://www.sphinx-doc.org/en/master/usage/markdown.html) (To use Markdown; Tested with v0.4.0)
+- [Doxygen](http://www.doxygen.nl/index.html) (Tested with v1.8.13-4)
+- [Exhale](https://exhale.readthedocs.io/en/latest/overview.html) (Tested with v0.2.3)
+- [Breathe](https://breathe.readthedocs.io/en/latest/) (Tested with v4.18.1)
 
 
 C++ Prerequisites
 -----------------
-- [GSL](https://www.gnu.org/software/gsl/)
-- [NetCDF C++](https://github.com/Unidata/netcdf-cxx4/releases)
-- [Boost](https://www.boost.org/)
-- [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/)
+- [GCC](https://gcc.gnu.org/) (Tested with v6.3.0)
+- [GSL](https://www.gnu.org/software/gsl/) (Tested with v2.3)
+- [NetCDF C++](https://github.com/Unidata/netcdf-cxx4/releases) (Tested with v4.7.3)
+- [Boost](https://www.boost.org/) (Tested with v1.3.4)
+- [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/) (Tested with v1.8.0)
 
 Optional Prerequisites
 ----------------------
-- [GNU Parallel](https://www.gnu.org/software/parallel/)
+- [GNU Parallel](https://www.gnu.org/software/parallel/) (Executing multiple processes with ease; Tested with v20161222)
+- [JupyterLab](https://jupyter.org/) (Working with Python and Plotting but in an easier way; Tested with v1.2.6)
 
 
 Compiling code
