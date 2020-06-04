@@ -1,0 +1,16 @@
+datashader==0.10.0
+jupyterlab==1.2.6
+matplotlib==3.1.3
+netCDF4==1.5.3
+numpy==1.18.1
+pandas==1.0.1
+progressbar2==3.37.1
+recommonmark==0.6.0
+seaborn==0.10.0
+Sphinx==3.0.3
+xarray==0.15.0
+python-snappy==0.5.4
+holoviews==1.13.2
+hvplot==0.5.2
+iris==2.4.0
+geoviews==1.8.1

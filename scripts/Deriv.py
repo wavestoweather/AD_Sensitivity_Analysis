@@ -16,10 +16,6 @@ from matplotlib import cm
 from pylab import rcParams
 import os
 
-from sklearn.cluster import MiniBatchKMeans, SpectralClustering, DBSCAN
-from sklearn.mixture import BayesianGaussianMixture
-from sklearn.metrics import adjusted_rand_score
-
 from multiprocessing import Pool
 from itertools import repeat
 from progressbar import progressbar as pb
@@ -80,12 +76,12 @@ class Deriv:
             self.pool = Pool(processes=threads)
         self.threads = threads
         self.data = loader.load_mult_derivates_direc_dic(
-            direc=direc, 
-            filt=filt, 
-            EPSILON=EPSILON, 
-            trajectories=trajectories, 
-            suffix=suffix, 
-            pool=self.pool, 
+            direc=direc,
+            filt=filt,
+            EPSILON=EPSILON,
+            trajectories=trajectories,
+            suffix=suffix,
+            pool=self.pool,
             file_list2=file_list
         )
         df = list(self.data.values())[0]
@@ -646,157 +642,3 @@ class Deriv:
                         p, v = sorted_tuples.pop()
                         in_params_2.append(p)
                     plot_helper(df, in_params=in_params_2, out_param=out_param, **kwargs)
-
-    def cluster(self, k, method, out_params=None, features=None,
-                new_col="cluster", truth=None, thresh=0.10):
-        """
-        Cluster the data where "features" are columns, "truth" can be a column
-        that can be used to identify a ground truth or a list of assignments.
-        If truth is given, purity and adjusted RAND index are calculated.
-        "method" can be used to choose different clustering methods. Discards
-        all columns that consist of at least one NaN.
-
-        Parameters
-        ----------
-        k : int
-            Number of clusters to cluster for. Is ignored for certain cluster
-            methods.
-        method : string
-            Choose the clustering method. Options are "kmeans", "spectral",
-            "gaussian" or "dbscan".
-        out_params : list of strings
-            The parameter for which the derivatives shall be considered
-            for. If none is given, all output parameters will be considered.
-        features : list of strings
-            Columns of the data that shall be used. If it is None, all
-            derivatives will be used.
-        new_col : string
-            Name of the column where the cluster assignment shall be stored.
-        truth : String or list of int
-            Either a column of the data or a list of assignments.
-        thresh : float
-            Threshold for dropping columns. if more than this amount of values
-            is NaN, drop that column.
-
-        Returns
-        -------
-        Array of float, optionally float
-            Cluster centers if "kmeans" is selected,
-            adjusted RAND index if truth is given.
-        """
-        if out_params is None:
-            out_params = self.data.keys()
-        if features is None:
-            features_tmp = self.data[out_params[0]].columns.values
-            features = []
-            for f in features_tmp:
-                if f[0] == "d":
-                    features.append(f)
-
-        if truth is not None:
-            if isinstance(truth, str):
-                truth_list = []
-                for out_p in out_params:
-                    truth_list.append(self.data[out_p][truth].tolist())
-                truth = truth_list
-
-        X = None
-        for out_p in out_params:
-            # Remove columns with more than half of NaNs
-            df_tmp = self.data[out_p]
-            cols_to_delete = df_tmp.columns[df_tmp.isnull().sum()/len(df_tmp)  > thresh]
-            for col in cols_to_delete:
-                try:
-                    features.remove(col)
-                except:
-                    pass
-            if features == []:
-                print("No derivatives in this dataset. Returning.")
-                if method == "gaussian":
-                    return None, None, None
-                return None, None
-            X_tmp = df_tmp.as_matrix(columns=features)
-            if X is None:
-                X = X_tmp
-            else:
-                X = np.concatenate((X, X_tmp), axis=0)
-
-        # Remove rows with NaNs from X and according labels from truth
-        delete_index = []
-        for i, row in enumerate(X):
-            delete = np.sum(np.isnan(row))
-            if delete > 0:
-                delete_index.append(i)
-        X = np.delete(X, delete_index, axis=0)
-        truth = np.delete(truth, delete_index)
-        print("Shape of X {}".format(np.shape(X)))
-        if np.shape(truth) == (0,):
-            print("No derivatives in this dataset. Returning.")
-            if method == "gaussian":
-                return None, None, None
-            return None, None
-
-        if method == "kmeans":
-            clustering = MiniBatchKMeans(n_clusters=k).fit(X)
-        elif method == "spectral":
-            try:
-                clustering = SpectralClustering(n_clusters=k).fit(X)
-            except MemoryError:
-                print("Dataset is too large to process. Aborting.")
-                return None, None
-        elif method == "gaussian":
-            clustering = BayesianGaussianMixture(n_components=k).fit(X)
-            labels = clustering.predict(X)
-        elif method == "dbscan":
-            # TODO: Change eps and min_samples
-            clustering = DBSCAN(eps=0.5, min_samples=5, metric='euclidean').fit(X)
-        else:
-            print("No such method")
-            return
-
-        for i, out_p in enumerate(out_params):
-            n = len(self.data[out_p].index)
-            if method == "gaussian":
-                this_labels = labels[i*n:(i+1)*n]
-            else:
-                this_labels = clustering.labels_[i*n:(i+1)*n]
-            # Add the one that could not be processed due to NaNs
-            for idx in delete_index:
-                if idx < i*n:
-                    continue
-                if idx >= (i+1)*n:
-                    break
-                this_labels = np.insert(this_labels, idx, -2)
-            self.data[out_p][new_col] = this_labels
-            if out_p in self.cluster_names.keys():
-                self.cluster_names[out_p].append(new_col)
-            else:
-                self.cluster_names[out_p] = [new_col]
-
-        if truth is not None:
-            if method == "gaussian":
-                adj_index = adjusted_rand_score(truth, labels)
-                return clustering.means_, adj_index, clustering.score(X)
-            else:
-                adj_index = adjusted_rand_score(truth, clustering.labels_)
-            if method == "kmeans":
-                return clustering.cluster_centers_, adj_index
-            elif method == "spectral":
-                return clustering.affinity_matrix_, adj_index
-            elif method == "dbscan":
-                # Calculate the centers
-                centers = {}
-                for out_p in self.cluster_names.keys():
-                    centers[out_p] = []
-                    df_tmp = self.data[out_p]
-                    center_idx = df_tmp[new_col].unique()
-                    for c in center_idx:
-                        df_tmp2 = df_tmp.loc[df_tmp[new_col] == c].as_matrix(columns=features)
-                        n = len(df_tmp2)
-                        cen = np.sum(df_tmp2, axis=0)/n
-                        centers[out_p].append(cen)
-                return centers, adj_index
-        if method == "kmeans":
-            return clustering.cluster_centers_
-        elif method == "gaussian":
-            return clustering.means_

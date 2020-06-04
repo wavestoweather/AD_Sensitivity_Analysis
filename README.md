@@ -2,7 +2,10 @@ AD with ICON and Processing Results
 ===================================
 
 Here are various scripts to plot and process data from [netCDF](https://www.unidata.ucar.edu/software/netcdf/) files and my implementation of two moment scheme (similar to [ICON](https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html)) with [AD using CoDiPack](https://github.com/scicompkl/codipack). For the C++ code we follow the
-[doxygen standard](http://www.doxygen.nl/manual/docblocks.html).
+[doxygen standard](http://www.doxygen.nl/manual/docblocks.html). \
+We recommend an [anaconda](https://www.anaconda.com/) environment for which you may
+use `requirements_conda.txt` and then `requirements_pip.txt` with pip.
+
 
 Contents
 ---------
@@ -14,29 +17,32 @@ Contents
 - ***.ipynb:** Jupyter Notebooks to get started. See below for more explanation.
 
 
-Python and Plotting Prerequisites
----------------------
-
+Python Prerequisites for Post-Processing
+----------------------------------------
 - [Python3](https://www.python.org/) (Tested with v3.7.6)
-- [Iris](https://github.com/SciTools/iris) (Recommended to install via conda or from source; Tested with v2.4.0)
 - [pandas](https://pandas.pydata.org/) (Tested with v1.0.1)
 - [DASK](https://dask.org/) (Tested with v2.16.0)
-- [dask_ml](https://dask-ml.readthedocs.io/en/latest/) (Tested with v1.2.0)
 - [progressbar2](https://pypi.org/project/progressbar2/) (Tested with v3.37.1)
 - [seaborn](https://seaborn.pydata.org/) (Tested with v0.10.0)
-- [matplotlib](https://matplotlib.org/) (Tested with v3.1.3)
 - [scipy](https://www.scipy.org/) (Tested with v1.4.1)
-- [matplotlib toolkits](https://matplotlib.org/1.4.3/mpl_toolkits/index.html)
 - [netCDF4](https://unidata.github.io/netcdf4-python/netCDF4/index.html) (Tested with v1.5.3)
 - [pillow, formerly known as PIL](https://pillow.readthedocs.io/en/stable/) (Tested with v7.0.0)
 - [xarray, formerly known as xray](http://xarray.pydata.org/en/stable/) (Tested with v0.15.0)
-- [GEOS](https://github.com/libgeos/geos) (Tested with v3.7.1)
-- [cartopy](https://scitools.org.uk/cartopy/docs/latest/) (Tested with v0.17.0)
-- [scikit-learn](https://scikit-learn.org/stable/) (Tested with v0.22.1)
-- [datashader](https://datashader.org/index.html) (Tested with v0.10.0)
+- [fastparquet](https://github.com/dask/fastparquet) (Tested with v0.3.3)
+- [python-snappy](http://google.github.io/snappy/) (Tested with v0.5.4)
+
+
+Python Prerequisites for Plotting
+----------------------------------------
+- [Iris](https://github.com/SciTools/iris) (Install from conda-forge; Tested with v2.4.0)
 - [holoviews](http://holoviews.org/) (Tested with v1.13.2)
 - [hvplot](https://hvplot.holoviz.org/) (Tested with v0.5.2)
-- [fastparquet](https://github.com/dask/fastparquet) (Tested with v0.3.3)
+- [datashader](https://datashader.org/index.html) (Tested with v0.10.0)
+- [matplotlib](https://matplotlib.org/) (Tested with v3.1.3)
+- [geoviews](https://geoviews.org/) (Install via `conda install -c pyviz geoviews`; Tested with v1.8.1)
+- [GEOS](https://github.com/libgeos/geos) (Tested with v3.7.1)
+- [cartopy](https://scitools.org.uk/cartopy/docs/latest/) (Tested with v0.17.0)
+
 
 Docs Prerequisites
 -------------------------
@@ -56,10 +62,12 @@ C++ Prerequisites
 - [Boost](https://www.boost.org/) (Tested with v1.3.4)
 - [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/) (Tested with v1.8.0)
 
+
 Optional Prerequisites
 ----------------------
 - [GNU Parallel](https://www.gnu.org/software/parallel/) (Executing multiple processes with ease; Tested with v20161222)
 - [JupyterLab](https://jupyter.org/) (Working with Python and Plotting but in an easier way; Tested with v1.2.6)
+- JupyterLab extension for geoviews: `jupyter labextension install @pyviz/jupyterlab_pyviz`
 
 
 Compiling code
