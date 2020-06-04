@@ -104,7 +104,7 @@ const std::vector<std::string> output_par_idx =
  */
 const std::vector<std::string> output_grad_idx =
     {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
-    "dbeta_r", "ddelta1", "ddelta2", "dzeta", "dcc.rain_gfak", "dcloud_k_au",
+    "dbeta_r", "ddelta1", "ddelta2", "dzeta", "drain_gfak", "dcloud_k_au",
     "dcloud_k_sc", "dkc_autocon", "dinv_z",
     // Rain
     "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_min_x_act",

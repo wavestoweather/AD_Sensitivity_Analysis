@@ -22,7 +22,7 @@ TARGET_TIME="60"
 
 # Where to write output files. Keep the naming convention of the files, ie
 # wcb403220_traj0_MAP...
-OUTPUT_PATH="/data/project/wcb/sim_results/sample_vladiana_test/"
+OUTPUT_PATH="data/sim/"
 
 # Wether to take the data from the netcdf-file every 20 seconds (=1)
 # or just use the initial conditions from the file and simulate microphysics
@@ -45,7 +45,7 @@ parallel -j ${NTASKS} --no-notice --delay .2 build/apps/src/microphysics/./traje
 # try "netcdf"
 # DISCLAIMER: netcdf is not yet supported!
 FILE_TYPE="parquet"
-INPUT_PATH="/data/project/wcb/sim_results/sample_vladiana_test"
-STORE_PATH="/data/project/wcb/parquet/sample_vladiana_test"
+INPUT_PATH="/uni-mainz.de/homes/mahieron/Documents/PhD/physics_tests/data/sim"
+STORE_PATH="/uni-mainz.de/homes/mahieron/Documents/PhD/physics_tests/data/parquet"
 cd scripts
 python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH}

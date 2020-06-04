@@ -649,7 +649,7 @@ int main(int argc, char** argv)
         uint32_t used_parameter = 0;
         uint32_t used_parameter2 = 0;
 
-        std::cout << "qi,Ni,T,S,qv,p,w,delta_qi,delta_Ni,delta_qv,"
+        std::cout << "qi,Ni,T,S,S_i,qv,p,w,delta_qi,delta_Ni,delta_qv,"
                   << "delta_lat_cool,delta_lat_heat\n";
 
         for(uint32_t i=0; i<=n1; ++i)
@@ -725,6 +725,7 @@ int main(int argc, char** argv)
                               << Ni.getValue() << ","
                               << T_prime_in.getValue() << ","
                               << S.getValue() << ","
+                              << ssi.getValue() << ","
                               << qv_prime_in.getValue() << ","
                               << p_prime_in.getValue() << ","
                               << w_prime_in.getValue() << ",";
