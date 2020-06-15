@@ -525,7 +525,7 @@ void ice_nuc_hom(
     float_t &qv_prime,
     float_t &qi_prime,
     float_t &Ni,
-    float_t &ssi,
+    float_t &S_i,
     float_t &p_sat_ice,
     std::vector<float_t> &res,
     model_constants_t &cc)
@@ -538,7 +538,7 @@ void ice_nuc_hom(
     const double ma_w = M_w/N_avo;      // mass of water molecule [kg]
     const double svol = ma_w / rho_ice; // specific volume of a water molecule in ice
 
-    if(ssi > s_crit && T_prime < 235.0 && Ni < ni_hom_max)
+    if(S_i > s_crit && T_prime < 235.0 && Ni < ni_hom_max)
     {
         float_t x_i = particle_mean_mass(qi_prime, Ni,
             cc.ice.min_x_nuc_homo, cc.ice.max_x);
@@ -555,13 +555,13 @@ void ice_nuc_hom(
 
         // coeffs of depositional growth equation
         std::vector<float_t> bcoeff(2);
-        bcoeff[0] = flux * svol * n_sat * (ssi - 1.0);
+        bcoeff[0] = flux * svol * n_sat * (S_i - 1.0);
         bcoeff[1] = flux/diffusivity(T_prime, p_prime);
 
         // pre-existing ice crystals included as reduced updraft speed
         float_t ri_dot = bcoeff[0] / (1.0 + bcoeff[1] * r_i);
         float_t R_ik = (4.0*M_PI) / svol * Ni * r_i*r_i * ri_dot;
-        float_t w_pre = max(0.0, (acoeff[1] + acoeff[2] * ssi)/(acoeff[0]*ssi)*R_ik); // KHL06 Eq. 19
+        float_t w_pre = max(0.0, (acoeff[1] + acoeff[2] * S_i)/(acoeff[0]*S_i)*R_ik); // KHL06 Eq. 19
 
         // homogenous nucleation event
         if(w_prime > w_pre)
@@ -570,7 +570,7 @@ void ice_nuc_hom(
             float_t ctau = T_prime * (0.004*T_prime - 2.0) + 304.4;
             float_t tau = 1.0/(ctau*cool);
             float_t delta = bcoeff[1] * r_0;
-            float_t phi = acoeff[0]*ssi / (acoeff[1]+acoeff[2]*ssi) * (w_prime - w_pre);
+            float_t phi = acoeff[0]*S_i / (acoeff[1]+acoeff[2]*S_i) * (w_prime - w_pre);
 
             // monodisperse approximation following KHL06
             float_t kappa = 2.0 * bcoeff[0]*bcoeff[1]*tau/((1.0+delta)*(1.0+delta));
@@ -619,14 +619,14 @@ void ice_activation_hande(
     float_t &qc_prime,
     float_t &qv_prime,
     float_t &T_prime,
-    float_t &ssi,
+    float_t &S_i,
     float_t &n_inact,
     bool &ndiag_mask,
     std::vector<float_t> &res,
     model_constants_t &cc
 )
 {
-    if(T_prime < T_nuc && T_prime > 180.0 && ssi > 1.0 && n_inact < ni_het_max)
+    if(T_prime < T_nuc && T_prime > 180.0 && S_i > 1.0 && n_inact < ni_het_max)
     {
 
         const double EPSILON = 1.0e-20;
@@ -647,7 +647,7 @@ void ice_activation_hande(
             {
                 ndiag = nin_dep * exp(-alf_dep
                     * exp(bet_dep*log(T_tmp - 220.0)));
-                ndiag = ndiag * (a_dep * atan(b_dep*(ssi-1.0)+c_dep)+d_dep);
+                ndiag = ndiag * (a_dep * atan(b_dep*(S_i-1.0)+c_dep)+d_dep);
             }
         }
         codi::RealReverse delta_n = max(ndiag - n_inact, 0.0);
@@ -688,7 +688,7 @@ void ice_activation_phillips(
     float_t &qv_prime,
     float_t &T_prime,
     float_t &p_sat_ice,
-    float_t &ssi,
+    float_t &S_i,
     float_t &n_inact,
     bool &use_prog_in,
     std::vector<float_t> &res,
@@ -718,7 +718,7 @@ void ice_activation_phillips(
 
     const double EPSILON = 1.0e-20;
 
-    if(T_prime < T_nuc && T_prime > 180.0 && ssi > 1.0
+    if(T_prime < T_nuc && T_prime > 180.0 && S_i > 1.0
         && n_inact < ni_het_max)
     {
         float_t x_t = (274.0 - T_prime) / t_tstep;
@@ -739,7 +739,7 @@ void ice_activation_phillips(
         {
             // deposition nucleation below water saturation
             // Indices for 2D look-up tables
-            float_t x_s = 100.0*(ssi-1.0) / s_sstep;
+            float_t x_s = 100.0*(S_i-1.0) / s_sstep;
             x_s = min(x_s, s_smax-1);
             int ss = std::max(0, (int) (x_s.getValue()-1) );
             float_t S_sr = max(1.0, trunc(x_s));
@@ -891,8 +891,6 @@ void ice_self_collection(
     codi::RealReverse D_i = particle_diameter(x_i, cc.ice.a_geo, cc.ice.b_geo);
     if(Ni > 0.0 && qi_prime > q_crit_i && D_i > D_crit_i)
     {
-
-
         float_t x_conv_i = pow(D_conv_i/cc.snow.a_geo, 1.0/cc.snow.b_geo);
         // efficiency depends on temperature here (Cotton et al 1986)
         // also Straka 1989, page 53
@@ -2096,7 +2094,6 @@ void hail_collision(
 /**
  * Rate of ice or snow collecting cloud droplets where values are hard
  * coded for *rain* droplets according to COSMO comments.
- * TODO: Check if this is actually for cloud or rain droplets
  */
 template<class float_t>
 void riming_cloud_core(
@@ -2276,8 +2273,8 @@ void ice_riming(
         {
             float_t rime_q = min(rime_rate_qr, qr_prime);
             float_t rime_n = min(Nr, rime_rate_nr);
-            // Snow
-            res[qs_idx] += rime_q;
+            // Ice
+            res[qi_idx] += rime_q;
             // Rain
             res[qr_idx] -= rime_q;
             // Rain N
@@ -3349,7 +3346,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse T_c = T_prime - tmelt;
     codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
     codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime);
-    codi::RealReverse ssi = qv_prime * Rv * T_prime / p_sat_ice;
+    codi::RealReverse S_i = qv_prime * Rv * T_prime / p_sat_ice;
     codi::RealReverse D_vtp = diffusivity(T_prime, p_prime);
     codi::RealReverse e_d = qv_prime * Rv * T_prime; // Could use R_v as well. The difference is minor
     codi::RealReverse s_sw = S - 1.0;   // super saturation over water
@@ -3407,12 +3404,12 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     bool use_prog_in = false;
     if(use_hdcp2_het)
     {
-        ice_activation_hande(qc_prime, qv_prime, T_prime, ssi,
+        ice_activation_hande(qc_prime, qv_prime, T_prime, S_i,
             n_inact, ndiag_mask, res, cc);
     }  else
     {
         ice_activation_phillips(qc_prime, qv_prime, T_prime,
-            p_sat_ice, ssi, n_inact, use_prog_in, res, cc);
+            p_sat_ice, S_i, n_inact, use_prog_in, res, cc);
     }
 
     if(use_prog_in)
@@ -3422,9 +3419,9 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         // macrophysical part
     }
 
-    // (optional) homogenous nucleation using KHL06
+    // (optional) homogeneous nucleation using KHL06
     ice_nuc_hom(T_prime, w_prime, p_prime, qv_prime,
-        qi_prime, Ni, ssi, p_sat_ice, res, cc);
+        qi_prime, Ni, S_i, p_sat_ice, res, cc);
 
     cloud_freeze_hom(qc_prime, Nc, T_prime, T_c, res, cc);
 

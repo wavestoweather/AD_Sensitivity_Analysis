@@ -78,7 +78,36 @@ struct particle_model_constants_t{
     codi::RealReverse cmu0, cmu1, cmu2, cmu3, cmu4, cmu5, alpha, beta, gamma;
     codi::RealReverse nu;
 
-    codi::RealReverse g1, g2, mu, nm1, nm2, nm3;
+    /**
+     * Right edge of incomplete gamma function,
+     * which had been initialized with \f[\text{nm}_1\f].
+     */
+    codi::RealReverse g1;
+    /**
+     * Right edge of incomplete gamma function,
+     * which had been initialized with \f[\text{nm}_1\f].
+     */
+    codi::RealReverse g2;
+
+    codi::RealReverse mu;
+    /**
+     * Used for initializing the incomplete
+     * gamma function lookup table 1.
+     * Number of bins.
+     */
+    codi::RealReverse nm1;
+    /**
+     * Used for initializing the incomplete
+     * gamma function lookup table 2.
+     * Number of bins.
+     */
+    codi::RealReverse nm2
+    /**
+     * Used for initializing the incomplete
+     * gamma function lookup table 3.
+     * Number of bins.
+     */
+    codi::RealReverse nm3;
 
     codi::RealReverse q_crit_c; /*!<  Riming parameter. */
     codi::RealReverse d_crit_c; /*!<  Riming parameter. */
@@ -674,7 +703,7 @@ struct model_constants_t{
   const double mu = 16.0e-6;    /*!< Constants for the IFS model. */
   const double rho0 = 1.0;      /*!< Constants for the IFS model. Why not 1.225? */
 
-  const double alphar = 1.0/(br + 1.0 - nbr);   /*!< Constants for the IFS model. */
+  const double alpha_r = 1.0/(br + 1.0 - nbr);   /*!< Constants for the IFS model. */
   const double epsilonr = 0.5*dr + 2.5 - nbr;   /*!< Constants for the IFS model. */
 
   double scaling_fact; /*!< Scaling factor. */
