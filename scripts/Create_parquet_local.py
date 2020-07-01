@@ -89,13 +89,14 @@ for f_this in file_list:
     df_dic_mapped.add_param_values(df_sim_mapped.data)
     t2 = timer()
     print("Adding finished in {} s".format(t2-t))
-    print("Saving as parquet")
+    print("Saving as {}".format(file_type))
     t = timer()
     try:
         if file_type == "parquet":
-            df_dic_mapped.to_parquet(store_path, compression="snappy")
+            df_dic_mapped.to_parquet(
+                store_path, compression="snappy", low_memory=True)
         elif file_type == "netcdf":
-            print("Not yet implemented")
+            df_dic_mapped.to_netcdf(store_path)
         else:
             print("No such file format: {}".format(file_type))
             failed_trajectories.append(prefix)
