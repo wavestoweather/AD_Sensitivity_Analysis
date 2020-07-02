@@ -113,6 +113,32 @@ class Deriv:
             append = not append
             dd.from_pandas(tmp_df, chunksize=3000000).to_parquet(f_name, append=append, ignore_divisions=append, compression=compression)
 
+    def to_netcdf(self, f_name, add_columns=None, dropna=False):
+        """
+        Store the data to netcdf-4 files where the index consists of
+        (timestep, trajectory, LONGITUDE, LATITUDE), and columns are the derivatives.
+
+        Parameters
+        ----------
+        f_name : string
+                 Path and first name of the netcdf-file
+        """
+        import xarray as xr
+
+        for k in self.data:
+            tmp_df = self.data[k]
+            if add_columns is not None:
+                for col in add_columns:
+                    tmp_df[col] = add_columns[col]
+            if dropna:
+                xr.Dataset.from_dataframe(tmp_df.set_index(
+                    ["timestep", "trajectory"]).dropna()).to_netcdf(
+                        f_name + "/" + k + ".nc_wcb")
+            else:
+                xr.Dataset.from_dataframe(tmp_df.set_index(
+                    ["timestep", "trajectory"])).to_netcdf(
+                        f_name + "/" + k + ".nc_wcb")
+
     def delete_not_mapped(self):
         """
         Delete all entries that are not within a mapped region, where
@@ -158,10 +184,10 @@ class Deriv:
         """
         cols = []
         for col in df:
-            if col in ["LONGITUDE", "LATITUDE", "MAP"]:
+            if col in ["LONGITUDE", "LATITUDE", "MAP", "dp2h",
+                       "conv_400", "conv_600", "slan_400", "slan_600"]:
                 continue
             cols.append(col)
-#         print("Appending {}".format(cols))
         for k in self.data:
             self.data[k] = self.data[k].merge(df[cols], how='right')
 

@@ -1069,7 +1069,7 @@ inline codi::RealReverse vent_coeff_b(
             / tgamma( (pc.nu+2.0)/pc.mu), (m_f+1.0) * pc.b_geo + m_f*pc.b_vel+n-1.0);
 }
 
-// complete mass moment of particle size distribution, Eq (82) of SB2006
+
 /**
  * Calculate the complete mass moment of particle size distribution from
  * Seifert & Beheng (2006), Eq. 82.
@@ -1110,8 +1110,8 @@ void setCoefficients(
     codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
 
 
-    cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alphar-2.0)/(A_pp + B_pp) );
-    cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alphar*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
+    cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alpha_r-2.0)/(A_pp + B_pp) );
+    cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alpha_r*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
 
     cc.a1_prime = cc.a1_scale;	// Constant coefficient
     cc.a2_prime = cc.a2_scale;	// Constant coefficient
@@ -1140,8 +1140,8 @@ void setCoefficients(
   cc.a1_prime = cc.a1_scale;	// Constant coefficient
   cc.a2_prime = cc.a2_scale;	// Constant coefficient
 
-  cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alphar-2.0)/(A_pp + B_pp) );
-  cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alphar*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
+  cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alpha_r-2.0)/(A_pp + B_pp) );
+  cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alpha_r*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
 
   cc.d_prime = cc.d_scale;	// Constant coefficient
 }
@@ -1280,7 +1280,7 @@ void setup_model_constants(
     const double Nc = 50; 	// 50 over ocean; 300 over land
     const double F_aut = 1.5;
     const double F_acc = 2.0;
-    const double lambdar_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alphar);
+    const double lambda_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alpha_r);
 
     // Inflow from above
     cc.B_prime = 0.0;
@@ -1330,14 +1330,14 @@ void setup_model_constants(
     const double Nc = 50; 	// 50 over ocean; 300 over land
     const double F_aut = 1.5;
     const double F_acc = 2.0;
-    const double lambdar_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alphar);
+    const double lambda_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alpha_r);
 
     // cc.a1_scale = (1350. * F_aut)/pow(Nc , 1.79);
     // cc.a2_scale = 67.0 * F_acc;
-    // cc.e1_scale = 2.0 * M_PI * cc.nar * ( (0.78 * tgamma(2.0 - cc.nbr))/(lambdar_pp*lambdar_pp) );
+    // cc.e1_scale = 2.0 * M_PI * cc.nar * ( (0.78 * tgamma(2.0 - cc.nbr))/(lambda_pp*lambda_pp) );
     // cc.e2_scale = cc.scaling_fact * 2.0 * M_PI * cc.nar * 0.31
     //     * pow(cc.cr/cc.mu, 0.5) * pow(cc.Sc, 1.0/3.0) * pow(cc.rho0, 0.25)
-    //     * (tgamma(cc.epsilonr + cc.nbr)/pow(lambdar_pp ,cc.epsilonr));
+    //     * (tgamma(cc.epsilonr + cc.nbr)/pow(lambda_pp ,cc.epsilonr));
     // cc.d_scale = 4.0e-3;
 
     // Inflow from above
