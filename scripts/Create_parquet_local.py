@@ -78,17 +78,35 @@ for f_this in file_list:
         refs=ref)
     t2 = timer()
     print("Loading done in {} s".format(t2-t))
+    
+    print("Checking for minimum number of rows")
+    min_rows = len(df_sim_mapped.data.index)
+    crop_data = False
+    for key in df_dic_mapped.data:
+        this_rows = len(df_dic_mapped.data[key].index)
+        if this_rows < min_rows:
+            min_rows = this_rows
+            crop_data = True
+    if crop_data:
+        print(f"Some sensitivities lack some rows. We delete the last rows such that {min_rows} are left.")
+        print("If anything fails from here on, please check your data!")
+        df_sim_mapped.data = df_sim_mapped.data.head(min_rows)
+        for key in df_dic_mapped.data:
+            df_dic_mapped.data[key] = df_dic_mapped.data[key].head(min_rows)
+    
 
     print("Get ratio of data")
     t = timer()
     df_dic_mapped.calculate_ratios()
     t2 = timer()
     print("ratio done in {} s".format(t2-t))
+    
     print("Adding columns for output Parameter results")
     t = timer()
     df_dic_mapped.add_param_values(df_sim_mapped.data)
     t2 = timer()
     print("Adding finished in {} s".format(t2-t))
+        
     print("Saving as {}".format(file_type))
     t = timer()
     try:

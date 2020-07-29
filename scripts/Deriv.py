@@ -188,6 +188,7 @@ class Deriv:
                        "conv_400", "conv_600", "slan_400", "slan_600"]:
                 continue
             cols.append(col)
+        
         for k in self.data:
             self.data[k] = self.data[k].merge(df[cols], how='right')
 
