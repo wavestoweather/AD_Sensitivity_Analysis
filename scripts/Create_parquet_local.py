@@ -106,6 +106,20 @@ for f_this in file_list:
     df_dic_mapped.add_param_values(df_sim_mapped.data)
     t2 = timer()
     print("Adding finished in {} s".format(t2-t))
+    
+    print("Shift the timesteps such that t=0 is the start of the ascent")
+    t = timer()
+    # Get the currently used flag from the filename
+    flag = "conv_400"
+    if "conv_600" in direc_path:
+        flag = "conv_600"
+    elif "slan_400" in direc_path:
+        flag = "slan_400"
+    elif "slan_600" in direc_path:
+        flag = "slan_600"
+    df_dic_mapped.shift_time(flag=flag)
+    t2 = timer()
+    print("Shifting done in {} s.".format(t2-t))
         
     print("Saving as {}".format(file_type))
     t = timer()

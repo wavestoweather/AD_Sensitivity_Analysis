@@ -1,5 +1,84 @@
 import matplotlib as mpl
 
+mappings = {"lat_heat": "Latent Heating",
+            "lat_cool": "Latent Cooling",
+            "latent_heat": "Latent Heating",
+            "latent_cool": "Latent Cooling",
+            "dinv_z": r"$\partial z^{-1}$",
+            "ratio_deriv": "Derivative Ratio",
+            "in_param": "Input Parameter",
+            "p": "Pressure",
+            "T": "Temperature",
+            "S": "Saturation",
+            "qv": "Water Vapor Mixing Ratio",
+            "qc": "Cloud Droplet Mixing Ratio",
+            "qr": "Rain Droplet Mixing Ratio",
+            "qs": "Snow Mixing Ratio",
+            "qi": "Ice Mixing Ratio",
+            "qg": "Graupel Mixing Ratio",
+            "qh": "Hail Mixing Ratio",
+            "Nv": "Water Vapor Particle Number",
+            "Nc": "Cloud Droplet Particle Number",
+            "Nr": "Rain Droplet Particle Number",
+            "Ns": "Snow Particle Number",
+            "Ni": "Ice Particle Number",
+            "Ng": "Graupel Particle Number",
+            "Nh": "Hail Particle Number",
+            "qvout": "Sedimentation of Water Vapor Mixing Ratio",
+            "qcout": "Sedimentation of Cloud Droplet Mixing Ratio",
+            "qrout": "Sedimentation of Rain Droplet Mixing Ratio",
+            "qsout": "Sedimentation of Snow Mixing Ratio",
+            "qiout": "Sedimentation of Ice Mixing Ratio",
+            "qgout": "Sedimentation of Graupel Mixing Ratio",
+            "qhout": "Sedimentation of Hail Mixing Ratio",
+            "LATITUDE": "Latitude",
+            "LONGITDUE": "longitude",
+            "z": "Height [m]",
+            "w": r"Ascend $[\frac{\text{m}} {\mathrm{s}}]$",
+            "MAP": "Flag for WCB-criterion",
+            "Derivatives": "Derivatives",
+            "timestep": "Time [s] after ascend begins",
+            "time": "Time [s] after ascend begins",
+            # Misc
+#             "da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma",
+#             "dbeta_c", "dbeta_r", "ddelta1", "ddelta2", "dzeta",
+#             "drain_gfak", "dcloud_k_au", "dcloud_k_sc", "dkc_autocon",
+#             "dinv_z",
+#             # Rain
+#             "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_max_x",
+#             "drain_sc_theta_q", "drain_sc_delta_q", "drain_sc_theta_n",
+#             "drain_sc_delta_n", "drain_s_vel", "drain_a_vel", "drain_b_vel",
+#             "drain_rho_v", "drain_c_z", "drain_sc_coll_n", "drain_cmu0",
+#             "drain_cmu1", "drain_cmu2", "drain_cmu3", "drain_cmu4",
+#             "drain_cmu5", "drain_alpha", "drain_beta", "drain_gamma",
+#             "drain_nu", "drain_g1", "drain_g2", "drain_mu", "drain_nm1",
+#             "drain_nm2", "drain_nm3", "drain_q_crit_c", "drain_d_crit_c",
+#             "drain_ecoll_c", "drain_cap", "drain_a_ven", "drain_b_ven",
+#             "drain_c_s", "drain_a_f", "drain_b_f", "drain_alfa_n",
+#             "drain_alfa_q", "drain_lambda", "drain_vsedi_min",
+#             "drain_vsedi_max"
+            # Cloud
+            
+            # Graupel
+            
+            # Hail
+            
+            # Ice
+            
+            # Snow
+            
+            
+            "dmin_x_nuc_hetero": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{hetero}}",
+            "dmin_x_nuc_homo": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{homo}}",
+            "dmin_x_melt": r"$\partial x_{\mathrm{min},\mathrm{melt}}",
+            "dmin_x_evap": r"$\partial x_{\mathrm{min},\mathrm{evap}}",
+            "dmin_x_freezing": r"$\partial x_{\mathrm{min},\mathrm{freezing}}",
+            "dmin_x_depo": r"$\partial x_{\mathrm{min},\mathrm{depo}}",
+            "dmin_x_collision": r"$\partial x_{\mathrm{min},\mathrm{collision}}",
+            "dmin_x_collection": r"$\partial x_{\mathrm{min},\mathrm{collection}}",
+            "dmin_x_conversion": r"$\partial x_{\mathrm{min},\mathrm{conversion}}",
+            "dmin_x_sedimentation": r"$\partial x_{\mathrm{min},\mathrm{sedimentation}}",
+            "dmin_x_riming": r"$\partial x_{\mathrm{min},\mathrm{riming}}"}
 
 def set_size(beamer=True):
     """
@@ -51,55 +130,7 @@ def parse_word(word):
     no_math = ["geo", "min", "max", "ven", "vel"]
     math_keys = ["alpha", "gamma", "beta", "delta", "zeta",
                  "rho", "nu", "mu", "lambda"]
-    mappings = {"lat_heat": "Latent Heating",
-                "lat_cool": "Latent Cooling",
-                "latent_heat": "Latent Heating",
-                "latent_cool": "Latent Cooling",
-                "dinv_z": r"$\partial z^{-1}$",
-                "ratio_deriv": "Derivative Ratio",
-                "in_param": "Input Parameter",
-                "p": "Pressure",
-                "T": "Temperature",
-                "S": "Saturation",
-                "qv": "Water Vapor Mixing Ratio",
-                "qc": "Cloud Droplet Mixing Ratio",
-                "qr": "Rain Droplet Mixing Ratio",
-                "qs": "Snow Mixing Ratio",
-                "qi": "Ice Mixing Ratio",
-                "qg": "Graupel Mixing Ratio",
-                "qh": "Hail Mixing Ratio",
-                "Nv": "Water Vapor Particle Number",
-                "Nc": "Cloud Droplet Particle Number",
-                "Nr": "Rain Droplet Particle Number",
-                "Ns": "Snow Particle Number",
-                "Ni": "Ice Particle Number",
-                "Ng": "Graupel Particle Number",
-                "Nh": "Hail Particle Number",
-                "qvout": "Sedimentation of Water Vapor Mixing Ratio",
-                "qcout": "Sedimentation of Cloud Droplet Mixing Ratio",
-                "qrout": "Sedimentation of Rain Droplet Mixing Ratio",
-                "qsout": "Sedimentation of Snow Mixing Ratio",
-                "qiout": "Sedimentation of Ice Mixing Ratio",
-                "qgout": "Sedimentation of Graupel Mixing Ratio",
-                "qhout": "Sedimentation of Hail Mixing Ratio",
-                "LATITUDE": "Latitude",
-                "LONGITDUE": "longitude",
-                "z": "Height z",
-                "w": "Ascend w",
-                "MAP": "Flag for WCB-criterion",
-                "Derivatives": "Derivatives",
-                "timestep": "Timestep",
-                "dmin_x_nuc_hetero": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{hetero}}",
-                "dmin_x_nuc_homo": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{homo}}",
-                "dmin_x_melt": r"$\partial x_{\mathrm{min},\mathrm{melt}}",
-                "dmin_x_evap": r"$\partial x_{\mathrm{min},\mathrm{evap}}",
-                "dmin_x_freezing": r"$\partial x_{\mathrm{min},\mathrm{freezing}}",
-                "dmin_x_depo": r"$\partial x_{\mathrm{min},\mathrm{depo}}",
-                "dmin_x_collision": r"$\partial x_{\mathrm{min},\mathrm{collision}}",
-                "dmin_x_collection": r"$\partial x_{\mathrm{min},\mathrm{collection}}",
-                "dmin_x_conversion": r"$\partial x_{\mathrm{min},\mathrm{conversion}}",
-                "dmin_x_sedimentation": r"$\partial x_{\mathrm{min},\mathrm{sedimentation}}",
-                "dmin_x_riming": r"$\partial x_{\mathrm{min},\mathrm{riming}}"}
+    
     maps = mappings.keys()
     for w in maps:
         if word == w:

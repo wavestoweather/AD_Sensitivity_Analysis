@@ -191,6 +191,27 @@ class Deriv:
         
         for k in self.data:
             self.data[k] = self.data[k].merge(df[cols], how='right')
+            
+    def shift_time(self, flag, debug=False):
+        """
+        Shift the time axis such that at t=0 the first occurence of flag appears.
+        
+        Parameters
+        ----------
+        flag : string
+               Name of the (boolean type) column, ie conv_400, slan_600, conv_600, slan_400.
+        """
+        start_time = None
+        for k in self.data:
+            if start_time is None:
+                start_time = self.data[k].loc[self.data[k][flag] == True]["timestep"].min()
+                if debug:
+                    print(f"Using start time {start_time} s for flag {flag}")
+            self.data[k]["timestep"] = self.data[k]["timestep"] - start_time
+            if debug:
+                new_min_time = self.data[k].loc[self.data[k][flag] == True]["timestep"].min()
+                print(f"New start time is {new_min_time} for {flag} (if this is not 0, something went wrong)")
+                assert new_min_time == 0
 
     @staticmethod
     def parallel_ratio(df, k):
