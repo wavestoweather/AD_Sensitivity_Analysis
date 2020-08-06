@@ -32,6 +32,7 @@ except:
 
 import dask.dataframe as pd
 from bokeh.io import curdoc
+from bokeh.palettes import Category20c
 
 class Deriv_dask:
     """
@@ -51,6 +52,10 @@ class Deriv_dask:
         that hold a clustering assignment.
     threads : int
             Number of threads to use.
+    cmap : Dic
+        Dic of typenames of trajectories and colors.
+    cache : pandas.Dataframe
+        A dataframe after compute() was used that can be used as cache.
     """
     data = {}
     n_timesteps = 0
@@ -59,6 +64,9 @@ class Deriv_dask:
     font_dic = {}
     backend = "matplotlib"
     widget = None
+    colors = None
+    cmap = None
+    cache = None
 
     def __init__(self, direc, parquet=True, columns=None, backend="matplotlib"):
         """
@@ -90,6 +98,38 @@ class Deriv_dask:
             "legend": 16
         }
         self.backend = backend
+        self.plots = []
+        if backend == "matplotlib":
+            colors = plt.get_cmap("tab20c")
+            self.cmap = {"Slantwise 600hPa 25. Quantile":  matplotlib.colors.to_hex(colors(0)[0:-1]),
+                "Slantwise 600hPa 50. Quantile":  matplotlib.colors.to_hex(colors(1)[0:-1]),
+                "Slantwise 600hPa 75. Quantile":  matplotlib.colors.to_hex(colors(2)[0:-1]),
+                "Slantwise 400hPa 25. Quantile":  matplotlib.colors.to_hex(colors(4)[0:-1]),
+                "Slantwise 400hPa 50. Quantile":  matplotlib.colors.to_hex(colors(5)[0:-1]),
+                "Slantwise 400hPa 75. Quantile":  matplotlib.colors.to_hex(colors(6)[0:-1]),
+                "Convective 600hPa 25. Quantile": matplotlib.colors.to_hex(colors(8)[0:-1]),
+                "Convective 600hPa 50. Quantile": matplotlib.colors.to_hex(colors(9)[0:-1]),
+                "Convective 600hPa 75. Quantile": matplotlib.colors.to_hex(colors(10)[0:-1]),
+                "Convective 400hPa 25. Quantile": matplotlib.colors.to_hex(colors(12)[0:-1]),
+                "Convective 400hPa 50. Quantile": matplotlib.colors.to_hex(colors(13)[0:-1]),
+                "Convective 400hPa 75. Quantile": matplotlib.colors.to_hex(colors(14)[0:-1])}
+            self.colors = colors
+        else:
+            colors = Category20c[20]
+            self.cmap = {"Slantwise 600hPa 25. Quantile":  colors[0],
+                "Slantwise 600hPa 50. Quantile":  colors[1],
+                "Slantwise 600hPa 75. Quantile":  colors[2],
+                "Slantwise 400hPa 25. Quantile":  colors[4],
+                "Slantwise 400hPa 50. Quantile":  colors[5],
+                "Slantwise 400hPa 75. Quantile":  colors[6],
+                "Convective 600hPa 25. Quantile": colors[8],
+                "Convective 600hPa 50. Quantile": colors[9],
+                "Convective 600hPa 75. Quantile": colors[10],
+                "Convective 400hPa 25. Quantile": colors[12],
+                "Convective 400hPa 50. Quantile": colors[13],
+                "Convective 400hPa 75. Quantile": colors[14]}
+            self.colors = colors
+
 
     def to_parquet(self, f_name, compression="snappy"):
         append = not os.listdir(f_name)
@@ -294,7 +334,8 @@ class Deriv_dask:
             i += 1
 
     def plot_mapped(self, out_params=None, in_params=None, kind="violin",
-                    x_label="WCB criterion", n_plots=None, **kwargs):
+                    x_label="WCB criterion", n_plots=None,
+                    flag="conv_400", **kwargs):
         """
         Create a scatter plot that uses the x-axis for the boolean MAP.
         Input parameter values of the same order are plotted on the same
@@ -318,6 +359,8 @@ class Deriv_dask:
         n_plots : int
             Plot only that many plots. If None is given, plot every possible
             plot.
+        flag : String
+            The boolean column to use.
         kwargs : dict
             Keyword arguments are passed down to seaborn.catplot(..) for
             the derivative plots.
@@ -328,9 +371,9 @@ class Deriv_dask:
             df = self.data
 
         def plot_helper(df, in_params, out_param, **kwargs):
-            df_tmp = df[in_params+["MAP"]]
+            df_tmp = df[in_params+[flag]]
 
-            df_tmp = df_tmp.melt("MAP", var_name="Derivatives",
+            df_tmp = df_tmp.melt(flag, var_name="Derivatives",
                                 value_name="Derivative Ratio").compute()
             df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
 
@@ -339,28 +382,28 @@ class Deriv_dask:
             # it does not work with plt.subplots() and it does not always
             # take any preceeding settings for matplotlib into account
             if kind == "violin":
-                sns.violinplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                sns.violinplot(x=flag, y="Derivative Ratio", data=df_tmp,
                             hue="Derivatives", **kwargs)
             elif kind == "swarm":
-                sns.swarmplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                sns.swarmplot(x=flag, y="Derivative Ratio", data=df_tmp,
                             hue="Derivatives", **kwargs)
             elif kind == "strip":
-                sns.stripplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                sns.stripplot(x=flag, y="Derivative Ratio", data=df_tmp,
                             hue="Derivatives", **kwargs)
             elif kind == "box":
-                sns.boxplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                sns.boxplot(x=flag, y="Derivative Ratio", data=df_tmp,
                             hue="Derivatives", **kwargs)
             elif kind == "boxen":
-                sns.boxenplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                sns.boxenplot(x=flag, y="Derivative Ratio", data=df_tmp,
                             hue="Derivatives", **kwargs)
             elif kind == "point":
-                sns.pointplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                sns.pointplot(x=flag, y="Derivative Ratio", data=df_tmp,
                             hue="Derivatives", **kwargs)
             elif kind == "bar":
-                sns.barplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                sns.barplot(x=flag, y="Derivative Ratio", data=df_tmp,
                             hue="Derivatives", **kwargs)
             elif kind == "count":
-                sns.countplot(x="MAP", y="Derivative Ratio", data=df_tmp,
+                sns.countplot(x=flag, y="Derivative Ratio", data=df_tmp,
                             hue="Derivatives", **kwargs)
             else:
                 print("No such kind: {}".format(kind))
@@ -378,11 +421,11 @@ class Deriv_dask:
             plt.ylim(min_y, max_y)
 
             i = 0
-            save = ("pics/" + kind + "_MAP_ " + out_param[0]
+            save = ("pics/" + kind + "_" + flag + "_" + out_param[0]
                     + "_" + "{:03d}".format(i) + ".png")
             while os.path.isfile(save):
                 i = i+1
-                save = ("pics/" + kind + "_MAP_ " + out_param[0]
+                save = ("pics/" + kind + "_" + flag + "_" + out_param[0]
                         + "_" + "{:03d}".format(i) + ".png")
 
             print("Saving to " + save)
@@ -424,9 +467,9 @@ class Deriv_dask:
         trajectories=None, scatter=False, n_plots=None, percentile=None,
         frac=None, min_x=None, max_x=None, nth=None, hist=[False, False],
         hexbin=[False, False], log=[False, False], sort=True,
-        scatter_deriv=False, line_deriv=False, prefix=None, c=False, compute=False,
+        scatter_deriv=False, line_deriv=False, prefix=None, compute=False,
         errorband=False, bins=50, plot_path="pics/", fig_type='svg',
-        datashade=True, **kwargs):
+        datashade=True, by=None, use_cache=False, alpha=[1, 1], **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
         At the bottom: Derivative with respect to that output parameter.
@@ -482,9 +525,26 @@ class Deriv_dask:
         sort : Bool
             If True, sort the derivatives and plot only those within the same
             magnitude in one plot. If False, plot every derivative.
+        by : String
+            String for groupby. Can be either "trajectory" or "type".
+        alpha : List of floats
+            Alpha values for top [0] and bottom [1] graph.
         kwargs : dict
             Keyword arguments are passed down matplotlib.
         """
+        import hvplot.dask # adds hvplot method to dask objects
+        import hvplot.pandas
+        import hvplot
+        from holoviews import opts
+        import holoviews as hv
+        from timeit import default_timer as timer
+        from holoviews.operation import histogram as hv_histo
+        import pandas
+        import dask.array as da
+
+        hv.extension(self.backend)
+
+        t = timer()
         if frac is not None:
             df = self.data.sample(frac=frac, replace=False, random_state=42)
         elif nth is not None:
@@ -510,23 +570,19 @@ class Deriv_dask:
         if mapped is not None:
             df = df.loc[df[mapped]]
         df = df.loc[df["Output Parameter"].isin(out_params)]
-        all_params = list(set(["Output Parameter", "trajectory"] + in_params + [x_axis] + out_params))
+        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
         if compute:
-            df = df[all_params].compute()
+            if use_cache:
+                df = self.cache
+            else:
+                df = df[all_params].compute()
+                self.cache = df
+        elif use_cache:
+            df = self.cache
         else:
             df = df[all_params]
-        import hvplot.dask # adds hvplot method to dask objects
-        import hvplot.pandas
-        import hvplot
-        from holoviews import opts
-        import holoviews as hv
-        from timeit import default_timer as timer
-        from holoviews.operation import histogram as hv_histo
-        import pandas
-        import dask.array as da
-
-
-        hv.extension(self.backend)
+        t2 = timer()
+        print("Loading done in {} s".format(t2-t))
 
         for out_par in out_params:
             df_tmp_out = df.loc[df["Output Parameter"] == out_par]
@@ -535,8 +591,16 @@ class Deriv_dask:
             if sort:
                 sorted_tuples = []
                 for in_p in in_params:
-                    value = np.abs(df_tmp_out[in_p].min())
-                    max_val = np.abs(df_tmp_out[in_p].max())
+                    if log[1]:
+                        value = np.abs(np.log(np.abs(df_tmp_out[in_p].min())))
+                        max_val = np.abs(np.log(np.abs(df_tmp_out[in_p].max())))
+                        if np.isinf(value):
+                            value = 0
+                        if np.isinf(max_val):
+                            max_val = 0
+                    else:
+                        value = np.abs(df_tmp_out[in_p].min())
+                        max_val = np.abs(df_tmp_out[in_p].max())
                     if max_val > value:
                         value = max_val
                     if value != 0 and not np.isnan(value):
@@ -555,9 +619,11 @@ class Deriv_dask:
                 t = timer()
                 if log[1]:
                     df_tmp["Derivative Ratio"] = da.log(da.fabs(df_tmp["Derivative Ratio"]))
-#                     df_tmp["Derivative Ratio"] = df_tmp["Derivative Ratio"].apply(lambda x: np.log(np.abs(x)))
                     # Remove zero entries (-inf)
                     df_tmp = df_tmp[~da.isinf(df_tmp["Derivative Ratio"])]
+                    t2 = timer()
+                    print("Log done in {} s".format(t2-t))
+                    t = timer()
                 df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word) # , meta=("Derivatives", "object")
 
                 if percentile is not None:
@@ -634,23 +700,86 @@ class Deriv_dask:
                             label="sd")
                             # color="grey")
                     )
-                elif c:
+                elif by is not None:
                     if out_par == x_axis:
-                        df_group = df[[x_axis, "trajectory"]]
+                        df_group = df[[x_axis, by]]
                     else:
-                        df_group = df[[x_axis, out_par, "trajectory"]]
+                        df_group = df[[x_axis, out_par, by]]
                     if log[0]:
                         # Apply should be more expensive
                         df_group[out_par] = da.log(da.fabs(df_group[out_par]))
 #                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
-                    param_plot = df_group.hvplot.scatter(
-                        x=x_axis,
-                        y=out_par,
-                        c="trajectory",
-                        title="Values of of {}".format(latexify.parse_word(out_par)),
-                        label=None,
-                        datashade=datashade
-                        )
+                    types = df_group[df_group[out_par] != 0][by].unique()
+                    types = np.sort(types[::-1])
+                    if not datashade:
+                        cmap_values = []
+                        for ty in types:
+                            cmap_values.append(self.cmap[ty])
+                    else:
+                        cmap = {}
+                        for ty in types:
+                            cmap[ty] = self.cmap[ty]
+                    if not datashade:
+                        if self.backend == "matplotlib":
+                            overlay = hv.NdOverlay(
+                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
+                                for i in range(len(types)) }
+                            )
+        
+                            param_plot = df_group[df_group[out_par] != 0].hvplot.scatter(
+                                x=x_axis,
+                                y=out_par,
+                                by=by,
+                                title="Values of of {}".format(latexify.parse_word(out_par)),
+                                color=cmap_values,
+                                label=None,
+                                datashade=datashade,
+                                alpha=alpha[0],
+                                legend=False
+                            ).opts(opts.Scatter(s=8)) * overlay
+                        else:
+                            param_plot = df_group[df_group[out_par] != 0].hvplot.scatter(
+                                x=x_axis,
+                                y=out_par,
+                                by=by,
+                                title="Values of of {}".format(latexify.parse_word(out_par)),
+                                color=cmap_values,
+                                label=None,
+                                datashade=datashade,
+                                alpha=alpha[0]
+                            )
+                    else:
+                        param_plot = df_group[df_group[out_par] != 0].hvplot.scatter(
+                            x=x_axis,
+                            y=out_par,
+                            by=by,
+                            title="Values of of {}".format(latexify.parse_word(out_par)),
+                            cmap=cmap,
+                            label=None,
+                            datashade=datashade
+                            )
+                        x_min = df_group[x_axis].min()
+                        x_max = df_group[x_axis].max()
+                        y_min = df_group[out_par].min()
+                        y_max = df_group[out_par].max()
+
+                        points = hv.Points(
+                            ([np.NaN for i in range(len(list(cmap.keys())))],
+                             [np.NaN for i in range(len(list(cmap.keys())))],
+                             list(cmap.keys())), vdims="type")
+                        if self.backend == "bokeh":
+                            legend = points.sort("type").options(
+                                color="type",
+                                cmap=cmap,
+                                size=0,
+                                show_legend=True)
+                        else:
+                            legend = points.sort("type").options(
+                                color="type",
+                                cmap=cmap,
+                                s=0,
+                                show_legend=True)
+                        param_plot = (legend * param_plot)
                 elif hexbin[0]:
                     if out_par == x_axis:
                         df_group = df[[x_axis, "trajectory"]]
@@ -686,18 +815,23 @@ class Deriv_dask:
                         label=None,
                         datashade=datashade
                     )
-
+                t2 = timer()
+                print("Setting up upper plot done in {} s".format(t2-t))
+                t = timer()
+                
                 layout_kwargs = {}
                 if self.backend == "bokeh":
                     layout_kwargs["width"] = 1600
                     layout_kwargs["height"] = 500
+                else:
+                    layout_kwargs["aspect"] = 1600/500
+                    layout_kwargs["fig_size"] = 300
 
                 if hist[0]:
                     param_plot.opts(**layout_kwargs)
                     param_hist_plot = param_plot.hist(dimension=[x_axis, out_par], bins=bins, range=[0, 10000])
 
                 if hexbin[1]:
-
                     deriv_plot = df_tmp.hvplot.hexbin(
                         x=x_axis,
                         y="Derivative Ratio",
@@ -711,21 +845,85 @@ class Deriv_dask:
                         colorbar=True
                     )
                 else:
-#                     df_tmp = df_tmp.compute()
-                    deriv_plot = df_tmp.hvplot.scatter(
-                        x=x_axis,
-                        y="Derivative Ratio",
-                        by="Derivatives",
-                        title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
-                        label=None,
-                        datashade=datashade
-#                         datashade=True # Useful for bokeh images, I guess
-                    )
+                    colors = plt.get_cmap("tab10")
+                    all_derives = df_tmp["Derivatives"].unique()
+                    all_derives = np.sort(all_derives[::-1])
+                    if not datashade:
+                        cmap_values = []
+                        for i in range(len(all_derives)):
+                            cmap_values.append(matplotlib.colors.to_hex(colors(i)[0:-1]))
+                        
+                        if self.backend == "matplotlib":
+                            overlay = hv.NdOverlay(
+                                {derivative: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
+                                for i, derivative in enumerate(all_derives)}
+                            )
+                        
+                            deriv_plot = df_tmp.hvplot.scatter(
+                                x=x_axis,
+                                y="Derivative Ratio",
+                                by="Derivatives",
+                                title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
+                                label=None,
+                                datashade=datashade,
+                                alpha=alpha[1],
+                                legend=False,
+                                cmap=cmap_values
+                            ).opts(opts.Scatter(s=8)).opts(aspect=3.2)
+                            deriv_plot = (deriv_plot * overlay)
+                        else:
+                            deriv_plot = df_tmp.hvplot.scatter(
+                                x=x_axis,
+                                y="Derivative Ratio",
+                                by="Derivatives",
+                                title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
+                                label=None,
+                                datashade=datashade,
+                                alpha=alpha[1],
+                                cmap=cmap_values
+                            ).opts(opts.Scatter(size=2))
+                        
+                    else:
+                        cmap = {}
+                        for i, d in enumerate(all_derives):
+                            cmap[d] = matplotlib.colors.to_hex(colors(i)[0:-1])
+                        deriv_plot = df_tmp.hvplot.scatter(
+                            x=x_axis,
+                            y="Derivative Ratio",
+                            by="Derivatives",
+                            title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
+                            label=None,
+                            datashade=datashade,
+                            cmap=cmap
+                        ).opts(aspect=3.2)
+                        x_min = df_tmp[x_axis].min()
+                        x_max = df_tmp[x_axis].max()
+                        y_min = df_tmp["Derivative Ratio"].min()
+                        y_max = df_tmp["Derivative Ratio"].max()
+                        
+                        points_deriv = hv.Points( 
+                            ([np.NaN for i in range(len(all_derives))],
+                             [np.NaN for i in range(len(all_derives))],
+                             list(cmap.keys())), vdims="Derivatives")
+                        if self.backend == "bokeh":
+                            legend_deriv = points_deriv.options(
+                                color="Derivatives",
+                                cmap=cmap,
+                                size=0,
+                                show_legend=True)
+                        else:
+                            legend_deriv = points_deriv.options(
+                                color="Derivatives",
+                                cmap=cmap,
+                                s=0,
+                                show_legend=True)
+                        deriv_plot = (legend_deriv * deriv_plot).opts(aspect=3.2)
                   # Does not work: Rectangle object has no property dimension
 #                 if hist[1]:
 #                     deriv_hist_plot = df_tmp.hist(dimension=[x_axis, "Derivative Ratio"], bins=bins)
                 hist[1] = False
-
+                t2 = timer()
+                print("Setting up lower plot done in {} s".format(t2-t))
 
                 if hist[0] and not hist[1]:
                     layout = param_hist_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
@@ -736,21 +934,24 @@ class Deriv_dask:
                 else:
                     layout = param_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
 
-                opts_arg = {}
-                if self.backend == "matplotlib":
-                    opts_arg["aspect"] = 3.2
-                    opts_arg["fig_latex"] = False
+                t2 = timer()
+                print("Creating layout done in {} s".format(t2-t))
+                t = timer()                
 
-                scatter_kwargs = opts_arg.copy()
-                area_kwargs = opts_arg.copy()
+                opts_arg = {} # Currently empty. Maybe useful in further iterations
+#                 if self.backend == "matplotlib":
+#                     opts_arg["aspect"] = 3.2
+#                     opts_arg["fig_size"] = 300
+                scatter_kwargs = {}
+                area_kwargs = {}
 
                 for k in kwargs:
                     scatter_kwargs[k] = kwargs[k]
 
-                if self.backend == "bokeh":
-                    scatter_kwargs["size"] = 5
-                else:
-                    scatter_kwargs["s"] = 8
+#                 if self.backend == "bokeh":
+#                     scatter_kwargs["size"] = 2
+#                 else:
+#                     scatter_kwargs["s"] = 8
 
                 if self.backend == "matplotlib":
                     area_kwargs["edgecolor"] = None
@@ -760,7 +961,11 @@ class Deriv_dask:
 
 
                 layout_kwargs = {}
-                if self.backend == "matplotlib":
+                if  self.backend == "bokeh":
+                    layout_kwargs["width"] = 1600
+                    layout_kwargs["height"] = 500
+                else:
+#                     layout_kwargs["aspect"] = 3.2
                     layout_kwargs["fig_size"] = 400
 
                # Matplotlib uses a horrible colormap as default...
@@ -831,7 +1036,7 @@ class Deriv_dask:
                                 **scatter_kwargs),
                             opts.Layout(**layout_kwargs)
                         ).cols(1)
-                    if hexbin[0] and hexbin[1]:
+                    elif hexbin[0] and hexbin[1]:
                         both_plots = layout.opts(
                             opts.HexTiles(**opts_arg),
                             opts.Layout(**layout_kwargs)
@@ -853,11 +1058,14 @@ class Deriv_dask:
                     both_plots = both_plots.opts(sublabel_format="", tight=True)
                 if hist[0]:
                     param_opts = param_plot.opts(xaxis="bare", alpha=0.1)
-                elif c:
-                    param_opts = param_plot.opts(xaxis="bare", alpha=1.0)
+                elif by is not None:
+                    param_opts = param_plot.opts(xaxis="bare")
                 else:
                     param_opts = param_plot.opts(xaxis="bare")
 
+                t2 = timer()
+                print("Setting options done in {} s".format(t2-t))
+                t = timer()
 
                 renderer = hv.Store.renderers[self.backend].instance(
                     fig='png', dpi=300)
@@ -865,9 +1073,9 @@ class Deriv_dask:
 
                 i = 0
                 if prefix is None:
-                    prefix = "plt_1line_"
+                    prefix = "plt_line_"
                     if scatter:
-                        prefix = "plt_1scatter_"
+                        prefix = "plt_scatter_"
                 save = (plot_path + prefix + x_axis + "_" + out_par
                         + "_" + "{:03d}".format(i))
                 while os.path.isfile(save + ".png"):
@@ -879,15 +1087,20 @@ class Deriv_dask:
                 if self.backend == "bokeh":
                     print("Plotting", flush=True)
                     hvplot.show(both_plots)
+                    self.plots.append(both_plots)
                     t2 = timer()
                     print("Plotting done in {}s".format(t2-t), flush=True)
                 else:
-                    print("Saving to " + save + ".png", flush=True)
+                    filetype = ".png"
+                    if datashade:
+                        filetype = ".html"
+                        self.plots.append(both_plots)
+                    print("Saving to " + save + filetype, flush=True)
                     renderer.save(both_plots, save)
                     t2 = timer()
                     try:
                         from IPython.display import Image, display
-                        display(Image(save + ".png", width=1600))
+                        display(Image(save + filetype, width=1600))
                     except:
                         pass
                     print("Saving done in {}s".format(t2-t), flush=True)
@@ -900,7 +1113,7 @@ class Deriv_dask:
                     p, v = sorted_tuples.pop()
                     in_params_2 = [p]
                     while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
-                        and np.abs(v/sorted_tuples[-1][1]) < 10):
+                        and np.abs(v/sorted_tuples[-1][1]) < 100):
                         p, v = sorted_tuples.pop()
                         in_params_2.append(p)
                     plot_helper(df_tmp_out, in_params=in_params_2, prefix=prefix, **kwargs)
