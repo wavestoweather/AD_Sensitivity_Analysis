@@ -624,7 +624,7 @@ class Deriv_dask:
                     t2 = timer()
                     print("Log done in {} s".format(t2-t))
                     t = timer()
-                df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word) # , meta=("Derivatives", "object")
+                df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word) 
 
                 if percentile is not None:
 
@@ -636,7 +636,6 @@ class Deriv_dask:
                     if log[0]:
                         # Apply should be more expensive
                         df_group[out_par] = da.log(da.fabs(df_group[out_par]))
-#                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
                         # Remove zero entries (-inf)
                         df_group = df_group[~da.isinf(df_group[out_par])]
 
@@ -676,7 +675,6 @@ class Deriv_dask:
                     if log[0]:
                         # Apply should be more expensive
                         df_group[out_par] = da.log(da.fabs(df_group[out_par]))
-#                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
                     df_min_max = df_group.groupby([x_axis, "trajectory"])[out_par].mean().groupby(x_axis).agg([np.min, np.max])
                     df_std = df_group.groupby([x_axis, "trajectory"])[out_par].mean().groupby(x_axis).agg([lambda x: -1*np.std(x)+np.mean(x), lambda x: np.std(x)+np.mean(x)])
                     df_mean = df_group.groupby(x_axis)[out_par].mean()
@@ -708,7 +706,6 @@ class Deriv_dask:
                     if log[0]:
                         # Apply should be more expensive
                         df_group[out_par] = da.log(da.fabs(df_group[out_par]))
-#                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
                     types = df_group[df_group[out_par] != 0][by].unique()
                     types = np.sort(types[::-1])
                     if not datashade:
@@ -747,7 +744,7 @@ class Deriv_dask:
                                 label=None,
                                 datashade=datashade,
                                 alpha=alpha[0]
-                            )
+                            ).opts(opts.Scatter(size=2))
                     else:
                         param_plot = df_group[df_group[out_par] != 0].hvplot.scatter(
                             x=x_axis,
@@ -757,29 +754,17 @@ class Deriv_dask:
                             cmap=cmap,
                             label=None,
                             datashade=datashade
-                            )
-                        x_min = df_group[x_axis].min()
-                        x_max = df_group[x_axis].max()
-                        y_min = df_group[out_par].min()
-                        y_max = df_group[out_par].max()
-
-                        points = hv.Points(
-                            ([np.NaN for i in range(len(list(cmap.keys())))],
-                             [np.NaN for i in range(len(list(cmap.keys())))],
-                             list(cmap.keys())), vdims="type")
+                        ).opts(aspect=3.2)
                         if self.backend == "bokeh":
-                            legend = points.sort("type").options(
-                                color="type",
+                            points = hv.Points(
+                                ([np.NaN for i in range(len(list(cmap.keys())))],
+                                 [np.NaN for i in range(len(list(cmap.keys())))],
+                                 list(cmap.keys())), vdims=by)
+                            legend = points.options(
+                                color=by,
                                 cmap=cmap,
-                                size=0,
                                 show_legend=True)
-                        else:
-                            legend = points.sort("type").options(
-                                color="type",
-                                cmap=cmap,
-                                s=0,
-                                show_legend=True)
-                        param_plot = (legend * param_plot)
+                            param_plot = (legend * param_plot).opts(aspect=3.2)
                 elif hexbin[0]:
                     if out_par == x_axis:
                         df_group = df[[x_axis, "trajectory"]]
@@ -788,7 +773,6 @@ class Deriv_dask:
                     if log[0]:
                         # Apply should be more expensive
                         df_group[out_par] = da.log(da.fabs(df_group[out_par]))
-#                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
                     param_plot = df_group.hvplot.hexbin(
                         x=x_axis,
                         y=out_par,
@@ -807,7 +791,6 @@ class Deriv_dask:
                     if log[0]:
                         # Apply should be more expensive
                          df_group[out_par] = da.log(da.fabs(df_group[out_par]))
-#                         df_group[out_par] = df_group[out_par].apply(lambda x: np.log(np.abs(x)))
                     param_plot = df_group.hvplot.scatter(
                         x=x_axis,
                         y=out_par,
@@ -847,6 +830,10 @@ class Deriv_dask:
                 else:
                     colors = plt.get_cmap("tab10")
                     all_derives = df_tmp["Derivatives"].unique()
+                    if len(all_derives) > 10 and len(all_derives) < 21:
+                        colors = plt.get_cmap("tab20")
+                    elif len(all_derives) > 20:
+                        colors = plt.get_cmap("gist_ncar")
                     all_derives = np.sort(all_derives[::-1])
                     if not datashade:
                         cmap_values = []
@@ -896,28 +883,17 @@ class Deriv_dask:
                             datashade=datashade,
                             cmap=cmap
                         ).opts(aspect=3.2)
-                        x_min = df_tmp[x_axis].min()
-                        x_max = df_tmp[x_axis].max()
-                        y_min = df_tmp["Derivative Ratio"].min()
-                        y_max = df_tmp["Derivative Ratio"].max()
-                        
-                        points_deriv = hv.Points( 
-                            ([np.NaN for i in range(len(all_derives))],
-                             [np.NaN for i in range(len(all_derives))],
-                             list(cmap.keys())), vdims="Derivatives")
+
                         if self.backend == "bokeh":
+                            points_deriv = hv.Points( 
+                                ([np.NaN for i in range(len(all_derives))],
+                                 [np.NaN for i in range(len(all_derives))],
+                                 list(cmap.keys())), vdims="Derivatives")
                             legend_deriv = points_deriv.options(
                                 color="Derivatives",
                                 cmap=cmap,
-                                size=0,
                                 show_legend=True)
-                        else:
-                            legend_deriv = points_deriv.options(
-                                color="Derivatives",
-                                cmap=cmap,
-                                s=0,
-                                show_legend=True)
-                        deriv_plot = (legend_deriv * deriv_plot).opts(aspect=3.2)
+                            deriv_plot = (legend_deriv * deriv_plot).opts(aspect=3.2)
                   # Does not work: Rectangle object has no property dimension
 #                 if hist[1]:
 #                     deriv_hist_plot = df_tmp.hist(dimension=[x_axis, "Derivative Ratio"], bins=bins)
@@ -939,19 +915,12 @@ class Deriv_dask:
                 t = timer()                
 
                 opts_arg = {} # Currently empty. Maybe useful in further iterations
-#                 if self.backend == "matplotlib":
-#                     opts_arg["aspect"] = 3.2
-#                     opts_arg["fig_size"] = 300
+
                 scatter_kwargs = {}
                 area_kwargs = {}
 
                 for k in kwargs:
                     scatter_kwargs[k] = kwargs[k]
-
-#                 if self.backend == "bokeh":
-#                     scatter_kwargs["size"] = 2
-#                 else:
-#                     scatter_kwargs["s"] = 8
 
                 if self.backend == "matplotlib":
                     area_kwargs["edgecolor"] = None
@@ -965,7 +934,6 @@ class Deriv_dask:
                     layout_kwargs["width"] = 1600
                     layout_kwargs["height"] = 500
                 else:
-#                     layout_kwargs["aspect"] = 3.2
                     layout_kwargs["fig_size"] = 400
 
                # Matplotlib uses a horrible colormap as default...
@@ -976,16 +944,12 @@ class Deriv_dask:
                             curve_kwargs["color"] = hv.Cycle("tab10")
                         elif len(percentile) <= 20:
                             curve_kwargs["color"] = hv.Cycle("tab20")
-                        # More seems convoluted to me
-#                         else:
-#                             curve_kwargs["color"] = hv.Cycle("viridis")
                     else:
                         if len(percentile) <= 10:
                             curve_kwargs["color"] = hv.Cycle("Category10")
                         elif len(percentile) <= 20:
                             curve_kwargs["color"] = hv.Cycle("Category20")
-#                         else:
-#                             curve_kwargs["color"] = "viridis" # "colorcet"
+
 
                 if errorband:
                     both_plots = layout.opts(
@@ -1108,12 +1072,13 @@ class Deriv_dask:
                 i = 0
                 if n_plots is None:
                     n_plots = 9999999
-    #             print("Creating {} plots".format(n_plots))
+
                 while len(sorted_tuples) > 0 and i < n_plots:
                     p, v = sorted_tuples.pop()
                     in_params_2 = [p]
+                    v_max = v
                     while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
-                        and np.abs(v/sorted_tuples[-1][1]) < 100):
+                        and np.abs(sorted_tuples[-1][1])/v_max > 0.1):
                         p, v = sorted_tuples.pop()
                         in_params_2.append(p)
                     plot_helper(df_tmp_out, in_params=in_params_2, prefix=prefix, **kwargs)
