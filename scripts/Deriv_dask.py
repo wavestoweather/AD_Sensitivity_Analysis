@@ -469,7 +469,8 @@ class Deriv_dask:
         hexbin=[False, False], log=[False, False], sort=True,
         scatter_deriv=False, line_deriv=False, prefix=None, compute=False,
         errorband=False, bins=50, plot_path="pics/", fig_type='svg',
-        datashade=True, by=None, use_cache=False, alpha=[1, 1], **kwargs):
+        datashade=True, by=None, use_cache=False, alpha=[1, 1], rolling_avg=None,
+        **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
         At the bottom: Derivative with respect to that output parameter.
@@ -529,6 +530,11 @@ class Deriv_dask:
             String for groupby. Can be either "trajectory" or "type".
         alpha : List of floats
             Alpha values for top [0] and bottom [1] graph.
+        rolling_avg : int
+            Number of timesteps to use for a rolling average of the derivatives. 
+            If None, no rolling average is being calculated.
+            If "by" is set, the rolling average will be calculated
+            per instance in the column from "by".
         kwargs : dict
             Keyword arguments are passed down matplotlib.
         """
@@ -570,7 +576,7 @@ class Deriv_dask:
         if mapped is not None:
             df = df.loc[df[mapped]]
         df = df.loc[df["Output Parameter"].isin(out_params)]
-        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
+        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))            
         if compute:
             if use_cache:
                 df = self.cache
@@ -611,12 +617,41 @@ class Deriv_dask:
             def plot_helper(df, in_params, prefix, **kwargs):
                 # following https://holoviz.org/tutorial/Composing_Plots.html
                 t = timer()
-                df_tmp = df[in_params+[x_axis]]
-                df_tmp = df_tmp.melt(x_axis, var_name="Derivatives",
+                if by is not None:
+                    df_tmp = df[in_params+[x_axis, by]]
+                    df_tmp = df_tmp.melt([x_axis, by], var_name="Derivatives",
                                     value_name="Derivative Ratio")
+                else:
+                    df_tmp = df[in_params+[x_axis]]
+                    df_tmp = df_tmp.melt([x_axis], var_name="Derivatives",
+                                         value_name="Derivative Ratio")
                 t2 = timer()
                 print("Melting done in {} s".format(t2-t), flush=True)
                 t = timer()
+                if rolling_avg is not None:
+                    if by is None:
+                        for param in in_params:
+                            series = df_tmp[
+                                df_tmp["Derivatives"] == param]["Derivative Ratio"].rolling(
+                                rolling_avg, min_periods=1).mean()
+                            series.name = "Derivative Ratio"
+                            series.index = df_tmp.index[df_tmp["Derivatives"] == param]
+                            df_tmp.update(series)
+                    else:
+                        types = df_tmp[by].unique()
+                        for ty in types:
+                            for param in in_params:
+                                series = df_tmp[
+                                    (df_tmp["Derivatives"] == param) & (df_tmp[by] == ty)]["Derivative Ratio"].rolling(
+                                    rolling_avg, min_periods=1).mean()
+                                series.name = "Derivative Ratio"
+                                series.index = df_tmp.index[
+                                    (df_tmp["Derivatives"] == param) & (df_tmp[by] == ty)]
+                                df_tmp.update(series)
+                    t2 = timer()
+                    print("Calculating rolling average done in {} s".format(t2-t))
+                    t = timer()
+                
                 if log[1]:
                     df_tmp["Derivative Ratio"] = da.log(da.fabs(df_tmp["Derivative Ratio"]))
                     # Remove zero entries (-inf)
