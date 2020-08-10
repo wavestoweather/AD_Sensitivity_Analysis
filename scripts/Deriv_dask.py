@@ -470,7 +470,7 @@ class Deriv_dask:
         scatter_deriv=False, line_deriv=False, prefix=None, compute=False,
         errorband=False, bins=50, plot_path="pics/", fig_type='svg',
         datashade=True, by=None, use_cache=False, alpha=[1, 1], rolling_avg=None,
-        **kwargs):
+        max_per_deriv=10, **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
         At the bottom: Derivative with respect to that output parameter.
@@ -535,6 +535,8 @@ class Deriv_dask:
             If None, no rolling average is being calculated.
             If "by" is set, the rolling average will be calculated
             per instance in the column from "by".
+        max_per_deriv : int
+            Maximum number of derivatives per plot.
         kwargs : dict
             Keyword arguments are passed down matplotlib.
         """
@@ -576,7 +578,7 @@ class Deriv_dask:
         if mapped is not None:
             df = df.loc[df[mapped]]
         df = df.loc[df["Output Parameter"].isin(out_params)]
-        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))            
+        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))     
         if compute:
             if use_cache:
                 df = self.cache
@@ -592,25 +594,33 @@ class Deriv_dask:
 
         for out_par in out_params:
             df_tmp_out = df.loc[df["Output Parameter"] == out_par]
+            # Todo: Averaging over output
             t = timer()
             # Sort the derivatives
             if sort:
                 sorted_tuples = []
                 for in_p in in_params:
                     if log[1]:
-                        value = np.abs(np.log(np.abs(df_tmp_out[in_p].min())))
-                        max_val = np.abs(np.log(np.abs(df_tmp_out[in_p].max())))
-                        if np.isinf(value):
-                            value = 0
-                        if np.isinf(max_val):
-                            max_val = 0
+                        value = np.log(np.abs(df_tmp_out[in_p].min()))
+                        max_val = np.log(np.abs(df_tmp_out[in_p].max()))
+#                         if np.isinf(value):
+#                             value = -1
+#                         if np.isinf(max_val):
+#                             max_val = -1
+                        if max_val > value:
+                            value = max_val
+                        if not np.isnan(value) and not np.isinf(value):
+                            sorted_tuples.append((in_p, value))
                     else:
                         value = np.abs(df_tmp_out[in_p].min())
                         max_val = np.abs(df_tmp_out[in_p].max())
-                    if max_val > value:
-                        value = max_val
-                    if value != 0 and not np.isnan(value):
-                        sorted_tuples.append((in_p, value))
+                        if max_val > value:
+                            value = max_val
+                        if value != 0 and not np.isnan(value):
+                            sorted_tuples.append((in_p, value))
+#                 if log[1]:
+#                     sorted_tuples[::-1].sort(key=lambda tup: tup[1])
+#                 else:
                 sorted_tuples.sort(key=lambda tup: tup[1])
             t2 = timer()
             print("Sorting done in {} s".format(t2-t), flush=True)
@@ -630,6 +640,7 @@ class Deriv_dask:
                 t = timer()
                 if rolling_avg is not None:
                     if by is None:
+                        # TODO: is that really rolling over consecutive timesteps? What if derivative gets 0?
                         for param in in_params:
                             series = df_tmp[
                                 df_tmp["Derivatives"] == param]["Derivative Ratio"].rolling(
@@ -757,7 +768,8 @@ class Deriv_dask:
                                 {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
                                 for i in range(len(types)) }
                             )
-        
+                            
+
                             param_plot = df_group[df_group[out_par] != 0].hvplot.scatter(
                                 x=x_axis,
                                 y=out_par,
@@ -769,6 +781,11 @@ class Deriv_dask:
                                 alpha=alpha[0],
                                 legend=False
                             ).opts(opts.Scatter(s=8)) * overlay
+                            
+                            if hist[0]:
+                                xhist = df_group[df_group[out_par] != 0].hvplot.hist(y=x_axis, bins=bins, height=125)
+                                yhist = df_group[df_group[out_par] != 0].hvplot.hist(y=out_par, bins=bins, width=125) 
+                                param_plot = param_plot << yhist << xhist
                         else:
                             param_plot = df_group[df_group[out_par] != 0].hvplot.scatter(
                                 x=x_axis,
@@ -817,7 +834,7 @@ class Deriv_dask:
                         cmap="viridis",
                         logz=True,
                         gridsize=100
-                        )
+                    )
                 else:
                     if out_par == x_axis:
                         df_group = df[[x_axis, "trajectory"]]
@@ -842,12 +859,21 @@ class Deriv_dask:
                     layout_kwargs["width"] = 1600
                     layout_kwargs["height"] = 500
                 else:
-                    layout_kwargs["aspect"] = 1600/500
-                    layout_kwargs["fig_size"] = 300
+                    if not hist[0]:
+                        layout_kwargs["aspect"] = 1600/500
+                    layout_kwargs["fig_size"] = 400
 
-                if hist[0]:
-                    param_plot.opts(**layout_kwargs)
-                    param_hist_plot = param_plot.hist(dimension=[x_axis, out_par], bins=bins, range=[0, 10000])
+#                 if hist[0]:
+#                     xhist, yhist = (hv_histo() * 
+#                                     hv_histo()
+#                                     for dim in [x_axis, out_par])
+#                     param_plot = param_plot << yhist.opts(width=125) << xhist.opts(height=125)
+#                     param_plot = param_plot.opts(**layout_kwargs)
+#                     print(param_plot.items())
+#                     print(param_plot.items()[0])
+#                     print(param_plot.items()[0][1])
+#                     print(param_plot.items()[0][1].items())
+#                     param_hist_plot = param_plot.items()[0][1].hist(dimension=[x_axis, out_par], bins=bins, range=[0, 10000])
 
                 if hexbin[1]:
                     deriv_plot = df_tmp.hvplot.hexbin(
@@ -932,12 +958,12 @@ class Deriv_dask:
                   # Does not work: Rectangle object has no property dimension
 #                 if hist[1]:
 #                     deriv_hist_plot = df_tmp.hist(dimension=[x_axis, "Derivative Ratio"], bins=bins)
-                hist[1] = False
+#                 hist[1] = False
                 t2 = timer()
                 print("Setting up lower plot done in {} s".format(t2-t))
 
                 if hist[0] and not hist[1]:
-                    layout = param_hist_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
+                    layout = param_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
                 elif hist[0] and hist[1]:
                     layout = param_hist_plot.opts(**layout_kwargs) + deriv_hist_plot.opts(**layout_kwargs)
                 elif not hist[0] and hist[1]:
@@ -1056,7 +1082,8 @@ class Deriv_dask:
                 if self.backend == "matplotlib":
                     both_plots = both_plots.opts(sublabel_format="", tight=True)
                 if hist[0]:
-                    param_opts = param_plot.opts(xaxis="bare", alpha=0.1)
+                    print("Passed")
+                    #param_opts = param_plot.opts(xaxis="bare", alpha=0.1)
                 elif by is not None:
                     param_opts = param_plot.opts(xaxis="bare")
                 else:
@@ -1116,6 +1143,8 @@ class Deriv_dask:
                         and np.abs(sorted_tuples[-1][1])/v_max > 0.1):
                         p, v = sorted_tuples.pop()
                         in_params_2.append(p)
+                        if len(in_params_2) == max_per_deriv:
+                            break
                     plot_helper(df_tmp_out, in_params=in_params_2, prefix=prefix, **kwargs)
                     i += 1
             else:
