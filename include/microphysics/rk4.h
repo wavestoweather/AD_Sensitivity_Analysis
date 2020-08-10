@@ -51,6 +51,9 @@ void RK4_step(
 #if defined(RK4_ONE_MOMENT)
     RHS(k, yold, ref, cc, nc); // k = k1
 #endif
+#if defined(OTHER)
+    RHS_other();
+#endif
 
     for(int ii = 0 ; ii < num_comp ; ii++){
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k1 for k2
