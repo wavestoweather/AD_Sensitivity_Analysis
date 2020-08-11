@@ -470,7 +470,7 @@ class Deriv_dask:
         scatter_deriv=False, line_deriv=False, prefix=None, compute=False,
         errorband=False, bins=50, plot_path="pics/", fig_type='svg',
         datashade=True, by=None, use_cache=False, alpha=[1, 1], rolling_avg=None,
-        max_per_deriv=10, **kwargs):
+        max_per_deriv=10, width=1280, height=800, **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
         At the bottom: Derivative with respect to that output parameter.
@@ -856,12 +856,12 @@ class Deriv_dask:
                 
                 layout_kwargs = {}
                 if self.backend == "bokeh":
-                    layout_kwargs["width"] = 1600
-                    layout_kwargs["height"] = 500
+                    layout_kwargs["width"] = width
+                    layout_kwargs["height"] = height
                 else:
                     if not hist[0]:
-                        layout_kwargs["aspect"] = 1600/500
-                    layout_kwargs["fig_size"] = 400
+                        layout_kwargs["aspect"] = width/height
+                    layout_kwargs["fig_size"] = height/2
 
 #                 if hist[0]:
 #                     xhist, yhist = (hv_histo() * 
@@ -992,10 +992,10 @@ class Deriv_dask:
 
                 layout_kwargs = {}
                 if  self.backend == "bokeh":
-                    layout_kwargs["width"] = 1600
-                    layout_kwargs["height"] = 500
+                    layout_kwargs["width"] = width
+                    layout_kwargs["height"] = height
                 else:
-                    layout_kwargs["fig_size"] = 400
+                    layout_kwargs["fig_size"] = height/2
 
                # Matplotlib uses a horrible colormap as default...
                 curve_kwargs = kwargs.copy()
@@ -1126,7 +1126,7 @@ class Deriv_dask:
                     t2 = timer()
                     try:
                         from IPython.display import Image, display
-                        display(Image(save + filetype, width=1600))
+                        display(Image(save + filetype, width=width))
                     except:
                         pass
                     print("Saving done in {}s".format(t2-t), flush=True)
@@ -1139,8 +1139,8 @@ class Deriv_dask:
                     p, v = sorted_tuples.pop()
                     in_params_2 = [p]
                     v_max = v
-                    while (len(sorted_tuples) > 0 and sorted_tuples[-1][1] > 0
-                        and np.abs(sorted_tuples[-1][1])/v_max > 0.1):
+                    print(f"ratio before {}")
+                    while (len(sorted_tuples) > 0 and np.abs(sorted_tuples[-1][1]/v_max) > 0.1):
                         p, v = sorted_tuples.pop()
                         in_params_2.append(p)
                         if len(in_params_2) == max_per_deriv:
