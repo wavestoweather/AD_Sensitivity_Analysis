@@ -1139,7 +1139,6 @@ class Deriv_dask:
                     p, v = sorted_tuples.pop()
                     in_params_2 = [p]
                     v_max = v
-                    print(f"ratio before {}")
                     while (len(sorted_tuples) > 0 and np.abs(sorted_tuples[-1][1]/v_max) > 0.1):
                         p, v = sorted_tuples.pop()
                         in_params_2.append(p)
