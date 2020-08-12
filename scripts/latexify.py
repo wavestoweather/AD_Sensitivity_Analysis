@@ -129,7 +129,7 @@ def parse_word(word):
     subscript_no_math = ["snow", "graupel", "rain", "ice", "cloud", "hail", "vapor"]
     no_math = ["geo", "min", "max", "ven", "vel"]
     math_keys = ["alpha", "gamma", "beta", "delta", "zeta",
-                 "rho", "nu", "mu", "lambda"]
+                 "rho", "nu", "mu", "lambda", "theta"]
     
     maps = mappings.keys()
     for w in maps:

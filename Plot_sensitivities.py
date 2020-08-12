@@ -104,6 +104,9 @@ alpha = [1, 0.1]
 # 2 seconds, where the COSMO simulation uses 20 seconds
 rolling_avg = 15 # == 30 seconds
 by = "type" # Column used for groupby operation
+width=1280
+height=800
+max_per_deriv = 5
 
 in_params = []
 for key in in_params_dic:
@@ -115,136 +118,165 @@ deriv = Deriv_dask(
     columns=None,
     backend="matplotlib")
 
-for out_param in out_params:
-    # Start plotting
-    deriv.plot_two_ds(
-        in_params=in_params,
-        out_params=[out_param],
-        x_axis=x_axis,
-        mapped=None,
-        trajectories=trajectories,
-        scatter=True,
-        n_plots=n_plots,
-        percentile=None,
-        min_x=min_x,
-        max_x=max_x,
-        hist=[False, False],
-        hexbin=hexbin,
-        log=log,
-        sort=True,
-        scatter_deriv=True,
-        line_deriv=False,
-        prefix=out_param + "_simple_",
-        by="type",
-        compute=True,
-        datashade=False,
-        use_cache=False,
-        alpha=alpha,
-        rolling_avg=rolling_avg)
+ratio_types = ["vanilla", "per_timestep", "window", "per_xaxis",
+               "per_timestep_per_out_param",
+               "window_per_out_param", "per_xaxis_per_out_param"]
+x_axiss = ["timestep", "p"]
+# Trajectories can be identified by a number but 9 is skipped and I never
+# corrected that mistake
+for i, trajectories in enumerate([None, [0, 1, 2], [3, 4, 5], [6, 7, 8], [10, 10, 12]]):
+    # We divide per out_param to reduce memory usage
+    for out_param in out_params:
+        print("\n\n##############################")
+        print(f"**** Plotting for {out_param} ****")
+        print("##############################\n\n")
+        for x_axis in x_axiss:
+            cache = False
+            for ratio_type in ratio_types:
+                if x_axis == "timestep" and "per_xaxis" in ratio_type:
+                    continue
+                log = [False, False]
+                deriv.plot_two_ds(
+                    in_params=in_params,
+                    out_params=[out_param],
+                    x_axis=x_axis,
+                    mapped=None,
+                    trajectories=trajectories,
+                    scatter=True,
+                    n_plots=n_plots,
+                    percentile=None,
+                    min_x=min_x,
+                    max_x=max_x,
+                    hist=[False, False],
+                    hexbin=hexbin,
+                    log=log,
+                    sort=True,
+                    scatter_deriv=True,
+                    line_deriv=False,
+                    prefix=str(i) + "_" + out_param + "_simple_" + ratio_type + "_",
+                    by="type",
+                    compute=True,
+                    datashade=False,
+                    use_cache=cache,
+                    alpha=alpha,
+                    rolling_avg=rolling_avg,
+                    width=width,
+                    height=height,
+                    ratio_type=ratio_type,
+                    max_per_deriv=max_per_deriv)
+                cache = True
+                log = [False, True]
+                deriv.plot_two_ds(
+                    in_params=in_params,
+                    out_params=[out_param],
+                    x_axis=x_axis,
+                    mapped=None,
+                    trajectories=trajectories,
+                    scatter=True,
+                    n_plots=n_plots,
+                    percentile=None,
+                    min_x=min_x,
+                    max_x=max_x,
+                    hist=[False, False],
+                    hexbin=hexbin,
+                    log=log,
+                    sort=True,
+                    scatter_deriv=True,
+                    line_deriv=False,
+                    prefix=str(i) + "_" + out_param + "_log_deriv_" + ratio_type + "_",
+                    by="type",
+                    compute=True,
+                    datashade=False,
+                    use_cache=cache,
+                    alpha=alpha,
+                    rolling_avg=rolling_avg,
+                    width=width,
+                    height=height,
+                    ratio_type=ratio_type,
+                    max_per_deriv=max_per_deriv)
 
-    # Now plotting using cached data
-    log = [False, True]
-    deriv.plot_two_ds(
-        in_params=in_params,
-        out_params=[out_param],
-        x_axis=x_axis,
-        mapped=None,
-        trajectories=trajectories,
-        scatter=True,
-        n_plots=n_plots,
-        percentile=None,
-        min_x=min_x,
-        max_x=max_x,
-        hist=[False, False],
-        hexbin=hexbin,
-        log=log,
-        sort=True,
-        scatter_deriv=True,
-        line_deriv=False,
-        prefix=out_param + "_log_deriv_",
-        by="type",
-        compute=True,
-        datashade=False,
-        use_cache=True,
-        alpha=alpha,
-        rolling_avg=rolling_avg)
+#     hexbin = [False, True]
+#     deriv.plot_two_ds(
+#         in_params=in_params,
+#         out_params=[out_param],
+#         x_axis=x_axis,
+#         mapped=None,
+#         trajectories=trajectories,
+#         scatter=True,
+#         n_plots=n_plots,
+#         percentile=None,
+#         min_x=min_x,
+#         max_x=max_x,
+#         hist=[False, False],
+#         hexbin=hexbin,
+#         log=log,
+#         sort=True,
+#         scatter_deriv=True,
+#         line_deriv=False,
+#         prefix=out_param + "_log_bin_deriv_",
+#         by="type",
+#         compute=True,
+#         datashade=False,
+#         use_cache=True,
+#         alpha=alpha,
+#         rolling_avg=rolling_avg,
+#         width=width,
+#         height=height)
 
-    hexbin = [False, True]
-    deriv.plot_two_ds(
-        in_params=in_params,
-        out_params=[out_param],
-        x_axis=x_axis,
-        mapped=None,
-        trajectories=trajectories,
-        scatter=True,
-        n_plots=n_plots,
-        percentile=None,
-        min_x=min_x,
-        max_x=max_x,
-        hist=[False, False],
-        hexbin=hexbin,
-        log=log,
-        sort=True,
-        scatter_deriv=True,
-        line_deriv=False,
-        prefix=out_param + "_log_bin_deriv_",
-        by="type",
-        compute=True,
-        datashade=False,
-        use_cache=True,
-        alpha=alpha,
-        rolling_avg=rolling_avg)
+#     hexbin = [True, True]
+#     deriv.plot_two_ds(
+#         in_params=in_params,
+#         out_params=[out_param],
+#         x_axis=x_axis,
+#         mapped=None,
+#         trajectories=trajectories,
+#         scatter=True,
+#         n_plots=n_plots,
+#         percentile=None,
+#         min_x=min_x,
+#         max_x=max_x,
+#         hist=[False, False],
+#         hexbin=hexbin,
+#         log=log,
+#         sort=True,
+#         scatter_deriv=True,
+#         line_deriv=False,
+#         prefix=out_param + "_bin_param_log_bin_deriv",
+#         by="type",
+#         compute=True,
+#         datashade=False,
+#         use_cache=True,
+#         alpha=alpha,
+#         rolling_avg=rolling_avg,
+#         width=width,
+#         height=height)
 
-    hexbin = [True, True]
-    deriv.plot_two_ds(
-        in_params=in_params,
-        out_params=[out_param],
-        x_axis=x_axis,
-        mapped=None,
-        trajectories=trajectories,
-        scatter=True,
-        n_plots=n_plots,
-        percentile=None,
-        min_x=min_x,
-        max_x=max_x,
-        hist=[False, False],
-        hexbin=hexbin,
-        log=log,
-        sort=True,
-        scatter_deriv=True,
-        line_deriv=False,
-        prefix=out_param + "_bin_param_log_bin_deriv",
-        by="type",
-        compute=True,
-        datashade=False,
-        use_cache=True,
-        alpha=alpha,
-        rolling_avg=rolling_avg)
+#     log = [False, False]
+#     deriv.plot_two_ds(
+#         in_params=in_params,
+#         out_params=[out_param],
+#         x_axis=x_axis,
+#         mapped=None,
+#         trajectories=trajectories,
+#         scatter=True,
+#         n_plots=n_plots,
+#         percentile=None,
+#         min_x=min_x,
+#         max_x=max_x,
+#         hist=[False, False],
+#         hexbin=hexbin,
+#         log=log,
+#         sort=True,
+#         scatter_deriv=True,
+#         line_deriv=False,
+#         prefix=out_param + "_bin_param_bin_deriv_",
+#         by="type",
+#         compute=True,
+#         datashade=False,
+#         use_cache=True,
+#         alpha=alpha,
+#         rolling_avg=rolling_avg,
+#         width=width,
+#         height=height)
 
-    log = [False, False]
-    deriv.plot_two_ds(
-        in_params=in_params,
-        out_params=[out_param],
-        x_axis=x_axis,
-        mapped=None,
-        trajectories=trajectories,
-        scatter=True,
-        n_plots=n_plots,
-        percentile=None,
-        min_x=min_x,
-        max_x=max_x,
-        hist=[False, False],
-        hexbin=hexbin,
-        log=log,
-        sort=True,
-        scatter_deriv=True,
-        line_deriv=False,
-        prefix=out_param + "_bin_param_bin_deriv_",
-        by="type",
-        compute=True,
-        datashade=False,
-        use_cache=True,
-        alpha=alpha,
-        rolling_avg=rolling_avg)
-
-    hexbin = [False, False]
+#     hexbin = [False, False]

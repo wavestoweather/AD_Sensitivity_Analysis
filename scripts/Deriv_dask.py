@@ -470,7 +470,7 @@ class Deriv_dask:
         scatter_deriv=False, line_deriv=False, prefix=None, compute=False,
         errorband=False, bins=50, plot_path="pics/", fig_type='svg',
         datashade=True, by=None, use_cache=False, alpha=[1, 1], rolling_avg=None,
-        max_per_deriv=10, width=1280, height=800, **kwargs):
+        max_per_deriv=10, width=1280, height=800, ratio_type="vanilla", **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
         At the bottom: Derivative with respect to that output parameter.
@@ -493,7 +493,7 @@ class Deriv_dask:
         mapped : string
             Column name which has to be true such as conv_400, slan_400,
             conv_600, slan_600.
-        trajectories : int
+        trajectories : List of int
             The index of the trajectories to plot. If None is given, all
             trajectories will be plotted.
         scatter : boolean
@@ -531,12 +531,21 @@ class Deriv_dask:
         alpha : List of floats
             Alpha values for top [0] and bottom [1] graph.
         rolling_avg : int
-            Number of timesteps to use for a rolling average of the derivatives. 
+            Number of timesteps to use for a rolling average of the derivatives.
             If None, no rolling average is being calculated.
             If "by" is set, the rolling average will be calculated
             per instance in the column from "by".
         max_per_deriv : int
             Maximum number of derivatives per plot.
+        ratio_type : String
+            "vanilla": Use the derivative ratio in the file that *should* use the
+            highest derivative over all times as denominator.
+            "per_timestep": Use the highest derivative per timestep as denominator.
+            "window": Use the highest derivative in the given window by min_x and max_x.
+            "per_xaxis": Use the highest derivative per x_axis value. If x_axis is "timestep"
+            it is the same as "per_timestep".
+            "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
+            derivative but per output parameter.
         kwargs : dict
             Keyword arguments are passed down matplotlib.
         """
@@ -578,22 +587,60 @@ class Deriv_dask:
         if mapped is not None:
             df = df.loc[df[mapped]]
         df = df.loc[df["Output Parameter"].isin(out_params)]
-        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))     
+        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
         if compute:
             if use_cache:
-                df = self.cache
+                df = self.cache.copy()
             else:
                 df = df[all_params].compute()
-                self.cache = df
+                self.cache = df.copy()
         elif use_cache:
-            df = self.cache
+            df = self.cache.copy()
         else:
             df = df[all_params]
         t2 = timer()
         print("Loading done in {} s".format(t2-t))
+        t = timer()
+
+        if "per_timestep" in ratio_type and not "per_out_param" in ratio_type:
+            # Get series of max values over all timesteps (equals index)
+            max_vals = df[in_params].apply(lambda x: np.max(np.abs(x)), axis=1)
+            df[in_params] = df[in_params].div(max_vals, axis=0)
+            t2 = timer()
+            print("Recalculating ratios done in {} s".format(t2-t))
+        elif "window" in ratio_type and not "per_out_param" in ratio_type:
+            max_val = df[in_params].max().max()
+            df[in_params] = df[in_params].div(max_val)
+            t2 = timer()
+            print("Recalculating ratios done in {} s".format(t2-t))
+        elif "per_xaxis" in ratio_type and not "per_out_param" in ratio_type:
+            df = df.set_index(x_axis)
+            max_vals = df.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
+            df[in_params] = df[in_params].div(max_vals, axis="index")
+            # df.reset_index()
+            t2 = timer()
+            print("Recalculating ratios done in {} s".format(t2-t))
 
         for out_par in out_params:
             df_tmp_out = df.loc[df["Output Parameter"] == out_par]
+            if "per_timestep" in ratio_type and "per_out_param" in ratio_type:
+                # Get series of max values over all timesteps (equals index)
+                max_vals = df_tmp_out[in_params].apply(lambda x: np.max(np.abs(x)), axis=1)
+                df_tmp_out[in_params] = df_tmp_out[in_params].div(max_vals, axis=0)
+                t2 = timer()
+                print("Recalculating ratios done in {} s".format(t2-t))
+            elif "window" in ratio_type and "per_out_param" in ratio_type:
+                max_val = df_tmp_out[in_params].max().max()
+                df_tmp_out[in_params] = df_tmp_out[in_params].div(max_val)
+                t2 = timer()
+                print("Recalculating ratios done in {} s".format(t2-t))
+            elif "per_xaxis" in ratio_type and "per_out_param" in ratio_type:
+                df_tmp_out = df_tmp_out.set_index(x_axis)
+                max_vals = df_tmp_out.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
+                df_tmp_out[in_params] = df_tmp_out[in_params].div(max_vals, axis="index")
+                # df.reset_index()
+                t2 = timer()
+                print("Recalculating ratios done in {} s".format(t2-t))
             # Todo: Averaging over output
             t = timer()
             # Sort the derivatives
@@ -662,15 +709,18 @@ class Deriv_dask:
                     t2 = timer()
                     print("Calculating rolling average done in {} s".format(t2-t))
                     t = timer()
-                
+
+                deriv_col_name = "Derivative Ratio"
                 if log[1]:
+                    deriv_col_name = "Log Derivative Ratio"
                     df_tmp["Derivative Ratio"] = da.log(da.fabs(df_tmp["Derivative Ratio"]))
                     # Remove zero entries (-inf)
                     df_tmp = df_tmp[~da.isinf(df_tmp["Derivative Ratio"])]
+                    df_tmp.rename(columns={"Derivative Ratio": deriv_col_name}, inplace=True)
                     t2 = timer()
                     print("Log done in {} s".format(t2-t))
                     t = timer()
-                df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word) 
+                df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
 
                 if percentile is not None:
 
@@ -768,7 +818,7 @@ class Deriv_dask:
                                 {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
                                 for i in range(len(types)) }
                             )
-                            
+
 
                             param_plot = df_group[df_group[out_par] != 0].hvplot.scatter(
                                 x=x_axis,
@@ -781,10 +831,10 @@ class Deriv_dask:
                                 alpha=alpha[0],
                                 legend=False
                             ).opts(opts.Scatter(s=8)) * overlay
-                            
+
                             if hist[0]:
                                 xhist = df_group[df_group[out_par] != 0].hvplot.hist(y=x_axis, bins=bins, height=125)
-                                yhist = df_group[df_group[out_par] != 0].hvplot.hist(y=out_par, bins=bins, width=125) 
+                                yhist = df_group[df_group[out_par] != 0].hvplot.hist(y=out_par, bins=bins, width=125)
                                 param_plot = param_plot << yhist << xhist
                         else:
                             param_plot = df_group[df_group[out_par] != 0].hvplot.scatter(
@@ -853,7 +903,7 @@ class Deriv_dask:
                 t2 = timer()
                 print("Setting up upper plot done in {} s".format(t2-t))
                 t = timer()
-                
+
                 layout_kwargs = {}
                 if self.backend == "bokeh":
                     layout_kwargs["width"] = width
@@ -864,7 +914,7 @@ class Deriv_dask:
                     layout_kwargs["fig_size"] = height/2
 
 #                 if hist[0]:
-#                     xhist, yhist = (hv_histo() * 
+#                     xhist, yhist = (hv_histo() *
 #                                     hv_histo()
 #                                     for dim in [x_axis, out_par])
 #                     param_plot = param_plot << yhist.opts(width=125) << xhist.opts(height=125)
@@ -878,7 +928,7 @@ class Deriv_dask:
                 if hexbin[1]:
                     deriv_plot = df_tmp.hvplot.hexbin(
                         x=x_axis,
-                        y="Derivative Ratio",
+                        y=deriv_col_name,
                         by="Derivatives",
                         title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
                         label=None,
@@ -900,16 +950,16 @@ class Deriv_dask:
                         cmap_values = []
                         for i in range(len(all_derives)):
                             cmap_values.append(matplotlib.colors.to_hex(colors(i)[0:-1]))
-                        
+
                         if self.backend == "matplotlib":
                             overlay = hv.NdOverlay(
                                 {derivative: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
                                 for i, derivative in enumerate(all_derives)}
                             )
-                        
+
                             deriv_plot = df_tmp.hvplot.scatter(
                                 x=x_axis,
-                                y="Derivative Ratio",
+                                y=deriv_col_name,
                                 by="Derivatives",
                                 title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
                                 label=None,
@@ -922,7 +972,7 @@ class Deriv_dask:
                         else:
                             deriv_plot = df_tmp.hvplot.scatter(
                                 x=x_axis,
-                                y="Derivative Ratio",
+                                y=deriv_col_name,
                                 by="Derivatives",
                                 title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
                                 label=None,
@@ -930,14 +980,14 @@ class Deriv_dask:
                                 alpha=alpha[1],
                                 cmap=cmap_values
                             ).opts(opts.Scatter(size=2))
-                        
+
                     else:
                         cmap = {}
                         for i, d in enumerate(all_derives):
                             cmap[d] = matplotlib.colors.to_hex(colors(i)[0:-1])
                         deriv_plot = df_tmp.hvplot.scatter(
                             x=x_axis,
-                            y="Derivative Ratio",
+                            y=deriv_col_name,
                             by="Derivatives",
                             title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
                             label=None,
@@ -946,7 +996,7 @@ class Deriv_dask:
                         ).opts(aspect=3.2)
 
                         if self.backend == "bokeh":
-                            points_deriv = hv.Points( 
+                            points_deriv = hv.Points(
                                 ([np.NaN for i in range(len(all_derives))],
                                  [np.NaN for i in range(len(all_derives))],
                                  list(cmap.keys())), vdims="Derivatives")
@@ -973,7 +1023,7 @@ class Deriv_dask:
 
                 t2 = timer()
                 print("Creating layout done in {} s".format(t2-t))
-                t = timer()                
+                t = timer()
 
                 opts_arg = {} # Currently empty. Maybe useful in further iterations
 
@@ -1139,11 +1189,18 @@ class Deriv_dask:
                     p, v = sorted_tuples.pop()
                     in_params_2 = [p]
                     v_max = v
-                    while (len(sorted_tuples) > 0 and np.abs(sorted_tuples[-1][1]/v_max) > 0.1):
-                        p, v = sorted_tuples.pop()
-                        in_params_2.append(p)
-                        if len(in_params_2) == max_per_deriv:
-                            break
+                    if log[1]:
+                        while (len(sorted_tuples) > 0 and np.abs(v_max) - np.abs(sorted_tuples[-1][1]) > 15):
+                            p, v = sorted_tuples.pop()
+                            in_params_2.append(p)
+                            if len(in_params_2) == max_per_deriv:
+                                break
+                    else:
+                        while (len(sorted_tuples) > 0 and np.abs(sorted_tuples[-1][1]/v_max) > 0.1):
+                            p, v = sorted_tuples.pop()
+                            in_params_2.append(p)
+                            if len(in_params_2) == max_per_deriv:
+                                break
                     plot_helper(df_tmp_out, in_params=in_params_2, prefix=prefix, **kwargs)
                     i += 1
             else:
