@@ -131,13 +131,17 @@ class Deriv:
                 for col in add_columns:
                     tmp_df[col] = add_columns[col]
             if dropna:
-                xr.Dataset.from_dataframe(tmp_df.set_index(
-                    ["timestep", "trajectory"]).dropna()).to_netcdf(
-                        f_name + "/" + k + ".nc_wcb")
+                ds = xr.Dataset.from_dataframe(tmp_df.set_index(
+                    ["timestep", "trajectory"]).dropna())
             else:
-                xr.Dataset.from_dataframe(tmp_df.set_index(
-                    ["timestep", "trajectory"])).to_netcdf(
-                        f_name + "/" + k + ".nc_wcb")
+                ds = xr.Dataset.from_dataframe(tmp_df.set_index(
+                    ["timestep", "trajectory"]))
+            # Choose encoding
+            comp = dict(hdf5=True, complevel=9)
+            encoding = {var: comp for var in ds.data_vars}
+
+            ds.to_netcdf(f_name + "/" + k + ".nc_wcb", encoding=encoding)
+
 
     def delete_not_mapped(self):
         """
@@ -188,14 +192,14 @@ class Deriv:
                        "conv_400", "conv_600", "slan_400", "slan_600"]:
                 continue
             cols.append(col)
-        
+
         for k in self.data:
             self.data[k] = self.data[k].merge(df[cols], how='right')
-            
+
     def shift_time(self, flag, debug=False):
         """
         Shift the time axis such that at t=0 the first occurence of flag appears.
-        
+
         Parameters
         ----------
         flag : string

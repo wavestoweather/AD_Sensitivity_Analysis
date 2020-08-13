@@ -137,6 +137,7 @@ for i, trajectories in enumerate([None, [0, 1, 2], [3, 4, 5], [6, 7, 8], [10, 10
                     continue
                 log = [False, False]
                 deriv.plot_two_ds(
+                    plot_path="/data/project/wcb/pics/",
                     in_params=in_params,
                     out_params=[out_param],
                     x_axis=x_axis,
@@ -160,6 +161,7 @@ for i, trajectories in enumerate([None, [0, 1, 2], [3, 4, 5], [6, 7, 8], [10, 10
                     use_cache=cache,
                     alpha=alpha,
                     rolling_avg=rolling_avg,
+                    rolling_avg_par=rolling_avg,
                     width=width,
                     height=height,
                     ratio_type=ratio_type,
@@ -167,6 +169,7 @@ for i, trajectories in enumerate([None, [0, 1, 2], [3, 4, 5], [6, 7, 8], [10, 10
                 cache = True
                 log = [False, True]
                 deriv.plot_two_ds(
+                    plot_path="/data/project/wcb/pics/",
                     in_params=in_params,
                     out_params=[out_param],
                     x_axis=x_axis,
@@ -190,6 +193,7 @@ for i, trajectories in enumerate([None, [0, 1, 2], [3, 4, 5], [6, 7, 8], [10, 10
                     use_cache=cache,
                     alpha=alpha,
                     rolling_avg=rolling_avg,
+                    rolling_avg_par=rolling_avg,
                     width=width,
                     height=height,
                     ratio_type=ratio_type,

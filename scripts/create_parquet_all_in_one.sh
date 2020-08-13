@@ -1,7 +1,7 @@
-FILE_TYPE="parquet"
+FILE_TYPE="netcdf"
 INPUT_PATH="/data/project/wcb/sim_results/traj_stats2/slan_600_quan25"
-STORE_PATH="/data/project/wcb/parquet/traj_stats_shifted_time"
-# python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH}
+STORE_PATH="/data/project/wcb/netcdf/sim_output"
+python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH}
 
 INPUT_PATH="/data/project/wcb/sim_results/traj_stats2/slan_600_median"
 python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH}

@@ -469,8 +469,9 @@ class Deriv_dask:
         hexbin=[False, False], log=[False, False], sort=True,
         scatter_deriv=False, line_deriv=False, prefix=None, compute=False,
         errorband=False, bins=50, plot_path="pics/", fig_type='svg',
-        datashade=True, by=None, use_cache=False, alpha=[1, 1], rolling_avg=None,
-        max_per_deriv=10, width=1280, height=800, ratio_type="vanilla", **kwargs):
+        datashade=True, by=None, use_cache=False, alpha=[1, 1],
+        rolling_avg=None, rolling_avg_par=None, max_per_deriv=10,
+        width=1280, height=800, ratio_type="vanilla", **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
         At the bottom: Derivative with respect to that output parameter.
@@ -535,6 +536,8 @@ class Deriv_dask:
             If None, no rolling average is being calculated.
             If "by" is set, the rolling average will be calculated
             per instance in the column from "by".
+        rolling_avg_par : int
+            Same as rollling_avg but for output parameters.
         max_per_deriv : int
             Maximum number of derivatives per plot.
         ratio_type : String
@@ -609,7 +612,7 @@ class Deriv_dask:
             t2 = timer()
             print("Recalculating ratios done in {} s".format(t2-t))
         elif "window" in ratio_type and not "per_out_param" in ratio_type:
-            max_val = df[in_params].max().max()
+            max_val = df[in_params].apply(lambda x: np.max(np.abs(x))).max()
             df[in_params] = df[in_params].div(max_val)
             t2 = timer()
             print("Recalculating ratios done in {} s".format(t2-t))
@@ -630,7 +633,7 @@ class Deriv_dask:
                 t2 = timer()
                 print("Recalculating ratios done in {} s".format(t2-t))
             elif "window" in ratio_type and "per_out_param" in ratio_type:
-                max_val = df_tmp_out[in_params].max().max()
+                max_val = df_tmp_out[in_params].apply(lambda x: np.max(np.abs(x))).max()
                 df_tmp_out[in_params] = df_tmp_out[in_params].div(max_val)
                 t2 = timer()
                 print("Recalculating ratios done in {} s".format(t2-t))
@@ -641,8 +644,23 @@ class Deriv_dask:
                 # df.reset_index()
                 t2 = timer()
                 print("Recalculating ratios done in {} s".format(t2-t))
-            # Todo: Averaging over output
+            # Averaging over output
             t = timer()
+            if rolling_avg_par is not None:
+                if by is None:
+                    df_tmp_out[out_par] = df_tmp_out[out_par].rolling(
+                        rolling_avg_par, min_periods=1).mean()
+                else:
+                    types = df_tmp_out[by].unique()
+                    for ty in types:
+                        for param in in_params:
+                            series = df_tmp_out[df_tmp_out[by] == ty][out_par].rolling(
+                                rolling_avg, min_periods=1).mean()
+                            series.name = out_par
+                            series.index = df_tmp_out.index[df_tmp_out[by] == ty]
+                            df_tmp_out.update(series)
+                t = timer()
+
             # Sort the derivatives
             if sort:
                 sorted_tuples = []
@@ -707,7 +725,7 @@ class Deriv_dask:
                                     (df_tmp["Derivatives"] == param) & (df_tmp[by] == ty)]
                                 df_tmp.update(series)
                     t2 = timer()
-                    print("Calculating rolling average done in {} s".format(t2-t))
+                    print("Calculating rolling average for derivatives done in {} s".format(t2-t))
                     t = timer()
 
                 deriv_col_name = "Derivative Ratio"
