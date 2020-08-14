@@ -137,10 +137,10 @@ class Deriv:
                 ds = xr.Dataset.from_dataframe(tmp_df.set_index(
                     ["timestep", "trajectory"]))
             # Choose encoding
-            comp = dict(hdf5=True, complevel=9)
+            comp = dict(zlib=True, complevel=9)
             encoding = {var: comp for var in ds.data_vars}
 
-            ds.to_netcdf(f_name + "/" + k + ".nc_wcb", encoding=encoding)
+            ds.to_netcdf(f_name + "_" + k + "_derivs.nc_wcb", encoding=encoding)
 
 
     def delete_not_mapped(self):

@@ -78,7 +78,7 @@ for f_this in file_list:
         refs=ref)
     t2 = timer()
     print("Loading done in {} s".format(t2-t))
-    
+
     print("Checking for minimum number of rows")
     min_rows = len(df_sim_mapped.data.index)
     crop_data = False
@@ -93,20 +93,20 @@ for f_this in file_list:
         df_sim_mapped.data = df_sim_mapped.data.head(min_rows)
         for key in df_dic_mapped.data:
             df_dic_mapped.data[key] = df_dic_mapped.data[key].head(min_rows)
-    
+
 
     print("Get ratio of data")
     t = timer()
     df_dic_mapped.calculate_ratios()
     t2 = timer()
     print("ratio done in {} s".format(t2-t))
-    
+
     print("Adding columns for output Parameter results")
     t = timer()
     df_dic_mapped.add_param_values(df_sim_mapped.data)
     t2 = timer()
     print("Adding finished in {} s".format(t2-t))
-    
+
     print("Shift the timesteps such that t=0 is the start of the ascent")
     t = timer()
     # Get the currently used flag from the filename
@@ -120,7 +120,7 @@ for f_this in file_list:
     df_dic_mapped.shift_time(flag=flag)
     t2 = timer()
     print("Shifting done in {} s.".format(t2-t))
-        
+
     print("Saving as {}".format(file_type))
     t = timer()
     try:
@@ -128,7 +128,8 @@ for f_this in file_list:
             df_dic_mapped.to_parquet(
                 store_path, compression="snappy", low_memory=True)
         elif file_type == "netcdf":
-            df_dic_mapped.to_netcdf(store_path)
+            f_name = store_path + "/" + flag
+            df_dic_mapped.to_netcdf(f_name)
         else:
             print("No such file format: {}".format(file_type))
             failed_trajectories.append(prefix)
