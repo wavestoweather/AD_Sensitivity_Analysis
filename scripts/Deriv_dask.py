@@ -33,6 +33,7 @@ except:
 import dask.dataframe as pd
 from bokeh.io import curdoc
 from bokeh.palettes import Category20c
+from timeit import default_timer as timer
 
 class Deriv_dask:
     """
@@ -166,6 +167,80 @@ class Deriv_dask:
         """
         return self.n_timesteps
 
+    def cache_data(self, in_params, out_params, x_axis="timestep",
+        y_axis=None,mapped=None,
+        trajectories=None, frac=None, min_x=None, max_x=None, nth=None,
+        compute=True):
+        """
+        Load some data into memory and store it as a pandas dataframe.
+        May speed up some routines if the data fits into memory.
+
+        Parameters
+        ----------
+        in_params : list of string
+            Plot the derivatives with respect to those in this list.
+        out_params : list of string
+            List of keys to plot the derivatives for.
+        x_axis : string
+            The column to use as x-axis. Can be either "timestep" or
+            an output parameter or a derivative.
+        y_axis : string
+            y-axis for the upper plot. If none is given, use output parameter.
+        mapped : string
+            Column name which has to be true such as conv_400, slan_400,
+            conv_600, slan_600.
+        trajectories : List of int
+            The index of the trajectories to plot. If None is given, all
+            trajectories will be plotted.
+        frac : float
+            Sample a given fraction of rows. Deactivates "nth".
+        nth : int
+            Sample every nth entry. Works fast with "timestep" as x-axis and
+            a given min_x and max_x value. If x_axis is any other than
+            "timestep", an errorband triggered by "percentile" may not
+            be plotted.
+        compute : bool
+            If true, store a pandas dataframe in self.cache. Otherwise dask
+            dataframe (not entirely loaded) is stored.
+        """
+        t = timer()
+        if frac is not None:
+            df = self.data.sample(frac=frac, replace=False, random_state=42)
+        elif nth is not None:
+            if min_x is not None and max_x is not None and x_axis == "timestep":
+                steps = np.arange(min_x, max_x, nth*2.5)
+            elif x_axis == "timestep":
+                df_tmp = self.data.timestep.unique().compute()
+                min_val = df_tmp.min()
+                max_val = df_tmp.max()
+                steps = np.arange(min_val, max_val, nth*2.5)
+            else:
+                steps = self.data[x_axis].unique().compute().to_numpy()[::nth]
+
+            df = self.data.loc[self.data[x_axis].isin(steps)]
+        else:
+            df = self.data
+        if min_x is not None:
+            df = df.loc[df[x_axis] >= min_x]
+        if max_x is not None:
+            df = df.loc[df[x_axis] <= max_x]
+        if trajectories is not None:
+            df = df.loc[df.trajectory.isin(trajectories)]
+        if mapped is not None:
+            df = df.loc[df[mapped]]
+
+        df = df.loc[df["Output Parameter"].isin(out_params)]
+        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
+        if y_axis is not None and not y_axis in all_params:
+            all_params.append(y_axis)
+        if compute:
+            self.cache = df[all_params].compute()
+        else:
+            self.cache = df[all_params]
+        t2 = timer()
+        print("Loading done in {} s".format(t2-t))
+        t = timer()
+
     def plot_two_ds(self, in_params, out_params, x_axis="timestep",
         y_axis=None,mapped=None,
         trajectories=None, scatter=False, n_plots=None, percentile=None,
@@ -271,59 +346,68 @@ class Deriv_dask:
         import hvplot
         from holoviews import opts
         import holoviews as hv
-        from timeit import default_timer as timer
         from holoviews.operation import histogram as hv_histo
         import pandas
         import dask.array as da
 
         hv.extension(self.backend)
 
-        t = timer()
-        if frac is not None:
-            df = self.data.sample(frac=frac, replace=False, random_state=42)
-        elif nth is not None:
-            if min_x is not None and max_x is not None and x_axis == "timestep":
-                steps = np.arange(min_x, max_x, nth*2.5)
-            elif x_axis == "timestep":
-                df_tmp = self.data.timestep.unique().compute()
-                min_val = df_tmp.min()
-                max_val = df_tmp.max()
-                steps = np.arange(min_val, max_val, nth*2.5)
-            else:
-                steps = self.data[x_axis].unique().compute().to_numpy()[::nth]
-
-            df = self.data.loc[self.data[x_axis].isin(steps)]
-        else:
-            df = self.data
-        if min_x is not None:
-            df = df.loc[df[x_axis] >= min_x]
-        if max_x is not None:
-            df = df.loc[df[x_axis] <= max_x]
-        if trajectories is not None:
-            df = df.loc[df.trajectory.isin(trajectories)]
-        if mapped is not None:
-            df = df.loc[df[mapped]]
-
-        df = df.loc[df["Output Parameter"].isin(out_params)]
-        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
-        if y_axis is not None and not y_axis in all_params:
-            all_params.append(y_axis)
-        set_yaxis = False
-        if y_axis is None:
-            set_yaxis = True
-        if compute:
-            if use_cache:
+        if not use_cache:
+            self.cache_data(in_params, out_params, x_axis, y_axis, mapped,
+                trajectories, frac, min_x, max_x, nth, compute)
+            if compute:
                 df = self.cache.copy()
             else:
-                df = df[all_params].compute()
-                self.cache = df.copy()
-        elif use_cache:
-            df = self.cache.copy()
+                df = self.cache
         else:
-            df = df[all_params]
-        t2 = timer()
-        print("Loading done in {} s".format(t2-t))
-        t = timer()
+            df = self.cache.copy()
+
+        # t = timer()
+        # if frac is not None:
+        #     df = self.data.sample(frac=frac, replace=False, random_state=42)
+        # elif nth is not None:
+        #     if min_x is not None and max_x is not None and x_axis == "timestep":
+        #         steps = np.arange(min_x, max_x, nth*2.5)
+        #     elif x_axis == "timestep":
+        #         df_tmp = self.data.timestep.unique().compute()
+        #         min_val = df_tmp.min()
+        #         max_val = df_tmp.max()
+        #         steps = np.arange(min_val, max_val, nth*2.5)
+        #     else:
+        #         steps = self.data[x_axis].unique().compute().to_numpy()[::nth]
+
+        #     df = self.data.loc[self.data[x_axis].isin(steps)]
+        # else:
+        #     df = self.data
+        # if min_x is not None:
+        #     df = df.loc[df[x_axis] >= min_x]
+        # if max_x is not None:
+        #     df = df.loc[df[x_axis] <= max_x]
+        # if trajectories is not None:
+        #     df = df.loc[df.trajectory.isin(trajectories)]
+        # if mapped is not None:
+        #     df = df.loc[df[mapped]]
+
+        # df = df.loc[df["Output Parameter"].isin(out_params)]
+        # all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
+        # if y_axis is not None and not y_axis in all_params:
+        #     all_params.append(y_axis)
+        # set_yaxis = False
+        # if y_axis is None:
+        #     set_yaxis = True
+        # if compute:
+        #     if use_cache:
+        #         df = self.cache.copy()
+        #     else:
+        #         df = df[all_params].compute()
+        #         self.cache = df.copy()
+        # elif use_cache:
+        #     df = self.cache.copy()
+        # else:
+        #     df = df[all_params]
+        # t2 = timer()
+        # print("Loading done in {} s".format(t2-t))
+        # t = timer()
 
         if "per_timestep" in ratio_type and not "per_out_param" in ratio_type:
             # Get series of max values over all timesteps (equals index)
@@ -959,3 +1043,58 @@ class Deriv_dask:
                 for in_param in in_params:
                     plot_helper(df_tmp_out, in_params=[in_param],
                                 prefix=prefix + "_" + in_param, **kwargs)
+
+    def plot_grid(self, hue="type", col_wrap=4, height=2, w_pad=5,
+        x_axis="timestep", y_axis="qv", col="Output Parameter",
+        style="ticks"):
+        """
+        Plot a grid for comparing multiple derivatives across different
+        output parameters. Only uses cached data and computed data!
+        TODO: Might change that to hvplot gridplot to ensure
+        similar style across all plots.
+
+        Parameters
+        ----------
+        hue : string
+            Use this to colorize multiple outputs in one plot.
+        col_wrap : int
+            Number of plots per column
+        height : float
+            Height of each plot.
+        w_pad : float
+            Padding used between the plots.
+        x_axis : string
+            The column for the x-axis.
+        y_axis : string
+            The name of the column for the y-axis.
+        col : string
+            Column name used for splitting into different plots, i.e.
+            "Output Parameter" (goes well with y_axis any derivative)
+            or "type" (works well with y_axis any output parameter value).
+        style : string
+            Style used for seaborn.
+
+        Returns
+        -------
+        seaborn.axisgrid.FacetGrid
+            The plot.
+        """
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+
+        df = self.cache
+
+        sns.set(style=style)
+        grid = sns.FacetGrid(
+            self.cache,
+            sharey=False,
+            col=col,
+            hue=hue,
+            palette=self.colors,
+            col_wrap=col_wrap,
+            height=height
+        )
+        grid.map(plt.scatter, x_axis, y_axis)
+        grid.fig.tight_layout(w_pad=w_pad)
+        return grid
+
