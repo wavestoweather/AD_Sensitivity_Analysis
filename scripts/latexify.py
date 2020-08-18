@@ -58,16 +58,16 @@ mappings = {"lat_heat": "Latent Heating",
 #             "drain_alfa_q", "drain_lambda", "drain_vsedi_min",
 #             "drain_vsedi_max"
             # Cloud
-            
+
             # Graupel
-            
+
             # Hail
-            
+
             # Ice
-            
+
             # Snow
-            
-            
+
+
             "dmin_x_nuc_hetero": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{hetero}}",
             "dmin_x_nuc_homo": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{homo}}",
             "dmin_x_melt": r"$\partial x_{\mathrm{min},\mathrm{melt}}",
@@ -111,6 +111,29 @@ def set_size(beamer=True):
         })
 
 
+def get_unit(param):
+    """
+    Get the unit for a given parameter.
+
+    Parameters
+    ----------
+    param : string
+        Name of the parameter
+
+    Returns
+    -------
+    string
+        Unit string.
+    """
+    unit_dic = {
+        "T": "K",
+        "p": "Pa",
+        "timestep": "s"}
+    if param in unit_dic:
+        return unit_dic[param]
+    else:
+        return ""
+
 def parse_word(word):
     """
     Parse a name of a derivative and return it in a latex conform type.
@@ -130,7 +153,7 @@ def parse_word(word):
     no_math = ["geo", "min", "max", "ven", "vel"]
     math_keys = ["alpha", "gamma", "beta", "delta", "zeta",
                  "rho", "nu", "mu", "lambda", "theta"]
-    
+
     maps = mappings.keys()
     for w in maps:
         if word == w:

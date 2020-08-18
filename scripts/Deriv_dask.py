@@ -332,10 +332,10 @@ class Deriv_dask:
             it is the same as "per_timestep".
             "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
             derivative but per output parameter. (that *should* be the vanilla version)
-        vertical_mark : dic
+        vertical_mark : dic of list
             A dictionary containing column names and values where a horizontal
             line should be created whenever the x_axis value intersects
-            with the given value, i.e. {"T": 237} with x_axis in time
+            with the given value, i.e. {"T": [273, 235]} with x_axis in time
             marks all times, where a trajectory reached that temperature.
             Recommended to use with a single trajectory.
         kwargs : dict
@@ -1101,7 +1101,8 @@ class Deriv_dask:
         grid.fig.tight_layout(w_pad=w_pad)
         return grid
 
-    def plot_grid_one_param(self, out_param, y_axis, by=None, hue="type", col_wrap=4,
+    def plot_grid_one_param(self, out_param, y_axis, by=None, hue="type",
+        col_wrap=4, trajectories=None,
         x_axis="timestep", width=1280, height=800, log=False,
         vertical_mark=None, datashade=False, prefix=None, alpha=1,
         plot_path="pics/", **kwargs):
@@ -1131,6 +1132,7 @@ class Deriv_dask:
         from holoviews import opts
         import holoviews as hv
         import dask.array as da
+        import math
 
 
         df = self.cache
@@ -1146,18 +1148,53 @@ class Deriv_dask:
         plot_list = []
         df_tmp_out = df.loc[df["Output Parameter"] == out_param]
         df_tmp_out["qi"] = da.fabs(df_tmp_out["qi"]) # sign error?
+        if trajectories is not None:
+            df_tmp_out = df_tmp_out.loc[df_tmp_out["type"].isin(trajectories)]
+
+
+        add_cols = []
+        if vertical_mark is not None:
+            add_cols = list(vertical_mark.keys())
         for y in y_axis:
+            marks = None
             if by is not None:
                 if y == x_axis:
-                    df_group = df_tmp_out[[x_axis, by]]
+                    df_group = df_tmp_out[[x_axis, by] + add_cols]
                 else:
-                    df_group = df_tmp_out[[x_axis, y, by]]
+                    df_group = df_tmp_out[[x_axis, y, by] + add_cols]
                 if log:
                     # Apply should be more expensive
                     df_group[y] = da.log(da.fabs(df_group[y]))
                 types = df_group[by].unique()
                 types = np.sort(types[::-1])
-
+                if vertical_mark is not None:
+                    min_x = df_group[x_axis].min()
+                    max_x = df_group[x_axis].max()
+                    min_y = df_group[y].min()
+                    max_y = df_group[y].max()
+                    del_x = (max_x-min_x)*0.08
+                    del_y = max_y - (max_y-min_y)*0.1
+                    df_tmp = df_group.groupby(by)
+                    for col in vertical_mark:
+                        for v in vertical_mark[col]:
+                            # Works well as long as dataframe is smaller than ~ 30k elements
+                            df_sort = df_tmp.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
+                            col_values = np.sort(df_sort[col].values)
+                            for index, row in df_sort.iterrows():
+                                if np.abs(row[col]-v) > 1.0:
+                                    break
+                                text = hv.Text(row[x_axis]+del_x, del_y, col + "=" + str(v) + latexify.get_unit(col),
+                                    fontsize=24)
+                                if marks is None:
+                                    marks = hv.VLine(
+                                        x=row[x_axis],
+                                        label=col + "=" + str(v)
+                                    ).opts(color="black", ylim=(min_y, max_y)) * text
+                                else:
+                                    marks = marks * hv.VLine(
+                                        x=row[x_axis],
+                                        label=col + "=" + str(v)
+                                    ).opts(color="black", ylim=(min_y, max_y)) * text
                 if not datashade:
                     cmap_values = []
                     for ty in types:
@@ -1180,6 +1217,9 @@ class Deriv_dask:
                                 alpha=alpha,
                                 legend=False
                             ).opts(opts.Scatter(s=8)) * overlay)
+
+                            if marks is not None:
+                                plot_list[-1] = (plot_list[-1] * marks)
                         else:
                             plot_list.append(df_group.hvplot.scatter(
                                 x=x_axis,
@@ -1192,6 +1232,10 @@ class Deriv_dask:
                                 alpha=alpha,
                                 legend=False
                             ).opts(opts.Scatter(s=8)))
+                            # for mark in marks:
+                            #     plot_list[-1] = plot_list[-1] * mark
+                            if marks is not None:
+                                plot_list[-1] = (plot_list[-1] * marks)
                     else:
                         param_plot = df_group[df_group[y] != 0].hvplot.scatter(
                             x=x_axis,
@@ -1203,6 +1247,7 @@ class Deriv_dask:
                             datashade=datashade,
                             alpha=alpha
                         ).opts(opts.Scatter(size=2), **layout_kwargs)
+
                 else:
                     cmap = {}
                     for ty in types:
