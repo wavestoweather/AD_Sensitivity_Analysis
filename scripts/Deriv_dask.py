@@ -428,6 +428,9 @@ class Deriv_dask:
             t2 = timer()
             print("Recalculating ratios done in {} s".format(t2-t))
 
+        set_yaxis = False
+        if y_axis is None:
+            set_yaxis = True
         for out_par in out_params:
             if set_yaxis:
                 y_axis = out_par
@@ -1044,8 +1047,8 @@ class Deriv_dask:
                     plot_helper(df_tmp_out, in_params=[in_param],
                                 prefix=prefix + "_" + in_param, **kwargs)
 
-    def plot_grid(self, hue="type", col_wrap=4, height=2, w_pad=5,
-        x_axis="timestep", y_axis="qv", col="Output Parameter",
+    def plot_grid(self, hue="type", col_wrap=4, height=10, w_pad=5,
+        x_axis="timestep", y_axis="da_1", col="Output Parameter",
         style="ticks"):
         """
         Plot a grid for comparing multiple derivatives across different
@@ -1098,3 +1101,199 @@ class Deriv_dask:
         grid.fig.tight_layout(w_pad=w_pad)
         return grid
 
+    def plot_grid_one_param(self, out_param, y_axis, by=None, hue="type", col_wrap=4,
+        x_axis="timestep", width=1280, height=800, log=False,
+        vertical_mark=None, datashade=False, prefix=None, alpha=1,
+        plot_path="pics/", **kwargs):
+        """
+        Plot a grid for comparing multiple output parameters or
+        multiple derivatives across one output parameter.
+        Only uses cached data and computed data!
+
+
+        Parameters
+        ----------
+        hue : string
+            Use this to colorize multiple outputs in one plot.
+        col_wrap : int
+            Number of plots per column
+        x_axis : string
+            The column for the x-axis.
+        y_axis : List of string
+            The name of the column for the y-axis for each plot.
+
+        Returns
+        -------
+
+            The plot.
+        """
+        import hvplot.pandas
+        from holoviews import opts
+        import holoviews as hv
+        import dask.array as da
+
+
+        df = self.cache
+        hv.extension(self.backend)
+
+        layout_kwargs = {}
+        if  self.backend == "bokeh":
+            layout_kwargs["width"] = width
+            layout_kwargs["height"] = height
+        else:
+            layout_kwargs["fig_size"] = height/2
+
+        plot_list = []
+        df_tmp_out = df.loc[df["Output Parameter"] == out_param]
+        df_tmp_out["qi"] = da.fabs(df_tmp_out["qi"]) # sign error?
+        for y in y_axis:
+            if by is not None:
+                if y == x_axis:
+                    df_group = df_tmp_out[[x_axis, by]]
+                else:
+                    df_group = df_tmp_out[[x_axis, y, by]]
+                if log:
+                    # Apply should be more expensive
+                    df_group[y] = da.log(da.fabs(df_group[y]))
+                types = df_group[by].unique()
+                types = np.sort(types[::-1])
+
+                if not datashade:
+                    cmap_values = []
+                    for ty in types:
+                        cmap_values.append(self.cmap[ty])
+                    if self.backend == "matplotlib":
+                        if len(plot_list) == 0:
+                            overlay = hv.NdOverlay(
+                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
+                                for i in range(len(types)) }
+                            )
+
+                            plot_list.append(df_group.hvplot.scatter(
+                                x=x_axis,
+                                y=y,
+                                by=by,
+                                title="Values of of {}".format(latexify.parse_word(y)),
+                                color=cmap_values,
+                                label=None,
+                                datashade=datashade,
+                                alpha=alpha,
+                                legend=False
+                            ).opts(opts.Scatter(s=8)) * overlay)
+                        else:
+                            plot_list.append(df_group.hvplot.scatter(
+                                x=x_axis,
+                                y=y,
+                                by=by,
+                                title="Values of of {}".format(latexify.parse_word(y)),
+                                color=cmap_values,
+                                label=None,
+                                datashade=datashade,
+                                alpha=alpha,
+                                legend=False
+                            ).opts(opts.Scatter(s=8)))
+                    else:
+                        param_plot = df_group[df_group[y] != 0].hvplot.scatter(
+                            x=x_axis,
+                            y=y,
+                            by=by,
+                            title="Values of of {}".format(latexify.parse_word(y)),
+                            # color=cmap_values,
+                            label=None,
+                            datashade=datashade,
+                            alpha=alpha
+                        ).opts(opts.Scatter(size=2), **layout_kwargs)
+                else:
+                    cmap = {}
+                    for ty in types:
+                        cmap[ty] = self.cmap[ty]
+                    param_plot = df_group[df_group[y] != 0].hvplot.scatter(
+                        x=x_axis,
+                        y=y,
+                        by=by,
+                        title="Values of of {}".format(latexify.parse_word(y)),
+                        cmap=cmap,
+                        label=None,
+                        datashade=datashade
+                    ).opts(aspect=3.2)
+                    if self.backend == "bokeh":
+                        points = hv.Points(
+                            ([np.NaN for i in range(len(list(cmap.keys())))],
+                                [np.NaN for i in range(len(list(cmap.keys())))],
+                                list(cmap.keys())), vdims=by)
+                        legend = points.options(
+                            color=by,
+                            cmap=cmap,
+                            show_legend=True)
+                        param_plot = (legend * param_plot).opts(aspect=3.2, **layout_kwargs)
+            else:
+                if y == x_axis:
+                    df_group = df_tmp_out[[x_axis, "trajectory"]]
+                else:
+                    df_group = df_tmp_out[[x_axis, y, "trajectory"]]
+                if log:
+                    # Apply should be more expensive
+                        df_group[y] = da.log(da.fabs(df_group[y]))
+                param_plot = df_group.hvplot.scatter(
+                    x=x_axis,
+                    y=y,
+                    title="Values of of {}".format(latexify.parse_word(y)),
+                    label=None,
+                    datashade=datashade
+                ).opts(**layout_kwargs)
+        all_plots = plot_list[0] + plot_list[1]
+        for i in range(len(plot_list)-2):
+            all_plots = all_plots + plot_list[i+2]
+        layout_kwargs = {}
+        if self.backend == "bokeh":
+            layout_kwargs["width"] = width
+            layout_kwargs["height"] = height
+        else:
+            layout_kwargs["fig_size"] = height/2
+
+        scatter_kwargs = {}
+
+        for k in kwargs:
+            scatter_kwargs[k] = kwargs[k]
+
+        final_plots = all_plots.opts(
+            opts.Scatter(
+                xticks=20,
+                xaxis="bottom",
+                fontsize=self.font_dic,
+                show_grid=True,
+                show_legend=True,
+                **scatter_kwargs),
+            opts.Layout(**layout_kwargs)
+        ).cols(col_wrap)
+        if self.backend == "matplotlib":
+            final_plots = final_plots.opts(sublabel_format="", tight=True)
+
+        renderer = hv.Store.renderers[self.backend].instance(
+                    fig='png', dpi=300)
+        latexify.set_size(True)
+
+        i = 0
+        if prefix is None:
+            prefix = "plt_grid_"
+
+        save = (plot_path + prefix + x_axis + "_" + "{:03d}".format(i))
+        while os.path.isfile(save + ".png"):
+            i = i+1
+            save = (plot_path + prefix + x_axis + "_" + "{:03d}".format(i))
+
+        if self.backend == "bokeh":
+            hvplot.show(final_plots)
+            self.plots.append(final_plots)
+        else:
+            filetype = ".png"
+            if datashade:
+                filetype = ".html"
+                self.plots.append(final_plots)
+            print("Saving to " + save + filetype, flush=True)
+            renderer.save(final_plots, save)
+            try:
+                from IPython.display import Image, display
+                display(Image(save + filetype, width=width))
+            except:
+                pass
