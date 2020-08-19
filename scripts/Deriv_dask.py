@@ -1102,10 +1102,10 @@ class Deriv_dask:
         return grid
 
     def plot_grid_one_param(self, out_param, y_axis, by=None, hue="type",
-        col_wrap=4, trajectories=None,
+        col_wrap=4, trajectories=None, twin_axis=None,
         x_axis="timestep", width=1280, height=800, log=False,
         vertical_mark=None, datashade=False, prefix=None, alpha=1,
-        plot_path="pics/", **kwargs):
+        plot_path="pics/", yticks=10, decimals=-3, **kwargs):
         """
         Plot a grid for comparing multiple output parameters or
         multiple derivatives across one output parameter.
@@ -1122,6 +1122,18 @@ class Deriv_dask:
             The column for the x-axis.
         y_axis : List of string
             The name of the column for the y-axis for each plot.
+        twin_axis : string
+            Plot a second y-axis for every plot using the column given
+            by "twin_axis". Works only with matplotlib atm. Does not
+            take "by" into account and would look cluttered with multiple
+            elements from "by".
+        pad : float
+            Padding used between the plots.
+        decimals : int, optional
+            For rounding the right y-axis, if provided by "twin_axis".
+            From numpy: Number of decimal places to round to (default: 0).
+            If decimals is negative, it specifies the number of
+            positions to the left of the decimal point.
 
         Returns
         -------
@@ -1150,7 +1162,28 @@ class Deriv_dask:
         df_tmp_out["qi"] = da.fabs(df_tmp_out["qi"]) # sign error?
         if trajectories is not None:
             df_tmp_out = df_tmp_out.loc[df_tmp_out["type"].isin(trajectories)]
-
+        # This is for the matplotlib backend
+        # For bokeh, see https://github.com/holoviz/holoviews/issues/396
+        twin = None
+        if twin_axis is not None and self.backend == "matplotlib":
+            lower_y = np.around(df_tmp_out[twin_axis].min(), decimals=decimals)
+            upper_y = np.around(df_tmp_out[twin_axis].max(), decimals=decimals)
+            tick_size = (upper_y - lower_y)/yticks
+            def twinx(plot, element):
+                ax = plot.handles["axis"]
+                twinax = ax.twinx()
+                twinax.set_ylim((lower_y - tick_size * 0.75,
+                                 upper_y + tick_size * 0.75))
+                twinax.set_yticks(np.arange(lower_y, upper_y + tick_size*0.75, tick_size))
+                twinax.set_ylabel(latexify.parse_word(twin_axis))
+                plot.handles["axis"] = twinax
+            twin = df_tmp_out.hvplot.scatter(
+                x=x_axis,
+                y=twin_axis,
+                color="gray",
+                datashade=datashade,
+                legend=False,
+            ).opts(initial_hooks=[twinx], apply_ranges=False).opts(opts.Scatter(s=8))
 
         add_cols = []
         if vertical_mark is not None:
@@ -1167,13 +1200,19 @@ class Deriv_dask:
                     df_group[y] = da.log(da.fabs(df_group[y]))
                 types = df_group[by].unique()
                 types = np.sort(types[::-1])
+
+                min_x = df_group[x_axis].min()
+                max_x = df_group[x_axis].max()
+                min_y = df_group[y].min()
+                max_y = df_group[y].max()
+                del_x = (max_x-min_x)*0.1
+                del_y = (max_y-min_y)
+                if min_y == max_y:
+                    min_y = max_y - 1
+                    max_y = max_y + 1
+                    del_y = 2
+
                 if vertical_mark is not None:
-                    min_x = df_group[x_axis].min()
-                    max_x = df_group[x_axis].max()
-                    min_y = df_group[y].min()
-                    max_y = df_group[y].max()
-                    del_x = (max_x-min_x)*0.08
-                    del_y = max_y - (max_y-min_y)*0.1
                     df_tmp = df_group.groupby(by)
                     for col in vertical_mark:
                         for v in vertical_mark[col]:
@@ -1183,23 +1222,28 @@ class Deriv_dask:
                             for index, row in df_sort.iterrows():
                                 if np.abs(row[col]-v) > 1.0:
                                     break
-                                text = hv.Text(row[x_axis]+del_x, del_y, col + "=" + str(v) + latexify.get_unit(col),
+                                text = hv.Text(row[x_axis]+del_x, max_y-del_y*0.1, col + "=" + str(v) + latexify.get_unit(col),
                                     fontsize=24)
                                 if marks is None:
                                     marks = hv.VLine(
                                         x=row[x_axis],
                                         label=col + "=" + str(v)
-                                    ).opts(color="black", ylim=(min_y, max_y)) * text
+                                    ).opts(color="black", ylim=(min_y-del_y*0.1, max_y+del_y*0.1)) * text
                                 else:
                                     marks = marks * hv.VLine(
                                         x=row[x_axis],
                                         label=col + "=" + str(v)
-                                    ).opts(color="black", ylim=(min_y, max_y)) * text
+                                        #min_y-del_y, max_y+del_y)
+                                    ).opts(color="black", ylim=(min_y-del_y*0.1, max_y+del_y*0.1)) * text
                 if not datashade:
                     cmap_values = []
                     for ty in types:
                         cmap_values.append(self.cmap[ty])
+                    lim_multiplier = 0.1
+                    if twin is not None:
+                        lim_multiplier = 0.7
                     if self.backend == "matplotlib":
+                        # print(f"{min_y}, {max_y}, {del_y}")
                         if len(plot_list) == 0:
                             overlay = hv.NdOverlay(
                                 {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
@@ -1216,10 +1260,12 @@ class Deriv_dask:
                                 datashade=datashade,
                                 alpha=alpha,
                                 legend=False
-                            ).opts(opts.Scatter(s=8)) * overlay)
+                            ).opts(opts.Scatter(s=8)).opts(
+                                # apply_ranges=False,
+                                ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
+                                yticks=yticks) * overlay)
 
-                            if marks is not None:
-                                plot_list[-1] = (plot_list[-1] * marks)
+
                         else:
                             plot_list.append(df_group.hvplot.scatter(
                                 x=x_axis,
@@ -1231,11 +1277,30 @@ class Deriv_dask:
                                 datashade=datashade,
                                 alpha=alpha,
                                 legend=False
-                            ).opts(opts.Scatter(s=8)))
-                            # for mark in marks:
-                            #     plot_list[-1] = plot_list[-1] * mark
-                            if marks is not None:
-                                plot_list[-1] = (plot_list[-1] * marks)
+                            ).opts(opts.Scatter(s=8)).opts(
+                                # apply_ranges=False,
+                                ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
+                                yticks=yticks))
+
+                        if marks is not None:
+                            plot_list[-1] = (plot_list[-1] * marks)
+                        if twin is not None:
+                            plot_list[-1] = (plot_list[-1] * twin)
+                        # if twin_axis is not None and self.backend == "matplotlib":
+                        #     def twinx(plot, element):
+                        #         ax = plot.handles["axis"]
+                        #         twinax = ax.twinx()
+                        #         twinax.set_ylabel(latexify.parse_word(twin_axis))
+                        #         plot.handles["axis"] = twinax
+                        #     twin = df_tmp_out.hvplot.scatter(
+                        #         x=x_axis,
+                        #         y=twin_axis,
+                        #         color="gray",
+                        #         datashade=datashade,
+                        #         legend=False,
+                        #     ).opts(initial_hooks=[twinx], apply_ranges=False).opts(opts.Scatter(s=8))
+                        #     print(f"Set lim to {min_y-del_y}, {max_y+del_y}")
+                        #     plot_list[-1] = (plot_list[-1] * twin)
                     else:
                         param_plot = df_group[df_group[y] != 0].hvplot.scatter(
                             x=x_axis,
@@ -1264,8 +1329,8 @@ class Deriv_dask:
                     if self.backend == "bokeh":
                         points = hv.Points(
                             ([np.NaN for i in range(len(list(cmap.keys())))],
-                                [np.NaN for i in range(len(list(cmap.keys())))],
-                                list(cmap.keys())), vdims=by)
+                             [np.NaN for i in range(len(list(cmap.keys())))],
+                             list(cmap.keys())), vdims=by)
                         legend = points.options(
                             color=by,
                             cmap=cmap,
@@ -1312,7 +1377,7 @@ class Deriv_dask:
             opts.Layout(**layout_kwargs)
         ).cols(col_wrap)
         if self.backend == "matplotlib":
-            final_plots = final_plots.opts(sublabel_format="", tight=True)
+            final_plots = final_plots.opts(sublabel_format="", tight=False)
 
         renderer = hv.Store.renderers[self.backend].instance(
                     fig='png', dpi=300)
