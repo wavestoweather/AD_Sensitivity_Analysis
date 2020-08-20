@@ -259,7 +259,7 @@ class Deriv_dask:
         use_cache=False, errorband=False, plot_path="pics/", prefix=None,
         fig_type='svg', datashade=True, by=None,  alpha=[1, 1],
         rolling_avg=None, rolling_avg_par=None, max_per_deriv=10,
-        width=1280, height=800, ratio_type="vanilla",
+        width=1280, height=800, ratio_type="vanilla", ratio_window=None,
         vertical_mark=None, **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
@@ -384,6 +384,13 @@ class Deriv_dask:
             it is the same as "per_timestep".
             "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
             derivative but per output parameter. (that *should* be the vanilla version)
+        ratio_window : dic of list
+            Overides ratio_type and switches to a derivative ratio calculation
+            per output param if "ratio_type" has "per_out_param" in it.
+            Calculate the derivative ratio in windows
+            where the key is a column name and the list consists of values
+            at which a new window starts, i.e. {"T": [235, 273]} results
+            in three windows with T < 235K, 235 <= T < 273K and 237K <= T.
         vertical_mark : dic of list
             A dictionary containing column names and values where a horizontal
             line should be created whenever the x_axis value intersects
@@ -403,6 +410,7 @@ class Deriv_dask:
         import dask.array as da
 
         hv.extension(self.backend)
+        deriv_col_name = "Derivative Ratio"
 
         if not use_cache:
             self.cache_data(in_params, out_params, x_axis, y_axis, mapped,
@@ -413,30 +421,88 @@ class Deriv_dask:
                 df = self.cache
         else:
             df = self.cache.copy()
+        t = timer()
+
         if trajectories is not None:
             if isinstance(trajectories[0], int):
                 df = df.loc[df["trajectory"].isin(trajectories)]
             else:
                 df = df.loc[df["type"].isin(trajectories)]
 
+        if rolling_avg is not None:
+            # For every output parameter, calculate the rolling average
+            # for all input parameters at once
+            for out_par in out_params:
+                df_tmp = df.loc[df["Output Parameter"] == out_par]
+                if by is None:
+                    # TODO: is that really rolling over consecutive timesteps? What if derivative gets 0?
+                    series = df_tmp[in_params].rolling(
+                        rolling_avg, min_periods=1).mean()
+                    series.index = df.loc[df["Output Parameter"] == out_par]
+                    df.update(series)
+                else:
+                    types = df_tmp[by].unique()
+                    for ty in types:
+                        df_tmp2 = df_tmp.loc[df_tmp[by] == ty]
+                        series = df_tmp2[in_params].rolling(
+                            rolling_avg, min_periods=1).mean()
+                        series.index = df.loc[
+                            (df["Output Parameter"] == out_par) & (df[by] == ty) ]
+                        df.update(series)
+            t2 = timer()
+            print("Calculating rolling average for derivatives done in {} s".format(t2-t))
+            t = timer()
+
         t = timer()
-        if "per_timestep" in ratio_type and not "per_out_param" in ratio_type:
-            # Get series of max values over all timesteps (equals index)
-            max_vals = df[in_params].apply(lambda x: np.max(np.abs(x)), axis=1)
-            df[in_params] = df[in_params].div(max_vals, axis=0)
-            t2 = timer()
-            print("Recalculating ratios done in {} s".format(t2-t))
-        elif "window" in ratio_type and not "per_out_param" in ratio_type:
-            max_val = df[in_params].apply(lambda x: np.max(np.abs(x))).max()
-            df[in_params] = df[in_params].div(max_val)
-            t2 = timer()
-            print("Recalculating ratios done in {} s".format(t2-t))
-        elif "per_xaxis" in ratio_type and not "per_out_param" in ratio_type:
-            df = df.set_index(x_axis)
-            max_vals = df.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
-            df[in_params] = df[in_params].div(max_vals, axis="index")
-            t2 = timer()
-            print("Recalculating ratios done in {} s".format(t2-t))
+        def recalc_ratios(ratio_df):
+            # TODO: Add if by is not None: go over all types and do that stuff.
+            if ratio_window is not None:
+                col = list(ratio_window.keys())[0]
+                edges = np.sort(ratio_window[col])
+                for i in range(len(edges)+1):
+                    if i == 0:
+                        df_edge = ratio_df.loc[ratio_df[col] < edges[i]]
+                        max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                        if max_val == 0:
+                            continue
+                        ratio_df[in_params] = ratio_df.apply(
+                            lambda x: x[in_params]/max_val if x[col] < edges[i] else x[in_params], axis=1)
+                    elif i == len(edges):
+                        df_edge = ratio_df.loc[ratio_df[col] >= edges[i-1]]
+                        max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                        if max_val == 0:
+                            continue
+                        ratio_df[in_params] = ratio_df.apply(
+                            lambda x: x[in_params]/max_val if x[col] >= edges[i-1] else x[in_params], axis=1)
+                    else:
+                        df_edge = ratio_df.loc[(ratio_df[col] < edges[i]) & (ratio_df[col] >= edges[i-1])]
+                        max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                        if max_val == 0:
+                            continue
+                        ratio_df[in_params] = ratio_df.apply(
+                            lambda x: x[in_params]/max_val if x[col] < edges[i] and x[col] >= edges[i-1] else x[in_params], axis=1)
+            elif "per_timestep" in ratio_type:
+                # Get series of max values over all timesteps (equals index)
+                max_vals = ratio_df[in_params].apply(lambda x: np.max(np.abs(x)), axis=1)
+                ratio_df[in_params] = ratio_df[in_params].div(max_vals, axis=0)
+                t2 = timer()
+                print("Recalculating ratios done in {} s".format(t2-t))
+            elif "window" in ratio_type:
+                max_val = ratio_df[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                ratio_df[in_params] = ratio_df[in_params].div(max_val)
+                t2 = timer()
+                print("Recalculating ratios done in {} s".format(t2-t))
+            elif "per_xaxis" in ratio_type:
+                ratio_df = ratio_df.set_index(x_axis)
+                max_vals = ratio_df.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
+                ratio_df[in_params] = ratio_df[in_params].div(max_vals, axis="index")
+                t2 = timer()
+                print("Recalculating ratios done in {} s".format(t2-t))
+            return ratio_df
+
+        if not "per_out_param" in ratio_type:
+            df = recalc_ratios(df)
+            t = timer()
 
         set_yaxis = False
         if y_axis is None:
@@ -446,23 +512,10 @@ class Deriv_dask:
             if set_yaxis:
                 y_axis = out_par
             df_tmp_out = df.loc[df["Output Parameter"] == out_par]
-            if "per_timestep" in ratio_type and "per_out_param" in ratio_type:
-                # Get series of max values over all timesteps (equals index)
-                max_vals = df_tmp_out[in_params].apply(lambda x: np.max(np.abs(x)), axis=1)
-                df_tmp_out[in_params] = df_tmp_out[in_params].div(max_vals, axis=0)
-                t2 = timer()
-                print("Recalculating ratios done in {} s".format(t2-t))
-            elif "window" in ratio_type and "per_out_param" in ratio_type:
-                max_val = df_tmp_out[in_params].apply(lambda x: np.max(np.abs(x))).max()
-                df_tmp_out[in_params] = df_tmp_out[in_params].div(max_val)
-                t2 = timer()
-                print("Recalculating ratios done in {} s".format(t2-t))
-            elif "per_xaxis" in ratio_type and "per_out_param" in ratio_type:
-                df_tmp_out = df_tmp_out.set_index(x_axis)
-                max_vals = df_tmp_out.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
-                df_tmp_out[in_params] = df_tmp_out[in_params].div(max_vals, axis="index")
-                t2 = timer()
-                print("Recalculating ratios done in {} s".format(t2-t))
+            if "per_out_param" in ratio_type:
+                df_tmp_out = recalc_ratios(df_tmp_out)
+                print(df_tmp_out[in_params].abs().max())
+                t = timer()
 
             # This is for the matplotlib backend
             # For bokeh, see https://github.com/holoviz/holoviews/issues/396
@@ -491,23 +544,6 @@ class Deriv_dask:
                     legend=False,
                 ).opts(initial_hooks=[twinx], apply_ranges=False).opts(opts.Scatter(s=8))
 
-            # Averaging over output
-            t = timer()
-            if rolling_avg_par is not None:
-                if by is None:
-                    df_tmp_out[y_axis] = df_tmp_out[y_axis].rolling(
-                        rolling_avg_par, min_periods=1).mean()
-                else:
-                    types = df_tmp_out[by].unique()
-                    for ty in types:
-                        for param in in_params:
-                            series = df_tmp_out[df_tmp_out[by] == ty][y_axis].rolling(
-                                rolling_avg, min_periods=1).mean()
-                            series.name = y_axis
-                            series.index = df_tmp_out.index[df_tmp_out[by] == ty]
-                            df_tmp_out.update(series)
-                t = timer()
-
             # Sort the derivatives
             if sort:
                 sorted_tuples = []
@@ -530,6 +566,7 @@ class Deriv_dask:
             t2 = timer()
             print("Sorting done in {} s".format(t2-t), flush=True)
             def plot_helper(df, in_params, prefix, **kwargs):
+                deriv_col_name = "Derivative Ratio"
                 # following https://holoviz.org/tutorial/Composing_Plots.html
                 t = timer()
                 add_cols = []
@@ -539,46 +576,20 @@ class Deriv_dask:
                 if by is not None:
                     df_tmp = df[in_params+[x_axis, by] + add_cols]
                     df_tmp = df_tmp.melt([x_axis, by] + add_cols, var_name="Derivatives",
-                                    value_name="Derivative Ratio")
+                                    value_name=deriv_col_name)
                 else:
                     df_tmp = df[in_params+[x_axis] + add_cols]
                     df_tmp = df_tmp.melt([x_axis] + add_cols, var_name="Derivatives",
-                                         value_name="Derivative Ratio")
+                                         value_name=deriv_col_name)
                 t2 = timer()
                 print("Melting done in {} s".format(t2-t), flush=True)
-                t = timer()
-                if rolling_avg is not None:
-                    if by is None:
-                        # TODO: is that really rolling over consecutive timesteps? What if derivative gets 0?
-                        for param in in_params:
-                            series = df_tmp[
-                                df_tmp["Derivatives"] == param]["Derivative Ratio"].rolling(
-                                rolling_avg, min_periods=1).mean()
-                            series.name = "Derivative Ratio"
-                            series.index = df_tmp.index[df_tmp["Derivatives"] == param]
-                            df_tmp.update(series)
-                    else:
-                        types = df_tmp[by].unique()
-                        for ty in types:
-                            for param in in_params:
-                                series = df_tmp[
-                                    (df_tmp["Derivatives"] == param) & (df_tmp[by] == ty)]["Derivative Ratio"].rolling(
-                                    rolling_avg, min_periods=1).mean()
-                                series.name = "Derivative Ratio"
-                                series.index = df_tmp.index[
-                                    (df_tmp["Derivatives"] == param) & (df_tmp[by] == ty)]
-                                df_tmp.update(series)
-                    t2 = timer()
-                    print("Calculating rolling average for derivatives done in {} s".format(t2-t))
-                    t = timer()
 
-                deriv_col_name = "Derivative Ratio"
                 if log[1]:
                     deriv_col_name = "Log Derivative Ratio"
-                    df_tmp["Derivative Ratio"] = da.log(da.fabs(df_tmp["Derivative Ratio"]))
+                    df_tmp[deriv_col_name] = da.log(da.fabs(df_tmp[deriv_col_name]))
                     # Remove zero entries (-inf)
-                    df_tmp = df_tmp[~da.isinf(df_tmp["Derivative Ratio"])]
-                    df_tmp.rename(columns={"Derivative Ratio": deriv_col_name}, inplace=True)
+                    df_tmp = df_tmp[~da.isinf(df_tmp[deriv_col_name])]
+                    df_tmp.rename(columns={deriv_col_name: deriv_col_name}, inplace=True)
                     t2 = timer()
                     print("Log done in {} s".format(t2-t))
                     t = timer()
@@ -810,7 +821,6 @@ class Deriv_dask:
                                 {derivative: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
                                 for i, derivative in enumerate(all_derives)}
                             )
-
                             deriv_plot = df_tmp.hvplot.scatter(
                                 x=x_axis,
                                 y=deriv_col_name,
