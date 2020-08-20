@@ -199,6 +199,15 @@ class Deriv_dask:
             a given min_x and max_x value. If x_axis is any other than
             "timestep", an errorband triggered by "percentile" may not
             be plotted.
+        min_x : float
+            Minimum value for the x-axis.
+        max_x : float
+            Maximum value for the x-axis.
+        nth : int
+            Sample every nth entry. Works fast with "timestep" as x-axis and
+            a given min_x and max_x value. If x_axis is any other than
+            "timestep", an errorband triggered by "percentile" may not
+            be plotted.
         compute : bool
             If true, store a pandas dataframe in self.cache. Otherwise dask
             dataframe (not entirely loaded) is stored.
@@ -245,10 +254,10 @@ class Deriv_dask:
         y_axis=None,mapped=None,
         trajectories=None, scatter=False, n_plots=None, percentile=None,
         frac=None, min_x=None, max_x=None, nth=None, hist=[False, False],
-        hexbin=[False, False], log=[False, False], sort=True,
-        scatter_deriv=False, line_deriv=False, prefix=None, compute=False,
-        errorband=False, bins=50, plot_path="pics/", fig_type='svg',
-        datashade=True, by=None, use_cache=False, alpha=[1, 1],
+        hexbin=[False, False], bins=50,  log=[False, False], sort=True,
+        scatter_deriv=False, line_deriv=False, compute=False,
+        use_cache=False, errorband=False, plot_path="pics/", prefix=None,
+        fig_type='svg', datashade=True, by=None,  alpha=[1, 1],
         rolling_avg=None, rolling_avg_par=None, max_per_deriv=10,
         width=1280, height=800, ratio_type="vanilla",
         vertical_mark=None, **kwargs):
@@ -286,16 +295,30 @@ class Deriv_dask:
             plot.
         percentile : list of int
             Plot the given percentiles along with the spread if
-            errorband is not given. Not implemented yet
-        errorband : Bool
-            Plot an errorband (spread) using the standard deviation and min/max values.
+            errorband is not given. Not implemented yet.
         frac : float
             Sample a given fraction of rows. Deactivates "nth".
+        min_x : float
+            Minimum value for the x-axis.
+        max_x : float
+            Maximum value for the x-axis.
         nth : int
             Sample every nth entry. Works fast with "timestep" as x-axis and
             a given min_x and max_x value. If x_axis is any other than
             "timestep", an errorband triggered by "percentile" may not
             be plotted.
+        hist : list of bools
+            Plot a histogram on the side of the top [0] or bottom [1]
+            (not implemented) graph.
+        hexbin : list of bools
+            Plot values as hexbin for the top [0] or bottom [1] graph.
+        bins : int
+            Number of bins to use on hexbin and histogram plots.
+        log : list of bools
+            Plot y-axis as log-plot for the top [0] or bottom [1] graph.
+        sort : Bool
+            If True, sort the derivatives and plot only those within the same
+            magnitude in one plot. If False, plot every derivative.
         scatter_deriv : boolean
             Plot the derivative plot with scatterplot. If scatter_deriv and
             line_deriv are set to false, use the same as provided via scatter
@@ -304,13 +327,25 @@ class Deriv_dask:
             Plot the derivative plot with lineplot. If scatter_deriv and
             line_deriv are set to false, use the same as provided via scatter
             and percentile.
+        compute : bool
+            Load the data into memory and create a pandas.DataFrame that will
+            vbe stored to cache.
+        use_cache : bool
+            Copy the pandas.DataFrame from the cache and work with that.
+            Overrides "compute".
+        errorband : Bool
+            Plot an errorband (spread) using the standard deviation and min/max values.
+        plot_path : string
+            Path to the folder to save the image.
         prefix : string
             Prefix to add to the filename.
-        sort : Bool
-            If True, sort the derivatives and plot only those within the same
-            magnitude in one plot. If False, plot every derivative.
+        fig_type : string
+            Figure type for saving the image (only for bokeh).
+        datashade : bool
+            Wether to use datashade for plotting the data.
         by : String
-            String for groupby. Can be either "trajectory" or "type".
+            String for groupby.
+            Can be either "trajectory" or "type" (recommended).
         alpha : List of floats
             Alpha values for top [0] and bottom [1] graph.
         rolling_avg : int
@@ -323,6 +358,12 @@ class Deriv_dask:
             sometimes the output is broken.
         max_per_deriv : int
             Maximum number of derivatives per plot.
+        width : int
+            The width of the plot (bokeh) or the relative width of the plot
+            (matplotlib).
+        height : int
+            The height of the plot (bokeh) or the relative height of the plot
+            (matplotlib).
         ratio_type : String
             "vanilla": Use the derivative ratio in the file that *should* use the
             highest derivative over all times for each output parameter as denominator.
@@ -361,54 +402,7 @@ class Deriv_dask:
                 df = self.cache
         else:
             df = self.cache.copy()
-
-        # t = timer()
-        # if frac is not None:
-        #     df = self.data.sample(frac=frac, replace=False, random_state=42)
-        # elif nth is not None:
-        #     if min_x is not None and max_x is not None and x_axis == "timestep":
-        #         steps = np.arange(min_x, max_x, nth*2.5)
-        #     elif x_axis == "timestep":
-        #         df_tmp = self.data.timestep.unique().compute()
-        #         min_val = df_tmp.min()
-        #         max_val = df_tmp.max()
-        #         steps = np.arange(min_val, max_val, nth*2.5)
-        #     else:
-        #         steps = self.data[x_axis].unique().compute().to_numpy()[::nth]
-
-        #     df = self.data.loc[self.data[x_axis].isin(steps)]
-        # else:
-        #     df = self.data
-        # if min_x is not None:
-        #     df = df.loc[df[x_axis] >= min_x]
-        # if max_x is not None:
-        #     df = df.loc[df[x_axis] <= max_x]
-        # if trajectories is not None:
-        #     df = df.loc[df.trajectory.isin(trajectories)]
-        # if mapped is not None:
-        #     df = df.loc[df[mapped]]
-
-        # df = df.loc[df["Output Parameter"].isin(out_params)]
-        # all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
-        # if y_axis is not None and not y_axis in all_params:
-        #     all_params.append(y_axis)
-        # set_yaxis = False
-        # if y_axis is None:
-        #     set_yaxis = True
-        # if compute:
-        #     if use_cache:
-        #         df = self.cache.copy()
-        #     else:
-        #         df = df[all_params].compute()
-        #         self.cache = df.copy()
-        # elif use_cache:
-        #     df = self.cache.copy()
-        # else:
-        #     df = df[all_params]
-        # t2 = timer()
-        # print("Loading done in {} s".format(t2-t))
-        # t = timer()
-
+        t = timer()
         if "per_timestep" in ratio_type and not "per_out_param" in ratio_type:
             # Get series of max values over all timesteps (equals index)
             max_vals = df[in_params].apply(lambda x: np.max(np.abs(x)), axis=1)
@@ -424,7 +418,6 @@ class Deriv_dask:
             df = df.set_index(x_axis)
             max_vals = df.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
             df[in_params] = df[in_params].div(max_vals, axis="index")
-            # df.reset_index()
             t2 = timer()
             print("Recalculating ratios done in {} s".format(t2-t))
 
@@ -450,7 +443,6 @@ class Deriv_dask:
                 df_tmp_out = df_tmp_out.set_index(x_axis)
                 max_vals = df_tmp_out.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
                 df_tmp_out[in_params] = df_tmp_out[in_params].div(max_vals, axis="index")
-                # df.reset_index()
                 t2 = timer()
                 print("Recalculating ratios done in {} s".format(t2-t))
             # Averaging over output
@@ -731,18 +723,6 @@ class Deriv_dask:
                         layout_kwargs["aspect"] = width/height
                     layout_kwargs["fig_size"] = height/2
 
-#                 if hist[0]:
-#                     xhist, yhist = (hv_histo() *
-#                                     hv_histo()
-#                                     for dim in [x_axis, out_par])
-#                     param_plot = param_plot << yhist.opts(width=125) << xhist.opts(height=125)
-#                     param_plot = param_plot.opts(**layout_kwargs)
-#                     print(param_plot.items())
-#                     print(param_plot.items()[0])
-#                     print(param_plot.items()[0][1])
-#                     print(param_plot.items()[0][1].items())
-#                     param_hist_plot = param_plot.items()[0][1].hist(dimension=[x_axis, out_par], bins=bins, range=[0, 10000])
-
                 if hexbin[1]:
                     deriv_plot = df_tmp.hvplot.hexbin(
                         x=x_axis,
@@ -823,10 +803,7 @@ class Deriv_dask:
                                 cmap=cmap,
                                 show_legend=True)
                             deriv_plot = (legend_deriv * deriv_plot).opts(aspect=3.2)
-                  # Does not work: Rectangle object has no property dimension
-#                 if hist[1]:
-#                     deriv_hist_plot = df_tmp.hist(dimension=[x_axis, "Derivative Ratio"], bins=bins)
-#                 hist[1] = False
+
                 t2 = timer()
                 print("Setting up lower plot done in {} s".format(t2-t))
                 t = timer()
@@ -850,10 +827,6 @@ class Deriv_dask:
 
                 if hist[0] and not hist[1]:
                     layout = param_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
-                # elif hist[0] and hist[1]:
-                #     layout = param_hist_plot.opts(**layout_kwargs) + deriv_hist_plot.opts(**layout_kwargs)
-                # elif not hist[0] and hist[1]:
-                #     layout = param_plot.opts(**layout_kwargs) + deriv_hist_plot.opts(**layout_kwargs)
                 else:
                     layout = param_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
 
@@ -896,7 +869,6 @@ class Deriv_dask:
                             curve_kwargs["color"] = hv.Cycle("Category10")
                         elif len(percentile) <= 20:
                             curve_kwargs["color"] = hv.Cycle("Category20")
-
 
                 if errorband:
                     both_plots = layout.opts(
@@ -968,8 +940,7 @@ class Deriv_dask:
                 if self.backend == "matplotlib":
                     both_plots = both_plots.opts(sublabel_format="", tight=True)
                 if hist[0]:
-                    print("Passed")
-                    #param_opts = param_plot.opts(xaxis="bare", alpha=0.1)
+                    print("Histogram for the upper plot is not yet supported.")
                 elif by is not None:
                     param_opts = param_plot.opts(xaxis="bare")
                 else:
@@ -1047,98 +1018,73 @@ class Deriv_dask:
                     plot_helper(df_tmp_out, in_params=[in_param],
                                 prefix=prefix + "_" + in_param, **kwargs)
 
-    def plot_grid(self, hue="type", col_wrap=4, height=10, w_pad=5,
-        x_axis="timestep", y_axis="da_1", col="Output Parameter",
-        style="ticks"):
-        """
-        Plot a grid for comparing multiple derivatives across different
-        output parameters. Only uses cached data and computed data!
-        TODO: Might change that to hvplot gridplot to ensure
-        similar style across all plots.
-
-        Parameters
-        ----------
-        hue : string
-            Use this to colorize multiple outputs in one plot.
-        col_wrap : int
-            Number of plots per column
-        height : float
-            Height of each plot.
-        w_pad : float
-            Padding used between the plots.
-        x_axis : string
-            The column for the x-axis.
-        y_axis : string
-            The name of the column for the y-axis.
-        col : string
-            Column name used for splitting into different plots, i.e.
-            "Output Parameter" (goes well with y_axis any derivative)
-            or "type" (works well with y_axis any output parameter value).
-        style : string
-            Style used for seaborn.
-
-        Returns
-        -------
-        seaborn.axisgrid.FacetGrid
-            The plot.
-        """
-        import seaborn as sns
-        import matplotlib.pyplot as plt
-
-        df = self.cache
-
-        sns.set(style=style)
-        grid = sns.FacetGrid(
-            self.cache,
-            sharey=False,
-            col=col,
-            hue=hue,
-            palette=self.colors,
-            col_wrap=col_wrap,
-            height=height
-        )
-        grid.map(plt.scatter, x_axis, y_axis)
-        grid.fig.tight_layout(w_pad=w_pad)
-        return grid
-
-    def plot_grid_one_param(self, out_param, y_axis, by=None, hue="type",
-        col_wrap=4, trajectories=None, twin_axis=None,
-        x_axis="timestep", width=1280, height=800, log=False,
+    def plot_grid_one_param(self, out_param, y_axis, x_axis="timestep",
+        by=None, hue="type", col_wrap=4, trajectories=None, twin_axis=None,
+        width=1280, height=800, log=[False, False],
         vertical_mark=None, datashade=False, prefix=None, alpha=1,
         plot_path="pics/", yticks=10, decimals=-3, **kwargs):
         """
         Plot a grid for comparing multiple output parameters or
         multiple derivatives across one output parameter.
-        Only uses cached data and computed data!
-
+        Only uses cached and computed data!
 
         Parameters
         ----------
-        hue : string
-            Use this to colorize multiple outputs in one plot.
-        col_wrap : int
-            Number of plots per column
-        x_axis : string
-            The column for the x-axis.
+        out_param : string
+            Use this output parameter as reference, i.e. if y-axis consists
+            of derivatives, then those are sensitivities towards the output
+            parameter. If the y-axis are output parameters, then out_param
+            can be any parameter.
         y_axis : List of string
             The name of the column for the y-axis for each plot.
+        x_axis : string
+            The column for the x-axis.
+        by : String
+            String for groupby.
+            Can be either "trajectory" or "type" (recommended).
+        hue : string
+            Define the column to colorize multiple outputs in one plot.
+        col_wrap : int
+            Number of plots per column
+        trajectories : List of int
+            The index of the trajectories to plot. If None is given, all
+            trajectories will be plotted.
         twin_axis : string
             Plot a second y-axis for every plot using the column given
             by "twin_axis". Works only with matplotlib atm. Does not
             take "by" into account and would look cluttered with multiple
             elements from "by".
-        pad : float
-            Padding used between the plots.
-        decimals : int, optional
+        width : int
+            The width of the plot (bokeh) or the relative width of the plot
+            (matplotlib).
+        height : int
+            The height of the plot (bokeh) or the relative height of the plot
+            (matplotlib).
+        log : List of bools
+            Plot the left y-axis (log[0]) with logarithmic scale or the right
+            y-axis (log[1]) with logarithmic scale.
+        vertical_mark : dic of list
+            A dictionary containing column names and values where a horizontal
+            line should be created whenever the x_axis value intersects
+            with the given value, i.e. {"T": [273, 235]} with x_axis in time
+            marks all times, where a trajectory reached that temperature.
+            Recommended to use with a single trajectory.
+        datashade : bool
+            Use datashade to plot results.
+            Not yet implemented/tested.
+        prefix : string
+            Prefix to add to the filename.
+        alpha : float
+            Alpha value to use on the plot aligned to the left y-axis.
+        plot_path : string
+            Path to the folder to save the image.
+        ytick : int
+            Number of ticks on all y-axis.
+        decimals : int
             For rounding the right y-axis, if provided by "twin_axis".
             From numpy: Number of decimal places to round to (default: 0).
             If decimals is negative, it specifies the number of
             positions to the left of the decimal point.
-
-        Returns
-        -------
-
-            The plot.
         """
         import hvplot.pandas
         from holoviews import opts
@@ -1179,6 +1125,8 @@ class Deriv_dask:
                     latexify.parse_word(twin_axis)
                     + " " + latexify.get_unit(twin_axis, brackets=True))
                 plot.handles["axis"] = twinax
+            if log[1]:
+                df_tmp_out[twin_axisy] = da.log(da.fabs(df_tmp_out[twin_axis]))
             twin = df_tmp_out.hvplot.scatter(
                 x=x_axis,
                 y=twin_axis,
@@ -1197,7 +1145,7 @@ class Deriv_dask:
                     df_group = df_tmp_out[[x_axis, by] + add_cols]
                 else:
                     df_group = df_tmp_out[[x_axis, y, by] + add_cols]
-                if log:
+                if log[0]:
                     # Apply should be more expensive
                     df_group[y] = da.log(da.fabs(df_group[y]))
                 types = df_group[by].unique()
