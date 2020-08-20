@@ -285,9 +285,10 @@ class Deriv_dask:
         mapped : string
             Column name which has to be true such as conv_400, slan_400,
             conv_600, slan_600.
-        trajectories : List of int
-            The index of the trajectories to plot. If None is given, all
-            trajectories will be plotted.
+        trajectories : List of int or list of string
+            If int: the index of the trajectories to plot from column "trajectory".
+            If string: the type name of the trajectories to plot from column "type".
+            If None is given, all trajectories will be plotted.
         scatter : boolean
             Plot a scatter plot or a line plot.
         n_plots : int
@@ -402,6 +403,12 @@ class Deriv_dask:
                 df = self.cache
         else:
             df = self.cache.copy()
+        if trajectories is not None:
+            if isinstance(trajectories[0], int):
+                df = df.loc[df["trajectory"].isin(trajectories)]
+            else:
+                df = df.loc[df["type"].isin(trajectories)]
+
         t = timer()
         if "per_timestep" in ratio_type and not "per_out_param" in ratio_type:
             # Get series of max values over all timesteps (equals index)
@@ -486,13 +493,17 @@ class Deriv_dask:
             def plot_helper(df, in_params, prefix, **kwargs):
                 # following https://holoviz.org/tutorial/Composing_Plots.html
                 t = timer()
+                add_cols = []
+                if vertical_mark is not None:
+                    add_cols = list(vertical_mark.keys())
+
                 if by is not None:
-                    df_tmp = df[in_params+[x_axis, by]]
-                    df_tmp = df_tmp.melt([x_axis, by], var_name="Derivatives",
+                    df_tmp = df[in_params+[x_axis, by] + add_cols]
+                    df_tmp = df_tmp.melt([x_axis, by] + add_cols, var_name="Derivatives",
                                     value_name="Derivative Ratio")
                 else:
-                    df_tmp = df[in_params+[x_axis]]
-                    df_tmp = df_tmp.melt([x_axis], var_name="Derivatives",
+                    df_tmp = df[in_params+[x_axis] + add_cols]
+                    df_tmp = df_tmp.melt([x_axis] + add_cols, var_name="Derivatives",
                                          value_name="Derivative Ratio")
                 t2 = timer()
                 print("Melting done in {} s".format(t2-t), flush=True)
@@ -539,7 +550,7 @@ class Deriv_dask:
                         print("x-axis and y-axis are the same. Cannot plot that with percentiles!")
                         return
                     else:
-                        df_group = df[[x_axis, y_axis]]
+                        df_group = df[[x_axis, y_axis] + add_cols]
                     if log[0]:
                         # Apply should be more expensive
                         df_group[y_axis] = da.log(da.fabs(df_group[y_axis]))
@@ -578,7 +589,7 @@ class Deriv_dask:
                             **kwargs)
                     )
                 elif errorband:
-                    df_group = df[[x_axis, y_axis, "trajectory"]]
+                    df_group = df[[x_axis, y_axis, "trajectory"] + add_cols]
                     if log[0]:
                         # Apply should be more expensive
                         df_group[y_axis] = da.log(da.fabs(df_group[y_axis]))
@@ -607,9 +618,9 @@ class Deriv_dask:
                     )
                 elif by is not None:
                     if y_axis == x_axis:
-                        df_group = df[[x_axis, by]]
+                        df_group = df[[x_axis, by] + add_cols]
                     else:
-                        df_group = df[[x_axis, y_axis, by]]
+                        df_group = df[[x_axis, y_axis, by] + add_cols]
                     if log[0]:
                         # Apply should be more expensive
                         df_group[y_axis] = da.log(da.fabs(df_group[y_axis]))
@@ -679,9 +690,9 @@ class Deriv_dask:
                             param_plot = (legend * param_plot).opts(aspect=3.2)
                 elif hexbin[0]:
                     if y_axis == x_axis:
-                        df_group = df[[x_axis, "trajectory"]]
+                        df_group = df[[x_axis, "trajectory"] + add_cols]
                     else:
-                        df_group = df[[x_axis, y_axis, "trajectory"]]
+                        df_group = df[[x_axis, y_axis, "trajectory"] + add_cols]
                     if log[0]:
                         # Apply should be more expensive
                         df_group[y_axis] = da.log(da.fabs(df_group[y_axis]))
@@ -697,9 +708,9 @@ class Deriv_dask:
                     )
                 else:
                     if y_axis == x_axis:
-                        df_group = df[[x_axis, "trajectory"]]
+                        df_group = df[[x_axis, "trajectory"] + add_cols]
                     else:
-                        df_group = df[[x_axis, y_axis, "trajectory"]]
+                        df_group = df[[x_axis, y_axis, "trajectory"] + add_cols]
                     if log[0]:
                         # Apply should be more expensive
                          df_group[y_axis] = da.log(da.fabs(df_group[y_axis]))
@@ -710,6 +721,7 @@ class Deriv_dask:
                         label=None,
                         datashade=datashade
                     )
+
                 t2 = timer()
                 print("Setting up upper plot done in {} s".format(t2-t))
                 t = timer()
@@ -807,32 +819,84 @@ class Deriv_dask:
                 t2 = timer()
                 print("Setting up lower plot done in {} s".format(t2-t))
                 t = timer()
+
                 # Create vertical lines if needed
-                marks = None
                 if vertical_mark is not None:
+                    marks = None
+                    if min_x is None:
+                        this_min_x = df_group[x_axis].min()
+                    else:
+                        this_min_x = min_x
+                    if max_x is None:
+                        this_max_x = df_group[x_axis].max()
+                    else:
+                        this_max_x = max_x
+                    min_y = df_group[y_axis].min()
+                    max_y = df_group[y_axis].max()
+                    del_x = (this_max_x-this_min_x)*0.1
+                    del_y = (max_y-min_y)
+                    if min_y == max_y:
+                        min_y = max_y - 1
+                        max_y = max_y + 1
+                        del_y = 2
+
+                    min_y_deriv = df_tmp["Derivative Ratio"].min()
+                    max_y_deriv = df_tmp["Derivative Ratio"].max()
+                    del_y_deriv = (max_y_deriv-min_y_deriv)
+                    if min_y_deriv == max_y_deriv:
+                        min_y_deriv = max_y_deriv - 1
+                        max_y_deriv = max_y_deriv + 1
+                        del_y_deriv = 2
+
+                    if by is not None:
+                        df_tmp_group = df_group.groupby(by)
+                    else:
+                        df_tmp_group = df_group
+
                     for col in vertical_mark:
-                        # might try math.isclose(df_group[col], vertical_mark[col], rel_tol=1e0-3)
-                        x_values = df_group.loc[df_group[col] == vertical_mark[col]][x_axis]
-                        for x_value in x_values:
-                            if marks is None:
-                                marks = hv.VLine(
-                                    x=x_value,
-                                    label=col + "=" + str(vertical_mark[col]))
-                            else:
-                                marks = marks * hv.VLine(
-                                    x=x_value,
-                                    label=col + "=" + str(vertical_mark[col]))
-                    param_plot = param_plot * marks
-                    deriv_plot = deriv_plot * marks
+                        for v in vertical_mark[col]:
+                            # Works well as long as dataframe is smaller than ~ 30k elements
+                            df_sort = df_tmp_group.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
+                            col_values = np.sort(df_sort[col].values)
+                            for index, row in df_sort.iterrows():
+                                if np.abs(row[col]-v) > 1.0:
+                                    break
+                                # The one for the plot above
+                                text = hv.Text(
+                                    row[x_axis]+del_x,
+                                    max_y-del_y*0.1,
+                                    col + "=" + str(v) + latexify.get_unit(col),
+                                    fontsize=24)
+                                mark = hv.VLine(
+                                        x=row[x_axis],
+                                        label=col + "=" + str(v)
+                                    ).opts(
+                                        color="black",
+                                        ylim=(min_y-del_y*0.1,
+                                              max_y+del_y*0.1)) * text
+                                param_plot = param_plot * mark
+                                # For the derivatives
+                                text = hv.Text(
+                                    row[x_axis]+del_x,
+                                    max_y_deriv-del_y_deriv*0.1,
+                                    col + "=" + str(v) + latexify.get_unit(col),
+                                    fontsize=24)
+                                mark = hv.VLine(
+                                        x=row[x_axis],
+                                        label=col + "=" + str(v)
+                                    ).opts(
+                                        color="black",
+                                        ylim=(min_y_deriv-del_y_deriv*0.1,
+                                              max_y_deriv+del_y_deriv*0.1)) * text
+                                deriv_plot = deriv_plot * mark
+                    t2 = timer()
+                    print("Creating marks done in {} s".format(t2-t))
+                    t = timer()
 
                 if hist[0] and not hist[1]:
                     layout = param_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
                 else:
                     layout = param_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
-
-                t2 = timer()
-                print("Creating layout done in {} s".format(t2-t))
-                t = timer()
 
                 opts_arg = {} # Currently empty. Maybe useful in further iterations
 
@@ -1046,9 +1110,10 @@ class Deriv_dask:
             Define the column to colorize multiple outputs in one plot.
         col_wrap : int
             Number of plots per column
-        trajectories : List of int
-            The index of the trajectories to plot. If None is given, all
-            trajectories will be plotted.
+        trajectories : List of int or list of string
+            If int: the index of the trajectories to plot from column "trajectory".
+            If string: the type name of the trajectories to plot from column "type".
+            If None is given, all trajectories will be plotted.
         twin_axis : string
             Plot a second y-axis for every plot using the column given
             by "twin_axis". Works only with matplotlib atm. Does not
@@ -1107,7 +1172,10 @@ class Deriv_dask:
         df_tmp_out = df.loc[df["Output Parameter"] == out_param]
         df_tmp_out["qi"] = da.fabs(df_tmp_out["qi"]) # sign error?
         if trajectories is not None:
-            df_tmp_out = df_tmp_out.loc[df_tmp_out["type"].isin(trajectories)]
+            if isinstance(trajectories[0], int):
+                df_tmp_out = df_tmp_out.loc[df_tmp_out["trajectory"].isin(trajectories)]
+            else:
+                df_tmp_out = df_tmp_out.loc[df_tmp_out["type"].isin(trajectories)]
         # This is for the matplotlib backend
         # For bokeh, see https://github.com/holoviz/holoviews/issues/396
         twin = None
@@ -1163,7 +1231,11 @@ class Deriv_dask:
                     del_y = 2
 
                 if vertical_mark is not None:
-                    df_tmp = df_group.groupby(by)
+                    if by is not None:
+                        df_tmp = df_group.groupby(by)
+                    else:
+                        df_tmp = df_group
+
                     for col in vertical_mark:
                         for v in vertical_mark[col]:
                             # Works well as long as dataframe is smaller than ~ 30k elements
@@ -1178,12 +1250,16 @@ class Deriv_dask:
                                     marks = hv.VLine(
                                         x=row[x_axis],
                                         label=col + "=" + str(v)
-                                    ).opts(color="black", ylim=(min_y-del_y*0.1, max_y+del_y*0.1)) * text
+                                    ).opts(
+                                        color="black",
+                                        ylim=(min_y-del_y*0.1, max_y+del_y*0.1)) * text
                                 else:
                                     marks = marks * hv.VLine(
                                         x=row[x_axis],
                                         label=col + "=" + str(v)
-                                    ).opts(color="black", ylim=(min_y-del_y*0.1, max_y+del_y*0.1)) * text
+                                    ).opts(
+                                        color="black",
+                                        ylim=(min_y-del_y*0.1, max_y+del_y*0.1)) * text
                 if not datashade:
                     cmap_values = []
                     for ty in types:
