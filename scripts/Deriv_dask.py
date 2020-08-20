@@ -251,7 +251,7 @@ class Deriv_dask:
         t = timer()
 
     def plot_two_ds(self, in_params, out_params, x_axis="timestep",
-        y_axis=None,mapped=None,
+        y_axis=None, twin_axis=None, decimals=-3, mapped=None,
         trajectories=None, scatter=False, n_plots=None, percentile=None,
         frac=None, min_x=None, max_x=None, nth=None, hist=[False, False],
         hexbin=[False, False], bins=50,  log=[False, False], sort=True,
@@ -282,6 +282,16 @@ class Deriv_dask:
             an output parameter or a derivative.
         y_axis : string
             y-axis for the upper plot. If none is given, use output parameter.
+        twin_axis : string
+            Plot a second y-axis for both plots using the column given
+            by "twin_axis". Works only with matplotlib atm. Does not
+            take "by" into account and might look cluttered with multiple
+            elements from "by".
+        decimals : int
+            For rounding the right y-axis, if provided by "twin_axis".
+            From numpy: Number of decimal places to round to (default: 0).
+            If decimals is negative, it specifies the number of
+            positions to the left of the decimal point.
         mapped : string
             Column name which has to be true such as conv_400, slan_400,
             conv_600, slan_600.
@@ -432,6 +442,7 @@ class Deriv_dask:
         if y_axis is None:
             set_yaxis = True
         for out_par in out_params:
+            t = timer()
             if set_yaxis:
                 y_axis = out_par
             df_tmp_out = df.loc[df["Output Parameter"] == out_par]
@@ -452,6 +463,34 @@ class Deriv_dask:
                 df_tmp_out[in_params] = df_tmp_out[in_params].div(max_vals, axis="index")
                 t2 = timer()
                 print("Recalculating ratios done in {} s".format(t2-t))
+
+            # This is for the matplotlib backend
+            # For bokeh, see https://github.com/holoviz/holoviews/issues/396
+            twin = None
+            if twin_axis is not None and self.backend == "matplotlib":
+                lower_y = np.around(df_tmp_out[twin_axis].min(), decimals=decimals)
+                upper_y = np.around(df_tmp_out[twin_axis].max(), decimals=decimals)
+                tick_size = (upper_y - lower_y)/10
+                def twinx(plot, element):
+                    ax = plot.handles["axis"]
+                    twinax = ax.twinx()
+                    twinax.set_ylim((lower_y - tick_size * 0.75,
+                                    upper_y + tick_size * 0.75))
+                    twinax.set_yticks(np.arange(lower_y, upper_y + tick_size*0.75, tick_size))
+                    twinax.set_ylabel(
+                        latexify.parse_word(twin_axis)
+                        + " " + latexify.get_unit(twin_axis, brackets=True))
+                    plot.handles["axis"] = twinax
+                if log[1]:
+                    df_tmp_out[twin_axis] = da.log(da.fabs(df_tmp_out[twin_axis]))
+                twin = df_tmp_out.hvplot.scatter(
+                    x=x_axis,
+                    y=twin_axis,
+                    color="gray",
+                    datashade=datashade,
+                    legend=False,
+                ).opts(initial_hooks=[twinx], apply_ranges=False).opts(opts.Scatter(s=8))
+
             # Averaging over output
             t = timer()
             if rolling_avg_par is not None:
@@ -634,6 +673,9 @@ class Deriv_dask:
                         cmap = {}
                         for ty in types:
                             cmap[ty] = self.cmap[ty]
+                    if twin is not None:
+                        cmap_values.append("gray")
+                        types = np.append(types, latexify.parse_word(twin_axis))
                     if not datashade:
                         if self.backend == "matplotlib":
                             overlay = hv.NdOverlay(
@@ -760,7 +802,9 @@ class Deriv_dask:
                         cmap_values = []
                         for i in range(len(all_derives)):
                             cmap_values.append(matplotlib.colors.to_hex(colors(i)[0:-1]))
-
+                        if twin is not None:
+                            cmap_values.append("gray")
+                            all_derives = np.append(all_derives, latexify.parse_word(twin_axis))
                         if self.backend == "matplotlib":
                             overlay = hv.NdOverlay(
                                 {derivative: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
@@ -892,6 +936,11 @@ class Deriv_dask:
                     t2 = timer()
                     print("Creating marks done in {} s".format(t2-t))
                     t = timer()
+
+                # Add second y-axis if given
+                if twin is not None:
+                    param_plot = param_plot * twin
+                    deriv_plot = deriv_plot * twin
 
                 if hist[0] and not hist[1]:
                     layout = param_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
@@ -1083,7 +1132,7 @@ class Deriv_dask:
                                 prefix=prefix + "_" + in_param, **kwargs)
 
     def plot_grid_one_param(self, out_param, y_axis, x_axis="timestep",
-        by=None, hue="type", col_wrap=4, trajectories=None, twin_axis=None,
+        twin_axis=None, by=None, hue="type", col_wrap=4, trajectories=None,
         width=1280, height=800, log=[False, False],
         vertical_mark=None, datashade=False, prefix=None, alpha=1,
         plot_path="pics/", yticks=10, decimals=-3, **kwargs):
@@ -1103,6 +1152,11 @@ class Deriv_dask:
             The name of the column for the y-axis for each plot.
         x_axis : string
             The column for the x-axis.
+        twin_axis : string
+            Plot a second y-axis for every plot using the column given
+            by "twin_axis". Works only with matplotlib atm. Does not
+            take "by" into account and might look cluttered with multiple
+            elements from "by".
         by : String
             String for groupby.
             Can be either "trajectory" or "type" (recommended).
@@ -1114,11 +1168,6 @@ class Deriv_dask:
             If int: the index of the trajectories to plot from column "trajectory".
             If string: the type name of the trajectories to plot from column "type".
             If None is given, all trajectories will be plotted.
-        twin_axis : string
-            Plot a second y-axis for every plot using the column given
-            by "twin_axis". Works only with matplotlib atm. Does not
-            take "by" into account and would look cluttered with multiple
-            elements from "by".
         width : int
             The width of the plot (bokeh) or the relative width of the plot
             (matplotlib).
@@ -1264,6 +1313,9 @@ class Deriv_dask:
                     cmap_values = []
                     for ty in types:
                         cmap_values.append(self.cmap[ty])
+                    if twin is not None:
+                        cmap_values.append("gray")
+                        types = np.append(types, latexify.parse_word(twin_axis))
                     lim_multiplier = 0.1
                     if twin is not None:
                         lim_multiplier = 0.7
