@@ -111,7 +111,7 @@ def set_size(beamer=True):
         })
 
 
-def get_unit(param):
+def get_unit(param, brackets=False):
     """
     Get the unit for a given parameter.
 
@@ -119,6 +119,8 @@ def get_unit(param):
     ----------
     param : string
         Name of the parameter
+    brackets : bool
+        If true, add "[]" to output
 
     Returns
     -------
@@ -130,6 +132,8 @@ def get_unit(param):
         "p": "Pa",
         "timestep": "s"}
     if param in unit_dic:
+        if brackets:
+            return "[" + unit_dic[param] + "]"
         return unit_dic[param]
     else:
         return ""
