@@ -365,8 +365,7 @@ class Deriv_dask:
             If "by" is set, the rolling average will be calculated
             per instance in the column from "by".
         rolling_avg_par : int
-            Same as rollling_avg but for output parameters. Not recommended as
-            sometimes the output is broken.
+            Same as rollling_avg but for output parameters.
         max_per_deriv : int
             Maximum number of derivatives per plot.
         width : int
@@ -536,7 +535,6 @@ class Deriv_dask:
             df_tmp_out = df.loc[df["Output Parameter"] == out_par]
             if "per_out_param" in ratio_type:
                 df_tmp_out = recalc_ratios(df_tmp_out)
-                print(df_tmp_out[in_params].abs().max())
                 t = timer()
 
             # This is for the matplotlib backend
@@ -677,7 +675,6 @@ class Deriv_dask:
                             alpha=0.5,
                             value_label=latexify.parse_word(y_axis),
                             label="Spread")
-                            # color="grey")
                         * df_mean.hvplot()
                         * df_std.hvplot.area(
                             x=x_axis,
@@ -686,7 +683,6 @@ class Deriv_dask:
                             alpha=0.3,
                             value_label=latexify.parse_word(y_axis),
                             label="sd")
-                            # color="grey")
                     )
                 elif by is not None:
                     if y_axis == x_axis:
@@ -1409,7 +1405,6 @@ class Deriv_dask:
                             y=y,
                             by=by,
                             title="Values of of {}".format(latexify.parse_word(y)),
-                            # color=cmap_values,
                             label=None,
                             datashade=datashade,
                             alpha=alpha
@@ -1451,7 +1446,7 @@ class Deriv_dask:
 
                 if log:
                     # Apply should be more expensive
-                        df_group[y] = da.log(da.fabs(df_group[y]))
+                    df_group[y] = da.log(da.fabs(df_group[y]))
                 param_plot = df_group.hvplot.scatter(
                     x=x_axis,
                     y=y,
