@@ -258,7 +258,7 @@ class Deriv_dask:
         scatter_deriv=False, line_deriv=False, compute=False,
         use_cache=False, errorband=False, plot_path="pics/", prefix=None,
         fig_type='svg', datashade=True, by=None,  alpha=[1, 1],
-        rolling_avg=None, rolling_avg_par=None, max_per_deriv=10,
+        rolling_avg=20, rolling_avg_par=20, max_per_deriv=10,
         width=1280, height=800, ratio_type="vanilla", ratio_window=None,
         vertical_mark=None, **kwargs):
         """
@@ -438,22 +438,44 @@ class Deriv_dask:
                     # TODO: is that really rolling over consecutive timesteps? What if derivative gets 0?
                     series = df_tmp[in_params].rolling(
                         rolling_avg, min_periods=1).mean()
-                    series.index = df.loc[df["Output Parameter"] == out_par]
+                    series.index = df.loc[df["Output Parameter"] == out_par].index
                     df.update(series)
                 else:
                     types = df_tmp[by].unique()
                     for ty in types:
                         df_tmp2 = df_tmp.loc[df_tmp[by] == ty]
+                        tmp_par = ["dcloud_a_vel", x_axis]
+                        df_tmp2 = df_tmp.loc[df_tmp[by] == ty]
                         series = df_tmp2[in_params].rolling(
                             rolling_avg, min_periods=1).mean()
                         series.index = df.loc[
-                            (df["Output Parameter"] == out_par) & (df[by] == ty) ]
+                            (df["Output Parameter"] == out_par) & (df[by] == ty) ].index
                         df.update(series)
             t2 = timer()
             print("Calculating rolling average for derivatives done in {} s".format(t2-t))
             t = timer()
 
-        t = timer()
+        if rolling_avg_par is not None:
+            for out_par in out_params:
+                df_tmp = df.loc[df["Output Parameter"] == out_par]
+                if by is None:
+                    series = df_tmp[out_par].rolling(
+                        rolling_avg_par, min_periods=1).mean()
+                    series.index = df.loc[df["Output Parameter"] == out_par].index
+                    df.update(series)
+                else:
+                    types = df_tmp[by].unique()
+                    for ty in types:
+                        df_tmp2 = df_tmp.loc[df_tmp[by] == ty]
+                        series = df_tmp2[out_par].rolling(
+                            rolling_avg_par, min_periods=1).mean()
+                        series.index = df.loc[
+                            (df["Output Parameter"] == out_par) & (df[by] == ty) ].index
+                        df.update(series)
+            t2 = timer()
+            print("Calculating rolling average for outputs done in {} s".format(t2-t))
+            t = timer()
+
         def recalc_ratios(ratio_df):
             # TODO: Add if by is not None: go over all types and do that stuff.
             if ratio_window is not None:
@@ -585,11 +607,11 @@ class Deriv_dask:
                 print("Melting done in {} s".format(t2-t), flush=True)
 
                 if log[1]:
-                    deriv_col_name = "Log Derivative Ratio"
-                    df_tmp[deriv_col_name] = da.log(da.fabs(df_tmp[deriv_col_name]))
+                    df_tmp[deriv_col_name] = da.log(da.fabs(df_tmp["Derivative Ratio"]))
                     # Remove zero entries (-inf)
                     df_tmp = df_tmp[~da.isinf(df_tmp[deriv_col_name])]
-                    df_tmp.rename(columns={deriv_col_name: deriv_col_name}, inplace=True)
+                    df_tmp.rename(columns={deriv_col_name: "Log Derivative Ratio"}, inplace=True)
+                    deriv_col_name = "Log Derivative Ratio"
                     t2 = timer()
                     print("Log done in {} s".format(t2-t))
                     t = timer()
@@ -1145,7 +1167,7 @@ class Deriv_dask:
         twin_axis=None, by=None, hue="type", col_wrap=4, trajectories=None,
         width=1280, height=800, log=[False, False],
         vertical_mark=None, datashade=False, prefix=None, alpha=1,
-        plot_path="pics/", yticks=10, decimals=-3, **kwargs):
+        plot_path="pics/", yticks=10, decimals=-3, rolling_avg=20, **kwargs):
         """
         Plot a grid for comparing multiple output parameters or
         multiple derivatives across one output parameter.
@@ -1209,6 +1231,9 @@ class Deriv_dask:
             From numpy: Number of decimal places to round to (default: 0).
             If decimals is negative, it specifies the number of
             positions to the left of the decimal point.
+        rolling_avg : int
+            Number of consecutive rows for a rolling average
+            for the left y-axis.
         """
         import hvplot.pandas
         from holoviews import opts
@@ -1272,11 +1297,18 @@ class Deriv_dask:
                     df_group = df_tmp_out[[x_axis, by] + add_cols]
                 else:
                     df_group = df_tmp_out[[x_axis, y, by] + add_cols]
+                types = df_group[by].unique()
+                types = np.sort(types[::-1])
+                if rolling_avg is not None:
+                    for ty in types:
+                        df_roll = df_group.loc[df_group[by] == ty]
+                        series = df_roll[y].rolling(
+                            rolling_avg, min_periods=1).mean()
+                        series.index = df_group.loc[df_group[by] == ty].index
+                        df_group.update(series)
                 if log[0]:
                     # Apply should be more expensive
                     df_group[y] = da.log(da.fabs(df_group[y]))
-                types = df_group[by].unique()
-                types = np.sort(types[::-1])
 
                 min_x = df_group[x_axis].min()
                 max_x = df_group[x_axis].max()
@@ -1335,7 +1367,6 @@ class Deriv_dask:
                                 {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
                                 for i in range(len(types)) }
                             )
-
                             plot_list.append(df_group.hvplot.scatter(
                                 x=x_axis,
                                 y=y,
@@ -1351,8 +1382,6 @@ class Deriv_dask:
                                 ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
                                 xlim=(min_x, max_x),
                                 yticks=yticks) * overlay)
-
-
                         else:
                             plot_list.append(df_group.hvplot.scatter(
                                 x=x_axis,
@@ -1414,6 +1443,12 @@ class Deriv_dask:
                     df_group = df_tmp_out[[x_axis, "trajectory"]]
                 else:
                     df_group = df_tmp_out[[x_axis, y, "trajectory"]]
+
+                if rolling_avg is not None:
+                    series = df_group[y].rolling(
+                        rolling_avg, min_periods=1).mean()
+                    df_group.update(series)
+
                 if log:
                     # Apply should be more expensive
                         df_group[y] = da.log(da.fabs(df_group[y]))
