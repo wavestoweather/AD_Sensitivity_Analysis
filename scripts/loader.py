@@ -1050,21 +1050,38 @@ def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
     tmp_dict = {}
 
     def booler(x):
-#         if x != "0" and x != "1":
-#             print(x)
         return np.bool_(x)
     def inter(x):
         return np.uint32(x)
     if pool is None:
         for f in file_list2:
             out_param = params_dict2[f.split(suffix)[1]]
-            df = pd.read_csv(f, sep=",", index_col=False, dtype=deriv_type_dic)#, converters={"conv_400": booler, "conv_600": booler, "slan_400": booler, "slan_600": booler, "dp2h": booler, "trajectory": inter})
+            df = pd.read_csv(f, sep=",", index_col=False, dtype=deriv_type_dic)
             if out_param in tmp_dict:
                 tmp_dict[out_param] = tmp_dict[out_param].append(df)
             else:
                 tmp_dict[out_param] = df
         if filt:
             tmp_dict = filter_zeros(tmp_dict, EPSILON)
+
+        if "type" not in list(tmp_dict.values())[0]:
+            typename = ""
+            if "conv" in file_list2[0]:
+                typename = "Convective "
+            else:
+                typename = "Slantwise "
+            if "_400_" in file_list2[0]:
+                typename = typename + "400hPa "
+            else:
+                typename = typename + "600hPa "
+            if "quan25" in file_list2[0]:
+                typename = typename + "25. Quantile"
+            elif "quan50" in file_list2[0] or "median" in file_list2[0]:
+                typename = typename + "50. Quantile"
+            elif "quan75" in file_list2[0]:
+                typename = typename + "75. Quantile"
+            for key in tmp_dict:
+                tmp_dict[key]["type"] = typename
 
         return tmp_dict
 

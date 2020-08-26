@@ -1,0 +1,243 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Template Function sedimentation_explicit &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Function set_input_from_arguments" href="function_group__io_1gaab68f866e7ee86dc4fd3cdd2409a88e4.html" />
+    <link rel="prev" title="Template Function saturation_pressure_water_icon" href="function_group__parametrizations_1ga49cda83d3ea4964b71db7cb9d4ef97c6.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="library_root.html">C++ API</a> &raquo;</li>
+        
+      <li>Template Function sedimentation_explicit</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/function_group__ufunc_1ga41fb2a120504f6a0c936112fd2def98f.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="template-function-sedimentation-explicit">
+<span id="exhale-function-group-ufunc-1ga41fb2a120504f6a0c936112fd2def98f"></span><h1>Template Function sedimentation_explicit<a class="headerlink" href="#template-function-sedimentation-explicit" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_include_microphysics_user_functions.h.html#file-include-microphysics-user-functions-h"><span class="std std-ref">File user_functions.h</span></a></p></li>
+</ul>
+<div class="section" id="function-documentation">
+<h2>Function Documentation<a class="headerlink" href="#function-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="cpp function">
+<dt id="_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t">
+<span id="_CPPv3I0E22sedimentation_explicitR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t"></span><span id="_CPPv2I0E22sedimentation_explicitR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t"></span>template&lt;class <code class="sig-name descname">float_t</code>&gt;<br /><span class="target" id="group__ufunc_1ga41fb2a120504f6a0c936112fd2def98f"></span>void <code class="sig-name descname">sedimentation_explicit</code><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>T_prime</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>S</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>qc_prime</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>qr_prime</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>Nr</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>qs_prime</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>Ns</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>qi_prime</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>Ni</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>qh_prime</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>Nh</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>qg_prime</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>Ng</em>, <a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a> &amp;<em>p_prime</em>, std::vector&lt;<a class="reference internal" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="sedimentation_explicit::float_t">float_t</a>&gt; &amp;<em>res</em>, <a class="reference internal" href="structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0E22sedimentation_explicitvR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tR7float_tRNSt6vectorI7float_tEER17model_constants_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Sedimentation after Seifert and Beheng (2006, 2008) </p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="function_group__io_1gaab68f866e7ee86dc4fd3cdd2409a88e4.html" class="btn btn-neutral float-right" title="Function set_input_from_arguments" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="function_group__parametrizations_1ga49cda83d3ea4964b71db7cb9d4ef97c6.html" class="btn btn-neutral float-left" title="Template Function saturation_pressure_water_icon" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

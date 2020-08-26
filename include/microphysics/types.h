@@ -648,19 +648,11 @@ struct model_constants_t{
   double dt_traject_prime;  /*!< Timestep size in seconds of the trajectory from the netCDF file. */
   double dt_traject;        /*!< Timestep size of the trajectory from the netCDF file. */
   uint64_t num_steps;       /*!< Number of timesteps to read from the netCDF file. */
+
   /**
    * Number of timesteps to simulate between each timestep of the netCDF file.
    */
   uint64_t num_sub_steps;
-  /**
-   * Number of simulation steps before a snapshot shall be stored on disk.
-   */
-  uint64_t snapshot_index;
-
-  /**
-   * Number of simulation steps before a snapshot shall stored on disk.
-   */
-  uint64_t write_index;
 
   //
   // General performance constants

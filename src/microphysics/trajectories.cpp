@@ -316,7 +316,7 @@ int main(int argc, char** argv)
     //             implicit_euler_step(y_single_new, y_single_old, num_comp, ref_quant, cc);
     // #endif
 
-#if defined(RK4) || defined(RK4_ONE_MOMENT)
+#if defined(RK4) || defined(RK4_ONE_MOMENT) || defined(OTHER)
                 RK4_step(y_single_new, y_single_old, ref_quant, cc,
                     nc_params, input.fixed_iteration);
 #elif defined(RK4NOICE)
