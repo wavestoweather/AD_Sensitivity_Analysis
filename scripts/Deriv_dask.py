@@ -233,8 +233,12 @@ class Deriv_dask:
             df = df.loc[df[x_axis] >= min_x]
         if max_x is not None:
             df = df.loc[df[x_axis] <= max_x]
+
         if trajectories is not None:
-            df = df.loc[df.trajectory.isin(trajectories)]
+            if isinstance(trajectories[0], int):
+                df = df.loc[df["trajectory"].isin(trajectories)]
+            else:
+                df = df.loc[df["type"].isin(trajectories)]
         if mapped is not None:
             df = df.loc[df[mapped]]
 
@@ -516,7 +520,10 @@ class Deriv_dask:
             elif "per_xaxis" in ratio_type:
                 ratio_df = ratio_df.set_index(x_axis)
                 max_vals = ratio_df.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
-                ratio_df[in_params] = ratio_df[in_params].div(max_vals, axis="index")
+                if x_axis == "timestep":
+                    ratio_df[in_params] = ratio_df[in_params].div(max_vals, axis="index")
+                else:
+                    ratio_df[in_params] = ratio_df[in_params].div(max_vals)
                 t2 = timer()
                 print("Recalculating ratios done in {} s".format(t2-t))
             return ratio_df
