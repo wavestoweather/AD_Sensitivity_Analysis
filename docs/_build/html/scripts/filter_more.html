@@ -185,51 +185,6 @@ Usage:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">-p</span></code>, <code class="docutils literal notranslate"><span class="pre">--param</span></code>: The out parameter to filter for.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">t</span></code>, <code class="docutils literal notranslate"><span class="pre">--trajectory</span></code>: The trajectory to filter for.</p></li>
 </ul>
-<span class="target" id="module-scripts.filter_more"></span><dl class="py function">
-<dt id="scripts.filter_more.filt_highest_in">
-<code class="sig-prename descclassname">scripts.filter_more.</code><code class="sig-name descname">filt_highest_in</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">out_param</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">3</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.filter_more.filt_highest_in" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a pandas dataframe and an out_param, get the n most important
-in_params (sum over all timesteps) and discard all others. Deletes
-other out_params as well.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns “in_param” and “deriv”.</p></li>
-<li><p><strong>out_param</strong> (<em>string</em>) – The output parameter to consider here such as “qr”.</p></li>
-<li><p><strong>n</strong> (<em>int</em>) – Get the n most important derivatives.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Dataframe with only out_param and the n most important
-in_param.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>pandas.Dataframe</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="scripts.filter_more.get_traj">
-<code class="sig-prename descclassname">scripts.filter_more.</code><code class="sig-name descname">get_traj</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">traj</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.filter_more.get_traj" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a pandas dataframe and a trajectory number or a list of numbers,
-get only those trajectories and discard the others.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with a column “trajectory”.</p></li>
-<li><p><strong>traj</strong> (<em>int</em><em> or </em><em>list of int</em>) – Trajectory index to filter for.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Dataframe with only certain trajectories selected.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>pandas.Dataframe</p>
-</dd>
-</dl>
-</dd></dl>
-
 </div>
 
 

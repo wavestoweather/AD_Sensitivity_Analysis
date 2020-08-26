@@ -178,7 +178,8 @@
 <div class="section" id="ad-with-icon-and-processing-results">
 <h1>AD with ICON and Processing Results<a class="headerlink" href="#ad-with-icon-and-processing-results" title="Permalink to this headline">¶</a></h1>
 <p>Here are various scripts to plot and process data from [netCDF](<a class="reference external" href="https://www.unidata.ucar.edu/software/netcdf/">https://www.unidata.ucar.edu/software/netcdf/</a>) files and my implementation of two moment scheme (similar to [ICON](<a class="reference external" href="https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html">https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html</a>)) with [AD using CoDiPack](<a class="reference external" href="https://github.com/scicompkl/codipack">https://github.com/scicompkl/codipack</a>). For the C++ code we follow the
-[doxygen standard](<a class="reference external" href="http://www.doxygen.nl/manual/docblocks.html">http://www.doxygen.nl/manual/docblocks.html</a>).</p>
+[doxygen standard](<a class="reference external" href="http://www.doxygen.nl/manual/docblocks.html">http://www.doxygen.nl/manual/docblocks.html</a>). We recommend an [anaconda](<a class="reference external" href="https://www.anaconda.com/">https://www.anaconda.com/</a>) environment for which you may
+use <cite>requirements_conda.txt</cite> and then <cite>requirements_pip.txt</cite> with pip.</p>
 <div class="section" id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -189,54 +190,62 @@
 <li><p><strong>*.ipynb:</strong> Jupyter Notebooks to get started. See below for more explanation.</p></li>
 </ul>
 </div>
-<div class="section" id="python-and-plotting-prerequisites">
-<h2>Python and Plotting Prerequisites<a class="headerlink" href="#python-and-plotting-prerequisites" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="python-prerequisites-for-post-processing">
+<h2>Python Prerequisites for Post-Processing<a class="headerlink" href="#python-prerequisites-for-post-processing" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p>[Iris](<a class="reference external" href="https://github.com/SciTools/iris">https://github.com/SciTools/iris</a>) (Recommended to install via conda or from source)</p></li>
-<li><p>[pandas](<a class="reference external" href="https://pandas.pydata.org/">https://pandas.pydata.org/</a>)</p></li>
-<li><p>[DASK](<a class="reference external" href="https://dask.org/">https://dask.org/</a>)</p></li>
-<li><p>[dask_ml](<a class="reference external" href="https://dask-ml.readthedocs.io/en/latest/">https://dask-ml.readthedocs.io/en/latest/</a>)</p></li>
-<li><p>[progressbar2](<a class="reference external" href="https://pypi.org/project/progressbar2/">https://pypi.org/project/progressbar2/</a>)</p></li>
-<li><p>[seaborn](<a class="reference external" href="https://seaborn.pydata.org/">https://seaborn.pydata.org/</a>)</p></li>
-<li><p>[matplotlib](<a class="reference external" href="https://matplotlib.org/">https://matplotlib.org/</a>)</p></li>
-<li><p>[scipy](<a class="reference external" href="https://www.scipy.org/">https://www.scipy.org/</a>)</p></li>
-<li><p>[matplotlib toolkits](<a class="reference external" href="https://matplotlib.org/1.4.3/mpl_toolkits/index.html">https://matplotlib.org/1.4.3/mpl_toolkits/index.html</a>)</p></li>
-<li><p>[netCDF4](<a class="reference external" href="https://unidata.github.io/netcdf4-python/netCDF4/index.html">https://unidata.github.io/netcdf4-python/netCDF4/index.html</a>)</p></li>
-<li><p>[pillow, formerly known as PIL](<a class="reference external" href="https://pillow.readthedocs.io/en/stable/">https://pillow.readthedocs.io/en/stable/</a>)</p></li>
-<li><p>[xarray, formerly known as xray](<a class="reference external" href="http://xarray.pydata.org/en/stable/">http://xarray.pydata.org/en/stable/</a>)</p></li>
-<li><p>[GEOS](<a class="reference external" href="https://github.com/libgeos/geos">https://github.com/libgeos/geos</a>)</p></li>
-<li><p>[cartopy](<a class="reference external" href="https://scitools.org.uk/cartopy/docs/latest/">https://scitools.org.uk/cartopy/docs/latest/</a>)</p></li>
-<li><p>[scikit-learn](<a class="reference external" href="https://scikit-learn.org/stable/">https://scikit-learn.org/stable/</a>)</p></li>
-<li><p>[datashader](<a class="reference external" href="https://datashader.org/index.html">https://datashader.org/index.html</a>)</p></li>
-<li><p>[holoviews](<a class="reference external" href="http://holoviews.org/">http://holoviews.org/</a>)</p></li>
-<li><p>[hvplot](<a class="reference external" href="https://hvplot.holoviz.org/">https://hvplot.holoviz.org/</a>)</p></li>
-<li><p>[fastparquet](<a class="reference external" href="https://github.com/dask/fastparquet">https://github.com/dask/fastparquet</a>)</p></li>
+<li><p>[Python3](<a class="reference external" href="https://www.python.org/">https://www.python.org/</a>) (Tested with v3.7.6)</p></li>
+<li><p>[pandas](<a class="reference external" href="https://pandas.pydata.org/">https://pandas.pydata.org/</a>) (Tested with v1.0.1)</p></li>
+<li><p>[DASK](<a class="reference external" href="https://dask.org/">https://dask.org/</a>) (Tested with v2.16.0)</p></li>
+<li><p>[progressbar2](<a class="reference external" href="https://pypi.org/project/progressbar2/">https://pypi.org/project/progressbar2/</a>) (Tested with v3.37.1)</p></li>
+<li><p>[seaborn](<a class="reference external" href="https://seaborn.pydata.org/">https://seaborn.pydata.org/</a>) (Tested with v0.10.0)</p></li>
+<li><p>[scipy](<a class="reference external" href="https://www.scipy.org/">https://www.scipy.org/</a>) (Tested with v1.4.1)</p></li>
+<li><p>[netCDF4](<a class="reference external" href="https://unidata.github.io/netcdf4-python/netCDF4/index.html">https://unidata.github.io/netcdf4-python/netCDF4/index.html</a>) (Tested with v1.5.3)</p></li>
+<li><p>[pillow, formerly known as PIL](<a class="reference external" href="https://pillow.readthedocs.io/en/stable/">https://pillow.readthedocs.io/en/stable/</a>) (Tested with v7.0.0)</p></li>
+<li><p>[xarray, formerly known as xray](<a class="reference external" href="http://xarray.pydata.org/en/stable/">http://xarray.pydata.org/en/stable/</a>) (Tested with v0.15.0)</p></li>
+<li><p>[fastparquet](<a class="reference external" href="https://github.com/dask/fastparquet">https://github.com/dask/fastparquet</a>) (Tested with v0.3.3)</p></li>
+<li><p>[python-snappy](<a class="reference external" href="http://google.github.io/snappy/">http://google.github.io/snappy/</a>) (Tested with v0.5.4)</p></li>
+</ul>
+</div>
+<div class="section" id="python-prerequisites-for-plotting">
+<h2>Python Prerequisites for Plotting<a class="headerlink" href="#python-prerequisites-for-plotting" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>[Iris](<a class="reference external" href="https://github.com/SciTools/iris">https://github.com/SciTools/iris</a>) (Install from conda-forge; Tested with v2.4.0)</p></li>
+<li><p>[holoviews](<a class="reference external" href="http://holoviews.org/">http://holoviews.org/</a>) (Tested with v1.13.2)</p></li>
+<li><p>[hvplot](<a class="reference external" href="https://hvplot.holoviz.org/">https://hvplot.holoviz.org/</a>) (Tested with v0.5.2)</p></li>
+<li><p>[datashader](<a class="reference external" href="https://datashader.org/index.html">https://datashader.org/index.html</a>) (Tested with v0.10.0)</p></li>
+<li><p>[matplotlib](<a class="reference external" href="https://matplotlib.org/">https://matplotlib.org/</a>) (Tested with v3.1.3)</p></li>
+<li><p>[geoviews](<a class="reference external" href="https://geoviews.org/">https://geoviews.org/</a>) (Install via <cite>conda install -c pyviz geoviews</cite>; Tested with v1.8.1)</p></li>
+<li><p>[GEOS](<a class="reference external" href="https://github.com/libgeos/geos">https://github.com/libgeos/geos</a>) (Tested with v3.7.1)</p></li>
+<li><p>[cartopy](<a class="reference external" href="https://scitools.org.uk/cartopy/docs/latest/">https://scitools.org.uk/cartopy/docs/latest/</a>) (Tested with v0.17.0)</p></li>
 </ul>
 </div>
 <div class="section" id="docs-prerequisites">
 <h2>Docs Prerequisites<a class="headerlink" href="#docs-prerequisites" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p>[Sphinx](<a class="reference external" href="http://www.sphinx-doc.org/en/master/">http://www.sphinx-doc.org/en/master/</a>)</p></li>
-<li><p>[Read the Docs Sphinx Theme](<a class="reference external" href="https://sphinx-rtd-theme.readthedocs.io/en/stable/">https://sphinx-rtd-theme.readthedocs.io/en/stable/</a>)</p></li>
-<li><p>[recommonmark](<a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/markdown.html">https://www.sphinx-doc.org/en/master/usage/markdown.html</a>) to use Markdown</p></li>
-<li><p>[Doxygen](<a class="reference external" href="http://www.doxygen.nl/index.html">http://www.doxygen.nl/index.html</a>)</p></li>
-<li><p>[Exhale](<a class="reference external" href="https://exhale.readthedocs.io/en/latest/overview.html">https://exhale.readthedocs.io/en/latest/overview.html</a>)</p></li>
-<li><p>[Breathe](<a class="reference external" href="https://breathe.readthedocs.io/en/latest/">https://breathe.readthedocs.io/en/latest/</a>)</p></li>
+<li><p>[Sphinx](<a class="reference external" href="http://www.sphinx-doc.org/en/master/">http://www.sphinx-doc.org/en/master/</a>) (Tested with v 1.4.9-2)</p></li>
+<li><p>[Read the Docs Sphinx Theme](<a class="reference external" href="https://sphinx-rtd-theme.readthedocs.io/en/stable/">https://sphinx-rtd-theme.readthedocs.io/en/stable/</a>) (Tested with v0.1.8-1)</p></li>
+<li><p>[recommonmark](<a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/markdown.html">https://www.sphinx-doc.org/en/master/usage/markdown.html</a>) (To use Markdown; Tested with v0.4.0)</p></li>
+<li><p>[Doxygen](<a class="reference external" href="http://www.doxygen.nl/index.html">http://www.doxygen.nl/index.html</a>) (Tested with v1.8.13-4)</p></li>
+<li><p>[Exhale](<a class="reference external" href="https://exhale.readthedocs.io/en/latest/overview.html">https://exhale.readthedocs.io/en/latest/overview.html</a>) (Tested with v0.2.3)</p></li>
+<li><p>[Breathe](<a class="reference external" href="https://breathe.readthedocs.io/en/latest/">https://breathe.readthedocs.io/en/latest/</a>) (Tested with v4.18.1)</p></li>
 </ul>
 </div>
 <div class="section" id="c-prerequisites">
 <h2>C++ Prerequisites<a class="headerlink" href="#c-prerequisites" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p>[GSL](<a class="reference external" href="https://www.gnu.org/software/gsl/">https://www.gnu.org/software/gsl/</a>)</p></li>
-<li><p>[NetCDF C++](<a class="reference external" href="https://github.com/Unidata/netcdf-cxx4/releases">https://github.com/Unidata/netcdf-cxx4/releases</a>)</p></li>
-<li><p>[Boost](<a class="reference external" href="https://www.boost.org/">https://www.boost.org/</a>)</p></li>
-<li><p>[CoDiPack](<a class="reference external" href="https://www.scicomp.uni-kl.de/software/codi/">https://www.scicomp.uni-kl.de/software/codi/</a>)</p></li>
+<li><p>[GCC](<a class="reference external" href="https://gcc.gnu.org/">https://gcc.gnu.org/</a>) (Tested with v6.3.0)</p></li>
+<li><p>[GSL](<a class="reference external" href="https://www.gnu.org/software/gsl/">https://www.gnu.org/software/gsl/</a>) (Tested with v2.3)</p></li>
+<li><p>[NetCDF C++](<a class="reference external" href="https://github.com/Unidata/netcdf-cxx4/releases">https://github.com/Unidata/netcdf-cxx4/releases</a>) (Tested with v4.7.3)</p></li>
+<li><p>[Boost](<a class="reference external" href="https://www.boost.org/">https://www.boost.org/</a>) (Tested with v1.3.4)</p></li>
+<li><p>[CoDiPack](<a class="reference external" href="https://www.scicomp.uni-kl.de/software/codi/">https://www.scicomp.uni-kl.de/software/codi/</a>) (Tested with v1.8.0)</p></li>
 </ul>
 </div>
 <div class="section" id="optional-prerequisites">
 <h2>Optional Prerequisites<a class="headerlink" href="#optional-prerequisites" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p>[GNU Parallel](<a class="reference external" href="https://www.gnu.org/software/parallel/">https://www.gnu.org/software/parallel/</a>)</p></li>
+<li><p>[GNU Parallel](<a class="reference external" href="https://www.gnu.org/software/parallel/">https://www.gnu.org/software/parallel/</a>) (Executing multiple processes with ease; Tested with v20161222)</p></li>
+<li><p>[JupyterLab](<a class="reference external" href="https://jupyter.org/">https://jupyter.org/</a>) (Working with Python and Plotting but in an easier way; Tested with v1.2.6)</p></li>
+<li><p>JupyterLab extension for geoviews: <cite>jupyter labextension install &#64;pyviz/jupyterlab_pyviz</cite></p></li>
 </ul>
 </div>
 <div class="section" id="compiling-code">
@@ -442,12 +451,12 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga44105174636599764f574b87e138f89d.html">Template Function graupel_melting</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga88a61ac260bf479ead4cb965990fc5b5.html">Template Function hail_collision</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gaac3e0a796e19f83589caa7b0f82cf4f3.html">Template Function hail_melting</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga8a8350773f473b966c9737a52183ba69.html">Template Function ice_activation_hande</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga36eaf38d6b846d58118397eeb3595375.html">Template Function ice_activation_phillips</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gac33e16011f15df37f6b94a8e84e72adf.html">Template Function ice_activation_hande</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga85c9fefa07eea884ad4b4733a8e3705f.html">Template Function ice_activation_phillips</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gafe69603db1d33f3121b923b6c7bf195b.html">Template Function ice_melting</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gac39d48ce77250621ebe11ad63bc0d8e6.html">Template Function ice_nuc_hom</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga1a5c0d75c9cf0ac56a03490deebc99b6.html">Template Function ice_nuc_hom</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gae83fae1edd67e34513d7abeb06af3616.html">Template Function ice_riming</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga228c08e269f9ef39d0964f0d39bf6005.html">Template Function ice_self_collection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga7d9faec3eda3375ebdcce82554c2dca4.html">Template Function ice_self_collection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_implicit__euler_8h_1a5bafa9e43aacbce425489554e0064cfb.html">Function implicit_euler_step</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga972543a894103649e760f07095f6aedc.html">Function init_global_args</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gac03abfac06224ad39f0ffc9462fec764.html">Function init_input_parameters</a></li>
@@ -475,7 +484,7 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga286537c9e131d24deb5258f7f1fdbc94.html">Template Function polyval6</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga74f4767c3eb70af6864d67470a7c773b.html">Function Press_Temp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__general_1gab47a3e7939687b90ee14022283252445.html">Function printy</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gac08754eeb2491e0f0cdcd3f2414b4372.html">Template Function rain_evaporation_sb</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gac93325864febf4f0a082a9bd8f9ae555.html">Template Function rain_evaporation_sb</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gad65088f5f27aa745b08809cc283a2ddb.html">Template Function rain_freeze</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gadb2646f93dcb6ee4fddace473bdd46b4.html">Template Function rain_self_collection_sb</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gac4d1b3718430b948a3970a89ad143913.html">Function read_init_netcdf</a></li>
@@ -493,7 +502,7 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga2a8a162336da8144cd4f2b611a8425de.html">Template Function saturation_pressure_ice</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga88aa8d1ac8129b0ce39d9b64780c4441.html">Template Function saturation_pressure_water</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga49cda83d3ea4964b71db7cb9d4ef97c6.html">Template Function saturation_pressure_water_icon</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gabc6dc2b7ba75505f8fc0eac28ba381ce.html">Template Function sedimentation_explicit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga41fb2a120504f6a0c936112fd2def98f.html">Template Function sedimentation_explicit</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gaab68f866e7ee86dc4fd3cdd2409a88e4.html">Function set_input_from_arguments</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga25cf928dedc67161761c509808eb289d.html">Function setCoefficients(std::vector&lt;codi::RealReverse&gt;&amp;, model_constants_t&amp;, reference_quantities_t&amp;)</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gaac8e29a9ea842fcce9e387cca2b51614.html">Function setCoefficients(codi::RealReverse, codi::RealReverse, model_constants_t&amp;)</a></li>

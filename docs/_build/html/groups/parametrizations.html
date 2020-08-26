@@ -815,7 +815,11 @@ Transcript written on math.log.
 </p>
 <p>for(uint64_t i=0; i&lt;8; ++i) { h2[i] = h1[i] + (h1[8+i]-h1[i]) * table.odx1 * (p_lok-table.x1[iu]); } for(uint64_t i=0; i&lt;4; ++i) { h3[i] = h2[i] + (h2[4+i]-h2[i]) * table.odx2 * (T_lok-table.x2[iu]); }</p>
 <p>h4[0] = h3[0] + (h3[2]-h3[0]) * table.odx3 * (qw_lok-table.x3[ku]); h4[1] = h3[1] + (h3[3] - h3[1]) * table.odx3 * (qw_lok-table.x3[ku]); dmin_loc = h4[0] + (h4[1]-h4[0]) * table.odx4 * (qi_lok-table.x4[lu]);</p>
-<p>} return dmin_loc; }</p>
+<p><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">}</span>
+<span class="k">return</span> <span class="n">dmin_loc</span><span class="p">;</span>
+</pre></div>
+</div>
+ }</p>
 <p>//////////////////////////////////////////////////////////////////////////////// // Variuous functions for collision integrals of SB2006 (Eq. 90, 91, 92, 93)</p>
 <p>/** Function for collision integrals of Seifert &amp; Beheng (2006), Eq. 90.</p>
 <p><p>/** Function for collision integrals of Seifert &amp; Beheng (2006), Eq. 90.</p>
@@ -867,7 +871,7 @@ Transcript written on math.log.
 </p>
 <p><p>/** Function for collision integrals of Seifert &amp; Beheng (2006), Eq. 92.</p>
 <dl class="simple">
-<dt><strong>Return</strong></dt><dd><p><img class="math" src="../_images/math/1542314743b0301d6122231d525b1e172f54bf73.png" alt="\vartheta_b^k"/> */ template &lt;class a=”codi::RealReverse”&gt; inline A coll_theta( <a class="reference internal" href="types.html#structparticle__model__constants__t"><span class="std std-ref">particle_model_constants_t</span></a> &amp;pc1, const uint64_t n) { A tmp1 = (2.0*pc1.b_vel+2.0*pc1.b_geo+pc1.nu+1.0)/pc1.mu; A tmp2 = (2.0*pc1.b_geo+pc1.nu+1.0+n)/pc1.mu; A tmp3 = (pc1.nu+1.0)/pc1.mu; A tmp4 = (pc1.nu+2.0)/pc1.mu; return tgamma( tmp1 ) / tgamma( tmp2 ) pow(tgamma( tmp3 ), 2.0*pc1.b_vel) / pow(tgamma( tmp4 ), 2.0*pc1.b_vel); }</p>
+<dt><strong>Return</strong></dt><dd><p><img class="math" src="../_images/math/1542314743b0301d6122231d525b1e172f54bf73.png" alt="\vartheta_b^k"/> */ template &lt;class a=”codi::RealReverse”&gt; inline A coll_theta( <a class="reference internal" href="types.html#structparticle__model__constants__t"><span class="std std-ref">particle_model_constants_t</span></a> &amp;pc1, const uint64_t n) { A tmp1 = (2.0*pc1.b_vel+2.0*pc1.b_geo+pc1.nu+1.0+n)/pc1.mu; A tmp2 = (2.0*pc1.b_geo+pc1.nu+1.0+n)/pc1.mu; A tmp3 = (pc1.nu+1.0)/pc1.mu; A tmp4 = (pc1.nu+2.0)/pc1.mu; return tgamma( tmp1 ) / tgamma( tmp2 ) pow(tgamma( tmp3 ), 2.0*pc1.b_vel) / pow(tgamma( tmp4 ), 2.0*pc1.b_vel); }</p>
 </dd>
 <dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">pc1</span></code>: Model constants for a particle type that is being collected </p></li>

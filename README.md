@@ -46,7 +46,7 @@ Python Prerequisites for Plotting
 
 Docs Prerequisites
 -------------------------
-- [Sphinx](http://www.sphinx-doc.org/en/master/) (Tested with v 1.4.9-2)
+- [Sphinx](http://www.sphinx-doc.org/en/master/) (Tested with v3.0.3)
 - [Read the Docs Sphinx Theme](https://sphinx-rtd-theme.readthedocs.io/en/stable/) (Tested with v0.1.8-1)
 - [recommonmark](https://www.sphinx-doc.org/en/master/usage/markdown.html) (To use Markdown; Tested with v0.4.0)
 - [Doxygen](http://www.doxygen.nl/index.html) (Tested with v1.8.13-4)
