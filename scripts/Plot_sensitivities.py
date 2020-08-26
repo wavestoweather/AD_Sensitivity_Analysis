@@ -175,6 +175,8 @@ for i, trajectories in enumerate([ [1], [4], [7], [11], None ]):
             for ratio_type in ratio_types:
                 if x_axis == "timestep" and "per_xaxis" in ratio_type:
                     continue
+                if x_axis == "p" and not "vanilla" == ratio_type:
+                    continue
                 log = [False, False]
                 deriv.plot_two_ds(
                     plot_path=plot_path + out_param + "/",
@@ -207,8 +209,7 @@ for i, trajectories in enumerate([ [1], [4], [7], [11], None ]):
                     ratio_type=ratio_type,
                     max_per_deriv=max_per_deriv,
                     vertical_mark=vertical_marks)
-                if ratio_type == "vanilla":
-                    print(f"\n2 Plot {out_param}, {x_axis}, {ratio_type}\n")
+                if ratio_type == "vanilla" and not x_axis == "p":
                     deriv.plot_two_ds(
                         plot_path=plot_path + out_param + "/",
                         in_params=in_params,
