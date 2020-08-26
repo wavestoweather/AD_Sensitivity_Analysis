@@ -36,7 +36,7 @@ Python Prerequisites for Plotting
 ----------------------------------------
 - [Iris](https://github.com/SciTools/iris) (Install from conda-forge; Tested with v2.4.0)
 - [holoviews](http://holoviews.org/) (Tested with v1.13.2)
-- [hvplot](https://hvplot.holoviz.org/) (v0.6.0 or newer)
+- [hvplot](https://hvplot.holoviz.org/) (Tested with v0.5.2)
 - [datashader](https://datashader.org/index.html) (Tested with v0.10.0)
 - [matplotlib](https://matplotlib.org/) (Tested with v3.1.3)
 - [geoviews](https://geoviews.org/) (Install via `conda install -c pyviz geoviews`; Tested with v1.8.1)
