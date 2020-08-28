@@ -27,10 +27,12 @@ OUTPUT_PATH="data/sim/"
 # Wether to take the data from the netcdf-file every 20 seconds (=1)
 # or just use the initial conditions from the file and simulate microphysics
 # until the target time is reached (=0 not recommended)
+# Does not affect temperature and pressure input (see below)
 START_OVER="1"
 
-# Fix pressure, temperature and ascent during microphysics (=1)
+# Fix pressure and temperature during microphysics (=1)
 # or take any changes of them into account (=0)
+# If FIXED_ITERATION=1, then it is advised to set START_OVER=0
 FIXED_ITERATION="0"
 
 # Run the stuff (in parallel with GNU parallel)
