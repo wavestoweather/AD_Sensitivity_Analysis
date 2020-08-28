@@ -101,7 +101,7 @@ struct particle_model_constants_t{
      * gamma function lookup table 2.
      * Number of bins.
      */
-    codi::RealReverse nm2
+    codi::RealReverse nm2;
     /**
      * Used for initializing the incomplete
      * gamma function lookup table 3.
