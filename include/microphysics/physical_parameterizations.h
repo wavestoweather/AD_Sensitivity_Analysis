@@ -1305,7 +1305,6 @@ void setup_model_constants(
     // The trajectories are calculated with 20 s timesteps.
     cc.num_sub_steps = (floor( 20.0/cc.dt ) < 1) ? 1 : floor( 20.0/cc.dt );
 
-    cc.snapshot_index = input.snapshot_index;
     // Evaluate the general performance constants
     cc.dt_half = cc.dt*0.5;
     cc.dt_third = cc.dt/3.0;
@@ -1372,7 +1371,6 @@ void setup_model_constants(
     // The trajectories are calculated with 20 s timesteps.
     cc.num_sub_steps = (floor( 20.0/cc.dt ) < 1) ? 1 : floor( 20.0/cc.dt );
 
-    cc.snapshot_index = input.snapshot_index;
     // Evaluate the general performance constants
     cc.dt_half = cc.dt*0.5;
     cc.dt_third = cc.dt/3.0;
@@ -1468,7 +1466,7 @@ void setup_model_constants(
 
     //// Graupel
     cc.graupel.nu = 1.0;
-    cc.graupel.mu = 1.0/3.0; // Not used actually?
+    cc.graupel.mu = 1.0/3.0;
     cc.graupel.max_x = 5.0e-4;
     cc.graupel.min_x = 1.0e-9;
     cc.graupel.min_x_act = 1.0e-9;
@@ -1512,7 +1510,7 @@ void setup_model_constants(
 
     //// Hail
     cc.hail.nu = 1.0;
-    cc.hail.mu = 1.0/3.0; // Not used actually?
+    cc.hail.mu = 1.0/3.0;
     cc.hail.max_x = 5.0e-4;
     cc.hail.min_x = 2.6e-9;
     cc.hail.min_x_act= 2.6e-9;
@@ -1548,7 +1546,7 @@ void setup_model_constants(
 
     //// Ice
     cc.ice.nu = 0.0;
-    cc.ice.mu = 1.0/3.0; // Not used actually?
+    cc.ice.mu = 1.0/3.0;
     cc.ice.max_x = 1.0e-5;
     cc.ice.min_x = 1.0e-12;
     cc.ice.min_x_act = 1.0e-12;
@@ -1584,7 +1582,7 @@ void setup_model_constants(
 
     //// Snow
     cc.snow.nu = 0.0;
-    cc.snow.mu = 0.5; // Not used actually?
+    cc.snow.mu = 0.5;
     cc.snow.max_x = 2.0e-5;
     cc.snow.min_x = 1.0e-10;
     cc.snow.min_x_act = 1.0e-10;
