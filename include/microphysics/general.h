@@ -111,7 +111,7 @@ void print_input_parameters(input_parameters_t &in)
 	    << "Scaling factor: " << in.scaling_fact << "\n"
         << "Name of input file: " << in.INPUT_FILENAME << "\n"
         << "Start over at each timestep of a trajectory?: " << in.start_over << "\n"
-        << "Fix temperature, vertical velocity and pressure at each substep?: " << in.fixed_iteration << "\n"
+        << "Fix temperature and pressure at each substep?: " << in.fixed_iteration << "\n"
         << "Auto type for rain evaporation (1, 2, 3): " << in.auto_type << "\n"
         << "Trajectory used: " << in.traj
         << std::endl;

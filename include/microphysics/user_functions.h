@@ -1387,7 +1387,7 @@ void sedimentation_explicit(
     float_t rhocorr = pow(compute_rhoa(p_prime,T_prime,S)/rho_0, -rho_vel);
     float_t v_n_sedi = 0.0;
     float_t v_q_sedi = 0.0;
-#ifdef TRACE_QS
+#ifdef TRACE_QI
     std::cout << "\nrhocorr: " << rhocorr
               << "\nrho_a_prime: " << compute_rhoa(p_prime,T_prime,S)
               << "\np_prime: " << p_prime
@@ -1406,6 +1406,7 @@ void sedimentation_explicit(
         float_t &resN,
         float_t &resOut)
     {
+    //    std::cout << "\nCore value resN: " << resN << "\n";
         float_t cmax_tmp = cmax;
         float_t v_nv = v_n_sedi;
         float_t v_qv = v_q_sedi;  // percentage how much trickles down
@@ -1430,10 +1431,10 @@ void sedimentation_explicit(
         resOut -= abs(s_qv);
         cmax = cmax_tmp;
         // precrate = -abs(s_sq);
-#ifdef TRACE_QS
+#ifdef TRACE_QI
         std::cout << "\n\ns_qv: " << s_qv << "\nc_qv: " << c_qv
             << "\nv_qv: " << v_qv << "\nq: " << q << "\ninv_z: "
-            << cc.inv_z << "\n";
+            << cc.inv_z << "\ns_nv: " << s_nv << "\nresN: " << resN << "\n";
 #endif
     };
 
@@ -1462,8 +1463,10 @@ void sedimentation_explicit(
             v_n_sedi -= v_n;
             v_q_sedi -= v_q;
         }
-#ifdef TRACE_QS
-    std::cout << "\n\nv_q_sedi: " << v_q_sedi << "\nq: " << q
+#ifdef TRACE_QI
+    std::cout << "\nWithin sedi_icon_sphere"
+              << "\nv_q_sedi: " << v_q_sedi << "\nq: " << q
+              << "\nv_n_sedi: " << v_n_sedi << "\nN: " << N << "\nresN: " << resN
               << "\nrhocorr: " << rhocorr
               << "\nvsedi_max: " << pc.vsedi_max
               << "\nalfa_q: " << pc.alfa_q
@@ -1475,7 +1478,14 @@ void sedimentation_explicit(
 #endif
         sedi_icon_core(q, N, v_q_sedi, v_n_sedi, resQ, resN, resOut);
 
-        resN = max(min(N, q/pc.min_x_sedimentation), q/pc.max_x);
+        // TODO: This breaks everything I think
+        // resN gets positive for one even though it should be negative
+        // It results in very high values
+        // resN = max(min(N, q/pc.min_x_sedimentation), q/pc.max_x);
+        // This should be the correct version
+        // Do not throw away more particles than ice mass permits aka
+        // only bigger particles shall fall down
+        resN = -max(min(abs(resN), q/pc.min_x_sedimentation), q/pc.max_x);
     };
 
     auto sedi_icon_sphere_lwf = [&](
@@ -1527,6 +1537,7 @@ void sedimentation_explicit(
 #endif
         sedi_icon_sphere(qi_prime, Ni, res[qi_idx], res[Ni_idx], res[qi_out_idx], cc.ice);
 #ifdef TRACE_QI
+std::cout << "N before: " << before_n << " and after " << res[Ni_idx] << "\n";
         std::cout << "sedi icon sphere dqi " << res[qi_idx] - before_q << ", dNi " << res[Ni_idx] - before_n << "\n";
 #endif
     }
@@ -3246,7 +3257,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     const double &dt,
     bool fixed=false)
 {
-
     // Limit Nx for every particle
     // y[Nc_idx] = min(max(y[Nc_idx], y[qc_idx]/cc.cloud.max_x), y[qc_idx]/cc.cloud.min_x);
     // y[Nr_idx] = min(max(y[Nr_idx], y[qr_idx]/cc.rain.max_x), y[qr_idx]/cc.rain.min_x);

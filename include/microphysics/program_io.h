@@ -836,7 +836,7 @@ int read_init_netcdf(
         nc_inq_dimid(ncid, "time", &dimid);
 #endif
         nc_inq_dimlen(ncid, dimid, &n_timesteps);
-        uint64_t n_timesteps_input = ceil(cc.t_end/20.0);
+        uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1;
 
         cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         init_nc_parameters(nc_params, lenp, n_timesteps);
@@ -1007,123 +1007,83 @@ void read_netcdf_write_stream(
     traj_id = ids[input.traj];
     // Set values from a given trajectory
 
-    if(t==0 || input.start_over)
+    if(t==0 || !input.fixed_iteration)
     {
-
         y_single_old[p_idx]  = nc_params.p;     // p
         y_single_old[T_idx]  = nc_params.t;     // T
-        if(t==0)
-        {
-            y_single_old[S_idx]  = nc_params.S;     // S
+    }
+    if(t==0 || input.start_over)
+    {
+        std::cout << "read_netcdf_write_stream at t = " << t
+        << " with start_over = " << input.start_over << "\n";
+
+        y_single_old[S_idx]  = nc_params.S;     // S
 #ifdef SAT_CALC
-            y_single_old[S_idx]  = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
-                / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+        y_single_old[S_idx]  = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
 #endif
-            y_single_old[qc_idx] = nc_params.qc;    // qc
-            y_single_old[qr_idx] = nc_params.qr;    // qr
-            y_single_old[qv_idx] = nc_params.qv;    // qv
+        y_single_old[qc_idx] = nc_params.qc;    // qc
+        y_single_old[qr_idx] = nc_params.qr;    // qr
+        y_single_old[qv_idx] = nc_params.qv;    // qv
 #if defined(RK4ICE)
-            y_single_old[qi_idx] = nc_params.qi;    // qi
-            y_single_old[qs_idx] = nc_params.qs;    // qs
+        y_single_old[qi_idx] = nc_params.qi;    // qi
+        y_single_old[qs_idx] = nc_params.qs;    // qs
 #endif
 #if !defined(WCB) && defined(RK4ICE)
-            y_single_old[qg_idx] = nc_params.qg;    // qg
+        y_single_old[qg_idx] = nc_params.qg;    // qg
 #elif defined(RK4ICE)
-            if(t==0)
-                y_single_old[qg_idx] = 0;
+        y_single_old[qg_idx] = 0;
 #endif
 #if defined(RK4ICE)
-            if(t==0)
-            {
-                y_single_old[qh_idx] = 0.0; // qh. We don't have hail in the trajectoris
-                y_single_old[Nh_idx] = 0.0; // Nh. We don't have hail in the trajectoris
-            }
+        y_single_old[qh_idx] = 0.0; // qh. We don't have hail in the trajectoris
+        y_single_old[Nh_idx] = 0.0; // Nh. We don't have hail in the trajectoris
 #endif
-            codi::RealReverse denom = 0;
-    #if defined(RK4ICE) && defined(WCB2)
-            y_single_old[Ng_idx] = nc_params.Ng;
-            y_single_old[Ni_idx] = nc_params.Ni;
-            y_single_old[Ns_idx] = nc_params.Ns;
-            y_single_old[Ng_out_idx] = nc_params.NGout;
-            y_single_old[Ni_out_idx] = nc_params.NIout;
-            y_single_old[Ns_out_idx] = nc_params.NSout;
-            y_single_old[Nr_out_idx] = nc_params.NRout;
-    #endif
-    #ifdef WCB2
-            y_single_old[Nc_idx] = nc_params.Nc;
-            y_single_old[Nr_idx] = nc_params.Nr;
-    #else
-            denom = (cc.cloud.max_x - cc.cloud.min_x) / 2.0 + cc.cloud.min_x;
-            y_single_old[Nc_idx] = y_single_old[qc_idx] * ref_quant.qref / (denom); //*10e2);  // Nc
-            denom = (cc.rain.max_x - cc.rain.min_x) / 2 + cc.rain.min_x;
-            y_single_old[Nr_idx] = y_single_old[qr_idx] * ref_quant.qref / (denom); //*10e2);  // Nr
-            denom = cc.cloud.min_x / 2.0;
-            y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
-    #if defined(RK4ICE)
-            denom = (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x;
-            y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
-            denom = (cc.snow.max_x - cc.snow.min_x) / 2.0 + cc.snow.min_x;
-            y_single_old[Ns_idx] = y_single_old[qs_idx] * ref_quant.qref / (denom); //*10e2); // Ns
-            denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
-            y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
-    #endif
-    #endif
-            cc.Nc_prime = y_single_old[Nc_idx];
-
-            cc.rho_a_prime = compute_rhoa(nc_params.p*ref_quant.pref,//*100,
-                nc_params.t*ref_quant.Tref, nc_params.S);
-            y_single_old[w_idx]  = nc_params.w[0]; // w
-            cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
-
-            denom = cc.cloud.min_x / 2.0;
-            y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
-    #if defined(RK4ICE) || defined(RK4NOICE)
-            y_single_old[z_idx] = nc_params.z[0];
-    #endif
-        }
-#if defined WCB || defined WCB2
-        out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
-                << nc_params.lon[0] << "," << nc_params.lat[0] << ","
-                << nc_params.ascent_flag << ",";
+        codi::RealReverse denom = 0;
+#if defined(RK4ICE) && defined(WCB2)
+        y_single_old[Ng_idx] = nc_params.Ng;
+        y_single_old[Ni_idx] = nc_params.Ni;
+        y_single_old[Ns_idx] = nc_params.Ns;
+        y_single_old[Ng_out_idx] = nc_params.NGout;
+        y_single_old[Ni_out_idx] = nc_params.NIout;
+        y_single_old[Ns_out_idx] = nc_params.NSout;
+        y_single_old[Nr_out_idx] = nc_params.NRout;
+        std::cout << "RK4ICE and WCB2 defined. Got Ni = " << y_single_old[Ni_idx] << "\n";
+#endif
+#ifdef WCB2
+        y_single_old[Nc_idx] = nc_params.Nc;
+        y_single_old[Nr_idx] = nc_params.Nr;
 #else
-        out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
-                << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
+        denom = (cc.cloud.max_x - cc.cloud.min_x) / 2.0 + cc.cloud.min_x;
+        y_single_old[Nc_idx] = y_single_old[qc_idx] * ref_quant.qref / (denom); //*10e2);  // Nc
+        denom = (cc.rain.max_x - cc.rain.min_x) / 2 + cc.rain.min_x;
+        y_single_old[Nr_idx] = y_single_old[qr_idx] * ref_quant.qref / (denom); //*10e2);  // Nr
+        denom = cc.cloud.min_x / 2.0;
+        y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
+#if defined(RK4ICE)
+        denom = (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x;
+        y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
+        std::cout << "RK4ICE defined. Set Ice to " << y_single_old[Ni_idx] << "\n";
+        std::cout << "Ice mass is " << y_single_old[qi_idx] << " which is recalculated as "
+            << y_single_old[qi_idx] * ref_quant.qref << "and middle size is "
+            << (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x << "\n";
+        denom = (cc.snow.max_x - cc.snow.min_x) / 2.0 + cc.snow.min_x;
+        y_single_old[Ns_idx] = y_single_old[qs_idx] * ref_quant.qref / (denom); //*10e2); // Ns
+        denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
+        y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
 #endif
-#if defined WCB2
-        out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
-                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                << nc_params.slan_600 << ",";
 #endif
-        for(int ii = 0 ; ii < num_comp; ii++)
-            out_tmp << y_single_old[ii] <<
-                ((ii == num_comp-1) ? "\n" : ",");
+        cc.Nc_prime = y_single_old[Nc_idx];
 
-        for(int ii = 0 ; ii < num_comp ; ii++)
-        {
-#if defined WCB || defined WCB2
-            out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
-                            << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << nc_params.lon[0] << ","
-                            << nc_params.lat[0] << ","
-                            << nc_params.ascent_flag << ",";
-#else
-            out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
-                            << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << nc_params.lon[0] << ","
-                            << nc_params.lat[0] << ",";
-#endif
-#if defined WCB2
-            out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
-                                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                                << nc_params.slan_600 << ",";
-#endif
-            for(int jj = 0 ; jj < num_par ; jj++)
-                out_diff_tmp[ii] << 0.0
-                    << ((jj==num_par-1) ? "\n" : ",");
+        cc.rho_a_prime = compute_rhoa(nc_params.p*ref_quant.pref,//*100,
+            nc_params.t*ref_quant.Tref, nc_params.S);
+        y_single_old[w_idx]  = nc_params.w[0]; // w
+        cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
 
-        }
+        denom = cc.cloud.min_x / 2.0;
+        y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
+#if defined(RK4ICE) || defined(RK4NOICE)
+        y_single_old[z_idx] = nc_params.z[0];
+#endif
 
 #if defined(FLUX) && !defined(WCB)
         inflow[qr_in_idx] = nc_params.QRin;
@@ -1155,6 +1115,49 @@ void read_netcdf_write_stream(
         inflow[Ng_in_idx] = 0;
   #endif
 #endif
+    }
+
+#if defined WCB || defined WCB2
+    out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
+            << nc_params.lon[0] << "," << nc_params.lat[0] << ","
+            << nc_params.ascent_flag << ",";
+#else
+    out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
+            << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
+#endif
+#if defined WCB2
+    out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
+            << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+            << nc_params.slan_600 << ",";
+#endif
+    for(int ii = 0 ; ii < num_comp; ii++)
+        out_tmp << y_single_old[ii] <<
+            ((ii == num_comp-1) ? "\n" : ",");
+
+    for(int ii = 0 ; ii < num_comp ; ii++)
+    {
+#if defined WCB || defined WCB2
+        out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                        << traj_id << ","
+                        << output_par_idx[ii] << ","
+                        << nc_params.lon[0] << ","
+                        << nc_params.lat[0] << ","
+                        << nc_params.ascent_flag << ",";
+#else
+        out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
+                        << traj_id << ","
+                        << output_par_idx[ii] << ","
+                        << nc_params.lon[0] << ","
+                        << nc_params.lat[0] << ",";
+#endif
+#if defined WCB2
+        out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
+                            << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                            << nc_params.slan_600 << ",";
+#endif
+        for(int jj = 0 ; jj < num_par ; jj++)
+            out_diff_tmp[ii] << 0.0
+                << ((jj==num_par-1) ? "\n" : ",");
     }
 }
 

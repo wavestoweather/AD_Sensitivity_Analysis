@@ -789,7 +789,7 @@ struct input_parameters_t{
   std::string INPUT_FILENAME; /*!< Filename for input netCDF file. */
 
   bool start_over; /*!< Start over at new timestep of trajectory? */
-  bool fixed_iteration; /*!< Fix temperature, pressure and ascension at every iteration? */
+  bool fixed_iteration; /*!< Fix temperature and pressure at every iteration? */
 
   double scaling_fact; /*!< Scaling factor. */
 
