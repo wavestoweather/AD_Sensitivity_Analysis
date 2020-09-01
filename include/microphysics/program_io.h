@@ -1014,9 +1014,6 @@ void read_netcdf_write_stream(
     }
     if(t==0 || input.start_over)
     {
-        std::cout << "read_netcdf_write_stream at t = " << t
-        << " with start_over = " << input.start_over << "\n";
-
         y_single_old[S_idx]  = nc_params.S;     // S
 #ifdef SAT_CALC
         y_single_old[S_idx]  = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
@@ -1047,7 +1044,6 @@ void read_netcdf_write_stream(
         y_single_old[Ni_out_idx] = nc_params.NIout;
         y_single_old[Ns_out_idx] = nc_params.NSout;
         y_single_old[Nr_out_idx] = nc_params.NRout;
-        std::cout << "RK4ICE and WCB2 defined. Got Ni = " << y_single_old[Ni_idx] << "\n";
 #endif
 #ifdef WCB2
         y_single_old[Nc_idx] = nc_params.Nc;
@@ -1062,10 +1058,6 @@ void read_netcdf_write_stream(
 #if defined(RK4ICE)
         denom = (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x;
         y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
-        std::cout << "RK4ICE defined. Set Ice to " << y_single_old[Ni_idx] << "\n";
-        std::cout << "Ice mass is " << y_single_old[qi_idx] << " which is recalculated as "
-            << y_single_old[qi_idx] * ref_quant.qref << "and middle size is "
-            << (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x << "\n";
         denom = (cc.snow.max_x - cc.snow.min_x) / 2.0 + cc.snow.min_x;
         y_single_old[Ns_idx] = y_single_old[qs_idx] * ref_quant.qref / (denom); //*10e2); // Ns
         denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
@@ -1173,7 +1165,7 @@ void write_output(
     const std::vector< std::array<double, num_par > >  &y_diff,
     const uint32_t sub,
     const uint32_t t,
-    const uint32_t time_new,
+    const double time_new,
     const uint32_t traj_id,
     const uint32_t write_index,
     const uint32_t snapshot_index)
