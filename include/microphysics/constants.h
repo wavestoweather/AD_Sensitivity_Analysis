@@ -207,6 +207,10 @@ const std::vector<std::string> output_grad_idx =
     "dsnow_vsedi_min", "dsnow_vsedi_max"};
 #endif
 
+double sediment_q = 0;
+double sediment_n = 0;
+double sediment_q_total = 0;
+double sediment_n_total = 0;
 
 /**
  * Universal gas constant, unit: J/(mol*K)
@@ -233,7 +237,7 @@ const double Rv = R_universal/Mw;
 
 /**
  * Gas constant for dry air, unit: J/(kg*K)
- */
+//  */
 const double Ra = R_universal/Ma;
 
 /**
@@ -245,11 +249,6 @@ const double Epsilon = Ra/Rv;
  * Gravitational acceleration (m/s^2)
  */
 const double gravity_acc = 9.81;
-
-/**
- * Melting temperature of ice/snow
- */
-const double tmelt = 273.15;
 
 /**
  * Treshold for ice selfcollection
@@ -321,6 +320,7 @@ const double T_nuc = 268.15;
  * Lower temperature threshold for raindrop freezing
  */
 const double T_freeze = 273.15;
+
 /**
  * Lower temperature threshold for (instantaneous) raindrop freezing
  */
@@ -483,7 +483,7 @@ const double D_rainfrz_gh = 1.25e-3;
  */
 const double dv0 = 2.22e-5;
 /**
- * Saturation pressure at \f$\text{T}=\text{tmelt}\f$, called e_3 in ICON.
+ * Saturation pressure at \f$\text{T}=\text{T}_\text{freeze}\f$, called e_3 in ICON.
  */
 const double p_sat_melt = 6.1078e2;
 
@@ -491,7 +491,7 @@ const double p_sat_melt = 6.1078e2;
  * Specific heat capacity of air at constant pressure in
  * \f$\text{J}/\text{K}/\text{kg}\f$
  */
-const double cp = 1004.64;
+const double cp = 1004.64; // COSMO: 1005.7
 
 /**
  * Boltzmann constant in \f$\text{J}/\text{K}\f$
@@ -691,6 +691,57 @@ const uint32_t t_tstep = 2;
  * Increment for ice supersaturation for Phillips et al. nucleation look-up table
  */
 const uint32_t s_sstep = 1;
+
+/**
+ * Parameter for saturation adjustment
+ */
+const double r_const = 287.04;
+
+/**
+ * Parameter for saturation adjustment
+ */
+const double r1_const = 461.5;
+
+/**
+ * Parameter for saturation adjustment
+ */
+// const double cp = 1005.7;
+
+/**
+ * Specific heat capacity of water vapor at constant pressure in
+ * \f$\text{J}/\text{K}/\text{kg}\f$
+ */
+const double cv = 718.66;
+
+/**
+ * Always use saturation adjustement (=True) or only adjust if T > 233K (=False)
+ */
+const bool always_sat_adj = true;
+
+/**
+ * Parameter for saturation adjustment. Constant saturated water vapor pressure
+ */
+const double p_sat_const_a = 17.2693882;
+
+/**
+ * Parameter for saturation adjustment. Constant saturated ice pressure
+ */
+// const double p_sat_ice_const_a = 21.8745584;
+
+/**
+ * Parameter for saturation adjustment. Constant saturated water vapor pressure
+ */
+const double p_sat_const_b = 35.86;
+
+/**
+ * Parameter for saturation adjustment. Constant saturated ice pressure
+ */
+// const double p_sat_ice_const_b = 7.66;
+
+/**
+ * Parameter for saturation adjustment. Saturated water vapor pressure at T = 233K
+ */
+// const double p_sat_low_temp = 610.78;
 
 const std::vector<std::vector<double> > afrac_dust = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},

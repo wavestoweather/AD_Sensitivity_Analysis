@@ -277,7 +277,7 @@ int main(int argc, char** argv)
             // Iterate over each substep
             for(uint32_t sub=1; sub<cc.num_sub_steps; ++sub) // cc.num_sub_steps
             {
-#if defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
+#if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
                 std::cout << "timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
 #endif
                 // Set the coefficients from the last timestep and from
@@ -285,10 +285,23 @@ int main(int argc, char** argv)
                 // *Should* only be necessary when parameters from the
                 // trajectory are used as start point
                 setCoefficients(y_single_old, cc, ref_quant);
-
+#if defined(TRACE_SAT)
+            std::cout << "Start qv_prime " << y_single_old[qv_idx]*ref_quant.qref << "\n";
+#endif
                 // CODIPACK
                 tape.setActive();
-
+#ifdef TRACE_QR
+                std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps
+                    << ", Nr " << inflow[Nr_in_idx]/cc.num_sub_steps << "\n";
+                std::cout << "qr_old " << y_single_old[qr_idx]
+                    << ", Nr_old " << y_single_old[Nr_idx] << "\n";
+#endif
+#ifdef TRACE_QI
+                std::cout << "Adding qi " << inflow[qi_in_idx]/cc.num_sub_steps
+                    << ", Ni " << inflow[Ni_in_idx]/cc.num_sub_steps << "\n";
+                std::cout << "qi_old " << y_single_old[qi_idx]
+                    << ", Ni_old " << y_single_old[Ni_idx] << "\n";
+#endif
                 //	 Add the inflow
                 y_single_old[qr_idx] += inflow[qr_in_idx]/cc.num_sub_steps;
                 y_single_old[Nr_idx] += inflow[Nr_in_idx]/cc.num_sub_steps;
@@ -300,10 +313,7 @@ int main(int argc, char** argv)
                 y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
                 y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
 #endif
-#ifdef TRACE_QR
-                std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps
-                    << ", Nr " << inflow[Nr_in_idx]/cc.num_sub_steps << "\n";
-#endif
+
                 register_everything(tape, cc);
 
 //////////////// Add any different scheme and model here
@@ -342,6 +352,12 @@ int main(int argc, char** argv)
                 time_old = time_new;
                     y_single_old.swap(y_single_new);
             } // End substep
+#ifdef TRACE_QG
+        std::cout << "\nSediment total q: " << sediment_q_total
+                  << "\nSediment total N: " << sediment_n_total << "\n";
+        sediment_n_total = 0;
+        sediment_q_total = 0;
+#endif
         }
         nc_close(ncid);
     } catch(netCDF::exceptions::NcException& e)

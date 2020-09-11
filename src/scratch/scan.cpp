@@ -843,7 +843,7 @@ int main(int argc, char** argv)
         uint32_t used_parameter = 0;
         uint32_t used_parameter2 = 0;
 
-        std::cout << "qc,Nc,T,S,qv,delta_qi,delta_Ni,delta_qv,"
+        std::cout << "qc,Nc,T,S,SSi,qv,delta_qi,delta_Ni,delta_qv,"
                   << "delta_lat_cool,delta_lat_heat\n";
 
         for(uint32_t i=0; i<=n1; ++i)
@@ -906,10 +906,11 @@ int main(int argc, char** argv)
                               << Nc.getValue() << ","
                               << T_prime_in.getValue() << ","
                               << S.getValue() << ","
+                              << ssi.getValue() << ","
                               << qv_prime_in.getValue() << ",";
 
                     ice_activation_phillips(qc_prime_in, qv_prime_in, T_prime_in,
-                        p_sat_ice, ssi, n_inact_in, use_prog_in, y, cc);
+                        ssi, n_inact_in, use_prog_in, y, cc); // p_sat_ice,
 
                     std::cout << y[qi_idx].getValue() << ","
                               << y[Ni_idx].getValue() << ","

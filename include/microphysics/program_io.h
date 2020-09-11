@@ -368,7 +368,7 @@ void load_nc_parameters(
     nc.qs_var.getVar(startp, countp, &nc.qs);
     nc.qv_var.getVar(startp, countp, &nc.qv);
 
-    double psat_prime = saturation_pressure_water(nc.t);
+    double psat_prime = saturation_pressure_water_icon(nc.t);
 
 #if !defined WCB2
     // We are reading in hPa. Convert to Pa
@@ -505,7 +505,6 @@ void load_nc_parameters(
     // and divide it by the amount of substeps
     nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
     nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
-    nc.dw = 0; // We do not interpolate w for now
 #endif
 
     nc.dlat = (nc.lat[1] - nc.lat[0]) / num_sub_steps;
@@ -926,10 +925,31 @@ int read_init_netcdf(
         y_init[Nv_idx] = 0;
 #if defined(RK4ICE) || defined(RK4NOICE)
         y_init[z_idx] = nc_params.z[0];
+        nc_params.dw = (nc_params.w[1] - nc_params.w[0]);
+        cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
         y_init[n_inact_idx] = 0;
         y_init[depo_idx] = 0;
         y_init[sub_idx] = 0;
 #endif
+
+#ifdef TRACE_SAT
+    std::cout << "######INIT######\n"
+    //           << "y_init[T_idx] " << y_init[T_idx] << "\n"
+              << "y_init[qv_idx] " << y_init[qv_idx]*ref_quant.qref << "\n";
+#endif
+    // DEBUG Set qv to qv_sat
+    // double psat_prime = saturation_pressure_water_icon(y_init[T_idx]*ref_quant.Tref);
+    // y_init[qv_idx] = psat_prime/(Rv*y_init[T_idx]*ref_quant.Tref) / ref_quant.qref;
+    // y_init[qv_idx] = Epsilon*( psat_prime/(y_init[p_idx]*ref_quant.pref - psat_prime) ) / ref_quant.qref;
+#ifdef SAT_CALC
+        y_init[S_idx]  = convert_qv_to_S(
+            y_init[p_idx]*ref_quant.pref,
+            y_init[T_idx]*ref_quant.Tref,
+            y_init[qv_idx]*ref_quant.qref);
+        // y_init[S_idx]  = y_init[qv_idx]*ref_quant.qref * Rv * y_init[T_idx]*ref_quant.Tref
+        //     / psat_prime;
+#endif
+
     } catch(netCDF::exceptions::NcException& e)
     {
         std::cout << e.what() << std::endl;
@@ -1011,6 +1031,29 @@ void read_netcdf_write_stream(
     {
         y_single_old[p_idx]  = nc_params.p;     // p
         y_single_old[T_idx]  = nc_params.t;     // T
+#if defined(RK4ICE) || defined(RK4NOICE)
+        y_single_old[w_idx]  = nc_params.w[0]; // w
+        nc_params.dw = (nc_params.w[1] - nc_params.w[0]);
+        cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
+        y_single_old[z_idx] = nc_params.z[0];
+#endif
+        // DEBUG purpose: What if we put add_params here?
+// #if defined(FLUX) && defined(WCB2)
+//         inflow[Nr_in_idx] = nc_params.NRin;
+//   #if defined(RK4ICE)
+//         inflow[Ni_in_idx] = nc_params.NIin;
+//         inflow[Ns_in_idx] = nc_params.NSin;
+//         inflow[Ng_in_idx] = nc_params.NGin;
+//   #endif
+// #else
+//         inflow[Nr_in_idx] = 0;
+//   #if defined(RK4ICE)
+//         inflow[Ni_in_idx] = 0;
+//         inflow[Ns_in_idx] = 0;
+//         inflow[Ng_in_idx] = 0;
+//   #endif
+// #endif
+        // END DEBUG
     }
     if(t==0 || input.start_over)
     {
@@ -1055,27 +1098,22 @@ void read_netcdf_write_stream(
         y_single_old[Nr_idx] = y_single_old[qr_idx] * ref_quant.qref / (denom); //*10e2);  // Nr
         denom = cc.cloud.min_x / 2.0;
         y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
-#if defined(RK4ICE)
+    #if defined(RK4ICE)
         denom = (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x;
         y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
         denom = (cc.snow.max_x - cc.snow.min_x) / 2.0 + cc.snow.min_x;
         y_single_old[Ns_idx] = y_single_old[qs_idx] * ref_quant.qref / (denom); //*10e2); // Ns
         denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
         y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
-#endif
+    #endif
 #endif
         cc.Nc_prime = y_single_old[Nc_idx];
-
+        // TODO: Check if cc.rho_a_prime is ever used
         cc.rho_a_prime = compute_rhoa(nc_params.p*ref_quant.pref,//*100,
             nc_params.t*ref_quant.Tref, nc_params.S);
-        y_single_old[w_idx]  = nc_params.w[0]; // w
-        cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
 
         denom = cc.cloud.min_x / 2.0;
         y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
-#if defined(RK4ICE) || defined(RK4NOICE)
-        y_single_old[z_idx] = nc_params.z[0];
-#endif
 
 #if defined(FLUX) && !defined(WCB)
         inflow[qr_in_idx] = nc_params.QRin;
@@ -1107,8 +1145,27 @@ void read_netcdf_write_stream(
         inflow[Ng_in_idx] = 0;
   #endif
 #endif
-    }
+#ifdef TRACE_SAT
+        std::cout << "#########read/write##########\n"
+        //           << "y_single_old[T_idx] " << y_single_old[T_idx] << "\n"
+        //           << "T_prime " << y_single_old[T_idx].getValue()*ref_quant.Tref << "\n"
+                  << "y_single_old[qv_idx]  " << y_single_old[qv_idx]*ref_quant.qref << "\n";
+#endif
+        // DEBUG Set qv to qv_sat
+        // y_single_old[qv_idx] = water_vapor_sat_ratio_2(y_single_old[T_idx].getValue()*ref_quant.Tref);
+        // double psat_prime = saturation_pressure_water_icon(y_single_old[T_idx].getValue()*ref_quant.Tref);
+        // y_single_old[qv_idx] = psat_prime/(Rv*y_single_old[T_idx]*ref_quant.Tref) / ref_quant.qref;
+        // y_single_old[qv_idx] = Epsilon*( psat_prime/(y_single_old[p_idx]*ref_quant.pref - psat_prime) ) / ref_quant.qref;
+#ifdef SAT_CALC
+        y_single_old[S_idx]  = convert_qv_to_S(
+            y_single_old[p_idx].getValue()*ref_quant.pref,
+            y_single_old[T_idx].getValue()*ref_quant.Tref,
+            y_single_old[qv_idx].getValue()*ref_quant.qref);
+        // y_single_old[qv_idx]*ref_quant.qref * Rv * y_single_old[T_idx]*ref_quant.Tref
+        //    / psat_prime;
+#endif
 
+    }
 #if defined WCB || defined WCB2
     out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
             << nc_params.lon[0] << "," << nc_params.lat[0] << ","

@@ -386,7 +386,7 @@ template <class A>
 inline A latent_heat_melt(A T)
 {
   // Table A1
-  return 4.184e3 * (79.7+0.485*(T-tmelt) - 2.5e-3*(T-tmelt)*(T-tmelt));
+  return 4.184e3 * (79.7+0.485*(T-T_freeze) - 2.5e-3*(T-T_freeze)*(T-T_freeze));
 }
 
 
@@ -407,7 +407,7 @@ inline A latent_heat_evap(A T)
   // Table A1
   A lh_e0 = 2.5006e6;
   A gam = 0.167 + 3.67e-4 * T;
-  return lh_e0 * pow(tmelt/T, gam);
+  return lh_e0 * pow(T_freeze/T, gam);
 }
 
 
@@ -444,6 +444,57 @@ inline A saturation_pressure_water(A T)
   return ( exp( 54.842763 - 6763.22*Tinv - 4.21*logT + 0.000367*T + tanh(0.0415*(T-218.8))*(53.878 - 1331.22*Tinv - 9.44523*logT + 0.014025*T) ) );
 
 }
+
+
+/**
+ * Calculate the water vapor mixing ratio at saturation = 1 using
+ * Dotzek (4.33).
+ *
+ * @param T Temperature in Kelvin
+ * @param p Pressure in Pa
+ * @return Mixing ratio at saturation = 1
+ */
+template <class A>
+inline A water_vapor_sat_ratio_dotzek(
+    A p,
+    A T)
+{
+    A p_sat = saturation_pressure_water_icon(T);
+    return (r_const/r1_const) / (p/p_sat + (r_const/r1_const)-1);
+}
+
+
+/**
+ * Calculate the water vapor mixing ratio at saturation = 1.
+ *
+ * @param T Temperature in Kelvin
+ * @param p Pressure in Pa
+ * @return Mixing ratio at saturation = 1
+ */
+template <class A>
+inline A water_vapor_sat_ratio(
+    A p,
+    A T)
+{
+    A p_sat = saturation_pressure_water_icon(T);
+    return Epsilon*( p_sat/(p - p_sat) );
+}
+
+
+/**
+ * Calculate the water vapor mixing ratio at saturation = 1.
+ *
+ * @param T Temperature in Kelvin
+ * @param p Pressure in Pa
+ * @return Mixing ratio at saturation = 1
+ */
+// template <class A>
+// inline A water_vapor_sat_ratio_2(
+//     A T)
+// {
+//     A p_sat = saturation_pressure_water_icon(T);
+//     return p_sat/(Rv*T);
+// }
 
 
 /**
@@ -521,7 +572,7 @@ inline A compute_pv(A T,
 		    A S)
 {
 
-  return ( S*saturation_pressure_water(T) );
+  return ( S*saturation_pressure_water_icon(T) );
 
 }
 
@@ -615,7 +666,7 @@ inline A convert_Si_to_qv(A p,
 			  A Si)
 {
 
-  A S = Si * ( saturation_pressure_ice(T)/saturation_pressure_water(T) );
+  A S = Si * ( saturation_pressure_ice(T)/saturation_pressure_water_icon(T) );
 
   return ( Epsilon*( compute_pv(T,S)/compute_pa(p,T,S) ) );
 
@@ -636,7 +687,7 @@ inline A convert_qv_to_S(A p,
 			 A qv)
 {
 
-  return ( (p*qv)/((Epsilon + qv)*saturation_pressure_water(T)) );
+  return ( (p*qv)/((Epsilon + qv)*saturation_pressure_water_icon(T)) );
 
 }
 
@@ -1105,7 +1156,7 @@ void setCoefficients(
     codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
     codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
     codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
-    codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
+    codi::RealReverse psat_prime = saturation_pressure_water_icon(T_prime);
     codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(Rv*T_prime)) - 1.0);
     codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
 
@@ -1133,7 +1184,7 @@ void setCoefficients(
   codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
   codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
   codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
-  codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
+  codi::RealReverse psat_prime = saturation_pressure_water_icon(T_prime);
   codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(Rv*T_prime)) - 1.0);
   codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
 
@@ -1397,6 +1448,7 @@ void setup_model_constants(
     cc.cloud.min_x_collection = 4.2e-15;
     cc.cloud.min_x_conversion = 4.2e-15;
     cc.cloud.min_x_sedimentation = 4.2e-15;
+    cc.cloud.min_x_riming = 4.2e-15;
     cc.cloud.a_geo = 1.24e-1;
     cc.cloud.b_geo = 0.333333;
     cc.cloud.a_vel = 3.75e5;
@@ -1430,6 +1482,7 @@ void setup_model_constants(
     cc.rain.min_x_collection = 2.6e-10;
     cc.rain.min_x_conversion = 2.6e-10;
     cc.rain.min_x_sedimentation = 2.6e-10;
+    cc.rain.min_x_riming = 2.6e-10;
     cc.rain.a_geo = 1.24e-1;
     cc.rain.b_geo = 0.333333;
     cc.rain.a_vel = 114.0137;
@@ -1480,6 +1533,7 @@ void setup_model_constants(
     cc.graupel.min_x_collection = 1.0e-9;
     cc.graupel.min_x_conversion = 1.0e-9;
     cc.graupel.min_x_sedimentation = 1.0e-9;
+    cc.graupel.min_x_riming = 1.0e-9;
     cc.graupel.a_geo = 1.42e-1;
     cc.graupel.b_geo = 0.314;
     cc.graupel.a_vel = 86.89371;
@@ -1524,6 +1578,7 @@ void setup_model_constants(
     cc.hail.min_x_collection = 2.6e-9;
     cc.hail.min_x_conversion = 2.6e-9;
     cc.hail.min_x_sedimentation = 2.6e-9;
+    cc.hail.min_x_riming = 2.6e-9;
     cc.hail.a_geo = 0.1366;
     cc.hail.b_geo = 1.0/3.0;
     cc.hail.a_vel = 39.3;
@@ -1560,6 +1615,7 @@ void setup_model_constants(
     cc.ice.min_x_collection = 1.0e-12;
     cc.ice.min_x_conversion = 1.0e-12;
     cc.ice.min_x_sedimentation = 1.0e-12;
+    cc.ice.min_x_riming = 1.0e-12;
     cc.ice.a_geo = 0.835;
     cc.ice.b_geo = 0.39;
     cc.ice.a_vel = 2.77e1;
@@ -1596,6 +1652,7 @@ void setup_model_constants(
     cc.snow.min_x_collection = 1.0e-10;
     cc.snow.min_x_conversion = 1.0e-10;
     cc.snow.min_x_sedimentation = 1.0e-10;
+    cc.snow.min_x_riming = 1.0e-10;
     cc.snow.a_geo = 2.4;
     cc.snow.b_geo = 0.455;
     cc.snow.a_vel = 8.8;

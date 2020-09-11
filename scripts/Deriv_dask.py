@@ -88,7 +88,6 @@ class Deriv_dask:
         self.data = dask_loader.load_mult_derivates_direc_dic(
             direc, parquet, columns
         )
-
         self.n_timesteps = len(self.data["timestep"].unique().compute())
         self.cluster_names = {}
         self.font_dic = {
@@ -590,8 +589,9 @@ class Deriv_dask:
                         if value != 0 and not np.isnan(value):
                             sorted_tuples.append((in_p, value))
                 sorted_tuples.sort(key=lambda tup: tup[1])
-            t2 = timer()
-            print("Sorting done in {} s".format(t2-t), flush=True)
+                t2 = timer()
+                print("Sorting done in {} s".format(t2-t), flush=True)
+                print(sorted_tuples)
             def plot_helper(df, in_params, prefix, **kwargs):
                 deriv_col_name = "Derivative Ratio"
                 # following https://holoviz.org/tutorial/Composing_Plots.html
@@ -1157,6 +1157,7 @@ class Deriv_dask:
                             in_params_2.append(p)
                             if len(in_params_2) == max_per_deriv:
                                 break
+                    print(f"Plotting for {in_params_2}")
                     plot_helper(df_tmp_out, in_params=in_params_2,
                                 prefix=prefix, **kwargs)
                     i += 1
@@ -1170,7 +1171,8 @@ class Deriv_dask:
         twin_axis=None, by=None, hue="type", col_wrap=4, trajectories=None,
         width=1280, height=800, log=[False, False],
         vertical_mark=None, datashade=False, prefix=None, alpha=1,
-        plot_path="pics/", yticks=10, decimals=-3, rolling_avg=20, **kwargs):
+        plot_path="pics/", yticks=10, decimals=-3, rolling_avg=20,
+        kind="scatter", **kwargs):
         """
         Plot a grid for comparing multiple output parameters or
         multiple derivatives across one output parameter.
@@ -1237,12 +1239,15 @@ class Deriv_dask:
         rolling_avg : int
             Number of consecutive rows for a rolling average
             for the left y-axis.
+        kind : string
+            Can be "scatter" for a scatter plot, else defaults to line plot.
         """
         import hvplot.pandas
         from holoviews import opts
         import holoviews as hv
         import dask.array as da
         import math
+        import pandas
 
         df = self.cache
         hv.extension(self.backend)
@@ -1257,7 +1262,7 @@ class Deriv_dask:
 
         plot_list = []
         df_tmp_out = df.loc[df["Output Parameter"] == out_param]
-        df_tmp_out["qi"] = da.fabs(df_tmp_out["qi"]) # sign error?
+        # df_tmp_out["qi"] = da.fabs(df_tmp_out["qi"]) # sign error?
         if trajectories is not None:
             if isinstance(trajectories[0], int):
                 df_tmp_out = df_tmp_out.loc[df_tmp_out["trajectory"].isin(trajectories)]
@@ -1293,9 +1298,17 @@ class Deriv_dask:
         add_cols = []
         if vertical_mark is not None:
             add_cols = list(vertical_mark.keys())
+            if x_axis in add_cols:
+                add_cols.remove(x_axis)
+
         for y in y_axis:
             marks = None
             if by is not None:
+                add_col_tmp = None
+                if y in add_cols:
+                    add_cols.remove(y)
+                    add_col_tmp = y
+
                 if y == x_axis:
                     df_group = df_tmp_out[[x_axis, by] + add_cols]
                 else:
@@ -1317,12 +1330,24 @@ class Deriv_dask:
                 max_x = df_group[x_axis].max()
                 min_y = df_group[y].min()
                 max_y = df_group[y].max()
+
                 del_x = (max_x-min_x)*0.1
                 del_y = (max_y-min_y)
+
                 if min_y == max_y:
                     min_y = max_y - 1
                     max_y = max_y + 1
                     del_y = 2
+
+                if kind == "scatter":
+                    plot_func = df_group.hvplot.scatter
+                    options = opts.Scatter(s=8)
+                else:
+                    plot_func = df_group.hvplot.line
+                    if self.backend == "bokeh":
+                        options = opts.Curve(line_width=8, show_grid=True)
+                    else:
+                        options = opts.Curve(linewidth=6, show_grid=True)
 
                 if vertical_mark is not None:
                     if by is not None:
@@ -1332,11 +1357,18 @@ class Deriv_dask:
 
                     for col in vertical_mark:
                         for v in vertical_mark[col]:
-                            # Works well as long as dataframe is smaller than ~ 30k elements
-                            df_sort = df_tmp.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
+                            if y == col:
+                                df_sort = df_tmp.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
+
+                            else:
+                                # Works well as long as dataframe is smaller than ~ 30k elements
+                                df_sort = df_tmp.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
                             col_values = np.sort(df_sort[col].values)
+
                             for index, row in df_sort.iterrows():
-                                if np.abs(row[col]-v) > 1.0:
+                                row_col = row[col]
+
+                                if np.abs(row_col-v) > 1.0:
                                     break
                                 text = hv.Text(row[x_axis]+del_x, max_y-del_y*0.1, col + "=" + str(v) + latexify.get_unit(col),
                                     fontsize=24)
@@ -1370,7 +1402,7 @@ class Deriv_dask:
                                 {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
                                 for i in range(len(types)) }
                             )
-                            plot_list.append(df_group.hvplot.scatter(
+                            plot_list.append(plot_func(
                                 x=x_axis,
                                 y=y,
                                 by=by,
@@ -1380,28 +1412,27 @@ class Deriv_dask:
                                 datashade=datashade,
                                 alpha=alpha,
                                 legend=False
-                            ).opts(opts.Scatter(s=8)).opts(
+                            ).opts(options).opts(
                                 aspect=aspect,
                                 ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
                                 xlim=(min_x, max_x),
                                 yticks=yticks) * overlay)
                         else:
-                            plot_list.append(df_group.hvplot.scatter(
-                                x=x_axis,
-                                y=y,
-                                by=by,
-                                title="Values of of {}".format(latexify.parse_word(y)),
-                                color=cmap_values,
-                                label=None,
-                                datashade=datashade,
-                                alpha=alpha,
-                                legend=False
-                            ).opts(opts.Scatter(s=8)).opts(
-                                aspect=aspect,
-                                ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
-                                xlim=(min_x, max_x),
-                                yticks=yticks))
-
+                            plot_list.append(plot_func(
+                                    x=x_axis,
+                                    y=y,
+                                    by=by,
+                                    title="Values of of {}".format(latexify.parse_word(y)),
+                                    color=cmap_values,
+                                    label=None,
+                                    datashade=datashade,
+                                    alpha=alpha,
+                                    legend=False
+                                ).opts(options).opts(
+                                    aspect=aspect,
+                                    ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
+                                    xlim=(min_x, max_x),
+                                    yticks=yticks))
                         if marks is not None:
                             plot_list[-1] = (plot_list[-1] * marks)
                         if twin is not None:
@@ -1416,7 +1447,6 @@ class Deriv_dask:
                             datashade=datashade,
                             alpha=alpha
                         ).opts(opts.Scatter(size=2), **layout_kwargs)
-
                 else:
                     cmap = {}
                     for ty in types:
@@ -1440,6 +1470,8 @@ class Deriv_dask:
                             cmap=cmap,
                             show_legend=True)
                         param_plot = (legend * param_plot).opts(aspect=aspect, **layout_kwargs)
+                if add_col_tmp is not None:
+                    add_cols.append(add_col_tmp)
             else:
                 if y == x_axis:
                     df_group = df_tmp_out[[x_axis, "trajectory"]]
@@ -1454,8 +1486,7 @@ class Deriv_dask:
                 if log:
                     # Apply should be more expensive
                     df_group[y] = da.log(da.fabs(df_group[y]))
-                param_plot = df_group.hvplot.scatter(
-                    x=x_axis,
+                param_plot = plot_func(x=x_axis,
                     y=y,
                     title="Values of of {}".format(latexify.parse_word(y)),
                     label=None,

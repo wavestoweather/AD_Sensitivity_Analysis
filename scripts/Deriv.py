@@ -211,6 +211,9 @@ class Deriv:
                 start_time = self.data[k].loc[self.data[k][flag] == True]["timestep"].min()
                 if debug:
                     print(f"Using start time {start_time} s for flag {flag}")
+            if np.isnan(start_time):
+                print(f"No region with {flag} found")
+                return
             self.data[k]["timestep"] = self.data[k]["timestep"] - start_time
             if debug:
                 new_min_time = self.data[k].loc[self.data[k][flag] == True]["timestep"].min()

@@ -58,7 +58,6 @@ void RK4_step(
     for(int ii = 0 ; ii < num_comp ; ii++){
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k1 for k2
         ynew[ii] += cc.dt_sixth*k[ii]; // Add k1-part to the result
-
     }
     if(fixed)
         for(int ii=0; ii<update_idx; ++ii)
@@ -184,6 +183,28 @@ void RK4_step_2_no_ice(
 
 }
 
+
+template<class float_t>
+void set_limits(
+    std::vector<float_t> &y,
+    const reference_quantities_t& ref,
+    model_constants_t &cc)
+{
+    if(nuc_type > 0)
+        y[Nc_idx] = min(min(max(y[Nc_idx], y[qc_idx]*ref.qref/cc.cloud.max_x),
+            y[qc_idx]*ref.qref/cc.cloud.min_x), 5e9);
+    y[Nr_idx] = min(max(y[Nr_idx], y[qr_idx]*ref.qref/cc.rain.max_x),
+        y[qr_idx]*ref.qref/cc.rain.min_x);
+    y[Ni_idx] = min(max(y[Ni_idx], y[qi_idx]*ref.qref/cc.ice.max_x),
+        y[qi_idx]*ref.qref/cc.ice.min_x);
+    y[Ns_idx] = min(max(y[Ns_idx], y[qs_idx]*ref.qref/cc.snow.max_x),
+        y[qs_idx]*ref.qref/cc.snow.min_x);
+    y[Ng_idx] = min(max(y[Ng_idx], y[qg_idx]*ref.qref/cc.graupel.max_x),
+        y[qg_idx]*ref.qref/cc.graupel.min_x);
+    y[Nh_idx] = min(max(y[Nh_idx], y[qh_idx]*ref.qref/cc.hail.max_x),
+        y[qh_idx]*ref.qref/cc.hail.min_x);
+}
+
 /**
  * Compute a single step using the Runge-Kutta 4 method for the ODE
  * \f[ y' = \text{RHS}(y) \f]
@@ -221,10 +242,21 @@ void RK4_step_2_sb_ice(
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
+#ifdef TRACE_QR
+//         if(ii == Nr_idx)
+//             std::cout << "k1, k: " << k[ii]
+//                       << "\nadding to ynew: " << cc.dt_sixth*k[ii]
+//                       << "\nyold: " << yold[ii]
+//                       << "\nytmp set to: " << yold[ii] + cc.dt_half*k[ii] << "\n";
+#endif
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k1 for k2
         ynew[ii] += cc.dt_sixth*k[ii]; // Add k1-part to the result
-
     }
+    set_limits(ytmp, ref, cc);
+    sediment_q_total += cc.dt_sixth*sediment_q;
+    sediment_q = 0;
+    sediment_n_total += cc.dt_sixth*sediment_n;
+    sediment_n = 0;
 
     //
     // Do all computations involving k2
@@ -233,9 +265,21 @@ void RK4_step_2_sb_ice(
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
+#ifdef TRACE_QR
+//         if(ii == Nr_idx)
+//             std::cout << "k2, k: " << k[ii]
+//                       << "\nadding to ynew: " << cc.dt_third*k[ii]
+//                       << "\nynew: " << ynew[ii]
+//                       << "\nytmp set to: " << yold[ii] + cc.dt_half*k[ii] << "\n";
+#endif
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k2 for k3
         ynew[ii] += cc.dt_third*k[ii]; // Add k2-part to the result
     }
+    set_limits(ytmp, ref, cc);
+    sediment_q_total += cc.dt_third*sediment_q;
+    sediment_q = 0;
+    sediment_n_total += cc.dt_third*sediment_n;
+    sediment_n = 0;
 
     //
     // Do all computations involving k3
@@ -244,9 +288,21 @@ void RK4_step_2_sb_ice(
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
+#ifdef TRACE_QR
+//         if(ii == Nr_idx)
+//             std::cout << "k3, k: " << k[ii]
+//                       << "\nadding to ynew: " << cc.dt_third*k[ii]
+//                       << "\nynew: " << ynew[ii]
+//                       << "\nytmp set to: " << yold[ii] + cc.dt*k[ii] << "\n";
+#endif
         ytmp[ii] = yold[ii] + cc.dt*k[ii]; // y_0 + dt*k3 for k4
         ynew[ii] += cc.dt_third*k[ii]; // Add k3-part to the result
     }
+    set_limits(ytmp, ref, cc);
+    sediment_q_total += cc.dt_third*sediment_q;
+    sediment_q = 0;
+    sediment_n_total += cc.dt_third*sediment_n;
+    sediment_n = 0;
 
     //
     // Do all computations involving k4
@@ -254,7 +310,20 @@ void RK4_step_2_sb_ice(
     RHS_SB(k, ytmp, ref, cc, nc, cc.dt_sixth, fixed); // k = k4
 
     for(int ii = 0 ; ii < num_comp ; ii++)
+    {
+#ifdef TRACE_QR
+//         if(ii == Nr_idx)
+//             std::cout << "k4, k: " << k[ii]
+//                       << "\nadding to ynew: " << cc.dt_sixth*k[ii]
+//                       << "\nynew: " << ynew[ii] << "\n";
+#endif
         ynew[ii] += cc.dt_sixth*k[ii];
+    }
+    set_limits(ynew, ref, cc);
+    sediment_q_total += cc.dt_sixth*sediment_q;
+    sediment_q = 0;
+    sediment_n_total += cc.dt_sixth*sediment_n;
+    sediment_n = 0;
 }
 
 /** @} */ // end of group rk

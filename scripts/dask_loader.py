@@ -237,7 +237,7 @@ def transform_df2(df, net_df, n_traj=903, traj_timestep=20):
     return pd.DataFrame.from_dict(new_dic)
 
 
-def load_mult_derivates_direc_dic(direc="", parquet=True, columns=None):
+def load_mult_derivates_direc_dic(direc="", parquet=True, columns=None, file_ending="*.nc_wcb"):
     """
     Create a dictionary with out parameters as keys and dictionaries with columns:
     trajectory, timestep, MAP, LATITUDE, LONGITUDE
@@ -249,11 +249,14 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, columns=None):
     Parameters
     ----------
     direc : string
-        A path to a directory wit a list of files to read.
+        A path to a directory with files to read.
     parquet : boolean
-        If true: Load a series of preprocessed parquet files, else load *.txt files.
+        If true: Load a series of preprocessed parquet files, else try loading *.txt files.
+        If this fails, netcdf-files are loaded.
     columns : list of strings
         Specify the columns to load.
+    file_ending : string
+        In case of netcdf-files, specify the file ending here.
 
     Returns
     -------
@@ -263,7 +266,27 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, columns=None):
     if parquet: 
         df = pd.read_parquet(direc + "/", columns=columns)
     else:
-        df = pd.read_csv(direc + "/*diff*", assume_missing=True) # , blocksize="8GB"
+        try:
+            df = pd.read_csv(direc + "/*diff*", assume_missing=True) # , blocksize="8GB"
+        except:
+            try:
+                # Try reading netcdf files in bulk
+                # Works only if no multiindex is given
+                df = xr.open_mfdataset(direc + "/" + file_ending, parallel=True).to_dask_dataframe()
+            except:
+                # Last fallback which works for most netcdf files
+                df = None
+                file_list = []
+                for f in os.listdir(direc):
+                    file_list.append(os.path.join(direc, f))
+                file_list = np.sort(np.asarray(file_list))
+                for f in file_list:
+                    if df is None:
+                        df = xr.open_dataset(f).to_dataframe()
+                    else:
+                        df = df.append(xr.open_dataset(f).to_dataframe())#[columns])
+                # Make id and time columns instead of MultiIndex
+                df.reset_index(inplace=True)
     return df
 
 
