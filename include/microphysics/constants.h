@@ -23,7 +23,7 @@
 #define qv_idx 6            /*!< Water vapor mixing ratio index */
 #define Nc_idx 7            /*!< Number of cloud droplets index */
 #define Nr_idx 8            /*!< Number of rain droplets index */
-#define Nv_idx 9            /*!< Number of water vapor droplets index */
+#define Nv_idx 9            /*!< Dummy */
 #define qi_idx 10           /*!< Ice mixing ratio index */
 #define Ni_idx 11           /*!< Number of ice crystals index */
 #define vi_idx 12           /*!< Vertical acceleration of ice index */
@@ -74,6 +74,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////////////////////
+
+#if defined(TRACE_TIME)
+double trace_time = 0;
+const double trace_start = 4600;
+const double trace_end = 4680;
+bool trace = false;
+#else
+bool trace = true;
+#endif
 
 #if defined(RK4_ONE_MOMENT)
 /**
@@ -349,7 +358,7 @@ const double rho_vel = 0.4;
 /**
  * Exponent for density correction of cloud droplets
  */
-const double rho_vel_c = 0.2;
+const double rho_vel_c = 1;//0.2;
 
 /**
  * Density of ice in \f$\text{kg}/\text{m}^3\f$
@@ -367,8 +376,12 @@ const double R_v = 461.51;
 const double a_v = 0.78;
 /**
  * Various constants from ICON regarding evaporation from melting ice particles
- */const double b_v = 0.308;
-//! Variuous constants from ICON regarding evaporation from melting ice particles
+ */
+const double b_v = 0.308;
+
+/**
+ *  Variuous constants from ICON regarding evaporation from melting ice particles
+ */
 const double N_Sc = 0.71;
 /**
  * Various constants from ICON regarding evaporation from melting ice particles
@@ -741,7 +754,12 @@ const double p_sat_const_b = 35.86;
 /**
  * Parameter for saturation adjustment. Saturated water vapor pressure at T = 233K
  */
-// const double p_sat_low_temp = 610.78;
+const double p_sat_low_temp = 610.78;
+
+/**
+ * Parameter for saturation adjustment.
+ */
+const double T_sat_low_temp = 273.16;
 
 const std::vector<std::vector<double> > afrac_dust = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},

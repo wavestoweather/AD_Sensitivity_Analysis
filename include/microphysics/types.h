@@ -540,8 +540,6 @@ struct model_constants_t{
   //
   double alpha_d; /*!< Accomodation coefficient */
 
-  codi::RealReverse rho_a_prime; /*!< Density of dry air */
-
   codi::RealReverse Nc_prime; /*!< Number concentration of cloud droplets */
 
   codi::RealReverse a1_prime; /*!< Dimensional coefficients */
@@ -710,13 +708,19 @@ struct nc_parameters_t{
 
     uint32_t n_trajectories = 30; /*!< Number of trajectories in the netCDF file. */
     uint32_t n_timesteps = 7922; /*!< Number of timesteps in the netCDF file. */
-    std::vector<double> w, z, lat, lon;
+#ifdef MET3D
+    double z, time_abs;
+#else
+    std::vector<double> z;
+#endif
+    std::vector<double> w, lat, lon;
     double  t, p, time_rel,
             qc, qr, qi, qs, qg, qv, S, dw, dlat, dlon,
             QIin, QSin, QRin, QGin, QIout, QSout, QRout, QGout,
             NIin, NSin, NRin, NGin, NIout, NSout, NRout, NGout,
             Nc, Nr, Ni, Ns, Ng;
     bool ascent_flag, conv_400, conv_600, slan_400, slan_600, dp2h;
+    std::string type;
     NcVar   lat_var, lon_var, z_var, t_var, p_var, w_var, time_rel_var,
             qc_var, qr_var, qi_var, qs_var, qg_var, qv_var, S_var,
             QIin_var, QSin_var, QRin_var, QGin_var, QIout_var, QSout_var,
@@ -724,7 +728,11 @@ struct nc_parameters_t{
             NIin_var, NSin_var, NRin_var, NGin_var, NIout_var, NSout_var,
             NRout_var, NGout_var, dp2h_var,
             Nc_var, Nr_var, Ni_var, Ns_var, Ng_var,
+#ifdef MET3D
+            type_var, time_abs_var,
+#endif
             conv_400_var, conv_600_var, slan_400_var, slan_600_var;
+
 };
 
 
@@ -751,10 +759,13 @@ struct global_args_t{
   int scaling_fact_flag; /*!< Scaling factor specified? */
   char* scaling_fact_string;
 
-  int start_over_flag; /*!< Reload data from trajectory every few seconds? */
+  int start_over_flag; /*!< Reload mixing ratios and particle numbers from trajectory every few seconds? */
   char* start_over_string;
 
-  int fixed_iteration_flag; /*!< Fix p, T, w during simulation? */
+  int start_over_env_flag; /*!< Reload pressure, temperature and ascent from trajectory every few seconds? */
+  char* start_over_env_string;
+
+  int fixed_iteration_flag; /*!< Fix p, T, w during microphysics? */
   char* fixed_iteration_string;
 
   int auto_type_flag; /*!< Particle type specified? */
@@ -765,6 +776,9 @@ struct global_args_t{
 
   int write_flag; /*!< Snapshot is flushed every x iterations. */
   char* write_string;
+
+  int progress_index_flag; /*!< Progressbar is updated every x iterations. */
+  char* progress_index_string;
 };
 
 
@@ -789,6 +803,7 @@ struct input_parameters_t{
   std::string INPUT_FILENAME; /*!< Filename for input netCDF file. */
 
   bool start_over; /*!< Start over at new timestep of trajectory? */
+  bool start_over_env; /*!< Start over environment variables at new timestep of trajectory? */
   bool fixed_iteration; /*!< Fix temperature and pressure at every iteration? */
 
   double scaling_fact; /*!< Scaling factor. */
@@ -796,6 +811,7 @@ struct input_parameters_t{
   uint32_t auto_type; /*!< Particle type. */
   uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
   uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
+  uint32_t progress_index; /*!< Index for updating progressbar. */
 };
 
 /** @} */ // end of group types

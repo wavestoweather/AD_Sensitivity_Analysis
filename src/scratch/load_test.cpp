@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <cmath>
 #include <tgmath.h>
@@ -31,7 +32,11 @@ int main(int argc, char** argv)
     ref_quant.Nref = 1.0; 	// DUMMY
     const uint32_t traj = 0;
     // char* file = "/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/wcb201609_vladiana/O_WCB_all_20160922_00.nc";
-    char* file = "/data/project/m2_jgu-tapt/online_trajectories/traj_new_appended/traj_t000120_p001.nc_wcb";
+#ifdef MET3D
+    const char* file = "/data/project/wcb/netcdf/vladiana_met/conv_400_0_traj_t000000_p001.nc_wcb";
+#else
+    const char* file = "/data/project/m2_jgu-tapt/online_trajectories/traj_new_appended/traj_t000120_p001.nc_wcb";
+#endif
     int traj_id;
 
     try
@@ -42,6 +47,8 @@ int main(int argc, char** argv)
         nc_open(file, NC_NOWRITE, &ncid);
 #ifdef WCB
         nc_inq_dimid(ncid, "ntra", &dimid);
+#elif defined MET3D
+        nc_inq_dimid(ncid, "trajectory", &dimid);
 #else
         nc_inq_dimid(ncid, "id", &dimid);
 #endif
@@ -67,68 +74,88 @@ int main(int argc, char** argv)
         netCDF::NcFile datafile(file, netCDF::NcFile::read);
         load_nc_parameters_var(nc_params, datafile);
         netCDF::NcVar id_var;
+#ifdef MET3D
+        id_var = datafile.getVar("trajectory");
+#else
         id_var = datafile.getVar("id");
+#endif
         std::vector<int> ids(lenp);
         id_var.getVar(ids.data());
         traj_id = ids[0];
 
         std::vector<size_t> startp, countp;
+#ifdef MET3D
+        startp.push_back(0);
+        countp.push_back(1);
+#endif
         startp.push_back(0); // start row, trajectory id or for wcb time
         startp.push_back(0); // start column, time or for wcb trajectory
         countp.push_back(1);
         countp.push_back(1);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
-        std::cout << std::setprecision(8);
+        std::cout << std::setprecision(8) << std::fixed
+                  << std::setfill('0') << std::setw(6);
         std::cout << "Trajectory 0 at t=0\n";
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\ttraj_id\n"
+        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
             << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
             << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
             << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
-            << nc_params.qg << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
+            << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
             << traj_id << "\n";
 
         load_nc_parameters_var(nc_params, datafile);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << "Trajectory 0 at t=0\n";
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\n"
+        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
             << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
             << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
             << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
-            << nc_params.qg << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
+            << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
             << traj_id << "\n";
-
+#ifdef MET3D
+        startp[2] += 1;
+#else
         startp[0] += 1;
+#endif
         load_nc_parameters_var(nc_params, datafile);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << "Trajectory 0 at t=1\n";
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\n"
+        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
             << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
             << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
             << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
-            << nc_params.qg << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
+            << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
             << traj_id << "\n";
         traj_id = ids[1];
+#ifdef MET3D
+        startp[1] = 1;
+        startp[2] = 1;
+#else
         startp[0] = 1;
         startp[1] = 1;
+#endif
         load_nc_parameters_var(nc_params, datafile);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << "Trajectory 1 at t=1\n";
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\n"
+        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
             << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
             << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
             << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
-            << nc_params.qg << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
+            << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
             << traj_id << "\n";
-
+#ifdef MET3D
+        startp[2] = 2;
+#else
         startp[1] = 2;
+#endif
         load_nc_parameters_var(nc_params, datafile);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << "Trajectory 1 at t=2\n";
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\n"
+        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
             << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
             << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
             << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
-            << nc_params.qg << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
+            << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
             << traj_id << "\n";
     } catch(netCDF::exceptions::NcException& e)
     {

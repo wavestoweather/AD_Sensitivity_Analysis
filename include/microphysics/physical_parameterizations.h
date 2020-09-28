@@ -422,7 +422,7 @@ inline A latent_heat_evap(A T)
 template <class A>
 inline A saturation_pressure_water_icon(A T)
 {
-  return 610.78*exp(17.269*(T-273.15)/(T-35.86));
+  return p_sat_low_temp*exp(p_sat_const_a*(T-T_sat_low_temp)/(T-p_sat_const_b));
 }
 
 
@@ -696,7 +696,7 @@ inline A convert_qv_to_S(A p,
  * Get mean mass of particle assuming a gamma distribution
  * (TODO: Is it though? It assumes a rather high shape parameter \f$k\f$).
  *
- * @param q Particle mixing ratio
+ * @param q Particle mixing ratio [kg/kg]
  * @param n Number of particles
  * @param min_x Minimum size of particle
  * @param max_x Maximum size of particle
@@ -1433,8 +1433,13 @@ void setup_model_constants(
     // ==================================================
     // Cosmo5 although nue1nue1 would be okay too, I guess
     //// Cloud
-    cc.cloud.nu = 0.0;
+#ifdef SB_SHAPE
+    cc.cloud.nu = 1;
+    cc.cloud.mu = 1;
+#else
+    cc.cloud.nu = 0;
     cc.cloud.mu = 1.0/3.0;
+#endif
     cc.cloud.max_x = 2.6e-10;
     cc.cloud.min_x = 4.2e-15;
     cc.cloud.min_x_act = 4.2e-15;
@@ -1467,8 +1472,12 @@ void setup_model_constants(
     setup_bulk_sedi(cc.cloud);
 
     //// Rain
-    cc.rain.nu = 0.0;
-    cc.rain.mu = 0.333333;
+#ifdef SB_SHAPE
+    cc.rain.nu = -2.0/3.0; // SB: -2/3 COSMO: 0.0
+#else
+     cc.rain.nu = 0; // SB: -2/3 COSMO: 0.0
+#endif
+    cc.rain.mu = 1.0/3.0; // SB: 1/3 COMSO: 1.0/3.0
     cc.rain.max_x = 3.0e-6;
     cc.rain.min_x = 2.6e-10;
     cc.rain.min_x_act = 2.6e-10;
@@ -1518,8 +1527,8 @@ void setup_model_constants(
     setup_bulk_sedi(cc.rain);
 
     //// Graupel
-    cc.graupel.nu = 1.0;
-    cc.graupel.mu = 1.0/3.0;
+    cc.graupel.nu = 1.0; // SB
+    cc.graupel.mu = 1.0/3.0; // SB
     cc.graupel.max_x = 5.0e-4;
     cc.graupel.min_x = 1.0e-9;
     cc.graupel.min_x_act = 1.0e-9;
@@ -1600,7 +1609,11 @@ void setup_model_constants(
     setup_bulk_sedi(cc.hail);
 
     //// Ice
-    cc.ice.nu = 0.0;
+#ifdef SB_SHAPE
+    cc.ice.nu = 1.0;
+#else
+    cc.ice.nu = 0.0; // COSMO 0.0, SB: 1.0
+#endif
     cc.ice.mu = 1.0/3.0;
     cc.ice.max_x = 1.0e-5;
     cc.ice.min_x = 1.0e-12;
@@ -1637,8 +1650,13 @@ void setup_model_constants(
     setup_bulk_sedi(cc.ice);
 
     //// Snow
-    cc.snow.nu = 0.0;
-    cc.snow.mu = 0.5;
+#ifdef SB_SHAPE
+    cc.snow.nu = 1.0; // COSMO: 0.0, SB 1.0
+    cc.snow.mu = 1.0/3.0; // COSMO 0.5, SB: 1.0/3.0
+#else
+    cc.snow.nu = 0.0; // COSMO: 0.0, SB 1.0
+    cc.snow.mu = 0.5; // COSMO 0.5, SB: 1.0/3.0
+#endif
     cc.snow.max_x = 2.0e-5;
     cc.snow.min_x = 1.0e-10;
     cc.snow.min_x_act = 1.0e-10;

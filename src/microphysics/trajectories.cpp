@@ -30,6 +30,8 @@
 #include "include/microphysics/implicit_euler.h"
 #endif
 
+#include "include/misc/pbar.h"
+
 /**
  * Based on
  * Revisiting the latent heating contribution to foehn warming:
@@ -60,113 +62,9 @@ int main(int argc, char** argv)
 {
     input_parameters_t input;
     init_input_parameters(input);
-
-    bool need_to_abort = false;
-    int opt;
     global_args_t global_args;
-    init_global_args(global_args);
-
-    if(argc < 2)
-    {
-        need_to_abort = true;
-        display_usage();
-    }else
-    {
-        opt = getopt(argc, argv, optString);
-
-        while(-1 != opt)
-        {
-            switch(opt)
-            {
-                case 'f':
-                {
-                    global_args.final_time_flag = 1;
-                    global_args.final_time_string = optarg;
-                    break;
-                }
-                case 'd':
-                {
-                    global_args.timestep_flag = 1;
-                    global_args.timestep_string = optarg;
-                    break;
-                }
-                case 'i':
-                {
-                    global_args.snapshot_index_flag = 1;
-                    global_args.snapshot_index_string = optarg;
-                    break;
-                }
-                case 'b':
-                {
-                    global_args.scaling_fact_flag = 1;
-                    global_args.scaling_fact_string = optarg;
-                    break;
-                }
-                case 'o':
-                {
-                    global_args.output_flag = 1;
-                    global_args.output_string = optarg;
-                    break;
-                }
-                case 'l':
-                {
-                    global_args.input_flag = 1;
-                    global_args.input_file = optarg;
-                    break;
-                }
-                case 's':
-                {
-                    global_args.start_over_flag = 1;
-                    global_args.start_over_string = optarg;
-                    break;
-                }
-                case 't':
-                {
-                    global_args.fixed_iteration_flag = 1;
-                    global_args.fixed_iteration_string = optarg;
-                    break;
-                }
-                case 'a':
-                {
-                    global_args.auto_type_flag = 1;
-                    global_args.auto_type_string = optarg;
-                    break;
-                }
-                case 'r':
-                {
-                    global_args.traj_flag = 1;
-                    global_args.traj_string = optarg;
-                    break;
-                }
-                case 'w':
-                {
-                    global_args.write_flag = 1;
-                    global_args.write_string = optarg;
-                    break;
-                }
-                case '?':
-                {
-                    need_to_abort = true;
-                    display_usage();
-                    break;
-                }
-                default:
-                {
-                    need_to_abort = true;
-                    display_error_on_command_line();
-                    display_usage();
-                    break;
-                }
-            }
-
-            opt = getopt(argc, argv, optString);
-        }
-    }
-
-    if(need_to_abort){
-        std::cout << "ABORTING." << std::endl;
-        return 1;			// Report error
-    }
+    int err;
+    if( (err = parse_arguments(argc, argv, global_args)) != 0 ) return err;
 
     set_input_from_arguments(global_args, input);
     auto_type = input.auto_type;
@@ -257,6 +155,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    ProgressBar pbar = ProgressBar((cc.num_sub_steps-2)*cc.num_steps, input.progress_index, "simulation step", std::cout);
     // Loop for timestepping: BEGIN
     try
     {
@@ -265,8 +164,8 @@ int main(int argc, char** argv)
         int ncid;
         std::vector<size_t> startp, countp;
         open_netcdf(ncid, startp, countp, global_args.input_file, input.traj);
-
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
+
         // Loop over every timestep that is usually fixed to 20 s
         for(uint32_t t=0; t<cc.num_steps; ++t) //
         {
@@ -278,8 +177,14 @@ int main(int argc, char** argv)
             for(uint32_t sub=1; sub<cc.num_sub_steps; ++sub) // cc.num_sub_steps
             {
 #if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
-                std::cout << "timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
+#if defined(TRACE_TIME)
+                trace = ( ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) >= trace_start) && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) <= trace_end) ) ? true : false;
 #endif
+                if(trace)
+                    std::cout << "timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
+
+#endif
+                bool last_step = ((sub+1 + t*cc.num_sub_steps)*cc.dt >= ((t+1)*cc.num_sub_steps)*cc.dt) || (sub == cc.num_sub_steps-input.start_over);
                 // Set the coefficients from the last timestep and from
                 // the input files
                 // *Should* only be necessary when parameters from the
@@ -291,16 +196,22 @@ int main(int argc, char** argv)
                 // CODIPACK
                 tape.setActive();
 #ifdef TRACE_QR
-                std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps
-                    << ", Nr " << inflow[Nr_in_idx]/cc.num_sub_steps << "\n";
-                std::cout << "qr_old " << y_single_old[qr_idx]
-                    << ", Nr_old " << y_single_old[Nr_idx] << "\n";
+                if(trace)
+                {
+                    std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps
+                        << ", Nr " << inflow[Nr_in_idx]/cc.num_sub_steps << "\n";
+                    std::cout << "qr_old " << y_single_old[qr_idx]
+                        << ", Nr_old " << y_single_old[Nr_idx] << "\n";
+                }
 #endif
 #ifdef TRACE_QI
-                std::cout << "Adding qi " << inflow[qi_in_idx]/cc.num_sub_steps
-                    << ", Ni " << inflow[Ni_in_idx]/cc.num_sub_steps << "\n";
-                std::cout << "qi_old " << y_single_old[qi_idx]
-                    << ", Ni_old " << y_single_old[Ni_idx] << "\n";
+                if(trace)
+                {
+                    std::cout << "Adding qi " << inflow[qi_in_idx]/cc.num_sub_steps
+                        << ", Ni " << inflow[Ni_in_idx]/cc.num_sub_steps << "\n";
+                    std::cout << "qi_old " << y_single_old[qi_idx]
+                        << ", Ni_old " << y_single_old[Ni_idx] << "\n";
+                }
 #endif
                 //	 Add the inflow
                 y_single_old[qr_idx] += inflow[qr_in_idx]/cc.num_sub_steps;
@@ -313,9 +224,43 @@ int main(int argc, char** argv)
                 y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
                 y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
 #endif
-
                 register_everything(tape, cc);
-
+                if(sub == 1)
+                {
+                                    //	 Add the inflow
+//                     y_single_old[qr_idx] += inflow[qr_in_idx];
+//                     y_single_old[Nr_idx] += inflow[Nr_in_idx];
+// #if defined(RK4ICE)
+//                     y_single_old[qi_idx] += inflow[qi_in_idx];
+//                     y_single_old[qs_idx] += inflow[qs_in_idx];
+//                     y_single_old[qg_idx] += inflow[qg_in_idx];
+//                     y_single_old[Ni_idx] += inflow[Ni_in_idx];
+//                     y_single_old[Ns_idx] += inflow[Ns_in_idx];
+//                     y_single_old[Ng_idx] += inflow[Ng_in_idx];
+// #endif
+                    // codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
+                    // codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
+                    // codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
+                    // codi::RealReverse qc_prime = y_single_old[qc_idx]*ref_quant.qref;
+                    // codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
+                    // std::vector<codi::RealReverse> res(7);
+                    // for(auto& r: res) r = 0;
+                    // saturation_adjust_meteo(
+                    //     T_prime,
+                    //     p_prime,
+                    //     p_sat,
+                    //     qv_prime,
+                    //     qc_prime,
+                    //     res,
+                    //     ref_quant.qref);
+                    // y_single_old[qv_idx] += res[qv_idx]/ref_quant.qref;
+                    // y_single_old[qc_idx] += res[qc_idx]/ref_quant.qref;
+                    // y_single_old[T_idx] += res[T_idx]/ref_quant.Tref;
+                    // y_single_old[S_idx] = convert_qv_to_S(
+                    //     y_single_old[p_idx].getValue()*ref_quant.pref,
+                    //     y_single_old[T_idx].getValue()*ref_quant.Tref,
+                    //     y_single_old[qv_idx].getValue()*ref_quant.qref);
+                }
 //////////////// Add any different scheme and model here
     // I did not check if those two methods still work with CODIPACK
     // #if defined(EXPLICIT_EULER)
@@ -325,6 +270,7 @@ int main(int argc, char** argv)
     // #if defined(IMPLICIT_EULER)
     //             implicit_euler_step(y_single_new, y_single_old, num_comp, ref_quant, cc);
     // #endif
+
 
 #if defined(RK4) || defined(RK4_ONE_MOMENT) || defined(OTHER)
                 RK4_step(y_single_new, y_single_old, ref_quant, cc,
@@ -336,6 +282,35 @@ int main(int argc, char** argv)
                 RK4_step_2_sb_ice(y_single_new, y_single_old, ref_quant, cc,
                     nc_params, input.fixed_iteration);
 #endif
+                if(last_step)
+                {
+                    // codi::RealReverse T_prime = y_single_new[T_idx]*ref_quant.Tref;
+                    // codi::RealReverse p_prime = y_single_new[p_idx]*ref_quant.pref;
+                    // codi::RealReverse qv_prime = y_single_new[qv_idx]*ref_quant.qref;
+                    // codi::RealReverse qc_prime = y_single_new[qc_idx]*ref_quant.qref;
+                    // codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
+                    // std::vector<codi::RealReverse> res(7);
+                    // for(auto& r: res) r = 0;
+                    // saturation_adjust_meteo(
+                    //     T_prime,
+                    //     p_prime,
+                    //     p_sat,
+                    //     qv_prime,
+                    //     qc_prime,
+                    //     res,
+                    //     ref_quant.qref);
+                    // y_single_new[qv_idx] += res[qv_idx]/ref_quant.qref;
+                    // y_single_new[qc_idx] += res[qc_idx]/ref_quant.qref;
+                    // y_single_new[T_idx] += res[T_idx]/ref_quant.Tref;
+                    // y_single_new[S_idx] = convert_qv_to_S(
+                    //     y_single_new[p_idx].getValue()*ref_quant.pref,
+                    //     y_single_new[T_idx].getValue()*ref_quant.Tref,
+                    //     y_single_new[qv_idx].getValue()*ref_quant.qref);
+// #ifdef TRACE_QV
+//                     std::cout << "sat ad dqv " << res[qv_idx]
+//                         << ", dqc " << res[qc_idx] << "\n";
+// #endif
+                }
                 // CODIPACK: BEGIN
                 get_gradients(y_single_new, y_diff, cc, tape);
                 // CODIPACK: END
@@ -346,22 +321,32 @@ int main(int argc, char** argv)
                 // Output *if needed* (checks within function)
                 write_output(cc, nc_params, y_single_new, y_diff, sub, t,
                     time_new, traj_id, input.write_index,
-                    input.snapshot_index);
+                    input.snapshot_index, last_step);
 
                 // Interchange old and new for next step
                 time_old = time_new;
-                    y_single_old.swap(y_single_new);
+                y_single_old.swap(y_single_new);
+                // While debugging, the bar is not useful.
+#if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR) && !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
+                pbar.progress(sub + t*cc.num_sub_steps);
+#endif
+                // In case that the sub timestep%timestep is not 0
+                if( last_step )
+                    break;
             } // End substep
 #ifdef TRACE_QG
-        std::cout << "\nSediment total q: " << sediment_q_total
-                  << "\nSediment total N: " << sediment_n_total << "\n";
+        if(trace)
+            std::cout << "\nSediment total q: " << sediment_q_total
+                    << "\nSediment total N: " << sediment_n_total << "\n";
         sediment_n_total = 0;
         sediment_q_total = 0;
 #endif
         }
+        pbar.finish();
         nc_close(ncid);
     } catch(netCDF::exceptions::NcException& e)
     {
+        pbar.finish();
         std::cout << e.what() << std::endl;
         std::cout << "ABORTING." << std::endl;
         return 1;

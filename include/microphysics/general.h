@@ -63,7 +63,7 @@ void print_reference_quantities(reference_quantities_t &ref)
         << "Mixing-ratio: " << ref.qref << "\n"
         << "Vertical velocity: " << ref.wref << " meter per second\n"
         << "Time: " << ref.tref << " Second\n"
-        << std::endl;
+        << std::endl << std::flush;
 }
 
 /**
@@ -90,7 +90,7 @@ void print_constants(model_constants_t &cc)
         << "e2_scale: " << cc.e2_scale << "\n"
         << "d_scale: " << cc.d_scale << "\n"
 	    << "Scaling factor: " << cc.scaling_fact << "\n"
-	    << std::endl;
+	    << std::endl << std::flush;
 }
 
 /**
@@ -106,15 +106,17 @@ void print_input_parameters(input_parameters_t &in)
         << "Time to integrate: " << in.t_end_prime << " Second\n"
         << "Timestep: " << in.dt_prime << " Second\n"
 	    << "Snapshot index: " << in.snapshot_index << "\n"
-        << "Write Index: " << in.write_index << "\n"
+        << "Write index: " << in.write_index << "\n"
+        << "Progressbar index: " << in.progress_index << "\n"
         << "Name of output file: " << in.OUTPUT_FILENAME << "\n"
 	    << "Scaling factor: " << in.scaling_fact << "\n"
         << "Name of input file: " << in.INPUT_FILENAME << "\n"
-        << "Start over at each timestep of a trajectory?: " << in.start_over << "\n"
+        << "Start over mixing ratios and particle numbers at each timestep of a trajectory?: " << in.start_over << "\n"
+        << "Start over pressure, temperature and ascent at each timestep of a trajectory?: " << in.start_over_env << "\n"
         << "Fix temperature and pressure at each substep?: " << in.fixed_iteration << "\n"
         << "Auto type for rain evaporation (1, 2, 3): " << in.auto_type << "\n"
         << "Trajectory used: " << in.traj
-        << std::endl;
+        << std::endl << std::flush;
 }
 
 /**
@@ -135,11 +137,13 @@ void display_usage()
 	    << "-d: Timestep in seconds for a substep between each new trajectory input.\n"
 	    << "-o: Name of the output file.\n"
         << "-l: Path and name of input file.\n"
-        << "-s: Start over at each timestep of a trajectory.\n"
+        << "-s: Start over mixing ratios and particle numbers at each timestep of a trajectory.\n"
+        << "-e: Start over temperature, pressure and ascent at each timestep of a trajectory.\n"
         << "-t: Set pressure, temperature and vertical velocity fixed at each substep.\n"
         << "-a: Set auto type (1=KB, 2=KK, 3=SB).\n"
         << "-r: Set index of trajectory.\n"
         << "-w: Write index for the snapshots.\n"
+        << "-p: Index for updating the progressbar.\n"
 	    << "-?: This help message.\n"
 	    << std::endl;
 }

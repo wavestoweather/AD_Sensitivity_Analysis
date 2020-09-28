@@ -305,20 +305,149 @@ void saturation_adjust(
         res[qc_idx] -= delta_q;
 
 #ifdef TRACE_QV
-        std::cout << "saturation_adjust: dqv " << delta_q << "\n";
-        float_t alt_delta_q = -(qv_prime - q_sat * qref)/(1 + b1);
-        alt_delta_q = max(min(alt_delta_q, qc_prime), -qv_prime);
-        std::cout << "q_sat " << q_sat << "\n"
-                  << "qv_prime " << qv_prime << "\n"
-                  << "delta_q with ref " << alt_delta_q << "\n";
+        if(trace)
+        {
+            std::cout << "saturation_adjust: dqv " << delta_q << "\n";
+            float_t alt_delta_q = -(qv_prime - q_sat * qref)/(1 + b1);
+            alt_delta_q = max(min(alt_delta_q, qc_prime), -qv_prime);
+            std::cout << "q_sat " << q_sat << "\n"
+                      << "qv_prime " << qv_prime << "\n"
+                      << "delta_q with ref " << alt_delta_q << "\n";
+        }
 #endif
 #ifdef TRACE_QC
-        std::cout << "saturation_adjust: dqc " << -delta_q << "\n";
+        if(trace)
+            std::cout << "saturation_adjust: dqc " << -delta_q << "\n";
 #endif
     }
 }
 
 // TODO: Try meteo_utilities.f90 satad
+template<class float_t>
+void saturation_adjust_meteo(
+    const float_t &T_prime,
+    const float_t &p_prime,
+    const float_t &p_sat,
+    const float_t &qv_prime,
+    const float_t &qc_prime,
+    std::vector<float_t> &res,
+    const double &qref)
+{
+    float_t qv = qv_prime;
+    float_t qc = qc_prime;
+    float_t T = T_prime;
+    // exchanged with convert_S_to_qv(p, T, S)
+    // This method calculates the saturated amount of qv using p_sat according
+    // to Dotzek. We ignore that and calculate saturation differently.
+    auto q_sat_f = [](
+        const float_t &p_sat,
+        const float_t &p)
+    {
+        return Epsilon * p_sat / (p - (1-Epsilon)*p_sat);
+    };
+
+    auto temp_p_dt = [](
+        const float_t &T,
+        const float_t p)
+    {
+        return p_sat_const_a*(T_sat_low_temp-p_sat_const_b)
+            * ( 1+(Epsilon-1)*p ) * p / ( (T-p_sat_const_b)*(T-p_sat_const_b) );
+    };
+
+    T = T - L_wd*qc_prime/cp;
+    qv = qc_prime + qv_prime;
+    qc = 0;
+    // After Dotzek...
+    // float_t p_sat_2 = saturation_pressure_water_icon(T);
+    // float_t delta_q = q_sat_f(p_sat_2, p_prime) - qv;
+    // ... our version
+    float_t delta_q = convert_S_to_qv(p_prime, T, float_t(1)) - qv;
+    if(delta_q < 0)
+    {
+
+        // Handle over saturation
+        // Adjust temperature
+        float_t Th = cp*T + L_wd*qv;
+        // After Dotzek...
+        // p_sat_2 = saturation_pressure_water_icon(T_prime);
+        // float_t T_qd0 = q_sat_f(p_sat_2, p_prime);
+        // ... our version
+        float_t T_qd0 = convert_S_to_qv(p_prime, T_prime, float_t(1));
+        float_t T_dt0;
+        // Do the Newton
+        for(uint32_t i=0; i<3; ++i)
+        {
+            T_dt0 = temp_p_dt(T_prime, T_qd0);
+            T = ( Th-L_wd*(T_qd0-T_dt0*T_prime) )
+                / ( cp+L_wd*T_dt0 );
+            // After Dotzek ...
+            // p_sat_2 = saturation_pressure_water_icon(T);
+            // T_qd0 = q_sat_f(p_sat_2, p_prime);
+            // ... our version
+            T_qd0 = convert_S_to_qv(p_prime, T, float_t(1));
+        }
+
+        // Get ratio mixing "back"
+        T_dt0 = temp_p_dt(T, T_qd0);
+        float_t T_gn = ( Th - L_wd*(T_qd0-T_dt0*T) )
+            / ( cp+L_wd*T_dt0 );
+        T_qd0 += T_dt0*(T_gn-T);
+
+        qv = T_qd0;
+        qc = max(qc_prime+qv_prime - T_qd0, 1.0e-20);
+        delta_q = qv - qv_prime;
+        res[qv_idx] += delta_q;
+        res[qc_idx] -= delta_q;
+        // T <- T_gn
+        // res[T_idx] +=  T_gn - T_prime;
+#ifdef TRACE_QV
+        if(trace)
+            std::cout << "saturation_adjust_meteo (over saturated) dqv " << delta_q << "\n";
+
+#endif
+#ifdef TRACE_ENV
+        if(trace)
+            std::cout << "saturation_adjust_meteo dT " << T_gn - T_prime
+                  << "\n";
+#endif
+#ifdef TRACE_QC
+        if(trace)
+            std::cout << "saturation_adjust_meteo (over saturated) dqc " << -delta_q << "\n";
+#endif
+    } else
+    {
+        // Throw everything from qc at qv -> qv will be as saturated as possible
+        res[qv_idx] += qc_prime;
+        res[qc_idx] -= qc_prime;
+        // res[T_idx] += T-T_prime;
+#ifdef TRACE_QV
+        if(trace)
+            std::cout << "saturation_adjust_meteo (under saturated) dqv " << qc_prime << "\n";
+#endif
+#ifdef TRACE_QC
+        if(trace)
+            std::cout << "saturation_adjust_meteo (under saturated) dqc " << -qc_prime << "\n";
+#endif
+#ifdef TRACE_ENV
+        if(trace)
+            std::couut << "saturation_adjust_meteo (under saturated) dT " << T-T_prime << "\n";
+#endif
+    }
+}
+
+// From mo_satad.f90 satad_v_3D
+template<class float_t>
+void saturation_adjust_icon(
+    const float_t &T_prime,
+    const float_t &p_prime,
+    const float_t &p_sat,
+    const float_t &qv_prime,
+    const float_t &qc_prime,
+    std::vector<float_t> &res,
+    const double &qref)
+{
+
+}
 
 template<class float_t>
 void saturation_adjust_qv(
@@ -344,14 +473,18 @@ void saturation_adjust_qv(
         // Temperature change?
 
 #ifdef TRACE_QV
-        std::cout << "saturation_adjust: dqv " << delta_q << "\n";
-        std::cout << "q_sat " << q_sat << "\n"
-                  << "qv_prime " << qv_prime << "\n"
-                  << "S with qv " << convert_qv_to_S(p_prime.getValue(), T_prime.getValue(), qv_prime.getValue()) << "\n"
-                  << "S with q_sat " << convert_qv_to_S(p_prime.getValue(), T_prime.getValue(), q_sat.getValue()) << "\n";
+        if(trace)
+        {
+            std::cout << "saturation_adjust: dqv " << delta_q << "\n";
+            std::cout << "q_sat " << q_sat << "\n"
+                      << "qv_prime " << qv_prime << "\n"
+                      << "S with qv " << convert_qv_to_S(p_prime.getValue(), T_prime.getValue(), qv_prime.getValue()) << "\n"
+                      << "S with q_sat " << convert_qv_to_S(p_prime.getValue(), T_prime.getValue(), q_sat.getValue()) << "\n";
+        }
 #endif
 #ifdef TRACE_QC
-        std::cout << "saturation_adjust: dqc " << -delta_q << "\n";
+        if(trace)
+            std::cout << "saturation_adjust: dqc " << -delta_q << "\n";
 #endif
     }
 }
@@ -392,12 +525,14 @@ void ccn_act_hande(
         res[qc_idx] += delta_q;
         res[qv_idx] -= delta_q;
 #ifdef TRACE_QC
-        if(abs(delta_q) > 0)
-            std::cout << "Ascent dqc " << delta_q << ", dNc " << delta_n
-                << ", nuc_n " << nuc_n << ", Nc " << Nc << ", rest " << 10.0e-6 << "\n";
+        if(trace)
+            if(abs(delta_q) > 0)
+                std::cout << "Ascent dqc " << delta_q << ", dNc " << delta_n
+                    << ", nuc_n " << nuc_n << ", Nc " << Nc << ", rest " << 10.0e-6 << "\n";
 #endif
 #ifdef TRACE_QV
-        std::cout << "Ascent dqv " << -delta_q << "\n";
+        if(trace)
+            std::cout << "Ascent dqv " << -delta_q << "\n";
 #endif
 
         float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
@@ -506,40 +641,65 @@ void ccn_act_seifert(
         + (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0) ) - C16*(S/(T*T))*dT;
 
 #ifdef TRACE_SAT
-    std::cout << "Saturation (CCN activation) dS: " << dS
-                << ", times dt: " << dS * dt
-                << ", Evaporation: " << (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0)
-                << ", Condensation: " << C9*qc_third*(S-1.0)
-                << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
-                << ", First part: " << (S/p)*res[p_idx]
-                << ", Middle part: " << - (S/qv)*( 1.0 - (qv/(C15+qv)) )
-                << ", S_percentage: " << S_percentage
-                << ", S: " << S
-                << ", e_d: " << qv_prime * Rv * T_prime
-                << ", qv_prime: " << qv_prime
-                << ", Rv: " << Rv
-                << ", T_prime " << T_prime
-                << ", p_sat: " << saturation_pressure_water_icon(T_prime)
-                << ", s_sw = e_d/p_sat - 1: " << qv_prime * Rv * T_prime/saturation_pressure_water_icon(T_prime)-1
-                << ", S calculated: " << qv_prime * Rv * T_prime/saturation_pressure_water_icon(T_prime)
-                << "\n";
+    if(trace)
+        std::cout << "Saturation (CCN activation) dS: " << dS
+                    << ", times dt: " << dS * dt
+                    << ", Evaporation: " << (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0)
+                    << ", Condensation: " << C9*qc_third*(S-1.0)
+                    << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
+                    << ", First part: " << (S/p)*res[p_idx]
+                    << ", Middle part: " << - (S/qv)*( 1.0 - (qv/(C15+qv)) )
+                    << ", S_percentage: " << S_percentage
+                    << ", S: " << S
+                    << ", e_d: " << qv_prime * Rv * T_prime
+                    << ", qv_prime: " << qv_prime
+                    << ", Rv: " << Rv
+                    << ", T_prime " << T_prime
+                    << ", p_sat: " << saturation_pressure_water_icon(T_prime)
+                    << ", s_sw = e_d/p_sat - 1: " << qv_prime * Rv * T_prime/saturation_pressure_water_icon(T_prime)-1
+                    << ", S calculated: " << qv_prime * Rv * T_prime/saturation_pressure_water_icon(T_prime)
+                    << "\n";
 #endif
     // dS *= dt;
     // float_t dSdz_w = w_prime *
 #ifdef TRACE_QC
-    // std::cout << "dS " << dS << ", s_perc " << S_percentage << ", S " << S
-    //           << ", S_max " << S_max << ", T " << T << ", T_prime "
-    //           << T_prime << ", T_f " << T_f << "\n";
-    // std::cout << "N_ccn " << N_ccn << ", k_ccn " << k_ccn
-    //           << ", pow(S, k-1) " << pow(S_percentage, k_ccn-1.0)
-    //           << ", N*k*s^k-1 " << N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0)
-    //           << "\n";
-    // std::cout << "Nc " << Nc << "\n";
-    // std::cout << "supersat: " << p_sat_ice/p_sat * (S-1)
-    //           << ", s_sw " << s_sw
-    //           << ", e_d/e_sat " << qv_prime * R_v * T_prime / saturation_pressure_water_icon(T_prime) - 1.0
-    //           << ", e_d/e_sat 2: " << qv_prime * Rv * T_prime / saturation_pressure_water_icon(T_prime) - 1.0
-    //           << ", qv to S " << convert_qv_to_S(p_prime, T_prime, qv_prime) << "\n";
+    if(trace)
+    {
+        std::cout << "Saturation (CCN activation) dS: " << dS
+                    << ", times dt: " << dS * dt
+                    << ", Evaporation: " << (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0)
+                    << ", Condensation: " << C9*qc_third*(S-1.0)
+                    << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
+                    << ", First part: " << (S/p)*res[p_idx]
+                    << ", Middle part: " << - (S/qv)*( 1.0 - (qv/(C15+qv)) )
+                    << ", S_percentage: " << S_percentage
+                    << ", S: " << S
+                    << ", e_d: " << qv_prime * Rv * T_prime
+                    << ", qv_prime: " << qv_prime
+                    << ", Rv: " << Rv
+                    << ", T_prime " << T_prime
+                    << ", p_sat: " << saturation_pressure_water_icon(T_prime)
+                    << ", s_sw = e_d/p_sat - 1: " << qv_prime * Rv * T_prime/saturation_pressure_water_icon(T_prime)-1
+                    << ", S calculated: " << qv_prime * Rv * T_prime/saturation_pressure_water_icon(T_prime)
+                    << "\n";
+        std::cout << "dS " << dS << ", s_perc " << S_percentage << ", S " << S
+                  << ", S_max " << S_max << ", T " << T << ", T_prime "
+                  << T_prime << ", T_f " << T_f << "\n";
+        std::cout << "N_ccn " << N_ccn << ", k_ccn " << k_ccn
+                  << ", pow(S, k-1) " << pow(S_percentage, k_ccn-1.0)
+                  << ", N*k*s^k-1 " << N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0)
+                  << "\n";
+        std::cout << "Nc " << Nc << "\n";
+        std::cout << "supersat: " << saturation_pressure_ice(T_prime)/saturation_pressure_water_icon(T_prime) * (S-1)
+                  << ", e_d/e_sat " << qv_prime * R_v * T_prime / saturation_pressure_water_icon(T_prime) - 1.0
+                  << ", e_d/e_sat 2: " << qv_prime * Rv * T_prime / saturation_pressure_water_icon(T_prime) - 1.0
+                  << ", qv to S " << convert_qv_to_S(p_prime, T_prime, qv_prime) << "\n";
+        std::cout << "z_prime " << z_prime << ", z_nccn " << z_nccn << "\n";
+        float_t S_cosmo = min(10, 100*S_percentage);
+        float_t n_ccn_texas = 1260e6 * pow(S_cosmo, 0.308);
+        std::cout << "over saturation in perc with cosmo " << S_cosmo
+                  << ", n_ccn_texas " << n_ccn_texas << "\n";
+    }
 #endif
     if(S_percentage > 0.0 && dS >= 0.0 && S_percentage <= S_max && T_prime >= T_f)
     {
@@ -576,11 +736,13 @@ void ccn_act_seifert(
         // std::cout << "SB ccn activation no bound dqv " << -delta_q << "\n";
 #endif
 #ifdef TRACE_QC
-        std::cout << "SB ccn activation no bound dqc " << delta_q << ", dNc " << delta_n
-            << "\n with bound? " << (res[Nc_idx]*dt + Nc > N_max) << " dNc "
-            << (N_max - Nc)/dt
-            << "\nelse ? " << (res[Nc_idx]*dt + Nc < N_min) << " dNc "
-            << (N_min - Nc)/dt << "\n";
+        if(trace)
+            std::cout << "SB ccn activation no bound dqc " << delta_q << ", dNc " << delta_n
+                << "\n with bound? " << (res[Nc_idx]*dt + Nc > N_max) << " dNc "
+                << (N_max - Nc)/dt
+                << "\nelse ? " << (res[Nc_idx]*dt + Nc < N_min) << " dNc "
+                << (N_min - Nc)/dt << "\n";
+
 
         // std::cout << "SB ccn activation before Nc " << Nc << " res[Nc] " << res[Nc_idx]
         //           << "\nres*dt + Nc " <<  res[Nc_idx]*dt + Nc  << " > "
@@ -597,7 +759,8 @@ void ccn_act_seifert(
             res[Nc_idx] = (N_min - Nc)/dt;
         }
 #ifdef TRACE_QV
-        std::cout << "SB ccn activation dqv " << -delta_q << "\n";
+        if(trace)
+            std::cout << "SB ccn activation dqv " << -delta_q << "\n";
 #endif
         float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
         // Evaporation
@@ -688,10 +851,12 @@ void ice_nuc_hom(
             res[qi_idx] += delta_q;
             res[qv_idx] -= delta_q;
 #ifdef TRACE_QV
-            std::cout << "KHL06 dqv " << -delta_q << "\n";
+            if(trace)
+                std::cout << "KHL06 dqv " << -delta_q << "\n";
 #endif
 #ifdef TRACE_QI
-            std::cout << "KHL06 dqi " << delta_q << ", dNi " << delta_n << "\n";
+            if(trace)
+                std::cout << "KHL06 dqi " << delta_q << ", dNi " << delta_n << "\n";
 #endif
             float_t delta_e = latent_heat_melt(T_prime) * delta_q / specific_heat_ice(T_prime);
             // Sublimation, cooling
@@ -752,10 +917,12 @@ void ice_activation_hande(
         res[Ni_idx] += delta_n;
         res[qv_idx] -= delta_q;
 #ifdef TRACE_QV
-        std::cout << "heterogeneous nucleation dqv " << -delta_q << "\n";
+        if(trace)
+            std::cout << "heterogeneous nucleation dqv " << -delta_q << "\n";
 #endif
 #ifdef TRACE_QI
-        std::cout << "heterogeneous nucleation dqi " << delta_q << ", dNi " << delta_n << "\n";
+        if(trace)
+            std::cout << "heterogeneous nucleation dqi " << delta_q << ", dNi " << delta_n << "\n";
 #endif
         n_inact += delta_n;
 
@@ -812,11 +979,12 @@ void ice_activation_phillips(
 
     const double EPSILON = 1.0e-20;
 #ifdef TRACE_QI
-    std::cout << "T_prime " << T_prime << "\n"
-              << "T_nuc " << T_nuc << "\n"
-              << "S_i " << S_i << "\n"
-              << "n_inact " << n_inact << "\n"
-              << "ni_het_max " << ni_het_max << "\n";
+    if(trace)
+        std::cout << "T_prime " << T_prime << "\n"
+                  << "T_nuc " << T_nuc << "\n"
+                  << "S_i " << S_i << "\n"
+                  << "n_inact " << n_inact << "\n"
+                  << "ni_het_max " << ni_het_max << "\n";
 #endif
     if(T_prime < T_nuc && T_prime > 180.0 && S_i > 1.0
         && n_inact < ni_het_max)
@@ -868,27 +1036,28 @@ void ice_activation_phillips(
                 + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
                 * afrac_dust[ss+1][tt+1];
 #ifdef TRACE_QI
-            std::cout << "\nS_sr: " << S_sr << "\n";
+            if(trace)
+                std::cout << "\nS_sr: " << S_sr << "\n";
 #endif
         }
         float_t ndiag = infrac[0]*na_dust + na_soot*infrac[1] + na_orga*infrac[2];
 #ifdef TRACE_QI
-        std::cout << "\n\nqc>EPSILON: " << (qc_prime > EPSILON)
-                  << "\ninfac[0]: " << infrac[0]
-                  << "\ninfrac[1]: " << infrac[1]
-                  << "\ninfrac[2]: " << infrac[2]
-                  << "\nna_soot: " << na_soot
-                  << "\nna_orga: " << na_orga
-                  << "\ntt: " << tt
-                  << "\nafrac_dust[98][tt]: " << afrac_dust[98][tt]
-                  << "\nqv: " << qv_prime
-                  << "\nqc: " << qc_prime
-                  << "\nT: " << T_prime
-                  << "\nn_inact: " << n_inact
-                  << "\nS_i: " << S_i
-                  <<"\n";
-        std::cout << "\nndiag: " << ndiag << "\nni_het_max: " << ni_het_max
-            << "\nn_inact: " << n_inact << "\nna_dust: " << na_dust << "\n";
+        if(trace)
+            std::cout << "\n\nqc>EPSILON: " << (qc_prime > EPSILON)
+                      << "\ninfac[0]: " << infrac[0]
+                      << "\ninfrac[1]: " << infrac[1]
+                      << "\ninfrac[2]: " << infrac[2]
+                      << "\nna_soot: " << na_soot
+                      << "\nna_orga: " << na_orga
+                      << "\ntt: " << tt
+                      << "\nafrac_dust[98][tt]: " << afrac_dust[98][tt]
+                      << "\nqv: " << qv_prime
+                      << "\nqc: " << qc_prime
+                      << "\nT: " << T_prime
+                      << "\nn_inact: " << n_inact
+                      << "\nS_i: " << S_i
+                      << "\nndiag: " << ndiag << "\nni_het_max: " << ni_het_max
+                      << "\nn_inact: " << n_inact << "\nna_dust: " << na_dust << "\n";
 #endif
         if(use_prog_in)
         {
@@ -914,10 +1083,12 @@ void ice_activation_phillips(
         res[n_inact_idx] += delta_n;
         res[depo_idx] += delta_q;
 #ifdef TRACE_QV
-        std::cout << "Phillips nucleation dqv: " << -delta_q << "\n";
+        if(trace)
+            std::cout << "Phillips nucleation dqv: " << -delta_q << "\n";
 #endif
 #ifdef TRACE_QI
-        std::cout << "Phillips nucleation dqi: " << delta_q << ", dNi: " << delta_n << "\n";
+        if(trace)
+            std::cout << "Phillips nucleation dqi: " << delta_q << ", dNi: " << delta_n << "\n";
 
 #endif
         // latent heating and cooling
@@ -980,11 +1151,13 @@ void cloud_freeze_hom(
         res[qc_idx] -= delta_qi;
         res[Nc_idx] -= delta_ni;
 #ifdef TRACE_QC
-        if(abs(delta_qi) > 0)
-            std::cout << "cloud freeze dqc " << -delta_qi << ", dNc " << -delta_ni << "\n";
+        if(trace)
+            if(abs(delta_qi) > 0)
+                std::cout << "cloud freeze dqc " << -delta_qi << ", dNc " << -delta_ni << "\n";
 #endif
 #ifdef TRACE_QI
-        std::cout << "cloud freeze dqi " << delta_qi << ", dNi " << delta_ni << "\n";
+        if(trace)
+            std::cout << "cloud freeze dqi " << delta_qi << ", dNi " << delta_ni << "\n";
 #endif
         float_t delta_e = latent_heat_melt(T_prime) * delta_qi / specific_heat_ice(T_prime);
         // Melting, cooling
@@ -1033,10 +1206,12 @@ void ice_self_collection(
         res[Ni_idx] -= delta_n;
         res[Ns_idx] += delta_n/2.0;
 #ifdef TRACE_QI
-        std::cout << "ice self colletion dqi " << -delta_q << ", dNi " << -delta_n << "\n";
+        if(trace)
+            std::cout << "ice self colletion dqi " << -delta_q << ", dNi " << -delta_n << "\n";
 #endif
 #ifdef TRACE_QS
-        std::cout << "ice self colletion dqs " << delta_q << ", dNs " << delta_n/2.0 << "\n";
+        if(trace)
+            std::cout << "ice self colletion dqs " << delta_q << ", dNs " << delta_n/2.0 << "\n";
 #endif
     }
 }
@@ -1063,8 +1238,9 @@ void snow_self_collection(
         res[Ns_idx] -= M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
             * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel);
 #ifdef TRACE_QS
-        std::cout << "snow self collection dNs " << - (M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
-            * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel)) << "\n";
+        if(trace)
+            std::cout << "snow self collection dNs " << - (M_PI/8.0 * e_coll * Ns * Ns * cc.snow.sc_delta_n * D_s * D_s
+                * sqrt(cc.snow.sc_theta_n * vel_s * vel_s + 2.0 * cc.snow.s_vel * cc.snow.s_vel)) << "\n";
 #endif
     }
 }
@@ -1117,10 +1293,12 @@ void snow_melting(
         // Rain N
         res[Nr_idx] += melt_n;
 #ifdef TRACE_QR
-        std::cout << "snow melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+        if(trace)
+            std::cout << "snow melting dqr " << melt_q << ", dNr " << melt_n << "\n";
 #endif
 #ifdef TRACE_QS
-        std::cout << "snow melting dqs " << -melt_q << ", dNs " << -melt_n << "\n";
+        if(trace)
+            std::cout << "snow melting dqs " << -melt_q << ", dNs " << -melt_n << "\n";
 #endif
         float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
         // Melting, cooling
@@ -1173,9 +1351,11 @@ void graupel_melting(
         // Rain N
         res[Nr_idx] += melt_n;
 #ifdef TRACE_QR
-        std::cout << "graupel melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+        if(trace)
+            std::cout << "graupel melting dqr " << melt_q << ", dNr " << melt_n << "\n";
 #endif
 #ifdef TRACE_QG
+        if(trace)
             std::cout << "graupel melting dqg " << -melt_q << ", dNg " << -melt_n << "\n";
 #endif
         float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
@@ -1227,10 +1407,12 @@ void hail_melting(
         // Rain N
         res[Nr_idx] += melt_n;
     #ifdef TRACE_QR
-        std::cout << "hail melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+        if(trace)
+            std::cout << "hail melting dqr " << melt_q << ", dNr " << melt_n << "\n";
     #endif
     #ifdef TRACE_QH
-        std::cout << "hail melting dqh " << -melt_q << ", dNh " << -melt_n << "\n";
+        if(trace)
+            std::cout << "hail melting dqh " << -melt_q << ", dNh " << -melt_n << "\n";
     #endif
         float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
         // Melting, cooling
@@ -1267,11 +1449,13 @@ void auto_conversion_kb(
     res[Nc_idx] -= au*x_s_i*2.0;
     res[qc_idx] -= au;
 #ifdef TRACE_QC
-    if(abs(au) > 0)
-        std::cout << "autoconversion dqc " << -au << ", dNc " << -au*x_s_i*2.0 << "\n";
+    if(trace)
+        if(abs(au) > 0)
+            std::cout << "autoconversion dqc " << -au << ", dNc " << -au*x_s_i*2.0 << "\n";
 #endif
 #ifdef TRACE_QR
-    std::cout << "autoconversion dqr " << au << ", dNr " << au*x_s_i << "\n";
+    if(trace)
+        std::cout << "autoconversion dqr " << au << ", dNr " << au*x_s_i << "\n";
 #endif
     // accretionKB
     if(qc_prime > q_crit_i && qr_prime > q_crit_i)
@@ -1282,17 +1466,21 @@ void auto_conversion_kb(
         res[qr_idx] += ac;
         res[qc_idx] -= ac;
 #ifdef TRACE_QR
-        std::cout << "accretionKB dqr " << ac << "\n";
+        if(trace)
+            std::cout << "accretionKB dqr " << ac << "\n";
 #endif
 #ifdef TRACE_QC
-        if(abs(ac) > 0)
-            std::cout << "accretionKB dqc " << -ac << "\n";
+        if(trace)
+            if(abs(ac) > 0)
+                std::cout << "accretionKB dqc " << -ac << "\n";
 #endif
     }
 }
 
 /**
- *
+ * Formation of raindrops by coagulating cloud droplets and growth
+ * of raindrops collecting cloud droplets using Seifert and Beheng (2006)
+ * section 2.2.1.
  */
 template<class float_t>
 void auto_conversion_sb(
@@ -1306,8 +1494,14 @@ void auto_conversion_sb(
     // autoconversionSB
     if(qc_prime > q_crit)
     {
-        const double k_1 = 6.0e2;
+
+#ifdef SB_CONV
+        const double k_1 = 400;
+        const double k_2 = 0.7;
+#else
+        const double k_1 = 600;
         const double k_2 = 0.68;
+#endif
         float_t x_c = particle_mean_mass(
             qc_prime, Nc, cc.cloud.min_x_conversion, cc.cloud.max_x);
         float_t au = cc.cloud_k_au * qc_prime*qc_prime
@@ -1326,11 +1520,13 @@ void auto_conversion_sb(
         res[qc_idx] -= au;
         res[Nc_idx] -= min(Nc, sc);
 #ifdef TRACE_QC
-        if(abs(au) > 0)
-            std::cout << "autoconversion dqc " << -au << ", dNc " << -min(Nc, sc) << "\n";
+        if(trace)
+            if(abs(au) > 0)
+                std::cout << "autoconversion dqc " << -au << ", dNc " << -min(Nc, sc) << "\n";
 #endif
 #ifdef TRACE_QR
-        std::cout << "autoconversion dqr " << au << ", dNr " << au / cc.cloud.max_x << "\n";
+        if(trace)
+            std::cout << "autoconversion dqr " << au << ", dNr " << au / cc.cloud.max_x << "\n";
 #endif
     }
 
@@ -1350,10 +1546,12 @@ void auto_conversion_sb(
         res[qc_idx] -= ac;
         res[Nc_idx] -= min(Nc, x_c);
 #ifdef TRACE_QC
-        std::cout << "accretionSB dqc " << -ac << ", dNc " << -min(Nc, x_c) << "\n";
+        if(trace)
+            std::cout << "accretionSB dqc " << -ac << ", dNc " << -min(Nc, x_c) << "\n";
 #endif
 #ifdef TRACE_QR
-        std::cout << "accretionSB dqr " << ac << "\n";
+        if(trace)
+            std::cout << "accretionSB dqr " << ac << "\n";
 #endif
     }
 }
@@ -1381,11 +1579,13 @@ void rain_self_collection_sb(
             breakup = sc * (1.0e+3 * (D_r - 1.10e-3) + 1.0);
         res[Nr_idx] -= min(Nr, sc-breakup);
 #ifdef TRACE_QR
-        std::cout << "self collection dNr " << -min(Nr, sc-breakup) << "\n";
-        std::cout << "Nr " << Nr
-                  << "\nsc: " << sc
-                  << "\nbreakup: " << breakup
-                  << "\nrain.rho_v: " << cc.rain.rho_v << "\n";
+        if(trace)
+            std::cout << "self collection dNr " << -min(Nr, sc-breakup) << "\n";
+        if(trace)
+            std::cout << "Nr " << Nr
+                      << "\nsc: " << sc
+                      << "\nbreakup: " << breakup
+                      << "\nrain.rho_v: " << cc.rain.rho_v << "\n";
 #endif
     }
 }
@@ -1463,10 +1663,12 @@ void rain_evaporation_sb(
         res[Nr_idx] -= delta_nv;
         // evap -= delta_qv
 #ifdef TRACE_QR
-        std::cout << "rain evaporation after Seifert (2008) dqr " << -delta_qv << ", dNr " << -delta_nv << "\n";
+        if(trace)
+            std::cout << "rain evaporation after Seifert (2008) dqr " << -delta_qv << ", dNr " << -delta_nv << "\n";
 #endif
 #ifdef TRACE_QV
-        std::cout << "rain evaporation after Seifert (2008) dqv " << delta_qv << "\n";
+        if(trace)
+            std::cout << "rain evaporation after Seifert (2008) dqv " << delta_qv << "\n";
 #endif
         float_t delta_e = latent_heat_evap(T_prime) * delta_qv
             / specific_heat_water_vapor(T_prime);
@@ -1529,7 +1731,8 @@ void sedimentation_explicit(
         float_t &v_n_sedi,
         float_t &resQ,
         float_t &resN,
-        float_t &resOut)
+        float_t &resQOut,
+        float_t &resNOut)
     {
     //    std::cout << "\nCore value resN: " << resN << "\n";
         float_t v_nv = v_n_sedi;
@@ -1551,7 +1754,8 @@ void sedimentation_explicit(
         // abs is used for paranoia reasons and should never be needed
         resN -= abs(s_nv);
         resQ -= abs(s_qv);
-        resOut -= abs(s_qv);
+        resQOut -= abs(s_qv);
+        resNOut -= abs(s_nv);
         // precrate = -abs(s_sq);
 #ifdef TRACE_QI
         // std::cout << "\n\ns_qv: " << s_qv << "\nc_qv: " << c_qv
@@ -1565,7 +1769,8 @@ void sedimentation_explicit(
         float_t &N,
         float_t &resQ,
         float_t &resN,
-        float_t &resOut,
+        float_t &resQOut,
+        float_t &resNOut,
         particle_model_constants_t &pc)
     {
         float_t v_n_sedi = 0.0;
@@ -1600,11 +1805,12 @@ void sedimentation_explicit(
 #endif
         float_t sedi_q = 0;
         float_t sedi_n = 0;
-        sedi_icon_core(q, N, v_q_sedi, v_n_sedi, sedi_q, sedi_n, resOut);
+        sedi_icon_core(q, N, v_q_sedi, v_n_sedi, sedi_q, sedi_n, resQOut, resNOut);
 
-        sedi_n = min(max(abs(sedi_n), abs(sedi_q)/pc.max_x), q/pc.min_x_sedimentation);
-        resN -= sedi_n;
-        resQ -= abs(sedi_q);
+        // TODO: Why did I have those three lines?
+        // sedi_n = min(max(abs(sedi_n), abs(sedi_q)/pc.max_x), q/pc.min_x_sedimentation);
+        // resN -= sedi_n;
+        // resQ -= abs(sedi_q);
 
         // TODO: This breaks everything I think
         // resN gets positive for one even though it should be negative
@@ -1669,9 +1875,15 @@ void sedimentation_explicit(
     auto beforeN = res[Nr_idx];
     auto beforeq = res[qr_idx];
 #endif
-    sedi_icon_core(qr_prime, Nr, v_q_sedi, v_n_sedi, res[qr_idx], res[Nr_idx], res[qr_out_idx]);
+    sedi_icon_core(qr_prime, Nr, v_q_sedi, v_n_sedi, res[qr_idx], res[Nr_idx], res[qr_out_idx], res[Nr_out_idx]);
+    // Just for fun and giggles
+    // res[qr_idx] -= res[qr_out_idx]*2/3;
+    // res[Nr_idx] -= res[Nr_out_idx]*2/3;
+    // res[qr_out_idx] /= 3;
+    // res[Nr_out_idx] /= 3;
 #ifdef TRACE_QR
-    std::cout << "sedi_icon_core dqr " << res[qr_idx] - beforeq << ", dNr " << res[Nr_idx] - beforeN << "\n";
+    if(trace)
+        std::cout << "sedi_icon_core dqr " << res[qr_idx] - beforeq << ", dNr " << res[Nr_idx] - beforeN << "\n";
 #endif
 
     // sedi_icon_sphere ice
@@ -1681,10 +1893,13 @@ void sedimentation_explicit(
         auto before_q = res[qi_idx];
         auto before_n = res[Ni_idx];
 #endif
-        sedi_icon_sphere(qi_prime, Ni, res[qi_idx], res[Ni_idx], res[qi_out_idx], cc.ice);
+        sedi_icon_sphere(qi_prime, Ni, res[qi_idx], res[Ni_idx], res[qi_out_idx], res[Ni_out_idx], cc.ice);
 #ifdef TRACE_QI
-        std::cout << "N before: " << before_n << " and after " << res[Ni_idx] << "\n";
-        std::cout << "sedi icon sphere dqi " << res[qi_idx] - before_q << ", dNi " << res[Ni_idx] - before_n << "\n";
+        if(trace)
+        {
+            std::cout << "N before: " << before_n << " and after " << res[Ni_idx] << "\n";
+            std::cout << "sedi icon sphere dqi " << res[qi_idx] - before_q << ", dNi " << res[Ni_idx] - before_n << "\n";
+        }
 #endif
     }
 
@@ -1695,9 +1910,10 @@ void sedimentation_explicit(
         auto before_q = res[qs_idx];
         auto before_n = res[Ns_idx];
 #endif
-        sedi_icon_sphere(qs_prime, Ns, res[qs_idx], res[Ns_idx], res[qs_out_idx], cc.snow);
+        sedi_icon_sphere(qs_prime, Ns, res[qs_idx], res[Ns_idx], res[qs_out_idx], res[Ns_out_idx], cc.snow);
 #ifdef TRACE_QS
-        std::cout << "sedi icon sphere dqs " << res[qs_idx] - before_q << ", dNs " << res[Ns_idx] - before_n << "\n";
+        if(trace)
+            std::cout << "sedi icon sphere dqs " << res[qs_idx] - before_q << ", dNs " << res[Ns_idx] - before_n << "\n";
 #endif
     }
     // sedi_icon_sphere graupel
@@ -1713,7 +1929,7 @@ void sedimentation_explicit(
             auto before_q = res[qg_idx];
             auto before_n = res[Ng_idx];
 #endif
-            sedi_icon_sphere(qg_prime, Ng, res[qg_idx], res[Ng_idx], res[qg_out_idx], cc.graupel);
+            sedi_icon_sphere(qg_prime, Ng, res[qg_idx], res[Ng_idx], res[qg_out_idx], res[Ng_out_idx], cc.graupel);
 #ifdef TRACE_QG
 
             // auto differ = (res[qg_idx].getValue() - before_q.getValue());
@@ -1724,6 +1940,7 @@ void sedimentation_explicit(
             // res[Ng_idx] = res[Ng_idx]+differ;
             sediment_q = sediment_q + res[qg_idx].getValue() - before_q.getValue();
             sediment_n = sediment_n + res[Ng_idx].getValue() - before_n.getValue();
+            if(trace)
                 std::cout << "sedi icon sphere dqg " << res[qg_idx] - before_q
                       << ", dNg " << res[Ng_idx] - before_n << "\n";
 #endif
@@ -1741,9 +1958,10 @@ void sedimentation_explicit(
             auto before_q = res[qh_idx];
             auto before_n = res[Nh_idx];
 #endif
-            sedi_icon_sphere(qh_prime, Nh, res[qh_idx], res[Nh_idx], res[qh_out_idx], cc.hail);
+            sedi_icon_sphere(qh_prime, Nh, res[qh_idx], res[Nh_idx], res[qh_out_idx], res[Nh_out_idx], cc.hail);
 #ifdef TRACE_QH
-            std::cout << "sedi icon sphere dqh " << res[qh_idx] - before_q << ", dNh " << res[Nh_idx] - before_n << "\n";
+            if(trace)
+                std::cout << "sedi icon sphere dqh " << res[qh_idx] - before_q << ", dNh " << res[Nh_idx] - before_n << "\n";
 #endif
         }
     }
@@ -1784,7 +2002,8 @@ void evaporation(
         // Vapor
         res[qv_idx] += delta_q;
 #ifdef TRAE_QV
-        std::cout << "Evaporation from melting ice particles dqv " << delta_q << "\n";
+        if(trace)
+            std::cout << "Evaporation from melting ice particles dqv " << delta_q << "\n";
 #endif
         resq -= delta_q;
         // subl? Actually not used here but for the broader simulation
@@ -1903,26 +2122,34 @@ void vapor_dep_relaxation(
             res[qh_idx] += dep_hail;
             res[qv_idx] -= dep_sum;
 #ifdef TRACE_QI
-            std::cout << "Depos growth dqi " << dep_ice << "\n";
-            std::cout << "qvsidiff " << qvsidiff << "\n";
-            std::cout << "qi_prime " << qi_prime << "\n";
+            if(trace)
+            {
+                std::cout << "Depos growth dqi " << dep_ice << "\n";
+                std::cout << "qvsidiff " << qvsidiff << "\n";
+                std::cout << "qi_prime " << qi_prime << "\n";
+            }
 #endif
 #ifdef TRACE_QS
-            std::cout << "Depos growth dqs " << dep_snow << "\n";
+            if(trace)
+                std::cout << "Depos growth dqs " << dep_snow << "\n";
 #endif
 #ifdef TRACE_QG
-
-            std::cout << "Depos growth dqg " << dep_graupel << "\n";
-            std::cout << "also dqv " << -dep_sum << "\n";
-            std::cout << "xfac " << xfac
-                      << "\ntau_g_i " << tau_g_i
-                      << "\n-qi_prime " << -qi_prime << "\n";
+            if(trace)
+            {
+                std::cout << "Depos growth dqg " << dep_graupel << "\n";
+                std::cout << "also dqv " << -dep_sum << "\n";
+                std::cout << "xfac " << xfac
+                          << "\ntau_g_i " << tau_g_i
+                          << "\n-qi_prime " << -qi_prime << "\n";
+            }
 #endif
 #ifdef TRACE_QH
-            std::cout << "Depos growth dqh " << dep_hail << "\n";
+            if(trace)
+                std::cout << "Depos growth dqh " << dep_hail << "\n";
 #endif
 #ifdef TRACE_QV
-            std::cout << "Depos growth dqv " << -dep_sum << "\n";
+            if(trace)
+                std::cout << "Depos growth dqv " << -dep_sum << "\n";
 #endif
 
             dep_rate_ice += dep_ice;
@@ -2056,10 +2283,12 @@ void particle_particle_collection(
         res[qi_idx] -= delta[1];
         res[Ni_idx] -= delta[0];
 #ifdef TRACE_QI
-        std::cout << "particle_collection snow dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
+        if(trace)
+            std::cout << "particle_collection snow dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
 #endif
 #ifdef TRACE_QS
-        std::cout << "particle_collection snow dqs " << delta[1] << "\n";
+        if(trace)
+            std::cout << "particle_collection snow dqs " << delta[1] << "\n";
 #endif
     }
 
@@ -2079,7 +2308,8 @@ void particle_particle_collection(
         delta_n = min(delta_n, Ng);
         res[Ng_idx] -= delta_n;
 #ifdef TRACE_QG
-        std::cout << "graupel self collection dNg " << -delta_n << "\n";
+        if(trace)
+            std::cout << "graupel self collection dNg " << -delta_n << "\n";
 #endif
     }
 
@@ -2093,10 +2323,12 @@ void particle_particle_collection(
         res[qi_idx] -= delta[1];
         res[Ni_idx] -= delta[0];
 #ifdef TRACE_QG
-        std::cout << "ice-graupel collision dqg " << delta[1] << "\n";
+        if(trace)
+            std::cout << "ice-graupel collision dqg " << delta[1] << "\n";
 #endif
 #ifdef TRACE_QI
-        std::cout << "ice-graupel collision dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
+        if(trace)
+            std::cout << "ice-graupel collision dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
 #endif
     }
 
@@ -2110,10 +2342,12 @@ void particle_particle_collection(
         res[qs_idx] -= delta[1];
         res[Ns_idx] -= delta[0];
 #ifdef TRACE_QG
-        std::cout << "snow-graupel collision dqg " << delta[1] << "\n";
+        if(trace)
+            std::cout << "snow-graupel collision dqg " << delta[1] << "\n";
 #endif
 #ifdef TRACE_QS
-        std::cout << "snow-graupel collision dqs " << -delta[1] << ", dNs " << -delta[0] << "\n";
+        if(trace)
+            std::cout << "snow-graupel collision dqs " << -delta[1] << ", dNs " << -delta[0] << "\n";
 #endif
     }
 }
@@ -2175,10 +2409,12 @@ void graupel_hail_conv(
             res[Nh_idx] += conv_n;
 
 #ifdef TRACE_QG
-            std::cout << "conversion graupel->hail dqg " << - conv_q << ", dNq " << - conv_n << "\n";
+            if(trace)
+                std::cout << "conversion graupel->hail dqg " << - conv_q << ", dNq " << - conv_n << "\n";
 #endif
 #ifdef TRACE_QH
-            std::cout << "conversion graupel->hail dqh " <<  conv_q << ", dNh " << conv_n << "\n";
+            if(trace)
+                std::cout << "conversion graupel->hail dqh " <<  conv_q << ", dNh " << conv_n << "\n";
 #endif
         }
     }
@@ -2209,10 +2445,12 @@ void hail_collision(
         res[qi_idx] -= delta[1];
         res[Ni_idx] -= delta[0];
 #ifdef TRACE_QH
-        std::cout << "ice-hail collision dqh " << delta[1] << "\n";
+        if(trace)
+            std::cout << "ice-hail collision dqh " << delta[1] << "\n";
 #endif
 #ifdef TRACE_QI
-        std::cout << "ice-hail collision dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
+        if(trace)
+            std::cout << "ice-hail collision dqi " << -delta[1] << ", dNi " << -delta[0] << "\n";
 #endif
     }
 
@@ -2225,10 +2463,12 @@ void hail_collision(
         res[qs_idx] -= delta[1];
         res[Ns_idx] -= delta[0];
 #ifdef TRACE_QH
-        std::cout << "snow-hail collision dqh " << delta[1] << "\n";
+        if(trace)
+            std::cout << "snow-hail collision dqh " << delta[1] << "\n";
 #endif
 #ifdef TRACE_QS
-        std::cout << "snow-hail collision dqs " << -delta[1] << ", dNs " << -delta[0] << "\n";
+        if(trace)
+            std::cout << "snow-hail collision dqs " << -delta[1] << ", dNs " << -delta[0] << "\n";
 #endif
     }
 }
@@ -2392,10 +2632,12 @@ void ice_riming(
             res[Nc_idx] -= rime_n;
 
 #ifdef TRACE_QC
-            std::cout << "ice riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
+            if(trace)
+                std::cout << "ice riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QI
-            std::cout << "ice riming dqi " << rime_q << "\n";
+            if(trace)
+                std::cout << "ice riming dqi " << rime_q << "\n";
 #endif
             if(T_prime < T_freeze && ice_multiplication)
             {
@@ -2406,7 +2648,8 @@ void ice_riming(
                 // Ice N
                 res[Ni_idx] += C_mult * mult_1 * mult_2 * rime_q;
 #ifdef TRACE_QI
-                std::cout << "ice riming with mult dNi " <<  C_mult * mult_1 * mult_2 * rime_q << "\n";
+                if(trace)
+                    std::cout << "ice riming with mult dNi " <<  C_mult * mult_1 * mult_2 * rime_q << "\n";
 #endif
             }
         }
@@ -2422,10 +2665,12 @@ void ice_riming(
             // Rain N
             res[Nr_idx] -= rime_n;
 #ifdef TRACE_QR
-            std::cout << "ice rain riming dqr " << -rime_q << ", dNr " << -rime_n << "\n";
+            if(trace)
+                std::cout << "ice rain riming dqr " << -rime_q << ", dNr " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QI
-            std::cout << "ice rain riming A dqi " << rime_q << "\n";
+            if(trace)
+                std::cout << "ice rain riming A dqi " << rime_q << "\n";
 #endif
             if(T_prime < T_freeze && ice_multiplication)
             {
@@ -2469,11 +2714,13 @@ void ice_riming(
             // Cloud N
             res[Nc_idx] -= rime_n;
 #ifdef TRACE_QC
-            if(abs(rime_q) > 0)
-                std::cout << "ice cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
+            if(trace)
+                if(abs(rime_q) > 0)
+                    std::cout << "ice cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QI
-            std::cout << "ice cloud riming dqi " << rime_q << "\n";
+            if(trace)
+                std::cout << "ice cloud riming dqi " << rime_q << "\n";
 #endif
             if(T_prime < T_freeze && ice_multiplication)
             {
@@ -2484,7 +2731,8 @@ void ice_riming(
                 // Ice N
                 res[Ni_idx] += C_mult * mult_1 * mult_2 * rime_q;
 #ifdef TRACE_QI
-                std::cout << "ice cloud rimingwith mult dNi " << C_mult * mult_1 * mult_2 * rime_q << "\n";
+                if(trace)
+                    std::cout << "ice cloud rimingwith mult dNi " << C_mult * mult_1 * mult_2 * rime_q << "\n";
 #endif
             }
 
@@ -2518,10 +2766,12 @@ void ice_riming(
                 // Graupel N
                 res[Ng_idx] += conv_n;
 #ifdef TRACE_QI
-                std::cout << "conv ice->graupel dqi " << -conv_q << ", dNi " << -conv_n << "\n";
+                if(trace)
+                    std::cout << "conv ice->graupel dqi " << -conv_q << ", dNi " << -conv_n << "\n";
 #endif
 #ifdef TRACE_QG
-                std::cout << "conv ice->graupel dqg " << conv_q << ", dNg " << conv_n << "\n";
+                if(trace)
+                    std::cout << "conv ice->graupel dqg " << conv_q << ", dNg " << conv_n << "\n";
 #endif
             }
         }
@@ -2542,10 +2792,12 @@ void ice_riming(
             // Rain N
             res[Nr_idx] -= rime_n;
 #ifdef TRACE_QR
-            std::cout << "ice rain riming dqr " << -rime_qr << ", dNr " << -rime_n << "\n";
+            if(trace)
+                std::cout << "ice rain riming dqr " << -rime_qr << ", dNr " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QI
-            std::cout << "ice rain riming B dqi " << -rime_qi << ", dNi " << -rime_n << "\n";
+            if(trace)
+                std::cout << "ice rain riming B dqi " << -rime_qi << ", dNi " << -rime_n << "\n";
 #endif
             float_t mult_q = 0.0;
             float_t mult_n = 0.0;
@@ -2584,10 +2836,12 @@ void ice_riming(
                 // Rain N
                 res[Nr_idx] += rime_qr/x_r;
 #ifdef TRACE_QR
-                std::cout << "Melting dqr " << rime_qr << ", dNr " << rime_qr/x_r << "\n";
+                if(trace)
+                    std::cout << "Melting dqr " << rime_qr << ", dNr " << rime_qr/x_r << "\n";
 #endif
 #ifdef TRACE_QI
-                std::cout << "Melting dqi " << rime_qi << ", dNi " << rime_n << "\n";
+                if(trace)
+                    std::cout << "Melting dqi " << rime_qi << ", dNi " << rime_n << "\n";
 #endif
                 delta_e = latent_heat_melt(T_prime) * rime_qi / specific_heat_ice(T_prime);
                 // Melting, cooling
@@ -2609,10 +2863,12 @@ void ice_riming(
                 // Graupel N
                 res[Ng_idx] += rime_n;
 #ifdef TRACE_QG
-                std::cout << "Melting with mult dqg " << rime_qi + rime_qr - mult_q << ", dNg " << rime_n << "\n";
+                if(trace)
+                    std::cout << "Melting with mult dqg " << rime_qi + rime_qr - mult_q << ", dNg " << rime_n << "\n";
 #endif
 #ifdef TRACE_QI
-                std::cout << "Melting with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
+                if(trace)
+                    std::cout << "Melting with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
 #endif
             }
         }
@@ -2659,11 +2915,13 @@ void snow_riming(
             // Cloud N
             res[Nc_idx] -= rime_n;
 #ifdef TRACE_QC
-            if(abs(rime_q) > 0)
-                std::cout << "Snow riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
+            if(trace)
+                if(abs(rime_q) > 0)
+                    std::cout << "Snow riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QS
-            std::cout << "Snow riming dqs " << rime_q << "\n";
+            if(trace)
+                std::cout << "Snow riming dqs " << rime_q << "\n";
 #endif
             float_t delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
             // Melting, cooling
@@ -2690,10 +2948,12 @@ void snow_riming(
                 // Snow
                 res[qs_idx] -= mult_q;
 #ifdef TRACE_QI
-                std::cout << "Snow riming with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
+                if(trace)
+                    std::cout << "Snow riming with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
 #endif
 #ifdef TRACE_QS
-                std::cout << "Snow riming with mult dqs " << -mult_q << "\n";
+                if(trace)
+                    std::cout << "Snow riming with mult dqs " << -mult_q << "\n";
 #endif
             }
         }
@@ -2709,10 +2969,12 @@ void snow_riming(
             // Rain N
             res[Nr_idx] -= rime_n;
 #ifdef TRACE_QR
-            std::cout << "snow rain riming dqr " << -rime_q << ", dNr " << -rime_n << "\n";
+            if(trace)
+                std::cout << "snow rain riming dqr " << -rime_q << ", dNr " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QS
-            std::cout << "Snow rain riming dqs " << rime_q << "\n";
+            if(trace)
+                std::cout << "Snow rain riming dqs " << rime_q << "\n";
 #endif
             float_t delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
             // Melting, cooling
@@ -2739,10 +3001,12 @@ void snow_riming(
                 // Snow
                 res[qs_idx] -= mult_q;
 #ifdef TRACE_QI
-                std::cout << "snow rain riming with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
+                if(trace)
+                    std::cout << "snow rain riming with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
 #endif
 #ifdef TRACE_QS
-                std::cout << "snow rain riming with mult dqs " << -mult_q << "\n";
+                if(trace)
+                    std::cout << "snow rain riming with mult dqs " << -mult_q << "\n";
 #endif
             }
         }
@@ -2767,11 +3031,13 @@ void snow_riming(
             // Cloud N
             res[Nc_idx] -= rime_n;
 #ifdef TRACE_QC
-            if(abs(rime_q) > 0)
-                std::cout << "snow depos dqc " << -rime_q << ", dNc " << -rime_n << "\n";
+            if(trace)
+                if(abs(rime_q) > 0)
+                    std::cout << "snow depos dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QS
-            std::cout << "snow depos dqs " << rime_q << "\n";
+            if(trace)
+                std::cout << "snow depos dqs " << rime_q << "\n";
 #endif
             float_t delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
             // Melting, cooling
@@ -2799,10 +3065,12 @@ void snow_riming(
                 // Snow
                 res[qs_idx] -= mult_q;
 #ifdef TRACE_QI
-                std::cout << "snow depos with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
+                if(trace)
+                    std::cout << "snow depos with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
 #endif
 #ifdef TRACE_QS
-                std::cout << "snow depos with mult dqs " << -mult_q << "\n";
+                if(trace)
+                    std::cout << "snow depos with mult dqs " << -mult_q << "\n";
 #endif
             }
 
@@ -2827,10 +3095,12 @@ void snow_riming(
                 // Graupel N
                 res[Ng_idx] += conv_n;
 #ifdef TRACE_QS
-                std::cout << "conversion snow->graupel dqs " << -conv_q << ", dNs " << -conv_n << "\n";
+                if(trace)
+                    std::cout << "conversion snow->graupel dqs " << -conv_q << ", dNs " << -conv_n << "\n";
 #endif
 #ifdef TRACE_QG
-                std::cout << "conversion snow->graupel dqg " << conv_q << ", dNg " << conv_n << "\n";
+                if(trace)
+                    std::cout << "conversion snow->graupel dqg " << conv_q << ", dNg " << conv_n << "\n";
 #endif
             }
         }
@@ -2851,10 +3121,12 @@ void snow_riming(
             // Rain N
             res[Nr_idx] -= rime_n;
 #ifdef TRACE_QR
-            std::cout << "snow rain riming 2 dqr " << -rime_qr << ", dNr " << -rime_n << "\n";
+            if(trace)
+                std::cout << "snow rain riming 2 dqr " << -rime_qr << ", dNr " << -rime_n << "\n";
 #endif
 #ifdef TRACE_QS
-            std::cout << "snow rain riming 2 dqs " << -rime_qs << ", dNs " << -rime_n << "\n";
+            if(trace)
+                std::cout << "snow rain riming 2 dqs " << -rime_qs << ", dNs " << -rime_n << "\n";
 #endif
             float_t delta_e = latent_heat_melt(T_prime) * rime_qr / specific_heat_ice(T_prime);
             // Melting, cooling
@@ -2893,10 +3165,12 @@ void snow_riming(
                 // Rain N
                 res[Nr_idx] += rime_qr/x_r;
 #ifdef TRACE_QR
-                std::cout << "More melting dqr " << rime_qr << ", dNr " << rime_qr/x_r << "\n";
+                if(trace)
+                    std::cout << "More melting dqr " << rime_qr << ", dNr " << rime_qr/x_r << "\n";
 #endif
 #ifdef TRACE_QS
-                std::cout << "More melting dqs " << rime_qs << ", dNs " << rime_n << "\n";
+                if(trace)
+                    std::cout << "More melting dqs " << rime_qs << ", dNs " << rime_n << "\n";
 #endif
                 float_t delta_e = latent_heat_melt(T_prime) * rime_qr
                                             / specific_heat_ice(T_prime);
@@ -2919,10 +3193,12 @@ void snow_riming(
                 // Graupel N
                 res[Ng_idx] += rime_n;
 #ifdef TRACE_QI
-                std::cout << "More melting with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
+                if(trace)
+                    std::cout << "More melting with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
 #endif
 #ifdef TRACE_QG
-                std::cout << "More melting with mult dqg " << rime_qs + rime_qr - mult_q << ", dNg " << rime_n << "\n";
+                if(trace)
+                    std::cout << "More melting with mult dqg " << rime_qs + rime_qr - mult_q << ", dNg " << rime_n << "\n";
 #endif
             }
         }
@@ -2986,8 +3262,9 @@ void particle_cloud_riming(
         // Cloud N
         res[Nc_idx] -= rime_n;
 #ifdef TRACE_QC
-        if(abs(rime_q) > 0)
-            std::cout << "Particle cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
+        if(trace)
+            if(abs(rime_q) > 0)
+                std::cout << "Particle cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
         float_t delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
         // Sublimination, cooling
@@ -3014,7 +3291,8 @@ void particle_cloud_riming(
             res[Ni_idx] += mult_n;
             resq -= mult_q;
 #ifdef TRACE_QI
-            std::cout << "Particle cloud riming dqi " << mult_q << ", dNi " << mult_n << "\n";
+            if(trace)
+                std::cout << "Particle cloud riming dqi " << mult_q << ", dNi " << mult_n << "\n";
 #endif
         }
 
@@ -3034,7 +3312,8 @@ void particle_cloud_riming(
             // Rain N
             res[Nr_idx] += melt_n;
 #ifdef TRACE_QR
-            std::cout << "enhancement of melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+            if(trace)
+                std::cout << "enhancement of melting dqr " << melt_q << ", dNr " << melt_n << "\n";
 #endif
             float_t delta_e = latent_heat_melt(T_prime) * melt_q
                                         / specific_heat_ice(T_prime);
@@ -3100,7 +3379,8 @@ void particle_rain_riming(
         // Rain N
         res[Nr_idx] -= rime_n;
 #ifdef TRACE_QR
-        std::cout << "particle rain riming dqr " << -rime_q << ", dNr " << -rime_n << "\n";
+        if(trace)
+            std::cout << "particle rain riming dqr " << -rime_q << ", dNr " << -rime_n << "\n";
 #endif
         float_t delta_e = latent_heat_melt(T_prime) * rime_q / specific_heat_ice(T_prime);
         // Melting, cooling
@@ -3126,7 +3406,8 @@ void particle_rain_riming(
             // Ice N
             res[Ni_idx] += mult_n;
 #ifdef TRACE_QI
-        std::cout << "particle rain riming dqi " << mult_q << ", dNi " << mult_n << "\n";
+            if(trace)
+                std::cout << "particle rain riming dqi " << mult_q << ", dNi " << mult_n << "\n";
         // std::cout << "particle rain riming mult_q: " << mult_n * cc.ice.min_x_riming.getValue()
         //           << ", rime_q: " << rime_q.getValue()
         //           << ", ice_min_x: " << cc.ice.min_x_riming.getValue() << "\n";
@@ -3150,7 +3431,8 @@ void particle_rain_riming(
             // Rain N
             res[Nr_idx] += melt_n;
 #ifdef TRACE_QR
-            std::cout << "particle rain riming enhancement dqr " << melt_q << ", dNr " << melt_n << "\n";
+            if(trace)
+                std::cout << "particle rain riming enhancement dqr " << melt_q << ", dNr " << melt_n << "\n";
 #endif
             float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
             // Melting, cooling
@@ -3160,6 +3442,8 @@ void particle_rain_riming(
             else
                 res[lat_heat_idx] -= delta_e;
         }
+
+        // TODO: Add shedding
     }
 }
 
@@ -3205,11 +3489,11 @@ void rain_freeze(
                 float_t lam = pow(cc.rain.g1/cc.rain.g2*x_r, -cc.rain.mu);
                 float_t N0 = cc.rain.mu * Nr_tmp * pow(lam, cc.rain.nm1) / cc.rain.g1;
                 float_t tmp = lam*xmax_ice;
-                fr_n_i = N0/pow(cc.rain.mu*lam, cc.rain.nm1) * table_r1.look_lo(tmp);
-                fr_q_i = N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
+                fr_n_i = N0/(cc.rain.mu*pow(lam, cc.rain.nm1)) * table_r1.look_lo(tmp);
+                fr_q_i = N0/(cc.rain.mu*pow(lam, cc.rain.nm2)) * table_r2.look_lo(tmp);
                 tmp = lam*xmax_gr;
-                fr_n_g = N0/pow(cc.rain.mu*lam, cc.rain.nm1) * table_r1.look_lo(tmp);
-                fr_q_g = N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
+                fr_n_g = N0/(cc.rain.mu*pow(lam, cc.rain.nm1)) * table_r1.look_lo(tmp);
+                fr_q_g = N0/(cc.rain.mu*pow(lam, cc.rain.nm2)) * table_r2.look_lo(tmp);
 
                 fr_n_h = fr_n - fr_n_g;
                 fr_q_h = fr_q - fr_q_g;
@@ -3230,12 +3514,12 @@ void rain_freeze(
                     float_t N0 = cc.rain.mu * Nr_tmp * pow(lam, cc.rain.nm1) / cc.rain.g1;
 
                     float_t tmp = lam*xmax_ice;
-                    fr_n_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
-                    fr_q_i = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
+                    fr_n_i = j_het * N0/(cc.rain.mu*pow(lam, cc.rain.nm2)) * table_r2.look_lo(tmp);
+                    fr_q_i = j_het * N0/(cc.rain.mu*pow(lam, cc.rain.nm3)) * table_r3.look_lo(tmp);
 
                     tmp = lam*xmax_gr;
-                    fr_n_g = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm2) * table_r2.look_lo(tmp);
-                    fr_q_g = j_het * N0/pow(cc.rain.mu*lam, cc.rain.nm3) * table_r3.look_lo(tmp);
+                    fr_n_g = j_het * N0/(cc.rain.mu*pow(lam, cc.rain.nm2)) * table_r2.look_lo(tmp);
+                    fr_q_g = j_het * N0/(cc.rain.mu*pow(lam, cc.rain.nm3)) * table_r3.look_lo(tmp);
 
                     fr_n_h = fr_n - fr_n_g;
                     fr_q_h = fr_q - fr_q_g;
@@ -3249,9 +3533,10 @@ void rain_freeze(
                         = fr_n_h = fr_q_h = fr_n_tmp = fr_q_tmp = 0.0;
                 }
 #if defined(TRACE_QR) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
-                std::cout << "Hetero j_het: " << j_het
-                          << ", val: " << b_HET * ( exp(a_HET * (T_freeze-T_prime)) - 1.0 )
-                          << "\n";
+                if(trace)
+                    std::cout << "Hetero j_het: " << j_het
+                              << ", val: " << b_HET * ( exp(a_HET * (T_freeze-T_prime)) - 1.0 )
+                              << "\n";
 #endif
             }
             fr_n = fr_n * fr_n_tmp;
@@ -3269,16 +3554,18 @@ void rain_freeze(
         res[Nr_idx] -= fr_n;
         // res[Nr_idx] = Nr_tmp - fr_n;
 #if defined(TRACE_QR) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
-        std::cout << "qr_prime <= q_crit_fr " << (qr_prime <= q_crit_fr)
-                  << "\nT_prime < T_freeze " << (T_prime < T_freeze)
-                  << "\nT_prime < T_f " << (T_prime < T_f)
-                  << "\nfr_q " << -fr_q
-                  << "\nfr_q_i " << fr_q_i
-                  << "\nfr_q_tmp " << fr_q_tmp
-                  << "\n";
+        if(trace)
+            std::cout << "qr_prime <= q_crit_fr " << (qr_prime <= q_crit_fr)
+                      << "\nT_prime < T_freeze " << (T_prime < T_freeze)
+                      << "\nT_prime < T_f " << (T_prime < T_f)
+                      << "\nfr_q " << -fr_q
+                      << "\nfr_q_i " << fr_q_i
+                      << "\nfr_q_tmp " << fr_q_tmp
+                      << "\n";
 #endif
 #ifdef TRACE_QR
-        std::cout << "Freezing dqr " << -fr_q << ", dNr " << -fr_n << "\n";
+        if(trace)
+            std::cout << "Freezing dqr " << -fr_q << ", dNr " << -fr_n << "\n";
 #endif
 
         // Snow
@@ -3286,7 +3573,8 @@ void rain_freeze(
         // Snow N
         res[Ns_idx] += fr_n_i;
 #ifdef TRACE_QS
-        std::cout << "Freezing dqs " << fr_q_i << ", dNs " << fr_n_i << "\n";
+        if(trace)
+            std::cout << "Freezing dqs " << fr_q_i << ", dNs " << fr_n_i << "\n";
 #endif
 
         // Graupel
@@ -3294,15 +3582,17 @@ void rain_freeze(
         // Graupel N
         res[Ng_idx] += fr_n_g;
 #ifdef TRACE_QG
-        std::cout << "Freezing dqg " << fr_q_g << ", dNg " << fr_n_g << "\n";
+        if(trace)
+            std::cout << "Freezing dqg " << fr_q_g << ", dNg " << fr_n_g << "\n";
 #endif
 
         // Hail
-        // res[qh_idx] += fr_q_h;
+        res[qh_idx] += fr_q_h;
         // Hail N
-        // res[Nh_idx] += fr_n_h;
+        res[Nh_idx] += fr_n_h;
 #ifdef TRACE_QH
-        std::cout << "Freezing dqh " << fr_q_h << ", dNh " << fr_n_h << "\n";
+        if(trace)
+            std::cout << "Freezing dqh " << fr_q_h << ", dNh " << fr_n_h << "\n";
 #endif
 
         float_t delta_e = latent_heat_melt(T_prime) * fr_q
@@ -3347,10 +3637,13 @@ void ice_melting(
         res[qi_idx] = -melt_q;
         // Ice N
         res[Ni_idx] = -melt_n;
-    #ifdef TRACE_QI
-        std::cout << "ice melting: qi and Ni set to 0.0\n";
-        std::cout << "ice_melting dqi " << -melt_q << ", dNi " << -melt_n << "\n";
-    #endif
+#ifdef TRACE_QI
+        if(trace)
+        {
+            std::cout << "ice melting: qi and Ni set to 0.0\n";
+            std::cout << "ice_melting dqi " << -melt_q << ", dNi " << -melt_n << "\n";
+        }
+#endif
         // melt into cloud or rain
         if(x_i > cc.cloud.max_x)
         {
@@ -3358,9 +3651,10 @@ void ice_melting(
             res[qr_idx] += melt_q;
             // Rain N
             res[Nr_idx] += melt_n;
-    #ifdef TRACE_QR
-            std::cout << "ice melting dqr " << melt_q << ", dNr " << melt_n << "\n";
-    #endif
+#ifdef TRACE_QR
+            if(trace)
+                std::cout << "ice melting dqr " << melt_q << ", dNr " << melt_n << "\n";
+#endif
         } else
         {
             // Cloud
@@ -3368,10 +3662,11 @@ void ice_melting(
 
             // Cloud N
             res[Nc_idx] += melt_n;
-    #ifdef TRACE_QC
-            if(abs(melt_q) > 0)
-                std::cout << "ice melting dqc " << melt_q << ", dNc " << melt_n << "\n";
-    #endif
+#ifdef TRACE_QC
+            if(trace)
+                if(abs(melt_q) > 0)
+                    std::cout << "ice melting dqc " << melt_q << ", dNc " << melt_n << "\n";
+#endif
         }
 
         float_t delta_e = latent_heat_melt(T_prime) * melt_q / specific_heat_ice(T_prime);
@@ -3513,46 +3808,49 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     // codi::RealReverse s_sw = e_d / p_sat - 1.0; // super saturation over water
     codi::RealReverse s_si = e_d / p_sat_ice - 1.0; // super saturation over ice
 #if defined(TRACE_SAT) ||defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QV) || defined(TRACE_QR) || defined(TRACE_QC) || defined(TRACE_QG) || defined(TRACE_QH)
-    codi::RealReverse x = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_depo, cc.rain.max_x);
-    codi::RealReverse q_sat = Epsilon*( p_sat/(p_prime - p_sat) );
-    codi::RealReverse q_sat_2 = p_sat/(Rv*T_prime);
-    codi::RealReverse p_sat_cosmo = saturation_pressure_water(T_prime);
-    codi::RealReverse q_sat_cosmo = Epsilon*( p_sat_cosmo/(p_prime - p_sat_cosmo) );
-    codi::RealReverse q_sat_2_cosmo = p_sat_cosmo/(Rv*T_prime);
-    std::cout << "\np_sat: " << p_sat.getValue()
-              << "\np_sat_ice: " << p_sat_ice.getValue()
-              << "\nS_i: " << S_i.getValue()
-              << "\ns_sw: " << s_sw.getValue()
-              << "\ns_si: " << s_si.getValue()
-              << "\nS: " << S.getValue()
-              << "\nS_calc : " << e_d / p_sat
-              << "\nS_with_q_sat2: " << q_sat_2 * Rv * T_prime / p_sat
-              << "\nS_calc_cosmo: " << e_d/p_sat_cosmo
-              << "\nS_with_q_sat_cosmo: " << q_sat_cosmo * Rv * T_prime / p_sat_cosmo
-              << "\nS_with_q_sat2_cosmo: " << q_sat_2_cosmo * Rv * T_prime / p_sat_cosmo
-              << "\nDotzek : " << (r_const/r1_const) / (p_prime/p_sat + (r_const/r1_const)-1)
-              << "\nqv: " << qv_prime.getValue()
-              << "\nqv_sat: " <<  q_sat
-              << "\nqv_sat1: " << p_sat/(Rv*T_prime)
-              << "\nq_sat2: " << q_sat_2
-              << "\nS_qv_sat: " << q_sat * Rv * T_prime / p_sat
-              << "\nqc: " << qc_prime.getValue()
-              << "\nqr: " << qr_prime.getValue()
-              << "\nqi: " << qi_prime.getValue()
-              << "\nqg: " << qg_prime.getValue()
-              << "\nqs: " << qs_prime.getValue()
-              << "\nNc: " << Nc.getValue()
-              << "\nNr: " << Nr.getValue()
-              << "\nmeanNr: " << qr_prime/x
-              << "\nmaxNr: " << qr_prime/cc.rain.min_x_depo
-              << "\nminNr: " << qr_prime/cc.rain.max_x
-              << "\nNi: " << Ni.getValue()
-              << "\nNg: " << Ng.getValue()
-              << "\nNs: " << Ns.getValue()
-              << "\nconvert_S_to_qv: " << convert_S_to_qv(p_prime.getValue(), T_prime.getValue(), S.getValue())
-              << "\nconvert_s_to_qv(S=1): " << convert_S_to_qv(p_prime.getValue(), T_prime.getValue(), codi::RealReverse(1).getValue())
-              << "\nconvert_qv_to_S: " << convert_qv_to_S(p_prime.getValue(), T_prime.getValue(), qv_prime.getValue())
-              << "\n";
+    if(trace)
+    {
+        codi::RealReverse x = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_depo, cc.rain.max_x);
+        codi::RealReverse q_sat = Epsilon*( p_sat/(p_prime - p_sat) );
+        codi::RealReverse q_sat_2 = p_sat/(Rv*T_prime);
+        codi::RealReverse p_sat_cosmo = saturation_pressure_water(T_prime);
+        codi::RealReverse q_sat_cosmo = Epsilon*( p_sat_cosmo/(p_prime - p_sat_cosmo) );
+        codi::RealReverse q_sat_2_cosmo = p_sat_cosmo/(Rv*T_prime);
+        std::cout << "\np_sat: " << p_sat.getValue()
+                  << "\np_sat_ice: " << p_sat_ice.getValue()
+                  << "\nS_i: " << S_i.getValue()
+                  << "\ns_sw: " << s_sw.getValue()
+                  << "\ns_si: " << s_si.getValue()
+                  << "\nS: " << S.getValue()
+                  << "\nS_calc : " << e_d / p_sat
+                  << "\nS_with_q_sat2: " << q_sat_2 * Rv * T_prime / p_sat
+                  << "\nS_calc_cosmo: " << e_d/p_sat_cosmo
+                  << "\nS_with_q_sat_cosmo: " << q_sat_cosmo * Rv * T_prime / p_sat_cosmo
+                  << "\nS_with_q_sat2_cosmo: " << q_sat_2_cosmo * Rv * T_prime / p_sat_cosmo
+                  << "\nDotzek : " << (r_const/r1_const) / (p_prime/p_sat + (r_const/r1_const)-1)
+                  << "\nqv: " << qv_prime.getValue()
+                  << "\nqv_sat: " <<  q_sat
+                  << "\nqv_sat1: " << p_sat/(Rv*T_prime)
+                  << "\nq_sat2: " << q_sat_2
+                  << "\nS_qv_sat: " << q_sat * Rv * T_prime / p_sat
+                  << "\nqc: " << qc_prime.getValue()
+                  << "\nqr: " << qr_prime.getValue()
+                  << "\nqi: " << qi_prime.getValue()
+                  << "\nqg: " << qg_prime.getValue()
+                  << "\nqs: " << qs_prime.getValue()
+                  << "\nNc: " << Nc.getValue()
+                  << "\nNr: " << Nr.getValue()
+                  << "\nmeanNr: " << qr_prime/x
+                  << "\nmaxNr: " << qr_prime/cc.rain.min_x_depo
+                  << "\nminNr: " << qr_prime/cc.rain.max_x
+                  << "\nNi: " << Ni.getValue()
+                  << "\nNg: " << Ng.getValue()
+                  << "\nNs: " << Ns.getValue()
+                  << "\nconvert_S_to_qv: " << convert_S_to_qv(p_prime.getValue(), T_prime.getValue(), S.getValue())
+                  << "\nconvert_s_to_qv(S=1): " << convert_S_to_qv(p_prime.getValue(), T_prime.getValue(), codi::RealReverse(1).getValue())
+                  << "\nconvert_qv_to_S: " << convert_qv_to_S(p_prime.getValue(), T_prime.getValue(), qv_prime.getValue())
+                  << "\n";
+    }
 #endif
 
     codi::RealReverse rime_rate_qc, rime_rate_qr, rime_rate_qi, rime_rate_qs;
@@ -3571,15 +3869,26 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     cc.ice.rho_v = exp(-rho_vel * rho_inter);
     cc.snow.rho_v = exp(-rho_vel * rho_inter);
 #ifdef TRACE_QR
-    codi::RealReverse virt = 1 + (Rv/Ra - 1) * qv_prime - qc_prime;
-    std::cout << "rho_0 :" << rho_0
-              << "\np: " << p_prime
-              << "\nT: " << T_prime
-              << "\nS: " << S
-              << "\nrho: " << compute_rhoh(p_prime, T_prime, S)
-              << "\nrho_icon: " << p_prime/(Ra*T_prime*virt)
-              << "\nrho_inter: " << rho_inter
-              << "\nrain rho_v: " << cc.rain.rho_v << "\n";
+    if(trace)
+    {
+        codi::RealReverse virt = 1 + (Rv/Ra - 1) * qv_prime - qc_prime;
+        auto visc = [] (double T)
+        {
+            return 2.92332e-6 + 5.20712e-8 * T;
+        };
+        auto rho_v_cosmo = visc(293.16)/visc(T.getValue());
+        std::cout << "rho_0 :" << rho_0
+                  << "\np: " << p_prime
+                  << "\nT: " << T_prime
+                  << "\nS: " << S
+                  << "\nrho: " << compute_rhoh(p_prime, T_prime, S)
+                  << "\nrho_icon: " << p_prime/(Ra*T_prime*virt)
+                  << "\nrho_inter: " << rho_inter
+                  << "\nrho_v_cosmo: " << rho_v_cosmo
+                  << "\nrho_v no pow: " << rho_0/compute_rhoh(p_prime, T_prime, S)
+                  << "\nrho_v: " << cc.cloud.rho_v
+                  << "\nrain rho_v: " << cc.rain.rho_v << "\n";
+    }
 #endif
 
     const double EPSILON = 1.0e-20;
@@ -3696,7 +4005,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         res[qh_idx], res[Nh_idx], cc.coeffs_hcr, cc.hail, res, cc);
 
 #ifdef TRACE_QH
-    std::cout << "hail cloud riming dqh " << res[qh_idx]-qh_before << ", dNh " << res[Nh_idx]-Nh_before << "\n";
+    if(trace)
+        std::cout << "hail cloud riming dqh " << res[qh_idx]-qh_before << ", dNh " << res[Nh_idx]-Nh_before << "\n";
     qh_before = res[qh_idx];
     Nh_before = res[Nh_idx];
 #endif
@@ -3704,7 +4014,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     particle_rain_riming(qr_prime, Nr, T_prime, qh_prime, Nh,
         res[qh_idx], res[Nh_idx], cc.coeffs_hrr, cc.hail, res, cc);
 #ifdef TRACE_QH
-    std::cout << "hail rain riming dqh " << res[qh_idx]-qh_before << ", dNh " << res[Nh_idx]-Nh_before << "\n";
+    if(trace)
+        std::cout << "hail rain riming dqh " << res[qh_idx]-qh_before << ", dNh " << res[Nh_idx]-Nh_before << "\n";
 #endif
 #ifdef TRACE_QG
     auto qg_before = res[qg_idx];
@@ -3715,7 +4026,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         res[qg_idx], res[Ng_idx], cc.coeffs_gcr, cc.graupel, res, cc);
 
 #ifdef TRACE_QG
-    std::cout << "graupel cloud riming dqg " << res[qg_idx]-qg_before << ", dNg " << res[Ng_idx]-Ng_before << "\n";
+    if(trace)
+        std::cout << "graupel cloud riming dqg " << res[qg_idx]-qg_before << ", dNg " << res[Ng_idx]-Ng_before << "\n";
     qg_before = res[qg_idx];
     Ng_before = res[Ng_idx];
 #endif
@@ -3723,7 +4035,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     particle_rain_riming(qr_prime, Nr, T_prime, qg_prime, Ng,
         res[qg_idx], res[Ng_idx], cc.coeffs_grr, cc.graupel, res, cc);
 #ifdef TRACE_QG
-    std::cout << "graupel rain riming dqg " << res[qg_idx]-qg_before << ", dNg " << res[Ng_idx]-Ng_before << "\n";
+    if(trace)
+        std::cout << "graupel rain riming dqg " << res[qg_idx]-qg_before << ", dNg " << res[Ng_idx]-Ng_before << "\n";
 #endif
 
     rain_freeze(qr_prime, Nr, T_prime, dt, res, cc);
@@ -3745,7 +4058,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     evaporation(qv_prime, e_d, p_sat, s_sw, T_prime,
         qs_prime, Ns, res[qs_idx], cc.snow, res);
 #ifdef TRACE_QS
-    std::cout << "evaporation dqs " << res[qs_idx]-qs_before << "\n";
+    if(trace)
+        std::cout << "evaporation dqs " << res[qs_idx]-qs_before << "\n";
 #endif
 #ifdef TRACE_QG
     qg_before = res[qg_idx];
@@ -3753,7 +4067,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     evaporation(qv_prime, e_d, p_sat, s_sw, T_prime,
         qg_prime, Ng, res[qg_idx], cc.graupel, res);
 #ifdef TRACE_QG
-    std::cout << "evaporation dqg " << res[qg_idx]-qg_before << "\n";
+    if(trace)
+        std::cout << "evaporation dqg " << res[qg_idx]-qg_before << "\n";
 #endif
 #ifdef TRACE_QI
     auto qi_before = res[qi_idx];
@@ -3761,7 +4076,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     evaporation(qv_prime, e_d, p_sat, s_sw, T_prime,
         qi_prime, Ni, res[qi_idx], cc.ice, res);
 #ifdef TRACE_QI
-    std::cout << "evaporation dqi " << res[qi_idx]-qi_before << "\n";
+    if(trace)
+        std::cout << "evaporation dqi " << res[qi_idx]-qi_before << "\n";
 #endif
 
     ////////////// Warm rain, ie autoconversion, accretion and rain rain collision
@@ -3798,10 +4114,12 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     // std::cout << "before limits dqr " << res[qr_idx] << ", dNr " << res[Nr_idx] << "\n";
 #endif
 #ifdef TRACE_QC
-    std::cout << "before saturation adj dqc " << res[qc_idx] << ", dNc " << res[Nc_idx] << "\n";
+    if(trace)
+        std::cout << "before saturation adj dqc " << res[qc_idx] << ", dNc " << res[Nc_idx] << "\n";
 #endif
 #ifdef TRACE_QV
-    std::cout << "before saturation adj dqv " << res[qv_idx] << ", dNv " << res[Nv_idx] << "\n";
+    if(trace)
+        std::cout << "before saturation adj dqv " << res[qv_idx] << ", dNv " << res[Nv_idx] << "\n";
 #endif
 #ifdef TRACE_QG
     // std::cout << "before limits dqg " << res[qg_idx] << ", dNg " << res[Ng_idx] << "\n";
@@ -3810,14 +4128,16 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     // std::cout << "before limits dqh " << res[qh_idx] << ", dNh " << res[Nh_idx] << "\n";
 #endif
     // TODO: Try sat_adj at every 20s for everything and adjust temperature. Then do microphysics.
-    saturation_adjust(T_prime, p_prime, p_sat, qv_prime, qc_prime, res, ref.qref);
+    // saturation_adjust(T_prime, p_prime, p_sat, qv_prime, qc_prime, res, ref.qref);
     // saturation_adjust_qv(T_prime, p_prime, p_sat, qv_prime, qc_prime, res, ref.qref);
+    saturation_adjust_meteo(T_prime, p_prime, p_sat, qv_prime, qc_prime, res, ref.qref);
 
 #ifdef TRACE_QC
     // std::cout << "before limits dqc " << res[qc_idx] << ", dNc " << res[Nc_idx] << "\n";
 #endif
 #ifdef TRACE_QV
-    std::cout << "end dqv " << res[qv_idx] << ", dNv " << res[Nv_idx] << "\n";
+    if(trace)
+        std::cout << "end dqv " << res[qv_idx] << ", dNv " << res[Nv_idx] << "\n";
 #endif
     // Set hard limits for particle number
     // double sign = (res[qc_idx] < 0) ? -1 : 1;
@@ -3841,22 +4161,28 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     //     abs(res[qh_idx])/cc.hail.min_x);
 
 #ifdef TRACE_QI
-    std::cout << "end dqi " << res[qi_idx] << ", dNi " << res[Ni_idx] << "\n";
+    if(trace)
+        std::cout << "end dqi " << res[qi_idx] << ", dNi " << res[Ni_idx] << "\n";
 #endif
 #ifdef TRACE_QS
-    std::cout << "end dqs " << res[qs_idx] << ", dNs " << res[Ns_idx] << "\n";
+    if(trace)
+        std::cout << "end dqs " << res[qs_idx] << ", dNs " << res[Ns_idx] << "\n";
 #endif
 #ifdef TRACE_QR
-    std::cout << "end dqr " << res[qr_idx] << ", dNr " << res[Nr_idx] << "\n";
+    if(trace)
+        std::cout << "end dqr " << res[qr_idx] << ", dNr " << res[Nr_idx] << "\n";
 #endif
 #ifdef TRACE_QC
-    std::cout << "end dqc " << res[qc_idx] << ", dNc " << res[Nc_idx] << "\n";
+    if(trace)
+        std::cout << "end dqc " << res[qc_idx] << ", dNc " << res[Nc_idx] << "\n";
 #endif
 #ifdef TRACE_QG
-    std::cout << "end dqg " << res[qg_idx] << ", dNg " << res[Ng_idx] << "\n";
+    if(trace)
+        std::cout << "end dqg " << res[qg_idx] << ", dNg " << res[Ng_idx] << "\n";
 #endif
 #ifdef TRACE_QH
-    std::cout << "end dqh " << res[qh_idx] << ", dNh " << res[Nh_idx] << "\n";
+    if(trace)
+        std::cout << "end dqh " << res[qh_idx] << ", dNh " << res[Nh_idx] << "\n";
 #endif
 
     ////// Get back to non-prime
@@ -3930,31 +4256,35 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     res[S_idx] = (S/p)*res[p_idx] - (S/qv)*( 1.0 - (qv/(C15+qv)) )*( C9*qc_third*(S-1.0)
         + (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0) ) - C16*(S/(T*T))*res[T_idx];
 #ifdef TRACE_ENV
-    std::cout << "Pressure " << res[p_idx] << "\n"
-              << "Temperat " << res[T_idx] << "\n"
-              << "ascent   " << res[w_idx] << "\n"
-              << "height   " << res[z_idx] << "\n";
-    std::cout << "w_prime " << w_prime << "\n"
-              << "z_prime " << z_prime << "\n"
-              << "zref " << ref.zref << "\n";
-    std::cout << "qsat_prime       " << qsat_prime << "\n"
-              << "qsat_prime COSMO " << (Epsilon - psat_prime)/(p_prime-(1-Epsilon)*psat_prime) << "\n";
-    std::cout << "qv_prime " << qv_prime << "\n"
-              << "qc_prime " << qc_prime << "\n";
-    std::cout << "T_prime " << T_prime << "\n";
+    if(trace)
+    {
+        std::cout << "Pressure " << res[p_idx] << "\n"
+                  << "Temperat " << res[T_idx] << "\n"
+                  << "ascent   " << res[w_idx] << "\n"
+                  << "height   " << res[z_idx] << "\n";
+        std::cout << "w_prime " << w_prime << "\n"
+                  << "z_prime " << z_prime << "\n"
+                  << "zref " << ref.zref << "\n";
+        std::cout << "qsat_prime       " << qsat_prime << "\n"
+                  << "qsat_prime COSMO " << (Epsilon - psat_prime)/(p_prime-(1-Epsilon)*psat_prime) << "\n";
+        std::cout << "qv_prime " << qv_prime << "\n"
+                  << "qc_prime " << qc_prime << "\n";
+        std::cout << "T_prime " << T_prime << "\n";
+    }
 #endif
 #ifdef TRACE_SAT
-    std::cout << "End: dS " << res[S_idx]
-              << ", S " << S
-              << ", S_calc " << (qv_prime * Rv * T_prime
-                    / saturation_pressure_water_icon(T_prime) )
-              << ", times dt: " << res[S_idx] * dt
-              << ", Evaporation: " << (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0)
-              << ", Condensation: " << C9*qc_third*(S-1.0)
-              << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
-              << ", First part: " << (S/p)*res[p_idx]
-              << ", Middle part: " << - (S/qv)*( 1.0 - (qv/(C15+qv)) )
-              << "\n";
+    if(trace)
+        std::cout << "End: dS " << res[S_idx]
+                  << ", S " << S
+                  << ", S_calc " << (qv_prime * Rv * T_prime
+                        / saturation_pressure_water_icon(T_prime) )
+                  << ", times dt: " << res[S_idx] * dt
+                  << ", Evaporation: " << (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0)
+                  << ", Condensation: " << C9*qc_third*(S-1.0)
+                  << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
+                  << ", First part: " << (S/p)*res[p_idx]
+                  << ", Middle part: " << - (S/qv)*( 1.0 - (qv/(C15+qv)) )
+                  << "\n";
 #endif
 }
 
