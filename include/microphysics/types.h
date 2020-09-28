@@ -643,7 +643,7 @@ struct model_constants_t{
   double t_end;             /*!< End time for the simulation. */
   double dt_prime;          /*!< Timestep size in seconds for the simulation. */
   double dt;                /*!< Timestep size for the simulation. */
-  double dt_traject_prime;  /*!< Timestep size in seconds of the trajectory from the netCDF file. */
+  double dt_traject_prime;  /*!< Timestep size of the trajectory from the netCDF file. */
   double dt_traject;        /*!< Timestep size of the trajectory from the netCDF file. */
   uint64_t num_steps;       /*!< Number of timesteps to read from the netCDF file. */
 
@@ -706,10 +706,11 @@ struct model_constants_t{
  */
 struct nc_parameters_t{
 
-    uint32_t n_trajectories = 30; /*!< Number of trajectories in the netCDF file. */
-    uint32_t n_timesteps = 7922; /*!< Number of timesteps in the netCDF file. */
+    uint64_t n_trajectories = 30; /*!< Number of trajectories in the netCDF file. */
+    uint64_t n_timesteps = 7922; /*!< Number of timesteps in the netCDF file. */
 #ifdef MET3D
     double z, time_abs;
+    uint64_t time_idx = 0;
 #else
     std::vector<double> z;
 #endif
@@ -779,6 +780,10 @@ struct global_args_t{
 
   int progress_index_flag; /*!< Progressbar is updated every x iterations. */
   char* progress_index_string;
+#ifdef MET3D
+  int delay_start_flag; /*!< Simulation starts at this time relative to ascend. */
+  char* delay_start_string;
+#endif
 };
 
 
@@ -792,6 +797,9 @@ struct input_parameters_t{
   double dt_prime; /*!< Timestep size in seconds for the simulation. */
   double dt_traject_prime; /*!< Timestep size in seconds of the trajectory in the netCDF file. */
   double dt_traject; /*!< Timestep size of the trajectory in the netCDF file. */
+#ifdef MET3D
+  double start_time;
+#endif
   int snapshot_index; /*!< Save a snapshot every snapshot_index iteration. */
   /**
    * Number of timesteps for the simulation between two

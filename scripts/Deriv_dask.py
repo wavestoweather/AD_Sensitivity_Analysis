@@ -1170,7 +1170,7 @@ class Deriv_dask:
     def plot_grid_one_param(self, out_param, y_axis, x_axis="timestep",
         twin_axis=None, by=None, hue="type", col_wrap=4, trajectories=None,
         width=1280, height=800, log=[False, False],
-        vertical_mark=None, datashade=False, prefix=None, alpha=1,
+        vertical_mark=None, cross_mark=None, datashade=False, prefix=None, alpha=1,
         plot_path="pics/", yticks=10, decimals=-3, rolling_avg=20,
         kind="scatter", **kwargs):
         """
@@ -1217,6 +1217,12 @@ class Deriv_dask:
         vertical_mark : dic of list
             A dictionary containing column names and values where a horizontal
             line should be created whenever the x_axis value intersects
+            with the given value, i.e. {"T": [273, 235]} with x_axis in time
+            marks all times, where a trajectory reached that temperature.
+            Recommended to use with a single trajectory.
+        cross_mark : dic of list
+            A dictionary containing column names and values where a cross
+            should be created whenever the x_axis value intersects
             with the given value, i.e. {"T": [273, 235]} with x_axis in time
             marks all times, where a trajectory reached that temperature.
             Recommended to use with a single trajectory.
@@ -1359,7 +1365,6 @@ class Deriv_dask:
                         for v in vertical_mark[col]:
                             if y == col:
                                 df_sort = df_tmp.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
-
                             else:
                                 # Works well as long as dataframe is smaller than ~ 30k elements
                                 df_sort = df_tmp.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
@@ -1386,6 +1391,83 @@ class Deriv_dask:
                                     ).opts(
                                         color="black",
                                         ylim=(min_y-del_y*0.1, max_y+del_y*0.1)) * text
+                if cross_mark is not None:
+                    def add_marks(df_tmp, marks):
+                        for col in cross_mark:
+                            df_mark = df_tmp.loc[df_tmp[col].isin(cross_mark[col])]
+                            if marks is None:
+                                marks = df_mark.hvplot.scatter(
+                                    x=x_axis,
+                                    y=y,
+                                    color="black",
+                                    marker="x",
+                                    datashade=datashade,
+                                    legend=False,
+                                ).opts(
+                                    apply_ranges=False).opts(opts.Scatter(s=16))
+                            else:
+                                marks = marks * df_mark.hvplot.scatter(
+                                    x=x_axis,
+                                    y=y,
+                                    color="black",
+                                    marker="x",
+                                    datashade=datashade,
+                                    legend=False,
+                                ).opts(
+                                    apply_ranges=False).opts(opts.Scatter(s=16))
+                        return marks
+
+                    if by is not None:
+                        for byby in df_group[by].unique():
+                            df_tmp = df_group.loc[df_group[by] == byby]
+                            marks = add_marks(df_tmp, marks)
+                    else:
+                        df_tmp = df_group
+                        marks = add_marks(df_tmp, marks)
+
+
+                        # for v in cross_mark[col]:
+                        #     if y == col:
+                        #         df_sort = df_tmp.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
+                        #     else:
+                        #         # Works well as long as dataframe is smaller than ~ 30k elements
+                        #         df_sort = df_tmp.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
+                        #     col_values = np.sort(df_sort[col].values)
+
+                        #     for index, row in df_sort.iterrows():
+                        #         row_col = row[col]
+
+                        #         if np.abs(row_col-v) > 1.0:
+                        #             break
+                        #         print(row)
+                        #         if marks is None:
+                        #             marks = row.hvplot.scatter(
+                        #                 x=x_axis,
+                        #                 y=y,
+                        #                 color="black",
+                        #                 marker="x",
+                        #                 datashade=datashade,
+                        #                 legend=False,
+                        #             ).opts(
+                        #                 apply_ranges=False).opts(opts.Scatter(s=16))
+                        #             # marks = hv.Scatter(
+                        #             #     y=row[y_axis],
+                        #             #     x=row[x_axis],
+                        #             #     label=col + "=" + str(v)
+                        #             # ).opts(
+                        #             #     color="black",
+                        #             #     marker="x",
+                        #             #     s=16)
+                        #         else:
+                        #             marks = marks * row.hvplot.scatter(
+                        #                 x=x_axis,
+                        #                 y=y,
+                        #                 color="black",
+                        #                 marker="x",
+                        #                 datashade=datashade,
+                        #                 legend=False,
+                        #             ).opts(
+                        #                 apply_ranges=False).opts(opts.Scatter(s=16))
                 if not datashade:
                     cmap_values = []
                     for ty in types:

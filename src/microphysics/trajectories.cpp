@@ -114,10 +114,19 @@ int main(int argc, char** argv)
     nc_parameters_t nc_params;
     size_t lenp;
     if(read_init_netcdf(y_init, nc_params, lenp, ref_quant,
+#ifdef MET3D
+        input.start_time,
+#endif
         global_args.input_file, input.traj, cc) != 0)
     {
         return 1;
     }
+#ifdef MET3D
+    if(write_attributes(input.INPUT_FILENAME, input.OUTPUT_FILENAME) != 0)
+    {
+        return 1;
+    }
+#endif
 
     setCoefficients(y_init[0] , y_init[1], cc);
 

@@ -83,6 +83,7 @@ for f_this in file_list:
     min_rows = len(df_sim_mapped.data.index)
     crop_data = False
     for key in df_dic_mapped.data:
+        # print(df_dic_mapped.data[key].timestep.unique())
         this_rows = len(df_dic_mapped.data[key].index)
         if this_rows < min_rows:
             min_rows = this_rows
@@ -141,5 +142,6 @@ for f_this in file_list:
     print("Saving done in {} s".format(t2-t))
 
 print("Done with following trajectories:\n{}".format(processed_trajectories))
-print("Failed the following trajectories:\n{}".format(failed_trajectories))
+if len(failed_trajectories) > 0:
+    print("Failed the following trajectories:\n{}".format(failed_trajectories))
 print("Finished")

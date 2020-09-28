@@ -103,8 +103,11 @@ void print_input_parameters(input_parameters_t &in)
   std::cout << "\n"
 	    << "Technical input parameters:\n"
 	    << "---------------------------\n"
-        << "Time to integrate: " << in.t_end_prime << " Second\n"
-        << "Timestep: " << in.dt_prime << " Second\n"
+        << "Time to integrate: " << in.t_end_prime << " Seconds\n"
+        << "Timestep: " << in.dt_prime << " Seconds\n"
+#ifdef MET3D
+        << "Start time (relative to ascend): " << in.start_time << " Seconds\n"
+#endif
 	    << "Snapshot index: " << in.snapshot_index << "\n"
         << "Write index: " << in.write_index << "\n"
         << "Progressbar index: " << in.progress_index << "\n"
@@ -144,6 +147,9 @@ void display_usage()
         << "-r: Set index of trajectory.\n"
         << "-w: Write index for the snapshots.\n"
         << "-p: Index for updating the progressbar.\n"
+#ifdef MET3D
+        << "-n: No simulation until given time (relative to ascend).\n"
+#endif
 	    << "-?: This help message.\n"
 	    << std::endl;
 }

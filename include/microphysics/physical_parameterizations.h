@@ -1411,22 +1411,6 @@ void setup_model_constants(
     // cc.delta2 = ( 0.5*cc.dr + 2.5 - cc.nbr )/( cc.br + 1.0 - cc.nbr );
     // cc.zeta = 1.0;
 
-    // Numerics
-    cc.t_end_prime = input.t_end_prime;
-    cc.t_end = input.t_end_prime/ref_quant.tref;
-    // Time of the substeps
-
-    cc.dt = input.dt_prime/ref_quant.tref;
-    cc.dt_prime = input.dt_prime;
-    cc.dt_traject_prime = cc.dt_traject * ref_quant.tref;
-    // The trajectories are calculated with 20 s timesteps.
-    cc.num_sub_steps = (floor( 20.0/cc.dt ) < 1) ? 1 : floor( 20.0/cc.dt );
-
-    // Evaluate the general performance constants
-    cc.dt_half = cc.dt*0.5;
-    cc.dt_third = cc.dt/3.0;
-    cc.dt_sixth = cc.dt/6.0;
-
     // ==================================================
     // Set rain constants
     // See init_2mom_scheme_once in mo_2mom_mcrph_main.f90

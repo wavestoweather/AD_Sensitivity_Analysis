@@ -72,6 +72,66 @@ int main(int argc, char** argv)
         init_nc_parameters(nc_params, lenp, n_timesteps);
 
         netCDF::NcFile datafile(file, netCDF::NcFile::read);
+#ifdef MET3D
+        // Read global attributes
+        std::cout << "Global attributes:\n";
+        auto attributes = datafile.getAtts();
+        for(auto & name_attr: attributes)
+        {
+            auto attribute = name_attr.second;
+            netCDF::NcType type = attribute.getType();
+            if(type.getName() == "double")
+            {
+                std::vector<float> values(1);
+                attribute.getValues(values.data());
+                std::cout << attribute.getName() << "\n\t"
+                            << "type: " << type.getName() << "\n\t"
+                            << "values: " << values[0] << "\n";
+            } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
+            {
+                std::vector<int> values(1);
+                attribute.getValues(values.data());
+                std::cout << attribute.getName() << "\n\t"
+                          << "type: " << type.getName() << "\n\t"
+                          << "values: " << values[0] << "\n";
+            }
+        }
+
+        // Read attributes from each column
+        std::cout << "Non global attributes:\n";
+        auto vars = datafile.getVars();
+        for(auto & name_var: vars)
+        {
+            auto var = name_var.second;
+            auto name = name_var.first;
+            std::cout << name << ":\n";
+            auto attributes = var.getAtts();
+            for(auto & name_attr: attributes)
+            {
+                auto attribute = name_attr.second;
+                netCDF::NcType type = attribute.getType();
+                if(type.getName() == "double" || type.getName() == "float")
+                {
+                    std::vector<double> values(1);
+                    attribute.getValues(values.data());
+                    std::cout << attribute.getName() << "=" << values[0] << "\n";
+                } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
+                {
+                    std::vector<int> values(1);
+                    attribute.getValues(values.data());
+                    std::cout << attribute.getName() << "=" << values[0] << "\n";
+                } else if(type.getName() == "char")
+                {
+                    std::string values;
+                    attribute.getValues(values);
+                    std::cout << attribute.getName() << "=" << values << "\n";
+                }
+            }
+        }
+
+
+#endif
+
         load_nc_parameters_var(nc_params, datafile);
         netCDF::NcVar id_var;
 #ifdef MET3D
