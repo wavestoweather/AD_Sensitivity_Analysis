@@ -77,7 +77,6 @@ void print_constants(model_constants_t &cc)
 
   std::cout << "\nModel constants:\n"
 	    << "----------------\n"
-	    << "\n"
 	    << "Final integration time: " << cc.t_end_prime << " seconds\n"
         << "Nondimensional final integration time: " << cc.t_end << "\n"
 	    << "Timestep: " << cc.dt_prime << " seconds\n"

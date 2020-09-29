@@ -23,39 +23,37 @@
 #define qv_idx 6            /*!< Water vapor mixing ratio index */
 #define Nc_idx 7            /*!< Number of cloud droplets index */
 #define Nr_idx 8            /*!< Number of rain droplets index */
-#define Nv_idx 9            /*!< Dummy */
-#define qi_idx 10           /*!< Ice mixing ratio index */
-#define Ni_idx 11           /*!< Number of ice crystals index */
-#define vi_idx 12           /*!< Vertical acceleration of ice index */
-#define qs_idx 13           /*!< Snow mixing ratio index */
-#define Ns_idx 14           /*!< Number of snow particles index */
-#define qg_idx 15           /*!< Graupel mixing ratio index */
-#define Ng_idx 16           /*!< Number of graupel particles index */
-#define qh_idx 17           /*!< Hail mixing ratio index */
-#define Nh_idx 18           /*!< Number of hail particles index */
-#define qi_out_idx 19       /*!< Ice mixing ratio precipitation index */
-#define qs_out_idx 20       /*!< Snow mixing ratio precipitation index */
-#define qr_out_idx 21       /*!< Rain mixing ratio precipitation index */
-#define qg_out_idx 22       /*!< Graupel mixing ratio precipitation index */
-#define qh_out_idx 23       /*!< Hail mixing ratio precipitation index */
-#define lat_heat_idx 24     /*!< Latent heating index */
-#define lat_cool_idx 25     /*!< Latent cooling index */
-#define Ni_out_idx 26       /*!< Ice particles precipitation index */
-#define Ns_out_idx 27       /*!< Snow particles ratio precipitation index */
-#define Nr_out_idx 28       /*!< Rain droplets ratio precipitation index */
-#define Ng_out_idx 29       /*!< Graupel particles ratio precipitation index */
-#define Nh_out_idx 30       /*!< Hail particles ratio precipitation index */
-#define z_idx 31            /*!< Altitude */
-#define n_inact_idx 32      /*!< Number of inactive nuclei (ie due to being activated before) */
-#define depo_idx 33         /*!< Number of deposited nuclei */
-#define sub_idx 34          /*!< Sublimination number */
+#define qi_idx 9           /*!< Ice mixing ratio index */
+#define Ni_idx 10           /*!< Number of ice crystals index */
+#define qs_idx 11           /*!< Snow mixing ratio index */
+#define Ns_idx 12           /*!< Number of snow particles index */
+#define qg_idx 13           /*!< Graupel mixing ratio index */
+#define Ng_idx 14           /*!< Number of graupel particles index */
+#define qh_idx 15           /*!< Hail mixing ratio index */
+#define Nh_idx 16           /*!< Number of hail particles index */
+#define qi_out_idx 17       /*!< Ice mixing ratio precipitation index */
+#define qs_out_idx 18       /*!< Snow mixing ratio precipitation index */
+#define qr_out_idx 19       /*!< Rain mixing ratio precipitation index */
+#define qg_out_idx 20       /*!< Graupel mixing ratio precipitation index */
+#define qh_out_idx 21       /*!< Hail mixing ratio precipitation index */
+#define lat_heat_idx 22     /*!< Latent heating index */
+#define lat_cool_idx 23     /*!< Latent cooling index */
+#define Ni_out_idx 24       /*!< Ice particles precipitation index */
+#define Ns_out_idx 25       /*!< Snow particles ratio precipitation index */
+#define Nr_out_idx 26       /*!< Rain droplets ratio precipitation index */
+#define Ng_out_idx 27       /*!< Graupel particles ratio precipitation index */
+#define Nh_out_idx 28       /*!< Hail particles ratio precipitation index */
+#define z_idx 29            /*!< Altitude */
+#define n_inact_idx 30      /*!< Number of inactive nuclei (ie due to being activated before) */
+#define depo_idx 31         /*!< Number of deposited nuclei */
+#define sub_idx 32          /*!< Sublimination number */
 
 #if defined(RK4_ONE_MOMENT)
-#define num_comp 10         /*!< Number of output elements of a model */
+#define num_comp 9         /*!< Number of output elements of a model */
 #define num_par 12          /*!< Number of gradients */
 
 #elif defined(RK4ICE) || defined(RK4NOICE)
-#define num_comp 35         /*!< Number of output elements of a model */
+#define num_comp 33         /*!< Number of output elements of a model */
 #define num_par 56*6+17     /*!< Number of gradients */
 
 #endif
@@ -89,7 +87,7 @@ bool trace = true;
  * Used for header files of output parameters.
  */
 const std::vector<std::string> output_par_idx =
-    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr", "Nv"};
+    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr"};
 
 /**
  * Used for header files of gradients.
@@ -102,8 +100,8 @@ const std::vector<std::string> output_grad_idx =
  * Used for header files of output parameters.
  */
 const std::vector<std::string> output_par_idx =
-    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr", "Nv",
-     "qi", "Ni", "vi", "qs", "Ns", "qg", "Ng", "qh", "Nh",
+    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr",
+     "qi", "Ni", "qs", "Ns", "qg", "Ng", "qh", "Nh",
      "qiout", "qsout", "qrout", "qgout", "qhout",
      "latent_heat", "latent_cool", "Niout", "Nsout", "Nrout",
      "Ngout", "Nhout", "z", "Inactive", "deposition", "sublimination"};

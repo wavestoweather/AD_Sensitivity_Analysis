@@ -214,6 +214,7 @@ void init_nc_parameters(
     nc.n_timesteps = n_timesteps;
 #if defined MET3D
     nc.w.resize(2);
+    nc.time_abs.resize(n_timesteps);
 #else
     nc.w.resize(2);
     nc.z.resize(4);
@@ -261,7 +262,10 @@ void load_nc_parameters_var(
     nc.qi_var       = datafile.getVar("QI");
     nc.qs_var       = datafile.getVar("QS");
     nc.time_rel_var = datafile.getVar("time_after_ascent");
-    nc.w_var   = datafile.getVar("w");
+    nc.time_abs_var = datafile.getVar("time");
+    nc.w_var        = datafile.getVar("w");
+    nc.S_var        = datafile.getVar("S");
+    nc.type_var     = datafile.getVar("type");
 #else
     nc.p_var        = datafile.getVar("p");
     nc.t_var        = datafile.getVar("t");
@@ -290,12 +294,7 @@ void load_nc_parameters_var(
     // Potential vorticity (German: Wirbelstaerke)
     // nc.pot_vortic   = datafile.getVar("POT_VORTIC")
 #endif
-#ifdef MET3D
-    nc.S_var        = datafile.getVar("S");
-    nc.type_var     = datafile.getVar("type");
-    nc.time_rel_var = datafile.getVar("time_after_ascent");
-    nc.time_abs_var = datafile.getVar("time");
-#endif
+
 #if defined WCB2 || MET3D
     nc.qg_var       = datafile.getVar("QG");
     nc.QIin_var     = datafile.getVar("QI_IN");
@@ -494,7 +493,13 @@ void load_nc_parameters(
     nc.QGout    = abs(nc.QGout);
 #endif
 
-#if !defined WCB && !defined WCB2
+#ifdef MET3D
+    nc.S_var.getVar(startp, countp, &nc.S);
+    nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
+    nc.type_var.getVar(startp, countp, &nc.type);
+    nc.w[0]     /= ref_quant.wref;
+    nc.w[1]     /= ref_quant.wref;
+#elif !defined WCB && !defined WCB2
     nc.w_var.getVar(startp, countp, nc.w.data());
     countp[1]++;
     nc.w_var.getVar(startp, countp, nc.w.data());
@@ -502,16 +507,6 @@ void load_nc_parameters(
 
     nc.w[0]     /= ref_quant.wref;
     nc.w[1]     /= ref_quant.wref;
-
-    // I am not sure why, but those values can be negative...
-    nc.QRin     = abs(nc.QRin);
-    nc.QRout    = abs(nc.QRout);
-    nc.QIin     = abs(nc.QIin);
-    nc.QIout    = abs(nc.QIout);
-    nc.QSin     = abs(nc.QSin);
-    nc.QSout    = abs(nc.QSout);
-    nc.QGin     = abs(nc.QGin);
-    nc.QGout    = abs(nc.QGout);
 #elif defined WCB
     nc.qc /= 1.0e6;
     nc.qr /= 1.0e6;
@@ -524,10 +519,6 @@ void load_nc_parameters(
     nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
     nc.S_var.getVar(startp, countp, &nc.S);
     nc.S /= 100; // to percentage
-#elif defined MET3D
-    nc.S_var.getVar(startp, countp, &nc.S);
-    nc.time_abs_var.getVar(startp, countp, &nc.time_abs);
-    nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
 #else
     // WCB 2
     // Calculate w by getting the z-coordinates
@@ -790,22 +781,22 @@ int write_attributes(
         {
             std::vector<float> values(1);
             attribute.getValues(values.data());
-            outfile << "name=" << attribute.getName() << "\n\t"
-                        << "type=" << type.getName() << "\n\t"
+            outfile << "name=" << attribute.getName() << "\n"
+                        << "type=" << type.getName() << "\n"
                         << "values=" << values[0] << "\n";
         } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
         {
             std::vector<int> values(1);
             attribute.getValues(values.data());
-            outfile << "name=" << attribute.getName() << "\n\t"
-                        << "type=" << type.getName() << "\n\t"
+            outfile << "name=" << attribute.getName() << "\n"
+                        << "type=" << type.getName() << "\n"
                         << "values=" << values[0] << "\n";
         } else if(type.getName() == "char")
         {
             std::string values;
             attribute.getValues(values);
-            outfile << "name=" << attribute.getName() << "\n\t"
-                    << "type=" << type.getName() << "\n\t"
+            outfile << "name=" << attribute.getName() << "\n"
+                    << "type=" << type.getName() << "\n"
                     << "values=" << values << "\n";
         }
     }
@@ -817,7 +808,7 @@ int write_attributes(
     {
         auto var = name_var.second;
         auto name = name_var.first;
-        outfile << "column=" << name << ":\n";
+        outfile << "column=" << name << "\n";
         auto attributes = var.getAtts();
         for(auto & name_attr: attributes)
         {
@@ -887,11 +878,12 @@ int write_headers(
     out_tmp
         << "time,"
         << "time_after_ascent,"
-        << "type,";
+        << "type,"
+        << "ensemble,";
 #endif
-        for(uint32_t i=0; i<output_par_idx.size(); ++i)
-            out_tmp << output_par_idx[i]  <<
-                ((i < output_par_idx.size()-1) ? "," : "\n");
+    for(uint32_t i=0; i<output_par_idx.size(); ++i)
+        out_tmp << output_par_idx[i]  <<
+            ((i < output_par_idx.size()-1) ? "," : "\n");
 
     std::string basename = "_diff_";
     std::string fname;
@@ -931,7 +923,8 @@ int write_headers(
         out_diff_tmp[ii]
             << "time,"
             << "time_after_ascent,"
-            << "type,";
+            << "type,"
+            << "ensemble,";
 #endif
         for(uint32_t i=0; i<output_grad_idx.size(); ++i)
             out_diff_tmp[ii] << output_grad_idx[i]  <<
@@ -1001,9 +994,15 @@ int read_init_netcdf(
         uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1;
 
         cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+
         init_nc_parameters(nc_params, lenp, n_timesteps);
         netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
         load_nc_parameters_var(nc_params, datafile);
+
+#ifdef MET3D
+        // Get the time coordinates
+        nc_params.time_abs_var.getVar(nc_params.time_abs.data());
+#endif
 
         std::vector<size_t> startp, countp;
         countp.push_back(1);
@@ -1118,7 +1117,6 @@ int read_init_netcdf(
         y_init[Ng_idx] = 0;
   #endif
 #endif
-        y_init[Nv_idx] = 0;
 #if defined(RK4ICE) || defined(RK4NOICE)
     #ifdef MET3D
         y_init[z_idx] = nc_params.z;
@@ -1217,6 +1215,9 @@ void read_netcdf_write_stream(
     std::vector<codi::RealReverse> &inflow,
     std::vector<int> &ids,
     int &traj_id,
+#ifdef MET3D
+    uint32_t &ensemble,
+#endif
     const uint32_t t)
 {
 #if defined WCB || defined WCB2
@@ -1240,6 +1241,11 @@ void read_netcdf_write_stream(
 #endif
     id_var.getVar(ids.data());
     traj_id = ids[input.traj];
+#ifdef MET3D
+    id_var = datafile.getVar("ensemble");
+    id_var.getVar(ids.data());
+    ensemble = ids[input.ensemble];
+#endif
     // Set values from a given trajectory
 
     if(t==0 || input.start_over_env)
@@ -1330,7 +1336,6 @@ void read_netcdf_write_stream(
         denom = (cc.rain.max_x - cc.rain.min_x) / 2 + cc.rain.min_x;
         y_single_old[Nr_idx] = y_single_old[qr_idx] * ref_quant.qref / (denom); //*10e2);  // Nr
         denom = cc.cloud.min_x / 2.0;
-        y_single_old[Nv_idx] = y_single_old[qv_idx] * ref_quant.qref / (denom); //*10e2);  // Nv
     #if defined(RK4ICE)
         denom = (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x;
         y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
@@ -1411,9 +1416,10 @@ void read_netcdf_write_stream(
 #endif
 #ifdef MET3D
         // time, time after ascent, type
-        out_tmp << nc_params.time_abs << ","
+        out_tmp << nc_params.time_abs[t] << ","
                 << nc_params.time_rel << ","
-                << nc_params.type << ",";
+                << nc_params.type << ","
+                << ensemble << ",";
 #endif
         for(int ii = 0 ; ii < num_comp; ii++)
             out_tmp << y_single_old[ii] <<
@@ -1448,9 +1454,10 @@ void read_netcdf_write_stream(
                                 << nc_params.slan_600 << ",";
 #endif
 #if defined MET3D
-        out_diff_tmp[ii] << nc_params.time_abs << ","
-                            << nc_params.time_rel << ","
-                            << nc_params.type << ",";
+        out_diff_tmp[ii] << nc_params.time_abs[t] << ","
+                         << nc_params.time_rel << ","
+                         << nc_params.type << ","
+                         << ensemble << ",";
 #endif
             for(int jj = 0 ; jj < num_par ; jj++)
                 out_diff_tmp[ii] << 0.0
@@ -1475,6 +1482,9 @@ void write_output(
     const uint32_t traj_id,
     const uint32_t write_index,
     const uint32_t snapshot_index,
+#ifdef MET3D
+    const uint32_t ensemble,
+#endif
     const bool last_step)
 {
     if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
@@ -1502,9 +1512,10 @@ void write_output(
                 << nc_params.slan_600 << ",";
 #endif
 #ifdef MET3D
-        out_tmp << nc_params.time_abs + sub*cc.dt << ","
+        out_tmp << nc_params.time_abs[t] + sub*cc.dt << ","
                 << nc_params.time_rel + sub*cc.dt << ","
-                << nc_params.type << ",";
+                << nc_params.type << ","
+                << ensemble << ",";
 #endif
         for(int ii = 0 ; ii < num_comp; ii++)
             out_tmp << y_single_new[ii]
@@ -1515,6 +1526,12 @@ void write_output(
         {
 #if defined WCB || defined WCB2
             out_diff_tmp[ii] << time_new << "," << traj_id << ","
+                            << output_par_idx[ii] << ","
+                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                            << (nc_params.lat[0] + sub*nc_params.dlat) << ","
+                            << nc_params.ascent_flag << ",";
+#elif defined MET3D
+            out_diff_tmp[ii] << sub + t*cc.num_sub_steps << "," << traj_id << ","
                             << output_par_idx[ii] << ","
                             << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                             << (nc_params.lat[0] + sub*nc_params.dlat) << ","
@@ -1531,9 +1548,10 @@ void write_output(
                             << nc_params.slan_600 << ",";
 #endif
 #if defined MET3D
-            out_diff_tmp[ii] << nc_params.time_abs + sub*cc.dt << ","
+            out_diff_tmp[ii] << nc_params.time_abs[t] + sub*cc.dt << ","
                          << nc_params.time_rel + sub*cc.dt << ","
-                         << nc_params.type << ",";
+                         << nc_params.type << ","
+                         << ensemble << ",";
 #endif
             for(int jj = 0 ; jj < num_par ; jj++)
                 out_diff_tmp[ii] << y_diff[ii][jj]

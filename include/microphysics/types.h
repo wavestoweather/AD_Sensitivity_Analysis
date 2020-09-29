@@ -709,7 +709,8 @@ struct nc_parameters_t{
     uint64_t n_trajectories = 30; /*!< Number of trajectories in the netCDF file. */
     uint64_t n_timesteps = 7922; /*!< Number of timesteps in the netCDF file. */
 #ifdef MET3D
-    double z, time_abs;
+    double z;
+    std::vector<double> time_abs;
     uint64_t time_idx = 0;
 #else
     std::vector<double> z;
@@ -820,6 +821,7 @@ struct input_parameters_t{
   uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
   uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
   uint32_t progress_index; /*!< Index for updating progressbar. */
+  uint32_t ensemble = 0; /*!< Index of ensemble. */
 };
 
 /** @} */ // end of group types

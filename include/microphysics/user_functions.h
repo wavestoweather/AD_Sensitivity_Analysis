@@ -3722,10 +3722,8 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse qv = y[qv_idx];
     codi::RealReverse Nc = y[Nc_idx];
     codi::RealReverse Nr = y[Nr_idx];
-    codi::RealReverse Nv = y[Nv_idx];
     codi::RealReverse qi = y[qi_idx];
     codi::RealReverse Ni = y[Ni_idx];
-    codi::RealReverse vi = y[vi_idx];
     codi::RealReverse qs = y[qs_idx];
     codi::RealReverse Ns = y[Ns_idx];
     codi::RealReverse qg = y[qg_idx];
@@ -3765,9 +3763,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 
     if(0. > Nr)
         Nr = 0.0;
-
-    if(0. > Nv)
-        Nv = 0.0;
 
     if(0. > Ni)
         Ni = 0.0;
@@ -4119,7 +4114,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 #endif
 #ifdef TRACE_QV
     if(trace)
-        std::cout << "before saturation adj dqv " << res[qv_idx] << ", dNv " << res[Nv_idx] << "\n";
+        std::cout << "before saturation adj dqv " << res[qv_idx] << "\n";
 #endif
 #ifdef TRACE_QG
     // std::cout << "before limits dqg " << res[qg_idx] << ", dNg " << res[Ng_idx] << "\n";
@@ -4137,7 +4132,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
 #endif
 #ifdef TRACE_QV
     if(trace)
-        std::cout << "end dqv " << res[qv_idx] << ", dNv " << res[Nv_idx] << "\n";
+        std::cout << "end dqv " << res[qv_idx] << "\n";
 #endif
     // Set hard limits for particle number
     // double sign = (res[qc_idx] < 0) ? -1 : 1;
@@ -4322,10 +4317,8 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
     codi::RealReverse qv = y[qv_idx];
     codi::RealReverse Nc = y[Nc_idx];
     codi::RealReverse Nr = y[Nr_idx];
-    codi::RealReverse Nv = y[Nv_idx];
     codi::RealReverse qi = y[qi_idx];
     codi::RealReverse Ni = y[Ni_idx];
-    codi::RealReverse vi = y[vi_idx];
     codi::RealReverse qs = y[qs_idx];
     codi::RealReverse Ns = y[Ns_idx];
     codi::RealReverse qg = y[qg_idx];
@@ -4351,9 +4344,6 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
     if(0. > Nr)
         Nr = 0.0;
 
-    if(0. > Nv)
-        Nv = 0.0;
-
     // Change to dimensional variables
     codi::RealReverse p_prime = ref.pref * p;
     codi::RealReverse T_prime = ref.Tref * T;
@@ -4374,7 +4364,7 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
     au = min(qc_prime/cc.dt, au);
     res[Nr_idx] += au*x_s_i;
     res[qr_idx] += au;
-    res[Nv_idx] -= au*x_s_i*2.0;
+    res[Nc_idx] -= au*x_s_i*2.0;
     res[qc_idx] -= au;
 
     // accretionKB (= growth of rain hydrometeor by collision with cloud drops)
@@ -4454,7 +4444,7 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
         delta_qv = max(-delta_qv, 0.0);
         delta_nv = max(-delta_nv, 0.0);
         delta_qv = min(delta_qv, qv);
-        delta_nv = min(delta_nv, Nv);
+        delta_nv = min(delta_nv, Nr);
 
         res[qv_idx] += delta_qv;
         res[qr_idx] -= delta_qv;

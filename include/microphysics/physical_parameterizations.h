@@ -1312,56 +1312,22 @@ void setup_model_constants(
       model_constants_t &cc,
       reference_quantities_t &ref_quant)
 {
-#if defined(RK4_ONE_MOMENT)
-    // Scaling factor from input
-    cc.scaling_fact = input.scaling_fact;
-
-    // Accomodation coefficient
-    cc.alpha_d = 1.0;
-
-    // // Performance constants for warm cloud; COSMO
-    cc.a1_scale = 1.0e-3;
-    cc.a2_scale = 1.72 / pow(Ra , 7./8.);
-    cc.e1_scale = 1.0 / sqrt(Ra);
-    cc.e2_scale = 9.1 / pow(Ra , 11./16.);
-    cc.d_scale = ( 130.0*tgamma(4.5) )/( 6.0*(1.0e3)*pow(M_PI*(8.0e6)*Ra , 1.0/8.0) );
-
-    // Performance constants for warm cloud; IFS
-    // The file constants.h also defines some constants as nar, ...
-    const double Nc = 50; 	// 50 over ocean; 300 over land
-    const double F_aut = 1.5;
-    const double F_acc = 2.0;
-    const double lambda_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alpha_r);
-
-    // Inflow from above
-    cc.B_prime = 0.0;
-
-    // // Exponents of the cloud model
-    // // COSMO
-    cc.gamma = 1.0;
-    cc.betac = 1.0;
-    cc.betar = 7./8.;
-    cc.delta1 = 0.5;
-    cc.delta2 = 11./16.;
-    cc.zeta = 9./8.;
-
     // Numerics
     cc.t_end_prime = input.t_end_prime;
     cc.t_end = input.t_end_prime/ref_quant.tref;
     // Time of the substeps
-
     cc.dt = input.dt_prime/ref_quant.tref;
     cc.dt_prime = input.dt_prime;
-    cc.dt_traject_prime = cc.dt_traject * ref_quant.tref;
+    cc.dt_traject_prime = 20.0;
+    cc.dt_traject = cc.dt_traject_prime/ref_quant.tref;
     // The trajectories are calculated with 20 s timesteps.
-    cc.num_sub_steps = (floor( 20.0/cc.dt ) < 1) ? 1 : floor( 20.0/cc.dt );
+    cc.num_sub_steps = (floor( cc.dt_traject_prime/cc.dt ) < 1) ? 1 : floor( cc.dt_traject_prime/cc.dt );
 
     // Evaluate the general performance constants
     cc.dt_half = cc.dt*0.5;
     cc.dt_third = cc.dt/3.0;
     cc.dt_sixth = cc.dt/6.0;
 
-#elif defined(RK4ICE) || defined(RK4NOICE)
     // Scaling factor from input
     cc.scaling_fact = input.scaling_fact;
 
@@ -1401,7 +1367,7 @@ void setup_model_constants(
     cc.delta1 = 0.5;
     cc.delta2 = 11./16.;
     cc.zeta = 9./8.;
-
+#if defined(RK4ICE) || defined(RK4NOICE)
     // Exponents of the cloud model
     // IFS
     // cc.gamma = 2.47;

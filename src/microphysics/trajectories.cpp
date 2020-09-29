@@ -71,7 +71,9 @@ int main(int argc, char** argv)
     load_lookup_table(ltabdminwgg);
 
     int traj_id;
-
+#ifdef MET3D
+    uint32_t ensemble;
+#endif
     // ==================================================
     // Define the reference quantities
     // ==================================================
@@ -156,8 +158,6 @@ int main(int argc, char** argv)
     {
         return 1;
     }
-    print_reference_quantities(ref_quant);
-
 
     if(write_headers(input.OUTPUT_FILENAME) != 0)
     {
@@ -180,7 +180,11 @@ int main(int argc, char** argv)
         {
             read_netcdf_write_stream(global_args.input_file, startp, countp,
                 nc_params, cc, input, ref_quant, y_single_old, inflow, ids,
-                traj_id, t);
+                traj_id,
+#ifdef MET3D
+                ensemble,
+#endif
+                t);
 
             // Iterate over each substep
             for(uint32_t sub=1; sub<cc.num_sub_steps; ++sub) // cc.num_sub_steps
@@ -193,7 +197,7 @@ int main(int argc, char** argv)
                     std::cout << "timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
 
 #endif
-                bool last_step = ((sub+1 + t*cc.num_sub_steps)*cc.dt >= ((t+1)*cc.num_sub_steps)*cc.dt) || (sub == cc.num_sub_steps-input.start_over);
+                bool last_step = ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps)) || (sub == cc.num_sub_steps-input.start_over);
                 // Set the coefficients from the last timestep and from
                 // the input files
                 // *Should* only be necessary when parameters from the
@@ -330,7 +334,11 @@ int main(int argc, char** argv)
                 // Output *if needed* (checks within function)
                 write_output(cc, nc_params, y_single_new, y_diff, sub, t,
                     time_new, traj_id, input.write_index,
-                    input.snapshot_index, last_step);
+                    input.snapshot_index,
+#ifdef MET3D
+                    ensemble,
+#endif
+                    last_step);
 
                 // Interchange old and new for next step
                 time_old = time_new;

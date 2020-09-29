@@ -88,8 +88,10 @@ class Deriv:
         self.n_timesteps = len(df.index)
         self.cluster_names = {}
 
-    def to_parquet(self, f_name, compression, add_columns=None, low_memory=False):
+    def to_parquet(self, f_name, compression, add_columns=None, low_memory=False, attr=None):
         import dask.dataframe as dd
+        if attr is not None:
+            attributes = loader.parse_attr(attr)
         if low_memory:
             for k in self.data:
                 tmp_df = self.data[k]
@@ -98,6 +100,13 @@ class Deriv:
                         tmp_df[col] = add_columns[col]
                 append = not os.listdir(f_name)
                 append = not append
+                if attr is not None:
+                    for key in attributes:
+                        if key == "Global attributes":
+                            tmp_df.attrs = attributes[key]
+                        else:
+                            for col in attributes[key]:
+                                tmp_df[col].attrs = attributes[key][col]
                 dd.from_pandas(tmp_df, chunksize=3000000).to_parquet(f_name, append=append, ignore_divisions=append, compression=compression)
         else:
             tmp_df = None
@@ -111,9 +120,16 @@ class Deriv:
                     tmp_df[col] = add_columns[col]
             append = not os.listdir(f_name)
             append = not append
+            if attr is not None:
+                for key in attributes:
+                    if key == "Global attributes":
+                        tmp_df.attrs = attributes[key]
+                    else:
+                        for col in attributes[key]:
+                            tmp_df[col].attrs = attributes[key][col]
             dd.from_pandas(tmp_df, chunksize=3000000).to_parquet(f_name, append=append, ignore_divisions=append, compression=compression)
 
-    def to_netcdf(self, f_name, add_columns=None, dropna=False):
+    def to_netcdf(self, f_name, add_columns=None, dropna=False, met3d=False, attr=None):
         """
         Store the data to netcdf-4 files where the index consists of
         (timestep, trajectory, LONGITUDE, LATITUDE), and columns are the derivatives.
@@ -125,23 +141,52 @@ class Deriv:
         """
         import xarray as xr
 
+        df = None
         for k in self.data:
             tmp_df = self.data[k]
             if add_columns is not None:
                 for col in add_columns:
                     tmp_df[col] = add_columns[col]
-            if dropna:
-                ds = xr.Dataset.from_dataframe(tmp_df.set_index(
-                    ["timestep", "trajectory"]).dropna())
+            if df is None:
+                df = tmp_df
             else:
-                ds = xr.Dataset.from_dataframe(tmp_df.set_index(
-                    ["timestep", "trajectory"]))
-            # Choose encoding
-            comp = dict(zlib=True, complevel=9)
-            encoding = {var: comp for var in ds.data_vars}
+                df = df.append(tmp_df)
+        if met3d:
+            df["Output Parameter"] = df["Output Parameter"].astype(str)
+            if dropna:
+                ds_complete = xr.Dataset.from_dataframe(df.set_index(
+                    ["Output Parameter", "ensemble", "trajectory", "time"]).dropna())
+            else:
+                ds_complete = xr.Dataset.from_dataframe(df.set_index(
+                    ["Output Parameter", "ensemble", "trajectory", "time"]))
+        else:
+            if dropna:
+                ds_complete = xr.Dataset.from_dataframe(df.set_index(
+                    ["Output Parameter", "timestep", "trajectory"]).dropna())
+            else:
+                ds_complete = xr.Dataset.from_dataframe(df.set_index(
+                    ["Output Parameter", "timestep", "trajectory"]))
 
-            ds.to_netcdf(f_name + "_" + k + "_derivs.nc_wcb", encoding=encoding)
+        # Choose encoding
+        comp = dict(zlib=True, complevel=5)
+        encoding = {var: comp for var in ds_complete.data_vars}
 
+        # Add attributes where applicable
+        if attr is not None:
+            attributes = loader.parse_attr(attr)
+            for key in attributes:
+                if key == "Global attributes":
+                    ds_complete.attrs = attributes[key]
+                else:
+                    for col in attributes[key]:
+                        ds_complete[col].attrs = attributes[key][col]
+        ds_complete.to_netcdf(
+            f_name + "_derivs.nc_wcb",
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w")
 
     def delete_not_mapped(self):
         """
