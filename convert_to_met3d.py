@@ -575,19 +575,19 @@ def convert_wcb2(f, store_path, fl, ensemble):
 
     ds["NR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain_number",
-        "long_name": "sedimentation of rain droplet mixing ratio",
+        "long_name": "sedimentation of rain droplet number",
         "units": "kg^-1 s^-1"}
     ds["NS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow_number",
-        "long_name": "sedimentation of snow crystal mixing ratio",
+        "long_name": "sedimentation of snow crystal number",
         "units": "kg^-1 s^-1"}
     ds["NI_OUT"].attrs = {
-        "standard_name": "sedi_outflux_of_ics_number",
-        "long_name": "sedimentation of ice crystal mixing ratio",
+        "standard_name": "sedi_outflux_of_ice_number",
+        "long_name": "sedimentation of ice crystal number",
         "units": "kg^-1 s^-1"}
     ds["NG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel_number",
-        "long_name": "sedimentation of graupel mixing ratio",
+        "long_name": "sedimentation of graupel number",
         "units": "kg^-1 s^-1"}
 
     ds["Q_TURBULENCE"].attrs = {

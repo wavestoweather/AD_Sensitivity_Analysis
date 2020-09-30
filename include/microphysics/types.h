@@ -722,7 +722,7 @@ struct nc_parameters_t{
             NIin, NSin, NRin, NGin, NIout, NSout, NRout, NGout,
             Nc, Nr, Ni, Ns, Ng;
     bool ascent_flag, conv_400, conv_600, slan_400, slan_600, dp2h;
-    std::string type;
+    char* type[1];
     NcVar   lat_var, lon_var, z_var, t_var, p_var, w_var, time_rel_var,
             qc_var, qr_var, qi_var, qs_var, qg_var, qv_var, S_var,
             QIin_var, QSin_var, QRin_var, QGin_var, QIout_var, QSout_var,

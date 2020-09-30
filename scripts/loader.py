@@ -57,6 +57,39 @@ params_dict2 = {"_diff_0.txt": "p",
                "_diff_30.txt": "n_inact",
                "_diff_31.txt": "depo",
                "_diff_32.txt": "sub"}
+params_dict2_met3d = {"_diff_0.txt": "pressure",
+               "_diff_1.txt": "T",
+               "_diff_2.txt": "w",
+               "_diff_3.txt": "S",
+               "_diff_4.txt": "QC",
+               "_diff_5.txt": "QR",
+               "_diff_6.txt": "QV",
+               "_diff_7.txt": "NCCLOUD",
+               "_diff_8.txt": "NCRAIN",
+               "_diff_9.txt": "QI",
+               "_diff_10.txt": "NCICE",
+               "_diff_11.txt": "QS",
+               "_diff_12.txt": "NCSNOW",
+               "_diff_13.txt": "QG",
+               "_diff_14.txt": "NCGRAUPEL",
+               "_diff_15.txt": "QH",
+               "_diff_16.txt": "NCHAIL",
+               "_diff_17.txt": "QI_OUT",
+               "_diff_18.txt": "QS_OUT",
+               "_diff_19.txt": "QR_OUT",
+               "_diff_20.txt": "QG_OUT",
+               "_diff_21.txt": "QH_OUT",
+               "_diff_22.txt": "latent_heat",
+               "_diff_23.txt": "latent_cool",
+               "_diff_24.txt": "NI_OUT",
+               "_diff_25.txt": "NS_OUT",
+               "_diff_26.txt": "NR_OUT",
+               "_diff_27.txt": "NG_OUT",
+               "_diff_28.txt": "NH_OUT",
+               "_diff_29.txt": "z",
+               "_diff_30.txt": "n_inact",
+               "_diff_31.txt": "depo",
+               "_diff_32.txt": "sub"}
 met3d_rename_dic = {"p"         : "pressure",
                     "LONGITUDE" : "lon",
                     "LATITUDE"  : "lat",
@@ -85,12 +118,15 @@ met3d_rename_dic = {"p"         : "pressure",
                     "qgout"     : "QG_OUT",
                     "qhout"     : "QH_OUT"}
 deriv_type_dic = {
+    "step": np.uint64,
+    "time": np.float64,
     "timestep": np.float64,
      "trajectory": np.uint64,
      "Output Parameter": "category",
-     "LONGITUDE": np.float64,
-     "LATITUDE": np.float64,
-     "MAP": np.bool_,
+     "lon": np.float64,
+     "lat": np.float64,
+     "time_after_ascent": np.float64,
+     "WCB_flag": np.bool_,
      "dp2h": np.bool_,
      "conv_400": np.bool_,
      "conv_600": np.bool_,
@@ -776,61 +812,103 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
             wref = refs[4]
             tref = refs[5]
             zref = refs[6]
-        if "time" in data:
+        if attr is not None:
             data["time"]            = data["time"]*tref
-        data["p"]               = data["p"]*pref
-        data["T"]               = data["T"]*Tref
-        data["w"]               = data["w"]*wref
-        data["qc"]              = data["qc"]*qref
-        data["qr"]              = data["qr"]*qref
-        if "qs" in data:
-            data["qs"]          = data["qs"]*qref
-        if "qg" in data:
-            data["qg"]          = data["qg"]*qref
-        if "qh" in data:
-            data["qh"]          = data["qh"]*qref
-        if "qi" in data:
-            data["qi"]          = data["qi"]*qref
-        data["qv"]              = data["qv"]*qref
-        if "qiout" in data:
-            data["qiout"]       = data["qiout"]*qref
-        if "qsout" in data:
-            data["qsout"]       = data["qsout"]*qref
-        if "qrout" in data:
-            data["qrout"]       = data["qrout"]*qref
-        if "qgout" in data:
-            data["qgout"]       = data["qgout"]*qref
-        if "qhout" in data:
-            data["qhout"]       = data["qhout"]*qref
-        data["Nc"]              *= Nref
-        data["Nr"]              *= Nref
-        if "Ns" in data:
-            data["Ns"]          *= Nref
-        if "Ng" in data:
-            data["Ng"]          *= Nref
-        if "Nh" in data:
-            data["Nh"]          *= Nref
-        if "Ni" in data:
-            data["Ni"]          *= Nref
-        if "Niout" in data:
-            data["Niout"]       *= Nref
-        if "Nsout" in data:
-            data["Nsout"]       *= Nref
-        if "Nrout" in data:
-            data["Nrout"]       *= Nref
-        if "Ngout" in data:
-            data["Ngout"]       *= Nref
-        if "Nhout" in data:
-            data["Nhout"]       *= Nref
-        if "latent_heat" in data:
-            data["latent_heat"] *= Tref
-        if "latent_cool" in data:
-            data["latent_cool"] *= Tref
-        if "z" in data:
-            data["z"]           *= zref
+            data["pressure"]        = data["pressure"]*pref
+            data["T"]               = data["T"]*Tref
+            data["w"]               = data["w"]*wref
+            data["QC"]              = data["QC"]*qref
+            data["QR"]              = data["QR"]*qref
+            data["QS"]              = data["QS"]*qref
+            data["QG"]              = data["QG"]*qref
+            data["QH"]              = data["QH"]*qref
+            data["QI"]              = data["QI"]*qref
+            data["QV"]              = data["QV"]*qref
+            data["QI_OUT"]           = data["QI_OUT"]*qref
+            data["QS_OUT"]           = data["QS_OUT"]*qref
+            data["QR_OUT"]           = data["QR_OUT"]*qref
+            data["QG_OUT"]           = data["QG_OUT"]*qref
+            data["QH_OUT"]           = data["QH_OUT"]*qref
+            data["NCCLOUD"]         *= Nref
+            data["NCRAIN"]          *= Nref
+            data["NCSNOW"]          *= Nref
+            data["NCGRAUPEL"]       *= Nref
+            data["NCHAIL"]          *= Nref
+            data["NCICE"]           *= Nref
+            data["NI_OUT"]          *= Nref
+            data["NS_OUT"]          *= Nref
+            data["NR_OUT"]          *= Nref
+            data["NG_OUT"]          *= Nref
+            data["NH_OUT"]          *= Nref
+            data["z"]               *= zref
+        else:
+            if "time" in data:
+                data["time"]            = data["time"]*tref
+            data["p"]               = data["p"]*pref
+            data["T"]               = data["T"]*Tref
+            data["w"]               = data["w"]*wref
+            data["qc"]              = data["qc"]*qref
+            data["qr"]              = data["qr"]*qref
+            if "qs" in data:
+                data["qs"]          = data["qs"]*qref
+            if "qg" in data:
+                data["qg"]          = data["qg"]*qref
+            if "qh" in data:
+                data["qh"]          = data["qh"]*qref
+            if "qi" in data:
+                data["qi"]          = data["qi"]*qref
+            data["qv"]              = data["qv"]*qref
+            if "qiout" in data:
+                data["qiout"]       = data["qiout"]*qref
+            if "qsout" in data:
+                data["qsout"]       = data["qsout"]*qref
+            if "qrout" in data:
+                data["qrout"]       = data["qrout"]*qref
+            if "qgout" in data:
+                data["qgout"]       = data["qgout"]*qref
+            if "qhout" in data:
+                data["qhout"]       = data["qhout"]*qref
+            data["Nc"]              *= Nref
+            data["Nr"]              *= Nref
+            if "Ns" in data:
+                data["Ns"]          *= Nref
+            if "Ng" in data:
+                data["Ng"]          *= Nref
+            if "Nh" in data:
+                data["Nh"]          *= Nref
+            if "Ni" in data:
+                data["Ni"]          *= Nref
+            if "Niout" in data:
+                data["Niout"]       *= Nref
+            if "Nsout" in data:
+                data["Nsout"]       *= Nref
+            if "Nrout" in data:
+                data["Nrout"]       *= Nref
+            if "Ngout" in data:
+                data["Ngout"]       *= Nref
+            if "Nhout" in data:
+                data["Nhout"]       *= Nref
+            if "z" in data:
+                data["z"]           *= zref
     if attr is not None:
-        data = data.rename(columns=met3d_rename_dic)
+        # data = data.rename(columns=met3d_rename_dic)
         attributes = parse_attr(attr)
+        data["QH"].attrs = {
+            "standard_name": "mass_fraction_of_hail_in_air",
+            "long_name": "specific hail content",
+            "units": "kg kg^-1"}
+        data["QH_OUT"].attrs = {
+            "standard_name": "sedi_outflux_of_hail",
+            "long_name": "sedimentation of hail mixing ratio",
+            "units": "kg kg^-1 s^-1"}
+        data["NCHAIL"].attrs = {
+            "standard_name": "specif_number_of_hail_in_air",
+            "long_name": "specific hail number",
+            "units": "kg^-1"}
+        data["NH_OUT"].attrs = {
+            "standard_name": "sedi_outflux_of_hail_number",
+            "long_name": "sedimentation of hail number",
+            "units": "kg^-1 s^-1"}
         for key in attributes:
             if key == "Global attributes":
                 data.attrs = attributes[key]
@@ -1071,7 +1149,8 @@ def load_parallel(f, suffix):
 
 
 def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
-                                  EPSILON=0.0, trajectories=[1], suffix="20160922_00", pool=None):
+                                  EPSILON=0.0, trajectories=[1], suffix="20160922_00",
+                                  pool=None, met3d=True):
     """
     Create a dictionary with out parameters as keys and dictionaries with columns:
     trajectory, timestep, MAP, LATITUDE, LONGITUDE
@@ -1135,8 +1214,13 @@ def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
         return np.uint32(x)
     if pool is None:
         for f in file_list2:
-            out_param = params_dict2[f.split("/")[-1].split(suffix)[1]]
+            if met3d:
+                out_param = params_dict2_met3d[f.split("/")[-1].split(suffix)[1]]
+            else:
+                out_param = params_dict2[f.split("/")[-1].split(suffix)[1]]
             df = pd.read_csv(f, sep=",", index_col=False, dtype=deriv_type_dic)
+            if met3d:
+                df = df.rename(columns=met3d_rename_dic)
             if out_param in tmp_dict:
                 tmp_dict[out_param] = tmp_dict[out_param].append(df)
             else:

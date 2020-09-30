@@ -153,6 +153,9 @@ class Deriv:
                 df = df.append(tmp_df)
         if met3d:
             df["Output Parameter"] = df["Output Parameter"].astype(str)
+            df["Output Parameter"].attrs = {
+                "standard_name": "output_parameter",
+                "long_name": "Output parameter for sensitivities"}
             if dropna:
                 ds_complete = xr.Dataset.from_dataframe(df.set_index(
                     ["Output Parameter", "ensemble", "trajectory", "time"]).dropna())
@@ -234,10 +237,10 @@ class Deriv:
         cols = []
         for col in df:
             if col in ["LONGITUDE", "LATITUDE", "MAP", "dp2h",
-                       "conv_400", "conv_600", "slan_400", "slan_600"]:
+                       "conv_400", "conv_600", "slan_400", "slan_600",
+                       "lon", "lat", "WCB_flag"]:
                 continue
             cols.append(col)
-
         for k in self.data:
             self.data[k] = self.data[k].merge(df[cols], how='right')
 

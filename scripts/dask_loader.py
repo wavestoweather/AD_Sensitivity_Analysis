@@ -237,7 +237,8 @@ def transform_df2(df, net_df, n_traj=903, traj_timestep=20):
     return pd.DataFrame.from_dict(new_dic)
 
 
-def load_mult_derivates_direc_dic(direc="", parquet=True, columns=None, file_ending="*.nc_wcb"):
+def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
+    columns=None, file_ending="*.nc_wcb"):
     """
     Create a dictionary with out parameters as keys and dictionaries with columns:
     trajectory, timestep, MAP, LATITUDE, LONGITUDE
@@ -260,11 +261,16 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, columns=None, file_end
 
     Returns
     -------
-    dic of pandas.Dataframe
-        Pandas dataframe as described above.
+    Dask.Dataframe
+        A delayed dataframe.
     """
-    if parquet: 
+    if parquet:
         df = pd.read_parquet(direc + "/", columns=columns)
+    elif netcdf:
+        df = xr.open_mfdataset(
+            direc + "/" + file_ending,
+            parallel=True,
+            decode_times=False).to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
     else:
         try:
             df = pd.read_csv(direc + "/*diff*", assume_missing=True) # , blocksize="8GB"

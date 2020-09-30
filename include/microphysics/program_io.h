@@ -215,6 +215,7 @@ void init_nc_parameters(
 #if defined MET3D
     nc.w.resize(2);
     nc.time_abs.resize(n_timesteps);
+    nc.type[0] = (char*) "";
 #else
     nc.w.resize(2);
     nc.z.resize(4);
@@ -495,8 +496,12 @@ void load_nc_parameters(
 
 #ifdef MET3D
     nc.S_var.getVar(startp, countp, &nc.S);
+    nc.S /= 100; // from percentage
     nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
-    nc.type_var.getVar(startp, countp, &nc.type);
+    // there is only a single value for that since each type
+    // is divided into different files in the input
+    if(nc.type[0] == "")
+        nc.type_var.getVar(nc.type);
     nc.w[0]     /= ref_quant.wref;
     nc.w[1]     /= ref_quant.wref;
 #elif !defined WCB && !defined WCB2
@@ -518,7 +523,7 @@ void load_nc_parameters(
     nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
     nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
     nc.S_var.getVar(startp, countp, &nc.S);
-    nc.S /= 100; // to percentage
+    nc.S /= 100; // from percentage
 #else
     // WCB 2
     // Calculate w by getting the z-coordinates
@@ -862,12 +867,12 @@ int write_headers(
     }
 
     // Append the initial values and write headers
-    out_tmp << "step,trajectory,LONGITUDE,LATITUDE,"
+    out_tmp << std::setprecision(10) << "step,trajectory,lon,lat,"
 #if defined WCB
         << "MAP,";
 #endif
 #if defined WCB2 || defined MET3D
-        << "MAP,"
+        << "WCB_flag,"
         << "dp2h,"
         << "conv_400,"
         << "conv_600,"
@@ -903,16 +908,17 @@ int write_headers(
             return 1;
         }
         out_diff_tmp[ii]
+            << std::setprecision(10)
             << "step,"
             << "trajectory,"
             << "Output Parameter,"
-            << "LONGITUDE,"
-            << "LATITUDE,"
+            << "lon,"
+            << "lat,"
 #if defined WCB
             << "MAP,";
 #endif
 #if defined WCB2 || defined MET3D
-            << "MAP,"
+            << "WCB_flag,"
             << "dp2h,"
             << "conv_400,"
             << "conv_600,"
@@ -1027,6 +1033,7 @@ int read_init_netcdf(
             // Calculate the needed index
             start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
         }
+        // std::cout << "got start time idx " << start_time_idx << "\n";
         nc_params.time_idx = start_time_idx;
         startp[2] = start_time_idx;
 #else
@@ -1416,9 +1423,9 @@ void read_netcdf_write_stream(
 #endif
 #ifdef MET3D
         // time, time after ascent, type
-        out_tmp << nc_params.time_abs[t] << ","
+        out_tmp << nc_params.time_abs[t + nc_params.time_idx] << ","
                 << nc_params.time_rel << ","
-                << nc_params.type << ","
+                << nc_params.type[0] << ","
                 << ensemble << ",";
 #endif
         for(int ii = 0 ; ii < num_comp; ii++)
@@ -1454,9 +1461,9 @@ void read_netcdf_write_stream(
                                 << nc_params.slan_600 << ",";
 #endif
 #if defined MET3D
-        out_diff_tmp[ii] << nc_params.time_abs[t] << ","
+        out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] << ","
                          << nc_params.time_rel << ","
-                         << nc_params.type << ","
+                         << nc_params.type[0] << ","
                          << ensemble << ",";
 #endif
             for(int jj = 0 ; jj < num_par ; jj++)
@@ -1512,10 +1519,11 @@ void write_output(
                 << nc_params.slan_600 << ",";
 #endif
 #ifdef MET3D
-        out_tmp << nc_params.time_abs[t] + sub*cc.dt << ","
+        out_tmp << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","
                 << nc_params.time_rel + sub*cc.dt << ","
-                << nc_params.type << ","
+                << nc_params.type[0] << ","
                 << ensemble << ",";
+            double abs_time = sub *cc.dt + nc_params.time_abs[t + nc_params.time_idx];
 #endif
         for(int ii = 0 ; ii < num_comp; ii++)
             out_tmp << y_single_new[ii]
@@ -1548,9 +1556,9 @@ void write_output(
                             << nc_params.slan_600 << ",";
 #endif
 #if defined MET3D
-            out_diff_tmp[ii] << nc_params.time_abs[t] + sub*cc.dt << ","
+            out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","
                          << nc_params.time_rel + sub*cc.dt << ","
-                         << nc_params.type << ","
+                         << nc_params.type[0] << ","
                          << ensemble << ",";
 #endif
             for(int jj = 0 ; jj < num_par ; jj++)

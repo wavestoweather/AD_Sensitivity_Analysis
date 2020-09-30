@@ -187,7 +187,7 @@ int main(int argc, char** argv)
                 t);
 
             // Iterate over each substep
-            for(uint32_t sub=1; sub<cc.num_sub_steps; ++sub) // cc.num_sub_steps
+            for(uint32_t sub=1; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
             {
 #if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
 #if defined(TRACE_TIME)
@@ -197,7 +197,8 @@ int main(int argc, char** argv)
                     std::cout << "timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
 
 #endif
-                bool last_step = ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps)) || (sub == cc.num_sub_steps-input.start_over);
+                bool last_step = ( ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + !input.start_over))
+                    || (sub == cc.num_sub_steps-input.start_over) );
                 // Set the coefficients from the last timestep and from
                 // the input files
                 // *Should* only be necessary when parameters from the

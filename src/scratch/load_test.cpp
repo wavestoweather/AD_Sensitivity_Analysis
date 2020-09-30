@@ -18,6 +18,30 @@
 
 #include <netcdf>
 
+void print_params(
+    nc_parameters_t &nc_params,
+    const int &traj_id)
+{
+#ifdef MET3D
+    std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon"
+              << "\t\t\ttraj_id\t\ttime\t\ttime_after_ascent\t\ttype\n"
+#else
+    std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
+#endif
+        << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
+        << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
+        << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
+        << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t\t"
+        << traj_id
+#ifdef MET3D
+        << "\t\t" << nc_params.time_abs[0] << "\t"
+        << nc_params.time_rel << "\t\t" << nc_params.type[0] << "\n";
+#else
+        << "\n";
+#endif
+}
+
+
 int main(int argc, char** argv)
 {
     nc_parameters_t nc_params;
@@ -105,10 +129,11 @@ int main(int argc, char** argv)
         {
             auto var = name_var.second;
             auto name = name_var.first;
-            std::cout << name << ":\n";
+            std::cout << name << "\n";
             auto attributes = var.getAtts();
             for(auto & name_attr: attributes)
             {
+                std::cout << "\t";
                 auto attribute = name_attr.second;
                 netCDF::NcType type = attribute.getType();
                 if(type.getName() == "double" || type.getName() == "float")
@@ -132,12 +157,7 @@ int main(int argc, char** argv)
 
 
 #endif
-
         load_nc_parameters_var(nc_params, datafile);
-#ifdef MET3D
-        // Get the time coordinates
-        nc_params.time_abs_var.getVar(nc_params.time_abs.data());
-#endif
 
         netCDF::NcVar id_var;
 #ifdef MET3D
@@ -160,41 +180,16 @@ int main(int argc, char** argv)
         countp.push_back(1);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << std::setprecision(8) << std::fixed
-                  << std::setfill('0') << std::setw(6);
+                  << std::setfill('0') << std::setw(8);
         std::cout << "Trajectory 0 at t=0\n";
-#ifdef MET3D
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\t\ttime\t\ttime_after_ascent\n"
-#else
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
-#endif
-            << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
-            << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
-            << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
-            << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
-            << traj_id
-#ifdef MET3D
-            << "\t\t" << nc_params.time_abs[0] << "\t" << nc_params.time_rel << "\n";
-#else
-            << "\n";
-#endif
+
+        print_params(nc_params, traj_id);
+
         load_nc_parameters_var(nc_params, datafile);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << "Trajectory 0 at t=0\n";
-#ifdef MET3D
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\t\ttime\t\ttime_after_ascent\n"
-#else
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
-#endif
-            << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
-            << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
-            << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
-            << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
-            << traj_id
-#ifdef MET3D
-            << "\t\t" << nc_params.time_abs[0] << "\t" << nc_params.time_rel << "\n";
-#else
-            << "\n";
-#endif
+        print_params(nc_params, traj_id);
+
 #ifdef MET3D
         startp[2] += 1;
 #else
@@ -203,21 +198,7 @@ int main(int argc, char** argv)
         load_nc_parameters_var(nc_params, datafile);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << "Trajectory 0 at t=1\n";
-#ifdef MET3D
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\t\ttime\t\ttime_after_ascent\n"
-#else
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
-#endif
-            << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
-            << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
-            << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
-            << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
-            << traj_id
-#ifdef MET3D
-            << "\t\t" << nc_params.time_abs[1] << "\t" << nc_params.time_rel << "\n";
-#else
-            << "\n";
-#endif
+        print_params(nc_params, traj_id);
         traj_id = ids[1];
 #ifdef MET3D
         startp[1] = 1;
@@ -229,21 +210,7 @@ int main(int argc, char** argv)
         load_nc_parameters_var(nc_params, datafile);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << "Trajectory 1 at t=1\n";
-#ifdef MET3D
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\t\ttime\t\ttime_after_ascent\n"
-#else
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
-#endif
-            << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
-            << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
-            << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
-            << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
-            << traj_id
-#ifdef MET3D
-            << "\t\t" << nc_params.time_abs[1] << "\t" << nc_params.time_rel << "\n";
-#else
-            << "\n";
-#endif
+        print_params(nc_params, traj_id);
 #ifdef MET3D
         startp[2] = 2;
 #else
@@ -252,21 +219,7 @@ int main(int argc, char** argv)
         load_nc_parameters_var(nc_params, datafile);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << "Trajectory 1 at t=2\n";
-#ifdef MET3D
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\t\ttime\t\ttime_after_ascent\n"
-#else
-        std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon\t\ttraj_id\n"
-#endif
-            << nc_params.p << "\t" << nc_params.t << "\t" << nc_params.w[0] << "\t"
-            << nc_params.w[1] << "\t" << nc_params.qc << "\t" << nc_params.qr << "\t"
-            << nc_params.qv << "\t" << nc_params.qi << "\t" << nc_params.qs << "\t"
-            << nc_params.qg << "\t" << nc_params.lat[0] << "\t" << nc_params.lon[0] << "\t"
-            << traj_id
-#ifdef MET3D
-            << "\t\t" << nc_params.time_abs[2] << "\t" << nc_params.time_rel << "\n";
-#else
-            << "\n";
-#endif
+        print_params(nc_params, traj_id);
     } catch(netCDF::exceptions::NcException& e)
     {
         std::cout << e.what() << std::endl;

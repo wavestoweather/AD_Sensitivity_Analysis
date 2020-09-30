@@ -96,6 +96,14 @@ const std::vector<std::string> output_grad_idx =
     {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
     "dbeta_r", "ddelta1", "ddelta2", "dzeta"};
 #elif defined(RK4ICE) || defined(RK4NOICE)
+#ifdef MET3D
+const std::vector<std::string> output_par_idx =
+    {"pressure", "T", "w", "S", "QC", "QR", "QV", "NCCLOUD", "NCRAIN",
+     "QI", "NCICE", "QS", "NCSNOW", "QG", "NCGRAUPEL", "QH", "NCHAIL",
+     "QI_OUT", "QS_OUT", "QR_OUT", "QG_OUT", "QH_OUT",
+     "latent_heat", "latent_cool", "NI_OUT", "NS_OUT", "NR_OUT",
+     "NG_OUT", "NH_OUT", "z", "Inactive", "deposition", "sublimination"};
+#else
 /**
  * Used for header files of output parameters.
  */
@@ -105,7 +113,7 @@ const std::vector<std::string> output_par_idx =
      "qiout", "qsout", "qrout", "qgout", "qhout",
      "latent_heat", "latent_cool", "Niout", "Nsout", "Nrout",
      "Ngout", "Nhout", "z", "Inactive", "deposition", "sublimination"};
-
+#endif
 /**
  * Used for header files of gradients.
  */

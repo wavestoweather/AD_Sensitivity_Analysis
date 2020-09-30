@@ -34,6 +34,8 @@ import dask.dataframe as pd
 from bokeh.io import curdoc
 from bokeh.palettes import Category20c
 from timeit import default_timer as timer
+import pandas
+import xarray as xr
 
 class Deriv_dask:
     """
@@ -69,7 +71,8 @@ class Deriv_dask:
     cmap = None
     cache = None
 
-    def __init__(self, direc, parquet=True, columns=None, backend="matplotlib"):
+    def __init__(self, direc, parquet=True, netcdf=False, columns=None,
+        backend="matplotlib", file_ending="*.nc_wcb"):
         """
         Init class by loading the data from the given path.
 
@@ -80,15 +83,20 @@ class Deriv_dask:
         parquet : boolean
             If true: Load a series of preprocessed parquet files,
             else load *.txt files.
+        netcdf : boolean
+            If true: Load a series of preprocessed netcdf files else
+            load *.txt files.
         columns : list of strings
             Specify the columns to load.
         backend : String
             Either matplotlib or bokeh
+        file_ending : String
+            File ending to use when loading netcdf files.
         """
         self.data = dask_loader.load_mult_derivates_direc_dic(
-            direc, parquet, columns
-        )
-        self.n_timesteps = len(self.data["timestep"].unique().compute())
+            direc, parquet, netcdf, columns, file_ending)
+
+        self.n_timesteps = len(np.unique(self.data["step"].compute()))
         self.cluster_names = {}
         self.font_dic = {
             "title": 20,
@@ -104,30 +112,38 @@ class Deriv_dask:
             self.cmap = {"Slantwise 600hPa 25. Quantile":  matplotlib.colors.to_hex(colors(0)[0:-1]),
                 "Slantwise 600hPa 50. Quantile":  matplotlib.colors.to_hex(colors(1)[0:-1]),
                 "Slantwise 600hPa 75. Quantile":  matplotlib.colors.to_hex(colors(2)[0:-1]),
+                "Slantwise 600hPa":  matplotlib.colors.to_hex(colors(3)[0:-1]),
                 "Slantwise 400hPa 25. Quantile":  matplotlib.colors.to_hex(colors(4)[0:-1]),
                 "Slantwise 400hPa 50. Quantile":  matplotlib.colors.to_hex(colors(5)[0:-1]),
                 "Slantwise 400hPa 75. Quantile":  matplotlib.colors.to_hex(colors(6)[0:-1]),
+                "Slantwise 400hPa":  matplotlib.colors.to_hex(colors(7)[0:-1]),
                 "Convective 600hPa 25. Quantile": matplotlib.colors.to_hex(colors(8)[0:-1]),
                 "Convective 600hPa 50. Quantile": matplotlib.colors.to_hex(colors(9)[0:-1]),
                 "Convective 600hPa 75. Quantile": matplotlib.colors.to_hex(colors(10)[0:-1]),
+                "Convective 600hPa": matplotlib.colors.to_hex(colors(11)[0:-1]),
                 "Convective 400hPa 25. Quantile": matplotlib.colors.to_hex(colors(12)[0:-1]),
                 "Convective 400hPa 50. Quantile": matplotlib.colors.to_hex(colors(13)[0:-1]),
-                "Convective 400hPa 75. Quantile": matplotlib.colors.to_hex(colors(14)[0:-1])}
+                "Convective 400hPa 75. Quantile": matplotlib.colors.to_hex(colors(14)[0:-1]),
+                "Convective 400hPa": matplotlib.colors.to_hex(colors(15)[0:-1])}
             self.colors = colors
         else:
             colors = Category20c[20]
             self.cmap = {"Slantwise 600hPa 25. Quantile":  colors[0],
                 "Slantwise 600hPa 50. Quantile":  colors[1],
                 "Slantwise 600hPa 75. Quantile":  colors[2],
+                "Slantwise 600hPa":  colors[3],
                 "Slantwise 400hPa 25. Quantile":  colors[4],
                 "Slantwise 400hPa 50. Quantile":  colors[5],
                 "Slantwise 400hPa 75. Quantile":  colors[6],
+                "Slantwise 400hPa":  colors[7],
                 "Convective 600hPa 25. Quantile": colors[8],
                 "Convective 600hPa 50. Quantile": colors[9],
                 "Convective 600hPa 75. Quantile": colors[10],
+                "Convective 600hPa": colors[11],
                 "Convective 400hPa 25. Quantile": colors[12],
                 "Convective 400hPa 50. Quantile": colors[13],
-                "Convective 400hPa 75. Quantile": colors[14]}
+                "Convective 400hPa 75. Quantile": colors[14],
+                "Convective 400hPa": colors[15]}
             self.colors = colors
 
 
@@ -157,16 +173,16 @@ class Deriv_dask:
 
     def get_n_timesteps(self):
         """
-        Get the number of timesteps of the data.
+        Get the number of simulated timesteps of the data.
 
         Returns
         -------
         int
-            Number of timesteps
+            Number of simulated timesteps
         """
         return self.n_timesteps
 
-    def cache_data(self, in_params, out_params, x_axis="timestep",
+    def cache_data(self, in_params, out_params, x_axis="step",
         y_axis=None,mapped=None,
         trajectories=None, frac=None, min_x=None, max_x=None, nth=None,
         compute=True):
@@ -181,7 +197,7 @@ class Deriv_dask:
         out_params : list of string
             List of keys to plot the derivatives for.
         x_axis : string
-            The column to use as x-axis. Can be either "timestep" or
+            The column to use as x-axis. Can be either "step" or
             an output parameter or a derivative.
         y_axis : string
             y-axis for the upper plot. If none is given, use output parameter.
@@ -194,19 +210,14 @@ class Deriv_dask:
         frac : float
             Sample a given fraction of rows. Deactivates "nth".
         nth : int
-            Sample every nth entry. Works fast with "timestep" as x-axis and
+            Sample every nth entry. Works fast with "step" as x-axis and
             a given min_x and max_x value. If x_axis is any other than
-            "timestep", an errorband triggered by "percentile" may not
+            "step", an errorband triggered by "percentile" may not
             be plotted.
         min_x : float
             Minimum value for the x-axis.
         max_x : float
             Maximum value for the x-axis.
-        nth : int
-            Sample every nth entry. Works fast with "timestep" as x-axis and
-            a given min_x and max_x value. If x_axis is any other than
-            "timestep", an errorband triggered by "percentile" may not
-            be plotted.
         compute : bool
             If true, store a pandas dataframe in self.cache. Otherwise dask
             dataframe (not entirely loaded) is stored.
@@ -215,10 +226,10 @@ class Deriv_dask:
         if frac is not None:
             df = self.data.sample(frac=frac, replace=False, random_state=42)
         elif nth is not None:
-            if min_x is not None and max_x is not None and x_axis == "timestep":
+            if min_x is not None and max_x is not None and x_axis == "step":
                 steps = np.arange(min_x, max_x, nth*2.5)
-            elif x_axis == "timestep":
-                df_tmp = self.data.timestep.unique().compute()
+            elif x_axis == "step":
+                df_tmp = self.data.step.unique().compute()
                 min_val = df_tmp.min()
                 max_val = df_tmp.max()
                 steps = np.arange(min_val, max_val, nth*2.5)
@@ -238,11 +249,13 @@ class Deriv_dask:
                 df = df.loc[df["trajectory"].isin(trajectories)]
             else:
                 df = df.loc[df["type"].isin(trajectories)]
+
         if mapped is not None:
             df = df.loc[df[mapped]]
 
         df = df.loc[df["Output Parameter"].isin(out_params)]
-        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
+
+        all_params = list(set(["Output Parameter", "trajectory", "type", "step"] + in_params + [x_axis] + out_params))
         if y_axis is not None and not y_axis in all_params:
             all_params.append(y_axis)
         if compute:
@@ -519,7 +532,7 @@ class Deriv_dask:
             elif "per_xaxis" in ratio_type:
                 ratio_df = ratio_df.set_index(x_axis)
                 max_vals = ratio_df.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
-                if x_axis == "timestep":
+                if x_axis == "timestep" or x_axis == "step" or x_axis == "time_after_ascent":
                     ratio_df[in_params] = ratio_df[in_params].div(max_vals, axis="index")
                 else:
                     ratio_df[in_params] = ratio_df[in_params].div(max_vals)
@@ -1167,7 +1180,7 @@ class Deriv_dask:
                     plot_helper(df_tmp_out, in_params=[in_param],
                                 prefix=prefix + "_" + in_param, **kwargs)
 
-    def plot_grid_one_param(self, out_param, y_axis, x_axis="timestep",
+    def plot_grid_one_param(self, out_param, y_axis, x_axis="step",
         twin_axis=None, by=None, hue="type", col_wrap=4, trajectories=None,
         width=1280, height=800, log=[False, False],
         vertical_mark=None, cross_mark=None, datashade=False, prefix=None, alpha=1,
