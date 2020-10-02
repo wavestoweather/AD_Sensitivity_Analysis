@@ -1185,7 +1185,7 @@ class Deriv_dask:
         width=1280, height=800, log=[False, False],
         vertical_mark=None, cross_mark=None, datashade=False, prefix=None, alpha=1,
         plot_path="pics/", yticks=10, decimals=-3, rolling_avg=20,
-        kind="scatter", **kwargs):
+        kind="scatter", s=8, **kwargs):
         """
         Plot a grid for comparing multiple output parameters or
         multiple derivatives across one output parameter.
@@ -1312,7 +1312,7 @@ class Deriv_dask:
                 color="gray",
                 datashade=datashade,
                 legend=False,
-            ).opts(initial_hooks=[twinx], apply_ranges=False).opts(opts.Scatter(s=8))
+            ).opts(initial_hooks=[twinx], apply_ranges=False).opts(opts.Scatter(s=s))
 
         add_cols = []
         if vertical_mark is not None:
@@ -1360,7 +1360,7 @@ class Deriv_dask:
 
                 if kind == "scatter":
                     plot_func = df_group.hvplot.scatter
-                    options = opts.Scatter(s=8)
+                    options = opts.Scatter(s=s)
                 else:
                     plot_func = df_group.hvplot.line
                     if self.backend == "bokeh":
@@ -1417,7 +1417,7 @@ class Deriv_dask:
                                     datashade=datashade,
                                     legend=False,
                                 ).opts(
-                                    apply_ranges=False).opts(opts.Scatter(s=16))
+                                    apply_ranges=False).opts(opts.Scatter(s=s*2))
                             else:
                                 marks = marks * df_mark.hvplot.scatter(
                                     x=x_axis,
@@ -1427,7 +1427,7 @@ class Deriv_dask:
                                     datashade=datashade,
                                     legend=False,
                                 ).opts(
-                                    apply_ranges=False).opts(opts.Scatter(s=16))
+                                    apply_ranges=False).opts(opts.Scatter(s=s*2))
                         return marks
 
                     if by is not None:
@@ -1494,7 +1494,7 @@ class Deriv_dask:
                     if self.backend == "matplotlib":
                         if len(plot_list) == 0:
                             overlay = hv.NdOverlay(
-                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
+                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=s*6, color=cmap_values[i]))
                                 for i in range(len(types)) }
                             )
                             plot_list.append(plot_func(
@@ -1638,6 +1638,23 @@ class Deriv_dask:
                 self.plots.append(final_plots)
             print("Saving to " + save + filetype, flush=True)
             renderer.save(final_plots, save)
+            # Store every image as an individual one as well
+            for j, pl in enumerate(final_plots):
+                y_name = y_axis[j]
+                i = 0
+                save = (plot_path + prefix + x_axis + "_" + y_name + "_{:03d}".format(i))
+                while os.path.isfile(save + ".png"):
+                    i = i+1
+                    save = (plot_path + prefix + x_axis + "_" + y_name + "_{:03d}".format(i))
+                pl = pl.opts(
+                    opts.Scatter(
+                        xticks=20,
+                        xaxis="bottom",
+                        fontsize=self.font_dic,
+                        show_grid=True,
+                        show_legend=True,
+                        **scatter_kwargs)).opts(aspect=aspect, **layout_kwargs)
+                renderer.save(pl, save)
             try:
                 from IPython.display import Image, display
                 display(Image(save + filetype, width=width))

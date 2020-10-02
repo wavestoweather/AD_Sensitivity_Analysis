@@ -9,6 +9,7 @@ import numpy as np
 from Deriv import Deriv
 from Sim import Sim
 from timeit import default_timer as timer
+import xarray as xr
 
 file_type = sys.argv[1]
 direc_path = sys.argv[2]
@@ -22,13 +23,13 @@ file_list = []
 for f in os.listdir(direc_path):
     file_list.append(os.path.join(direc_path, f))
 file_list = np.sort(file_list)
-print("Running for {} trajectories".format(len(file_list)//37))
+print("Running for {} trajectories".format(len(file_list)//35))
 
 # wcb#####_traj#_MAP_t#####_p###
 # where # is a number.
 processed_trajectories = []
 failed_trajectories = []
-
+datasets = {}
 def parse_attr(f):
     print(f)
     attributes = {}
@@ -90,6 +91,7 @@ for f_this in file_list:
     print("Found sim: {}".format(sim))
     if input_type == "MET3D":
         print(f"Found attributes: {att}")
+    print
 
     df_dic_mapped = Deriv(direc=direc_path,
                           filt=filt,
@@ -152,28 +154,65 @@ for f_this in file_list:
         df_dic_mapped.shift_time(flag=flag)
         t2 = timer()
         print("Shifting done in {} s.".format(t2-t))
-
-    print("Saving as {}".format(file_type))
+    if not input_type == "MET3D":
+        print("Saving as {}".format(file_type))
     t = timer()
-    # try:
-    if file_type == "parquet":
-        df_dic_mapped.to_parquet(
-            store_path, compression="snappy", low_memory=True, attr=att)
-    elif file_type == "netcdf":
-        f_name = store_path + "/" + suffix
-        if input_type == "MET3D":
-            df_dic_mapped.to_netcdf(f_name, met3d=True, attr=att)
+    try:
+        if file_type == "parquet":
+            df_dic_mapped.to_parquet(
+                store_path, compression="snappy", low_memory=True, attr=att)
+        elif file_type == "netcdf":
+            f_name = store_path + "/" + suffix
+            if input_type == "MET3D":
+                if suffix in datasets:
+                    datasets[suffix].append(df_dic_mapped.get_netcdf_ready_data(attr=att))
+                else:
+                    datasets[suffix] = [df_dic_mapped.get_netcdf_ready_data(attr=att)]
+                # df_dic_mapped.to_netcdf(f_name, met3d=True, attr=att)
+            else:
+                df_dic_mapped.to_netcdf(f_name)
         else:
-            df_dic_mapped.to_netcdf(f_name)
-    else:
-        print("No such file format: {}".format(file_type))
+            print("No such file format: {}".format(file_type))
+            failed_trajectories.append(prefix)
+    except Exception as e:
+        print("FAILED: {}".format(prefix))
+        print(str(e))
         failed_trajectories.append(prefix)
-    # except Exception as e:
-    #     print("FAILED: {}".format(prefix))
-    #     print(str(e))
-    #     failed_trajectories.append(prefix)
+    t2 = timer()
+    if not input_type == "MET3D":
+        print("Saving done in {} s".format(t2-t))
+if input_type == "MET3D":
+    # print("Merging data and storing it")
+    t = timer()
+    for suffix in datasets:
+        # print(type(datasets[suffix][0]))
+        # datas = xr.concat(datasets[suffix], "trajectory")
+        for i, data in enumerate(datasets[suffix]):
+            comp = dict(zlib=True, complevel=5)
+            encoding = {var: comp for var in data.data_vars}
+            f_name = store_path + "/" + suffix
+            data.to_netcdf(
+                    f_name + f"_derivs_{i:03}.nc_wcb",
+                    encoding=encoding,
+                    compute=True,
+                    engine="netcdf4",
+                    format="NETCDF4",
+                    mode="w")
+        # # datasets = xr.concat(datasets[suffix], "trajectory")
+        # # datasets = xr.merge(datasets[suffix])
+        # comp = dict(zlib=True, complevel=5)
+        # encoding = {var: comp for var in datas.data_vars}
+        # f_name = store_path + "/" + suffix
+        # datas.to_netcdf(
+        #         f_name + "_derivs.nc_wcb",
+        #         encoding=encoding,
+        #         compute=True,
+        #         engine="netcdf4",
+        #         format="NETCDF4",
+        #         mode="w")
     t2 = timer()
     print("Saving done in {} s".format(t2-t))
+
 
 print("Done with following trajectories:\n{}".format(processed_trajectories))
 if len(failed_trajectories) > 0:

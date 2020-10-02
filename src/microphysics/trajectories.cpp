@@ -191,7 +191,11 @@ int main(int argc, char** argv)
             {
 #if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
 #if defined(TRACE_TIME)
-                trace = ( ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) >= trace_start) && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) <= trace_end) ) ? true : false;
+#if defined(MET3D)
+                trace = ( ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) + input.start_time >= trace_start) && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) + input.start_time <= trace_end) ) ? true : false;
+#else
+                trace = ( ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime)  >= trace_start) && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) <= trace_end) ) ? true : false;
+#endif
 #endif
                 if(trace)
                     std::cout << "timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
@@ -205,7 +209,8 @@ int main(int argc, char** argv)
                 // trajectory are used as start point
                 setCoefficients(y_single_old, cc, ref_quant);
 #if defined(TRACE_SAT)
-            std::cout << "Start qv_prime " << y_single_old[qv_idx]*ref_quant.qref << "\n";
+            if(trace)
+                std::cout << "Start qv_prime " << y_single_old[qv_idx]*ref_quant.qref << "\n";
 #endif
                 // CODIPACK
                 tape.setActive();
@@ -239,6 +244,7 @@ int main(int argc, char** argv)
                 y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
 #endif
                 register_everything(tape, cc);
+#ifndef IN_SAT_ADJ
                 if(sub == 1)
                 {
                                     //	 Add the inflow
@@ -252,29 +258,36 @@ int main(int argc, char** argv)
 //                     y_single_old[Ns_idx] += inflow[Ns_in_idx];
 //                     y_single_old[Ng_idx] += inflow[Ng_in_idx];
 // #endif
-                    // codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
-                    // codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
-                    // codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
-                    // codi::RealReverse qc_prime = y_single_old[qc_idx]*ref_quant.qref;
-                    // codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
-                    // std::vector<codi::RealReverse> res(7);
-                    // for(auto& r: res) r = 0;
-                    // saturation_adjust_meteo(
-                    //     T_prime,
-                    //     p_prime,
-                    //     p_sat,
-                    //     qv_prime,
-                    //     qc_prime,
-                    //     res,
-                    //     ref_quant.qref);
-                    // y_single_old[qv_idx] += res[qv_idx]/ref_quant.qref;
-                    // y_single_old[qc_idx] += res[qc_idx]/ref_quant.qref;
-                    // y_single_old[T_idx] += res[T_idx]/ref_quant.Tref;
-                    // y_single_old[S_idx] = convert_qv_to_S(
-                    //     y_single_old[p_idx].getValue()*ref_quant.pref,
-                    //     y_single_old[T_idx].getValue()*ref_quant.Tref,
-                    //     y_single_old[qv_idx].getValue()*ref_quant.qref);
+                    codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
+                    codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
+                    codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
+                    codi::RealReverse qc_prime = y_single_old[qc_idx]*ref_quant.qref;
+                    codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
+                    std::vector<codi::RealReverse> res(7);
+                    for(auto& r: res) r = 0;
+                    saturation_adjust_meteo(
+                        T_prime,
+                        p_prime,
+                        p_sat,
+                        qv_prime,
+                        qc_prime,
+                        res,
+                        ref_quant.qref);
+                    y_single_old[qv_idx] += res[qv_idx]/ref_quant.qref;
+                    y_single_old[qc_idx] += res[qc_idx]/ref_quant.qref;
+                    y_single_old[T_idx] += res[T_idx]/ref_quant.Tref;
+                    y_single_old[S_idx] = convert_qv_to_S(
+                        y_single_old[p_idx].getValue()*ref_quant.pref,
+                        y_single_old[T_idx].getValue()*ref_quant.Tref,
+                        y_single_old[qv_idx].getValue()*ref_quant.qref);
+#ifdef TRACE_QV
+                    if(trace)
+                        std::cout << "sat ad S " << y_single_new[S_idx]
+                            << "\nsat ad T " << y_single_new[T_idx] << "\n";
+#endif
                 }
+#endif
+
 //////////////// Add any different scheme and model here
     // I did not check if those two methods still work with CODIPACK
     // #if defined(EXPLICIT_EULER)
@@ -296,35 +309,38 @@ int main(int argc, char** argv)
                 RK4_step_2_sb_ice(y_single_new, y_single_old, ref_quant, cc,
                     nc_params, input.fixed_iteration);
 #endif
+#ifndef IN_SAT_ADJ
                 if(last_step)
                 {
-                    // codi::RealReverse T_prime = y_single_new[T_idx]*ref_quant.Tref;
-                    // codi::RealReverse p_prime = y_single_new[p_idx]*ref_quant.pref;
-                    // codi::RealReverse qv_prime = y_single_new[qv_idx]*ref_quant.qref;
-                    // codi::RealReverse qc_prime = y_single_new[qc_idx]*ref_quant.qref;
-                    // codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
-                    // std::vector<codi::RealReverse> res(7);
-                    // for(auto& r: res) r = 0;
-                    // saturation_adjust_meteo(
-                    //     T_prime,
-                    //     p_prime,
-                    //     p_sat,
-                    //     qv_prime,
-                    //     qc_prime,
-                    //     res,
-                    //     ref_quant.qref);
-                    // y_single_new[qv_idx] += res[qv_idx]/ref_quant.qref;
-                    // y_single_new[qc_idx] += res[qc_idx]/ref_quant.qref;
-                    // y_single_new[T_idx] += res[T_idx]/ref_quant.Tref;
-                    // y_single_new[S_idx] = convert_qv_to_S(
-                    //     y_single_new[p_idx].getValue()*ref_quant.pref,
-                    //     y_single_new[T_idx].getValue()*ref_quant.Tref,
-                    //     y_single_new[qv_idx].getValue()*ref_quant.qref);
-// #ifdef TRACE_QV
-//                     std::cout << "sat ad dqv " << res[qv_idx]
-//                         << ", dqc " << res[qc_idx] << "\n";
-// #endif
+                    codi::RealReverse T_prime = y_single_new[T_idx]*ref_quant.Tref;
+                    codi::RealReverse p_prime = y_single_new[p_idx]*ref_quant.pref;
+                    codi::RealReverse qv_prime = y_single_new[qv_idx]*ref_quant.qref;
+                    codi::RealReverse qc_prime = y_single_new[qc_idx]*ref_quant.qref;
+                    codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
+                    std::vector<codi::RealReverse> res(7);
+                    for(auto& r: res) r = 0;
+                    saturation_adjust_meteo(
+                        T_prime,
+                        p_prime,
+                        p_sat,
+                        qv_prime,
+                        qc_prime,
+                        res,
+                        ref_quant.qref);
+                    y_single_new[qv_idx] += res[qv_idx]/ref_quant.qref;
+                    y_single_new[qc_idx] += res[qc_idx]/ref_quant.qref;
+                    y_single_new[T_idx] += res[T_idx]/ref_quant.Tref;
+                    y_single_new[S_idx] = convert_qv_to_S(
+                        y_single_new[p_idx].getValue()*ref_quant.pref,
+                        y_single_new[T_idx].getValue()*ref_quant.Tref,
+                        y_single_new[qv_idx].getValue()*ref_quant.qref);
+#ifdef TRACE_QV
+                    if(trace)
+                        std::cout << "sat ad S " << y_single_new[S_idx]
+                            << "\nsat ad T " << y_single_new[T_idx] << "\n";
+#endif
                 }
+#endif
                 // CODIPACK: BEGIN
                 get_gradients(y_single_new, y_diff, cc, tape);
                 // CODIPACK: END

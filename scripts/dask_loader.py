@@ -10,7 +10,7 @@ import os
 import xarray as xr
 from multiprocessing import Pool
 from itertools import repeat
-
+from glob import glob
 
 params_dict = {"p": "_diff_0.txt", "T": "_diff_1.txt",
                "w": "_diff_2.txt", "S": "_diff_3.txt", "qc": "_diff_4.txt",
@@ -257,7 +257,8 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
     columns : list of strings
         Specify the columns to load.
     file_ending : string
-        In case of netcdf-files, specify the file ending here.
+        In case of netcdf-files, specify the file ending here to load
+        multiple files (takes long) or a single file.
 
     Returns
     -------
@@ -267,10 +268,20 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
     if parquet:
         df = pd.read_parquet(direc + "/", columns=columns)
     elif netcdf:
-        df = xr.open_mfdataset(
-            direc + "/" + file_ending,
-            parallel=True,
-            decode_times=False).to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+        if "*" in file_ending:
+            files = sorted(glob(direc + "/" + file_ending))
+            datasets = [xr.open_dataset(f, decode_times=False) for f in files]
+            df = xr.concat(datasets, "trajectory")
+        else:
+            df = xr.open_dataset(direc + "/" + file_ending, decode_times=False)
+        df = df.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+        # The performance of the following command is not the best.
+
+        # df = xr.open_mfdataset(
+        #     direc + "/" + file_ending,
+        #     parallel=True,
+        #     combine="by_coords",
+        #     decode_times=False).to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
     else:
         try:
             df = pd.read_csv(direc + "/*diff*", assume_missing=True) # , blocksize="8GB"
