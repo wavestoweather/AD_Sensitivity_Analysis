@@ -34,8 +34,12 @@ struct reference_quantities_t{
  */
 struct particle_model_constants_t{
 
+    /**
+     * Geometry coefficients.
+     */
     codi::RealReverse a_geo;
     codi::RealReverse b_geo;
+
     /**
      * Minimum size of particle for mean meass calculation.
      */
@@ -70,10 +74,10 @@ struct particle_model_constants_t{
     codi::RealReverse sc_theta_n;
     codi::RealReverse sc_delta_n;
     codi::RealReverse s_vel;        /*!< Also known as sigma_vel in ICON. */
-    codi::RealReverse a_vel;
-    codi::RealReverse b_vel;
+    codi::RealReverse a_vel;    /*!< Coefficient for sedimentation. */
+    codi::RealReverse b_vel;    /*!< Coefficient for sedimentation. */
     codi::RealReverse rho_v;
-    codi::RealReverse c_z;
+    codi::RealReverse c_z;  /*!< Coefficient for capacity. */
     codi::RealReverse sc_coll_n;    /*!< Also known as e_coll in ICON. */
     codi::RealReverse cmu0, cmu1, cmu2, cmu3, cmu4, cmu5, alpha, beta, gamma;
     codi::RealReverse nu;
@@ -120,8 +124,8 @@ struct particle_model_constants_t{
     codi::RealReverse b_ven;    /*!<  Riming parameter. */
 
     codi::RealReverse c_s;  /*!< Also known as c_i in ICON.*/
-    codi::RealReverse a_f;
-    codi::RealReverse b_f;
+    codi::RealReverse a_f; /*!< Coefficient for average ventilation. */
+    codi::RealReverse b_f; /*!< Coefficient for average ventilation. */
 
     codi::RealReverse alfa_n;       /*!<  Bulk sedimentation velocity parameter. */
     codi::RealReverse alfa_q;       /*!<  Bulk sedimentation velocity parameter. */

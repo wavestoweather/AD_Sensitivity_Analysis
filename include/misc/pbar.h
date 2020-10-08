@@ -35,14 +35,14 @@ public:
         unit = "Hz";
         out = &out_;
         // Description width with spaces, additional characters and some additional space
-        desc_width = description.length() + unit.length()*2 + 16 + 40;
+        desc_width = description.length() + unit.length()*2 + 16 + 40 + 14;
         t_first = std::chrono::system_clock::now();
     }
 
     void reset()
     {
         t_first = std::chrono::system_clock::now();
-        desc_width = description.length() + unit.length()*2 + 16 + 40;
+        desc_width = description.length() + unit.length()*2 + 16 + 40 + 14;
     }
     void finish()
     {
@@ -69,12 +69,11 @@ public:
         double dt_total = ((std::chrono::duration<double>)(now - t_first)).count();
         // Get total time string
         std::string time = " in ";
-        if(dt_total > 3600)
+        if(dt_total >= 3600)
             time = time + std::to_string(int(dt_total/3600)) + "h ";
-        if(dt_total > 60)
-        {
-            time = time + std::to_string(int(dt_total/60)) + "min ";
-        }
+        if(dt_total >= 60)
+            time = time + std::to_string(int(dt_total)%3600/60) + "min ";
+
         time = time + std::to_string(int(dt_total)%60) + "s ";
         int window_width = get_console_width();
         // Get average amount of steps per second
@@ -96,23 +95,31 @@ public:
         std::string right_string = right_side.str();
         if(right_string.length()+1 > desc_width) desc_width = right_string.length();
         // Get the progressbar
-        uint32_t bar_width_max = window_width-desc_width-1;
+        int bar_width_max = window_width-desc_width-1;
         double current_box = double(t)/double(end_step) * bar_width_max;
-        uint32_t n_full = current_box;
+        int n_full = current_box;
         std::string bar;
-        for(uint32_t i=0; i<n_full; i++) bar += bars[8];
+        for(int i=0; i<n_full; i++) bar += bars[8];
         // fill the one inbetween
-        uint32_t bar_width = n_full;
+        int bar_width = n_full;
         if(current_box > n_full)
         {
             bar += bars[uint32_t( bars.size()*(current_box-n_full) )];
             bar_width++;
         }
         // the rest
-        for(uint32_t i=0; i<bar_width_max-bar_width; i++) bar += bars[0];
+        for(int i=0; i<bar_width_max-bar_width; i++) bar += bars[0];
         bar += right_pad;
+        // Get estimated remaining time "Rem. xxmin xxs"
+        uint64_t rem_time = (end_step - t)/dt_step;
+        std::string rem_string = " Rem. ";
+        if(rem_time >= 3600)
+            rem_string = rem_string + std::to_string(int(rem_time/3600)) + "h ";
+        if(rem_time >= 60)
+            rem_string = rem_string + std::to_string(int(rem_time%3600/60)) + "min ";
+        rem_string = rem_string + std::to_string(int(rem_time%60)) + "s";
         int old_precision = out->precision();
-        *out << bar << right_string << "\r" << std::flush;
+        *out << bar << right_string << rem_string << "    \r" << std::flush;
     }
 
 private:

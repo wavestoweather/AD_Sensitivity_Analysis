@@ -13,7 +13,7 @@ INPUT_FILENAME="/data/project/wcb/netcdf/vladiana_met/conv_400_0_traj_t000000_p0
 TIMESTEP="0.01"
 # Update the progressbar after that many simulation steps
 # Usually there are about 87 to 280 snapshots/second
-PROGRESSBAR="999999" # Only useful with -u for parallel and 1 process
+PROGRESSBAR="300" # Only useful with -u for parallel and 1 process
 # TIMESTEP="19.99"
 # Get results every SNAPSHOT_INDEX steps, in this example every 2 seconds
 # SNAPSHOT_INDEX="200"
@@ -24,46 +24,57 @@ PROGRESSBAR="999999" # Only useful with -u for parallel and 1 process
 
 # End time in seconds for the simulation. Should be lower than
 # the maximum time of the netcdf-file
-WRITE_INDEX="1000"
-SNAPSHOT_INDEX="100"
-TARGET_TIME_AFTER_START="5000"
-START_TIME="-1000"
+# WRITE_INDEX="1000"
+# SNAPSHOT_INDEX="100"
+# TARGET_TIME_AFTER_START="5000"
+# START_TIME="-1000"
 
 # TARGET_TIME_AFTER_START="600"
-
+START_TIME="-1000"
 WRITE_INDEX="1000"
-SNAPSHOT_INDEX="1000"
-TARGET_TIME_AFTER_START="3000" # Minus Start_time
-TARGET_TIME_AFTER_START="1200"
+SNAPSHOT_INDEX="250"
+TARGET_TIME_AFTER_START="7500" # Minus Start_time
+# TARGET_TIME_AFTER_START="400"
 # for SUFF in "_outSat_sbConv" "_outSat" "_outSat_sbShape_sbConv" "_outSat_sbShape"
+# dt 20 s
+TIMESTEP="20"
+SNAPSHOT_INDEX="1"
+# TARGET_TIME_AFTER_START="3000"
 # for SUFF in "_outSat_sbConv" "_inSat_sbConv" "_outSat" "_inSat" "_outSat_sbShape_sbConv" "_inSat_sbShape_sbConv" "_outSat_sbShape" "_inSat_sbShape"
-for SUFF in "_outSat_sbShape_sbConv"
+#  -DTRACE_TIME -DTRACE_SAT -DTRACE_QV -DTRACE_QC -DTRACE_QR -DTRACE_ENV -DTRACE_QS -DTRACE_QI -DTRACE_QG -DTRACE_QH
+for SUFF in "_outSat_sbShape_sbConv_debug"
 do
     make clean
+    echo "###################################"
+    echo "Running for ${SUFF}"
+    echo ""
     case $SUFF in
         _outSat_sbConv)
             make release SOURCE='-DMET3D -DSB_CONV'
             ;;
         _inSat_sbConv)
-            make release SORUCE='-DMET3D -DIN_SAT_ADJ -DSB_CONV'
+            make release SOURCE='-DMET3D -DIN_SAT_ADJ -DSB_CONV'
             ;;
         _outSat)
             make release SOURCE='-DMET3D'
             ;;
         _inSat)
-            make release SORUCE='-DMET3D -DIN_SAT_ADJ'
+            make release SOURCE='-DMET3D -DIN_SAT_ADJ'
             ;;
         _outSat_sbShape_sbConv)
-            make release SOURCE='-DMET3D -DSB_CONV -DSB_SHAPE -DTRACE_SAT -DTRACE_TIME -DTRACE_QV'
+            make release SOURCE='-DMET3D -DSB_CONV -DSB_SHAPE'
+            ;;
+        _outSat_sbShape_sbConv_debug)
+            make release SOURCE='-DMET3D -DSB_CONV -DSB_SHAPE -DTRACE_TIME -DTRACE_SAT -DTRACE_QV -DTRACE_QC -DTRACE_QR -DTRACE_ENV -DTRACE_QS -DTRACE_QI -DTRACE_QG -DTRACE_QH'
             ;;
         _inSat_sbShape_sbConv)
-            make release SORUCE='-DMET3D -DIN_SAT_ADJ -DSB_CONV -DSB_SHAPE -DTRACE_SAT -DTRACE_TIME'
+            make release SOURCE='-DMET3D -DIN_SAT_ADJ -DSB_CONV -DSB_SHAPE'
             ;;
         _outSat_sbShape)
             make release SOURCE='-DMET3D -DSB_SHAPE'
             ;;
         _inSat_sbShape)
-            make release SORUCE='-DMET3D -DIN_SAT_ADJ -DSB_SHAPE'
+            make release SOURCE='-DMET3D -DIN_SAT_ADJ -DSB_SHAPE'
             ;;
     esac
 
@@ -112,7 +123,7 @@ do
     # -e ${START_OVER_ENVIRONMENT} \
     # -p ${PROGRESSBAR} \
     # -n ${START_TIME} \
-    # -l ${INPUT_FILENAME} -r {1} ::: {0..11}
+    # -l ${INPUT_FILENAME} -r {1} ::: {3..3}
 
     OUTPUT_PATH="/data/project/wcb/sim_results/traj_stats2_testset/conv_400_0_t000000_p001_mult${SUFF}/"
     START_OVER="0"
@@ -142,6 +153,7 @@ do
     -n ${START_TIME} \
     -l ${INPUT_FILENAME} -r {1} ::: {3..3}
 
+    echo ""
     FILE_TYPE="netcdf"
     INPUT_TYPE="MET3D"
     INPUT_PATH="/data/project/wcb/sim_results/traj_stats2_testset/conv_400_0_t000000_p001_start_over_mult${SUFF}"
@@ -163,7 +175,7 @@ do
     else
         rm "${STORE_PATH}/"*.nc_wcb
     fi
-    # python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH} ${INPUT_TYPE}
+    python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH} ${INPUT_TYPE}
     cd ..
 done
 
@@ -177,5 +189,5 @@ done
 # INPUT_PATH="/data/project/wcb/sim_results/traj_stats2_testset/conv_400_0_t000000_p001_ansatz4${SUFF}"
 # STORE_PATH="/data/project/wcb/parquet/traj_stats2_testset/conv_400_0_t000000_p001_ansatz4${SUFF}"
 # python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH} ${INPUT_TYPE}
-
-# python plot_outcomes.py
+# pics/ inSat_sbShape
+python plot_outcomes.py pics/ outSat_sbShape_sbConv_debug

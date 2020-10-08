@@ -163,8 +163,32 @@ int main(int argc, char** argv)
     {
         return 1;
     }
+#ifdef TRACE_QC
+    print_particle_params(cc.cloud, "cloud");
+#endif
+#ifdef TRACE_QR
+    print_particle_params(cc.rain, "rain");
+#endif
 
-    ProgressBar pbar = ProgressBar((cc.num_sub_steps-2)*cc.num_steps, input.progress_index, "simulation step", std::cout);
+#ifdef TRACE_QI
+    print_particle_params(cc.ice, "ice");
+#endif
+
+#ifdef TRACE_QS
+    print_particle_params(cc.snow, "snow");
+#endif
+
+#ifdef TRACE_QG
+    print_particle_params(cc.graupel, "graupel");
+#endif
+
+#ifdef TRACE_QH
+    print_particle_params(cc.hail, "hail");
+#endif
+
+
+    ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps, input.progress_index, "simulation step", std::cout);
+
     // Loop for timestepping: BEGIN
     try
     {
@@ -185,10 +209,10 @@ int main(int argc, char** argv)
                 ensemble,
 #endif
                 t);
-
             // Iterate over each substep
             for(uint32_t sub=1; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
             {
+                // std::cout << "sub=" << sub << "\n";
 #if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
 #if defined(TRACE_TIME)
 #if defined(MET3D)
@@ -217,19 +241,37 @@ int main(int argc, char** argv)
 #ifdef TRACE_QR
                 if(trace)
                 {
-                    std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps
+                    std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps*ref_quant.qref
                         << ", Nr " << inflow[Nr_in_idx]/cc.num_sub_steps << "\n";
-                    std::cout << "qr_old " << y_single_old[qr_idx]
+                    std::cout << "qr_old " << y_single_old[qr_idx]*ref_quant.qref
                         << ", Nr_old " << y_single_old[Nr_idx] << "\n";
                 }
 #endif
 #ifdef TRACE_QI
                 if(trace)
                 {
-                    std::cout << "Adding qi " << inflow[qi_in_idx]/cc.num_sub_steps
+                    std::cout << "Adding qi " << inflow[qi_in_idx]/cc.num_sub_steps*ref_quant.qref
                         << ", Ni " << inflow[Ni_in_idx]/cc.num_sub_steps << "\n";
-                    std::cout << "qi_old " << y_single_old[qi_idx]
+                    std::cout << "qi_old " << y_single_old[qi_idx]*ref_quant.qref
                         << ", Ni_old " << y_single_old[Ni_idx] << "\n";
+                }
+#endif
+#ifdef TRACE_QS
+                if(trace)
+                {
+                    std::cout << "Adding qs " << inflow[qs_in_idx]/cc.num_sub_steps*ref_quant.qref
+                        << ", Ns " << inflow[Ns_in_idx]/cc.num_sub_steps << "\n";
+                    std::cout << "qs_old " << y_single_old[qs_idx]*ref_quant.qref
+                        << ", Ns_old " << y_single_old[Ns_idx] << "\n";
+                }
+#endif
+#ifdef TRACE_QG
+                if(trace)
+                {
+                    std::cout << "Adding qg " << inflow[qg_in_idx]/cc.num_sub_steps*ref_quant.qref
+                        << ", Ng " << inflow[Ng_in_idx]/cc.num_sub_steps << "\n";
+                    std::cout << "qg_old " << y_single_old[qg_idx]*ref_quant.qref
+                        << ", Ng_old " << y_single_old[Ng_idx] << "\n";
                 }
 #endif
                 //	 Add the inflow
@@ -244,49 +286,56 @@ int main(int argc, char** argv)
                 y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
 #endif
                 register_everything(tape, cc);
-#ifndef IN_SAT_ADJ
                 if(sub == 1)
                 {
-                                    //	 Add the inflow
-//                     y_single_old[qr_idx] += inflow[qr_in_idx];
-//                     y_single_old[Nr_idx] += inflow[Nr_in_idx];
-// #if defined(RK4ICE)
-//                     y_single_old[qi_idx] += inflow[qi_in_idx];
-//                     y_single_old[qs_idx] += inflow[qs_in_idx];
-//                     y_single_old[qg_idx] += inflow[qg_in_idx];
-//                     y_single_old[Ni_idx] += inflow[Ni_in_idx];
-//                     y_single_old[Ns_idx] += inflow[Ns_in_idx];
-//                     y_single_old[Ng_idx] += inflow[Ng_in_idx];
-// #endif
-                    codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
                     codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
+                    codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
                     codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
-                    codi::RealReverse qc_prime = y_single_old[qc_idx]*ref_quant.qref;
-                    codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
-                    std::vector<codi::RealReverse> res(7);
-                    for(auto& r: res) r = 0;
-                    saturation_adjust_meteo(
-                        T_prime,
-                        p_prime,
-                        p_sat,
-                        qv_prime,
-                        qc_prime,
-                        res,
-                        ref_quant.qref);
-                    y_single_old[qv_idx] += res[qv_idx]/ref_quant.qref;
-                    y_single_old[qc_idx] += res[qc_idx]/ref_quant.qref;
-                    y_single_old[T_idx] += res[T_idx]/ref_quant.Tref;
-                    y_single_old[S_idx] = convert_qv_to_S(
-                        y_single_old[p_idx].getValue()*ref_quant.pref,
-                        y_single_old[T_idx].getValue()*ref_quant.Tref,
-                        y_single_old[qv_idx].getValue()*ref_quant.qref);
-#ifdef TRACE_QV
-                    if(trace)
-                        std::cout << "sat ad S " << y_single_new[S_idx]
-                            << "\nsat ad T " << y_single_new[T_idx] << "\n";
-#endif
+                    y_single_old[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime);
                 }
-#endif
+// #ifndef IN_SAT_ADJ
+//                 if(sub == 1)
+//                 {
+//                                     //	 Add the inflow
+// //                     y_single_old[qr_idx] += inflow[qr_in_idx];
+// //                     y_single_old[Nr_idx] += inflow[Nr_in_idx];
+// // #if defined(RK4ICE)
+// //                     y_single_old[qi_idx] += inflow[qi_in_idx];
+// //                     y_single_old[qs_idx] += inflow[qs_in_idx];
+// //                     y_single_old[qg_idx] += inflow[qg_in_idx];
+// //                     y_single_old[Ni_idx] += inflow[Ni_in_idx];
+// //                     y_single_old[Ns_idx] += inflow[Ns_in_idx];
+// //                     y_single_old[Ng_idx] += inflow[Ng_in_idx];
+// // #endif
+//                     codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
+//                     codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
+//                     codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
+//                     codi::RealReverse qc_prime = y_single_old[qc_idx]*ref_quant.qref;
+//                     codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
+//                     std::vector<codi::RealReverse> res(7);
+//                     for(auto& r: res) r = 0;
+//                     saturation_adjust_meteo(
+//                         T_prime,
+//                         p_prime,
+//                         p_sat,
+//                         qv_prime,
+//                         qc_prime,
+//                         res,
+//                         ref_quant.qref);
+//                     y_single_old[qv_idx] += res[qv_idx]/ref_quant.qref;
+//                     y_single_old[qc_idx] += res[qc_idx]/ref_quant.qref;
+//                     y_single_old[T_idx] += res[T_idx]/ref_quant.Tref;
+//                     y_single_old[S_idx] = convert_qv_to_S(
+//                         y_single_old[p_idx].getValue()*ref_quant.pref,
+//                         y_single_old[T_idx].getValue()*ref_quant.Tref,
+//                         y_single_old[qv_idx].getValue()*ref_quant.qref);
+// #ifdef TRACE_QV
+//                     if(trace)
+//                         std::cout << "sat ad S " << y_single_new[S_idx]
+//                             << "\nsat ad T " << y_single_new[T_idx] << "\n";
+// #endif
+//                 }
+// #endif
 
 //////////////// Add any different scheme and model here
     // I did not check if those two methods still work with CODIPACK
@@ -318,6 +367,15 @@ int main(int argc, char** argv)
                     codi::RealReverse qc_prime = y_single_new[qc_idx]*ref_quant.qref;
                     codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
                     std::vector<codi::RealReverse> res(7);
+#ifdef TRACE_ENV
+                    if(trace)
+                        std::cout << "before sat ad S " << y_single_new[S_idx]
+                            << "\nbefore sat ad S calc "
+                            << convert_qv_to_S(
+                                y_single_new[p_idx].getValue()*ref_quant.pref,
+                                y_single_new[T_idx].getValue()*ref_quant.Tref,
+                                y_single_new[qv_idx].getValue()*ref_quant.qref) << "\n";
+#endif
                     for(auto& r: res) r = 0;
                     saturation_adjust_meteo(
                         T_prime,
@@ -334,13 +392,17 @@ int main(int argc, char** argv)
                         y_single_new[p_idx].getValue()*ref_quant.pref,
                         y_single_new[T_idx].getValue()*ref_quant.Tref,
                         y_single_new[qv_idx].getValue()*ref_quant.qref);
-#ifdef TRACE_QV
+#ifdef TRACE_ENV
                     if(trace)
                         std::cout << "sat ad S " << y_single_new[S_idx]
-                            << "\nsat ad T " << y_single_new[T_idx] << "\n";
+                            << "\nsat ad T " << y_single_new[T_idx]*ref_quant.Tref << "\n";
 #endif
                 }
 #endif
+                y_single_new[S_idx] = convert_qv_to_S(
+                        y_single_new[p_idx].getValue()*ref_quant.pref,
+                        y_single_new[T_idx].getValue()*ref_quant.Tref,
+                        y_single_new[qv_idx].getValue()*ref_quant.qref);
                 // CODIPACK: BEGIN
                 get_gradients(y_single_new, y_diff, cc, tape);
                 // CODIPACK: END

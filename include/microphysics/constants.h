@@ -74,9 +74,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #if defined(TRACE_TIME)
+// Relative to ascent time
 double trace_time = 0;
-const double trace_start = 4600;
-const double trace_end = 4680;
+const double trace_start = 1000;
+const double trace_end = 1400;
 bool trace = false;
 #else
 bool trace = true;

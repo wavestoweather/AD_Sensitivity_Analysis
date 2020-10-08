@@ -251,6 +251,7 @@ inline A density_ice(A T)
 /**
  * Specific heat capacity of dry air in \f$ \text{J}/(\text{kg} \cdot \text{K}) \f$.
  * From Rogers and Yau (1989)
+ * For now we use a fixed constant that is valid in constant pressure.
  * Validity range: ?
  *
  * @param T Temperature in Kelvin
@@ -260,7 +261,7 @@ template <class A>
 inline A specific_heat_dry_air(A T)
 {
 
-  return 1005.0;
+  return cp; // 1005.0
 
 }
 
@@ -1646,7 +1647,7 @@ void setup_model_constants(
     init_particle_collection_2(cc.ice, cc.rain, cc.coeffs_irr);
     init_particle_collection_1(cc.ice, cc.cloud, cc.coeffs_icr);
     init_particle_collection_1(cc.hail, cc.rain, cc.coeffs_hrr);
-    init_particle_collection_1(cc.graupel, cc.rain, cc.coeffs_grr);
+    init_particle_collection_1(cc.graupel, cc.rain, cc.coeffs_grr); // Cosmo uses 2, ICON uses 1
     init_particle_collection_1(cc.hail, cc.cloud, cc.coeffs_hcr);
     init_particle_collection_1(cc.graupel, cc.cloud, cc.coeffs_gcr);
     init_particle_collection_1(cc.snow, cc.ice, cc.coeffs_sic);

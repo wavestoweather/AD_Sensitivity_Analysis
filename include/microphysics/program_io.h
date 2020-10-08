@@ -296,7 +296,7 @@ void load_nc_parameters_var(
     // nc.pot_vortic   = datafile.getVar("POT_VORTIC")
 #endif
 
-#if defined WCB2 || MET3D
+#if defined WCB2 || defined MET3D
     nc.qg_var       = datafile.getVar("QG");
     nc.QIin_var     = datafile.getVar("QI_IN");
     nc.QSin_var     = datafile.getVar("QS_IN");
@@ -1269,24 +1269,39 @@ void read_netcdf_write_stream(
 #else
         y_single_old[z_idx] = nc_params.z[0];
 #endif
-        // DEBUG purpose: What if we put add_params here?
-// #if defined(FLUX) && defined(WCB2)
-//         inflow[Nr_in_idx] = nc_params.NRin;
-//   #if defined(RK4ICE)
-//         inflow[Ni_in_idx] = nc_params.NIin;
-//         inflow[Ns_in_idx] = nc_params.NSin;
-//         inflow[Ng_in_idx] = nc_params.NGin;
-//   #endif
-// #else
-//         inflow[Nr_in_idx] = 0;
-//   #if defined(RK4ICE)
-//         inflow[Ni_in_idx] = 0;
-//         inflow[Ns_in_idx] = 0;
-//         inflow[Ng_in_idx] = 0;
-//   #endif
-// #endif
-        // END DEBUG
+
+#if defined(FLUX) && (defined(WCB2) || defined(MET3D))
+        inflow[Nr_in_idx] = nc_params.NRin;
+  #if defined(RK4ICE)
+        inflow[Ni_in_idx] = nc_params.NIin;
+        inflow[Ns_in_idx] = nc_params.NSin;
+        inflow[Ng_in_idx] = nc_params.NGin;
+  #endif
+#else
+        inflow[Nr_in_idx] = 0;
+  #if defined(RK4ICE)
+        inflow[Ni_in_idx] = 0;
+        inflow[Ns_in_idx] = 0;
+        inflow[Ng_in_idx] = 0;
+  #endif
+#endif
+#if defined(FLUX) && !defined(WCB)
+        inflow[qr_in_idx] = nc_params.QRin;
+  #if defined(RK4ICE)
+        inflow[qi_in_idx] = nc_params.QIin;
+        inflow[qs_in_idx] = nc_params.QSin;
+        inflow[qg_in_idx] = nc_params.QGin;
+  #endif
+#else
+        inflow[qr_in_idx] = 0;
+  #if defined(RK4ICE)
+        inflow[qi_in_idx] = 0;
+        inflow[qs_in_idx] = 0;
+        inflow[qg_in_idx] = 0;
+  #endif
+#endif
     }
+
     if(t==0 || input.start_over)
     {
         y_single_old[S_idx]  = nc_params.S;     // S
@@ -1352,6 +1367,7 @@ void read_netcdf_write_stream(
         y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
     #endif
 #endif
+        // Actually only needed for single moment schemes
         cc.Nc_prime = y_single_old[Nc_idx];
 
 #if defined(FLUX) && !defined(WCB)
@@ -1383,12 +1399,6 @@ void read_netcdf_write_stream(
         inflow[Ns_in_idx] = 0;
         inflow[Ng_in_idx] = 0;
   #endif
-#endif
-#ifdef TRACE_SAT
-        std::cout << "#########read/write##########\n"
-        //           << "y_single_old[T_idx] " << y_single_old[T_idx] << "\n"
-        //           << "T_prime " << y_single_old[T_idx].getValue()*ref_quant.Tref << "\n"
-                  << "y_single_old[qv_idx]  " << y_single_old[qv_idx]*ref_quant.qref << "\n";
 #endif
         // DEBUG Set qv to qv_sat
         // y_single_old[qv_idx] = water_vapor_sat_ratio_2(y_single_old[T_idx].getValue()*ref_quant.Tref);
@@ -1497,6 +1507,7 @@ void write_output(
     if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {
+        // std::cout << "buffering\n";
         // Write the results to the output file
 #if defined WCB || defined WCB2
         out_tmp << time_new << "," << traj_id << ","
@@ -1570,6 +1581,7 @@ void write_output(
     if( (0 == (sub + t*cc.num_sub_steps) % write_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {
+        // std::cout << "Writing to file\n";
         outfile << out_tmp.rdbuf();
         for(int ii = 0 ; ii < num_comp ; ii++)
         {

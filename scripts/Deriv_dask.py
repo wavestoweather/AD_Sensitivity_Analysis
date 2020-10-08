@@ -1185,7 +1185,7 @@ class Deriv_dask:
         width=1280, height=800, log=[False, False],
         vertical_mark=None, cross_mark=None, datashade=False, prefix=None, alpha=1,
         plot_path="pics/", yticks=10, decimals=-3, rolling_avg=20,
-        kind="scatter", s=8, **kwargs):
+        kind="scatter", plot_singles=False, s=8, **kwargs):
         """
         Plot a grid for comparing multiple output parameters or
         multiple derivatives across one output parameter.
@@ -1638,25 +1638,27 @@ class Deriv_dask:
                 self.plots.append(final_plots)
             print("Saving to " + save + filetype, flush=True)
             renderer.save(final_plots, save)
+            display_file = save
             # Store every image as an individual one as well
-            for j, pl in enumerate(final_plots):
-                y_name = y_axis[j]
-                i = 0
-                save = (plot_path + prefix + x_axis + "_" + y_name + "_{:03d}".format(i))
-                while os.path.isfile(save + ".png"):
-                    i = i+1
+            if plot_singles:
+                for j, pl in enumerate(final_plots):
+                    y_name = y_axis[j]
+                    i = 0
                     save = (plot_path + prefix + x_axis + "_" + y_name + "_{:03d}".format(i))
-                pl = pl.opts(
-                    opts.Scatter(
-                        xticks=20,
-                        xaxis="bottom",
-                        fontsize=self.font_dic,
-                        show_grid=True,
-                        show_legend=True,
-                        **scatter_kwargs)).opts(aspect=aspect, **layout_kwargs)
-                renderer.save(pl, save)
+                    while os.path.isfile(save + ".png"):
+                        i = i+1
+                        save = (plot_path + prefix + x_axis + "_" + y_name + "_{:03d}".format(i))
+                    pl = pl.opts(
+                        opts.Scatter(
+                            xticks=20,
+                            xaxis="bottom",
+                            fontsize=self.font_dic,
+                            show_grid=True,
+                            show_legend=True,
+                            **scatter_kwargs)).opts(aspect=aspect, **layout_kwargs)
+                    renderer.save(pl, save)
             try:
                 from IPython.display import Image, display
-                display(Image(save + filetype, width=width))
+                display(Image(display_file + filetype, width=width))
             except:
                 pass
