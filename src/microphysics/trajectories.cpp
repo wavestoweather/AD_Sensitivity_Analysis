@@ -293,60 +293,6 @@ int main(int argc, char** argv)
                     codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
                     y_single_old[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime);
                 }
-// #ifndef IN_SAT_ADJ
-//                 if(sub == 1)
-//                 {
-//                                     //	 Add the inflow
-// //                     y_single_old[qr_idx] += inflow[qr_in_idx];
-// //                     y_single_old[Nr_idx] += inflow[Nr_in_idx];
-// // #if defined(RK4ICE)
-// //                     y_single_old[qi_idx] += inflow[qi_in_idx];
-// //                     y_single_old[qs_idx] += inflow[qs_in_idx];
-// //                     y_single_old[qg_idx] += inflow[qg_in_idx];
-// //                     y_single_old[Ni_idx] += inflow[Ni_in_idx];
-// //                     y_single_old[Ns_idx] += inflow[Ns_in_idx];
-// //                     y_single_old[Ng_idx] += inflow[Ng_in_idx];
-// // #endif
-//                     codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
-//                     codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
-//                     codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
-//                     codi::RealReverse qc_prime = y_single_old[qc_idx]*ref_quant.qref;
-//                     codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime);
-//                     std::vector<codi::RealReverse> res(7);
-//                     for(auto& r: res) r = 0;
-//                     saturation_adjust_meteo(
-//                         T_prime,
-//                         p_prime,
-//                         p_sat,
-//                         qv_prime,
-//                         qc_prime,
-//                         res,
-//                         ref_quant.qref);
-//                     y_single_old[qv_idx] += res[qv_idx]/ref_quant.qref;
-//                     y_single_old[qc_idx] += res[qc_idx]/ref_quant.qref;
-//                     y_single_old[T_idx] += res[T_idx]/ref_quant.Tref;
-//                     y_single_old[S_idx] = convert_qv_to_S(
-//                         y_single_old[p_idx].getValue()*ref_quant.pref,
-//                         y_single_old[T_idx].getValue()*ref_quant.Tref,
-//                         y_single_old[qv_idx].getValue()*ref_quant.qref);
-// #ifdef TRACE_QV
-//                     if(trace)
-//                         std::cout << "sat ad S " << y_single_new[S_idx]
-//                             << "\nsat ad T " << y_single_new[T_idx] << "\n";
-// #endif
-//                 }
-// #endif
-
-//////////////// Add any different scheme and model here
-    // I did not check if those two methods still work with CODIPACK
-    // #if defined(EXPLICIT_EULER)
-    //             euler_step(y_single_new, y_single_old, num_comp, ref_quant, cc);
-    // #endif
-
-    // #if defined(IMPLICIT_EULER)
-    //             implicit_euler_step(y_single_new, y_single_old, num_comp, ref_quant, cc);
-    // #endif
-
 
 #if defined(RK4) || defined(RK4_ONE_MOMENT) || defined(OTHER)
                 RK4_step(y_single_new, y_single_old, ref_quant, cc,
@@ -377,14 +323,13 @@ int main(int argc, char** argv)
                                 y_single_new[qv_idx].getValue()*ref_quant.qref) << "\n";
 #endif
                     for(auto& r: res) r = 0;
-                    saturation_adjust_meteo(
+                    saturation_adjust(
                         T_prime,
                         p_prime,
                         p_sat,
                         qv_prime,
                         qc_prime,
-                        res,
-                        ref_quant.qref);
+                        res);
                     y_single_new[qv_idx] += res[qv_idx]/ref_quant.qref;
                     y_single_new[qc_idx] += res[qc_idx]/ref_quant.qref;
                     y_single_new[T_idx] += res[T_idx]/ref_quant.Tref;

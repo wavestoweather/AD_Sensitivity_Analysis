@@ -32,17 +32,17 @@ PROGRESSBAR="300" # Only useful with -u for parallel and 1 process
 # TARGET_TIME_AFTER_START="600"
 START_TIME="-1000"
 WRITE_INDEX="1000"
-SNAPSHOT_INDEX="250"
+SNAPSHOT_INDEX="100"
 TARGET_TIME_AFTER_START="7500" # Minus Start_time
 # TARGET_TIME_AFTER_START="400"
 # for SUFF in "_outSat_sbConv" "_outSat" "_outSat_sbShape_sbConv" "_outSat_sbShape"
 # dt 20 s
-TIMESTEP="20"
-SNAPSHOT_INDEX="1"
+# TIMESTEP="20"
+# SNAPSHOT_INDEX="1"
 # TARGET_TIME_AFTER_START="3000"
 # for SUFF in "_outSat_sbConv" "_inSat_sbConv" "_outSat" "_inSat" "_outSat_sbShape_sbConv" "_inSat_sbShape_sbConv" "_outSat_sbShape" "_inSat_sbShape"
-#  -DTRACE_TIME -DTRACE_SAT -DTRACE_QV -DTRACE_QC -DTRACE_QR -DTRACE_ENV -DTRACE_QS -DTRACE_QI -DTRACE_QG -DTRACE_QH
-for SUFF in "_outSat_sbShape_sbConv_debug"
+#  -DTRACE_TIME -DTRACE_SAT -DTRACE_QV -DTRACE_QC -DTRACE_QR -DTRACE_ENV -DTRACE_QS -DTRACE_QI -DTRACE_QG -DTRACE_QH -DTRACE_SEDI
+for SUFF in "_outSat_sbShape_sbConv"
 do
     make clean
     echo "###################################"
@@ -65,7 +65,7 @@ do
             make release SOURCE='-DMET3D -DSB_CONV -DSB_SHAPE'
             ;;
         _outSat_sbShape_sbConv_debug)
-            make release SOURCE='-DMET3D -DSB_CONV -DSB_SHAPE -DTRACE_TIME -DTRACE_SAT -DTRACE_QV -DTRACE_QC -DTRACE_QR -DTRACE_ENV -DTRACE_QS -DTRACE_QI -DTRACE_QG -DTRACE_QH'
+            make release SOURCE='-DMET3D -DSB_CONV -DSB_SHAPE -DTRACE_SEDI -DTRACE_TIME -DTRACE_SAT -DTRACE_QV -DTRACE_QC -DTRACE_QR -DTRACE_ENV -DTRACE_QS -DTRACE_QI -DTRACE_QG -DTRACE_QH'
             ;;
         _inSat_sbShape_sbConv)
             make release SOURCE='-DMET3D -DIN_SAT_ADJ -DSB_CONV -DSB_SHAPE'
@@ -151,7 +151,7 @@ do
     -e ${START_OVER_ENVIRONMENT} \
     -p ${PROGRESSBAR} \
     -n ${START_TIME} \
-    -l ${INPUT_FILENAME} -r {1} ::: {3..3}
+    -l ${INPUT_FILENAME} -r {1} ::: {3..5}
 
     echo ""
     FILE_TYPE="netcdf"
@@ -190,4 +190,4 @@ done
 # STORE_PATH="/data/project/wcb/parquet/traj_stats2_testset/conv_400_0_t000000_p001_ansatz4${SUFF}"
 # python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH} ${INPUT_TYPE}
 # pics/ inSat_sbShape
-python plot_outcomes.py pics/ outSat_sbShape_sbConv_debug
+python plot_outcomes.py pics/ outSat_sbShape_sbConv

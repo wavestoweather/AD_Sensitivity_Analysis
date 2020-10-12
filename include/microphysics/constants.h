@@ -76,8 +76,8 @@
 #if defined(TRACE_TIME)
 // Relative to ascent time
 double trace_time = 0;
-const double trace_start = 1000;
-const double trace_end = 1400;
+const double trace_start = 4400;
+const double trace_end = 4800;
 bool trace = false;
 #else
 bool trace = true;
@@ -326,6 +326,11 @@ const double D_crit_c = 1.0e-5;
  * Upper bound for diameter in collision efficiency
  */
 const double D_coll_c = 4.0e-5;
+
+/**
+ * Height of the trajectory package [m].
+ */
+const double parcel_height = 250.0;
 
 /**
  * Lower temperature threshold for ice nucleation, -5°C
@@ -684,7 +689,7 @@ const std::vector<double> d_ccn = {287736034.13, 0.6258809883,
  * 6: ccn_activation_sk (Segal & Khain), not implemented
  * >6: SB (2006) from Cosmo 5.2 (cloud_nucleation(..))
  */
-const int nuc_type = 7;
+const int nuc_type = 5;
 
 /** Use nucleation based either on Hande et al. (true)
  * or Phillips et al. (false). This *should* depend

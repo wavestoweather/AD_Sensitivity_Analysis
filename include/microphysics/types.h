@@ -685,7 +685,7 @@ struct model_constants_t{
    * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
    * at \f$23 \text{km}\f$.
    */
-  codi::RealReverse inv_z = 1.0/150.0;
+  codi::RealReverse inv_z;
 
   const double nar = 0.22;      /*!< Constants for the IFS model. */
   const double nbr = 2.2;       /*!< Constants for the IFS model. */

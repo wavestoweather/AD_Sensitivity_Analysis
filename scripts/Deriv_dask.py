@@ -1185,7 +1185,7 @@ class Deriv_dask:
         width=1280, height=800, log=[False, False],
         vertical_mark=None, cross_mark=None, datashade=False, prefix=None, alpha=1,
         plot_path="pics/", yticks=10, decimals=-3, rolling_avg=20,
-        kind="scatter", plot_singles=False, s=8, **kwargs):
+        kind="scatter", plot_singles=False, s=8, formatter_limits=None, **kwargs):
         """
         Plot a grid for comparing multiple output parameters or
         multiple derivatives across one output parameter.
@@ -1267,6 +1267,8 @@ class Deriv_dask:
         import dask.array as da
         import math
         import pandas
+        if formatter_limits is not None:
+            matplotlib.rcParams['axes.formatter.limits'] = formatter_limits
 
         df = self.cache
         hv.extension(self.backend)

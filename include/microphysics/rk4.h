@@ -287,13 +287,6 @@ void RK4_step_2_sb_ice(
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
-#ifdef TRACE_QR
-//         if(ii == Nr_idx)
-//             std::cout << "k1, k: " << k[ii]
-//                       << "\nadding to ynew: " << cc.dt_sixth*k[ii]
-//                       << "\nyold: " << yold[ii]
-//                       << "\nytmp set to: " << yold[ii] + cc.dt_half*k[ii] << "\n";
-#endif
 #ifdef TRACE_ENV
         if(trace && ii == T_idx)
             std::cout << "RK1, yold[T] = " << yold[ii]
@@ -321,13 +314,6 @@ void RK4_step_2_sb_ice(
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
-#ifdef TRACE_QR
-//         if(ii == Nr_idx)
-//             std::cout << "k2, k: " << k[ii]
-//                       << "\nadding to ynew: " << cc.dt_third*k[ii]
-//                       << "\nynew: " << ynew[ii]
-//                       << "\nytmp set to: " << yold[ii] + cc.dt_half*k[ii] << "\n";
-#endif
 #ifdef TRACE_ENV
         if(trace && ii == T_idx)
             std::cout << "RK2, yold[T] = " << yold[ii]
@@ -355,13 +341,6 @@ void RK4_step_2_sb_ice(
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
-#ifdef TRACE_QR
-//         if(ii == Nr_idx)
-//             std::cout << "k3, k: " << k[ii]
-//                       << "\nadding to ynew: " << cc.dt_third*k[ii]
-//                       << "\nynew: " << ynew[ii]
-//                       << "\nytmp set to: " << yold[ii] + cc.dt*k[ii] << "\n";
-#endif
 #ifdef TRACE_ENV
         if(trace && ii == T_idx)
             std::cout << "RK3, yold[T] = " << yold[ii]
@@ -389,12 +368,6 @@ void RK4_step_2_sb_ice(
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
-#ifdef TRACE_QR
-//         if(ii == Nr_idx)
-//             std::cout << "k4, k: " << k[ii]
-//                       << "\nadding to ynew: " << cc.dt_sixth*k[ii]
-//                       << "\nynew: " << ynew[ii] << "\n";
-#endif
 #ifdef TRACE_ENV
         if(trace && ii == T_idx)
             std::cout << "RK4, k[T] = " << k[ii]

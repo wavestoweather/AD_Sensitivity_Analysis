@@ -1196,6 +1196,7 @@ void setCoefficients(
   cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alpha_r*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
 
   cc.d_prime = cc.d_scale;	// Constant coefficient
+  cc.inv_z = 1.0/parcel_height;
 }
 
 
@@ -1503,7 +1504,6 @@ void setup_model_constants(
     cc.graupel.cap = 2.0;
     cc.graupel.vsedi_max = 30.0;
     cc.graupel.vsedi_min = 0.1;
-    cc.graupel.sc_coll_n = 1.0;
     cc.graupel.d_crit_c = 100.0e-6;
     cc.graupel.q_crit_c = 1.0e-6;
     cc.graupel.s_vel = 0.0;
@@ -1663,7 +1663,6 @@ void setup_model_constants(
            + coll_delta_12(cc.graupel, cc.graupel, 0))
         * sqrt((2.0*coll_theta_11(cc.graupel, cc.graupel, 0)
            - coll_theta_12(cc.graupel, cc.graupel, 0)));
-
 
     cc.snow.sc_delta_n = (2.0*coll_delta_11(cc.snow, cc.snow, 0)
         + coll_delta_12(cc.snow, cc.snow, 0));
