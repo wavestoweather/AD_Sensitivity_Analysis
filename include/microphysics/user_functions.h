@@ -1885,9 +1885,9 @@ void sedimentation_explicit(
  * Evaporation from melting ice particles.
  *
  * @params qv_prime Water vapor mixing ratio
- * @params e_d
+ * @params e_d Partial pressure of water vapor
  * @params p_sat Saturation pressure of water [Pa]
- * @params s_sw
+ * @params s_sw Super saturation of water
  * @params T_prime Temperature [K]
  * @params q1 Mixing ratio of any ice particle
  * @params N1 Particle number of any ice particle
