@@ -172,7 +172,7 @@ do
         rm "${STORE_PATH}/"*.nc_wcb
     fi
     cd scripts
-    python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH} ${INPUT_TYPE}
+    python Create_processed_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH} ${INPUT_TYPE}
 
     INPUT_PATH="data/sim_results/conv_400_0_t000000_p001_mult${SUFF}"
     STORE_PATH="data/sim_processed/conv_400_0_t000000_p001_mult${SUFF}"
@@ -182,7 +182,7 @@ do
     else
         rm "${STORE_PATH}/"*.nc_wcb
     fi
-    python Create_parquet_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH} ${INPUT_TYPE}
+    python Create_processed_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH} ${INPUT_TYPE}
 
     # Plot results
     # Define store path and which plots to generate

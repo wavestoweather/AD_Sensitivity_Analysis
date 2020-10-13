@@ -115,7 +115,6 @@ for f_this in file_list:
     min_rows = len(df_sim_mapped.data.index)
     crop_data = False
     for key in df_dic_mapped.data:
-        # print(df_dic_mapped.data[key].timestep.unique())
         this_rows = len(df_dic_mapped.data[key].index)
         if this_rows < min_rows:
             min_rows = this_rows
@@ -168,7 +167,6 @@ for f_this in file_list:
                     datasets[suffix].append(df_dic_mapped.get_netcdf_ready_data(attr=att))
                 else:
                     datasets[suffix] = [df_dic_mapped.get_netcdf_ready_data(attr=att)]
-                # df_dic_mapped.to_netcdf(f_name, met3d=True, attr=att)
             else:
                 df_dic_mapped.to_netcdf(f_name)
         else:
@@ -182,11 +180,8 @@ for f_this in file_list:
     if not input_type == "MET3D":
         print("Saving done in {} s".format(t2-t))
 if input_type == "MET3D":
-    # print("Merging data and storing it")
     t = timer()
     for suffix in datasets:
-        # print(type(datasets[suffix][0]))
-        # datas = xr.concat(datasets[suffix], "trajectory")
         for i, data in enumerate(datasets[suffix]):
             comp = dict(zlib=True, complevel=5)
             encoding = {var: comp for var in data.data_vars}
@@ -198,18 +193,6 @@ if input_type == "MET3D":
                     engine="netcdf4",
                     format="NETCDF4",
                     mode="w")
-        # # datasets = xr.concat(datasets[suffix], "trajectory")
-        # # datasets = xr.merge(datasets[suffix])
-        # comp = dict(zlib=True, complevel=5)
-        # encoding = {var: comp for var in datas.data_vars}
-        # f_name = store_path + "/" + suffix
-        # datas.to_netcdf(
-        #         f_name + "_derivs.nc_wcb",
-        #         encoding=encoding,
-        #         compute=True,
-        #         engine="netcdf4",
-        #         format="NETCDF4",
-        #         mode="w")
     t2 = timer()
     print("Saving done in {} s".format(t2-t))
 

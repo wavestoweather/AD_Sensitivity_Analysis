@@ -148,6 +148,20 @@ class Deriv_dask:
 
 
     def to_parquet(self, f_name, compression="snappy"):
+        """
+        Store the data as parquet files.
+
+        Parameters
+        ----------
+        f_name : string
+            Path to folder where to store the data.
+        compression : string or dict
+            From dask docs: Either a string like "snappy" or a dictionary mapping
+            column names to compressors
+            like {"name": "gzip", "values": "snappy"}.
+            The default is "default", which uses the default compression for
+            whichever engine is selected.
+        """
         append = not os.listdir(f_name)
         append = not append
         pd.to_parquet(self.data, f_name, append=append, ignore_divisions=append, compression=compression)
@@ -1260,6 +1274,15 @@ class Deriv_dask:
             for the left y-axis.
         kind : string
             Can be "scatter" for a scatter plot, else defaults to line plot.
+        plot_singles : bool
+            Plot every plot as an individual plot in addition to the grid of
+            plots.
+        s : int
+            Can be used to adjust the size of the scatter dots.
+        formatter_limits : tuple of ints
+            Lower and upper limits for formatting x- and y-axis.
+        kwargs : dict
+            Keyword arguments are passed down matplotlib.
         """
         import hvplot.pandas
         from holoviews import opts
@@ -1271,6 +1294,10 @@ class Deriv_dask:
             matplotlib.rcParams['axes.formatter.limits'] = formatter_limits
 
         df = self.cache
+        if df is None:
+            print("Cached data is None. Make sure to cache your data using")
+            print("self.cache_data()\nABORTING")
+            return
         hv.extension(self.backend)
 
         aspect = width/height
@@ -1440,49 +1467,6 @@ class Deriv_dask:
                         df_tmp = df_group
                         marks = add_marks(df_tmp, marks)
 
-
-                        # for v in cross_mark[col]:
-                        #     if y == col:
-                        #         df_sort = df_tmp.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
-                        #     else:
-                        #         # Works well as long as dataframe is smaller than ~ 30k elements
-                        #         df_sort = df_tmp.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
-                        #     col_values = np.sort(df_sort[col].values)
-
-                        #     for index, row in df_sort.iterrows():
-                        #         row_col = row[col]
-
-                        #         if np.abs(row_col-v) > 1.0:
-                        #             break
-                        #         print(row)
-                        #         if marks is None:
-                        #             marks = row.hvplot.scatter(
-                        #                 x=x_axis,
-                        #                 y=y,
-                        #                 color="black",
-                        #                 marker="x",
-                        #                 datashade=datashade,
-                        #                 legend=False,
-                        #             ).opts(
-                        #                 apply_ranges=False).opts(opts.Scatter(s=16))
-                        #             # marks = hv.Scatter(
-                        #             #     y=row[y_axis],
-                        #             #     x=row[x_axis],
-                        #             #     label=col + "=" + str(v)
-                        #             # ).opts(
-                        #             #     color="black",
-                        #             #     marker="x",
-                        #             #     s=16)
-                        #         else:
-                        #             marks = marks * row.hvplot.scatter(
-                        #                 x=x_axis,
-                        #                 y=y,
-                        #                 color="black",
-                        #                 marker="x",
-                        #                 datashade=datashade,
-                        #                 legend=False,
-                        #             ).opts(
-                        #                 apply_ranges=False).opts(opts.Scatter(s=16))
                 if not datashade:
                     cmap_values = []
                     for ty in types:
