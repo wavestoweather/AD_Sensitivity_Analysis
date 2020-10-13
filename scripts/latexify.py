@@ -38,7 +38,6 @@ mappings = {"lat_heat": "Latent Heating",
             "Nhout": "Precipitation of Hail Particles",
             "LATITUDE": "Latitude",
             "LONGITDUE": "longitude",
-
             "pressure": "Pressure",
             "QV": "Water Vapor Mixing Ratio",
             "QC": "Cloud Droplet Mixing Ratio",
@@ -62,48 +61,16 @@ mappings = {"lat_heat": "Latent Heating",
             "QI_OUT": "sedimentation of ice crystal mixing ratio",
             "QG_OUT": "sedimentation of graupel mixing ratio",
             "QH_OUT": "sedimentation of hail mixing ratio",
-
             "lat": "Latitude",
             "lon": "longitude",
-
             "z": "Height [m]",
             "w": "Ascend [m/s]",
-            # "w": r"Ascend $[\frac{\mathrm{m}}{\mathrm{s}}]$",
             "MAP": "Flag for WCB-criterion",
             "Derivatives": "Derivatives",
             "timestep": "Time [s] after ascend begins",
             "time": "Time [s] after COSMO simulation begins",
             "time_after_ascent": "Time [s] after ascend begins",
             "step": "Simulation step",
-            # Misc
-#             "da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma",
-#             "dbeta_c", "dbeta_r", "ddelta1", "ddelta2", "dzeta",
-#             "drain_gfak", "dcloud_k_au", "dcloud_k_sc", "dkc_autocon",
-#             "dinv_z",
-#             # Rain
-#             "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_max_x",
-#             "drain_sc_theta_q", "drain_sc_delta_q", "drain_sc_theta_n",
-#             "drain_sc_delta_n", "drain_s_vel", "drain_a_vel", "drain_b_vel",
-#             "drain_rho_v", "drain_c_z", "drain_sc_coll_n", "drain_cmu0",
-#             "drain_cmu1", "drain_cmu2", "drain_cmu3", "drain_cmu4",
-#             "drain_cmu5", "drain_alpha", "drain_beta", "drain_gamma",
-#             "drain_nu", "drain_g1", "drain_g2", "drain_mu", "drain_nm1",
-#             "drain_nm2", "drain_nm3", "drain_q_crit_c", "drain_d_crit_c",
-#             "drain_ecoll_c", "drain_cap", "drain_a_ven", "drain_b_ven",
-#             "drain_c_s", "drain_a_f", "drain_b_f", "drain_alfa_n",
-#             "drain_alfa_q", "drain_lambda", "drain_vsedi_min",
-#             "drain_vsedi_max"
-            # Cloud
-
-            # Graupel
-
-            # Hail
-
-            # Ice
-
-            # Snow
-
-
             "dmin_x_nuc_hetero": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{hetero}}",
             "dmin_x_nuc_homo": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{homo}}",
             "dmin_x_melt": r"$\partial x_{\mathrm{min},\mathrm{melt}}",

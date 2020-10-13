@@ -1,4 +1,4 @@
-from scripts.Deriv_dask import Deriv_dask
+from Deriv_dask import Deriv_dask
 import numpy as np
 import xarray as xr
 from glob import glob

@@ -7,7 +7,7 @@ NTASKS=4
 SCALING_FACTOR="1.0"
 AUTO_TYPE="3"
 # Define here your input data
-INPUT_FILENAME="data/conv_400_median_long.nc_wcb"
+INPUT_FILENAME="data/conv_400_0_traj_t000000_p001.nc_wcb"
 # Time step size in seconds for the microphysics
 TIMESTEP="0.01"
 # Update the progressbar after that many simulation steps
@@ -21,9 +21,9 @@ SNAPSHOT_INDEX="200"
 # then set it to a multiple of SNAPSHOT_INDEX
 WRITE_INDEX="1000"
 # Start time in seconds before the ascend starts
-START_TIME="-1000"
+START_TIME="-100"
 # End time after START_TIME in seconds for the simulation.
-TARGET_TIME_AFTER_START="7500"
+TARGET_TIME_AFTER_START="250"
 
 # You can use the loop to run different versions with hard coded parameters
 # or with debugging statements. See the cases below for different versions
@@ -157,28 +157,27 @@ do
     -p ${PROGRESSBAR} \
     -n ${START_TIME} \
     -l ${INPUT_FILENAME} -r {1} ::: {0..0} # You can run multiple trajectories at once here
-
+    cd scripts
     echo ""
     # Define file type. We recommend netcdf over parquet
     FILE_TYPE="netcdf"
     # MET3D is a visualization tool. Our most up-to-date version supports it
     INPUT_TYPE="MET3D"
-    INPUT_PATH="data/sim_results/conv_400_0_t000000_p001_start_over_mult${SUFF}"
-    STORE_PATH="data/sim_processed/conv_400_0_t000000_p001_start_over_mult${SUFF}"
+    INPUT_PATH="../data/sim_results/conv_400_0_t000000_p001_start_over_mult${SUFF}"
+    STORE_PATH="../data/sim_processed/conv_400_0_t000000_p001_start_over_mult${SUFF}"
     if [ ! -d "$STORE_PATH" ]
     then
-        mkdir "$STORE_PATH"
+        mkdir -p "$STORE_PATH"
     else
         rm "${STORE_PATH}/"*.nc_wcb
     fi
-    cd scripts
     python Create_processed_local.py ${FILE_TYPE} ${INPUT_PATH} ${STORE_PATH} ${INPUT_TYPE}
 
-    INPUT_PATH="data/sim_results/conv_400_0_t000000_p001_mult${SUFF}"
-    STORE_PATH="data/sim_processed/conv_400_0_t000000_p001_mult${SUFF}"
+    INPUT_PATH="../data/sim_results/conv_400_0_t000000_p001_mult${SUFF}"
+    STORE_PATH="../data/sim_processed/conv_400_0_t000000_p001_mult${SUFF}"
     if [ ! -d "$STORE_PATH" ]
     then
-        mkdir "$STORE_PATH"
+        mkdir -p "$STORE_PATH"
     else
         rm "${STORE_PATH}/"*.nc_wcb
     fi
