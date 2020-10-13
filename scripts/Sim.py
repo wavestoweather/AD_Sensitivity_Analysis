@@ -40,7 +40,7 @@ class Sim:
         self.n_timesteps = {}
 
     def load_file(self, filename, sep=None, nrows=None,
-                 change_ref=True, refs=None):
+                 change_ref=True, refs=None, attr=None):
         """
         Read a csv file and init a pandas.Dataframe with
         physical (not normalized) entries.
@@ -58,7 +58,7 @@ class Sim:
         refs : String
             Path to a file of references for transformation
         """
-        df = loader.load_output(filename, sep, nrows, change_ref, refs)
+        df = loader.load_output(filename, sep, nrows, change_ref, refs, attr)
         self.n_timesteps[df.trajectory.unique()[0]] = len(df.index)
         if self.data.empty:
             self.data = df

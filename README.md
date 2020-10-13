@@ -100,8 +100,8 @@ under `build/apps/src/scratch/scan`.
 
 Running a simulation
 ---------------------
-You can use `./execute.sh` to execute your simulation and do post-processing
-to make the data ready for analysis.
+You can use `./execute.sh` to compile the code, execute your simulation and do post-processing
+to make the data ready for analysis and to plot the simulation results.
 All necessary commandline parameters are explained there.
 
 Using Jupyter Notebooks
@@ -111,7 +111,7 @@ of input parameters. Helpful if you want to see "what happens" and for debugging
 - **Plot_sensitivities.ipynb:** Use this as a starting point to plot results
 from a simulation and to plot the sensitivities.
 - **Plot_simulation.ipynb:** Plot the data from netcdf files to get an idea, what's inside.
-Or you just use [Panoply](https://www.giss.nasa.gov/tools/panoply/) if you want something more elaborate.
+Or you just use [Panoply](https://www.giss.nasa.gov/tools/panoply/) if you want something more elaborate. We also approve [Met.3D](https://met3d.wavestoweather.de/met-3d.html) for visualization and work towards as much compatibility as possible.
 
 Adding New Physics
 ------------------

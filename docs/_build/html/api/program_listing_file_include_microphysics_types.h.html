@@ -81,17 +81,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Python Documentation</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -196,6 +186,7 @@
 
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">a_geo</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">b_geo</span><span class="p">;</span>
+
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_act</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">min_x_nuc_homo</span><span class="p">;</span>
@@ -230,7 +221,7 @@
 
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">mu</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">nm1</span><span class="p">;</span>
-    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">nm2</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">nm2</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">nm3</span><span class="p">;</span>
 
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">q_crit_c</span><span class="p">;</span>
@@ -242,7 +233,6 @@
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">c_s</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">a_f</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">b_f</span><span class="p">;</span>
-
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">alfa_n</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">alfa_q</span><span class="p">;</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">lambda</span><span class="p">;</span>
@@ -564,7 +554,6 @@
   <span class="c1">// Physical constants warm cloud</span>
   <span class="c1">//</span>
   <span class="kt">double</span> <span class="n">alpha_d</span><span class="p">;</span>
-  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">rho_a_prime</span><span class="p">;</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">Nc_prime</span><span class="p">;</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">a1_prime</span><span class="p">;</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">a2_prime</span><span class="p">;</span>
@@ -628,7 +617,7 @@
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">cloud_k_sc</span><span class="p">;</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">kc_autocon</span> <span class="o">=</span> <span class="mf">9.44e9</span><span class="p">;</span>
 
-  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">inv_z</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">150.0</span><span class="p">;</span>
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">inv_z</span><span class="p">;</span>
 
   <span class="k">const</span> <span class="kt">double</span> <span class="n">nar</span> <span class="o">=</span> <span class="mf">0.22</span><span class="p">;</span>
   <span class="k">const</span> <span class="kt">double</span> <span class="n">nbr</span> <span class="o">=</span> <span class="mf">2.2</span><span class="p">;</span>
@@ -647,15 +636,23 @@
 
 <span class="k">struct</span> <span class="n">nc_parameters_t</span><span class="p">{</span>
 
-    <span class="kt">uint32_t</span> <span class="n">n_trajectories</span> <span class="o">=</span> <span class="mi">30</span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <span class="n">n_timesteps</span> <span class="o">=</span> <span class="mi">7922</span><span class="p">;</span>
-    <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">w</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="n">n_trajectories</span> <span class="o">=</span> <span class="mi">30</span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="n">n_timesteps</span> <span class="o">=</span> <span class="mi">7922</span><span class="p">;</span>
+<span class="cp">#ifdef MET3D</span>
+    <span class="kt">double</span> <span class="n">z</span><span class="p">;</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">time_abs</span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="n">time_idx</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="cp">#else</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">z</span><span class="p">;</span>
+<span class="cp">#endif</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">w</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">;</span>
     <span class="kt">double</span>  <span class="n">t</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">time_rel</span><span class="p">,</span>
             <span class="n">qc</span><span class="p">,</span> <span class="n">qr</span><span class="p">,</span> <span class="n">qi</span><span class="p">,</span> <span class="n">qs</span><span class="p">,</span> <span class="n">qg</span><span class="p">,</span> <span class="n">qv</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">dw</span><span class="p">,</span> <span class="n">dlat</span><span class="p">,</span> <span class="n">dlon</span><span class="p">,</span>
             <span class="n">QIin</span><span class="p">,</span> <span class="n">QSin</span><span class="p">,</span> <span class="n">QRin</span><span class="p">,</span> <span class="n">QGin</span><span class="p">,</span> <span class="n">QIout</span><span class="p">,</span> <span class="n">QSout</span><span class="p">,</span> <span class="n">QRout</span><span class="p">,</span> <span class="n">QGout</span><span class="p">,</span>
             <span class="n">NIin</span><span class="p">,</span> <span class="n">NSin</span><span class="p">,</span> <span class="n">NRin</span><span class="p">,</span> <span class="n">NGin</span><span class="p">,</span> <span class="n">NIout</span><span class="p">,</span> <span class="n">NSout</span><span class="p">,</span> <span class="n">NRout</span><span class="p">,</span> <span class="n">NGout</span><span class="p">,</span>
             <span class="n">Nc</span><span class="p">,</span> <span class="n">Nr</span><span class="p">,</span> <span class="n">Ni</span><span class="p">,</span> <span class="n">Ns</span><span class="p">,</span> <span class="n">Ng</span><span class="p">;</span>
     <span class="kt">bool</span> <span class="n">ascent_flag</span><span class="p">,</span> <span class="n">conv_400</span><span class="p">,</span> <span class="n">conv_600</span><span class="p">,</span> <span class="n">slan_400</span><span class="p">,</span> <span class="n">slan_600</span><span class="p">,</span> <span class="n">dp2h</span><span class="p">;</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">type</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
     <span class="n">NcVar</span>   <span class="n">lat_var</span><span class="p">,</span> <span class="n">lon_var</span><span class="p">,</span> <span class="n">z_var</span><span class="p">,</span> <span class="n">t_var</span><span class="p">,</span> <span class="n">p_var</span><span class="p">,</span> <span class="n">w_var</span><span class="p">,</span> <span class="n">time_rel_var</span><span class="p">,</span>
             <span class="n">qc_var</span><span class="p">,</span> <span class="n">qr_var</span><span class="p">,</span> <span class="n">qi_var</span><span class="p">,</span> <span class="n">qs_var</span><span class="p">,</span> <span class="n">qg_var</span><span class="p">,</span> <span class="n">qv_var</span><span class="p">,</span> <span class="n">S_var</span><span class="p">,</span>
             <span class="n">QIin_var</span><span class="p">,</span> <span class="n">QSin_var</span><span class="p">,</span> <span class="n">QRin_var</span><span class="p">,</span> <span class="n">QGin_var</span><span class="p">,</span> <span class="n">QIout_var</span><span class="p">,</span> <span class="n">QSout_var</span><span class="p">,</span>
@@ -663,7 +660,11 @@
             <span class="n">NIin_var</span><span class="p">,</span> <span class="n">NSin_var</span><span class="p">,</span> <span class="n">NRin_var</span><span class="p">,</span> <span class="n">NGin_var</span><span class="p">,</span> <span class="n">NIout_var</span><span class="p">,</span> <span class="n">NSout_var</span><span class="p">,</span>
             <span class="n">NRout_var</span><span class="p">,</span> <span class="n">NGout_var</span><span class="p">,</span> <span class="n">dp2h_var</span><span class="p">,</span>
             <span class="n">Nc_var</span><span class="p">,</span> <span class="n">Nr_var</span><span class="p">,</span> <span class="n">Ni_var</span><span class="p">,</span> <span class="n">Ns_var</span><span class="p">,</span> <span class="n">Ng_var</span><span class="p">,</span>
+<span class="cp">#ifdef MET3D</span>
+            <span class="n">type_var</span><span class="p">,</span> <span class="n">time_abs_var</span><span class="p">,</span>
+<span class="cp">#endif</span>
             <span class="n">conv_400_var</span><span class="p">,</span> <span class="n">conv_600_var</span><span class="p">,</span> <span class="n">slan_400_var</span><span class="p">,</span> <span class="n">slan_600_var</span><span class="p">;</span>
+
 <span class="p">};</span>
 
 
@@ -690,6 +691,9 @@
   <span class="kt">int</span> <span class="n">start_over_flag</span><span class="p">;</span>
   <span class="kt">char</span><span class="o">*</span> <span class="n">start_over_string</span><span class="p">;</span>
 
+  <span class="kt">int</span> <span class="n">start_over_env_flag</span><span class="p">;</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">start_over_env_string</span><span class="p">;</span>
+
   <span class="kt">int</span> <span class="n">fixed_iteration_flag</span><span class="p">;</span>
   <span class="kt">char</span><span class="o">*</span> <span class="n">fixed_iteration_string</span><span class="p">;</span>
 
@@ -701,6 +705,13 @@
 
   <span class="kt">int</span> <span class="n">write_flag</span><span class="p">;</span>
   <span class="kt">char</span><span class="o">*</span> <span class="n">write_string</span><span class="p">;</span>
+
+  <span class="kt">int</span> <span class="n">progress_index_flag</span><span class="p">;</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">progress_index_string</span><span class="p">;</span>
+<span class="cp">#ifdef MET3D</span>
+  <span class="kt">int</span> <span class="n">delay_start_flag</span><span class="p">;</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">delay_start_string</span><span class="p">;</span>
+<span class="cp">#endif</span>
 <span class="p">};</span>
 
 
@@ -711,16 +722,22 @@
   <span class="kt">double</span> <span class="n">dt_prime</span><span class="p">;</span>
   <span class="kt">double</span> <span class="n">dt_traject_prime</span><span class="p">;</span>
   <span class="kt">double</span> <span class="n">dt_traject</span><span class="p">;</span>
+<span class="cp">#ifdef MET3D</span>
+  <span class="kt">double</span> <span class="n">start_time</span><span class="p">;</span>
+<span class="cp">#endif</span>
   <span class="kt">int</span> <span class="n">snapshot_index</span><span class="p">;</span>
   <span class="kt">uint64_t</span> <span class="n">num_sub_steps</span><span class="p">;</span>
   <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">OUTPUT_FILENAME</span><span class="p">;</span>
   <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">INPUT_FILENAME</span><span class="p">;</span>
   <span class="kt">bool</span> <span class="n">start_over</span><span class="p">;</span>
+  <span class="kt">bool</span> <span class="n">start_over_env</span><span class="p">;</span>
   <span class="kt">bool</span> <span class="n">fixed_iteration</span><span class="p">;</span>
   <span class="kt">double</span> <span class="n">scaling_fact</span><span class="p">;</span>
   <span class="kt">uint32_t</span> <span class="n">auto_type</span><span class="p">;</span>
   <span class="kt">uint32_t</span> <span class="n">traj</span><span class="p">;</span>
   <span class="kt">uint32_t</span> <span class="n">write_index</span><span class="p">;</span>
+  <span class="kt">uint32_t</span> <span class="n">progress_index</span><span class="p">;</span>
+  <span class="kt">uint32_t</span> <span class="n">ensemble</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">};</span>
  <span class="c1">// end of group types</span>
 </pre></div>

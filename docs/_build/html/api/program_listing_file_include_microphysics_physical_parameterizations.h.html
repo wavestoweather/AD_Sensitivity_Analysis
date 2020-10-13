@@ -81,17 +81,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Python Documentation</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -326,7 +316,7 @@
 <span class="kr">inline</span> <span class="n">A</span> <span class="n">specific_heat_dry_air</span><span class="p">(</span><span class="n">A</span> <span class="n">T</span><span class="p">)</span>
 <span class="p">{</span>
 
-  <span class="k">return</span> <span class="mf">1005.0</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">cp</span><span class="p">;</span> <span class="c1">// 1005.0</span>
 
 <span class="p">}</span>
 
@@ -399,7 +389,7 @@
 <span class="kr">inline</span> <span class="n">A</span> <span class="n">latent_heat_melt</span><span class="p">(</span><span class="n">A</span> <span class="n">T</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="c1">// Table A1</span>
-  <span class="k">return</span> <span class="mf">4.184e3</span> <span class="o">*</span> <span class="p">(</span><span class="mf">79.7</span><span class="o">+</span><span class="mf">0.485</span><span class="o">*</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="n">tmelt</span><span class="p">)</span> <span class="o">-</span> <span class="mf">2.5e-3</span><span class="o">*</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="n">tmelt</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="n">tmelt</span><span class="p">));</span>
+  <span class="k">return</span> <span class="mf">4.184e3</span> <span class="o">*</span> <span class="p">(</span><span class="mf">79.7</span><span class="o">+</span><span class="mf">0.485</span><span class="o">*</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="n">T_freeze</span><span class="p">)</span> <span class="o">-</span> <span class="mf">2.5e-3</span><span class="o">*</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="n">T_freeze</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="n">T_freeze</span><span class="p">));</span>
 <span class="p">}</span>
 
 
@@ -409,14 +399,14 @@
   <span class="c1">// Table A1</span>
   <span class="n">A</span> <span class="n">lh_e0</span> <span class="o">=</span> <span class="mf">2.5006e6</span><span class="p">;</span>
   <span class="n">A</span> <span class="n">gam</span> <span class="o">=</span> <span class="mf">0.167</span> <span class="o">+</span> <span class="mf">3.67e-4</span> <span class="o">*</span> <span class="n">T</span><span class="p">;</span>
-  <span class="k">return</span> <span class="n">lh_e0</span> <span class="o">*</span> <span class="nf">pow</span><span class="p">(</span><span class="n">tmelt</span><span class="o">/</span><span class="n">T</span><span class="p">,</span> <span class="n">gam</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">lh_e0</span> <span class="o">*</span> <span class="nf">pow</span><span class="p">(</span><span class="n">T_freeze</span><span class="o">/</span><span class="n">T</span><span class="p">,</span> <span class="n">gam</span><span class="p">);</span>
 <span class="p">}</span>
 
 
 <span class="k">template</span> <span class="o">&lt;</span><span class="k">class</span> <span class="nc">A</span><span class="o">&gt;</span>
 <span class="kr">inline</span> <span class="n">A</span> <span class="n">saturation_pressure_water_icon</span><span class="p">(</span><span class="n">A</span> <span class="n">T</span><span class="p">)</span>
 <span class="p">{</span>
-  <span class="k">return</span> <span class="mf">610.78</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="mf">17.269</span><span class="o">*</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="mf">273.15</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="mf">35.86</span><span class="p">));</span>
+  <span class="k">return</span> <span class="n">p_sat_low_temp</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="n">p_sat_const_a</span><span class="o">*</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="n">T_sat_low_temp</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="n">p_sat_const_b</span><span class="p">));</span>
 <span class="p">}</span>
 
 
@@ -430,6 +420,35 @@
   <span class="k">return</span> <span class="p">(</span> <span class="n">exp</span><span class="p">(</span> <span class="mf">54.842763</span> <span class="o">-</span> <span class="mf">6763.22</span><span class="o">*</span><span class="n">Tinv</span> <span class="o">-</span> <span class="mf">4.21</span><span class="o">*</span><span class="n">logT</span> <span class="o">+</span> <span class="mf">0.000367</span><span class="o">*</span><span class="n">T</span> <span class="o">+</span> <span class="n">tanh</span><span class="p">(</span><span class="mf">0.0415</span><span class="o">*</span><span class="p">(</span><span class="n">T</span><span class="o">-</span><span class="mf">218.8</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="mf">53.878</span> <span class="o">-</span> <span class="mf">1331.22</span><span class="o">*</span><span class="n">Tinv</span> <span class="o">-</span> <span class="mf">9.44523</span><span class="o">*</span><span class="n">logT</span> <span class="o">+</span> <span class="mf">0.014025</span><span class="o">*</span><span class="n">T</span><span class="p">)</span> <span class="p">)</span> <span class="p">);</span>
 
 <span class="p">}</span>
+
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">class</span> <span class="nc">A</span><span class="o">&gt;</span>
+<span class="kr">inline</span> <span class="n">A</span> <span class="n">water_vapor_sat_ratio_dotzek</span><span class="p">(</span>
+    <span class="n">A</span> <span class="n">p</span><span class="p">,</span>
+    <span class="n">A</span> <span class="n">T</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">A</span> <span class="n">p_sat</span> <span class="o">=</span> <span class="n">saturation_pressure_water_icon</span><span class="p">(</span><span class="n">T</span><span class="p">);</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">r_const</span><span class="o">/</span><span class="n">r1_const</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span><span class="o">/</span><span class="n">p_sat</span> <span class="o">+</span> <span class="p">(</span><span class="n">r_const</span><span class="o">/</span><span class="n">r1_const</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="k">class</span> <span class="nc">A</span><span class="o">&gt;</span>
+<span class="kr">inline</span> <span class="n">A</span> <span class="n">water_vapor_sat_ratio</span><span class="p">(</span>
+    <span class="n">A</span> <span class="n">p</span><span class="p">,</span>
+    <span class="n">A</span> <span class="n">T</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">A</span> <span class="n">p_sat</span> <span class="o">=</span> <span class="n">saturation_pressure_water_icon</span><span class="p">(</span><span class="n">T</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">Epsilon</span><span class="o">*</span><span class="p">(</span> <span class="n">p_sat</span><span class="o">/</span><span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="n">p_sat</span><span class="p">)</span> <span class="p">);</span>
+<span class="p">}</span>
+
+
+<span class="c1">// template &lt;class A&gt;</span>
+<span class="c1">// inline A water_vapor_sat_ratio_2(</span>
+<span class="c1">//     A T)</span>
+<span class="c1">// {</span>
+<span class="c1">//     A p_sat = saturation_pressure_water_icon(T);</span>
+<span class="c1">//     return p_sat/(Rv*T);</span>
+<span class="c1">// }</span>
 
 
 <span class="k">template</span> <span class="o">&lt;</span><span class="k">class</span> <span class="nc">A</span><span class="o">&gt;</span>
@@ -475,7 +494,7 @@
             <span class="n">A</span> <span class="n">S</span><span class="p">)</span>
 <span class="p">{</span>
 
-  <span class="k">return</span> <span class="p">(</span> <span class="n">S</span><span class="o">*</span><span class="n">saturation_pressure_water</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="p">);</span>
+  <span class="k">return</span> <span class="p">(</span> <span class="n">S</span><span class="o">*</span><span class="n">saturation_pressure_water_icon</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="p">);</span>
 
 <span class="p">}</span>
 
@@ -528,7 +547,7 @@
               <span class="n">A</span> <span class="n">Si</span><span class="p">)</span>
 <span class="p">{</span>
 
-  <span class="n">A</span> <span class="n">S</span> <span class="o">=</span> <span class="n">Si</span> <span class="o">*</span> <span class="p">(</span> <span class="n">saturation_pressure_ice</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="o">/</span><span class="n">saturation_pressure_water</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="p">);</span>
+  <span class="n">A</span> <span class="n">S</span> <span class="o">=</span> <span class="n">Si</span> <span class="o">*</span> <span class="p">(</span> <span class="n">saturation_pressure_ice</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="o">/</span><span class="n">saturation_pressure_water_icon</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="p">);</span>
 
   <span class="k">return</span> <span class="p">(</span> <span class="n">Epsilon</span><span class="o">*</span><span class="p">(</span> <span class="n">compute_pv</span><span class="p">(</span><span class="n">T</span><span class="p">,</span><span class="n">S</span><span class="p">)</span><span class="o">/</span><span class="n">compute_pa</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">T</span><span class="p">,</span><span class="n">S</span><span class="p">)</span> <span class="p">)</span> <span class="p">);</span>
 
@@ -541,7 +560,7 @@
              <span class="n">A</span> <span class="n">qv</span><span class="p">)</span>
 <span class="p">{</span>
 
-  <span class="k">return</span> <span class="p">(</span> <span class="p">(</span><span class="n">p</span><span class="o">*</span><span class="n">qv</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="n">Epsilon</span> <span class="o">+</span> <span class="n">qv</span><span class="p">)</span><span class="o">*</span><span class="n">saturation_pressure_water</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="p">);</span>
+  <span class="k">return</span> <span class="p">(</span> <span class="p">(</span><span class="n">p</span><span class="o">*</span><span class="n">qv</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="n">Epsilon</span> <span class="o">+</span> <span class="n">qv</span><span class="p">)</span><span class="o">*</span><span class="n">saturation_pressure_water_icon</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="p">);</span>
 
 <span class="p">}</span>
 
@@ -845,7 +864,7 @@
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">rho_prime</span> <span class="o">=</span> <span class="n">p_prime</span> <span class="o">/</span><span class="p">(</span> <span class="n">Ra</span> <span class="o">*</span> <span class="n">T_prime</span> <span class="p">);</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">L_vap_prime</span> <span class="o">=</span> <span class="n">latent_heat_water</span><span class="p">(</span><span class="n">T_prime</span><span class="p">);</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">Ka_prime</span> <span class="o">=</span> <span class="n">thermal_conductivity_dry_air</span><span class="p">(</span><span class="n">T_prime</span><span class="p">);</span>
-    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">psat_prime</span> <span class="o">=</span> <span class="n">saturation_pressure_water</span><span class="p">(</span><span class="n">T_prime</span><span class="p">);</span>
+    <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">psat_prime</span> <span class="o">=</span> <span class="n">saturation_pressure_water_icon</span><span class="p">(</span><span class="n">T_prime</span><span class="p">);</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">A_pp</span> <span class="o">=</span> <span class="p">(</span><span class="n">L_vap_prime</span><span class="o">/</span><span class="p">(</span><span class="n">Ka_prime</span><span class="o">*</span><span class="n">T_prime</span><span class="p">))</span><span class="o">*</span><span class="p">((</span><span class="n">L_vap_prime</span><span class="o">/</span><span class="p">(</span><span class="n">Rv</span><span class="o">*</span><span class="n">T_prime</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">);</span>
     <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">B_pp</span> <span class="o">=</span> <span class="p">(</span><span class="n">Rv</span><span class="o">*</span><span class="n">T_prime</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="mf">2.21</span><span class="o">/</span><span class="n">p_prime</span><span class="p">)</span><span class="o">*</span><span class="n">psat_prime</span><span class="p">);</span>
 
@@ -866,7 +885,7 @@
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">rho_prime</span> <span class="o">=</span> <span class="n">p_prime</span> <span class="o">/</span><span class="p">(</span> <span class="n">Ra</span> <span class="o">*</span> <span class="n">T_prime</span> <span class="p">);</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">L_vap_prime</span> <span class="o">=</span> <span class="n">latent_heat_water</span><span class="p">(</span><span class="n">T_prime</span><span class="p">);</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">Ka_prime</span> <span class="o">=</span> <span class="n">thermal_conductivity_dry_air</span><span class="p">(</span><span class="n">T_prime</span><span class="p">);</span>
-  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">psat_prime</span> <span class="o">=</span> <span class="n">saturation_pressure_water</span><span class="p">(</span><span class="n">T_prime</span><span class="p">);</span>
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">psat_prime</span> <span class="o">=</span> <span class="n">saturation_pressure_water_icon</span><span class="p">(</span><span class="n">T_prime</span><span class="p">);</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">A_pp</span> <span class="o">=</span> <span class="p">(</span><span class="n">L_vap_prime</span><span class="o">/</span><span class="p">(</span><span class="n">Ka_prime</span><span class="o">*</span><span class="n">T_prime</span><span class="p">))</span><span class="o">*</span><span class="p">((</span><span class="n">L_vap_prime</span><span class="o">/</span><span class="p">(</span><span class="n">Rv</span><span class="o">*</span><span class="n">T_prime</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">);</span>
   <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">B_pp</span> <span class="o">=</span> <span class="p">(</span><span class="n">Rv</span><span class="o">*</span><span class="n">T_prime</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="mf">2.21</span><span class="o">/</span><span class="n">p_prime</span><span class="p">)</span><span class="o">*</span><span class="n">psat_prime</span><span class="p">);</span>
 
@@ -877,6 +896,7 @@
   <span class="n">cc</span><span class="p">.</span><span class="n">e2_prime</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">e2_scale</span> <span class="o">*</span> <span class="p">(</span> <span class="n">pow</span><span class="p">(</span><span class="n">rho_prime</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">alpha_r</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">epsilonr</span> <span class="o">-</span> <span class="p">(</span><span class="mf">7.0</span><span class="o">/</span><span class="mf">4.0</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="n">A_pp</span> <span class="o">+</span> <span class="n">B_pp</span><span class="p">)</span> <span class="p">);</span>
 
   <span class="n">cc</span><span class="p">.</span><span class="n">d_prime</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">d_scale</span><span class="p">;</span>  <span class="c1">// Constant coefficient</span>
+  <span class="n">cc</span><span class="p">.</span><span class="n">inv_z</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">parcel_height</span><span class="p">;</span>
 <span class="p">}</span>
 
 
@@ -963,57 +983,22 @@
       <span class="n">model_constants_t</span> <span class="o">&amp;</span><span class="n">cc</span><span class="p">,</span>
       <span class="n">reference_quantities_t</span> <span class="o">&amp;</span><span class="n">ref_quant</span><span class="p">)</span>
 <span class="p">{</span>
-<span class="cp">#if defined(RK4_ONE_MOMENT)</span>
-    <span class="c1">// Scaling factor from input</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">scaling_fact</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">scaling_fact</span><span class="p">;</span>
-
-    <span class="c1">// Accomodation coefficient</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">alpha_d</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
-
-    <span class="c1">// // Performance constants for warm cloud; COSMO</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">a1_scale</span> <span class="o">=</span> <span class="mf">1.0e-3</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">a2_scale</span> <span class="o">=</span> <span class="mf">1.72</span> <span class="o">/</span> <span class="n">pow</span><span class="p">(</span><span class="n">Ra</span> <span class="p">,</span> <span class="mf">7.</span><span class="o">/</span><span class="mf">8.</span><span class="p">);</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">e1_scale</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">Ra</span><span class="p">);</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">e2_scale</span> <span class="o">=</span> <span class="mf">9.1</span> <span class="o">/</span> <span class="n">pow</span><span class="p">(</span><span class="n">Ra</span> <span class="p">,</span> <span class="mf">11.</span><span class="o">/</span><span class="mf">16.</span><span class="p">);</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">d_scale</span> <span class="o">=</span> <span class="p">(</span> <span class="mf">130.0</span><span class="o">*</span><span class="n">tgamma</span><span class="p">(</span><span class="mf">4.5</span><span class="p">)</span> <span class="p">)</span><span class="o">/</span><span class="p">(</span> <span class="mf">6.0</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0e3</span><span class="p">)</span><span class="o">*</span><span class="n">pow</span><span class="p">(</span><span class="n">M_PI</span><span class="o">*</span><span class="p">(</span><span class="mf">8.0e6</span><span class="p">)</span><span class="o">*</span><span class="n">Ra</span> <span class="p">,</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">8.0</span><span class="p">)</span> <span class="p">);</span>
-
-    <span class="c1">// Performance constants for warm cloud; IFS</span>
-    <span class="c1">// The file constants.h also defines some constants as nar, ...</span>
-    <span class="k">const</span> <span class="kt">double</span> <span class="n">Nc</span> <span class="o">=</span> <span class="mi">50</span><span class="p">;</span>   <span class="c1">// 50 over ocean; 300 over land</span>
-    <span class="k">const</span> <span class="kt">double</span> <span class="n">F_aut</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">;</span>
-    <span class="k">const</span> <span class="kt">double</span> <span class="n">F_acc</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">;</span>
-    <span class="k">const</span> <span class="kt">double</span> <span class="n">lambda_pp</span> <span class="o">=</span> <span class="n">pow</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">nar</span> <span class="o">*</span> <span class="n">cc</span><span class="p">.</span><span class="n">ar</span> <span class="o">*</span> <span class="n">tgamma</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">br</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">alpha_r</span><span class="p">);</span>
-
-    <span class="c1">// Inflow from above</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">B_prime</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
-
-    <span class="c1">// // Exponents of the cloud model</span>
-    <span class="c1">// // COSMO</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">betac</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">betar</span> <span class="o">=</span> <span class="mf">7.</span><span class="o">/</span><span class="mf">8.</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">delta1</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">delta2</span> <span class="o">=</span> <span class="mf">11.</span><span class="o">/</span><span class="mf">16.</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">zeta</span> <span class="o">=</span> <span class="mf">9.</span><span class="o">/</span><span class="mf">8.</span><span class="p">;</span>
-
     <span class="c1">// Numerics</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">t_end_prime</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">t_end_prime</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">t_end</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">t_end_prime</span><span class="o">/</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">tref</span><span class="p">;</span>
     <span class="c1">// Time of the substeps</span>
-
     <span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">dt_prime</span><span class="o">/</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">tref</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">dt_prime</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">dt_prime</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">dt_traject_prime</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt_traject</span> <span class="o">*</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">tref</span><span class="p">;</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">dt_traject_prime</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">;</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">dt_traject</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt_traject_prime</span><span class="o">/</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">tref</span><span class="p">;</span>
     <span class="c1">// The trajectories are calculated with 20 s timesteps.</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span> <span class="o">=</span> <span class="p">(</span><span class="n">floor</span><span class="p">(</span> <span class="mf">20.0</span><span class="o">/</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">?</span> <span class="mi">1</span> <span class="o">:</span> <span class="n">floor</span><span class="p">(</span> <span class="mf">20.0</span><span class="o">/</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="p">);</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span> <span class="o">=</span> <span class="p">(</span><span class="n">floor</span><span class="p">(</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt_traject_prime</span><span class="o">/</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">?</span> <span class="mi">1</span> <span class="o">:</span> <span class="n">floor</span><span class="p">(</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt_traject_prime</span><span class="o">/</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="p">);</span>
 
-    <span class="n">cc</span><span class="p">.</span><span class="n">snapshot_index</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">snapshot_index</span><span class="p">;</span>
     <span class="c1">// Evaluate the general performance constants</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">dt_half</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt</span><span class="o">*</span><span class="mf">0.5</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">dt_third</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">dt_sixth</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt</span><span class="o">/</span><span class="mf">6.0</span><span class="p">;</span>
 
-<span class="cp">#elif defined(RK4ICE) || defined(RK4NOICE)</span>
     <span class="c1">// Scaling factor from input</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">scaling_fact</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">scaling_fact</span><span class="p">;</span>
 
@@ -1053,7 +1038,7 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">delta1</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">delta2</span> <span class="o">=</span> <span class="mf">11.</span><span class="o">/</span><span class="mf">16.</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">zeta</span> <span class="o">=</span> <span class="mf">9.</span><span class="o">/</span><span class="mf">8.</span><span class="p">;</span>
-
+<span class="cp">#if defined(RK4ICE) || defined(RK4NOICE)</span>
     <span class="c1">// Exponents of the cloud model</span>
     <span class="c1">// IFS</span>
     <span class="c1">// cc.gamma = 2.47;</span>
@@ -1063,30 +1048,18 @@
     <span class="c1">// cc.delta2 = ( 0.5*cc.dr + 2.5 - cc.nbr )/( cc.br + 1.0 - cc.nbr );</span>
     <span class="c1">// cc.zeta = 1.0;</span>
 
-    <span class="c1">// Numerics</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">t_end_prime</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">t_end_prime</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">t_end</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">t_end_prime</span><span class="o">/</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">tref</span><span class="p">;</span>
-    <span class="c1">// Time of the substeps</span>
-
-    <span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">dt_prime</span><span class="o">/</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">tref</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">dt_prime</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">dt_prime</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">dt_traject_prime</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt_traject</span> <span class="o">*</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">tref</span><span class="p">;</span>
-    <span class="c1">// The trajectories are calculated with 20 s timesteps.</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span> <span class="o">=</span> <span class="p">(</span><span class="n">floor</span><span class="p">(</span> <span class="mf">20.0</span><span class="o">/</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">?</span> <span class="mi">1</span> <span class="o">:</span> <span class="n">floor</span><span class="p">(</span> <span class="mf">20.0</span><span class="o">/</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="p">);</span>
-
-    <span class="n">cc</span><span class="p">.</span><span class="n">snapshot_index</span> <span class="o">=</span> <span class="n">input</span><span class="p">.</span><span class="n">snapshot_index</span><span class="p">;</span>
-    <span class="c1">// Evaluate the general performance constants</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">dt_half</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt</span><span class="o">*</span><span class="mf">0.5</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">dt_third</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">dt_sixth</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt</span><span class="o">/</span><span class="mf">6.0</span><span class="p">;</span>
-
     <span class="c1">// ==================================================</span>
     <span class="c1">// Set rain constants</span>
     <span class="c1">// See init_2mom_scheme_once in mo_2mom_mcrph_main.f90</span>
     <span class="c1">// ==================================================</span>
     <span class="c1">// Cosmo5 although nue1nue1 would be okay too, I guess</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="cp">#ifdef SB_SHAPE</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="cp">#else</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span>
+<span class="cp">#endif</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">max_x</span> <span class="o">=</span> <span class="mf">2.6e-10</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">min_x</span> <span class="o">=</span> <span class="mf">4.2e-15</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">min_x_act</span> <span class="o">=</span> <span class="mf">4.2e-15</span><span class="p">;</span>
@@ -1100,6 +1073,7 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">min_x_collection</span> <span class="o">=</span> <span class="mf">4.2e-15</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">min_x_conversion</span> <span class="o">=</span> <span class="mf">4.2e-15</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">min_x_sedimentation</span> <span class="o">=</span> <span class="mf">4.2e-15</span><span class="p">;</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">min_x_riming</span> <span class="o">=</span> <span class="mf">4.2e-15</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">a_geo</span> <span class="o">=</span> <span class="mf">1.24e-1</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">b_geo</span> <span class="o">=</span> <span class="mf">0.333333</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">a_vel</span> <span class="o">=</span> <span class="mf">3.75e5</span><span class="p">;</span>
@@ -1117,8 +1091,12 @@
     <span class="n">setup_cloud_autoconversion</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">,</span> <span class="n">cc</span><span class="p">);</span>
     <span class="n">setup_bulk_sedi</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">);</span>
 
-    <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">0.333333</span><span class="p">;</span>
+<span class="cp">#ifdef SB_SHAPE</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span> <span class="c1">// SB: -2/3 COSMO: 0.0</span>
+<span class="cp">#else</span>
+     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// SB: -2/3 COSMO: 0.0</span>
+<span class="cp">#endif</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span> <span class="c1">// SB: 1/3 COMSO: 1.0/3.0</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">max_x</span> <span class="o">=</span> <span class="mf">3.0e-6</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">min_x</span> <span class="o">=</span> <span class="mf">2.6e-10</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">min_x_act</span> <span class="o">=</span> <span class="mf">2.6e-10</span><span class="p">;</span>
@@ -1132,6 +1110,7 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">min_x_collection</span> <span class="o">=</span> <span class="mf">2.6e-10</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">min_x_conversion</span> <span class="o">=</span> <span class="mf">2.6e-10</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">min_x_sedimentation</span> <span class="o">=</span> <span class="mf">2.6e-10</span><span class="p">;</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">min_x_riming</span> <span class="o">=</span> <span class="mf">2.6e-10</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">a_geo</span> <span class="o">=</span> <span class="mf">1.24e-1</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">b_geo</span> <span class="o">=</span> <span class="mf">0.333333</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">a_vel</span> <span class="o">=</span> <span class="mf">114.0137</span><span class="p">;</span>
@@ -1166,8 +1145,8 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">c_z</span> <span class="o">=</span> <span class="n">moment_gamma</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
     <span class="n">setup_bulk_sedi</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">);</span>
 
-    <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span> <span class="c1">// Not used actually?</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span> <span class="c1">// SB</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span> <span class="c1">// SB</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">max_x</span> <span class="o">=</span> <span class="mf">5.0e-4</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">min_x</span> <span class="o">=</span> <span class="mf">1.0e-9</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">min_x_act</span> <span class="o">=</span> <span class="mf">1.0e-9</span><span class="p">;</span>
@@ -1181,6 +1160,7 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">min_x_collection</span> <span class="o">=</span> <span class="mf">1.0e-9</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">min_x_conversion</span> <span class="o">=</span> <span class="mf">1.0e-9</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">min_x_sedimentation</span> <span class="o">=</span> <span class="mf">1.0e-9</span><span class="p">;</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">min_x_riming</span> <span class="o">=</span> <span class="mf">1.0e-9</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">a_geo</span> <span class="o">=</span> <span class="mf">1.42e-1</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">b_geo</span> <span class="o">=</span> <span class="mf">0.314</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">a_vel</span> <span class="o">=</span> <span class="mf">86.89371</span><span class="p">;</span>
@@ -1190,7 +1170,6 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">cap</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">vsedi_max</span> <span class="o">=</span> <span class="mf">30.0</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">vsedi_min</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">sc_coll_n</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">d_crit_c</span> <span class="o">=</span> <span class="mf">100.0e-6</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">q_crit_c</span> <span class="o">=</span> <span class="mf">1.0e-6</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">s_vel</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
@@ -1210,7 +1189,7 @@
     <span class="n">setup_bulk_sedi</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">);</span>
 
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span> <span class="c1">// Not used actually?</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">max_x</span> <span class="o">=</span> <span class="mf">5.0e-4</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">min_x</span> <span class="o">=</span> <span class="mf">2.6e-9</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">min_x_act</span><span class="o">=</span> <span class="mf">2.6e-9</span><span class="p">;</span>
@@ -1224,6 +1203,7 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">min_x_collection</span> <span class="o">=</span> <span class="mf">2.6e-9</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">min_x_conversion</span> <span class="o">=</span> <span class="mf">2.6e-9</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">min_x_sedimentation</span> <span class="o">=</span> <span class="mf">2.6e-9</span><span class="p">;</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">min_x_riming</span> <span class="o">=</span> <span class="mf">2.6e-9</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">a_geo</span> <span class="o">=</span> <span class="mf">0.1366</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">b_geo</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">a_vel</span> <span class="o">=</span> <span class="mf">39.3</span><span class="p">;</span>
@@ -1244,8 +1224,12 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">.</span><span class="n">c_z</span> <span class="o">=</span> <span class="n">moment_gamma</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
     <span class="n">setup_bulk_sedi</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">);</span>
 
-    <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span> <span class="c1">// Not used actually?</span>
+<span class="cp">#ifdef SB_SHAPE</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+<span class="cp">#else</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="c1">// COSMO 0.0, SB: 1.0</span>
+<span class="cp">#endif</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">max_x</span> <span class="o">=</span> <span class="mf">1.0e-5</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">min_x</span> <span class="o">=</span> <span class="mf">1.0e-12</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">min_x_act</span> <span class="o">=</span> <span class="mf">1.0e-12</span><span class="p">;</span>
@@ -1259,6 +1243,7 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">min_x_collection</span> <span class="o">=</span> <span class="mf">1.0e-12</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">min_x_conversion</span> <span class="o">=</span> <span class="mf">1.0e-12</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">min_x_sedimentation</span> <span class="o">=</span> <span class="mf">1.0e-12</span><span class="p">;</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">min_x_riming</span> <span class="o">=</span> <span class="mf">1.0e-12</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">a_geo</span> <span class="o">=</span> <span class="mf">0.835</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">b_geo</span> <span class="o">=</span> <span class="mf">0.39</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">a_vel</span> <span class="o">=</span> <span class="mf">2.77e1</span><span class="p">;</span>
@@ -1279,8 +1264,13 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">c_z</span> <span class="o">=</span> <span class="n">moment_gamma</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
     <span class="n">setup_bulk_sedi</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">);</span>
 
-    <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
-    <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">;</span> <span class="c1">// Not used actually?</span>
+<span class="cp">#ifdef SB_SHAPE</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span> <span class="c1">// COSMO: 0.0, SB 1.0</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">;</span> <span class="c1">// COSMO 0.5, SB: 1.0/3.0</span>
+<span class="cp">#else</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">nu</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="c1">// COSMO: 0.0, SB 1.0</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">;</span> <span class="c1">// COSMO 0.5, SB: 1.0/3.0</span>
+<span class="cp">#endif</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">max_x</span> <span class="o">=</span> <span class="mf">2.0e-5</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">min_x</span> <span class="o">=</span> <span class="mf">1.0e-10</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">min_x_act</span> <span class="o">=</span> <span class="mf">1.0e-10</span><span class="p">;</span>
@@ -1294,6 +1284,7 @@
     <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">min_x_collection</span> <span class="o">=</span> <span class="mf">1.0e-10</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">min_x_conversion</span> <span class="o">=</span> <span class="mf">1.0e-10</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">min_x_sedimentation</span> <span class="o">=</span> <span class="mf">1.0e-10</span><span class="p">;</span>
+    <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">min_x_riming</span> <span class="o">=</span> <span class="mf">1.0e-10</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">a_geo</span> <span class="o">=</span> <span class="mf">2.4</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">b_geo</span> <span class="o">=</span> <span class="mf">0.455</span><span class="p">;</span>
     <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">a_vel</span> <span class="o">=</span> <span class="mf">8.8</span><span class="p">;</span>
@@ -1319,7 +1310,7 @@
     <span class="n">init_particle_collection_2</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">coeffs_irr</span><span class="p">);</span>
     <span class="n">init_particle_collection_1</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">coeffs_icr</span><span class="p">);</span>
     <span class="n">init_particle_collection_1</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">coeffs_hrr</span><span class="p">);</span>
-    <span class="n">init_particle_collection_1</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">coeffs_grr</span><span class="p">);</span>
+    <span class="n">init_particle_collection_1</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">coeffs_grr</span><span class="p">);</span> <span class="c1">// Cosmo uses 2, ICON uses 1</span>
     <span class="n">init_particle_collection_1</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">hail</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">coeffs_hcr</span><span class="p">);</span>
     <span class="n">init_particle_collection_1</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">coeffs_gcr</span><span class="p">);</span>
     <span class="n">init_particle_collection_1</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">coeffs_sic</span><span class="p">);</span>
@@ -1335,7 +1326,6 @@
            <span class="o">+</span> <span class="n">coll_delta_12</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="o">*</span> <span class="n">sqrt</span><span class="p">((</span><span class="mf">2.0</span><span class="o">*</span><span class="n">coll_theta_11</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
            <span class="o">-</span> <span class="n">coll_theta_12</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">,</span> <span class="mi">0</span><span class="p">)));</span>
-
 
     <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">sc_delta_n</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">coll_delta_11</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="o">+</span> <span class="n">coll_delta_12</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">,</span> <span class="mi">0</span><span class="p">));</span>

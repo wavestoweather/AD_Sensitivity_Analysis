@@ -81,17 +81,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Python Documentation</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -191,37 +181,35 @@
 <span class="cp">#define qv_idx 6</span>
 <span class="cp">#define Nc_idx 7</span>
 <span class="cp">#define Nr_idx 8</span>
-<span class="cp">#define Nv_idx 9</span>
-<span class="cp">#define qi_idx 10</span>
-<span class="cp">#define Ni_idx 11</span>
-<span class="cp">#define vi_idx 12</span>
-<span class="cp">#define qs_idx 13</span>
-<span class="cp">#define Ns_idx 14</span>
-<span class="cp">#define qg_idx 15</span>
-<span class="cp">#define Ng_idx 16</span>
-<span class="cp">#define qh_idx 17</span>
-<span class="cp">#define Nh_idx 18</span>
-<span class="cp">#define qi_out_idx 19</span>
-<span class="cp">#define qs_out_idx 20</span>
-<span class="cp">#define qr_out_idx 21</span>
-<span class="cp">#define qg_out_idx 22</span>
-<span class="cp">#define qh_out_idx 23</span>
-<span class="cp">#define lat_heat_idx 24</span>
-<span class="cp">#define lat_cool_idx 25</span>
-<span class="cp">#define Ni_out_idx 26</span>
-<span class="cp">#define Ns_out_idx 27</span>
-<span class="cp">#define Nr_out_idx 28</span>
-<span class="cp">#define Ng_out_idx 29</span>
-<span class="cp">#define Nh_out_idx 30</span>
-<span class="cp">#define z_idx 31</span>
-<span class="cp">#define n_inact_idx 32</span>
-<span class="cp">#define depo_idx 33</span>
-<span class="cp">#define sub_idx 34</span>
+<span class="cp">#define qi_idx 9</span>
+<span class="cp">#define Ni_idx 10</span>
+<span class="cp">#define qs_idx 11</span>
+<span class="cp">#define Ns_idx 12</span>
+<span class="cp">#define qg_idx 13</span>
+<span class="cp">#define Ng_idx 14</span>
+<span class="cp">#define qh_idx 15</span>
+<span class="cp">#define Nh_idx 16</span>
+<span class="cp">#define qi_out_idx 17</span>
+<span class="cp">#define qs_out_idx 18</span>
+<span class="cp">#define qr_out_idx 19</span>
+<span class="cp">#define qg_out_idx 20</span>
+<span class="cp">#define qh_out_idx 21</span>
+<span class="cp">#define lat_heat_idx 22</span>
+<span class="cp">#define lat_cool_idx 23</span>
+<span class="cp">#define Ni_out_idx 24</span>
+<span class="cp">#define Ns_out_idx 25</span>
+<span class="cp">#define Nr_out_idx 26</span>
+<span class="cp">#define Ng_out_idx 27</span>
+<span class="cp">#define Nh_out_idx 28</span>
+<span class="cp">#define z_idx 29</span>
+<span class="cp">#define n_inact_idx 30</span>
+<span class="cp">#define depo_idx 31</span>
+<span class="cp">#define sub_idx 32</span>
 <span class="cp">#if defined(RK4_ONE_MOMENT)</span>
-<span class="cp">#define num_comp 10</span>
+<span class="cp">#define num_comp 9</span>
 <span class="cp">#define num_par 12</span>
 <span class="cp">#elif defined(RK4ICE) || defined(RK4NOICE)</span>
-<span class="cp">#define num_comp 35</span>
+<span class="cp">#define num_comp 33</span>
 <span class="cp">#define num_par 56*6+17</span>
 <span class="cp">#endif</span>
 
@@ -237,22 +225,41 @@
 <span class="cp">#define num_inflows 8</span>
 <span class="c1">// Constants</span>
 
+<span class="cp">#if defined(TRACE_TIME)</span>
+<span class="c1">// Relative to ascent time</span>
+<span class="kt">double</span> <span class="n">trace_time</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">trace_start</span> <span class="o">=</span> <span class="mi">4400</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">trace_end</span> <span class="o">=</span> <span class="mi">4800</span><span class="p">;</span>
+<span class="kt">bool</span> <span class="n">trace</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+<span class="cp">#else</span>
+<span class="kt">bool</span> <span class="n">trace</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="cp">#endif</span>
+
 <span class="cp">#if defined(RK4_ONE_MOMENT)</span>
 
 <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">output_par_idx</span> <span class="o">=</span>
-    <span class="p">{</span><span class="s">&quot;p&quot;</span><span class="p">,</span> <span class="s">&quot;T&quot;</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">,</span> <span class="s">&quot;S&quot;</span><span class="p">,</span> <span class="s">&quot;qc&quot;</span><span class="p">,</span> <span class="s">&quot;qr&quot;</span><span class="p">,</span> <span class="s">&quot;qv&quot;</span><span class="p">,</span> <span class="s">&quot;Nc&quot;</span><span class="p">,</span> <span class="s">&quot;Nr&quot;</span><span class="p">,</span> <span class="s">&quot;Nv&quot;</span><span class="p">};</span>
+    <span class="p">{</span><span class="s">&quot;p&quot;</span><span class="p">,</span> <span class="s">&quot;T&quot;</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">,</span> <span class="s">&quot;S&quot;</span><span class="p">,</span> <span class="s">&quot;qc&quot;</span><span class="p">,</span> <span class="s">&quot;qr&quot;</span><span class="p">,</span> <span class="s">&quot;qv&quot;</span><span class="p">,</span> <span class="s">&quot;Nc&quot;</span><span class="p">,</span> <span class="s">&quot;Nr&quot;</span><span class="p">};</span>
 
 <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">output_grad_idx</span> <span class="o">=</span>
     <span class="p">{</span><span class="s">&quot;da_1&quot;</span><span class="p">,</span> <span class="s">&quot;da_2&quot;</span><span class="p">,</span> <span class="s">&quot;de_1&quot;</span><span class="p">,</span> <span class="s">&quot;de_2&quot;</span><span class="p">,</span> <span class="s">&quot;dd&quot;</span><span class="p">,</span> <span class="s">&quot;dN_c&quot;</span><span class="p">,</span> <span class="s">&quot;dgamma&quot;</span><span class="p">,</span> <span class="s">&quot;dbeta_c&quot;</span><span class="p">,</span>
     <span class="s">&quot;dbeta_r&quot;</span><span class="p">,</span> <span class="s">&quot;ddelta1&quot;</span><span class="p">,</span> <span class="s">&quot;ddelta2&quot;</span><span class="p">,</span> <span class="s">&quot;dzeta&quot;</span><span class="p">};</span>
 <span class="cp">#elif defined(RK4ICE) || defined(RK4NOICE)</span>
+<span class="cp">#ifdef MET3D</span>
+<span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">output_par_idx</span> <span class="o">=</span>
+    <span class="p">{</span><span class="s">&quot;pressure&quot;</span><span class="p">,</span> <span class="s">&quot;T&quot;</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">,</span> <span class="s">&quot;S&quot;</span><span class="p">,</span> <span class="s">&quot;QC&quot;</span><span class="p">,</span> <span class="s">&quot;QR&quot;</span><span class="p">,</span> <span class="s">&quot;QV&quot;</span><span class="p">,</span> <span class="s">&quot;NCCLOUD&quot;</span><span class="p">,</span> <span class="s">&quot;NCRAIN&quot;</span><span class="p">,</span>
+     <span class="s">&quot;QI&quot;</span><span class="p">,</span> <span class="s">&quot;NCICE&quot;</span><span class="p">,</span> <span class="s">&quot;QS&quot;</span><span class="p">,</span> <span class="s">&quot;NCSNOW&quot;</span><span class="p">,</span> <span class="s">&quot;QG&quot;</span><span class="p">,</span> <span class="s">&quot;NCGRAUPEL&quot;</span><span class="p">,</span> <span class="s">&quot;QH&quot;</span><span class="p">,</span> <span class="s">&quot;NCHAIL&quot;</span><span class="p">,</span>
+     <span class="s">&quot;QI_OUT&quot;</span><span class="p">,</span> <span class="s">&quot;QS_OUT&quot;</span><span class="p">,</span> <span class="s">&quot;QR_OUT&quot;</span><span class="p">,</span> <span class="s">&quot;QG_OUT&quot;</span><span class="p">,</span> <span class="s">&quot;QH_OUT&quot;</span><span class="p">,</span>
+     <span class="s">&quot;latent_heat&quot;</span><span class="p">,</span> <span class="s">&quot;latent_cool&quot;</span><span class="p">,</span> <span class="s">&quot;NI_OUT&quot;</span><span class="p">,</span> <span class="s">&quot;NS_OUT&quot;</span><span class="p">,</span> <span class="s">&quot;NR_OUT&quot;</span><span class="p">,</span>
+     <span class="s">&quot;NG_OUT&quot;</span><span class="p">,</span> <span class="s">&quot;NH_OUT&quot;</span><span class="p">,</span> <span class="s">&quot;z&quot;</span><span class="p">,</span> <span class="s">&quot;Inactive&quot;</span><span class="p">,</span> <span class="s">&quot;deposition&quot;</span><span class="p">,</span> <span class="s">&quot;sublimination&quot;</span><span class="p">};</span>
+<span class="cp">#else</span>
 
 <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">output_par_idx</span> <span class="o">=</span>
-    <span class="p">{</span><span class="s">&quot;p&quot;</span><span class="p">,</span> <span class="s">&quot;T&quot;</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">,</span> <span class="s">&quot;S&quot;</span><span class="p">,</span> <span class="s">&quot;qc&quot;</span><span class="p">,</span> <span class="s">&quot;qr&quot;</span><span class="p">,</span> <span class="s">&quot;qv&quot;</span><span class="p">,</span> <span class="s">&quot;Nc&quot;</span><span class="p">,</span> <span class="s">&quot;Nr&quot;</span><span class="p">,</span> <span class="s">&quot;Nv&quot;</span><span class="p">,</span>
-     <span class="s">&quot;qi&quot;</span><span class="p">,</span> <span class="s">&quot;Ni&quot;</span><span class="p">,</span> <span class="s">&quot;vi&quot;</span><span class="p">,</span> <span class="s">&quot;qs&quot;</span><span class="p">,</span> <span class="s">&quot;Ns&quot;</span><span class="p">,</span> <span class="s">&quot;qg&quot;</span><span class="p">,</span> <span class="s">&quot;Ng&quot;</span><span class="p">,</span> <span class="s">&quot;qh&quot;</span><span class="p">,</span> <span class="s">&quot;Nh&quot;</span><span class="p">,</span>
+    <span class="p">{</span><span class="s">&quot;p&quot;</span><span class="p">,</span> <span class="s">&quot;T&quot;</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">,</span> <span class="s">&quot;S&quot;</span><span class="p">,</span> <span class="s">&quot;qc&quot;</span><span class="p">,</span> <span class="s">&quot;qr&quot;</span><span class="p">,</span> <span class="s">&quot;qv&quot;</span><span class="p">,</span> <span class="s">&quot;Nc&quot;</span><span class="p">,</span> <span class="s">&quot;Nr&quot;</span><span class="p">,</span>
+     <span class="s">&quot;qi&quot;</span><span class="p">,</span> <span class="s">&quot;Ni&quot;</span><span class="p">,</span> <span class="s">&quot;qs&quot;</span><span class="p">,</span> <span class="s">&quot;Ns&quot;</span><span class="p">,</span> <span class="s">&quot;qg&quot;</span><span class="p">,</span> <span class="s">&quot;Ng&quot;</span><span class="p">,</span> <span class="s">&quot;qh&quot;</span><span class="p">,</span> <span class="s">&quot;Nh&quot;</span><span class="p">,</span>
      <span class="s">&quot;qiout&quot;</span><span class="p">,</span> <span class="s">&quot;qsout&quot;</span><span class="p">,</span> <span class="s">&quot;qrout&quot;</span><span class="p">,</span> <span class="s">&quot;qgout&quot;</span><span class="p">,</span> <span class="s">&quot;qhout&quot;</span><span class="p">,</span>
      <span class="s">&quot;latent_heat&quot;</span><span class="p">,</span> <span class="s">&quot;latent_cool&quot;</span><span class="p">,</span> <span class="s">&quot;Niout&quot;</span><span class="p">,</span> <span class="s">&quot;Nsout&quot;</span><span class="p">,</span> <span class="s">&quot;Nrout&quot;</span><span class="p">,</span>
      <span class="s">&quot;Ngout&quot;</span><span class="p">,</span> <span class="s">&quot;Nhout&quot;</span><span class="p">,</span> <span class="s">&quot;z&quot;</span><span class="p">,</span> <span class="s">&quot;Inactive&quot;</span><span class="p">,</span> <span class="s">&quot;deposition&quot;</span><span class="p">,</span> <span class="s">&quot;sublimination&quot;</span><span class="p">};</span>
+<span class="cp">#endif</span>
 
 <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">output_grad_idx</span> <span class="o">=</span>
     <span class="p">{</span><span class="s">&quot;da_1&quot;</span><span class="p">,</span> <span class="s">&quot;da_2&quot;</span><span class="p">,</span> <span class="s">&quot;de_1&quot;</span><span class="p">,</span> <span class="s">&quot;de_2&quot;</span><span class="p">,</span> <span class="s">&quot;dd&quot;</span><span class="p">,</span> <span class="s">&quot;dN_c&quot;</span><span class="p">,</span> <span class="s">&quot;dgamma&quot;</span><span class="p">,</span> <span class="s">&quot;dbeta_c&quot;</span><span class="p">,</span>
@@ -359,6 +366,10 @@
     <span class="s">&quot;dsnow_vsedi_min&quot;</span><span class="p">,</span> <span class="s">&quot;dsnow_vsedi_max&quot;</span><span class="p">};</span>
 <span class="cp">#endif</span>
 
+<span class="kt">double</span> <span class="n">sediment_q</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">double</span> <span class="n">sediment_n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">double</span> <span class="n">sediment_q_total</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">double</span> <span class="n">sediment_n_total</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">R_universal</span> <span class="o">=</span> <span class="mf">8.3144598</span><span class="p">;</span>
 
@@ -373,8 +384,6 @@
 <span class="k">const</span> <span class="kt">double</span> <span class="n">Epsilon</span> <span class="o">=</span> <span class="n">Ra</span><span class="o">/</span><span class="n">Rv</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">gravity_acc</span> <span class="o">=</span> <span class="mf">9.81</span><span class="p">;</span>
-
-<span class="k">const</span> <span class="kt">double</span> <span class="n">tmelt</span> <span class="o">=</span> <span class="mf">273.15</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">q_crit_i</span> <span class="o">=</span> <span class="mf">1.0e-6</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">double</span> <span class="n">D_crit_i</span> <span class="o">=</span> <span class="mf">1.0e-4</span><span class="p">;</span>
@@ -398,9 +407,12 @@
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">D_coll_c</span> <span class="o">=</span> <span class="mf">4.0e-5</span><span class="p">;</span>
 
+<span class="k">const</span> <span class="kt">double</span> <span class="n">parcel_height</span> <span class="o">=</span> <span class="mf">250.0</span><span class="p">;</span>
+
 <span class="k">const</span> <span class="kt">double</span> <span class="n">T_nuc</span> <span class="o">=</span> <span class="mf">268.15</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">T_freeze</span> <span class="o">=</span> <span class="mf">273.15</span><span class="p">;</span>
+
 <span class="k">const</span> <span class="kt">double</span> <span class="n">T_f</span> <span class="o">=</span> <span class="mf">233.0</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">D_eq</span> <span class="o">=</span> <span class="mf">1.1e-3</span><span class="p">;</span>
@@ -411,13 +423,15 @@
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">rho_vel</span> <span class="o">=</span> <span class="mf">0.4</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">rho_vel_c</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">rho_vel_c</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span><span class="c1">//0.2;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">rho_ice</span> <span class="o">=</span> <span class="mf">916.7</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">R_v</span> <span class="o">=</span> <span class="mf">461.51</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">a_v</span> <span class="o">=</span> <span class="mf">0.78</span><span class="p">;</span><span class="k">const</span> <span class="kt">double</span> <span class="n">b_v</span> <span class="o">=</span> <span class="mf">0.308</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">a_v</span> <span class="o">=</span> <span class="mf">0.78</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">b_v</span> <span class="o">=</span> <span class="mf">0.308</span><span class="p">;</span>
+
 <span class="k">const</span> <span class="kt">double</span> <span class="n">N_Sc</span> <span class="o">=</span> <span class="mf">0.71</span><span class="p">;</span><span class="k">const</span> <span class="kt">double</span> <span class="n">a_prime</span> <span class="o">=</span> <span class="mf">9.65</span><span class="p">;</span><span class="k">const</span> <span class="kt">double</span> <span class="n">b_prime</span> <span class="o">=</span> <span class="mf">9.80</span><span class="p">;</span><span class="k">const</span> <span class="kt">double</span> <span class="n">c_prime</span> <span class="o">=</span> <span class="mi">600</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">K_T</span> <span class="o">=</span> <span class="mf">2.4e-2</span><span class="p">;</span>
@@ -451,7 +465,7 @@
 <span class="k">const</span> <span class="kt">double</span> <span class="n">dv0</span> <span class="o">=</span> <span class="mf">2.22e-5</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">double</span> <span class="n">p_sat_melt</span> <span class="o">=</span> <span class="mf">6.1078e2</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">cp</span> <span class="o">=</span> <span class="mf">1004.64</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">cp</span> <span class="o">=</span> <span class="mf">1004.64</span><span class="p">;</span> <span class="c1">// COSMO: 1005.7</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">k_b</span> <span class="o">=</span> <span class="mf">1.3806504e-23</span><span class="p">;</span>
 
@@ -538,7 +552,7 @@
 <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">d_ccn</span> <span class="o">=</span> <span class="p">{</span><span class="mf">287736034.13</span><span class="p">,</span> <span class="mf">0.6258809883</span><span class="p">,</span>
                                 <span class="mf">0.8907491812</span><span class="p">,</span> <span class="mf">360848977.55</span><span class="p">};</span>
 
-<span class="k">const</span> <span class="kt">int</span> <span class="n">nuc_type</span> <span class="o">=</span> <span class="mi">7</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">int</span> <span class="n">nuc_type</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">bool</span> <span class="n">use_hdcp2_het</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
 
@@ -549,6 +563,28 @@
 <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">t_tstep</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">s_sstep</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">r_const</span> <span class="o">=</span> <span class="mf">287.04</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">r1_const</span> <span class="o">=</span> <span class="mf">461.5</span><span class="p">;</span>
+
+<span class="c1">// const double cp = 1005.7;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">cv</span> <span class="o">=</span> <span class="mf">718.66</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">bool</span> <span class="n">always_sat_adj</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">p_sat_const_a</span> <span class="o">=</span> <span class="mf">17.2693882</span><span class="p">;</span>
+
+<span class="c1">// const double p_sat_ice_const_a = 21.8745584;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">p_sat_const_b</span> <span class="o">=</span> <span class="mf">35.86</span><span class="p">;</span>
+
+<span class="c1">// const double p_sat_ice_const_b = 7.66;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">p_sat_low_temp</span> <span class="o">=</span> <span class="mf">610.78</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">T_sat_low_temp</span> <span class="o">=</span> <span class="mf">273.16</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">afrac_dust</span> <span class="o">=</span> <span class="p">{</span>
 <span class="p">{</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">},</span>

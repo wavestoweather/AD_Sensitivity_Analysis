@@ -34,8 +34,12 @@ struct reference_quantities_t{
  */
 struct particle_model_constants_t{
 
+    /**
+     * Geometry coefficients.
+     */
     codi::RealReverse a_geo;
     codi::RealReverse b_geo;
+
     /**
      * Minimum size of particle for mean meass calculation.
      */
@@ -70,10 +74,10 @@ struct particle_model_constants_t{
     codi::RealReverse sc_theta_n;
     codi::RealReverse sc_delta_n;
     codi::RealReverse s_vel;        /*!< Also known as sigma_vel in ICON. */
-    codi::RealReverse a_vel;
-    codi::RealReverse b_vel;
+    codi::RealReverse a_vel;    /*!< Coefficient for sedimentation. */
+    codi::RealReverse b_vel;    /*!< Coefficient for sedimentation. */
     codi::RealReverse rho_v;
-    codi::RealReverse c_z;
+    codi::RealReverse c_z;  /*!< Coefficient for capacity. */
     codi::RealReverse sc_coll_n;    /*!< Also known as e_coll in ICON. */
     codi::RealReverse cmu0, cmu1, cmu2, cmu3, cmu4, cmu5, alpha, beta, gamma;
     codi::RealReverse nu;
@@ -120,8 +124,8 @@ struct particle_model_constants_t{
     codi::RealReverse b_ven;    /*!<  Riming parameter. */
 
     codi::RealReverse c_s;  /*!< Also known as c_i in ICON.*/
-    codi::RealReverse a_f;
-    codi::RealReverse b_f;
+    codi::RealReverse a_f; /*!< Coefficient for average ventilation. */
+    codi::RealReverse b_f; /*!< Coefficient for average ventilation. */
 
     codi::RealReverse alfa_n;       /*!<  Bulk sedimentation velocity parameter. */
     codi::RealReverse alfa_q;       /*!<  Bulk sedimentation velocity parameter. */
@@ -540,8 +544,6 @@ struct model_constants_t{
   //
   double alpha_d; /*!< Accomodation coefficient */
 
-  codi::RealReverse rho_a_prime; /*!< Density of dry air */
-
   codi::RealReverse Nc_prime; /*!< Number concentration of cloud droplets */
 
   codi::RealReverse a1_prime; /*!< Dimensional coefficients */
@@ -645,7 +647,7 @@ struct model_constants_t{
   double t_end;             /*!< End time for the simulation. */
   double dt_prime;          /*!< Timestep size in seconds for the simulation. */
   double dt;                /*!< Timestep size for the simulation. */
-  double dt_traject_prime;  /*!< Timestep size in seconds of the trajectory from the netCDF file. */
+  double dt_traject_prime;  /*!< Timestep size of the trajectory from the netCDF file. */
   double dt_traject;        /*!< Timestep size of the trajectory from the netCDF file. */
   uint64_t num_steps;       /*!< Number of timesteps to read from the netCDF file. */
 
@@ -683,7 +685,7 @@ struct model_constants_t{
    * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
    * at \f$23 \text{km}\f$.
    */
-  codi::RealReverse inv_z = 1.0/150.0;
+  codi::RealReverse inv_z;
 
   const double nar = 0.22;      /*!< Constants for the IFS model. */
   const double nbr = 2.2;       /*!< Constants for the IFS model. */
@@ -708,15 +710,23 @@ struct model_constants_t{
  */
 struct nc_parameters_t{
 
-    uint32_t n_trajectories = 30; /*!< Number of trajectories in the netCDF file. */
-    uint32_t n_timesteps = 7922; /*!< Number of timesteps in the netCDF file. */
-    std::vector<double> w, z, lat, lon;
+    uint64_t n_trajectories = 30; /*!< Number of trajectories in the netCDF file. */
+    uint64_t n_timesteps = 7922; /*!< Number of timesteps in the netCDF file. */
+#ifdef MET3D
+    double z;
+    std::vector<double> time_abs;
+    uint64_t time_idx = 0;
+#else
+    std::vector<double> z;
+#endif
+    std::vector<double> w, lat, lon;
     double  t, p, time_rel,
             qc, qr, qi, qs, qg, qv, S, dw, dlat, dlon,
             QIin, QSin, QRin, QGin, QIout, QSout, QRout, QGout,
             NIin, NSin, NRin, NGin, NIout, NSout, NRout, NGout,
             Nc, Nr, Ni, Ns, Ng;
     bool ascent_flag, conv_400, conv_600, slan_400, slan_600, dp2h;
+    char* type[1];
     NcVar   lat_var, lon_var, z_var, t_var, p_var, w_var, time_rel_var,
             qc_var, qr_var, qi_var, qs_var, qg_var, qv_var, S_var,
             QIin_var, QSin_var, QRin_var, QGin_var, QIout_var, QSout_var,
@@ -724,7 +734,11 @@ struct nc_parameters_t{
             NIin_var, NSin_var, NRin_var, NGin_var, NIout_var, NSout_var,
             NRout_var, NGout_var, dp2h_var,
             Nc_var, Nr_var, Ni_var, Ns_var, Ng_var,
+#ifdef MET3D
+            type_var, time_abs_var,
+#endif
             conv_400_var, conv_600_var, slan_400_var, slan_600_var;
+
 };
 
 
@@ -751,10 +765,13 @@ struct global_args_t{
   int scaling_fact_flag; /*!< Scaling factor specified? */
   char* scaling_fact_string;
 
-  int start_over_flag; /*!< Reload data from trajectory every few seconds? */
+  int start_over_flag; /*!< Reload mixing ratios and particle numbers from trajectory every few seconds? */
   char* start_over_string;
 
-  int fixed_iteration_flag; /*!< Fix p, T, w during simulation? */
+  int start_over_env_flag; /*!< Reload pressure, temperature and ascent from trajectory every few seconds? */
+  char* start_over_env_string;
+
+  int fixed_iteration_flag; /*!< Fix p, T, w during microphysics? */
   char* fixed_iteration_string;
 
   int auto_type_flag; /*!< Particle type specified? */
@@ -765,6 +782,13 @@ struct global_args_t{
 
   int write_flag; /*!< Snapshot is flushed every x iterations. */
   char* write_string;
+
+  int progress_index_flag; /*!< Progressbar is updated every x iterations. */
+  char* progress_index_string;
+#ifdef MET3D
+  int delay_start_flag; /*!< Simulation starts at this time relative to ascend. */
+  char* delay_start_string;
+#endif
 };
 
 
@@ -778,6 +802,9 @@ struct input_parameters_t{
   double dt_prime; /*!< Timestep size in seconds for the simulation. */
   double dt_traject_prime; /*!< Timestep size in seconds of the trajectory in the netCDF file. */
   double dt_traject; /*!< Timestep size of the trajectory in the netCDF file. */
+#ifdef MET3D
+  double start_time;
+#endif
   int snapshot_index; /*!< Save a snapshot every snapshot_index iteration. */
   /**
    * Number of timesteps for the simulation between two
@@ -789,13 +816,16 @@ struct input_parameters_t{
   std::string INPUT_FILENAME; /*!< Filename for input netCDF file. */
 
   bool start_over; /*!< Start over at new timestep of trajectory? */
-  bool fixed_iteration; /*!< Fix temperature, pressure and ascension at every iteration? */
+  bool start_over_env; /*!< Start over environment variables at new timestep of trajectory? */
+  bool fixed_iteration; /*!< Fix temperature and pressure at every iteration? */
 
   double scaling_fact; /*!< Scaling factor. */
 
   uint32_t auto_type; /*!< Particle type. */
   uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
   uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
+  uint32_t progress_index; /*!< Index for updating progressbar. */
+  uint32_t ensemble = 0; /*!< Index of ensemble. */
 };
 
 /** @} */ // end of group types

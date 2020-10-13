@@ -15,16 +15,15 @@ from itertools import repeat
 params_dict = {"p": "_diff_0.txt", "T": "_diff_1.txt",
                "w": "_diff_2.txt", "S": "_diff_3.txt", "qc": "_diff_4.txt",
                "qr": "_diff_5.txt", "qv": "_diff_6.txt", "Nc": "_diff_7.txt",
-               "Nr": "_diff_8.txt", "Nv": "_diff_9.txt",
-               "qi": "_diff_10.txt", "Ni": "_diff_11.txt",
-               "vi": "_diff_12.txt", "qs": "_diff_13.txt",
-               "Ns": "_diff_14.txt", "qg": "_diff_15.txt",
-               "Ng": "_diff_16.txt", "qh": "_diff_17.txt",
-               "Nh": "_diff_18.txt", "qiout": "_diff_19.txt",
-               "qsout": "_diff_20.txt", "qrout": "_diff_21.txt",
-               "qgout": "_diff_22.txt",
-               "qhout": "_diff_23.txt", "latent_heat": "_diff_24.txt",
-               "latent_cool": "_diff_25.txt"}
+               "Nr": "_diff_8.txt", "qi": "_diff_9.txt",
+               "Ni": "_diff_10.txt", "qs": "_diff_11.txt",
+               "Ns": "_diff_12.txt", "qg": "_diff_13.txt",
+               "Ng": "_diff_14.txt", "qh": "_diff_15.txt",
+               "Nh": "_diff_16.txt", "qiout": "_diff_17.txt",
+               "qsout": "_diff_18.txt", "qrout": "_diff_19.txt",
+               "qgout": "_diff_20.txt", "qhout": "_diff_21.txt",
+               "latent_heat": "_diff_22.txt",
+               "latent_cool": "_diff_23.txt"}
 params_dict2 = {"_diff_0.txt": "p",
                "_diff_1.txt": "T",
                "_diff_2.txt": "w",
@@ -34,39 +33,100 @@ params_dict2 = {"_diff_0.txt": "p",
                "_diff_6.txt": "qv",
                "_diff_7.txt": "Nc",
                "_diff_8.txt": "Nr",
-               "_diff_9.txt": "Nv",
-               "_diff_10.txt": "qi",
-               "_diff_11.txt": "Ni",
-               "_diff_12.txt": "vi",
-               "_diff_13.txt": "qs",
-               "_diff_14.txt": "Ns",
-               "_diff_15.txt": "qg",
-               "_diff_16.txt": "Ng",
-               "_diff_17.txt": "qh",
-               "_diff_18.txt": "Nh",
-               "_diff_19.txt": "qiout",
-               "_diff_20.txt": "qsout",
-               "_diff_21.txt": "qrout",
-               "_diff_22.txt": "qgout",
-               "_diff_23.txt": "qhout",
-               "_diff_24.txt": "latent_heat",
-               "_diff_25.txt": "latent_cool",
-               "_diff_26.txt": "Niout",
-               "_diff_27.txt": "Nsout",
-               "_diff_28.txt": "Nrout",
-               "_diff_29.txt": "Ngout",
-               "_diff_30.txt": "Nhout",
-               "_diff_31.txt": "z",
-               "_diff_32.txt": "n_inact",
-               "_diff_33.txt": "depo",
-               "_diff_34.txt": "sub"}
+               "_diff_9.txt": "qi",
+               "_diff_10.txt": "Ni",
+               "_diff_11.txt": "qs",
+               "_diff_12.txt": "Ns",
+               "_diff_13.txt": "qg",
+               "_diff_14.txt": "Ng",
+               "_diff_15.txt": "qh",
+               "_diff_16.txt": "Nh",
+               "_diff_17.txt": "qiout",
+               "_diff_18.txt": "qsout",
+               "_diff_19.txt": "qrout",
+               "_diff_20.txt": "qgout",
+               "_diff_21.txt": "qhout",
+               "_diff_22.txt": "latent_heat",
+               "_diff_23.txt": "latent_cool",
+               "_diff_24.txt": "Niout",
+               "_diff_25.txt": "Nsout",
+               "_diff_26.txt": "Nrout",
+               "_diff_27.txt": "Ngout",
+               "_diff_28.txt": "Nhout",
+               "_diff_29.txt": "z",
+               "_diff_30.txt": "n_inact",
+               "_diff_31.txt": "depo",
+               "_diff_32.txt": "sub"}
+params_dict2_met3d = {"_diff_0.txt": "pressure",
+               "_diff_1.txt": "T",
+               "_diff_2.txt": "w",
+               "_diff_3.txt": "S",
+               "_diff_4.txt": "QC",
+               "_diff_5.txt": "QR",
+               "_diff_6.txt": "QV",
+               "_diff_7.txt": "NCCLOUD",
+               "_diff_8.txt": "NCRAIN",
+               "_diff_9.txt": "QI",
+               "_diff_10.txt": "NCICE",
+               "_diff_11.txt": "QS",
+               "_diff_12.txt": "NCSNOW",
+               "_diff_13.txt": "QG",
+               "_diff_14.txt": "NCGRAUPEL",
+               "_diff_15.txt": "QH",
+               "_diff_16.txt": "NCHAIL",
+               "_diff_17.txt": "QI_OUT",
+               "_diff_18.txt": "QS_OUT",
+               "_diff_19.txt": "QR_OUT",
+               "_diff_20.txt": "QG_OUT",
+               "_diff_21.txt": "QH_OUT",
+               "_diff_22.txt": "latent_heat",
+               "_diff_23.txt": "latent_cool",
+               "_diff_24.txt": "NI_OUT",
+               "_diff_25.txt": "NS_OUT",
+               "_diff_26.txt": "NR_OUT",
+               "_diff_27.txt": "NG_OUT",
+               "_diff_28.txt": "NH_OUT",
+               "_diff_29.txt": "z",
+               "_diff_30.txt": "n_inact",
+               "_diff_31.txt": "depo",
+               "_diff_32.txt": "sub"}
+met3d_rename_dic = {"p"         : "pressure",
+                    "LONGITUDE" : "lon",
+                    "LATITUDE"  : "lat",
+                    "MAP"       : "WCB_flag",
+                    "qv"        : "QV",
+                    "qc"        : "QC",
+                    "qr"        : "QR",
+                    "qi"        : "QI",
+                    "qs"        : "QS",
+                    "qg"        : "QG",
+                    "qh"        : "QH",
+                    "Nrout"     : "NR_OUT",
+                    "Niout"     : "NI_OUT",
+                    "Nsout"     : "NS_OUT",
+                    "Ngout"     : "NG_OUT",
+                    "Nhout"     : "NH_OUT",
+                    "Nc"        : "NCCLOUD",
+                    "Ng"        : "NCGRAUPEL",
+                    "Nr"        : "NCRAIN",
+                    "Nh"        : "NCHAIL",
+                    "Ns"        : "NCSNOW",
+                    "Ni"        : "NCICE",
+                    "qrout"     : "QR_OUT",
+                    "qiout"     : "QI_OUT",
+                    "qsout"     : "QS_OUT",
+                    "qgout"     : "QG_OUT",
+                    "qhout"     : "QH_OUT"}
 deriv_type_dic = {
+    "step": np.uint64,
+    "time": np.float64,
     "timestep": np.float64,
      "trajectory": np.uint64,
      "Output Parameter": "category",
-     "LONGITUDE": np.float64,
-     "LATITUDE": np.float64,
-     "MAP": np.bool_,
+     "lon": np.float64,
+     "lat": np.float64,
+     "time_after_ascent": np.float64,
+     "WCB_flag": np.bool_,
      "dp2h": np.bool_,
      "conv_400": np.bool_,
      "conv_600": np.bool_,
@@ -428,6 +488,49 @@ deriv_type_dic = {
 }
 
 
+def parse_attr(attr):
+    """
+    Parse a file to global attributes dictionary and a dictionary for every
+    column
+
+    Parameters
+    ----------
+    attr : Path to file in ini format.
+
+    Returns
+    -------
+    Dictionary of dictionaries
+        {"Global attributes": {}, "Non global attributes": {"Column name": {}}}
+    """
+    attributes = {}
+    key = None
+    column_key = None
+    with open(attr, "r") as opened:
+        for line in opened:
+            if "[" in line and "]" in line:
+                key = line.replace("[", "").replace("]", "").rstrip()
+                attributes[key] = {}
+            elif key == "Global attributes":
+                if "name" in line:
+                    gl_name = line.split("=")[1].rstrip()
+                elif "values" in line:
+                    attributes[key][gl_name] = line.split("=")[1].rstrip()
+            else:
+                if "column" in line:
+                    column_key = line.split("=")[1].rstrip()
+                    if "_IN" in column_key or "Q_TURBULENCE" == column_key or "dtype" == column_key:
+                        continue
+                    attributes[key][column_key] = {}
+                else:
+                    if "_IN" in column_key or "Q_TURBULENCE" == column_key or "dtype" == column_key:
+                        continue
+                    val = line.split("=")[1].rstrip()
+                    if val == "bool":
+                        continue
+                    attributes[key][column_key][line.split("=")[0].rstrip()] = val
+    return attributes
+
+
 def filter_zeros(df_dict, EPSILON=1e-31):
     """
     Drop all columns that have zero impact
@@ -596,7 +699,7 @@ def load_nc(inp="/mnt/localscratch/data/project/m2_jgu-tapt/o"
 
 
 def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
-        refs=None):
+        refs=None, attr=None):
     """
     Read a csv file and return a pandas.Dataframe with
     physical (not normalized) entries.
@@ -613,18 +716,19 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
         If true: Multiply all entries with reference values.
     refs : String
         Path to a file of references for transformation
+    attr : String
+        Path to a file with attributes of every output column. If given, a
+        MET3D styled version is assumed and triggered.
 
     Returns
     -------
     pandas.Dataframe
-        Dataframe with the columns "p", "T", "w",
-        "qc", "qr", "qs", "qg", "qh", "qi", "qv",
-        "qiout", "qsout", "qrout", "qgout", "qhout",
-        "latent_heat", "latent_cool" if change_ref is True. Otherwise
+        Dataframe with certain columns if change_ref is True. Otherwise
         any dataframe from the given csv file.
+        If attr is given, column names is slightly different.
     """
     type_dic = {
-        "timestep": np.float64,
+        "step": np.float64,
         "trajectory": np.uint64,
         "LONGITUDE": np.float64,
         "LATITUDE": np.float64,
@@ -643,7 +747,6 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
         "qv": np.float64,
         "Nc": np.float64,
         "Nr": np.float64,
-        "Nv": np.float64,
         "qi": np.float64,
         "Ni": np.float64,
         "vi": np.float64,
@@ -670,6 +773,10 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
         "deposition": np.float64,
         "sublimination": np.float64
     }
+    if attr is not None:
+        type_dic["time"] = np.float64
+        type_dic["time_after_ascent"] = np.float64
+        type_dic["type"] = str
 
     if sep is None:
         try:
@@ -705,60 +812,109 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
             wref = refs[4]
             tref = refs[5]
             zref = refs[6]
-
-        data["timestep"]    = data["timestep"]*tref
-        data["p"]           = data["p"]*pref
-        data["T"]           = data["T"]*Tref
-        data["w"]           = data["w"]*wref
-        data["qc"]          = data["qc"]*qref
-        data["qr"]          = data["qr"]*qref
-        if "qs" in data:
-            data["qs"]          = data["qs"]*qref
-        if "qg" in data:
-            data["qg"]          = data["qg"]*qref
-        if "qh" in data:
-            data["qh"]          = data["qh"]*qref
-        if "qi" in data:
-            data["qi"]          = data["qi"]*qref
-        data["qv"]          = data["qv"]*qref
-        if "qiout" in data:
-            data["qiout"]       = data["qiout"]*qref
-        if "qsout" in data:
-            data["qsout"]       = data["qsout"]*qref
-        if "qrout" in data:
-            data["qrout"]       = data["qrout"]*qref
-        if "qgout" in data:
-            data["qgout"]       = data["qgout"]*qref
-        if "qhout" in data:
-            data["qhout"]       = data["qhout"]*qref
-        data["Nc"]          *= Nref
-        data["Nr"]          *= Nref
-        if "Ns" in data:
-            data["Ns"]          *= Nref
-        if "Ng" in data:
-            data["Ng"]          *= Nref
-        if "Nh" in data:
-            data["Nh"]          *= Nref
-        if "Ni" in data:
-            data["Ni"]          *= Nref
-        data["Nv"]          *= Nref
-        if "Niout" in data:
-            data["Niout"]       *= Nref
-        if "Nsout" in data:
-            data["Nsout"]       *= Nref
-        if "Nrout" in data:
-            data["Nrout"]       *= Nref
-        if "Ngout" in data:
-            data["Ngout"]       *= Nref
-        if "Nhout" in data:
-            data["Nhout"]       *= Nref
-        if "latent_heat" in data:
-            data["latent_heat"] *= Tref
-        if "latent_cool" in data:
-            data["latent_cool"] *= Tref
-        if "z" in data:
-            data["z"]           *= zref
-
+        if attr is not None:
+            data["time"]            = data["time"]*tref
+            data["pressure"]        = data["pressure"]*pref
+            data["T"]               = data["T"]*Tref
+            data["w"]               = data["w"]*wref
+            data["QC"]              = data["QC"]*qref
+            data["QR"]              = data["QR"]*qref
+            data["QS"]              = data["QS"]*qref
+            data["QG"]              = data["QG"]*qref
+            data["QH"]              = data["QH"]*qref
+            data["QI"]              = data["QI"]*qref
+            data["QV"]              = data["QV"]*qref
+            data["QI_OUT"]           = data["QI_OUT"]*qref
+            data["QS_OUT"]           = data["QS_OUT"]*qref
+            data["QR_OUT"]           = data["QR_OUT"]*qref
+            data["QG_OUT"]           = data["QG_OUT"]*qref
+            data["QH_OUT"]           = data["QH_OUT"]*qref
+            data["NCCLOUD"]         *= Nref
+            data["NCRAIN"]          *= Nref
+            data["NCSNOW"]          *= Nref
+            data["NCGRAUPEL"]       *= Nref
+            data["NCHAIL"]          *= Nref
+            data["NCICE"]           *= Nref
+            data["NI_OUT"]          *= Nref
+            data["NS_OUT"]          *= Nref
+            data["NR_OUT"]          *= Nref
+            data["NG_OUT"]          *= Nref
+            data["NH_OUT"]          *= Nref
+            data["z"]               *= zref
+        else:
+            if "time" in data:
+                data["time"]            = data["time"]*tref
+            data["p"]               = data["p"]*pref
+            data["T"]               = data["T"]*Tref
+            data["w"]               = data["w"]*wref
+            data["qc"]              = data["qc"]*qref
+            data["qr"]              = data["qr"]*qref
+            if "qs" in data:
+                data["qs"]          = data["qs"]*qref
+            if "qg" in data:
+                data["qg"]          = data["qg"]*qref
+            if "qh" in data:
+                data["qh"]          = data["qh"]*qref
+            if "qi" in data:
+                data["qi"]          = data["qi"]*qref
+            data["qv"]              = data["qv"]*qref
+            if "qiout" in data:
+                data["qiout"]       = data["qiout"]*qref
+            if "qsout" in data:
+                data["qsout"]       = data["qsout"]*qref
+            if "qrout" in data:
+                data["qrout"]       = data["qrout"]*qref
+            if "qgout" in data:
+                data["qgout"]       = data["qgout"]*qref
+            if "qhout" in data:
+                data["qhout"]       = data["qhout"]*qref
+            data["Nc"]              *= Nref
+            data["Nr"]              *= Nref
+            if "Ns" in data:
+                data["Ns"]          *= Nref
+            if "Ng" in data:
+                data["Ng"]          *= Nref
+            if "Nh" in data:
+                data["Nh"]          *= Nref
+            if "Ni" in data:
+                data["Ni"]          *= Nref
+            if "Niout" in data:
+                data["Niout"]       *= Nref
+            if "Nsout" in data:
+                data["Nsout"]       *= Nref
+            if "Nrout" in data:
+                data["Nrout"]       *= Nref
+            if "Ngout" in data:
+                data["Ngout"]       *= Nref
+            if "Nhout" in data:
+                data["Nhout"]       *= Nref
+            if "z" in data:
+                data["z"]           *= zref
+    if attr is not None:
+        # data = data.rename(columns=met3d_rename_dic)
+        attributes = parse_attr(attr)
+        data["QH"].attrs = {
+            "standard_name": "mass_fraction_of_hail_in_air",
+            "long_name": "specific hail content",
+            "units": "kg kg^-1"}
+        data["QH_OUT"].attrs = {
+            "standard_name": "sedi_outflux_of_hail",
+            "long_name": "sedimentation of hail mixing ratio",
+            "units": "kg kg^-1 s^-1"}
+        data["NCHAIL"].attrs = {
+            "standard_name": "specif_number_of_hail_in_air",
+            "long_name": "specific hail number",
+            "units": "kg^-1"}
+        data["NH_OUT"].attrs = {
+            "standard_name": "sedi_outflux_of_hail_number",
+            "long_name": "sedimentation of hail number",
+            "units": "kg^-1 s^-1"}
+        for key in attributes:
+            if key == "Global attributes":
+                data.attrs = attributes[key]
+            else:
+                for col in attributes[key]:
+                    data[col].attrs = attributes[key][col]
     return data
 
 
@@ -984,7 +1140,7 @@ def load_parallel(f, suffix):
     A helper for load_mult_derivates_direc_dic(..) to load using multiple
     processes.
     """
-    out_param = params_dict2[f.split(suffix)[1]]
+    out_param = params_dict2[f.split("/")[-1].split(suffix)[1]]
 #     print("Loading from {}".format(f))
     return (out_param, pd.read_csv(f, sep=",", index_col=False, dtype=deriv_type_dic))
     # return (out_param, pd.read_csv(f, sep=",", index_col=False,
@@ -993,7 +1149,8 @@ def load_parallel(f, suffix):
 
 
 def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
-                                  EPSILON=0.0, trajectories=[1], suffix="20160922_00", pool=None):
+                                  EPSILON=0.0, trajectories=[1], suffix="20160922_00",
+                                  pool=None, met3d=True):
     """
     Create a dictionary with out parameters as keys and dictionaries with columns:
     trajectory, timestep, MAP, LATITUDE, LONGITUDE
@@ -1030,7 +1187,8 @@ def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
         for f in file_list:
             if "diff" not in f:
                 continue
-            s = f.split("traj")
+            s = f.split("/")[-1]
+            s = s.split("traj")
             s = s[-1].split("_")
             if int(s[0]) in trajectories:
                 file_list2.append(f)
@@ -1044,6 +1202,7 @@ def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
             i += 1
         # The last 4 chars should be ".txt" now.
         example = example[:-4]
+        example = example.split("/")[-1]
         example = example.split("_")
         suffix = example[-2] + "_" + example[-1]
         print("Found suffix: {}".format(suffix))
@@ -1055,8 +1214,13 @@ def load_mult_derivates_direc_dic(direc="", filt=True, file_list2=None,
         return np.uint32(x)
     if pool is None:
         for f in file_list2:
-            out_param = params_dict2[f.split(suffix)[1]]
+            if met3d:
+                out_param = params_dict2_met3d[f.split("/")[-1].split(suffix)[1]]
+            else:
+                out_param = params_dict2[f.split("/")[-1].split(suffix)[1]]
             df = pd.read_csv(f, sep=",", index_col=False, dtype=deriv_type_dic)
+            if met3d:
+                df = df.rename(columns=met3d_rename_dic)
             if out_param in tmp_dict:
                 tmp_dict[out_param] = tmp_dict[out_param].append(df)
             else:

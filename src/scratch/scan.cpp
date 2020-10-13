@@ -810,7 +810,6 @@ int main(int argc, char** argv)
 
                     codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
                     codi::RealReverse ssi = qv_prime_in * Rv * T_prime_in / p_sat_ice;
-                    bool ndiag_mask = false;
 
                     codi::RealReverse n_inact_tmp = n_inact_in;
 
@@ -822,7 +821,7 @@ int main(int argc, char** argv)
                               << qv_prime_in.getValue() << ",";
 
                     ice_activation_hande(qc_prime_in, qv_prime_in, T_prime_in,
-                        ssi, n_inact_in, ndiag_mask, y, cc);
+                        ssi, n_inact_in, y, cc);
 
                     std::cout << y[qi_idx].getValue() << ","
                               << y[Ni_idx].getValue() << ","
@@ -843,7 +842,7 @@ int main(int argc, char** argv)
         uint32_t used_parameter = 0;
         uint32_t used_parameter2 = 0;
 
-        std::cout << "qc,Nc,T,S,qv,delta_qi,delta_Ni,delta_qv,"
+        std::cout << "qc,Nc,T,S,SSi,qv,delta_qi,delta_Ni,delta_qv,"
                   << "delta_lat_cool,delta_lat_heat\n";
 
         for(uint32_t i=0; i<=n1; ++i)
@@ -906,10 +905,11 @@ int main(int argc, char** argv)
                               << Nc.getValue() << ","
                               << T_prime_in.getValue() << ","
                               << S.getValue() << ","
+                              << ssi.getValue() << ","
                               << qv_prime_in.getValue() << ",";
 
                     ice_activation_phillips(qc_prime_in, qv_prime_in, T_prime_in,
-                        p_sat_ice, ssi, n_inact_in, use_prog_in, y, cc);
+                        ssi, n_inact_in, use_prog_in, y, cc); // p_sat_ice,
 
                     std::cout << y[qi_idx].getValue() << ","
                               << y[Ni_idx].getValue() << ","
@@ -954,7 +954,7 @@ int main(int argc, char** argv)
                           << Nc.getValue() << ","
                           << T_prime_in.getValue() << ",";
 
-                codi::RealReverse T_c = T_prime_in - tmelt;
+                codi::RealReverse T_c = T_prime_in - T_freeze;
 
                 cloud_freeze_hom(qc_prime_in, Nc, T_prime_in, T_c, y, cc);
 
@@ -1030,7 +1030,7 @@ int main(int argc, char** argv)
                     codi::RealReverse Ni = qi_prime_in
                         / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
 
-                    codi::RealReverse T_c = T_prime_in - tmelt;
+                    codi::RealReverse T_c = T_prime_in - T_freeze;
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
                             / saturation_pressure_water_icon(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
@@ -1779,9 +1779,6 @@ int main(int argc, char** argv)
                               << Ng.getValue() << ","
                               << p_prime_in.getValue() << ",";
 
-                    cc.rho_a_prime = compute_rhoa(p_prime_in,
-                        T_prime_in, S);
-
                     sedimentation_explicit(T_prime_in, S,
                         qc_prime_in, qr_prime_in, Nr,
                         qs_prime_in, Ns, qi_prime_in, Ni, qh_prime_in, Nh,
@@ -1858,7 +1855,7 @@ int main(int argc, char** argv)
             return 1;
         }
         std::cout << "T,S,p,q" << q2 << ",N" << q2 << ","
-                  << "qv,delta_qv,delta_q" << q2 << ","
+                  << "qv,dt,delta_qv,delta_q" << q2 << ","
                   << "delta_lat_cool,delta_lat_heat\n";
         for(uint32_t i=0; i<=n1; ++i)
         {
@@ -1928,10 +1925,11 @@ int main(int argc, char** argv)
                               << p_prime_in.getValue() << ","
                               << q2_prime_in.getValue() << ","
                               << N2.getValue() << ","
-                              << qv_prime_in.getValue() << ",";
+                              << qv_prime_in.getValue() << ","
+                              << cc.dt_prime << ",";
 
                     evaporation(qv_prime_in, e_d, p_sat, s_sw, T_prime_in,
-                        q2_prime_in, N2, y[q2_idx], *pc, y);
+                        q2_prime_in, N2, y[q2_idx], *pc, y, cc.dt_prime);
 
                     std::cout << y[qv_idx].getValue() << ","
                               << y[q2_idx].getValue() << ","
@@ -2204,7 +2202,8 @@ int main(int argc, char** argv)
             return 1;
         }
 
-        std::cout << "p,T,S,qv,q" << q1 << ",N" << q1 << ",q" << q2 << ",N" << q2 << ","
+        std::cout << "p,T,S,qv,q" << q1 << ",N" << q1 << ",q" << q2 << ",N"
+                  << q2 << ",dt,"
                   << "delta_q" << q1 << ",delta_q" << q2 << ",delta_N"
                   << q1 << "\n";
 
@@ -2286,12 +2285,13 @@ int main(int argc, char** argv)
                               << q1_prime_in.getValue() << ","
                               << N1.getValue() << ","
                               << q2_prime_in.getValue() << ","
-                              << N2.getValue() << ",";
-                    codi::RealReverse T_c = T_prime_in - tmelt;
+                              << N2.getValue() << ","
+                              << cc.dt_prime << ",";
+                    codi::RealReverse T_c = T_prime_in - T_freeze;
 
                     std::vector<codi::RealReverse> res = particle_collection(
                         q1_prime_in, q2_prime_in, N1, N2, T_c,
-                        *coeffs, *pc1, *pc2);
+                        *coeffs, *pc1, *pc2, cc.dt_prime);
 
                     std::cout << -res[1].getValue() << ","
                               << res[1].getValue() << ","
@@ -2414,7 +2414,7 @@ int main(int argc, char** argv)
                               << S.getValue() << ","
                               << T_prime_in.getValue() << ","
                               << p_prime_in.getValue() << ",";
-                    codi::RealReverse T_c = T_prime_in - tmelt;
+                    codi::RealReverse T_c = T_prime_in - T_freeze;
 
                     particle_particle_collection(
                         qi_prime_in, Ni, qs_prime_in, Ns,
@@ -2544,7 +2544,7 @@ int main(int argc, char** argv)
                               << Nh.getValue() << ","
                               << p_prime_in.getValue() << ","
                               << T_prime_in.getValue() << ",";
-                    codi::RealReverse T_c = T_prime_in - tmelt;
+                    codi::RealReverse T_c = T_prime_in - T_freeze;
 
                     graupel_hail_conv(qc_prime_in, qr_prime_in,
                         qi_prime_in, qg_prime_in, Ng,
@@ -2673,7 +2673,7 @@ int main(int argc, char** argv)
                               << S.getValue() << ","
                               << T_prime_in.getValue() << ","
                               << p_prime_in.getValue() << ",";
-                    codi::RealReverse T_c = T_prime_in - tmelt;
+                    codi::RealReverse T_c = T_prime_in - T_freeze;
 
                     hail_collision(qh_prime_in, Nh,
                         qs_prime_in, Ns, qi_prime_in, Ni, T_c, y, cc);
@@ -3648,12 +3648,11 @@ int main(int argc, char** argv)
                 if(used_parameter < 1 && qi_min != NOT_USED && qi_max != NOT_USED)
                     qi_prime_in = j * (qi_max-qi_min) / n2 + qi_min;
 
-                codi::RealReverse qi_in = qi_prime_in/ref_quant.qref;
                 codi::RealReverse Ni = qi_prime_in
                     / ( (cc.ice.max_x - cc.ice.min_x_melt)/2 + cc.ice.min_x_melt );
                 std::cout << qi_prime_in.getValue() << "," << Ni.getValue() << ","
                           << T_prime_in.getValue() << "," << cc.dt_prime << ",";
-                ice_melting(qi_prime_in, qi_in, Ni, T_prime_in,
+                ice_melting(qi_prime_in, Ni, T_prime_in,
                     cc.dt_prime, y, cc);
                 std::cout << y[qi_idx].getValue() << "," << y[Ni_idx].getValue() << ","
                           << y[qr_idx].getValue() << "," << y[Nr_idx].getValue() << ","
