@@ -1,4 +1,4 @@
-# Convert WCB2 netcdf files and outputs of the simulation to comply with Met3d
+# Convert WCB2 netcdf files and outputs of the simulation to comply with Met.3D
 # See https://met3d.readthedocs.io/en/latest/dataformats.html#trajectory-data-in-netcdf-format
 import os
 import pandas as pd
