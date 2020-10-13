@@ -81,17 +81,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Python Documentation</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -188,6 +178,7 @@
 <span class="cp">#include</span> <span class="cpf">&lt;iterator&gt;</span><span class="cp"></span>
 <span class="cp">#include</span> <span class="cpf">&quot;codi.hpp&quot;</span><span class="cp"></span>
 <span class="cp">#include</span> <span class="cpf">&quot;types.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;general.h&quot;</span><span class="cp"></span>
 <span class="k">using</span> <span class="k">namespace</span> <span class="n">netCDF</span><span class="p">;</span>
 
 
@@ -365,8 +356,14 @@
 <span class="p">{</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">n_trajectories</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">n_timesteps</span> <span class="o">=</span> <span class="n">n_timesteps</span><span class="p">;</span>
+<span class="cp">#if defined MET3D</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">time_abs</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">n_timesteps</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="s">&quot;&quot;</span><span class="p">;</span>
+<span class="cp">#else</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+<span class="cp">#endif</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">lat</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">lon</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
 <span class="p">}</span>
@@ -394,6 +391,19 @@
     <span class="n">nc</span><span class="p">.</span><span class="n">qi_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QI&quot;</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">qs_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QS&quot;</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">time_rel_var</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;time&quot;</span><span class="p">);</span>
+<span class="cp">#elif defined MET3D</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">p_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;pressure&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">t_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;T&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qc_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QC&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qv_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QV&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qr_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QR&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qi_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QI&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">qs_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QS&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">time_rel_var</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;time_after_ascent&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">time_abs_var</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;time&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;w&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">S_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;S&quot;</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">type_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;type&quot;</span><span class="p">);</span>
 <span class="cp">#else</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">p_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;p&quot;</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">t_var</span>        <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;t&quot;</span><span class="p">);</span>
@@ -422,7 +432,8 @@
     <span class="c1">// Potential vorticity (German: Wirbelstaerke)</span>
     <span class="c1">// nc.pot_vortic   = datafile.getVar(&quot;POT_VORTIC&quot;)</span>
 <span class="cp">#endif</span>
-<span class="cp">#ifdef WCB2</span>
+
+<span class="cp">#if defined WCB2 || defined MET3D</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">qg_var</span>       <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QG&quot;</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">QIin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QI_IN&quot;</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">QSin_var</span>     <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;QS_IN&quot;</span><span class="p">);</span>
@@ -465,8 +476,9 @@
     <span class="n">reference_quantities_t</span> <span class="o">&amp;</span><span class="n">ref_quant</span><span class="p">,</span>
     <span class="kt">uint64_t</span> <span class="n">num_sub_steps</span><span class="p">)</span>
 <span class="p">{</span>
-    <span class="c1">// startp[0] &lt;- trajectory id</span>
-    <span class="c1">// startp[1] &lt;- timestep</span>
+    <span class="c1">// startp[0] &lt;- ensemble (if available)</span>
+    <span class="c1">// startp[1] &lt;- trajectory id</span>
+    <span class="c1">// startp[2] &lt;- timestep</span>
 
 
 <span class="cp">#if defined WCB || defined WCB2</span>
@@ -477,6 +489,13 @@
     <span class="n">nc</span><span class="p">.</span><span class="n">lon_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">lon</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
     <span class="n">countp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">--</span><span class="p">;</span>
     <span class="n">countp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">--</span><span class="p">;</span>
+<span class="cp">#elif defined MET3D</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">z_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">);</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lat_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">lat</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">lon_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">lon</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">countp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">--</span><span class="p">;</span>
 <span class="cp">#else</span>
     <span class="n">countp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
     <span class="n">countp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
@@ -487,10 +506,22 @@
     <span class="n">countp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">--</span><span class="p">;</span>
 <span class="cp">#endif</span>
 
-<span class="cp">#if defined WCB || defined WCB2</span>
+<span class="cp">#if defined WCB || defined WCB2 || defined MET3D</span>
     <span class="kt">int</span> <span class="n">map</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">ascent_flag_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="cp">#if defined MET3D || defined WCB2</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">dp2h_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">dp2h</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">conv_400_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">conv_400</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">conv_600_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">conv_600</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">slan_400_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">slan_400</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">slan_600_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">slan_600</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
 <span class="cp">#endif</span>
 
     <span class="n">nc</span><span class="p">.</span><span class="n">t_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">t</span><span class="p">);</span>
@@ -502,9 +533,9 @@
     <span class="n">nc</span><span class="p">.</span><span class="n">qs_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">qs</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">qv_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">qv</span><span class="p">);</span>
 
-    <span class="kt">double</span> <span class="n">psat_prime</span> <span class="o">=</span> <span class="n">saturation_pressure_water</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">t</span><span class="p">);</span>
+    <span class="kt">double</span> <span class="n">psat_prime</span> <span class="o">=</span> <span class="n">saturation_pressure_water_icon</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">t</span><span class="p">);</span>
 
-<span class="cp">#if !defined WCB2</span>
+<span class="cp">#if !defined WCB2 &amp;&amp; !defined MET3D</span>
     <span class="c1">// We are reading in hPa. Convert to Pa</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">p</span>        <span class="o">*=</span> <span class="mi">100</span><span class="p">;</span>
 <span class="cp">#endif</span>
@@ -516,7 +547,7 @@
     <span class="n">nc</span><span class="p">.</span><span class="n">qi</span>       <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">qs</span>       <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">;</span>
 
-<span class="cp">#if defined WCB2</span>
+<span class="cp">#if defined WCB2 || defined MET3D</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">NRin_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">NRin</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">NIin_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">NIin</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">NSin_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">NSin</span><span class="p">);</span>
@@ -553,19 +584,6 @@
     <span class="n">nc</span><span class="p">.</span><span class="n">NIin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">NIin</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">NSin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">NSin</span><span class="p">);</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">NGin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">NGin</span><span class="p">);</span>
-
-    <span class="c1">// Some additional flags for convective and</span>
-    <span class="c1">// slantwise trajectories</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">conv_400_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">conv_400</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">conv_600_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">conv_600</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">slan_400_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">slan_400</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">slan_600_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">slan_600</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">dp2h_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">map</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">dp2h</span> <span class="o">=</span> <span class="p">(</span><span class="n">map</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="nb">true</span> <span class="o">:</span> <span class="nb">false</span><span class="p">;</span>
 <span class="cp">#endif</span>
 
 <span class="cp">#if !defined WCB</span>
@@ -600,7 +618,17 @@
     <span class="n">nc</span><span class="p">.</span><span class="n">QGout</span>    <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QGout</span><span class="p">);</span>
 <span class="cp">#endif</span>
 
-<span class="cp">#if !defined WCB &amp;&amp; !defined WCB2</span>
+<span class="cp">#ifdef MET3D</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">S_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">S</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">S</span> <span class="o">/=</span> <span class="mi">100</span><span class="p">;</span> <span class="c1">// from percentage</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">time_rel_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">time_rel</span><span class="p">);</span>
+    <span class="c1">// there is only a single value for that since each type</span>
+    <span class="c1">// is divided into different files in the input</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">nc</span><span class="p">.</span><span class="n">type_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">type</span><span class="p">);</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>     <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">wref</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>     <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">wref</span><span class="p">;</span>
+<span class="cp">#elif !defined WCB &amp;&amp; !defined WCB2</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">w_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
     <span class="n">countp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">w_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
@@ -608,17 +636,6 @@
 
     <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>     <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">wref</span><span class="p">;</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>     <span class="o">/=</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">wref</span><span class="p">;</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
-
-    <span class="c1">// I am not sure why, but those values can be negative...</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">QRin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QRin</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">QRout</span>    <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QRout</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">QIin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QIin</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">QIout</span>    <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QIout</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">QSin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QSin</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">QSout</span>    <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QSout</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">QGin</span>     <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QGin</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">QGout</span>    <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">QGout</span><span class="p">);</span>
 <span class="cp">#elif defined WCB</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">qc</span> <span class="o">/=</span> <span class="mf">1.0e6</span><span class="p">;</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">qr</span> <span class="o">/=</span> <span class="mf">1.0e6</span><span class="p">;</span>
@@ -630,16 +647,13 @@
     <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">20.0</span><span class="p">;</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">20.0</span><span class="p">;</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">S_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nc</span><span class="p">.</span><span class="n">S</span><span class="p">);</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">S</span> <span class="o">/=</span> <span class="mi">100</span><span class="p">;</span> <span class="c1">// to percentage</span>
-    <span class="c1">// we do not change w</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">nc</span><span class="p">.</span><span class="n">S</span> <span class="o">/=</span> <span class="mi">100</span><span class="p">;</span> <span class="c1">// from percentage</span>
 <span class="cp">#else</span>
     <span class="c1">// WCB 2</span>
     <span class="c1">// Calculate w by getting the z-coordinates</span>
     <span class="c1">// and divide it by the amount of substeps</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">20.0</span><span class="p">;</span>
     <span class="n">nc</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">20.0</span><span class="p">;</span>
-    <span class="n">nc</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// We do not interpolate w for now</span>
 <span class="cp">#endif</span>
 
     <span class="n">nc</span><span class="p">.</span><span class="n">dlat</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_sub_steps</span><span class="p">;</span>
@@ -671,13 +685,18 @@
   <span class="c1">// Scaling factor</span>
   <span class="n">in</span><span class="p">.</span><span class="n">scaling_fact</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>    <span class="c1">// No scaling</span>
   <span class="n">in</span><span class="p">.</span><span class="n">start_over</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">start_over_env</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
   <span class="n">in</span><span class="p">.</span><span class="n">fixed_iteration</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
   <span class="n">in</span><span class="p">.</span><span class="n">auto_type</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
   <span class="n">in</span><span class="p">.</span><span class="n">traj</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
   <span class="n">in</span><span class="p">.</span><span class="n">write_index</span> <span class="o">=</span> <span class="mi">100000</span><span class="p">;</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">progress_index</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">;</span>
+<span class="cp">#ifdef MET3D</span>
+  <span class="n">in</span><span class="p">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">nan</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">);</span>
+<span class="cp">#endif</span>
 <span class="p">}</span>
 
-<span class="k">static</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">optString</span> <span class="o">=</span> <span class="s">&quot;w:f:d:i:b:o:l:s:t:a:r:?&quot;</span><span class="p">;</span>
+<span class="k">static</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">optString</span> <span class="o">=</span> <span class="s">&quot;w:f:d:e:i:b:o:l:s:t:a:r:p:n:?&quot;</span><span class="p">;</span>
 
 
 <span class="kt">void</span> <span class="nf">init_global_args</span><span class="p">(</span><span class="n">global_args_t</span> <span class="o">&amp;</span><span class="n">arg</span><span class="p">)</span>
@@ -704,6 +723,9 @@
   <span class="n">arg</span><span class="p">.</span><span class="n">start_over_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
   <span class="n">arg</span><span class="p">.</span><span class="n">start_over_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
 
+  <span class="n">arg</span><span class="p">.</span><span class="n">start_over_env_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">start_over_env_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
   <span class="n">arg</span><span class="p">.</span><span class="n">fixed_iteration_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
   <span class="n">arg</span><span class="p">.</span><span class="n">fixed_iteration_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
 
@@ -715,6 +737,13 @@
 
   <span class="n">arg</span><span class="p">.</span><span class="n">write_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
   <span class="n">arg</span><span class="p">.</span><span class="n">write_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+
+  <span class="n">arg</span><span class="p">.</span><span class="n">progress_index_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">progress_index_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+<span class="cp">#ifdef MET3D</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">delay_start_flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">arg</span><span class="p">.</span><span class="n">delay_start_string</span> <span class="o">=</span> <span class="k">nullptr</span><span class="p">;</span>
+<span class="cp">#endif</span>
 <span class="p">}</span>
 
 <span class="kt">void</span> <span class="nf">set_input_from_arguments</span><span class="p">(</span><span class="n">global_args_t</span> <span class="o">&amp;</span><span class="n">arg</span> <span class="p">,</span>
@@ -750,9 +779,14 @@
     <span class="n">in</span><span class="p">.</span><span class="n">scaling_fact</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">strtod</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">scaling_fact_string</span><span class="p">,</span> <span class="k">nullptr</span><span class="p">);</span>
   <span class="p">}</span>
 
-  <span class="c1">// Starting over</span>
+  <span class="c1">// Starting over mixing ratios and particle numbers</span>
   <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">start_over_flag</span><span class="p">){</span>
     <span class="n">in</span><span class="p">.</span><span class="n">start_over</span> <span class="o">=</span> <span class="p">(</span><span class="n">strcmp</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">start_over_string</span><span class="p">,</span> <span class="s">&quot;0&quot;</span><span class="p">));</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Starting over environment variables (p, T, w)</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">start_over_env_flag</span><span class="p">){</span>
+    <span class="n">in</span><span class="p">.</span><span class="n">start_over_env</span> <span class="o">=</span> <span class="p">(</span><span class="n">strcmp</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">start_over_env_string</span><span class="p">,</span> <span class="s">&quot;0&quot;</span><span class="p">));</span>
   <span class="p">}</span>
 
   <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">fixed_iteration_flag</span><span class="p">){</span>
@@ -773,6 +807,17 @@
   <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">write_flag</span><span class="p">){</span>
       <span class="n">in</span><span class="p">.</span><span class="n">write_index</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">write_string</span><span class="p">);</span>
   <span class="p">}</span>
+
+  <span class="c1">// Progressbar index</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">progress_index_flag</span><span class="p">){</span>
+      <span class="n">in</span><span class="p">.</span><span class="n">progress_index</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">progress_index_string</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="cp">#ifdef MET3D</span>
+  <span class="c1">// Simulation start time</span>
+  <span class="k">if</span><span class="p">(</span><span class="mi">1</span> <span class="o">==</span> <span class="n">arg</span><span class="p">.</span><span class="n">delay_start_flag</span><span class="p">){</span>
+      <span class="n">in</span><span class="p">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">strtod</span><span class="p">(</span><span class="n">arg</span><span class="p">.</span><span class="n">delay_start_string</span><span class="p">,</span> <span class="k">nullptr</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="cp">#endif</span>
 <span class="p">}</span>
 
 
@@ -786,11 +831,10 @@
 
     <span class="k">if</span><span class="p">(</span> <span class="o">!</span><span class="n">outfile_refs</span><span class="p">.</span><span class="n">is_open</span><span class="p">()</span> <span class="p">)</span>
     <span class="p">{</span>
-        <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;ERROR while opening the outputfile. Aborting.&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;ERROR while opening the reference file. Aborting.&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
         <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
     <span class="p">}</span>
 
-    <span class="c1">// Write the reference quantities</span>
     <span class="c1">// Write the reference quantities</span>
     <span class="n">outfile_refs</span> <span class="o">&lt;&lt;</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">Tref</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; &quot;</span>
            <span class="o">&lt;&lt;</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">pref</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; &quot;</span>
@@ -804,6 +848,87 @@
     <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
 
+<span class="cp">#ifdef MET3D</span>
+
+<span class="kt">int</span> <span class="nf">write_attributes</span><span class="p">(</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">in_filename</span><span class="p">,</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">out_filename</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">ofstream</span> <span class="n">outfile</span><span class="p">;</span>
+    <span class="n">outfile</span><span class="p">.</span><span class="n">open</span><span class="p">(</span><span class="n">out_filename</span> <span class="o">+</span> <span class="s">&quot;_attributes.txt&quot;</span><span class="p">);</span>
+    <span class="n">outfile</span><span class="p">.</span><span class="n">precision</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+    <span class="k">if</span><span class="p">(</span> <span class="o">!</span><span class="n">outfile</span><span class="p">.</span><span class="n">is_open</span><span class="p">()</span> <span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;ERROR while opening the attribute file. Aborting.&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="c1">// Global attributes</span>
+    <span class="n">outfile</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;[Global attributes]</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+    <span class="n">netCDF</span><span class="o">::</span><span class="n">NcFile</span> <span class="n">datafile</span><span class="p">(</span><span class="n">in_filename</span><span class="p">,</span> <span class="n">netCDF</span><span class="o">::</span><span class="n">NcFile</span><span class="o">::</span><span class="n">read</span><span class="p">);</span>
+    <span class="k">auto</span> <span class="n">attributes</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getAtts</span><span class="p">();</span>
+    <span class="k">for</span><span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span> <span class="nl">name_attr</span><span class="p">:</span> <span class="n">attributes</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">auto</span> <span class="n">attribute</span> <span class="o">=</span> <span class="n">name_attr</span><span class="p">.</span><span class="n">second</span><span class="p">;</span>
+        <span class="n">netCDF</span><span class="o">::</span><span class="n">NcType</span> <span class="n">type</span> <span class="o">=</span> <span class="n">attribute</span><span class="p">.</span><span class="n">getType</span><span class="p">();</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;double&quot;</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span> <span class="n">values</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+            <span class="n">attribute</span><span class="p">.</span><span class="n">getValues</span><span class="p">(</span><span class="n">values</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+            <span class="n">outfile</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;name=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">attribute</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+                        <span class="o">&lt;&lt;</span> <span class="s">&quot;type=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+                        <span class="o">&lt;&lt;</span> <span class="s">&quot;values=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;int64&quot;</span> <span class="o">||</span> <span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;int32&quot;</span> <span class="o">||</span> <span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;int&quot;</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">values</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+            <span class="n">attribute</span><span class="p">.</span><span class="n">getValues</span><span class="p">(</span><span class="n">values</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+            <span class="n">outfile</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;name=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">attribute</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+                        <span class="o">&lt;&lt;</span> <span class="s">&quot;type=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+                        <span class="o">&lt;&lt;</span> <span class="s">&quot;values=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;char&quot;</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">values</span><span class="p">;</span>
+            <span class="n">attribute</span><span class="p">.</span><span class="n">getValues</span><span class="p">(</span><span class="n">values</span><span class="p">);</span>
+            <span class="n">outfile</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;name=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">attribute</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+                    <span class="o">&lt;&lt;</span> <span class="s">&quot;type=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+                    <span class="o">&lt;&lt;</span> <span class="s">&quot;values=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">values</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Column attributes</span>
+    <span class="n">outfile</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;[Non global attributes]</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+    <span class="k">auto</span> <span class="n">vars</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVars</span><span class="p">();</span>
+    <span class="k">for</span><span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span> <span class="nl">name_var</span><span class="p">:</span> <span class="n">vars</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">auto</span> <span class="n">var</span> <span class="o">=</span> <span class="n">name_var</span><span class="p">.</span><span class="n">second</span><span class="p">;</span>
+        <span class="k">auto</span> <span class="n">name</span> <span class="o">=</span> <span class="n">name_var</span><span class="p">.</span><span class="n">first</span><span class="p">;</span>
+        <span class="n">outfile</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;column=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">name</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+        <span class="k">auto</span> <span class="n">attributes</span> <span class="o">=</span> <span class="n">var</span><span class="p">.</span><span class="n">getAtts</span><span class="p">();</span>
+        <span class="k">for</span><span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span> <span class="nl">name_attr</span><span class="p">:</span> <span class="n">attributes</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">auto</span> <span class="n">attribute</span> <span class="o">=</span> <span class="n">name_attr</span><span class="p">.</span><span class="n">second</span><span class="p">;</span>
+            <span class="n">netCDF</span><span class="o">::</span><span class="n">NcType</span> <span class="n">type</span> <span class="o">=</span> <span class="n">attribute</span><span class="p">.</span><span class="n">getType</span><span class="p">();</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;double&quot;</span> <span class="o">||</span> <span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;float&quot;</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="n">values</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+                <span class="n">attribute</span><span class="p">.</span><span class="n">getValues</span><span class="p">(</span><span class="n">values</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+                <span class="n">outfile</span> <span class="o">&lt;&lt;</span> <span class="n">attribute</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+            <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;int64&quot;</span> <span class="o">||</span> <span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;int32&quot;</span> <span class="o">||</span> <span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;int&quot;</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">values</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+                <span class="n">attribute</span><span class="p">.</span><span class="n">getValues</span><span class="p">(</span><span class="n">values</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+                <span class="n">outfile</span> <span class="o">&lt;&lt;</span> <span class="n">attribute</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+            <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">type</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;char&quot;</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">values</span><span class="p">;</span>
+                <span class="n">attribute</span><span class="p">.</span><span class="n">getValues</span><span class="p">(</span><span class="n">values</span><span class="p">);</span>
+                <span class="n">outfile</span> <span class="o">&lt;&lt;</span> <span class="n">attribute</span><span class="p">.</span><span class="n">getName</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;=&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">values</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="n">outfile</span><span class="p">.</span><span class="n">close</span><span class="p">();</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="cp">#endif</span>
 
 <span class="kt">int</span> <span class="nf">write_headers</span><span class="p">(</span>
     <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">out_filename</span><span class="p">)</span>
@@ -823,21 +948,28 @@
     <span class="p">}</span>
 
     <span class="c1">// Append the initial values and write headers</span>
-    <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;timestep,trajectory,LONGITUDE,LATITUDE,&quot;</span>
+    <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">setprecision</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;step,trajectory,lon,lat,&quot;</span>
 <span class="cp">#if defined WCB</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;MAP,&quot;</span><span class="p">;</span>
 <span class="cp">#endif</span>
-<span class="cp">#if defined WCB2</span>
-        <span class="o">&lt;&lt;</span> <span class="s">&quot;MAP,&quot;</span>
+<span class="cp">#if defined WCB2 || defined MET3D</span>
+        <span class="o">&lt;&lt;</span> <span class="s">&quot;WCB_flag,&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;dp2h,&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;conv_400,&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;conv_600,&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;slan_400,&quot;</span>
         <span class="o">&lt;&lt;</span> <span class="s">&quot;slan_600,&quot;</span><span class="p">;</span>
 <span class="cp">#endif</span>
-        <span class="k">for</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">output_par_idx</span><span class="p">.</span><span class="n">size</span><span class="p">();</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
-            <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">output_par_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="o">&lt;&lt;</span>
-                <span class="p">((</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">output_par_idx</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">?</span> <span class="s">&quot;,&quot;</span> <span class="o">:</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="cp">#if defined MET3D</span>
+    <span class="n">out_tmp</span>
+        <span class="o">&lt;&lt;</span> <span class="s">&quot;time,&quot;</span>
+        <span class="o">&lt;&lt;</span> <span class="s">&quot;time_after_ascent,&quot;</span>
+        <span class="o">&lt;&lt;</span> <span class="s">&quot;type,&quot;</span>
+        <span class="o">&lt;&lt;</span> <span class="s">&quot;ensemble,&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+    <span class="k">for</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">output_par_idx</span><span class="p">.</span><span class="n">size</span><span class="p">();</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">output_par_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="o">&lt;&lt;</span>
+            <span class="p">((</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">output_par_idx</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">?</span> <span class="s">&quot;,&quot;</span> <span class="o">:</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 
     <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">basename</span> <span class="o">=</span> <span class="s">&quot;_diff_&quot;</span><span class="p">;</span>
     <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">fname</span><span class="p">;</span>
@@ -857,21 +989,29 @@
             <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
         <span class="p">}</span>
         <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
-            <span class="o">&lt;&lt;</span> <span class="s">&quot;timestep,&quot;</span>
+            <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">setprecision</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+            <span class="o">&lt;&lt;</span> <span class="s">&quot;step,&quot;</span>
             <span class="o">&lt;&lt;</span> <span class="s">&quot;trajectory,&quot;</span>
             <span class="o">&lt;&lt;</span> <span class="s">&quot;Output Parameter,&quot;</span>
-            <span class="o">&lt;&lt;</span> <span class="s">&quot;LONGITUDE,&quot;</span>
-            <span class="o">&lt;&lt;</span> <span class="s">&quot;LATITUDE,&quot;</span>
+            <span class="o">&lt;&lt;</span> <span class="s">&quot;lon,&quot;</span>
+            <span class="o">&lt;&lt;</span> <span class="s">&quot;lat,&quot;</span>
 <span class="cp">#if defined WCB</span>
             <span class="o">&lt;&lt;</span> <span class="s">&quot;MAP,&quot;</span><span class="p">;</span>
 <span class="cp">#endif</span>
-<span class="cp">#if defined WCB2</span>
-            <span class="o">&lt;&lt;</span> <span class="s">&quot;MAP,&quot;</span>
+<span class="cp">#if defined WCB2 || defined MET3D</span>
+            <span class="o">&lt;&lt;</span> <span class="s">&quot;WCB_flag,&quot;</span>
             <span class="o">&lt;&lt;</span> <span class="s">&quot;dp2h,&quot;</span>
             <span class="o">&lt;&lt;</span> <span class="s">&quot;conv_400,&quot;</span>
             <span class="o">&lt;&lt;</span> <span class="s">&quot;conv_600,&quot;</span>
             <span class="o">&lt;&lt;</span> <span class="s">&quot;slan_400,&quot;</span>
             <span class="o">&lt;&lt;</span> <span class="s">&quot;slan_600,&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="cp">#if defined MET3D</span>
+        <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+            <span class="o">&lt;&lt;</span> <span class="s">&quot;time,&quot;</span>
+            <span class="o">&lt;&lt;</span> <span class="s">&quot;time_after_ascent,&quot;</span>
+            <span class="o">&lt;&lt;</span> <span class="s">&quot;type,&quot;</span>
+            <span class="o">&lt;&lt;</span> <span class="s">&quot;ensemble,&quot;</span><span class="p">;</span>
 <span class="cp">#endif</span>
         <span class="k">for</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">output_grad_idx</span><span class="p">.</span><span class="n">size</span><span class="p">();</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
             <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">output_grad_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="o">&lt;&lt;</span>
@@ -887,6 +1027,9 @@
     <span class="n">nc_parameters_t</span> <span class="o">&amp;</span><span class="n">nc_params</span><span class="p">,</span>
     <span class="kt">size_t</span> <span class="o">&amp;</span><span class="n">lenp</span><span class="p">,</span>
     <span class="n">reference_quantities_t</span> <span class="o">&amp;</span><span class="n">ref_quant</span><span class="p">,</span>
+<span class="cp">#ifdef MET3D</span>
+    <span class="kt">double</span> <span class="o">&amp;</span><span class="n">start_time</span><span class="p">,</span>
+<span class="cp">#endif</span>
     <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">input_file</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">traj</span><span class="p">,</span>
     <span class="n">model_constants_t</span> <span class="o">&amp;</span><span class="n">cc</span><span class="p">)</span>
@@ -899,6 +1042,8 @@
         <span class="n">nc_open</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">NC_NOWRITE</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ncid</span><span class="p">);</span>
 <span class="cp">#ifdef WCB</span>
         <span class="n">nc_inq_dimid</span><span class="p">(</span><span class="n">ncid</span><span class="p">,</span> <span class="s">&quot;ntra&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">dimid</span><span class="p">);</span>
+<span class="cp">#elif defined MET3D</span>
+        <span class="n">nc_inq_dimid</span><span class="p">(</span><span class="n">ncid</span><span class="p">,</span> <span class="s">&quot;trajectory&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">dimid</span><span class="p">);</span>
 <span class="cp">#else</span>
         <span class="n">nc_inq_dimid</span><span class="p">(</span><span class="n">ncid</span><span class="p">,</span> <span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">dimid</span><span class="p">);</span>
 <span class="cp">#endif</span>
@@ -917,24 +1062,50 @@
         <span class="n">nc_inq_dimid</span><span class="p">(</span><span class="n">ncid</span><span class="p">,</span> <span class="s">&quot;time&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">dimid</span><span class="p">);</span>
 <span class="cp">#endif</span>
         <span class="n">nc_inq_dimlen</span><span class="p">(</span><span class="n">ncid</span><span class="p">,</span> <span class="n">dimid</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">n_timesteps</span><span class="p">);</span>
-        <span class="kt">uint64_t</span> <span class="n">n_timesteps_input</span> <span class="o">=</span> <span class="n">ceil</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">t_end</span><span class="o">/</span><span class="mf">20.0</span><span class="p">);</span>
+        <span class="kt">uint64_t</span> <span class="n">n_timesteps_input</span> <span class="o">=</span> <span class="n">ceil</span><span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">t_end</span><span class="o">/</span><span class="mf">20.0</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span>
 
         <span class="n">cc</span><span class="p">.</span><span class="n">num_steps</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_timesteps</span><span class="o">-</span><span class="mi">1</span> <span class="o">&gt;</span> <span class="n">n_timesteps_input</span><span class="p">)</span> <span class="o">?</span> <span class="nl">n_timesteps_input</span> <span class="p">:</span> <span class="n">n_timesteps</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
         <span class="n">init_nc_parameters</span><span class="p">(</span><span class="n">nc_params</span><span class="p">,</span> <span class="n">lenp</span><span class="p">,</span> <span class="n">n_timesteps</span><span class="p">);</span>
         <span class="n">netCDF</span><span class="o">::</span><span class="n">NcFile</span> <span class="n">datafile</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">netCDF</span><span class="o">::</span><span class="n">NcFile</span><span class="o">::</span><span class="n">read</span><span class="p">);</span>
         <span class="n">load_nc_parameters_var</span><span class="p">(</span><span class="n">nc_params</span><span class="p">,</span> <span class="n">datafile</span><span class="p">);</span>
 
+<span class="cp">#ifdef MET3D</span>
+        <span class="c1">// Get the time coordinates</span>
+        <span class="n">nc_params</span><span class="p">.</span><span class="n">time_abs_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">time_abs</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+<span class="cp">#endif</span>
+
         <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span> <span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">;</span>
+        <span class="n">countp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+        <span class="n">countp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="cp">#ifdef MET3D</span>
+        <span class="n">countp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="cp">#endif</span>
         <span class="c1">// wcb files have a different ordering</span>
 <span class="cp">#if defined WCB || defined WCB2</span>
         <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="c1">// time</span>
         <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">traj</span><span class="p">);</span> <span class="c1">// trajectory id</span>
+<span class="cp">#elif defined MET3D</span>
+        <span class="kt">uint64_t</span> <span class="n">start_time_idx</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="c1">// ensemble</span>
+        <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">traj</span><span class="p">);</span> <span class="c1">// trajectory</span>
+        <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">start_time_idx</span><span class="p">);</span> <span class="c1">// time</span>
+        <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">std</span><span class="o">::</span><span class="n">isnan</span><span class="p">(</span><span class="n">start_time</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> <span class="n">rel_start_time</span><span class="p">;</span>
+            <span class="c1">// Get relative start time of trajectory</span>
+            <span class="n">nc_params</span><span class="p">.</span><span class="n">time_rel_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">rel_start_time</span><span class="p">);</span>
+            <span class="c1">// Calculate the needed index</span>
+            <span class="n">start_time_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">start_time</span><span class="o">-</span><span class="n">rel_start_time</span><span class="p">)</span><span class="o">/</span><span class="n">cc</span><span class="p">.</span><span class="n">dt_traject</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="c1">// std::cout &lt;&lt; &quot;got start time idx &quot; &lt;&lt; start_time_idx &lt;&lt; &quot;\n&quot;;</span>
+        <span class="n">nc_params</span><span class="p">.</span><span class="n">time_idx</span> <span class="o">=</span> <span class="n">start_time_idx</span><span class="p">;</span>
+        <span class="n">startp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_time_idx</span><span class="p">;</span>
 <span class="cp">#else</span>
         <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">traj</span><span class="p">);</span> <span class="c1">// trajectory id</span>
         <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="c1">// time (where time == 0 only has zeros)</span>
 <span class="cp">#endif</span>
-        <span class="n">countp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
-        <span class="n">countp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
         <span class="n">load_nc_parameters</span><span class="p">(</span><span class="n">nc_params</span><span class="p">,</span> <span class="n">startp</span><span class="p">,</span> <span class="n">countp</span><span class="p">,</span>
                            <span class="n">ref_quant</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">);</span>
 
@@ -969,19 +1140,31 @@
         <span class="n">y_init</span><span class="p">[</span><span class="n">qh_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">Nh_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
 <span class="cp">#endif</span>
-<span class="cp">#ifdef WCB2</span>
-
+<span class="cp">#if defined WCB2 || defined MET3D</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">Nr_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">Nr</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">Nc_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">Nc</span><span class="p">;</span>
   <span class="cp">#if defined(RK4ICE)</span>
-        <span class="n">y_init</span><span class="p">[</span><span class="n">qr_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">QRout</span><span class="p">;</span>
-        <span class="n">y_init</span><span class="p">[</span><span class="n">Nr_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NRout</span><span class="p">;</span>
-        <span class="n">y_init</span><span class="p">[</span><span class="n">qi_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">QIout</span><span class="p">;</span>
-        <span class="n">y_init</span><span class="p">[</span><span class="n">qs_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">QSout</span><span class="p">;</span>
-        <span class="n">y_init</span><span class="p">[</span><span class="n">qg_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">QGout</span><span class="p">;</span>
-        <span class="n">y_init</span><span class="p">[</span><span class="n">Ni_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NIout</span><span class="p">;</span>
-        <span class="n">y_init</span><span class="p">[</span><span class="n">Ns_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NSout</span><span class="p">;</span>
-        <span class="n">y_init</span><span class="p">[</span><span class="n">Ng_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NGout</span><span class="p">;</span>
+        <span class="c1">// We can read the sedimentation from the original file like this</span>
+        <span class="c1">// y_init[qr_out_idx] = nc_params.QRout;</span>
+        <span class="c1">// y_init[Nr_out_idx] = nc_params.NRout;</span>
+        <span class="c1">// y_init[qi_out_idx] = nc_params.QIout;</span>
+        <span class="c1">// y_init[qs_out_idx] = nc_params.QSout;</span>
+        <span class="c1">// y_init[qg_out_idx] = nc_params.QGout;</span>
+        <span class="c1">// y_init[Ni_out_idx] = nc_params.NIout;</span>
+        <span class="c1">// y_init[Ns_out_idx] = nc_params.NSout;</span>
+        <span class="c1">// y_init[Ng_out_idx] = nc_params.NGout;</span>
+        <span class="c1">// But we actually want to set them to zero and calculate them</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">qr_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">Nr_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">qi_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">qs_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">qg_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">qh_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">Nh_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">Ni_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">Ns_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">Ng_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
         <span class="n">y_init</span><span class="p">[</span><span class="n">Ni_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">Ni</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">Ns_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">Ns</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">Ng_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">Ng</span><span class="p">;</span>
@@ -996,6 +1179,8 @@
         <span class="n">y_init</span><span class="p">[</span><span class="n">qi_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">qs_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">qg_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">qh_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">Nh_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">Ni_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">Ns_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">Ng_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
@@ -1004,13 +1189,39 @@
         <span class="n">y_init</span><span class="p">[</span><span class="n">Ng_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
   <span class="cp">#endif</span>
 <span class="cp">#endif</span>
-        <span class="n">y_init</span><span class="p">[</span><span class="n">Nv_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 <span class="cp">#if defined(RK4ICE) || defined(RK4NOICE)</span>
+    <span class="cp">#ifdef MET3D</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">z_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">z</span><span class="p">;</span>
+    <span class="cp">#else</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">z_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+    <span class="cp">#endif</span>
+<span class="cp">#endif</span>
+<span class="cp">#if defined(RK4ICE) || defined(RK4NOICE) || defined(MET3D)</span>
+        <span class="n">nc_params</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+        <span class="n">cc</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">dw</span> <span class="o">/</span> <span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">);</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">n_inact_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">depo_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
         <span class="n">y_init</span><span class="p">[</span><span class="n">sub_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 <span class="cp">#endif</span>
+
+<span class="cp">#ifdef TRACE_SAT</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;######INIT######</span><span class="se">\n</span><span class="s">&quot;</span>
+    <span class="c1">//           &lt;&lt; &quot;y_init[T_idx] &quot; &lt;&lt; y_init[T_idx] &lt;&lt; &quot;\n&quot;</span>
+                  <span class="o">&lt;&lt;</span> <span class="s">&quot;y_init[qv_idx] &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">y_init</span><span class="p">[</span><span class="n">qv_idx</span><span class="p">]</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+    <span class="c1">// DEBUG Set qv to qv_sat</span>
+    <span class="c1">// double psat_prime = saturation_pressure_water_icon(y_init[T_idx]*ref_quant.Tref);</span>
+    <span class="c1">// y_init[qv_idx] = psat_prime/(Rv*y_init[T_idx]*ref_quant.Tref) / ref_quant.qref;</span>
+    <span class="c1">// y_init[qv_idx] = Epsilon*( psat_prime/(y_init[p_idx]*ref_quant.pref - psat_prime) ) / ref_quant.qref;</span>
+<span class="cp">#ifdef SAT_CALC</span>
+        <span class="n">y_init</span><span class="p">[</span><span class="n">S_idx</span><span class="p">]</span>  <span class="o">=</span> <span class="n">convert_qv_to_S</span><span class="p">(</span>
+            <span class="n">y_init</span><span class="p">[</span><span class="n">p_idx</span><span class="p">]</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">pref</span><span class="p">,</span>
+            <span class="n">y_init</span><span class="p">[</span><span class="n">T_idx</span><span class="p">]</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">Tref</span><span class="p">,</span>
+            <span class="n">y_init</span><span class="p">[</span><span class="n">qv_idx</span><span class="p">]</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">);</span>
+        <span class="c1">// y_init[S_idx]  = y_init[qv_idx]*ref_quant.qref * Rv * y_init[T_idx]*ref_quant.Tref</span>
+        <span class="c1">//     / psat_prime;</span>
+<span class="cp">#endif</span>
+
     <span class="p">}</span> <span class="k">catch</span><span class="p">(</span><span class="n">netCDF</span><span class="o">::</span><span class="n">exceptions</span><span class="o">::</span><span class="n">NcException</span><span class="o">&amp;</span> <span class="n">e</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">e</span><span class="p">.</span><span class="n">what</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
@@ -1033,12 +1244,19 @@
 <span class="cp">#if defined WCB || defined WCB2</span>
     <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>          <span class="c1">// time</span>
     <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">traj</span><span class="p">);</span> <span class="c1">// trajectory</span>
+<span class="cp">#elif defined MET3D</span>
+    <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="c1">// ensemble; currently only one is supported</span>
+    <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">traj</span><span class="p">);</span> <span class="c1">// trajectory</span>
+    <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="c1">// time</span>
 <span class="cp">#else</span>
     <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">traj</span><span class="p">);</span> <span class="c1">// trajectory</span>
     <span class="n">startp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>          <span class="c1">// time</span>
 <span class="cp">#endif</span>
     <span class="n">countp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
     <span class="n">countp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="cp">#ifdef MET3D</span>
+    <span class="n">countp</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="cp">#endif</span>
 <span class="p">}</span>
 
 
@@ -1054,10 +1272,15 @@
     <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span><span class="o">&gt;</span> <span class="o">&amp;</span><span class="n">inflow</span><span class="p">,</span>
     <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="o">&amp;</span><span class="n">ids</span><span class="p">,</span>
     <span class="kt">int</span> <span class="o">&amp;</span><span class="n">traj_id</span><span class="p">,</span>
+<span class="cp">#ifdef MET3D</span>
+    <span class="kt">uint32_t</span> <span class="o">&amp;</span><span class="n">ensemble</span><span class="p">,</span>
+<span class="cp">#endif</span>
     <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">t</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="cp">#if defined WCB || defined WCB2</span>
     <span class="n">startp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">;</span>
+<span class="cp">#elif defined MET3D</span>
+    <span class="n">startp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_idx</span><span class="p">;</span>
 <span class="cp">#else</span>
     <span class="n">startp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span>
 <span class="cp">#endif</span>
@@ -1068,15 +1291,69 @@
                         <span class="n">ref_quant</span><span class="p">,</span> <span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">);</span>
 
     <span class="n">netCDF</span><span class="o">::</span><span class="n">NcVar</span> <span class="n">id_var</span><span class="p">;</span>
+<span class="cp">#ifdef MET3D</span>
+    <span class="n">id_var</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;trajectory&quot;</span><span class="p">);</span>
+<span class="cp">#else</span>
     <span class="n">id_var</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">);</span>
+<span class="cp">#endif</span>
     <span class="n">id_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">ids</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
     <span class="n">traj_id</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[</span><span class="n">input</span><span class="p">.</span><span class="n">traj</span><span class="p">];</span>
+<span class="cp">#ifdef MET3D</span>
+    <span class="n">id_var</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="s">&quot;ensemble&quot;</span><span class="p">);</span>
+    <span class="n">id_var</span><span class="p">.</span><span class="n">getVar</span><span class="p">(</span><span class="n">ids</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+    <span class="n">ensemble</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[</span><span class="n">input</span><span class="p">.</span><span class="n">ensemble</span><span class="p">];</span>
+<span class="cp">#endif</span>
     <span class="c1">// Set values from a given trajectory</span>
-    <span class="k">if</span><span class="p">(</span><span class="n">t</span><span class="o">==</span><span class="mi">0</span> <span class="o">||</span> <span class="n">input</span><span class="p">.</span><span class="n">start_over</span><span class="p">)</span>
-    <span class="p">{</span>
 
+    <span class="k">if</span><span class="p">(</span><span class="n">t</span><span class="o">==</span><span class="mi">0</span> <span class="o">||</span> <span class="n">input</span><span class="p">.</span><span class="n">start_over_env</span><span class="p">)</span>
+    <span class="p">{</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">p_idx</span><span class="p">]</span>  <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">p</span><span class="p">;</span>     <span class="c1">// p</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">T_idx</span><span class="p">]</span>  <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">t</span><span class="p">;</span>     <span class="c1">// T</span>
+<span class="cp">#if defined(RK4ICE) || defined(RK4NOICE)</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">w_idx</span><span class="p">]</span>  <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span> <span class="c1">// w</span>
+        <span class="n">nc_params</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+        <span class="n">cc</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">dw</span> <span class="o">/</span> <span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">);</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifdef MET3D</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">z_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">z</span><span class="p">;</span>
+<span class="cp">#else</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">z_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if defined(FLUX) &amp;&amp; (defined(WCB2) || defined(MET3D))</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">Nr_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NRin</span><span class="p">;</span>
+  <span class="cp">#if defined(RK4ICE)</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">Ni_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NIin</span><span class="p">;</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">Ns_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NSin</span><span class="p">;</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">Ng_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NGin</span><span class="p">;</span>
+  <span class="cp">#endif</span>
+<span class="cp">#else</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">Nr_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="cp">#if defined(RK4ICE)</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">Ni_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">Ns_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">Ng_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="cp">#endif</span>
+<span class="cp">#endif</span>
+<span class="cp">#if defined(FLUX) &amp;&amp; !defined(WCB)</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">qr_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">QRin</span><span class="p">;</span>
+  <span class="cp">#if defined(RK4ICE)</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">qi_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">QIin</span><span class="p">;</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">qs_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">QSin</span><span class="p">;</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">qg_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">QGin</span><span class="p">;</span>
+  <span class="cp">#endif</span>
+<span class="cp">#else</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">qr_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="cp">#if defined(RK4ICE)</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">qi_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">qs_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">inflow</span><span class="p">[</span><span class="n">qg_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="cp">#endif</span>
+<span class="cp">#endif</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span><span class="p">(</span><span class="n">t</span><span class="o">==</span><span class="mi">0</span> <span class="o">||</span> <span class="n">input</span><span class="p">.</span><span class="n">start_over</span><span class="p">)</span>
+    <span class="p">{</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">S_idx</span><span class="p">]</span>  <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">S</span><span class="p">;</span>     <span class="c1">// S</span>
 <span class="cp">#ifdef SAT_CALC</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">S_idx</span><span class="p">]</span>  <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">qv</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span> <span class="o">*</span> <span class="n">Rv</span> <span class="o">*</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">t</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">Tref</span>
@@ -1092,27 +1369,37 @@
 <span class="cp">#if !defined(WCB) &amp;&amp; defined(RK4ICE)</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">qg_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">qg</span><span class="p">;</span>    <span class="c1">// qg</span>
 <span class="cp">#elif defined(RK4ICE)</span>
-        <span class="k">if</span><span class="p">(</span><span class="n">t</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">y_single_old</span><span class="p">[</span><span class="n">qg_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">qg_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 <span class="cp">#endif</span>
 <span class="cp">#if defined(RK4ICE)</span>
-        <span class="k">if</span><span class="p">(</span><span class="n">t</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
-        <span class="p">{</span>
-            <span class="n">y_single_old</span><span class="p">[</span><span class="n">qh_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="c1">// qh. We don&#39;t have hail in the trajectoris</span>
-            <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nh_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="c1">// Nh. We don&#39;t have hail in the trajectoris</span>
-        <span class="p">}</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">qh_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="c1">// qh. We don&#39;t have hail in the trajectoris</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nh_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="c1">// Nh. We don&#39;t have hail in the trajectoris</span>
 <span class="cp">#endif</span>
         <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">denom</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-<span class="cp">#if defined(RK4ICE) &amp;&amp; defined(WCB2)</span>
+<span class="cp">#if defined(RK4ICE) &amp;&amp; (defined(WCB2) || defined(MET3D))</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ng_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">Ng</span><span class="p">;</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ni_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">Ni</span><span class="p">;</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ns_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">Ns</span><span class="p">;</span>
-        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ng_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NGout</span><span class="p">;</span>
-        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ni_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NIout</span><span class="p">;</span>
-        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ns_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NSout</span><span class="p">;</span>
-        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nr_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NRout</span><span class="p">;</span>
+        <span class="c1">// Reading precipation can be done like this</span>
+        <span class="c1">// y_single_old[Ng_out_idx] = nc_params.NGout;</span>
+        <span class="c1">// y_single_old[Ni_out_idx] = nc_params.NIout;</span>
+        <span class="c1">// y_single_old[Ns_out_idx] = nc_params.NSout;</span>
+        <span class="c1">// y_single_old[Nr_out_idx] = nc_params.NRout;</span>
+        <span class="c1">// But we calculate them by ourself</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ng_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ni_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ns_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nr_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nh_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">qr_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">qi_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">qs_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">qg_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">qh_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 <span class="cp">#endif</span>
-<span class="cp">#ifdef WCB2</span>
+<span class="cp">#if defined WCB2 || defined MET3D</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">qr_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nr_out_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nc_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">Nc</span><span class="p">;</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nr_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">Nr</span><span class="p">;</span>
 <span class="cp">#else</span>
@@ -1121,71 +1408,17 @@
         <span class="n">denom</span> <span class="o">=</span> <span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">max_x</span> <span class="o">-</span> <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">min_x</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">cc</span><span class="p">.</span><span class="n">rain</span><span class="p">.</span><span class="n">min_x</span><span class="p">;</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nr_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_single_old</span><span class="p">[</span><span class="n">qr_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span> <span class="o">/</span> <span class="p">(</span><span class="n">denom</span><span class="p">);</span> <span class="c1">//*10e2);  // Nr</span>
         <span class="n">denom</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">min_x</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">;</span>
-        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nv_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_single_old</span><span class="p">[</span><span class="n">qv_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span> <span class="o">/</span> <span class="p">(</span><span class="n">denom</span><span class="p">);</span> <span class="c1">//*10e2);  // Nv</span>
-<span class="cp">#if defined(RK4ICE)</span>
+    <span class="cp">#if defined(RK4ICE)</span>
         <span class="n">denom</span> <span class="o">=</span> <span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">max_x</span> <span class="o">-</span> <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">min_x</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">cc</span><span class="p">.</span><span class="n">ice</span><span class="p">.</span><span class="n">min_x</span><span class="p">;</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ni_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_single_old</span><span class="p">[</span><span class="n">qi_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span> <span class="o">/</span> <span class="p">(</span><span class="n">denom</span><span class="p">);</span> <span class="c1">//*10e2); // Ni</span>
         <span class="n">denom</span> <span class="o">=</span> <span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">max_x</span> <span class="o">-</span> <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">min_x</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">cc</span><span class="p">.</span><span class="n">snow</span><span class="p">.</span><span class="n">min_x</span><span class="p">;</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ns_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_single_old</span><span class="p">[</span><span class="n">qs_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span> <span class="o">/</span> <span class="p">(</span><span class="n">denom</span><span class="p">);</span> <span class="c1">//*10e2); // Ns</span>
         <span class="n">denom</span> <span class="o">=</span> <span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">max_x</span> <span class="o">-</span> <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">min_x</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">cc</span><span class="p">.</span><span class="n">graupel</span><span class="p">.</span><span class="n">min_x</span><span class="p">;</span>
         <span class="n">y_single_old</span><span class="p">[</span><span class="n">Ng_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_single_old</span><span class="p">[</span><span class="n">qg_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span> <span class="o">/</span> <span class="p">(</span><span class="n">denom</span><span class="p">);</span> <span class="c1">//*10e2); // Ng</span>
+    <span class="cp">#endif</span>
 <span class="cp">#endif</span>
-<span class="cp">#endif</span>
+        <span class="c1">// Actually only needed for single moment schemes</span>
         <span class="n">cc</span><span class="p">.</span><span class="n">Nc_prime</span> <span class="o">=</span> <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nc_idx</span><span class="p">];</span>
-
-        <span class="n">cc</span><span class="p">.</span><span class="n">rho_a_prime</span> <span class="o">=</span> <span class="n">compute_rhoa</span><span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">p</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">pref</span><span class="p">,</span><span class="c1">//*100,</span>
-            <span class="n">nc_params</span><span class="p">.</span><span class="n">t</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">Tref</span><span class="p">,</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">S</span><span class="p">);</span>
-        <span class="n">y_single_old</span><span class="p">[</span><span class="n">w_idx</span><span class="p">]</span>  <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span> <span class="c1">// w</span>
-        <span class="n">cc</span><span class="p">.</span><span class="n">dw</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">dw</span> <span class="o">/</span> <span class="p">(</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">);</span>
-
-        <span class="n">denom</span> <span class="o">=</span> <span class="n">cc</span><span class="p">.</span><span class="n">cloud</span><span class="p">.</span><span class="n">min_x</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">;</span>
-        <span class="n">y_single_old</span><span class="p">[</span><span class="n">Nv_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_single_old</span><span class="p">[</span><span class="n">qv_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span> <span class="o">/</span> <span class="p">(</span><span class="n">denom</span><span class="p">);</span> <span class="c1">//*10e2);  // Nv</span>
-<span class="cp">#if defined(RK4ICE) || defined(RK4NOICE)</span>
-        <span class="n">y_single_old</span><span class="p">[</span><span class="n">z_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
-<span class="cp">#endif</span>
-<span class="cp">#if defined WCB || defined WCB2</span>
-        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">)</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
-<span class="cp">#else</span>
-        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">)</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
-<span class="cp">#endif</span>
-<span class="cp">#if defined WCB2</span>
-        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">dp2h</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
-<span class="cp">#endif</span>
-        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">num_comp</span><span class="p">;</span> <span class="n">ii</span><span class="o">++</span><span class="p">)</span>
-            <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">y_single_old</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span>
-                <span class="p">((</span><span class="n">ii</span> <span class="o">==</span> <span class="n">num_comp</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">?</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">:</span> <span class="s">&quot;,&quot;</span><span class="p">);</span>
-
-        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">num_comp</span> <span class="p">;</span> <span class="n">ii</span><span class="o">++</span><span class="p">)</span>
-        <span class="p">{</span>
-<span class="cp">#if defined WCB || defined WCB2</span>
-            <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                            <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                            <span class="o">&lt;&lt;</span> <span class="n">output_par_idx</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
-<span class="cp">#else</span>
-            <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                            <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                            <span class="o">&lt;&lt;</span> <span class="n">output_par_idx</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
-<span class="cp">#endif</span>
-<span class="cp">#if defined WCB2</span>
-            <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">dp2h</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
-                                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
-<span class="cp">#endif</span>
-            <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">jj</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">jj</span> <span class="o">&lt;</span> <span class="n">num_par</span> <span class="p">;</span> <span class="n">jj</span><span class="o">++</span><span class="p">)</span>
-                <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mf">0.0</span>
-                    <span class="o">&lt;&lt;</span> <span class="p">((</span><span class="n">jj</span><span class="o">==</span><span class="n">num_par</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">?</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">:</span> <span class="s">&quot;,&quot;</span><span class="p">);</span>
-
-        <span class="p">}</span>
 
 <span class="cp">#if defined(FLUX) &amp;&amp; !defined(WCB)</span>
         <span class="n">inflow</span><span class="p">[</span><span class="n">qr_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">QRin</span><span class="p">;</span>
@@ -1202,7 +1435,7 @@
         <span class="n">inflow</span><span class="p">[</span><span class="n">qg_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
   <span class="cp">#endif</span>
 <span class="cp">#endif</span>
-<span class="cp">#if defined(FLUX) &amp;&amp; defined(WCB2)</span>
+<span class="cp">#if defined(FLUX) &amp;&amp; (defined(WCB2) || defined(MET3D))</span>
         <span class="n">inflow</span><span class="p">[</span><span class="n">Nr_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NRin</span><span class="p">;</span>
   <span class="cp">#if defined(RK4ICE)</span>
         <span class="n">inflow</span><span class="p">[</span><span class="n">Ni_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">NIin</span><span class="p">;</span>
@@ -1217,6 +1450,86 @@
         <span class="n">inflow</span><span class="p">[</span><span class="n">Ng_in_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
   <span class="cp">#endif</span>
 <span class="cp">#endif</span>
+        <span class="c1">// DEBUG Set qv to qv_sat</span>
+        <span class="c1">// y_single_old[qv_idx] = water_vapor_sat_ratio_2(y_single_old[T_idx].getValue()*ref_quant.Tref);</span>
+        <span class="c1">// double psat_prime = saturation_pressure_water_icon(y_single_old[T_idx].getValue()*ref_quant.Tref);</span>
+        <span class="c1">// y_single_old[qv_idx] = psat_prime/(Rv*y_single_old[T_idx]*ref_quant.Tref) / ref_quant.qref;</span>
+        <span class="c1">// y_single_old[qv_idx] = Epsilon*( psat_prime/(y_single_old[p_idx]*ref_quant.pref - psat_prime) ) / ref_quant.qref;</span>
+<span class="cp">#ifdef SAT_CALC</span>
+        <span class="n">y_single_old</span><span class="p">[</span><span class="n">S_idx</span><span class="p">]</span>  <span class="o">=</span> <span class="n">convert_qv_to_S</span><span class="p">(</span>
+            <span class="n">y_single_old</span><span class="p">[</span><span class="n">p_idx</span><span class="p">].</span><span class="n">getValue</span><span class="p">()</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">pref</span><span class="p">,</span>
+            <span class="n">y_single_old</span><span class="p">[</span><span class="n">T_idx</span><span class="p">].</span><span class="n">getValue</span><span class="p">()</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">Tref</span><span class="p">,</span>
+            <span class="n">y_single_old</span><span class="p">[</span><span class="n">qv_idx</span><span class="p">].</span><span class="n">getValue</span><span class="p">()</span><span class="o">*</span><span class="n">ref_quant</span><span class="p">.</span><span class="n">qref</span><span class="p">);</span>
+        <span class="c1">// y_single_old[qv_idx]*ref_quant.qref * Rv * y_single_old[T_idx]*ref_quant.Tref</span>
+        <span class="c1">//    / psat_prime;</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if defined WCB || defined WCB2</span>
+        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">)</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#elif defined MET3D</span>
+        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#else</span>
+        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">)</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="cp">#if defined WCB2 || defined MET3D</span>
+        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">dp2h</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifdef MET3D</span>
+        <span class="c1">// time, time after ascent, type</span>
+        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_abs</span><span class="p">[</span><span class="n">t</span> <span class="o">+</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_idx</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_rel</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">ensemble</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">num_comp</span><span class="p">;</span> <span class="n">ii</span><span class="o">++</span><span class="p">)</span>
+            <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">y_single_old</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span>
+                <span class="p">((</span><span class="n">ii</span> <span class="o">==</span> <span class="n">num_comp</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">?</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">:</span> <span class="s">&quot;,&quot;</span><span class="p">);</span>
+
+        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">num_comp</span> <span class="p">;</span> <span class="n">ii</span><span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+<span class="cp">#if defined WCB || defined WCB2</span>
+            <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">output_par_idx</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#elif defined MET3D</span>
+            <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">output_par_idx</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#else</span>
+            <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">output_par_idx</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="cp">#if defined WCB2 || defined MET3D</span>
+            <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">dp2h</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="cp">#if defined MET3D</span>
+        <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_abs</span><span class="p">[</span><span class="n">t</span> <span class="o">+</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_idx</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                         <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_rel</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                         <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                         <span class="o">&lt;&lt;</span> <span class="n">ensemble</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+            <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">jj</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">jj</span> <span class="o">&lt;</span> <span class="n">num_par</span> <span class="p">;</span> <span class="n">jj</span><span class="o">++</span><span class="p">)</span>
+                <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mf">0.0</span>
+                    <span class="o">&lt;&lt;</span> <span class="p">((</span><span class="n">jj</span><span class="o">==</span><span class="n">num_par</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">?</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">:</span> <span class="s">&quot;,&quot;</span><span class="p">);</span>
+        <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}</span>
 
@@ -1228,17 +1541,27 @@
     <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="n">num_par</span> <span class="o">&gt;</span> <span class="o">&gt;</span>  <span class="o">&amp;</span><span class="n">y_diff</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">sub</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">t</span><span class="p">,</span>
-    <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">time_new</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">double</span> <span class="n">time_new</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">traj_id</span><span class="p">,</span>
     <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">write_index</span><span class="p">,</span>
-    <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">snapshot_index</span><span class="p">)</span>
+    <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">snapshot_index</span><span class="p">,</span>
+<span class="cp">#ifdef MET3D</span>
+    <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">ensemble</span><span class="p">,</span>
+<span class="cp">#endif</span>
+    <span class="k">const</span> <span class="kt">bool</span> <span class="n">last_step</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="k">if</span><span class="p">(</span> <span class="p">(</span><span class="mi">0</span> <span class="o">==</span> <span class="p">(</span><span class="n">sub</span> <span class="o">+</span> <span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">)</span> <span class="o">%</span> <span class="n">snapshot_index</span><span class="p">)</span>
-        <span class="o">||</span> <span class="p">(</span> <span class="n">t</span> <span class="o">==</span> <span class="n">cc</span><span class="p">.</span><span class="n">num_steps</span><span class="o">-</span><span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">sub</span> <span class="o">==</span> <span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="o">-</span><span class="mi">1</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="o">||</span> <span class="p">(</span> <span class="n">t</span> <span class="o">==</span> <span class="n">cc</span><span class="p">.</span><span class="n">num_steps</span><span class="o">-</span><span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">last_step</span> <span class="p">)</span> <span class="p">)</span>
     <span class="p">{</span>
+        <span class="c1">// std::cout &lt;&lt; &quot;buffering\n&quot;;</span>
         <span class="c1">// Write the results to the output file</span>
 <span class="cp">#if defined WCB || defined WCB2</span>
         <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">time_new</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlon</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlat</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#elif defined MET3D</span>
+        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">sub</span> <span class="o">+</span> <span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                 <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlon</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                 <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlat</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                 <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
@@ -1247,10 +1570,17 @@
                 <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlon</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                 <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlat</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
 <span class="cp">#endif</span>
-<span class="cp">#if defined WCB2</span>
+<span class="cp">#if defined WCB2 || defined MET3D</span>
         <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">dp2h</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                 <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                 <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="cp">#ifdef MET3D</span>
+        <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_abs</span><span class="p">[</span><span class="n">t</span> <span class="o">+</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_rel</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                <span class="o">&lt;&lt;</span> <span class="n">ensemble</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+            <span class="kt">double</span> <span class="n">abs_time</span> <span class="o">=</span> <span class="n">sub</span> <span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">+</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_abs</span><span class="p">[</span><span class="n">t</span> <span class="o">+</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_idx</span><span class="p">];</span>
 <span class="cp">#endif</span>
         <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">num_comp</span><span class="p">;</span> <span class="n">ii</span><span class="o">++</span><span class="p">)</span>
             <span class="n">out_tmp</span> <span class="o">&lt;&lt;</span> <span class="n">y_single_new</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
@@ -1265,16 +1595,28 @@
                             <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlon</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                             <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlat</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                             <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#elif defined MET3D</span>
+            <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">sub</span> <span class="o">+</span> <span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">output_par_idx</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlon</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlat</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                            <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">ascent_flag</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
 <span class="cp">#else</span>
             <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">time_new</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">traj_id</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                             <span class="o">&lt;&lt;</span> <span class="n">output_par_idx</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                             <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlon</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                             <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">nc_params</span><span class="p">.</span><span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">nc_params</span><span class="p">.</span><span class="n">dlat</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
 <span class="cp">#endif</span>
-<span class="cp">#if defined WCB2</span>
+<span class="cp">#if defined WCB2 || defined MET3D</span>
             <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">dp2h</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                             <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">conv_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_400</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
                             <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">slan_600</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="cp">#if defined MET3D</span>
+            <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_abs</span><span class="p">[</span><span class="n">t</span> <span class="o">+</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                         <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">time_rel</span> <span class="o">+</span> <span class="n">sub</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">dt</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                         <span class="o">&lt;&lt;</span> <span class="n">nc_params</span><span class="p">.</span><span class="n">type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span>
+                         <span class="o">&lt;&lt;</span> <span class="n">ensemble</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;,&quot;</span><span class="p">;</span>
 <span class="cp">#endif</span>
             <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">jj</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">jj</span> <span class="o">&lt;</span> <span class="n">num_par</span> <span class="p">;</span> <span class="n">jj</span><span class="o">++</span><span class="p">)</span>
                 <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">y_diff</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="n">jj</span><span class="p">]</span>
@@ -1283,8 +1625,9 @@
         <span class="c1">// CODIPACK: END</span>
     <span class="p">}</span>
     <span class="k">if</span><span class="p">(</span> <span class="p">(</span><span class="mi">0</span> <span class="o">==</span> <span class="p">(</span><span class="n">sub</span> <span class="o">+</span> <span class="n">t</span><span class="o">*</span><span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="p">)</span> <span class="o">%</span> <span class="n">write_index</span><span class="p">)</span>
-        <span class="o">||</span> <span class="p">(</span> <span class="n">t</span> <span class="o">==</span> <span class="n">cc</span><span class="p">.</span><span class="n">num_steps</span><span class="o">-</span><span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">sub</span> <span class="o">==</span> <span class="n">cc</span><span class="p">.</span><span class="n">num_sub_steps</span><span class="o">-</span><span class="mi">1</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="o">||</span> <span class="p">(</span> <span class="n">t</span> <span class="o">==</span> <span class="n">cc</span><span class="p">.</span><span class="n">num_steps</span><span class="o">-</span><span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">last_step</span> <span class="p">)</span> <span class="p">)</span>
     <span class="p">{</span>
+        <span class="c1">// std::cout &lt;&lt; &quot;Writing to file\n&quot;;</span>
         <span class="n">outfile</span> <span class="o">&lt;&lt;</span> <span class="n">out_tmp</span><span class="p">.</span><span class="n">rdbuf</span><span class="p">();</span>
         <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">num_comp</span> <span class="p">;</span> <span class="n">ii</span><span class="o">++</span><span class="p">)</span>
         <span class="p">{</span>
@@ -1295,6 +1638,139 @@
         <span class="n">out_tmp</span><span class="p">.</span><span class="n">str</span><span class="p">(</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">()</span> <span class="p">);</span>
         <span class="n">out_tmp</span><span class="p">.</span><span class="n">clear</span><span class="p">();</span>
     <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">parse_arguments</span><span class="p">(</span>
+    <span class="kt">int</span> <span class="n">argc</span><span class="p">,</span>
+    <span class="kt">char</span><span class="o">**</span> <span class="n">argv</span><span class="p">,</span>
+    <span class="n">global_args_t</span> <span class="o">&amp;</span><span class="n">global_args</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">bool</span> <span class="n">need_to_abort</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">opt</span><span class="p">;</span>
+    <span class="n">init_global_args</span><span class="p">(</span><span class="n">global_args</span><span class="p">);</span>
+
+    <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">need_to_abort</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+        <span class="n">display_usage</span><span class="p">();</span>
+    <span class="p">}</span><span class="k">else</span>
+    <span class="p">{</span>
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">getopt</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">optString</span><span class="p">);</span>
+
+        <span class="k">while</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">switch</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">case</span> <span class="sc">&#39;f&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">final_time_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">final_time_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;d&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">timestep_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">timestep_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;i&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">snapshot_index_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">snapshot_index_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;b&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">scaling_fact_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">scaling_fact_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;o&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">output_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">output_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;l&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">input_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">input_file</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;s&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">start_over_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">start_over_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;e&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">start_over_env_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">start_over_env_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;t&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">fixed_iteration_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">fixed_iteration_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;a&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">auto_type_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">auto_type_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;r&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">traj_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">traj_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;w&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">write_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">write_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">case</span> <span class="sc">&#39;p&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">progress_index_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">progress_index_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+<span class="cp">#ifdef MET3D</span>
+                <span class="k">case</span> <span class="sc">&#39;n&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">delay_start_flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                    <span class="n">global_args</span><span class="p">.</span><span class="n">delay_start_string</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+<span class="cp">#endif</span>
+                <span class="k">case</span> <span class="sc">&#39;?&#39;</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">need_to_abort</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+                    <span class="n">display_usage</span><span class="p">();</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">default</span><span class="o">:</span>
+                <span class="p">{</span>
+                    <span class="n">need_to_abort</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+                    <span class="n">display_error_on_command_line</span><span class="p">();</span>
+                    <span class="n">display_usage</span><span class="p">();</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="n">opt</span> <span class="o">=</span> <span class="n">getopt</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">optString</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span><span class="p">(</span><span class="n">need_to_abort</span><span class="p">){</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;ABORTING.&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span> <span class="c1">// Report error</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
  <span class="c1">// end of group io</span>
 
