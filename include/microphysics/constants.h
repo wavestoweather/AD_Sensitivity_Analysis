@@ -23,39 +23,37 @@
 #define qv_idx 6            /*!< Water vapor mixing ratio index */
 #define Nc_idx 7            /*!< Number of cloud droplets index */
 #define Nr_idx 8            /*!< Number of rain droplets index */
-#define Nv_idx 9            /*!< Number of water vapor droplets index */
-#define qi_idx 10           /*!< Ice mixing ratio index */
-#define Ni_idx 11           /*!< Number of ice crystals index */
-#define vi_idx 12           /*!< Vertical acceleration of ice index */
-#define qs_idx 13           /*!< Snow mixing ratio index */
-#define Ns_idx 14           /*!< Number of snow particles index */
-#define qg_idx 15           /*!< Graupel mixing ratio index */
-#define Ng_idx 16           /*!< Number of graupel particles index */
-#define qh_idx 17           /*!< Hail mixing ratio index */
-#define Nh_idx 18           /*!< Number of hail particles index */
-#define qi_out_idx 19       /*!< Ice mixing ratio precipitation index */
-#define qs_out_idx 20       /*!< Snow mixing ratio precipitation index */
-#define qr_out_idx 21       /*!< Rain mixing ratio precipitation index */
-#define qg_out_idx 22       /*!< Graupel mixing ratio precipitation index */
-#define qh_out_idx 23       /*!< Hail mixing ratio precipitation index */
-#define lat_heat_idx 24     /*!< Latent heating index */
-#define lat_cool_idx 25     /*!< Latent cooling index */
-#define Ni_out_idx 26       /*!< Ice particles precipitation index */
-#define Ns_out_idx 27       /*!< Snow particles ratio precipitation index */
-#define Nr_out_idx 28       /*!< Rain droplets ratio precipitation index */
-#define Ng_out_idx 29       /*!< Graupel particles ratio precipitation index */
-#define Nh_out_idx 30       /*!< Hail particles ratio precipitation index */
-#define z_idx 31            /*!< Altitude */
-#define n_inact_idx 32      /*!< Number of inactive nuclei (ie due to being activated before) */
-#define depo_idx 33         /*!< Number of deposited nuclei */
-#define sub_idx 34          /*!< Sublimination number */
+#define qi_idx 9           /*!< Ice mixing ratio index */
+#define Ni_idx 10           /*!< Number of ice crystals index */
+#define qs_idx 11           /*!< Snow mixing ratio index */
+#define Ns_idx 12           /*!< Number of snow particles index */
+#define qg_idx 13           /*!< Graupel mixing ratio index */
+#define Ng_idx 14           /*!< Number of graupel particles index */
+#define qh_idx 15           /*!< Hail mixing ratio index */
+#define Nh_idx 16           /*!< Number of hail particles index */
+#define qi_out_idx 17       /*!< Ice mixing ratio precipitation index */
+#define qs_out_idx 18       /*!< Snow mixing ratio precipitation index */
+#define qr_out_idx 19       /*!< Rain mixing ratio precipitation index */
+#define qg_out_idx 20       /*!< Graupel mixing ratio precipitation index */
+#define qh_out_idx 21       /*!< Hail mixing ratio precipitation index */
+#define lat_heat_idx 22     /*!< Latent heating index */
+#define lat_cool_idx 23     /*!< Latent cooling index */
+#define Ni_out_idx 24       /*!< Ice particles precipitation index */
+#define Ns_out_idx 25       /*!< Snow particles ratio precipitation index */
+#define Nr_out_idx 26       /*!< Rain droplets ratio precipitation index */
+#define Ng_out_idx 27       /*!< Graupel particles ratio precipitation index */
+#define Nh_out_idx 28       /*!< Hail particles ratio precipitation index */
+#define z_idx 29            /*!< Altitude */
+#define n_inact_idx 30      /*!< Number of inactive nuclei (ie due to being activated before) */
+#define depo_idx 31         /*!< Number of deposited nuclei */
+#define sub_idx 32          /*!< Sublimination number */
 
 #if defined(RK4_ONE_MOMENT)
-#define num_comp 10         /*!< Number of output elements of a model */
+#define num_comp 9         /*!< Number of output elements of a model */
 #define num_par 12          /*!< Number of gradients */
 
 #elif defined(RK4ICE) || defined(RK4NOICE)
-#define num_comp 35         /*!< Number of output elements of a model */
+#define num_comp 33         /*!< Number of output elements of a model */
 #define num_par 56*6+17     /*!< Number of gradients */
 
 #endif
@@ -75,12 +73,22 @@
 // Constants
 ////////////////////////////////////////////////////////////////////////////////
 
+#if defined(TRACE_TIME)
+// Relative to ascent time
+double trace_time = 0;
+const double trace_start = 4400;
+const double trace_end = 4800;
+bool trace = false;
+#else
+bool trace = true;
+#endif
+
 #if defined(RK4_ONE_MOMENT)
 /**
  * Used for header files of output parameters.
  */
 const std::vector<std::string> output_par_idx =
-    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr", "Nv"};
+    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr"};
 
 /**
  * Used for header files of gradients.
@@ -89,16 +97,24 @@ const std::vector<std::string> output_grad_idx =
     {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
     "dbeta_r", "ddelta1", "ddelta2", "dzeta"};
 #elif defined(RK4ICE) || defined(RK4NOICE)
+#ifdef MET3D
+const std::vector<std::string> output_par_idx =
+    {"pressure", "T", "w", "S", "QC", "QR", "QV", "NCCLOUD", "NCRAIN",
+     "QI", "NCICE", "QS", "NCSNOW", "QG", "NCGRAUPEL", "QH", "NCHAIL",
+     "QI_OUT", "QS_OUT", "QR_OUT", "QG_OUT", "QH_OUT",
+     "latent_heat", "latent_cool", "NI_OUT", "NS_OUT", "NR_OUT",
+     "NG_OUT", "NH_OUT", "z", "Inactive", "deposition", "sublimination"};
+#else
 /**
  * Used for header files of output parameters.
  */
 const std::vector<std::string> output_par_idx =
-    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr", "Nv",
-     "qi", "Ni", "vi", "qs", "Ns", "qg", "Ng", "qh", "Nh",
+    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr",
+     "qi", "Ni", "qs", "Ns", "qg", "Ng", "qh", "Nh",
      "qiout", "qsout", "qrout", "qgout", "qhout",
      "latent_heat", "latent_cool", "Niout", "Nsout", "Nrout",
      "Ngout", "Nhout", "z", "Inactive", "deposition", "sublimination"};
-
+#endif
 /**
  * Used for header files of gradients.
  */
@@ -207,6 +223,10 @@ const std::vector<std::string> output_grad_idx =
     "dsnow_vsedi_min", "dsnow_vsedi_max"};
 #endif
 
+double sediment_q = 0;
+double sediment_n = 0;
+double sediment_q_total = 0;
+double sediment_n_total = 0;
 
 /**
  * Universal gas constant, unit: J/(mol*K)
@@ -233,7 +253,7 @@ const double Rv = R_universal/Mw;
 
 /**
  * Gas constant for dry air, unit: J/(kg*K)
- */
+//  */
 const double Ra = R_universal/Ma;
 
 /**
@@ -245,11 +265,6 @@ const double Epsilon = Ra/Rv;
  * Gravitational acceleration (m/s^2)
  */
 const double gravity_acc = 9.81;
-
-/**
- * Melting temperature of ice/snow
- */
-const double tmelt = 273.15;
 
 /**
  * Treshold for ice selfcollection
@@ -313,6 +328,11 @@ const double D_crit_c = 1.0e-5;
 const double D_coll_c = 4.0e-5;
 
 /**
+ * Height of the trajectory package [m].
+ */
+const double parcel_height = 250.0;
+
+/**
  * Lower temperature threshold for ice nucleation, -5°C
  */
 const double T_nuc = 268.15;
@@ -321,6 +341,7 @@ const double T_nuc = 268.15;
  * Lower temperature threshold for raindrop freezing
  */
 const double T_freeze = 273.15;
+
 /**
  * Lower temperature threshold for (instantaneous) raindrop freezing
  */
@@ -349,7 +370,7 @@ const double rho_vel = 0.4;
 /**
  * Exponent for density correction of cloud droplets
  */
-const double rho_vel_c = 0.2;
+const double rho_vel_c = 1;//0.2;
 
 /**
  * Density of ice in \f$\text{kg}/\text{m}^3\f$
@@ -367,8 +388,12 @@ const double R_v = 461.51;
 const double a_v = 0.78;
 /**
  * Various constants from ICON regarding evaporation from melting ice particles
- */const double b_v = 0.308;
-//! Variuous constants from ICON regarding evaporation from melting ice particles
+ */
+const double b_v = 0.308;
+
+/**
+ *  Variuous constants from ICON regarding evaporation from melting ice particles
+ */
 const double N_Sc = 0.71;
 /**
  * Various constants from ICON regarding evaporation from melting ice particles
@@ -483,7 +508,7 @@ const double D_rainfrz_gh = 1.25e-3;
  */
 const double dv0 = 2.22e-5;
 /**
- * Saturation pressure at \f$\text{T}=\text{tmelt}\f$, called e_3 in ICON.
+ * Saturation pressure at \f$\text{T}=\text{T}_\text{freeze}\f$, called e_3 in ICON.
  */
 const double p_sat_melt = 6.1078e2;
 
@@ -491,7 +516,7 @@ const double p_sat_melt = 6.1078e2;
  * Specific heat capacity of air at constant pressure in
  * \f$\text{J}/\text{K}/\text{kg}\f$
  */
-const double cp = 1004.64;
+const double cp = 1004.64; // COSMO: 1005.7
 
 /**
  * Boltzmann constant in \f$\text{J}/\text{K}\f$
@@ -664,7 +689,7 @@ const std::vector<double> d_ccn = {287736034.13, 0.6258809883,
  * 6: ccn_activation_sk (Segal & Khain), not implemented
  * >6: SB (2006) from Cosmo 5.2 (cloud_nucleation(..))
  */
-const int nuc_type = 7;
+const int nuc_type = 5;
 
 /** Use nucleation based either on Hande et al. (true)
  * or Phillips et al. (false). This *should* depend
@@ -691,6 +716,62 @@ const uint32_t t_tstep = 2;
  * Increment for ice supersaturation for Phillips et al. nucleation look-up table
  */
 const uint32_t s_sstep = 1;
+
+/**
+ * Parameter for saturation adjustment
+ */
+const double r_const = 287.04;
+
+/**
+ * Parameter for saturation adjustment
+ */
+const double r1_const = 461.5;
+
+/**
+ * Parameter for saturation adjustment
+ */
+// const double cp = 1005.7;
+
+/**
+ * Specific heat capacity of water vapor at constant pressure in
+ * \f$\text{J}/\text{K}/\text{kg}\f$
+ */
+const double cv = 718.66;
+
+/**
+ * Always use saturation adjustement (=True) or only adjust if T > 233K (=False)
+ */
+const bool always_sat_adj = true;
+
+/**
+ * Parameter for saturation adjustment. Constant saturated water vapor pressure
+ */
+const double p_sat_const_a = 17.2693882;
+
+/**
+ * Parameter for saturation adjustment. Constant saturated ice pressure
+ */
+// const double p_sat_ice_const_a = 21.8745584;
+
+/**
+ * Parameter for saturation adjustment. Constant saturated water vapor pressure
+ */
+const double p_sat_const_b = 35.86;
+
+/**
+ * Parameter for saturation adjustment. Constant saturated ice pressure
+ */
+// const double p_sat_ice_const_b = 7.66;
+
+/**
+ * Parameter for saturation adjustment. Saturated water vapor pressure at T = 233K
+ */
+const double p_sat_low_temp = 610.78;
+
+/**
+ * Parameter for saturation adjustment.
+ */
+const double T_sat_low_temp = 273.16;
 
 const std::vector<std::vector<double> > afrac_dust = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},

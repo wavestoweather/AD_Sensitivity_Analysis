@@ -58,7 +58,14 @@ void RK4_step(
     for(int ii = 0 ; ii < num_comp ; ii++){
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k1 for k2
         ynew[ii] += cc.dt_sixth*k[ii]; // Add k1-part to the result
-
+#ifdef TRACE_ENV
+        if(trace && ii == T_idx)
+            std::cout << "RK1, yold[T] = " << yold[ii]
+                      << "\nk[T] = " << k[ii]
+                      << "\ndT = " << yold[ii] + cc.dt_half*k[ii]
+                      << "\ndT Result = " << cc.dt_sixth*k[ii]
+                      << "\n";
+#endif
     }
     if(fixed)
         for(int ii=0; ii<update_idx; ++ii)
@@ -74,6 +81,14 @@ void RK4_step(
     for(int ii = 0 ; ii < num_comp ; ii++){
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k2 for k3
         ynew[ii] += cc.dt_third*k[ii]; // Add k2-part to the result
+#ifdef TRACE_ENV
+        if(trace && ii == T_idx)
+            std::cout << "RK2, yold[T] = " << yold[ii]
+                      << "\nk[T] = " << k[ii]
+                      << "\ndT = " << yold[ii] + cc.dt_half*k[ii]
+                      << "\ndT Result = " << cc.dt_third*k[ii]
+                      << "\n";
+#endif
     }
     if(fixed)
         for(int ii=0; ii<update_idx; ++ii)
@@ -89,6 +104,14 @@ void RK4_step(
     for(int ii = 0 ; ii < num_comp ; ii++){
         ytmp[ii] = yold[ii] + cc.dt*k[ii]; // y_0 + dt*k3 for k4
         ynew[ii] += cc.dt_third*k[ii]; // Add k3-part to the result
+#ifdef TRACE_ENV
+        if(trace && ii == T_idx)
+            std::cout << "RK3, yold[T] = " << yold[ii]
+                      << "\nk[T] = " << k[ii]
+                      << "\ndT = " << yold[ii] + cc.dt*k[ii]
+                      << "\ndT Result = " << cc.dt_third*k[ii]
+                      << "\n";
+#endif
     }
     if(fixed)
         for(int ii=0; ii<update_idx; ++ii)
@@ -101,8 +124,15 @@ void RK4_step(
     RHS(k, ytmp, ref, cc, nc); // k = k4
 #endif
 
-    for(int ii = 0 ; ii < num_comp ; ii++)
+    for(int ii = 0 ; ii < num_comp ; ii++){
         ynew[ii] += cc.dt_sixth*k[ii];
+#ifdef TRACE_ENV
+        if(trace && ii == T_idx)
+            std::cout << "RK4, k[T] = " << k[ii]
+                      << "\ndT Result = " << cc.dt_sixth*k[ii]
+                      << "\n";
+#endif
+    }
 
     if(fixed)
         for(int ii=0; ii < update_idx; ii++)
@@ -184,6 +214,42 @@ void RK4_step_2_no_ice(
 
 }
 
+
+template<class float_t>
+void set_limits(
+    std::vector<float_t> &y,
+    const reference_quantities_t& ref,
+    model_constants_t &cc)
+{
+    if(nuc_type > 0)
+        y[Nc_idx] = min(min(max(y[Nc_idx], y[qc_idx]*ref.qref/cc.cloud.max_x),
+            y[qc_idx]*ref.qref/cc.cloud.min_x), 5e9);
+    y[Nr_idx] = min(max(y[Nr_idx], y[qr_idx]*ref.qref/cc.rain.max_x),
+        y[qr_idx]*ref.qref/cc.rain.min_x);
+    y[Ni_idx] = min(max(y[Ni_idx], y[qi_idx]*ref.qref/cc.ice.max_x),
+        y[qi_idx]*ref.qref/cc.ice.min_x);
+    y[Ns_idx] = min(max(y[Ns_idx], y[qs_idx]*ref.qref/cc.snow.max_x),
+        y[qs_idx]*ref.qref/cc.snow.min_x);
+    y[Ng_idx] = min(max(y[Ng_idx], y[qg_idx]*ref.qref/cc.graupel.max_x),
+        y[qg_idx]*ref.qref/cc.graupel.min_x);
+    y[Nh_idx] = min(max(y[Nh_idx], y[qh_idx]*ref.qref/cc.hail.max_x),
+        y[qh_idx]*ref.qref/cc.hail.min_x);
+    // Set everything negative to zero
+    y[qv_idx] = (y[qv_idx] < 0) ? 0 : y[qv_idx];
+    y[qc_idx] = (y[qc_idx] < 0) ? 0 : y[qc_idx];
+    y[qr_idx] = (y[qr_idx] < 0) ? 0 : y[qr_idx];
+    y[qs_idx] = (y[qs_idx] < 0) ? 0 : y[qs_idx];
+    y[qi_idx] = (y[qi_idx] < 0) ? 0 : y[qi_idx];
+    y[qg_idx] = (y[qg_idx] < 0) ? 0 : y[qg_idx];
+    y[qh_idx] = (y[qh_idx] < 0) ? 0 : y[qh_idx];
+    y[Nc_idx] = (y[Nc_idx] < 0) ? 0 : y[Nc_idx];
+    y[Nr_idx] = (y[Nr_idx] < 0) ? 0 : y[Nr_idx];
+    y[Ns_idx] = (y[Ns_idx] < 0) ? 0 : y[Ns_idx];
+    y[Ni_idx] = (y[Ni_idx] < 0) ? 0 : y[Ni_idx];
+    y[Ng_idx] = (y[Ng_idx] < 0) ? 0 : y[Ng_idx];
+    y[Nh_idx] = (y[Nh_idx] < 0) ? 0 : y[Nh_idx];
+}
+
 /**
  * Compute a single step using the Runge-Kutta 4 method for the ODE
  * \f[ y' = \text{RHS}(y) \f]
@@ -221,10 +287,25 @@ void RK4_step_2_sb_ice(
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
+#ifdef TRACE_ENV
+        if(trace && ii == T_idx)
+            std::cout << "RK1, yold[T] = " << yold[ii]
+                      << "\nk[T] = " << k[ii]
+                      << "\nk[T] prime = " << k[ii]*ref.Tref
+                      << "\nk[T] prime time = " << k[ii]*ref.Tref*cc.dt_half
+                      << "\ndT = " << yold[ii] + cc.dt_half*k[ii]
+                      << "\ndT Result = " << cc.dt_sixth*k[ii]
+                      << "\ndT prime Result = " << cc.dt_sixth*k[ii]*ref.Tref
+                      << "\n";
+#endif
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k1 for k2
         ynew[ii] += cc.dt_sixth*k[ii]; // Add k1-part to the result
-
     }
+    set_limits(ytmp, ref, cc);
+    sediment_q_total += cc.dt_sixth*sediment_q;
+    sediment_q = 0;
+    sediment_n_total += cc.dt_sixth*sediment_n;
+    sediment_n = 0;
 
     //
     // Do all computations involving k2
@@ -233,9 +314,25 @@ void RK4_step_2_sb_ice(
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
+#ifdef TRACE_ENV
+        if(trace && ii == T_idx)
+            std::cout << "RK2, yold[T] = " << yold[ii]
+                      << "\nk[T] = " << k[ii]
+                      << "\nk[T] prime = " << k[ii]*ref.Tref
+                      << "\nk[T] prime time = " << k[ii]*ref.Tref*cc.dt_half
+                      << "\ndT = " << yold[ii] + cc.dt_half*k[ii]
+                      << "\ndT Result = " << cc.dt_third*k[ii]
+                      << "\ndT prime Result = " << cc.dt_third*k[ii]*ref.Tref
+                      << "\n";
+#endif
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k2 for k3
         ynew[ii] += cc.dt_third*k[ii]; // Add k2-part to the result
     }
+    set_limits(ytmp, ref, cc);
+    sediment_q_total += cc.dt_third*sediment_q;
+    sediment_q = 0;
+    sediment_n_total += cc.dt_third*sediment_n;
+    sediment_n = 0;
 
     //
     // Do all computations involving k3
@@ -244,9 +341,25 @@ void RK4_step_2_sb_ice(
 
     for(int ii = 0 ; ii < num_comp ; ii++)
     {
+#ifdef TRACE_ENV
+        if(trace && ii == T_idx)
+            std::cout << "RK3, yold[T] = " << yold[ii]
+                      << "\nk[T] = " << k[ii]
+                      << "\nk[T] prime = " << k[ii]*ref.Tref
+                      << "\nk[T] prime time = " << k[ii]*ref.Tref*cc.dt
+                      << "\ndT = " << yold[ii] + cc.dt*k[ii]
+                      << "\ndT Result = " << cc.dt_third*k[ii]
+                      << "\ndT prime Result = " << cc.dt_third*k[ii]*ref.Tref
+                      << "\n";
+#endif
         ytmp[ii] = yold[ii] + cc.dt*k[ii]; // y_0 + dt*k3 for k4
         ynew[ii] += cc.dt_third*k[ii]; // Add k3-part to the result
     }
+    set_limits(ytmp, ref, cc);
+    sediment_q_total += cc.dt_third*sediment_q;
+    sediment_q = 0;
+    sediment_n_total += cc.dt_third*sediment_n;
+    sediment_n = 0;
 
     //
     // Do all computations involving k4
@@ -254,7 +367,22 @@ void RK4_step_2_sb_ice(
     RHS_SB(k, ytmp, ref, cc, nc, cc.dt_sixth, fixed); // k = k4
 
     for(int ii = 0 ; ii < num_comp ; ii++)
+    {
+#ifdef TRACE_ENV
+        if(trace && ii == T_idx)
+            std::cout << "RK4, k[T] = " << k[ii]
+                        << "\nk[T] prime = " << k[ii]*ref.Tref
+                      << "\ndT Result = " << cc.dt_sixth*k[ii]
+                      << "\ndT prime Result = " << cc.dt_sixth*k[ii]*ref.Tref
+                      << "\n";
+#endif
         ynew[ii] += cc.dt_sixth*k[ii];
+    }
+    set_limits(ynew, ref, cc);
+    sediment_q_total += cc.dt_sixth*sediment_q;
+    sediment_q = 0;
+    sediment_n_total += cc.dt_sixth*sediment_n;
+    sediment_n = 0;
 }
 
 /** @} */ // end of group rk

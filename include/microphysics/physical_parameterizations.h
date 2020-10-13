@@ -251,6 +251,7 @@ inline A density_ice(A T)
 /**
  * Specific heat capacity of dry air in \f$ \text{J}/(\text{kg} \cdot \text{K}) \f$.
  * From Rogers and Yau (1989)
+ * For now we use a fixed constant that is valid in constant pressure.
  * Validity range: ?
  *
  * @param T Temperature in Kelvin
@@ -260,7 +261,7 @@ template <class A>
 inline A specific_heat_dry_air(A T)
 {
 
-  return 1005.0;
+  return cp; // 1005.0
 
 }
 
@@ -386,7 +387,7 @@ template <class A>
 inline A latent_heat_melt(A T)
 {
   // Table A1
-  return 4.184e3 * (79.7+0.485*(T-tmelt) - 2.5e-3*(T-tmelt)*(T-tmelt));
+  return 4.184e3 * (79.7+0.485*(T-T_freeze) - 2.5e-3*(T-T_freeze)*(T-T_freeze));
 }
 
 
@@ -407,7 +408,7 @@ inline A latent_heat_evap(A T)
   // Table A1
   A lh_e0 = 2.5006e6;
   A gam = 0.167 + 3.67e-4 * T;
-  return lh_e0 * pow(tmelt/T, gam);
+  return lh_e0 * pow(T_freeze/T, gam);
 }
 
 
@@ -422,7 +423,7 @@ inline A latent_heat_evap(A T)
 template <class A>
 inline A saturation_pressure_water_icon(A T)
 {
-  return 610.78*exp(17.269*(T-273.15)/(T-35.86));
+  return p_sat_low_temp*exp(p_sat_const_a*(T-T_sat_low_temp)/(T-p_sat_const_b));
 }
 
 
@@ -444,6 +445,57 @@ inline A saturation_pressure_water(A T)
   return ( exp( 54.842763 - 6763.22*Tinv - 4.21*logT + 0.000367*T + tanh(0.0415*(T-218.8))*(53.878 - 1331.22*Tinv - 9.44523*logT + 0.014025*T) ) );
 
 }
+
+
+/**
+ * Calculate the water vapor mixing ratio at saturation = 1 using
+ * Dotzek (4.33).
+ *
+ * @param T Temperature in Kelvin
+ * @param p Pressure in Pa
+ * @return Mixing ratio at saturation = 1
+ */
+template <class A>
+inline A water_vapor_sat_ratio_dotzek(
+    A p,
+    A T)
+{
+    A p_sat = saturation_pressure_water_icon(T);
+    return (r_const/r1_const) / (p/p_sat + (r_const/r1_const)-1);
+}
+
+
+/**
+ * Calculate the water vapor mixing ratio at saturation = 1.
+ *
+ * @param T Temperature in Kelvin
+ * @param p Pressure in Pa
+ * @return Mixing ratio at saturation = 1
+ */
+template <class A>
+inline A water_vapor_sat_ratio(
+    A p,
+    A T)
+{
+    A p_sat = saturation_pressure_water_icon(T);
+    return Epsilon*( p_sat/(p - p_sat) );
+}
+
+
+/**
+ * Calculate the water vapor mixing ratio at saturation = 1.
+ *
+ * @param T Temperature in Kelvin
+ * @param p Pressure in Pa
+ * @return Mixing ratio at saturation = 1
+ */
+// template <class A>
+// inline A water_vapor_sat_ratio_2(
+//     A T)
+// {
+//     A p_sat = saturation_pressure_water_icon(T);
+//     return p_sat/(Rv*T);
+// }
 
 
 /**
@@ -521,7 +573,7 @@ inline A compute_pv(A T,
 		    A S)
 {
 
-  return ( S*saturation_pressure_water(T) );
+  return ( S*saturation_pressure_water_icon(T) );
 
 }
 
@@ -615,7 +667,7 @@ inline A convert_Si_to_qv(A p,
 			  A Si)
 {
 
-  A S = Si * ( saturation_pressure_ice(T)/saturation_pressure_water(T) );
+  A S = Si * ( saturation_pressure_ice(T)/saturation_pressure_water_icon(T) );
 
   return ( Epsilon*( compute_pv(T,S)/compute_pa(p,T,S) ) );
 
@@ -636,7 +688,7 @@ inline A convert_qv_to_S(A p,
 			 A qv)
 {
 
-  return ( (p*qv)/((Epsilon + qv)*saturation_pressure_water(T)) );
+  return ( (p*qv)/((Epsilon + qv)*saturation_pressure_water_icon(T)) );
 
 }
 
@@ -645,7 +697,7 @@ inline A convert_qv_to_S(A p,
  * Get mean mass of particle assuming a gamma distribution
  * (TODO: Is it though? It assumes a rather high shape parameter \f$k\f$).
  *
- * @param q Particle mixing ratio
+ * @param q Particle mixing ratio [kg/kg]
  * @param n Number of particles
  * @param min_x Minimum size of particle
  * @param max_x Maximum size of particle
@@ -1105,7 +1157,7 @@ void setCoefficients(
     codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
     codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
     codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
-    codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
+    codi::RealReverse psat_prime = saturation_pressure_water_icon(T_prime);
     codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(Rv*T_prime)) - 1.0);
     codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
 
@@ -1133,7 +1185,7 @@ void setCoefficients(
   codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
   codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
   codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
-  codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
+  codi::RealReverse psat_prime = saturation_pressure_water_icon(T_prime);
   codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(Rv*T_prime)) - 1.0);
   codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
 
@@ -1144,6 +1196,7 @@ void setCoefficients(
   cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alpha_r*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
 
   cc.d_prime = cc.d_scale;	// Constant coefficient
+  cc.inv_z = 1.0/parcel_height;
 }
 
 
@@ -1261,56 +1314,22 @@ void setup_model_constants(
       model_constants_t &cc,
       reference_quantities_t &ref_quant)
 {
-#if defined(RK4_ONE_MOMENT)
-    // Scaling factor from input
-    cc.scaling_fact = input.scaling_fact;
-
-    // Accomodation coefficient
-    cc.alpha_d = 1.0;
-
-    // // Performance constants for warm cloud; COSMO
-    cc.a1_scale = 1.0e-3;
-    cc.a2_scale = 1.72 / pow(Ra , 7./8.);
-    cc.e1_scale = 1.0 / sqrt(Ra);
-    cc.e2_scale = 9.1 / pow(Ra , 11./16.);
-    cc.d_scale = ( 130.0*tgamma(4.5) )/( 6.0*(1.0e3)*pow(M_PI*(8.0e6)*Ra , 1.0/8.0) );
-
-    // Performance constants for warm cloud; IFS
-    // The file constants.h also defines some constants as nar, ...
-    const double Nc = 50; 	// 50 over ocean; 300 over land
-    const double F_aut = 1.5;
-    const double F_acc = 2.0;
-    const double lambda_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alpha_r);
-
-    // Inflow from above
-    cc.B_prime = 0.0;
-
-    // // Exponents of the cloud model
-    // // COSMO
-    cc.gamma = 1.0;
-    cc.betac = 1.0;
-    cc.betar = 7./8.;
-    cc.delta1 = 0.5;
-    cc.delta2 = 11./16.;
-    cc.zeta = 9./8.;
-
     // Numerics
     cc.t_end_prime = input.t_end_prime;
     cc.t_end = input.t_end_prime/ref_quant.tref;
     // Time of the substeps
-
     cc.dt = input.dt_prime/ref_quant.tref;
     cc.dt_prime = input.dt_prime;
-    cc.dt_traject_prime = cc.dt_traject * ref_quant.tref;
+    cc.dt_traject_prime = 20.0;
+    cc.dt_traject = cc.dt_traject_prime/ref_quant.tref;
     // The trajectories are calculated with 20 s timesteps.
-    cc.num_sub_steps = (floor( 20.0/cc.dt ) < 1) ? 1 : floor( 20.0/cc.dt );
+    cc.num_sub_steps = (floor( cc.dt_traject_prime/cc.dt ) < 1) ? 1 : floor( cc.dt_traject_prime/cc.dt );
 
     // Evaluate the general performance constants
     cc.dt_half = cc.dt*0.5;
     cc.dt_third = cc.dt/3.0;
     cc.dt_sixth = cc.dt/6.0;
 
-#elif defined(RK4ICE) || defined(RK4NOICE)
     // Scaling factor from input
     cc.scaling_fact = input.scaling_fact;
 
@@ -1350,7 +1369,7 @@ void setup_model_constants(
     cc.delta1 = 0.5;
     cc.delta2 = 11./16.;
     cc.zeta = 9./8.;
-
+#if defined(RK4ICE) || defined(RK4NOICE)
     // Exponents of the cloud model
     // IFS
     // cc.gamma = 2.47;
@@ -1360,30 +1379,19 @@ void setup_model_constants(
     // cc.delta2 = ( 0.5*cc.dr + 2.5 - cc.nbr )/( cc.br + 1.0 - cc.nbr );
     // cc.zeta = 1.0;
 
-    // Numerics
-    cc.t_end_prime = input.t_end_prime;
-    cc.t_end = input.t_end_prime/ref_quant.tref;
-    // Time of the substeps
-
-    cc.dt = input.dt_prime/ref_quant.tref;
-    cc.dt_prime = input.dt_prime;
-    cc.dt_traject_prime = cc.dt_traject * ref_quant.tref;
-    // The trajectories are calculated with 20 s timesteps.
-    cc.num_sub_steps = (floor( 20.0/cc.dt ) < 1) ? 1 : floor( 20.0/cc.dt );
-
-    // Evaluate the general performance constants
-    cc.dt_half = cc.dt*0.5;
-    cc.dt_third = cc.dt/3.0;
-    cc.dt_sixth = cc.dt/6.0;
-
     // ==================================================
     // Set rain constants
     // See init_2mom_scheme_once in mo_2mom_mcrph_main.f90
     // ==================================================
     // Cosmo5 although nue1nue1 would be okay too, I guess
     //// Cloud
-    cc.cloud.nu = 0.0;
+#ifdef SB_SHAPE
+    cc.cloud.nu = 1;
+    cc.cloud.mu = 1;
+#else
+    cc.cloud.nu = 0;
     cc.cloud.mu = 1.0/3.0;
+#endif
     cc.cloud.max_x = 2.6e-10;
     cc.cloud.min_x = 4.2e-15;
     cc.cloud.min_x_act = 4.2e-15;
@@ -1397,6 +1405,7 @@ void setup_model_constants(
     cc.cloud.min_x_collection = 4.2e-15;
     cc.cloud.min_x_conversion = 4.2e-15;
     cc.cloud.min_x_sedimentation = 4.2e-15;
+    cc.cloud.min_x_riming = 4.2e-15;
     cc.cloud.a_geo = 1.24e-1;
     cc.cloud.b_geo = 0.333333;
     cc.cloud.a_vel = 3.75e5;
@@ -1415,8 +1424,12 @@ void setup_model_constants(
     setup_bulk_sedi(cc.cloud);
 
     //// Rain
-    cc.rain.nu = 0.0;
-    cc.rain.mu = 0.333333;
+#ifdef SB_SHAPE
+    cc.rain.nu = -2.0/3.0; // SB: -2/3 COSMO: 0.0
+#else
+     cc.rain.nu = 0; // SB: -2/3 COSMO: 0.0
+#endif
+    cc.rain.mu = 1.0/3.0; // SB: 1/3 COMSO: 1.0/3.0
     cc.rain.max_x = 3.0e-6;
     cc.rain.min_x = 2.6e-10;
     cc.rain.min_x_act = 2.6e-10;
@@ -1430,6 +1443,7 @@ void setup_model_constants(
     cc.rain.min_x_collection = 2.6e-10;
     cc.rain.min_x_conversion = 2.6e-10;
     cc.rain.min_x_sedimentation = 2.6e-10;
+    cc.rain.min_x_riming = 2.6e-10;
     cc.rain.a_geo = 1.24e-1;
     cc.rain.b_geo = 0.333333;
     cc.rain.a_vel = 114.0137;
@@ -1465,8 +1479,8 @@ void setup_model_constants(
     setup_bulk_sedi(cc.rain);
 
     //// Graupel
-    cc.graupel.nu = 1.0;
-    cc.graupel.mu = 1.0/3.0;
+    cc.graupel.nu = 1.0; // SB
+    cc.graupel.mu = 1.0/3.0; // SB
     cc.graupel.max_x = 5.0e-4;
     cc.graupel.min_x = 1.0e-9;
     cc.graupel.min_x_act = 1.0e-9;
@@ -1480,6 +1494,7 @@ void setup_model_constants(
     cc.graupel.min_x_collection = 1.0e-9;
     cc.graupel.min_x_conversion = 1.0e-9;
     cc.graupel.min_x_sedimentation = 1.0e-9;
+    cc.graupel.min_x_riming = 1.0e-9;
     cc.graupel.a_geo = 1.42e-1;
     cc.graupel.b_geo = 0.314;
     cc.graupel.a_vel = 86.89371;
@@ -1489,7 +1504,6 @@ void setup_model_constants(
     cc.graupel.cap = 2.0;
     cc.graupel.vsedi_max = 30.0;
     cc.graupel.vsedi_min = 0.1;
-    cc.graupel.sc_coll_n = 1.0;
     cc.graupel.d_crit_c = 100.0e-6;
     cc.graupel.q_crit_c = 1.0e-6;
     cc.graupel.s_vel = 0.0;
@@ -1524,6 +1538,7 @@ void setup_model_constants(
     cc.hail.min_x_collection = 2.6e-9;
     cc.hail.min_x_conversion = 2.6e-9;
     cc.hail.min_x_sedimentation = 2.6e-9;
+    cc.hail.min_x_riming = 2.6e-9;
     cc.hail.a_geo = 0.1366;
     cc.hail.b_geo = 1.0/3.0;
     cc.hail.a_vel = 39.3;
@@ -1545,7 +1560,11 @@ void setup_model_constants(
     setup_bulk_sedi(cc.hail);
 
     //// Ice
-    cc.ice.nu = 0.0;
+#ifdef SB_SHAPE
+    cc.ice.nu = 1.0;
+#else
+    cc.ice.nu = 0.0; // COSMO 0.0, SB: 1.0
+#endif
     cc.ice.mu = 1.0/3.0;
     cc.ice.max_x = 1.0e-5;
     cc.ice.min_x = 1.0e-12;
@@ -1560,6 +1579,7 @@ void setup_model_constants(
     cc.ice.min_x_collection = 1.0e-12;
     cc.ice.min_x_conversion = 1.0e-12;
     cc.ice.min_x_sedimentation = 1.0e-12;
+    cc.ice.min_x_riming = 1.0e-12;
     cc.ice.a_geo = 0.835;
     cc.ice.b_geo = 0.39;
     cc.ice.a_vel = 2.77e1;
@@ -1581,8 +1601,13 @@ void setup_model_constants(
     setup_bulk_sedi(cc.ice);
 
     //// Snow
-    cc.snow.nu = 0.0;
-    cc.snow.mu = 0.5;
+#ifdef SB_SHAPE
+    cc.snow.nu = 1.0; // COSMO: 0.0, SB 1.0
+    cc.snow.mu = 1.0/3.0; // COSMO 0.5, SB: 1.0/3.0
+#else
+    cc.snow.nu = 0.0; // COSMO: 0.0, SB 1.0
+    cc.snow.mu = 0.5; // COSMO 0.5, SB: 1.0/3.0
+#endif
     cc.snow.max_x = 2.0e-5;
     cc.snow.min_x = 1.0e-10;
     cc.snow.min_x_act = 1.0e-10;
@@ -1596,6 +1621,7 @@ void setup_model_constants(
     cc.snow.min_x_collection = 1.0e-10;
     cc.snow.min_x_conversion = 1.0e-10;
     cc.snow.min_x_sedimentation = 1.0e-10;
+    cc.snow.min_x_riming = 1.0e-10;
     cc.snow.a_geo = 2.4;
     cc.snow.b_geo = 0.455;
     cc.snow.a_vel = 8.8;
@@ -1621,7 +1647,7 @@ void setup_model_constants(
     init_particle_collection_2(cc.ice, cc.rain, cc.coeffs_irr);
     init_particle_collection_1(cc.ice, cc.cloud, cc.coeffs_icr);
     init_particle_collection_1(cc.hail, cc.rain, cc.coeffs_hrr);
-    init_particle_collection_1(cc.graupel, cc.rain, cc.coeffs_grr);
+    init_particle_collection_1(cc.graupel, cc.rain, cc.coeffs_grr); // Cosmo uses 2, ICON uses 1
     init_particle_collection_1(cc.hail, cc.cloud, cc.coeffs_hcr);
     init_particle_collection_1(cc.graupel, cc.cloud, cc.coeffs_gcr);
     init_particle_collection_1(cc.snow, cc.ice, cc.coeffs_sic);
@@ -1637,7 +1663,6 @@ void setup_model_constants(
            + coll_delta_12(cc.graupel, cc.graupel, 0))
         * sqrt((2.0*coll_theta_11(cc.graupel, cc.graupel, 0)
            - coll_theta_12(cc.graupel, cc.graupel, 0)));
-
 
     cc.snow.sc_delta_n = (2.0*coll_delta_11(cc.snow, cc.snow, 0)
         + coll_delta_12(cc.snow, cc.snow, 0));

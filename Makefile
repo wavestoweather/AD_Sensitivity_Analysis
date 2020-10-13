@@ -6,7 +6,7 @@ TIMESTEPPER=-DRK4ICE
 ATMOFLAGS=-DCONSTANT_DROP=FALSE
 SEASON=-DSPRING
 FLUX=-DFLUX
-SOURCE=-DWCB2 -DSAT_CALC
+SOURCE=-DMET3D -DSB_CONV -DSB_SHAPE
 
 BUILD=build
 OBJ_DIR=$(BUILD)/objects
@@ -68,6 +68,6 @@ release: GCCLFAGS += -O2 -march=native
 release: all
 
 clean:
-	-@rm -rvf $(OBJ_DIR)/*
-	-@rm -rvf $(APP_DIR)/src/microphysics/*
+	-@trash-put $(OBJ_DIR)/*
+	-@trash-put $(APP_DIR)/src/microphysics/*
 

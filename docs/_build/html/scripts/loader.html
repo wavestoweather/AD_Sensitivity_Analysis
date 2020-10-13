@@ -37,9 +37,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="filter_more" href="filter_more.html" />
-    <link rel="prev" title="get_deriv_info" href="get_deriv_info.html" /> 
+    <link rel="search" title="Search" href="../search.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -83,17 +81,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Python Documentation</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="get_deriv_info.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">get_deriv_info</span></code></a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">loader</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="filter_more.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filter_more</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_heat.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_heat</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_many_traj.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_many_traj</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_trajectories.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_trajectories</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="executing.html">Executing Scripts</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -314,7 +302,7 @@ higher values.</p></li>
 
 <dl class="py function">
 <dt id="scripts.loader.load_mult_derivates_direc_dic">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_mult_derivates_direc_dic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">direc</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">filt</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">file_list2</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">EPSILON</span><span class="o">=</span><span class="default_value">0.0</span></em>, <em class="sig-param"><span class="n">trajectories</span><span class="o">=</span><span class="default_value">[1]</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">'20160922_00'</span></em>, <em class="sig-param"><span class="n">pool</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_mult_derivates_direc_dic" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_mult_derivates_direc_dic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">direc</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">filt</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">file_list2</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">EPSILON</span><span class="o">=</span><span class="default_value">0.0</span></em>, <em class="sig-param"><span class="n">trajectories</span><span class="o">=</span><span class="default_value">[1]</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">'20160922_00'</span></em>, <em class="sig-param"><span class="n">pool</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">met3d</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_mult_derivates_direc_dic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a dictionary with out parameters as keys and dictionaries with columns:
 trajectory, timestep, MAP, LATITUDE, LONGITUDE
 and a column for each in parameter such as “da_1”, “da_2”, “dsnow_alfa_q”, …
@@ -394,7 +382,7 @@ of pole.</p>
 
 <dl class="py function">
 <dt id="scripts.loader.load_output">
-<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_output</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">'sb_ice.txt'</span></em>, <em class="sig-param"><span class="n">sep</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nrows</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">change_ref</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">refs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_output" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">load_output</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">'sb_ice.txt'</span></em>, <em class="sig-param"><span class="n">sep</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nrows</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">change_ref</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">refs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">attr</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.load_output" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a csv file and return a pandas.Dataframe with
 physical (not normalized) entries.</p>
 <dl class="field-list simple">
@@ -405,14 +393,14 @@ physical (not normalized) entries.</p>
 <li><p><strong>nrows</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of rows to read from the datafile.</p></li>
 <li><p><strong>change_ref</strong> (<em>bool</em>) – If true: Multiply all entries with reference values.</p></li>
 <li><p><strong>refs</strong> (<em>String</em>) – Path to a file of references for transformation</p></li>
+<li><p><strong>attr</strong> (<em>String</em>) – Path to a file with attributes of every output column. If given, a
+MET3D styled version is assumed and triggered.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Dataframe with the columns “p”, “T”, “w”,
-“qc”, “qr”, “qs”, “qg”, “qh”, “qi”, “qv”,
-“qiout”, “qsout”, “qrout”, “qgout”, “qhout”,
-“latent_heat”, “latent_cool” if change_ref is True. Otherwise
-any dataframe from the given csv file.</p>
+<dd class="field-even"><p>Dataframe with certain columns if change_ref is True. Otherwise
+any dataframe from the given csv file.
+If attr is given, column names is slightly different.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>pandas.Dataframe</p>
@@ -445,6 +433,24 @@ as another column “norm_deriv”. The column “MAP” is used to normalize on
 <dd class="field-odd"><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns trajectory, timestep, out_param, in_param,
 deriv, ratio_deriv and MAP. On out: Holds another
 column “norm_deriv”</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.loader.parse_attr">
+<code class="sig-prename descclassname">scripts.loader.</code><code class="sig-name descname">parse_attr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">attr</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.loader.parse_attr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a file to global attributes dictionary and a dictionary for every
+column</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>attr</strong> (<em>Path to file in ini format.</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>{“Global attributes”: {}, “Non global attributes”: {“Column name”: {}}}</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dictionary of dictionaries</p>
 </dd>
 </dl>
 </dd></dl>
@@ -546,15 +552,6 @@ coordinates to the data from df.</p>
            
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="filter_more.html" class="btn btn-neutral float-right" title="filter_more" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="get_deriv_info.html" class="btn btn-neutral float-left" title="get_deriv_info" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>
