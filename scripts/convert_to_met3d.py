@@ -78,9 +78,7 @@ def differ(x, axis, hPa, debug=False):
     # Get minimum length of window with value >= hPa
     min_lengths = np.full(np.shape(both), np.inf)
     counter = 0
-    # if debug:
-    #     with open("log2", "a+") as f:
-    #         f.write("timestep, curr_sum, min_len, len(window), start, end, startP, endP\n")
+
     for ens in range(len(differences)):
         if not both[ens].any():
             continue
@@ -108,17 +106,12 @@ def differ(x, axis, hPa, debug=False):
 
                         curr_sum += window[end]
                         end += 1
-                    # if debug:
-                    #     print("curr_sum {} at start {}, end {}, timestep {}".format(curr_sum, start, end, timestep))
                     # Check, if a smaller window exists where the ascend is done by pushing the start
                     while(curr_sum <= -hPa*100 and start < len(window)):
                         if(end-start < min_len):
                             min_len = end-start
                         curr_sum -= window[start]
                         start += 1
-                # if debug:
-                #     with open("log2", "a+") as f:
-                #         f.write("{}, {}, {}, {}, {}, {}, {}, {}\n".format(timestep, curr_sum, min_len, len(window), start, end, x[timestep][0][start], x[timestep][0][end]))
                 min_lengths[ens][traj][timestep] = min_len
 
     # Take the minimum overall and that's whenever True shall stand
@@ -143,17 +136,6 @@ def differ(x, axis, hPa, debug=False):
             return_bools_tmp[timestep] = (min_lengths_trans[timestep] == min_len_traj)
         return_bools.append(np.transpose(return_bools_tmp))
 
-    # if debug:
-    #     with open("return_log", "a+") as fout:
-    #         for line in return_bools_transposed:
-    #             fout.write(np.array2string(line))
-    #             fout.write("\n")
-    #             fout.write("min lenghts ({})\n".format(min_len_traj))
-    #             fout.write(np.array2string(min_lengths))
-
-    # if debug:
-    #     with open("set_log", "a+") as fout:
-    #         fout.write("start, length, min_length, start+length, set_start, set_end\n")
     # Shift everything such that the beginning starts at the actual start and ends accordingly
     for ens in range(len(return_bools)):
         for traj in range(len(return_bools[ens])):
@@ -161,35 +143,18 @@ def differ(x, axis, hPa, debug=False):
                 continue
             min_len_traj = min_len_traj_all[ens]
             vals, start, length = find_runs(return_bools[ens][traj])
-            # if debug:
-            #     print("vals:")
-            #     print(vals)
-            #     print("start:")
-            #     print(start)
-            #     print("length:")
-            #     print(length)
-            #     print("returner")
-            #     print(return_bools_transposed[traj])
+
             for i in range(len(vals)):
                 if vals[i] > 0:
                     set_start = int(start[i] - min_len_traj[traj])
-                    set_end = set_start + min_len_traj[traj] + 1#  + length[i] #
+                    set_end = set_start + min_len_traj[traj] + 1
 
                     if length[i] > min_len_traj[traj]:
-                        set_end = set_start + length[i] + 1 # - window_size + min_len_traj[traj]
-                        # if debug:
-                        #     print("length is bigger then minimum length")
-                        #     print("window_size {}, length-window_size {}, min_len {}, this_length: {}".format(window_size, length[i]-window_size, min_len_traj[traj], length[i] - window_size + min_len_traj[traj] + 1))
-                            # with open("set_log", "a+") as fout:
-                            #     fout.write("length is bigger then minimum length\n")
-                            #     fout.write("window_size {}, length-window_size {}, min_len {}, this_length: {}\n".format(window_size, length[i]-window_size, min_len_traj[traj], length[i] - window_size + min_len_traj[traj] + 1))
-                    # if debug:
-                        # with open("set_log", "a+") as fout:
-                        #     fout.write("{}, {}, {}, {}, {}, {}\n".format(start[i], length[i], min_len_traj[traj], start[i]+length[i], set_start, int(set_end)))
+                        set_end = set_start + length[i] + 1
+
                     return_bools[ens][traj][start[i]:length[i]+start[i]] = False
                     return_bools[ens][traj][set_start:int(set_end)] = True
 
-    # return_bools = np.transpose(return_bools_transposed)
     return return_bools
 
 def differ_slan(x, axis, hPa, min_window):
@@ -230,7 +195,6 @@ def differ_slan(x, axis, hPa, min_window):
             min_lengths[timestep][traj] = min_len
     # Take the minimum overall and that's whenever True shall stand
     # Those are minimum window sizes for every trajectory
-
     min_len_traj = np.nanmin(min_lengths, axis=0)
     min_len_traj[min_len_traj == np.inf] = -1
     return_bools = np.full(np.shape(both), 0)#, dtype=bool)
@@ -246,10 +210,10 @@ def differ_slan(x, axis, hPa, min_window):
         vals, start, length = find_runs(return_bools_transposed[traj])
         for i in range(len(vals)):
             if vals[i] > 0:
-                set_start = int(start[i] - min_len_traj[traj]) # + 1
-                set_end = set_start + min_len_traj[traj] + 1 # min_len_traj[traj] + set_start
+                set_start = int(start[i] - min_len_traj[traj])
+                set_end = set_start + min_len_traj[traj] + 1
                 if length[i] > min_len_traj[traj]:
-                    set_end = set_start + length[i] + 1 # - window_size + min_len_traj[traj] + 1
+                    set_end = set_start + length[i] + 1
                 return_bools_transposed[traj][start[i]:length[i]+start[i]] = False
                 return_bools_transposed[traj][set_start:int(set_end)] = True
 
@@ -616,5 +580,4 @@ for flag in ["conv_400", "conv_600", "slan_400"]:
             store_path=store_path + flag + "_" + str(i) + "_" + file_list[i].split("/")[-1],
             fl=flag,
             ensemble=i)
-    #     break
-    # break
+
