@@ -92,14 +92,18 @@ for f_this in file_list:
     if input_type == "MET3D":
         print(f"Found attributes: {att}")
     print
-
-    df_dic_mapped = Deriv(direc=direc_path,
-                          filt=filt,
-                          EPSILON=EPSILON,
-                          trajectories=[traj],
-                          file_list=load_f,
-                          suffix=suffix,
-                          threads=ncpus)
+    try:
+        df_dic_mapped = Deriv(direc=direc_path,
+                            filt=filt,
+                            EPSILON=EPSILON,
+                            trajectories=[traj],
+                            file_list=load_f,
+                            suffix=suffix,
+                            threads=ncpus)
+    except:
+        print("Reading the files failed. Continue with the next")
+        failed_trajectories.append(prefix)
+        continue
 
     df_sim_mapped = Sim()
     df_sim_mapped.load_file(

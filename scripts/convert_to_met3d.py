@@ -15,11 +15,7 @@ met_dims = ["ensemble", "trajectory", "time", "start_lon",
 
 path = "/data/project/wcb/netcdf/vladiana"
 store_path = "/data/project/wcb/netcdf/vladiana_met/"
-file_list = []
-for f in os.listdir(path):
-    if ".nc_wcb" in f:
-        file_list.append(os.path.join(path, f))
-file_list = np.sort(file_list)
+
 
 # 400 hPa and 600 hPa ascent
 window_conv_400 = 1 * 3 * 60
@@ -572,12 +568,18 @@ def convert_wcb2(f, store_path, fl, ensemble):
         format="NETCDF4",
         mode="w")
 
-for flag in ["conv_400", "conv_600", "slan_400"]:
-    print(f"#################### {flag} ######################")
-    for i in pb.progressbar(range(len(file_list)), redirect_stdout=True):
-        convert_wcb2(
-            f = file_list[i],
-            store_path=store_path + flag + "_" + str(i) + "_" + file_list[i].split("/")[-1],
-            fl=flag,
-            ensemble=i)
+if __name__ == "__main__":
+    file_list = []
+    for f in os.listdir(path):
+        if ".nc_wcb" in f:
+            file_list.append(os.path.join(path, f))
+    file_list = np.sort(file_list)
+    for flag in ["slan_400"]:
+        print(f"#################### {flag} ######################")
+        for i in pb.progressbar(range(len(file_list)), redirect_stdout=True):
+            convert_wcb2(
+                f = file_list[i],
+                store_path=store_path + flag + "_" + str(i) + "_" + file_list[i].split("/")[-1],
+                fl=flag,
+                ensemble=i)
 
