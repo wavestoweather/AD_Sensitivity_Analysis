@@ -719,6 +719,10 @@ struct nc_parameters_t{
 #else
     std::vector<double> z;
 #endif
+#if defined MET3D && defined TURBULENCE
+    NcVar qturb_var;
+    double qturb;
+#endif
     std::vector<double> w, lat, lon;
     double  t, p, time_rel,
             qc, qr, qi, qs, qg, qv, S, dw, dlat, dlon,

@@ -321,14 +321,20 @@ void load_nc_parameters_var(
     nc.Ni_var       = datafile.getVar("NCICE");
     nc.Ns_var       = datafile.getVar("NCSNOW");
     nc.Ng_var       = datafile.getVar("NCGRAUPEL");
-    // Flag wether an effective ascent region is reached
-    nc.ascent_flag_var = datafile.getVar("WCB_flag");
-    // 2h ascent rate after Oertel et al. (2019)
-    nc.dp2h_var     = datafile.getVar("dp2h");
+
     nc.conv_400_var = datafile.getVar("conv_400");
     nc.conv_600_var = datafile.getVar("conv_600");
     nc.slan_400_var = datafile.getVar("slan_400");
     nc.slan_600_var = datafile.getVar("slan_600");
+#endif
+#if defined WCB2
+    // Flag wether an effective ascent region is reached
+    nc.ascent_flag_var = datafile.getVar("WCB_flag");
+    // 2h ascent rate after Oertel et al. (2019)
+    nc.dp2h_var     = datafile.getVar("dp2h");
+#endif
+#if defined MET3D && defined TURBULENCE
+    nc.qturb_var    = datafile.getVar("Q_TURBULENCE");
 #endif
 }
 
@@ -382,14 +388,19 @@ void load_nc_parameters(
     countp[1]--;
 #endif
 
-#if defined WCB || defined WCB2 || defined MET3D
+#if defined WCB || defined WCB2
     int map = 0;
     nc.ascent_flag_var.getVar(startp, countp, &map);
     nc.ascent_flag = (map > 0) ? true : false;
 #endif
-#if defined MET3D || defined WCB2
+#if defined WCB2
     nc.dp2h_var.getVar(startp, countp, &map);
     nc.dp2h = (map > 0) ? true : false;
+#endif
+#if defined MET3D
+    int map = 0;
+#endif
+#if defined MET3D || defined WCB2
     nc.conv_400_var.getVar(startp, countp, &map);
     nc.conv_400 = (map > 0) ? true : false;
     nc.conv_600_var.getVar(startp, countp, &map);
@@ -409,8 +420,7 @@ void load_nc_parameters(
     nc.qs_var.getVar(startp, countp, &nc.qs);
     nc.qv_var.getVar(startp, countp, &nc.qv);
 
-    double psat_prime = saturation_pressure_water_icon(nc.t);
-
+    double psat_prime = saturation_pressure_water(nc.t);
 #if !defined WCB2 && !defined MET3D
     // We are reading in hPa. Convert to Pa
     nc.p        *= 100;
@@ -462,6 +472,10 @@ void load_nc_parameters(
     nc.NGin     = abs(nc.NGin);
 #endif
 
+#if defined MET3D && defined TURBULENCE
+    nc.qturb_var.getVar(startp, countp, &nc.qturb);
+    nc.qturb /= ref_quant.qref;
+#endif
 #if !defined WCB
     nc.S = 1.0;
     nc.qg_var.getVar(startp, countp, &nc.qg);
@@ -493,7 +507,6 @@ void load_nc_parameters(
     nc.QGin     = abs(nc.QGin);
     nc.QGout    = abs(nc.QGout);
 #endif
-
 #ifdef MET3D
     nc.S_var.getVar(startp, countp, &nc.S);
     nc.S /= 100; // from percentage
@@ -501,7 +514,11 @@ void load_nc_parameters(
     // there is only a single value for that since each type
     // is divided into different files in the input
     if(nc.type[0] == "")
+    {
+        std::cout << "Does type work?\n" << std::flush;
         nc.type_var.getVar(nc.type);
+        std::cout << "yepp\n" << std::flush;
+    }
     nc.w[0]     /= ref_quant.wref;
     nc.w[1]     /= ref_quant.wref;
 #elif !defined WCB && !defined WCB2
@@ -531,7 +548,6 @@ void load_nc_parameters(
     nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
     nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
 #endif
-
     nc.dlat = (nc.lat[1] - nc.lat[0]) / num_sub_steps;
     nc.dlon = (nc.lon[1] - nc.lon[0]) / num_sub_steps;
 }
@@ -871,9 +887,11 @@ int write_headers(
 #if defined WCB
         << "MAP,";
 #endif
-#if defined WCB2 || defined MET3D
+#if defined WCB2
         << "WCB_flag,"
         << "dp2h,"
+#endif
+#if defined WCB2 || defined MET3D
         << "conv_400,"
         << "conv_600,"
         << "slan_400,"
@@ -917,9 +935,11 @@ int write_headers(
 #if defined WCB
             << "MAP,";
 #endif
-#if defined WCB2 || defined MET3D
+#if defined WCB2
             << "WCB_flag,"
             << "dp2h,"
+#endif
+#if defined WCB2 || defined MET3D
             << "conv_400,"
             << "conv_600,"
             << "slan_400,"
@@ -998,18 +1018,15 @@ int read_init_netcdf(
 #endif
         nc_inq_dimlen(ncid, dimid, &n_timesteps);
         uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1;
-
         cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
 
         init_nc_parameters(nc_params, lenp, n_timesteps);
         netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
         load_nc_parameters_var(nc_params, datafile);
-
 #ifdef MET3D
         // Get the time coordinates
         nc_params.time_abs_var.getVar(nc_params.time_abs.data());
 #endif
-
         std::vector<size_t> startp, countp;
         countp.push_back(1);
         countp.push_back(1);
@@ -1040,17 +1057,15 @@ int read_init_netcdf(
         startp.push_back(traj); // trajectory id
         startp.push_back(1); // time (where time == 0 only has zeros)
 #endif
-
         load_nc_parameters(nc_params, startp, countp,
                            ref_quant, cc.num_sub_steps);
-
         y_init[p_idx] = nc_params.p;
         y_init[T_idx] = nc_params.t;
 
         y_init[S_idx] = nc_params.S;
 #ifdef SAT_CALC
         y_init[S_idx] = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
-            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+            / saturation_pressure_water(nc_params.t*ref_quant.Tref);
 #endif
         y_init[qc_idx] = nc_params.qc;
         y_init[qr_idx] = nc_params.qr;
@@ -1145,7 +1160,7 @@ int read_init_netcdf(
                   << "y_init[qv_idx] " << y_init[qv_idx]*ref_quant.qref << "\n";
 #endif
     // DEBUG Set qv to qv_sat
-    // double psat_prime = saturation_pressure_water_icon(y_init[T_idx]*ref_quant.Tref);
+    // double psat_prime = saturation_pressure_water(y_init[T_idx]*ref_quant.Tref);
     // y_init[qv_idx] = psat_prime/(Rv*y_init[T_idx]*ref_quant.Tref) / ref_quant.qref;
     // y_init[qv_idx] = Epsilon*( psat_prime/(y_init[p_idx]*ref_quant.pref - psat_prime) ) / ref_quant.qref;
 #ifdef SAT_CALC
@@ -1160,7 +1175,7 @@ int read_init_netcdf(
     } catch(netCDF::exceptions::NcException& e)
     {
         std::cout << e.what() << std::endl;
-        std::cout << "ABORTING." << std::endl;
+        std::cout << "In read_init_netcdf()\nABORTING." << std::endl;
         return 1;
     }
     return 0;
@@ -1253,8 +1268,19 @@ void read_netcdf_write_stream(
     id_var.getVar(ids.data());
     ensemble = ids[input.ensemble];
 #endif
-    // Set values from a given trajectory
+    // Reset outflow
+    y_single_old[qi_out_idx] = 0;
+    y_single_old[qs_out_idx] = 0;
+    y_single_old[qr_out_idx] = 0;
+    y_single_old[qg_out_idx] = 0;
+    y_single_old[qh_out_idx] = 0;
+    y_single_old[Ni_out_idx] = 0;
+    y_single_old[Ns_out_idx] = 0;
+    y_single_old[Nr_out_idx] = 0;
+    y_single_old[Ng_out_idx] = 0;
+    y_single_old[Nh_out_idx] = 0;
 
+    // Set values from a given trajectory
     if(t==0 || input.start_over_env)
     {
         y_single_old[p_idx]  = nc_params.p;     // p
@@ -1300,6 +1326,9 @@ void read_netcdf_write_stream(
         inflow[qg_in_idx] = 0;
   #endif
 #endif
+#if defined MET3D && defined TURBULENCE
+        inflow[qv_in_idx] = nc_params.qturb;
+#endif
     }
 
     if(t==0 || input.start_over)
@@ -1307,7 +1336,7 @@ void read_netcdf_write_stream(
         y_single_old[S_idx]  = nc_params.S;     // S
 #ifdef SAT_CALC
         y_single_old[S_idx]  = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
-            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+            / saturation_pressure_water(nc_params.t*ref_quant.Tref);
 #endif
         y_single_old[qc_idx] = nc_params.qc;    // qc
         y_single_old[qr_idx] = nc_params.qr;    // qr
@@ -1400,9 +1429,13 @@ void read_netcdf_write_stream(
         inflow[Ng_in_idx] = 0;
   #endif
 #endif
+
+#if defined MET3D && defined TURBULENCE
+        inflow[qv_in_idx] = nc_params.qturb;
+#endif
         // DEBUG Set qv to qv_sat
         // y_single_old[qv_idx] = water_vapor_sat_ratio_2(y_single_old[T_idx].getValue()*ref_quant.Tref);
-        // double psat_prime = saturation_pressure_water_icon(y_single_old[T_idx].getValue()*ref_quant.Tref);
+        // double psat_prime = saturation_pressure_water(y_single_old[T_idx].getValue()*ref_quant.Tref);
         // y_single_old[qv_idx] = psat_prime/(Rv*y_single_old[T_idx]*ref_quant.Tref) / ref_quant.qref;
         // y_single_old[qv_idx] = Epsilon*( psat_prime/(y_single_old[p_idx]*ref_quant.pref - psat_prime) ) / ref_quant.qref;
 #ifdef SAT_CALC
@@ -1420,16 +1453,20 @@ void read_netcdf_write_stream(
                 << nc_params.ascent_flag << ",";
 #elif defined MET3D
         out_tmp << t*cc.num_sub_steps << "," << traj_id << ","
-                << nc_params.lon[0] << "," << nc_params.lat[0] << ","
-                << nc_params.ascent_flag << ",";
+                << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
 #else
         out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
                 << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
 #endif
 #if defined WCB2 || defined MET3D
-        out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
-                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                << nc_params.slan_600 << ",";
+        out_tmp
+#if defined WCB2
+            << nc_params.dp2h << ","
+#endif
+            << nc_params.conv_400 << ","
+            << nc_params.conv_600 << ","
+            << nc_params.slan_400 << ","
+            << nc_params.slan_600 << ",";
 #endif
 #ifdef MET3D
         // time, time after ascent, type
@@ -1456,8 +1493,7 @@ void read_netcdf_write_stream(
                             << traj_id << ","
                             << output_par_idx[ii] << ","
                             << nc_params.lon[0] << ","
-                            << nc_params.lat[0] << ","
-                            << nc_params.ascent_flag << ",";
+                            << nc_params.lat[0] << ",";
 #else
             out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
                             << traj_id << ","
@@ -1466,9 +1502,13 @@ void read_netcdf_write_stream(
                             << nc_params.lat[0] << ",";
 #endif
 #if defined WCB2 || defined MET3D
-            out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
-                                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                                << nc_params.slan_600 << ",";
+            out_diff_tmp[ii]
+#if defined WCB2
+                << nc_params.dp2h << ","
+#endif
+                << nc_params.conv_400 << ","
+                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
+                << nc_params.slan_600 << ",";
 #endif
 #if defined MET3D
         out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] << ","
@@ -1517,15 +1557,18 @@ void write_output(
 #elif defined MET3D
         out_tmp << sub + t*cc.num_sub_steps << "," << traj_id << ","
                 << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                << (nc_params.lat[0] + sub*nc_params.dlat) << ","
-                << nc_params.ascent_flag << ",";
+                << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #else
         out_tmp << time_new << "," << traj_id << ","
                 << (nc_params.lon[0] + sub*nc_params.dlon) << ","
                 << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #endif
 #if defined WCB2 || defined MET3D
-        out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
+        out_tmp
+#if defined WCB2
+                << nc_params.dp2h << ","
+#endif
+                << nc_params.conv_400 << ","
                 << nc_params.conv_600 << "," << nc_params.slan_400 << ","
                 << nc_params.slan_600 << ",";
 #endif
@@ -1553,8 +1596,7 @@ void write_output(
             out_diff_tmp[ii] << sub + t*cc.num_sub_steps << "," << traj_id << ","
                             << output_par_idx[ii] << ","
                             << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                            << (nc_params.lat[0] + sub*nc_params.dlat) << ","
-                            << nc_params.ascent_flag << ",";
+                            << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #else
             out_diff_tmp[ii] << time_new << "," << traj_id << ","
                             << output_par_idx[ii] << ","
@@ -1562,9 +1604,14 @@ void write_output(
                             << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
 #endif
 #if defined WCB2 || defined MET3D
-            out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
-                            << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                            << nc_params.slan_600 << ",";
+            out_diff_tmp[ii]
+#if defined WCB2
+                << nc_params.dp2h << ","
+#endif
+                << nc_params.conv_400 << ","
+                << nc_params.conv_600 << ","
+                << nc_params.slan_400 << ","
+                << nc_params.slan_600 << ",";
 #endif
 #if defined MET3D
             out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","

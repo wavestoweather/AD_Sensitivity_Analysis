@@ -14,8 +14,9 @@ met_dims = ["ensemble", "trajectory", "time", "start_lon",
             "start_lat", "start_isobaric"]
 
 path = "/data/project/wcb/netcdf/vladiana"
+# path = "/lustre/project/m2_jgu-tapt/cosmo_output/vladiana/traj"
 store_path = "/data/project/wcb/netcdf/vladiana_met/"
-
+# /lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana
 
 # 400 hPa and 600 hPa ascent
 window_conv_400 = 1 * 3 * 60
@@ -154,66 +155,77 @@ def differ(x, axis, hPa, debug=False):
     return return_bools
 
 def differ_slan(x, axis, hPa, min_window):
-    window_size = len(x[0][0])
-    ascent = np.argmax(x, axis=axis) < np.argmin(x, axis=2)
+    window_size = len(x[0][0][0])
+    ascent = np.argmax(x, axis=axis) < np.argmin(x, axis=3)
     amount = np.max(x, axis=axis) - np.min(x, axis=axis) >= hPa*100
     both = np.logical_and(ascent, amount)
 
     # Calculate the differences within every window
-    differences = np.diff(x, axis=2)
+    differences = np.diff(x, axis=3)
     # Get minimum length of window with value >= hPa
     min_lengths = np.full(np.shape(both), np.inf)
-    for timestep in range(len(differences)):
-        if not both[timestep].any():
-            # No trajectory in this timestep satisfies
-            # the constraint
+
+
+    for ens in range(len(differences)):
+        if not both[ens].any():
             continue
-        for traj in range(len(differences[timestep])):
-            if not both[timestep][traj].any():
+        for traj in range(len(differences[ens])):
+            if not both[ens][traj].any():
+                # No timestep in this trajectory satisfies
+                # the constraint
                 continue
-            window = differences[timestep][traj]
-            start = 0
-            end = 0
-            curr_sum = 0
-            min_len = np.inf
-            while(end < len(window)):
-                while( (curr_sum > -hPa*100 and end < len(window)) or (np.isnan(curr_sum)) ):
-                    if (curr_sum >= 0 and window[end] < 0 or np.isnan(curr_sum) ):
-                        start = end
-                        curr_sum = 0
-                    curr_sum += window[end]
-                    end += 1
-                while(curr_sum <= -hPa*100 and start < len(window)):
-                    if(end-start < min_len and end-start >= min_window):
-                        min_len = end-start
-                    curr_sum -= window[start]
-                    start += 1
-            min_lengths[timestep][traj] = min_len
+            for timestep in range(len(differences[ens][traj])):
+                if not both[ens][traj][timestep].any():
+                    continue
+                window = differences[ens][traj][timestep]
+                start = 0
+                end = 0
+                curr_sum = 0
+                min_len = np.inf
+                while(end < len(window)):
+                    while( (curr_sum > -hPa*100 and end < len(window)) or (np.isnan(curr_sum)) ):
+                        if (curr_sum >= 0 and window[end] < 0 or np.isnan(curr_sum) ):
+                            start = end
+                            curr_sum = 0
+                        curr_sum += window[end]
+                        end += 1
+                    while(curr_sum <= -hPa*100 and start < len(window)):
+                        if(end-start < min_len and end-start >= min_window):
+                            min_len = end-start
+                        curr_sum -= window[start]
+                        start += 1
+                min_lengths[ens][traj][timestep] = min_len
     # Take the minimum overall and that's whenever True shall stand
     # Those are minimum window sizes for every trajectory
-    min_len_traj = np.nanmin(min_lengths, axis=0)
-    min_len_traj[min_len_traj == np.inf] = -1
-    return_bools = np.full(np.shape(both), 0)#, dtype=bool)
-
-    for timestep in range(len(return_bools)):
-        return_bools[timestep] = (min_lengths[timestep] == min_len_traj)
-    return_bools_transposed = np.transpose(return_bools)
+    return_bools = []
+    min_len_traj_all = []
+    for ens in range(len(x)):
+        min_len_traj = np.nanmin(min_lengths[ens], axis=1)
+        min_len_traj_all.append(min_len_traj)
+        min_len_traj[min_len_traj == np.inf] = -1
+        return_bools_tmp = np.full(np.shape(both[ens]), 0)#, dtype=bool)
+        return_bools_tmp = np.transpose(return_bools_tmp)
+        min_lengths_trans = min_lengths[ens].transpose()
+        for timestep in range(len(return_bools_tmp)):
+            return_bools_tmp[timestep] = (min_lengths_trans[timestep] == min_len_traj)
+        return_bools.append(np.transpose(return_bools_tmp))
 
     # Shift everything such that the beginning starts at the actual start and ends accordingly
-    for traj in range(len(return_bools_transposed)):
-        if min_len_traj[traj] <= -1:
-            continue
-        vals, start, length = find_runs(return_bools_transposed[traj])
-        for i in range(len(vals)):
-            if vals[i] > 0:
-                set_start = int(start[i] - min_len_traj[traj])
-                set_end = set_start + min_len_traj[traj] + 1
-                if length[i] > min_len_traj[traj]:
-                    set_end = set_start + length[i] + 1
-                return_bools_transposed[traj][start[i]:length[i]+start[i]] = False
-                return_bools_transposed[traj][set_start:int(set_end)] = True
+    for ens in range(len(return_bools)):
+        for traj in range(len(return_bools[ens])):
+            if min_len_traj_all[ens][traj] == -1:
+                continue
+            vals, start, length = find_runs(return_bools[ens][traj])
+            for i in range(len(vals)):
+                if vals[i] > 0:
+                    set_start = int(start[i] - min_len_traj[traj])
+                    set_end = set_start + min_len_traj[traj] + 1
 
-    return_bools = np.transpose(return_bools_transposed)
+                    if length[i] > min_len_traj[traj]:
+                        set_end = set_start + length[i] + 1
+
+                    return_bools[ens][traj][start[i]:length[i]+start[i]] = False
+                    return_bools[ens][traj][set_start:int(set_end)] = True
     return return_bools
 
 def add_norm_time(df, norm_col, group, columns=None, flag=None):

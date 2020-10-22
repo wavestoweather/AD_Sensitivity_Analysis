@@ -55,12 +55,11 @@ int main(int argc, char** argv)
 
     ref_quant.Nref = 1.0; 	// DUMMY
     const uint32_t traj = 0;
-    // char* file = "/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/wcb201609_vladiana/O_WCB_all_20160922_00.nc";
-#ifdef MET3D
-    const char* file = "/data/project/wcb/netcdf/vladiana_met/conv_400_0_traj_t000000_p001.nc_wcb";
-#else
-    const char* file = "/data/project/m2_jgu-tapt/online_trajectories/traj_new_appended/traj_t000120_p001.nc_wcb";
-#endif
+    const char* file = argv[1];
+    // Some datafiles I used for testing
+    // const char* file = "/data/project/wcb/netcdf/vladiana_met/conv_400_0_traj_t000000_p001.nc_wcb";
+    // const char* file = "/data/project/wcb/netcdf/vladiana_met_stats/no_exclusions_conv_400_median.nc_wcb";
+
     int traj_id;
 
     try
@@ -199,27 +198,31 @@ int main(int argc, char** argv)
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << "Trajectory 0 at t=1\n";
         print_params(nc_params, traj_id);
-        traj_id = ids[1];
+        if(lenp > 1)
+        {
+            traj_id = ids[1];
 #ifdef MET3D
-        startp[1] = 1;
-        startp[2] = 1;
+            startp[1] = 1;
+            startp[2] = 1;
 #else
-        startp[0] = 1;
-        startp[1] = 1;
+            startp[0] = 1;
+            startp[1] = 1;
 #endif
-        load_nc_parameters_var(nc_params, datafile);
-        load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
-        std::cout << "Trajectory 1 at t=1\n";
-        print_params(nc_params, traj_id);
+            load_nc_parameters_var(nc_params, datafile);
+            load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
+
+            std::cout << "Trajectory 1 at t=1\n";
+            print_params(nc_params, traj_id);
 #ifdef MET3D
-        startp[2] = 2;
+            startp[2] = 2;
 #else
-        startp[1] = 2;
+            startp[1] = 2;
 #endif
-        load_nc_parameters_var(nc_params, datafile);
-        load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
-        std::cout << "Trajectory 1 at t=2\n";
-        print_params(nc_params, traj_id);
+            load_nc_parameters_var(nc_params, datafile);
+            load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
+            std::cout << "Trajectory 1 at t=2\n";
+            print_params(nc_params, traj_id);
+        }
     } catch(netCDF::exceptions::NcException& e)
     {
         std::cout << e.what() << std::endl;

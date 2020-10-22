@@ -383,6 +383,14 @@ void RK4_step_2_sb_ice(
     sediment_q = 0;
     sediment_n_total += cc.dt_sixth*sediment_n;
     sediment_n = 0;
+    // Explicit calculation of saturation
+    codi::RealReverse T_prime = ynew[T_idx]*ref.Tref;
+    codi::RealReverse p_prime = ynew[p_idx]*ref.pref;
+    codi::RealReverse qv_prime = ynew[qv_idx]*ref.qref;
+    ynew[S_idx] = convert_qv_to_S(
+                        p_prime,
+                        T_prime,
+                        qv_prime);
 }
 
 /** @} */ // end of group rk

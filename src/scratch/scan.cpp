@@ -89,6 +89,10 @@ static struct option long_options[] =
     {"height_min", required_argument, NULL, 63},
     {"height_max", required_argument, NULL, 64},
 
+    {"S", required_argument, NULL, 65},
+    {"S_min", required_argument, NULL, 66},
+    {"S_max", required_argument, NULL, 67},
+
     {NULL, 0, NULL, 0}
 };
 
@@ -99,7 +103,7 @@ int main(int argc, char** argv)
 
     uint32_t n1 = 500;
     uint32_t n2 = 500;
-    uint32_t n3 = 1; // Default: No third iteration
+    uint32_t n3 = 0; // Default: No third iteration
     const double NOT_USED = -9999999;
     std::string func_name = "";
 
@@ -164,6 +168,9 @@ int main(int argc, char** argv)
     codi::RealReverse z_prime = NOT_USED;
     codi::RealReverse z_min = NOT_USED;
     codi::RealReverse z_max = NOT_USED;
+    codi::RealReverse S = NOT_USED;
+    codi::RealReverse S_min = NOT_USED;
+    codi::RealReverse S_max = NOT_USED;
 
     int ch;
     // loop over all of the options
@@ -366,6 +373,15 @@ int main(int argc, char** argv)
             case 64:
                 z_max = std::stod(optarg);
                 break;
+            case 65:
+                S = std::stod(optarg);
+                break;
+            case 66:
+                S_min = std::stod(optarg);
+                break;
+            case 67:
+                S_max = std::stod(optarg);
+                break;
             default:
                 std::cout << "No such option " << ch << " with " << optarg << "\n";
                 break;
@@ -481,7 +497,7 @@ int main(int argc, char** argv)
                     codi::RealReverse Nc = qc_prime_in
                         / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
 
                     std::cout << qc_prime_in.getValue() << ","
                               << Nc.getValue() << ","
@@ -606,13 +622,13 @@ int main(int argc, char** argv)
                     codi::RealReverse Nr = qr_prime_in
                         / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
                     codi::RealReverse p = p_prime_in / ref_quant.pref;
                     codi::RealReverse T = T_prime_in / ref_quant.Tref;
                     codi::RealReverse qv = qv_prime_in / ref_quant.qref;
                     codi::RealReverse qc = qc_prime_in / ref_quant.qref;
                     codi::RealReverse qr = qr_prime_in / ref_quant.qref;
-                    codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse p_sat = saturation_pressure_water(T_prime_in);
 
                     std::cout << qc_prime_in.getValue() << ","
                               << Nc.getValue() << ","
@@ -716,7 +732,7 @@ int main(int argc, char** argv)
                         / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
 
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
 
                     codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
                     codi::RealReverse ssi = qv_prime_in * Rv * T_prime_in / p_sat_ice;
@@ -806,7 +822,7 @@ int main(int argc, char** argv)
                     codi::RealReverse Nc = qc_prime_in
                         / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
 
                     codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
                     codi::RealReverse ssi = qv_prime_in * Rv * T_prime_in / p_sat_ice;
@@ -895,7 +911,7 @@ int main(int argc, char** argv)
                     codi::RealReverse Nc = qc_prime_in
                         / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
 
                     codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
                     codi::RealReverse ssi = qv_prime_in * Rv * T_prime_in / p_sat_ice;
@@ -1032,7 +1048,7 @@ int main(int argc, char** argv)
 
                     codi::RealReverse T_c = T_prime_in - T_freeze;
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                            / saturation_pressure_water_icon(T_prime_in);
+                            / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
                         T_prime_in, S)/rho_0);
                     cc.ice.rho_v = exp(-rho_vel * rho_inter);
@@ -1119,7 +1135,7 @@ int main(int argc, char** argv)
                         / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
 
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                            / saturation_pressure_water_icon(T_prime_in);
+                            / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
                         T_prime_in, S)/rho_0);
                     cc.snow.rho_v = exp(-rho_vel * rho_inter);
@@ -1202,7 +1218,7 @@ int main(int argc, char** argv)
                         / ( (cc.graupel.max_x - cc.graupel.min_x)/2 + cc.graupel.min_x );
 
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                            / saturation_pressure_water_icon(T_prime_in);
+                            / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
                         T_prime_in, S)/rho_0);
                     cc.graupel.rho_v = exp(-rho_vel * rho_inter);
@@ -1290,7 +1306,7 @@ int main(int argc, char** argv)
                         / ( (cc.hail.max_x - cc.hail.min_x)/2 + cc.hail.min_x );
 
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                            / saturation_pressure_water_icon(T_prime_in);
+                            / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
                         T_prime_in, S)/rho_0);
                     cc.graupel.rho_v = exp(-rho_vel * rho_inter);
@@ -1428,7 +1444,7 @@ int main(int argc, char** argv)
                     codi::RealReverse Nc = qc_prime_in
                         / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                                / saturation_pressure_water_icon(T_prime_in);
+                                / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
                     cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
 
@@ -1511,7 +1527,7 @@ int main(int argc, char** argv)
                     codi::RealReverse Nr = qr_prime_in
                         / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                                / saturation_pressure_water_icon(T_prime_in);
+                                / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
                         T_prime_in, S)/rho_0);
                     cc.rain.rho_v = exp(-rho_vel * rho_inter);
@@ -1592,11 +1608,11 @@ int main(int argc, char** argv)
                     codi::RealReverse Nr = qr_prime_in
                         / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                                / saturation_pressure_water_icon(T_prime_in);
+                                / saturation_pressure_water(T_prime_in);
                     codi::RealReverse s_sw = S - 1.0;
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
                         T_prime_in, S)/rho_0);
-                    codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse p_sat = saturation_pressure_water(T_prime_in);
                     cc.rain.rho_v = exp(-rho_vel * rho_inter);
 
                     std::cout << qr_prime_in.getValue() << ","
@@ -1751,7 +1767,7 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                                / saturation_pressure_water_icon(T_prime_in);
+                                / saturation_pressure_water(T_prime_in);
                     codi::RealReverse Nr = qr_prime_in
                         / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
                     codi::RealReverse Ns = qs_prime_in
@@ -1908,7 +1924,7 @@ int main(int argc, char** argv)
                     codi::RealReverse N2 = q2_prime_in / avg_size;
                     // Update vertical velocity parameters
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
                     codi::RealReverse s_sw = S - 1.0;
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
                     cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
@@ -1918,7 +1934,7 @@ int main(int argc, char** argv)
                     cc.ice.rho_v = exp(-rho_vel * rho_inter);
                     cc.snow.rho_v = exp(-rho_vel * rho_inter);
                     codi::RealReverse e_d = qv_prime_in * Rv * T_prime_in;
-                    codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse p_sat = saturation_pressure_water(T_prime_in);
 
                     std::cout << T_prime_in.getValue() << ","
                               << S.getValue() << ","
@@ -2054,7 +2070,7 @@ int main(int argc, char** argv)
                     codi::RealReverse D_vtp = diffusivity(T_prime_in, p_prime_in);
 
                     codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
-                    codi::RealReverse e_d = qv_prime_in * Rv * T_prime_in;
+                    codi::RealReverse e_d = compute_pv(T_prime_in, convert_qv_to_S(p_prime_in, T_prime_in, qv_prime_in));
                     codi::RealReverse s_si = e_d / p_sat_ice - 1.0;
 
                     codi::RealReverse dep_rate_snow, dep_rate_ice;
@@ -2077,7 +2093,7 @@ int main(int argc, char** argv)
                     vapor_dep_relaxation(qv_prime_in,
                         qi_prime_in, Ni, qs_prime_in, Ns,
                         qg_prime_in, Ng, qh_prime_in, Nh,
-                        s_si, p_sat_ice, T_prime_in, EPSILON,
+                        s_si, p_sat_ice, e_d, p_prime_in, T_prime_in, EPSILON,
                         dep_rate_ice, dep_rate_snow,
                         D_vtp, y, cc);
 
@@ -2270,7 +2286,7 @@ int main(int argc, char** argv)
                     codi::RealReverse N2 = q2_prime_in / avg_size2;
                     // Update vertical velocity parameters
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
                     cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
                     cc.rain.rho_v = exp(-rho_vel * rho_inter);
@@ -2395,7 +2411,7 @@ int main(int argc, char** argv)
                         / ( (cc.graupel.max_x - cc.graupel.min_x)/2 + cc.graupel.min_x );
 
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
                     cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
                     cc.rain.rho_v = exp(-rho_vel * rho_inter);
@@ -2654,7 +2670,7 @@ int main(int argc, char** argv)
                         / ( (cc.hail.max_x - cc.hail.min_x)/2 + cc.hail.min_x );
 
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
                     cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
                     cc.rain.rho_v = exp(-rho_vel * rho_inter);
@@ -2800,7 +2816,7 @@ int main(int argc, char** argv)
                     codi::RealReverse N2 = q2_prime_in / avg_size;
                     // Update vertical velocity parameters
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
                     cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
                     cc.rain.rho_v = exp(-rho_vel * rho_inter);
@@ -2940,7 +2956,7 @@ int main(int argc, char** argv)
                     codi::RealReverse N2 = q2_prime_in / avg_size;
                     // Update vertical velocity parameters
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
                     cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
                     cc.rain.rho_v = exp(-rho_vel * rho_inter);
@@ -3411,7 +3427,7 @@ int main(int argc, char** argv)
                     codi::RealReverse N2 = q2_prime_in / avg_size;
                     // Update vertical velocity parameters
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
                     cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
                     cc.rain.rho_v = exp(-rho_vel * rho_inter);
@@ -3558,7 +3574,7 @@ int main(int argc, char** argv)
                     codi::RealReverse N2 = q2_prime_in / avg_size;
                     // Update vertical velocity parameters
                     codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / saturation_pressure_water(T_prime_in);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
                     cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
                     cc.rain.rho_v = exp(-rho_vel * rho_inter);
@@ -3661,6 +3677,81 @@ int main(int argc, char** argv)
                           << y[lat_heat_idx].getValue() << "\n";
             }
         }
+    } else if(func_name.compare("pressure_parametrization") == 0)
+    {
+        codi::RealReverse S_in = S;
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+        // std::cout << "S,T,p,qv,p_sat,p_sat2,p_sat_van,p_sat_ice,p_water,p_water2,qv2,p_water_old_qv,p_sat_old_qv\n";
+        std::cout << "S,T,p,p_sat,qv_convert,qv_old,pv_cosmo,pv,pv_old,p_sat_ice,p_sat_ice_old\n";
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(S_min != NOT_USED && S_max != NOT_USED)
+            {
+                S_in = i * (S_max-S_min) / n1 + S_min;
+                used_parameter = 1;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && S_min != NOT_USED && S_max != NOT_USED)
+                    S_in = j * (S_max-S_min) / n2 + S_min;
+
+
+
+                auto qv_prime = convert_S_to_qv(
+                    p_prime_in,//.getValue(),
+                    T_prime_in,//.getValue(),
+                    S_in);//.getValue());
+                auto qv_old = Epsilon*( S_in*saturation_pressure_water(T_prime_in)/ (p_prime_in-S_in*saturation_pressure_water(T_prime_in)) );
+                auto p_sat = saturation_pressure_water(T_prime_in);
+                auto p_sat_vanil = saturation_pressure_water(T_prime_in);
+                auto p_sat_ice = saturation_pressure_ice(T_prime_in);
+                auto p_sat_ice_vanil = saturation_pressure_ice(T_prime_in);
+
+                // auto p_sat_ice = saturation_pressure_ice(T_prime_in);
+                auto pv_cosmo = qv_prime * Rv * T_prime_in;
+                // auto p_v2 = compute_pv(T_prime_in, S_in);
+                auto pv = compute_pv(T_prime_in, S_in);//p_prime_in * qv_prime /((Epsilon+qv_prime)*S_in);
+                auto pv_old = S_in*saturation_pressure_water(T_prime_in);
+
+                // auto qv_prime2 = convert_S_to_qv(
+                    // p_prime_in,//.getValue(),
+                    // T_prime_in,//.getValue(),
+                    // S_in);//.getValue());
+                // auto p_v_old = qv_prime2 * Rv * T_prime_in;
+                // auto p_sat2_old = p_prime_in * qv_prime2 /((Epsilon+qv_prime2)*S_in);
+
+                std::cout << S_in.getValue() << ","
+                            << T_prime_in.getValue() << ","
+                            << p_prime_in.getValue() << ","
+
+                            << p_sat.getValue() << ","
+                        //   << p_sat2.getValue() << ","
+                            // << p_sat_vanil.getValue() <<  ","
+                            << qv_prime.getValue() << ","
+                            << qv_old.getValue() << ","
+                            << pv_cosmo.getValue() << ","
+                            << pv.getValue() << ","
+                            << pv_old.getValue() << ","
+                            << p_sat_ice.getValue() << ","
+                            << p_sat_ice_vanil.getValue() //<<  ","
+                        //   << p_sat_ice.getValue() << ","
+                        //   << p_v.getValue() << ","
+                        //   << p_v2.getValue() << ","
+                        //   << qv_prime2.getValue() << ","
+                        //   << p_v_old.getValue() << ","
+                        //   << p_sat2_old.getValue()
+                            << "\n";
+
+
+            }
+        }
+
     } else
     {
         std::cout << "No such method: " << func_name << "\n";

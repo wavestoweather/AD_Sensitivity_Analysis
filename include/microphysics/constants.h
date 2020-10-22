@@ -67,8 +67,12 @@
 #define Ns_in_idx 5         /*!< Snow input index for another vector */
 #define Nr_in_idx 6         /*!< Rain input index for another vector */
 #define Ng_in_idx 7         /*!< Graupel input index for another vector */
+#if defined MET3D && defined TURBULENCE
+#define qv_in_idx 8         /*!< Vapor input index for another vector */
+#define num_inflows 9       /*!< Number of parameters for inflowing stuff */
+#else
 #define num_inflows 8       /*!< Number of parameters for inflowing stuff */
-
+#endif
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,8 +80,8 @@
 #if defined(TRACE_TIME)
 // Relative to ascent time
 double trace_time = 0;
-const double trace_start = 4400;
-const double trace_end = 4800;
+const double trace_start = 2500;
+const double trace_end = 3500;
 bool trace = false;
 #else
 bool trace = true;
@@ -751,7 +755,7 @@ const double p_sat_const_a = 17.2693882;
 /**
  * Parameter for saturation adjustment. Constant saturated ice pressure
  */
-// const double p_sat_ice_const_a = 21.8745584;
+const double p_sat_ice_const_a = 21.8745584;
 
 /**
  * Parameter for saturation adjustment. Constant saturated water vapor pressure
@@ -761,7 +765,7 @@ const double p_sat_const_b = 35.86;
 /**
  * Parameter for saturation adjustment. Constant saturated ice pressure
  */
-// const double p_sat_ice_const_b = 7.66;
+const double p_sat_ice_const_b = 7.66;
 
 /**
  * Parameter for saturation adjustment. Saturated water vapor pressure at T = 233K
@@ -771,7 +775,7 @@ const double p_sat_low_temp = 610.78;
 /**
  * Parameter for saturation adjustment.
  */
-const double T_sat_low_temp = 273.16;
+const double T_sat_low_temp = 273.15;
 
 const std::vector<std::vector<double> > afrac_dust = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},

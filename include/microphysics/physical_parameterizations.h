@@ -417,19 +417,7 @@ inline A latent_heat_evap(A T)
  * From ICON.
  * Validity range: ?
  *
- * @param T Temperature in Kelvin
- * @return Saturation vapor pressure
- */
-template <class A>
-inline A saturation_pressure_water_icon(A T)
-{
-  return p_sat_low_temp*exp(p_sat_const_a*(T-T_sat_low_temp)/(T-p_sat_const_b));
-}
-
-
-/**
- * Saturation vapor pressure over a flat surface of liquid water in Pa.
- * From Murphy and Koop (2005).
+ * Vanilla: From Murphy and Koop (2005).
  * Validity range: \f$ 123 \text{K} <= \text{T} <= 332 \text{K} \f$
  *
  * @param T Temperature in Kelvin
@@ -438,12 +426,31 @@ inline A saturation_pressure_water_icon(A T)
 template <class A>
 inline A saturation_pressure_water(A T)
 {
-
+#ifdef VANILLA_PRESSURE
   A Tinv = 1.0/T;
   A logT = log(T);
-
   return ( exp( 54.842763 - 6763.22*Tinv - 4.21*logT + 0.000367*T + tanh(0.0415*(T-218.8))*(53.878 - 1331.22*Tinv - 9.44523*logT + 0.014025*T) ) );
+#else
+  return p_sat_low_temp*exp(p_sat_const_a*(T-T_sat_low_temp)/(T-p_sat_const_b));
+#endif
+}
 
+
+/**
+ * Change of saturation vapor pressure over a flat surface of liquid water
+ * in Pa given a change of temperature.
+ *
+ * Validity range: ?
+ *
+ * @param T Temperature in Kelvin
+ * @param T_deriv Temperature change in Kelvin
+ * @return Saturation vapor pressure
+ */
+template <class A>
+inline A saturation_pressure_water_icon_deriv(A T, A T_deriv)
+{
+  return -( p_sat_low_temp*p_sat_const_a * (p_sat_const_b-T_sat_low_temp)
+    * T_deriv * exp(saturation_pressure_water(T)) )/( (T-p_sat_const_b)*(T-p_sat_const_b) );
 }
 
 
@@ -460,7 +467,7 @@ inline A water_vapor_sat_ratio_dotzek(
     A p,
     A T)
 {
-    A p_sat = saturation_pressure_water_icon(T);
+    A p_sat = saturation_pressure_water(T);
     return (r_const/r1_const) / (p/p_sat + (r_const/r1_const)-1);
 }
 
@@ -477,30 +484,16 @@ inline A water_vapor_sat_ratio(
     A p,
     A T)
 {
-    A p_sat = saturation_pressure_water_icon(T);
+    A p_sat = saturation_pressure_water(T);
     return Epsilon*( p_sat/(p - p_sat) );
 }
 
 
-/**
- * Calculate the water vapor mixing ratio at saturation = 1.
- *
- * @param T Temperature in Kelvin
- * @param p Pressure in Pa
- * @return Mixing ratio at saturation = 1
- */
-// template <class A>
-// inline A water_vapor_sat_ratio_2(
-//     A T)
-// {
-//     A p_sat = saturation_pressure_water_icon(T);
-//     return p_sat/(Rv*T);
-// }
-
 
 /**
  * Saturation vapor pressure over a flat surface of ice in Pa.
- * From Murphy and Koop (2005).
+ *
+ * For vanilla: From Murphy and Koop (2005).
  * Validity range: \f$ 110 \text{K} <= \text{T} \f$
  *
  * @param T Temperature in Kelvin
@@ -509,9 +502,11 @@ inline A water_vapor_sat_ratio(
 template <class A>
 inline A saturation_pressure_ice(A T)
 {
-
-  return ( exp( 9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T ) );
-
+#ifdef VANILLA_PRESSURE
+    return ( exp( 9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T ) );
+#else
+    return ( p_sat_low_temp*exp(p_sat_ice_const_a*(T-T_sat_low_temp)/(T-p_sat_ice_const_b)) );
+#endif
 }
 
 
@@ -573,7 +568,7 @@ inline A compute_pv(A T,
 		    A S)
 {
 
-  return ( S*saturation_pressure_water_icon(T) );
+  return ( S*saturation_pressure_water(T) );
 
 }
 
@@ -631,8 +626,13 @@ inline A compute_rhoh(
     A T,
     A S)
 {
+    // auto p_sat = p_sat_low_temp*exp(p_sat_const_a*(T-T_sat_low_temp)/(T-p_sat_const_b));
+    // auto p_sat = exp( 9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T );
+    // return ( (p-S*p_sat)/(Ra*T) + S*p_sat/(Rv*T) );
     return ( compute_pa(p, T, S)/(Ra*T) + compute_pv(T, S)/(Rv*T) );
+
 }
+
 
 /**
  * Convert saturation ratio to water vapor mixing-ratio.
@@ -667,9 +667,9 @@ inline A convert_Si_to_qv(A p,
 			  A Si)
 {
 
-  A S = Si * ( saturation_pressure_ice(T)/saturation_pressure_water_icon(T) );
+  A S = Si * ( saturation_pressure_ice(T)/saturation_pressure_water(T) );
 
-  return ( Epsilon*( compute_pv(T,S)/compute_pa(p,T,S) ) );
+  return convert_S_to_qv(p, T, S);
 
 }
 
@@ -688,7 +688,7 @@ inline A convert_qv_to_S(A p,
 			 A qv)
 {
 
-  return ( (p*qv)/((Epsilon + qv)*saturation_pressure_water_icon(T)) );
+  return ( (p*qv)/((Epsilon + qv)*saturation_pressure_water(T)) );
 
 }
 
@@ -1157,7 +1157,7 @@ void setCoefficients(
     codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
     codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
     codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
-    codi::RealReverse psat_prime = saturation_pressure_water_icon(T_prime);
+    codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
     codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(Rv*T_prime)) - 1.0);
     codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
 
@@ -1185,7 +1185,7 @@ void setCoefficients(
   codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
   codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
   codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
-  codi::RealReverse psat_prime = saturation_pressure_water_icon(T_prime);
+  codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
   codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(Rv*T_prime)) - 1.0);
   codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
 
