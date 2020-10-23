@@ -78,7 +78,7 @@ for f_this in file_list:
             load_f.append(f)
         elif "reference" in f:
             ref = f
-            traj = f.split("_traj")[1]
+            traj = f.split("_traj")[-1]
             traj = traj.split("_MAP")[0]
             traj = int(traj)
         else:
@@ -130,12 +130,14 @@ for f_this in file_list:
         for key in df_dic_mapped.data:
             df_dic_mapped.data[key] = df_dic_mapped.data[key].head(min_rows)
 
-
-    print("Get ratio of data")
-    t = timer()
-    df_dic_mapped.calculate_ratios()
-    t2 = timer()
-    print("ratio done in {} s".format(t2-t))
+    # We could do this
+    # Anyhow we don't *need* to do this and calculate different ratios
+    # during plotting
+    # print("Get ratio of data")
+    # t = timer()
+    # df_dic_mapped.calculate_ratios()
+    # t2 = timer()
+    # print("ratio done in {} s".format(t2-t))
 
     print("Adding columns for output Parameter results")
     t = timer()

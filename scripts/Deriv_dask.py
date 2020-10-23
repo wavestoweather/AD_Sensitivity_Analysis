@@ -269,7 +269,7 @@ class Deriv_dask:
 
         df = df.loc[df["Output Parameter"].isin(out_params)]
 
-        all_params = list(set(["Output Parameter", "trajectory", "type", "step"] + in_params + [x_axis] + out_params))
+        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
         if y_axis is not None and not y_axis in all_params:
             all_params.append(y_axis)
         if compute:
@@ -440,6 +440,8 @@ class Deriv_dask:
 
         hv.extension(self.backend)
         deriv_col_name = "Derivative Ratio"
+        matplotlib.rcParams['axes.formatter.limits'] = (-2,2)
+
 
         if not use_cache:
             self.cache_data(in_params, out_params, x_axis, y_axis, mapped,
@@ -618,7 +620,7 @@ class Deriv_dask:
                 sorted_tuples.sort(key=lambda tup: tup[1])
                 t2 = timer()
                 print("Sorting done in {} s".format(t2-t), flush=True)
-                print(sorted_tuples)
+
             def plot_helper(df, in_params, prefix, **kwargs):
                 deriv_col_name = "Derivative Ratio"
                 # following https://holoviz.org/tutorial/Composing_Plots.html
@@ -639,7 +641,7 @@ class Deriv_dask:
                 print("Melting done in {} s".format(t2-t), flush=True)
 
                 if log[1]:
-                    df_tmp[deriv_col_name] = da.log(da.fabs(df_tmp["Derivative Ratio"]))
+                    df_tmp[deriv_col_name] = da.log(da.fabs(df_tmp[deriv_col_name]))
                     # Remove zero entries (-inf)
                     df_tmp = df_tmp[~da.isinf(df_tmp[deriv_col_name])]
                     df_tmp.rename(columns={deriv_col_name: "Log Derivative Ratio"}, inplace=True)
@@ -756,7 +758,7 @@ class Deriv_dask:
                                 datashade=datashade,
                                 alpha=alpha[0],
                                 legend=False
-                            ).opts(opts.Scatter(s=8)) * overlay
+                            ).opts(opts.Scatter(s=8)).options(ylabel=latexify.parse_word(y_axis)) * overlay
 
                             if hist[0]:
                                 xhist = df_group[df_group[y_axis] != 0].hvplot.hist(y=x_axis, bins=bins, height=125)
@@ -772,7 +774,7 @@ class Deriv_dask:
                                 label=None,
                                 datashade=datashade,
                                 alpha=alpha[0]
-                            ).opts(opts.Scatter(size=2))
+                            ).opts(opts.Scatter(size=2)).options(ylabel=latexify.parse_word(y_axis))
                     else:
                         param_plot = df_group[df_group[y_axis] != 0].hvplot.scatter(
                             x=x_axis,
@@ -782,7 +784,7 @@ class Deriv_dask:
                             cmap=cmap,
                             label=None,
                             datashade=datashade
-                        ).opts(aspect=3.2)
+                        ).opts(aspect=3.2).options(ylabel=latexify.parse_word(y_axis))
                         if self.backend == "bokeh":
                             points = hv.Points(
                                 ([np.NaN for i in range(len(list(cmap.keys())))],
@@ -810,7 +812,7 @@ class Deriv_dask:
                         cmap="viridis",
                         logz=True,
                         gridsize=100
-                    )
+                    ).options(ylabel=latexify.parse_word(y_axis))
                 else:
                     if y_axis == x_axis:
                         df_group = df[[x_axis, "trajectory"] + add_cols]
@@ -825,7 +827,7 @@ class Deriv_dask:
                         title="Values of of {}".format(latexify.parse_word(y_axis)),
                         label=None,
                         datashade=datashade
-                    )
+                    ).options(ylabel=latexify.parse_word(y_axis))
 
                 t2 = timer()
                 print("Setting up upper plot done in {} s".format(t2-t))
@@ -883,7 +885,8 @@ class Deriv_dask:
                                 alpha=alpha[1],
                                 legend=False,
                                 cmap=cmap_values
-                            ).opts(opts.Scatter(s=8)).opts(aspect=3.2)
+                            ).opts(opts.Scatter(
+                                s=8)).opts(aspect=3.2)
                             deriv_plot = (deriv_plot * overlay)
                         else:
                             deriv_plot = df_tmp.hvplot.scatter(
@@ -946,8 +949,8 @@ class Deriv_dask:
                         max_y = max_y + 1
                         del_y = 2
 
-                    min_y_deriv = df_tmp["Derivative Ratio"].min()
-                    max_y_deriv = df_tmp["Derivative Ratio"].max()
+                    min_y_deriv = df_tmp[deriv_col_name].min()
+                    max_y_deriv = df_tmp[deriv_col_name].max()
                     del_y_deriv = (max_y_deriv-min_y_deriv)
                     if min_y_deriv == max_y_deriv:
                         min_y_deriv = max_y_deriv - 1
@@ -960,18 +963,21 @@ class Deriv_dask:
                         df_tmp_group = df_group
 
                     for col in vertical_mark:
+                        scale = 1
                         for v in vertical_mark[col]:
                             # Works well as long as dataframe is smaller than ~ 30k elements
                             df_sort = df_tmp_group.apply(lambda x: x.iloc[np.argmin(np.abs(x[col]-v))] )
                             col_values = np.sort(df_sort[col].values)
+                            if scale == 8:
+                                scale = 1
                             for index, row in df_sort.iterrows():
                                 if np.abs(row[col]-v) > 1.0:
                                     break
                                 # The one for the plot above
                                 text = hv.Text(
                                     row[x_axis]+del_x,
-                                    max_y-del_y*0.1,
-                                    col + "=" + str(v) + latexify.get_unit(col),
+                                    max_y-del_y*0.1*scale,
+                                    f"{col}={v:.2f}{latexify.get_unit(col)}",
                                     fontsize=24)
                                 mark = hv.VLine(
                                         x=row[x_axis],
@@ -984,8 +990,8 @@ class Deriv_dask:
                                 # For the derivatives
                                 text = hv.Text(
                                     row[x_axis]+del_x,
-                                    max_y_deriv-del_y_deriv*0.1,
-                                    col + "=" + str(v) + latexify.get_unit(col),
+                                    max_y_deriv-del_y_deriv*0.1*scale,
+                                    f"{col}={v:.2f}{latexify.get_unit(col)}",
                                     fontsize=24)
                                 mark = hv.VLine(
                                         x=row[x_axis],
@@ -995,6 +1001,7 @@ class Deriv_dask:
                                         ylim=(min_y_deriv-del_y_deriv*0.1,
                                               max_y_deriv+del_y_deriv*0.1)) * text
                                 deriv_plot = deriv_plot * mark
+                                scale += 1
                     t2 = timer()
                     print("Creating marks done in {} s".format(t2-t))
                     t = timer()
@@ -1091,6 +1098,7 @@ class Deriv_dask:
                                 fontsize=self.font_dic,
                                 show_grid=True,
                                 show_legend=True,
+                                xlabel=latexify.parse_word(x_axis),
                                 **scatter_kwargs),
                             opts.Layout(**layout_kwargs)
                         ).cols(1)
@@ -1107,6 +1115,7 @@ class Deriv_dask:
                                 fontsize=self.font_dic,
                                 show_grid=True,
                                 show_legend=True,
+                                xlabel=latexify.parse_word(x_axis),
                                 **scatter_kwargs),
                             opts.HexTiles(**opts_arg),
                             opts.Layout(**layout_kwargs)

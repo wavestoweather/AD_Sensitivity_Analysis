@@ -161,7 +161,8 @@ class Deriv:
                     ds_complete.attrs = attributes[key]
                 else:
                     for col in attributes[key]:
-                        ds_complete[col].attrs = attributes[key][col]
+                        if col in ds_complete:
+                            ds_complete[col].attrs = attributes[key][col]
         return ds_complete
 
 

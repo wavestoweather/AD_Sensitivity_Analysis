@@ -186,9 +186,7 @@ int main(int argc, char** argv)
     print_particle_params(cc.hail, "hail");
 #endif
 
-
     ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps, input.progress_index, "simulation step", std::cout);
-
     // Loop for timestepping: BEGIN
     try
     {
@@ -196,6 +194,7 @@ int main(int argc, char** argv)
         std::vector<int> ids(lenp);
         int ncid;
         std::vector<size_t> startp, countp;
+
         open_netcdf(ncid, startp, countp, global_args.input_file, input.traj);
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
 

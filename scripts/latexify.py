@@ -133,6 +133,9 @@ def get_unit(param, brackets=False):
     unit_dic = {
         "T": "K",
         "p": "Pa",
+        "pressure": "Pa",
+        "time_after_ascent": "s",
+        "time": "s",
         "timestep": "s"}
     if param in unit_dic:
         if brackets:

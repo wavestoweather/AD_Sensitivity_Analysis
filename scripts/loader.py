@@ -914,7 +914,8 @@ def load_output(filename="sb_ice.txt", sep=None, nrows=None, change_ref=True,
                 data.attrs = attributes[key]
             else:
                 for col in attributes[key]:
-                    data[col].attrs = attributes[key][col]
+                    if col in data:
+                        data[col].attrs = attributes[key][col]
     return data
 
 

@@ -515,9 +515,7 @@ void load_nc_parameters(
     // is divided into different files in the input
     if(nc.type[0] == "")
     {
-        std::cout << "Does type work?\n" << std::flush;
         nc.type_var.getVar(nc.type);
-        std::cout << "yepp\n" << std::flush;
     }
     nc.w[0]     /= ref_quant.wref;
     nc.w[1]     /= ref_quant.wref;
