@@ -1499,6 +1499,8 @@ class Deriv_dask:
                                 title="Values of of {}".format(latexify.parse_word(y)),
                                 color=cmap_values,
                                 label=None,
+                                ylabel=latexify.parse_word(y),
+                                xlabel=latexify.parse_word(x_axis),
                                 datashade=datashade,
                                 alpha=alpha,
                                 legend=False
@@ -1515,6 +1517,8 @@ class Deriv_dask:
                                     title="Values of of {}".format(latexify.parse_word(y)),
                                     color=cmap_values,
                                     label=None,
+                                    ylabel=latexify.parse_word(y),
+                                    xlabel=latexify.parse_word(x_axis),
                                     datashade=datashade,
                                     alpha=alpha,
                                     legend=False
@@ -1548,6 +1552,8 @@ class Deriv_dask:
                         title="Values of of {}".format(latexify.parse_word(y)),
                         cmap=cmap,
                         label=None,
+                        ylabel=latexify.parse_word(y),
+                        xlabel=latexify.parse_word(x_axis),
                         datashade=datashade
                     ).opts(aspect=aspect)
                     if self.backend == "bokeh":

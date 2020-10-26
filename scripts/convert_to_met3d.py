@@ -272,6 +272,7 @@ def add_turb_flux(ds):
 
 def convert_wcb2(f, store_path, fl, ensemble):
     ds = xr.open_dataset(f).to_dataframe().reset_index()
+
     ds.rename(columns={
         "id": "trajectory",
         "longitude": "lon",
@@ -295,7 +296,7 @@ def convert_wcb2(f, store_path, fl, ensemble):
     ds = ds[ds.lon != -999]
     ds = ds[ds.lat != -999]
     ds = ds[ds.z != -999]
-    ds = ds.dropna(how="any")
+    ds = ds.dropna(how="all")
 
     ds = xr.Dataset.from_dataframe(ds.set_index(["ensemble", "trajectory", "time"])) # ,
     # Set flag
@@ -581,12 +582,23 @@ def convert_wcb2(f, store_path, fl, ensemble):
         mode="w")
 
 if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1:
+        path = sys.argv[1]
+    if len(sys.argv) > 2:
+        store_path = sys.argv[2]
+        if store_path[-1] != "/":
+            store_path += "/"
+    if len(sys.argv) > 3:
+        flags = [sys.argv[3]]
+    else:
+        flags = ["conv_400", "conv_600", "slan_400", "slan_600"]
     file_list = []
     for f in os.listdir(path):
         if ".nc_wcb" in f:
             file_list.append(os.path.join(path, f))
     file_list = np.sort(file_list)
-    for flag in ["slan_400"]:
+    for flag in flags:
         print(f"#################### {flag} ######################")
         for i in pb.progressbar(range(len(file_list)), redirect_stdout=True):
             convert_wcb2(

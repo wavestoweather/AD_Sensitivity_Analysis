@@ -22,6 +22,8 @@ if len(sys.argv) > 4:
     netcdf_path = sys.argv[4]
 else:
     netcdf_path = "../data/conv_400_0_traj_t000000_p001.nc_wcb"
+
+plot_singles = True
 # A dictionary of all the derivatives where the key refers to the
 # particle for which the parameter is defined. However,
 # cloud parameters can affect rain droplets!
@@ -259,7 +261,7 @@ def plot_my_thing(path, netcdf_path, prefix, min_x=None, max_x=None, time_offset
                 cross_mark=cross_mark,
                 plot_path=store_path,
                 alpha=1,
-                plot_singles=False,
+                plot_singles=plot_singles,
                 formatter_limits=(-2,2), # Limits for x- and y-axis format
                 s=20, # Size of scatter plots
                 kind="scatter")
@@ -316,7 +318,7 @@ def plot_my_thing(path, netcdf_path, prefix, min_x=None, max_x=None, time_offset
             vertical_mark=vertical_mark,
             cross_mark=cross_mark,
             plot_path=store_path,
-            plot_singles=False,
+            plot_singles=plot_singles,
             alpha=1,
             formatter_limits=(-2,2),
             s=20,
@@ -326,23 +328,23 @@ def plot_my_thing(path, netcdf_path, prefix, min_x=None, max_x=None, time_offset
 # Plot with "pressure" as twin axis
 # Plot with crosses for the input simulation data
 # (overrides according datapoints of the output simulation)
-# for suff in suffixes:
-#     files = sorted(glob(path + "/*"))
-#     for f in files:
-#         just_f = f.split("/")[-1]
-#         number = just_f.split("derivs_")[-1].split(".nc_wcb")[0]
-#         plot_my_thing(path,
-#                     netcdf_path,
-#                     suff + "_" + number + "_",
-#                     y_axis="pressure",
-#                     x_axis="time_after_ascent",
-#                     traj="Convective 400hPa",
-#                     f=just_f,
-#                     twin_axis="pressure",
-#                     vertical_mark={"T": [273, 235]},
-#         #               min_x=0, # You can use a start time for plotting
-#         #               max_x=100, # You can use an end time for plotting
-#                     cross_mark_bool=True)
+for suff in suffixes:
+    files = sorted(glob(path + "/*"))
+    for f in files:
+        just_f = f.split("/")[-1]
+        number = just_f.split("derivs_")[-1].split(".nc_wcb")[0]
+        plot_my_thing(path,
+                    netcdf_path,
+                    suff + "_" + number + "_",
+                    y_axis="pressure",
+                    x_axis="time_after_ascent",
+                    traj="Convective 400hPa",
+                    f=just_f,
+                    twin_axis="pressure",
+                    vertical_mark={"T": [273, 235]},
+        #               min_x=0, # You can use a start time for plotting
+        #               max_x=100, # You can use an end time for plotting
+                    cross_mark_bool=True)
 
 # Plot with "pressure" as twin axis
 # Plot no crosses

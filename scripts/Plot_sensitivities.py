@@ -1,7 +1,5 @@
 from Deriv_dask import Deriv_dask
 
-
-parquet_path = "/data/project/wcb/parquet/traj_stats_shifted_time/"
 # Dictionary for various sensitivities; Plotting all at once is hideous!
 in_params_dic = {"Misc":
             ["da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma",
@@ -109,33 +107,44 @@ in_params_dic = {"Misc":
             "dsnow_vsedi_min", "dsnow_vsedi_max"]}
 # Setup
 keys = ["Misc", "Cloud", "Rain", "Hail", "Graupel", "Snow", "Ice"]
-out_params = ["qv", "qc", "qr", "qi", "qs", "qg",
-              "Nc", "Nr", "Ni", "Ns", "Ng"]
-x_axis = "timestep"
-trajectories = None # Can be an int from 0 to 11
-n_plots = 3 # 10
-min_x = -1000
-max_x = 15000
+out_params = ["QV", "QC", "QR", "QI", "QS", "QG",
+              "NCCLOUD", "NCRAIN", "NCICE", "NCSNOW", "NCGRAUPEL"]
+x_axis = "time_after_ascent"
+
+keys = ["Misc", "Cloud", "Rain", "Hail", "Graupel", "Snow", "Ice"]
+# out_params = ["QV", "QC", "QR", "QI", "QS", "QG",
+#               "NCCLOUD", "NCRAIN", "NCICE", "NCSNOW", "NCGRAUPEL"]
+out_param = "QV"
+data_path = "/data/project/wcb/netcdf/sim_output_testset/conv_400_0_traj_t000000_p001_outSat_sbShape_sbConv/"
+f = "*.nc_wcb"
+f = "t000000_p001_derivs_000.nc_wcb"
+trajectories = None
+n_plots = 1 # Or more if you want to get additional plots with more sensitivities
+min_x = None
+max_x = None
 # Use hexagonal bins for top (output parameter)/bottom (sensitivites) plot
 hexbin = [False, False]
 log = [False, False]
-alpha = [1, 0.1]
+alpha = [1, 0.5]
 # Number of timesteps to use for a rolling average. Each timestep is usually
 # 2 seconds, where the COSMO simulation uses 20 seconds
-rolling_avg = 20 # == 40 seconds
+rolling_avg = None
 by = "type" # Column used for groupby operation
 width=1280
 height=800
-max_per_deriv = 5
+max_per_deriv = 10
 vertical_marks = {"T": [273, 235]}
 plot_path = "/data/project/wcb/pics/"
 
 in_params = []
-for key in in_params_dic:
+for i, key in enumerate(in_params_dic):
     in_params = in_params + in_params_dic[key]
 
-ratio_types = ["vanilla", "per_timestep", "window", "per_xaxis"]
-x_axiss = ["timestep", "p"]
+x_axis = "time_after_ascent"
+twin = None
+
+ratio_types = ["per_timestep", "window", "per_xaxis"]
+x_axiss = ["time_after_ascent", "pressure"]
 cache = True
 trajectory_list = [
     ["Convective 400hPa 50. Quantile"],
@@ -156,7 +165,7 @@ for i, trajectories in enumerate(trajectory_list):
         backend="matplotlib")
     deriv.cache_data(
         in_params=in_params,
-        out_params=out_params + ["T"],
+        out_params=out_params + vertical_marks.keys(),
         x_axis=x_axis,
         y_axis="p",
         compute=True,
