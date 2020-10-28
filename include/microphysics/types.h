@@ -37,51 +37,116 @@ struct particle_model_constants_t{
     /**
      * Geometry coefficients.
      */
-    codi::RealReverse a_geo;
-    codi::RealReverse b_geo;
+    codi::RealReverse a_geo; /*!< Coefficient for diameter size calculation */
+    codi::RealReverse b_geo; /*!< Exponent for diameter size calculation */
 
     /**
      * Minimum size of particle for mean meass calculation.
      */
     codi::RealReverse min_x;
     /**
-     * Minimum size of particle for activation.
+     * Minimum size of particle for CCN activation (cloud) and
+     * ice activation (ice).
      * *Should* be the same as min_x but is used to distinguish the
      * influence of those processes.
      */
     codi::RealReverse min_x_act;
     /**
-     * Minimum size of particle for nucleation.
+     * Minimum size of particle for homogenous nucleation (ice).
      * *Should* be the same as min_x but is used to distinguish the
      * influence of those processes.
      */
     codi::RealReverse min_x_nuc_homo;
-
+    /**
+     * Minimum size of particle for heterogeneous nucleation (ice).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
     codi::RealReverse min_x_nuc_hetero;
+    /**
+     * Minimum size of particle for melting (snow, graupel, ice, hail).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
     codi::RealReverse min_x_melt;
+    /**
+     * Minimum size of particle for evaporation (rain, snow, graupel, ice).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
     codi::RealReverse min_x_evap;
+    /**
+     * Minimum size of particle for freezing (rain, cloud).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
     codi::RealReverse min_x_freezing;
+    /**
+     * Minimum size of particle for vapor deposition (ice, snow, graupel, hail).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
     codi::RealReverse min_x_depo;
+    /**
+     * Minimum size of particle for ice-ice collision.
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
     codi::RealReverse min_x_collision;
+    /**
+     * Minimum size of particle for different collision processes
+     * (snow, rain, ice, snow, graupel).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
     codi::RealReverse min_x_collection;
+    /**
+     * Minimum size of particle for conversion processes (cloud, graupel, ice).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
     codi::RealReverse min_x_conversion;
+    /**
+     * Minimum size of particle for sedimentation (rain, ice, snow, graupel, hail).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
     codi::RealReverse min_x_sedimentation;
+    /**
+     * Minimum size of particle for riming (cloud, rain, ice, snow, hail, graupel).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
     codi::RealReverse min_x_riming;
 
-    codi::RealReverse max_x;
-    codi::RealReverse sc_theta_q;   /*!< For snow collision. */
-    codi::RealReverse sc_delta_q;
-    codi::RealReverse sc_theta_n;
-    codi::RealReverse sc_delta_n;
-    codi::RealReverse s_vel;        /*!< Also known as sigma_vel in ICON. */
-    codi::RealReverse a_vel;    /*!< Coefficient for sedimentation. */
-    codi::RealReverse b_vel;    /*!< Coefficient for sedimentation. */
+    codi::RealReverse max_x; /*!< Maximum size of particle. */
+    codi::RealReverse sc_theta_q; /*!< Coefficient for ice collision ratio mass. */
+    codi::RealReverse sc_delta_q; /*!< Coefficient for ice collision ratio mass. */
+    codi::RealReverse sc_theta_n; /*!< Coefficient for collision particle number (ice, snow). */
+    codi::RealReverse sc_delta_n; /*!< Coefficient for collision particle number (ice, snow). */
+    /**
+     * Variance for the assumed Gaussian velocity distributions used in collection and riming processes.
+     */
+    codi::RealReverse s_vel;
+    codi::RealReverse a_vel;    /*!< Coefficient for particle velocity. */
+    codi::RealReverse b_vel;    /*!< Exponent for particle velocity. */
+    /**
+     * Coefficient used in density correction for the increased terminal
+     * fall velocity with decreasing air density.
+     * \f[ \rho_v = (\rho/\rho_0)^{-\rho_{\text{vel}}} \f]
+     */
     codi::RealReverse rho_v;
-    codi::RealReverse c_z;  /*!< Coefficient for capacity. */
-    codi::RealReverse sc_coll_n;    /*!< Also known as e_coll in ICON. */
-    codi::RealReverse cmu0, cmu1, cmu2, cmu3, cmu4, cmu5, alpha, beta, gamma;
-    codi::RealReverse nu;
-
+    codi::RealReverse c_z; /*!< Coefficient for 2nd mass moment. */
+    codi::RealReverse sc_coll_n;    /*!< Coefficient in graupel self collection and cloud riming. */
+    codi::RealReverse cmu0; /*!< Coefficient for calculating the shape parameter \f$\mu\f$. */
+    codi::RealReverse cmu1; /*!< Coefficient for calculating the shape parameter \f$\mu\f$. */
+    codi::RealReverse cmu2; /*!< Coefficient for calculating the shape parameter \f$\mu\f$. */
+    codi::RealReverse cmu3; /*!< Constant for calculating the shape parameter \f$\mu\f$. */
+    codi::RealReverse cmu4; /*!< Constant for calculating the shape parameter \f$\mu\f$. */
+    codi::RealReverse cmu5; /*!< Exponent for calculating the shape parameter \f$\mu\f$. */
+    codi::RealReverse alpha; /*!< Constant in rain sedimentation. */
+    codi::RealReverse beta; /*!< Coefficient for rain sedimentation. */
+    codi::RealReverse gamma; /*!< Exponent for rain sedimentation. */
     /**
      * Right edge of incomplete gamma function,
      * which had been initialized with \f[\text{nm}_1\f].
@@ -89,11 +154,18 @@ struct particle_model_constants_t{
     codi::RealReverse g1;
     /**
      * Right edge of incomplete gamma function,
-     * which had been initialized with \f[\text{nm}_1\f].
+     * which had been initialized with \f[\text{nm}_2\f].
      */
     codi::RealReverse g2;
-
+    /**
+     * Shape parameter of the generalized \f$\Gamma$\f-distribution.
+     */
     codi::RealReverse mu;
+    /**
+     * Shape parameter of the generalized \f$\Gamma$\f-distribution.
+     * i.e. used in rain sedimentation as coefficient.
+     */
+    codi::RealReverse nu;
     /**
      * Used for initializing the incomplete
      * gamma function lookup table 1.
@@ -115,23 +187,23 @@ struct particle_model_constants_t{
 
     codi::RealReverse q_crit_c; /*!<  Riming parameter. */
     codi::RealReverse d_crit_c; /*!<  Riming parameter. */
-    codi::RealReverse ecoll_c;  /*!<  Riming parameter. */
+    codi::RealReverse ecoll_c;  /*!<  Riming coefficient. */
     /**
-     * Riming parameter. Coefficient for capacity of particle.
+     * Coefficient for capacity of particle.
      */
     codi::RealReverse cap;
-    codi::RealReverse a_ven;    /*!<  Riming parameter. */
-    codi::RealReverse b_ven;    /*!<  Riming parameter. */
+    codi::RealReverse a_ven;    /*!< Vapor deposition coefficient. */
+    codi::RealReverse b_ven;    /*!< Currently unused parameter. */
 
-    codi::RealReverse c_s;  /*!< Also known as c_i in ICON.*/
-    codi::RealReverse a_f; /*!< Coefficient for average ventilation. */
+    codi::RealReverse c_s;  /*!< Inverse of capacity. Coefficient in evaporation and vapor deposition. */
+    codi::RealReverse a_f; /*!< Constant for average ventilation. Used in melting and ice-vapor processes. */
     codi::RealReverse b_f; /*!< Coefficient for average ventilation. */
 
-    codi::RealReverse alfa_n;       /*!<  Bulk sedimentation velocity parameter. */
-    codi::RealReverse alfa_q;       /*!<  Bulk sedimentation velocity parameter. */
-    codi::RealReverse lambda;       /*!<  Bulk sedimentation velocity parameter. */
-    codi::RealReverse vsedi_min;    /*!<  Bulk sedimentation velocity parameter. */
-    codi::RealReverse vsedi_max;    /*!<  Bulk sedimentation velocity parameter. */
+    codi::RealReverse alfa_n;       /*!<  Sedimentation velocity coefficient. */
+    codi::RealReverse alfa_q;       /*!<  Sedimentation velocity coefficient. */
+    codi::RealReverse lambda;       /*!<  Sedimentation velocity coefficient. */
+    codi::RealReverse vsedi_min;    /*!<  Minimum sedimentation velocity parameter. */
+    codi::RealReverse vsedi_max;    /*!<  Maximum sedimentation velocity parameter. */
 
     /**
      * Register the model parameters on the tape for codi::RealReverse.
@@ -544,23 +616,23 @@ struct model_constants_t{
   //
   double alpha_d; /*!< Accomodation coefficient */
 
-  codi::RealReverse Nc_prime; /*!< Number concentration of cloud droplets */
+  codi::RealReverse Nc_prime; /*!< Number concentration of cloud droplets needed for one-moment scheme */
 
-  codi::RealReverse a1_prime; /*!< Dimensional coefficients */
-  codi::RealReverse a2_prime; /*!< Dimensional coefficients */
-  codi::RealReverse e1_prime; /*!< Dimensional coefficients */
-  codi::RealReverse e2_prime; /*!< Dimensional coefficients */
-  codi::RealReverse B_prime;  /*!< Dimensional coefficients */
-  codi::RealReverse d_prime;  /*!< Dimensional coefficients */
+  codi::RealReverse a1_prime; /*!< Dimensional coefficient used in one-moment warm physics for qc and qr calculation */
+  codi::RealReverse a2_prime; /*!< Dimensional coefficient used in one-moment warm physics for qc and qr calculation */
+  codi::RealReverse e1_prime; /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
+  codi::RealReverse e2_prime; /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
+  codi::RealReverse B_prime;  /*!< Dimensional coefficient to simulate inflow from above in one-moment warm physics */
+  codi::RealReverse d_prime;  /*!< Dimensional coefficient used in one-moment warm physics qr calculation for sedimentation*/
 
   codi::RealReverse dw; /*!< Change in buoancy */
 
-  codi::RealReverse gamma;  /*!< Exponents */
-  codi::RealReverse betac;  /*!< Exponents */
-  codi::RealReverse betar;  /*!< Exponents */
-  codi::RealReverse delta1; /*!< Exponents */
-  codi::RealReverse delta2; /*!< Exponents */
-  codi::RealReverse zeta;   /*!< Exponents */
+  codi::RealReverse gamma;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
+  codi::RealReverse betac;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
+  codi::RealReverse betar;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
+  codi::RealReverse delta1; /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
+  codi::RealReverse delta2; /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
+  codi::RealReverse zeta;   /*!< Exponents used in one-moment warm physics for qr calculation */
 
   /**
    * Model constants for hail.
@@ -668,9 +740,9 @@ struct model_constants_t{
   codi::RealReverse e1_scale; /*!< Performance constants warm cloud */
   codi::RealReverse e2_scale; /*!< Performance constants warm cloud */
   codi::RealReverse d_scale;  /*!< Performance constants warm cloud */
-  codi::RealReverse rain_gfak = -1.0; /*!<  See mo_2mom_mcrph_main.f90 line 830 following of ICON. */
-  codi::RealReverse cloud_k_au; /*!< Parameter for autoconversion Seifert & Beheng. */
-  codi::RealReverse cloud_k_sc; /*!< Parameter for autoconversion Seifert & Beheng. */
+  codi::RealReverse rain_gfak = 1.0; /*!< Coefficient for gamma evaluation in rain evaporation */
+  codi::RealReverse cloud_k_au; /*!< Coefficient for autoconversion of cloud to rain */
+  codi::RealReverse cloud_k_sc; /*!< Coefficient for autoconversion of cloud to rain */
 
   /**
    * Kernel for autoconversion

@@ -366,7 +366,8 @@ void saturation_adjust(
 
 
 /**
- * CCN activation after Hande et al 2015.
+ * CCN activation after Hande et al 2016.
+ * https://doi.org/10.5194/acp-16-12059-2016
  *
  * @params p_prime Pressure [Pa]
  * @params w_prime Ascend velocity [m s^-1]
@@ -937,9 +938,9 @@ void ice_activation_phillips(
 
         ndiag = min(ndiag, ni_het_max/cc.dt_prime);
         float_t delta_n = max(ndiag-n_inact, 0.0)/cc.dt_prime;
-        float_t delta_q = min(delta_n*cc.ice.min_x, qv_prime/cc.dt_prime);
+        float_t delta_q = min(delta_n*cc.ice.min_x_act, qv_prime/cc.dt_prime);
 
-        delta_n = delta_q/cc.ice.min_x;
+        delta_n = delta_q/cc.ice.min_x_act;
         res[Ni_idx] += delta_n;
         res[qi_idx] += delta_q;
         res[qv_idx] -= delta_q;
@@ -1485,7 +1486,7 @@ void rain_self_collection_sb(
         float_t x_r = particle_mean_mass(qr_prime, Nr, cc.rain.min_x_collection, cc.rain.max_x);
         float_t D_r = particle_diameter(x_r, cc.rain.a_geo, cc.rain.b_geo);
         // Parameters based on Seifert (2008)
-        float_t sc = 4.33 * Nr * qr_prime * cc.rain.rho_v; // rhain%rho_v(i, k)
+        float_t sc = 4.33 * Nr * qr_prime * cc.rain.rho_v;
         // Breakup Seifert (2008), Eq. A13
         float_t breakup = 0.0;
         if(D_r > 0.30e-3)
@@ -1647,7 +1648,8 @@ void sedimentation_explicit(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    float_t rhocorr = pow(compute_rhoa(p_prime,T_prime,S)/rho_0, -rho_vel);
+    // float_t rhocorr = pow(compute_rhoa(p_prime,T_prime,S)/rho_0, -rho_vel);
+    float_t rhocorr = cc.rain.rho_v; // Every other than from cloud should be the same
     float_t v_n_sedi = 0.0;
     float_t v_q_sedi = 0.0;
 

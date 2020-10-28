@@ -290,7 +290,7 @@ class Deriv_dask:
         fig_type='svg', datashade=True, by=None,  alpha=[1, 1],
         rolling_avg=20, rolling_avg_par=20, max_per_deriv=10,
         width=1280, height=800, ratio_type="vanilla", ratio_window=None,
-        vertical_mark=None, **kwargs):
+        vertical_mark=None, plot_singles=False, xticks=20, **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
         At the bottom: Derivative with respect to that output parameter.
@@ -426,6 +426,10 @@ class Deriv_dask:
             with the given value, i.e. {"T": [273, 235]} with x_axis in time
             marks all times, where a trajectory reached that temperature.
             Recommended to use with a single trajectory.
+        plot_singles : bool
+            Plot every plot individually as well.
+        xticks : int
+            Number of ticks on all x-axis.
         kwargs : dict
             Keyword arguments are passed down matplotlib.
         """
@@ -513,6 +517,7 @@ class Deriv_dask:
                 col = list(ratio_window.keys())[0]
                 edges = np.sort(ratio_window[col])
                 for i in range(len(edges)+1):
+
                     if i == 0:
                         df_edge = ratio_df.loc[ratio_df[col] < edges[i]]
                         max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
@@ -533,7 +538,7 @@ class Deriv_dask:
                         if max_val == 0:
                             continue
                         ratio_df[in_params] = ratio_df.apply(
-                            lambda x: x[in_params]/max_val if x[col] < edges[i] and x[col] >= edges[i-1] else x[in_params], axis=1)
+                            lambda x: x[in_params]/max_val if ((x[col] < edges[i]) and (x[col] >= edges[i-1])) else x[in_params], axis=1)
             elif "per_timestep" in ratio_type:
                 # Get series of max values over all timesteps (equals index)
                 max_vals = ratio_df[in_params].apply(lambda x: np.max(np.abs(x)), axis=1)
@@ -559,6 +564,16 @@ class Deriv_dask:
         if not "per_out_param" in ratio_type:
             df = recalc_ratios(df)
             t = timer()
+                #     "Deriv. Ratio per Time of Water Vapor Mixing Ratio"
+                #     "Sensitivities per Time for Water Vapor Mixing Ratio"
+        deriv_title = "Deriv. Ratio"
+        if ratio_window is not None:
+            deriv_title += " within Vertical Lines"
+        elif "per_timestep" in ratio_type:
+            deriv_title += " per Time Step"
+        elif "per_xaxis" in ratio_type:
+            deriv_title += " per X-Axis"
+
 
         set_yaxis = False
         if y_axis is None:
@@ -685,7 +700,7 @@ class Deriv_dask:
                             y2="Max",
                             alpha=0.5,
                             ylabel=latexify.parse_word(y_axis),
-                            title="Values of of {}".format(latexify.parse_word(y_axis)),
+                            title="Values of {}".format(latexify.parse_word(y_axis)),
                             label="Spread",
                             color="grey")
                         * df_min_max.hvplot.line(
@@ -748,11 +763,11 @@ class Deriv_dask:
                                 for i in range(len(types)) }
                             )
 
-                            param_plot = df_group[df_group[y_axis] != 0].hvplot.scatter(
+                            param_plot = df_group.hvplot.scatter(
                                 x=x_axis,
                                 y=y_axis,
                                 by=by,
-                                title="Values of of {}".format(latexify.parse_word(y_axis)),
+                                title="Values of {}".format(latexify.parse_word(y_axis)),
                                 color=cmap_values,
                                 label=None,
                                 datashade=datashade,
@@ -761,30 +776,30 @@ class Deriv_dask:
                             ).opts(opts.Scatter(s=8)).options(ylabel=latexify.parse_word(y_axis)) * overlay
 
                             if hist[0]:
-                                xhist = df_group[df_group[y_axis] != 0].hvplot.hist(y=x_axis, bins=bins, height=125)
-                                yhist = df_group[df_group[y_axis] != 0].hvplot.hist(y=y_axis, bins=bins, width=125)
+                                xhist = df_group.hvplot.hist(y=x_axis, bins=bins, height=125)
+                                yhist = df_group.hvplot.hist(y=y_axis, bins=bins, width=125)
                                 param_plot = param_plot << yhist << xhist
                         else:
-                            param_plot = df_group[df_group[y_axis] != 0].hvplot.scatter(
+                            param_plot = df_group.hvplot.scatter(
                                 x=x_axis,
                                 y=y_axis,
                                 by=by,
-                                title="Values of of {}".format(latexify.parse_word(y_axis)),
+                                title="Values of {}".format(latexify.parse_word(y_axis)),
                                 color=cmap_values,
                                 label=None,
                                 datashade=datashade,
                                 alpha=alpha[0]
                             ).opts(opts.Scatter(size=2)).options(ylabel=latexify.parse_word(y_axis))
                     else:
-                        param_plot = df_group[df_group[y_axis] != 0].hvplot.scatter(
+                        param_plot = df_group.hvplot.scatter(
                             x=x_axis,
                             y=y_axis,
                             by=by,
-                            title="Values of of {}".format(latexify.parse_word(y_axis)),
+                            title="Values of {}".format(latexify.parse_word(y_axis)),
                             cmap=cmap,
                             label=None,
                             datashade=datashade
-                        ).opts(aspect=3.2).options(ylabel=latexify.parse_word(y_axis))
+                        ).opts(aspect=width/height).options(ylabel=latexify.parse_word(y_axis))
                         if self.backend == "bokeh":
                             points = hv.Points(
                                 ([np.NaN for i in range(len(list(cmap.keys())))],
@@ -794,7 +809,7 @@ class Deriv_dask:
                                 color=by,
                                 cmap=cmap,
                                 show_legend=True)
-                            param_plot = (legend * param_plot).opts(aspect=3.2)
+                            param_plot = (legend * param_plot).opts(aspect=width/height)
                 elif hexbin[0]:
                     if y_axis == x_axis:
                         df_group = df[[x_axis, "trajectory"] + add_cols]
@@ -806,7 +821,7 @@ class Deriv_dask:
                     param_plot = df_group.hvplot.hexbin(
                         x=x_axis,
                         y=y_axis,
-                        title="Values of of {}".format(latexify.parse_word(y_axis)),
+                        title="Values of {}".format(latexify.parse_word(y_axis)),
                         label=None,
                         clabel="Count",
                         cmap="viridis",
@@ -824,7 +839,7 @@ class Deriv_dask:
                     param_plot = df_group.hvplot.scatter(
                         x=x_axis,
                         y=y_axis,
-                        title="Values of of {}".format(latexify.parse_word(y_axis)),
+                        title="Values of {}".format(latexify.parse_word(y_axis)),
                         label=None,
                         datashade=datashade
                     ).options(ylabel=latexify.parse_word(y_axis))
@@ -847,7 +862,7 @@ class Deriv_dask:
                         x=x_axis,
                         y=deriv_col_name,
                         by="Derivatives",
-                        title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
+                        title=deriv_title + " for {}".format(out_par),
                         label=None,
                         logz=True,
                         gridsize=100,
@@ -879,21 +894,21 @@ class Deriv_dask:
                                 x=x_axis,
                                 y=deriv_col_name,
                                 by="Derivatives",
-                                title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
+                                title=deriv_title + " for {}".format(out_par),
                                 label=None,
                                 datashade=datashade,
                                 alpha=alpha[1],
                                 legend=False,
                                 cmap=cmap_values
                             ).opts(opts.Scatter(
-                                s=8)).opts(aspect=3.2)
+                                s=8)).opts(aspect=width/height)
                             deriv_plot = (deriv_plot * overlay)
                         else:
                             deriv_plot = df_tmp.hvplot.scatter(
                                 x=x_axis,
                                 y=deriv_col_name,
                                 by="Derivatives",
-                                title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
+                                title=deriv_title + " for {}".format(out_par),
                                 label=None,
                                 datashade=datashade,
                                 alpha=alpha[1],
@@ -908,11 +923,11 @@ class Deriv_dask:
                             x=x_axis,
                             y=deriv_col_name,
                             by="Derivatives",
-                            title="Deriv. Ratio of {}".format(latexify.parse_word(out_par)),
+                            title=deriv_title + " for {}".format(out_par),
                             label=None,
                             datashade=datashade,
                             cmap=cmap
-                        ).opts(aspect=3.2)
+                        ).opts(aspect=width/height)
 
                         if self.backend == "bokeh":
                             points_deriv = hv.Points(
@@ -923,7 +938,7 @@ class Deriv_dask:
                                 color="Derivatives",
                                 cmap=cmap,
                                 show_legend=True)
-                            deriv_plot = (legend_deriv * deriv_plot).opts(aspect=3.2)
+                            deriv_plot = (legend_deriv * deriv_plot).opts(aspect=width/height)
 
                 t2 = timer()
                 print("Setting up lower plot done in {} s".format(t2-t))
@@ -1055,7 +1070,7 @@ class Deriv_dask:
                 if errorband:
                     both_plots = layout.opts(
                         opts.Area(
-                            xticks=20,
+                            xticks=xticks,
                             xaxis="bottom",
                             fontsize=self.font_dic,
                             show_grid=True,
@@ -1073,7 +1088,7 @@ class Deriv_dask:
                 elif percentile is not None:
                     both_plots = layout.opts(
                         opts.Area(
-                            xticks=20,
+                            xticks=xticks,
                             xaxis="bottom",
                             fontsize=self.font_dic,
                             show_grid=True,
@@ -1093,7 +1108,7 @@ class Deriv_dask:
                     if not hexbin[0] and not hexbin[1]:
                         both_plots = layout.opts(
                             opts.Scatter(
-                                xticks=20,
+                                xticks=xticks,
                                 xaxis="bottom",
                                 fontsize=self.font_dic,
                                 show_grid=True,
@@ -1110,7 +1125,7 @@ class Deriv_dask:
                     else:
                         both_plots = layout.opts(
                             opts.Scatter(
-                                xticks=20,
+                                xticks=xticks,
                                 xaxis="bottom",
                                 fontsize=self.font_dic,
                                 show_grid=True,
@@ -1161,21 +1176,43 @@ class Deriv_dask:
                     filetype = ".png"
                     if datashade:
                         filetype = ".html"
-                        self.plots.append(both_plots)
+                    self.plots.append(both_plots)
                     print("Saving to " + save + filetype, flush=True)
                     renderer.save(both_plots, save)
+                    display_file = save
+                    if plot_singles:
+                        for j, pl in enumerate(both_plots):
+                            which_plot = "_outParam_"
+                            if j > 0:
+                                which_plot = "_deriv_"
+                            i = 0
+                            save = (plot_path + prefix + x_axis + "_" + out_par
+                                + which_plot + "{:03d}".format(i))
+                            while os.path.isfile(save + ".png"):
+                                i = i+1
+                                save = (plot_path + prefix + x_axis + "_" + out_par
+                                    + which_plot + "{:03d}".format(i))
+                            pl = pl.opts(
+                                opts.Scatter(
+                                    xticks=xticks,
+                                    xaxis="bottom",
+                                    fontsize=self.font_dic,
+                                    show_grid=True,
+                                    show_legend=True,
+                                    **scatter_kwargs)).opts(aspect=width/height, xaxis="bottom", **layout_kwargs)
+                            renderer.save(pl, save)
                     t2 = timer()
                     try:
                         from IPython.display import Image, display
-                        display(Image(save + filetype, width=width))
+                        display(Image(display_file + filetype, width=width))
                     except:
                         pass
+
                     print("Saving done in {}s".format(t2-t), flush=True)
             if sort:
                 i = 0
                 if n_plots is None:
                     n_plots = 9999999
-
                 while len(sorted_tuples) > 0 and i < n_plots:
                     p, v = sorted_tuples.pop()
                     in_params_2 = [p]
@@ -1207,7 +1244,7 @@ class Deriv_dask:
         twin_axis=None, by=None, hue="type", col_wrap=4, trajectories=None,
         width=1280, height=800, log=[False, False],
         vertical_mark=None, cross_mark=None, datashade=False, prefix=None, alpha=1,
-        plot_path="pics/", yticks=10, decimals=-3, rolling_avg=20,
+        plot_path="pics/", yticks=10, xticks=20, decimals=-3, rolling_avg=20,
         kind="scatter", plot_singles=False, s=8, formatter_limits=None, **kwargs):
         """
         Plot a grid for comparing multiple output parameters or
@@ -1271,8 +1308,10 @@ class Deriv_dask:
             Alpha value to use on the plot aligned to the left y-axis.
         plot_path : string
             Path to the folder to save the image.
-        ytick : int
+        yticks : int
             Number of ticks on all y-axis.
+        xticks : int
+            Number of ticks on all x-axis.
         decimals : int
             For rounding the right y-axis, if provided by "twin_axis".
             From numpy: Number of decimal places to round to (default: 0).
@@ -1605,7 +1644,7 @@ class Deriv_dask:
 
         final_plots = all_plots.opts(
             opts.Scatter(
-                xticks=20,
+                xticks=xticks,
                 xaxis="bottom",
                 fontsize=self.font_dic,
                 show_grid=True,
@@ -1651,7 +1690,7 @@ class Deriv_dask:
                         save = (plot_path + prefix + x_axis + "_" + y_name + "_{:03d}".format(i))
                     pl = pl.opts(
                         opts.Scatter(
-                            xticks=20,
+                            xticks=xticks,
                             xaxis="bottom",
                             fontsize=self.font_dic,
                             show_grid=True,
