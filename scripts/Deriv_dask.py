@@ -772,7 +772,7 @@ class Deriv_dask:
                     if not datashade:
                         if self.backend == "matplotlib":
                             overlay = hv.NdOverlay(
-                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size, color=cmap_values[i]))
+                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size*8, color=cmap_values[i]))
                                 for i in range(len(types)) }
                             )
 
@@ -891,7 +891,7 @@ class Deriv_dask:
                             all_derives = np.append(all_derives, latexify.parse_word(twin_axis))
                         if self.backend == "matplotlib":
                             overlay = hv.NdOverlay(
-                                {derivative: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size, color=cmap_values[i]))
+                                {derivative: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size*8, color=cmap_values[i]))
                                 for i, derivative in enumerate(all_derives)}
                             )
                             deriv_plot = df_tmp.hvplot.scatter(
@@ -1536,7 +1536,7 @@ class Deriv_dask:
                     if self.backend == "matplotlib":
                         if len(plot_list) == 0:
                             overlay = hv.NdOverlay(
-                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size, color=cmap_values[i]))
+                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size*8, color=cmap_values[i]))
                                 for i in range(len(types)) }
                             )
                             plot_list.append(plot_func(
