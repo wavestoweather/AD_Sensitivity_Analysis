@@ -270,11 +270,18 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
     elif netcdf:
         if "*" in file_ending:
             files = sorted(glob(direc + "/" + file_ending))
-            datasets = [xr.open_dataset(f, decode_times=False) for f in files]
-            df = xr.concat(datasets, "trajectory")
+            datasets = [xr.open_dataset(f, decode_times=False).to_dask_dataframe(
+                dim_order=["Output Parameter", "ensemble", "trajectory", "time"]) for f in files]
+            df = None
+            for d in datasets:
+                if df is not None:
+                    df = df.append(d)
+                else:
+                    df = d
+            # df = xr.concat(datasets, "trajectory")
         else:
             df = xr.open_dataset(direc + "/" + file_ending, decode_times=False)
-        df = df.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+            df = df.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
         # The performance of the following command is not the best.
 
         # df = xr.open_mfdataset(

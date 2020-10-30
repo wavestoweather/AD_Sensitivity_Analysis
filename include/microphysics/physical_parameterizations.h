@@ -1517,6 +1517,7 @@ void setup_model_constants(
     cc.graupel.g1 = table_g1.igf[table_g1.n_bins-1];
     cc.graupel.g2 = table_g2.igf[table_g2.n_bins-1];
     cc.graupel.c_s = 1.0 / cc.graupel.cap;
+    cc.graupel.ecoll_c = 1.0;
     cc.graupel.a_f = vent_coeff_a(cc.graupel, 1);
     cc.graupel.b_f = vent_coeff_b(cc.graupel, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
     cc.graupel.c_z = moment_gamma(cc.graupel, 2);

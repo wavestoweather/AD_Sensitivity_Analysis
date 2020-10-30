@@ -89,7 +89,10 @@ void print_particle_params(
         << "alfa_q = " << pc.alfa_q << "\n"
         << "lambda = " << pc.lambda << "\n"
         << "vsedi_min = " << pc.vsedi_min << "\n"
-        << "vsedi_max = " << pc.vsedi_max << "\n\n";
+        << "vsedi_max = " << pc.vsedi_max << "\n"
+        << "g1 = " << pc.g1 << "\n"
+        << "g2 = " << pc.g2 << "\n"
+        << "\n";
 }
 
 /**

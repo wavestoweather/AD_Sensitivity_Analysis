@@ -1152,11 +1152,6 @@ int read_init_netcdf(
         y_init[sub_idx] = 0;
 #endif
 
-#ifdef TRACE_SAT
-        std::cout << "######INIT######\n"
-    //           << "y_init[T_idx] " << y_init[T_idx] << "\n"
-                  << "y_init[qv_idx] " << y_init[qv_idx]*ref_quant.qref << "\n";
-#endif
     // DEBUG Set qv to qv_sat
     // double psat_prime = saturation_pressure_water(y_init[T_idx]*ref_quant.Tref);
     // y_init[qv_idx] = psat_prime/(Rv*y_init[T_idx]*ref_quant.Tref) / ref_quant.qref;

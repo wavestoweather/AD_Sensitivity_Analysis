@@ -98,13 +98,21 @@ class Deriv_dask:
 
         self.n_timesteps = len(np.unique(self.data["step"].compute()))
         self.cluster_names = {}
+        # self.font_dic = {
+        #     "title": 20,
+        #     "labels": 20,
+        #     "xticks": 12,
+        #     "yticks": 16,
+        #     "legend": 16
+        # }
         self.font_dic = {
-            "title": 20,
-            "labels": 20,
-            "xticks": 12,
-            "yticks": 16,
-            "legend": 16
+            "title": 10,
+            "labels": 10,
+            "xticks": 8,
+            "yticks": 8,
+            "legend": 10
         }
+        self.vertical_mark_fontsize = 10
         self.backend = backend
         self.plots = []
         if backend == "matplotlib":
@@ -289,7 +297,7 @@ class Deriv_dask:
         use_cache=False, errorband=False, plot_path="pics/", prefix=None,
         fig_type='svg', datashade=True, by=None,  alpha=[1, 1],
         rolling_avg=20, rolling_avg_par=20, max_per_deriv=10,
-        width=1280, height=800, ratio_type="vanilla", ratio_window=None,
+        width=1959, height=1224, ratio_type="vanilla", ratio_window=None,
         vertical_mark=None, plot_singles=False, xticks=20, **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
@@ -446,6 +454,12 @@ class Deriv_dask:
         deriv_col_name = "Derivative Ratio"
         matplotlib.rcParams['axes.formatter.limits'] = (-2,2)
 
+        # Adjust scatter size according to height
+        scatter_size = int(height/200)
+        fig_inches = width/300
+        if width < height:
+            fig_inches = height/300
+        aspect = width/height
 
         if not use_cache:
             self.cache_data(in_params, out_params, x_axis, y_axis, mapped,
@@ -564,8 +578,7 @@ class Deriv_dask:
         if not "per_out_param" in ratio_type:
             df = recalc_ratios(df)
             t = timer()
-                #     "Deriv. Ratio per Time of Water Vapor Mixing Ratio"
-                #     "Sensitivities per Time for Water Vapor Mixing Ratio"
+
         deriv_title = "Deriv. Ratio"
         if ratio_window is not None:
             deriv_title += " within Vertical Lines"
@@ -612,7 +625,7 @@ class Deriv_dask:
                     color="gray",
                     datashade=datashade,
                     legend=False,
-                ).opts(initial_hooks=[twinx], apply_ranges=False).opts(opts.Scatter(s=8))
+                ).opts(initial_hooks=[twinx], apply_ranges=False).opts(opts.Scatter(s=scatter_size))
 
             # Sort the derivatives
             if sort:
@@ -759,7 +772,7 @@ class Deriv_dask:
                     if not datashade:
                         if self.backend == "matplotlib":
                             overlay = hv.NdOverlay(
-                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
+                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size, color=cmap_values[i]))
                                 for i in range(len(types)) }
                             )
 
@@ -773,7 +786,7 @@ class Deriv_dask:
                                 datashade=datashade,
                                 alpha=alpha[0],
                                 legend=False
-                            ).opts(opts.Scatter(s=8)).options(ylabel=latexify.parse_word(y_axis)) * overlay
+                            ).opts(opts.Scatter(s=scatter_size)).opts(aspect=aspect).options(ylabel=latexify.parse_word(y_axis)) * overlay
 
                             if hist[0]:
                                 xhist = df_group.hvplot.hist(y=x_axis, bins=bins, height=125)
@@ -789,7 +802,7 @@ class Deriv_dask:
                                 label=None,
                                 datashade=datashade,
                                 alpha=alpha[0]
-                            ).opts(opts.Scatter(size=2)).options(ylabel=latexify.parse_word(y_axis))
+                            ).opts(opts.Scatter(size=scatter_size)).options(ylabel=latexify.parse_word(y_axis))
                     else:
                         param_plot = df_group.hvplot.scatter(
                             x=x_axis,
@@ -809,7 +822,7 @@ class Deriv_dask:
                                 color=by,
                                 cmap=cmap,
                                 show_legend=True)
-                            param_plot = (legend * param_plot).opts(aspect=width/height)
+                            param_plot = (legend * param_plot).opts(aspect=aspect)
                 elif hexbin[0]:
                     if y_axis == x_axis:
                         df_group = df[[x_axis, "trajectory"] + add_cols]
@@ -848,15 +861,6 @@ class Deriv_dask:
                 print("Setting up upper plot done in {} s".format(t2-t))
                 t = timer()
 
-                layout_kwargs = {}
-                if self.backend == "bokeh":
-                    layout_kwargs["width"] = width
-                    layout_kwargs["height"] = height
-                else:
-                    if not hist[0]:
-                        layout_kwargs["aspect"] = width/height
-                    layout_kwargs["fig_size"] = height/2
-
                 if hexbin[1]:
                     deriv_plot = df_tmp.hvplot.hexbin(
                         x=x_axis,
@@ -887,7 +891,7 @@ class Deriv_dask:
                             all_derives = np.append(all_derives, latexify.parse_word(twin_axis))
                         if self.backend == "matplotlib":
                             overlay = hv.NdOverlay(
-                                {derivative: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=50, color=cmap_values[i]))
+                                {derivative: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size, color=cmap_values[i]))
                                 for i, derivative in enumerate(all_derives)}
                             )
                             deriv_plot = df_tmp.hvplot.scatter(
@@ -901,7 +905,7 @@ class Deriv_dask:
                                 legend=False,
                                 cmap=cmap_values
                             ).opts(opts.Scatter(
-                                s=8)).opts(aspect=width/height)
+                                s=scatter_size)).opts(aspect=aspect)
                             deriv_plot = (deriv_plot * overlay)
                         else:
                             deriv_plot = df_tmp.hvplot.scatter(
@@ -913,7 +917,7 @@ class Deriv_dask:
                                 datashade=datashade,
                                 alpha=alpha[1],
                                 cmap=cmap_values
-                            ).opts(opts.Scatter(size=2))
+                            ).opts(opts.Scatter(size=scatter_size))
 
                     else:
                         cmap = {}
@@ -993,7 +997,7 @@ class Deriv_dask:
                                     row[x_axis]+del_x,
                                     max_y-del_y*0.1*scale,
                                     f"{col}={v:.2f}{latexify.get_unit(col)}",
-                                    fontsize=24)
+                                    fontsize=self.vertical_mark_fontsize)
                                 mark = hv.VLine(
                                         x=row[x_axis],
                                         label=col + "=" + str(v)
@@ -1007,7 +1011,7 @@ class Deriv_dask:
                                     row[x_axis]+del_x,
                                     max_y_deriv-del_y_deriv*0.1*scale,
                                     f"{col}={v:.2f}{latexify.get_unit(col)}",
-                                    fontsize=24)
+                                    fontsize=self.vertical_mark_fontsize)
                                 mark = hv.VLine(
                                         x=row[x_axis],
                                         label=col + "=" + str(v)
@@ -1026,10 +1030,7 @@ class Deriv_dask:
                     param_plot = param_plot * twin
                     deriv_plot = deriv_plot * twin
 
-                if hist[0] and not hist[1]:
-                    layout = param_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
-                else:
-                    layout = param_plot.opts(**layout_kwargs) + deriv_plot.opts(**layout_kwargs)
+                layout = param_plot + deriv_plot
 
                 opts_arg = {} # Currently empty. Maybe useful in further iterations
 
@@ -1051,7 +1052,7 @@ class Deriv_dask:
                     layout_kwargs["width"] = width
                     layout_kwargs["height"] = height
                 else:
-                    layout_kwargs["fig_size"] = height/2
+                    layout_kwargs["fig_inches"] = fig_inches
 
                # Matplotlib uses a horrible colormap as default...
                 curve_kwargs = kwargs.copy()
@@ -1151,7 +1152,6 @@ class Deriv_dask:
 
                 renderer = hv.Store.renderers[self.backend].instance(
                     fig='png', dpi=300)
-                latexify.set_size(True)
 
                 i = 0
                 if prefix is None:
@@ -1199,7 +1199,7 @@ class Deriv_dask:
                                     fontsize=self.font_dic,
                                     show_grid=True,
                                     show_legend=True,
-                                    **scatter_kwargs)).opts(aspect=width/height, xaxis="bottom", **layout_kwargs)
+                                    **scatter_kwargs)).opts(fig_inches=fig_inches, aspect=aspect, xaxis="bottom")
                             renderer.save(pl, save)
                     t2 = timer()
                     try:
@@ -1245,7 +1245,7 @@ class Deriv_dask:
         width=1280, height=800, log=[False, False],
         vertical_mark=None, cross_mark=None, datashade=False, prefix=None, alpha=1,
         plot_path="pics/", yticks=10, xticks=20, decimals=-3, rolling_avg=20,
-        kind="scatter", plot_singles=False, s=8, formatter_limits=None, **kwargs):
+        kind="scatter", plot_singles=False, s=None, formatter_limits=None, **kwargs):
         """
         Plot a grid for comparing multiple output parameters or
         multiple derivatives across one output parameter.
@@ -1349,12 +1349,20 @@ class Deriv_dask:
         hv.extension(self.backend)
 
         aspect = width/height
+        if s is None:
+            scatter_size = int(height/200)
+        else:
+            scatter_size = s
+
+        fig_inches = width/300
+        if width < height:
+            fig_inches = height/300
         layout_kwargs = {}
         if  self.backend == "bokeh":
             layout_kwargs["width"] = width
             layout_kwargs["height"] = height
         else:
-            layout_kwargs["fig_size"] = height/2
+            layout_kwargs["fig_inches"] = fig_inches
 
         plot_list = []
         df_tmp_out = df.loc[df["Output Parameter"] == out_param]
@@ -1441,9 +1449,9 @@ class Deriv_dask:
                 else:
                     plot_func = df_group.hvplot.line
                     if self.backend == "bokeh":
-                        options = opts.Curve(line_width=8, show_grid=True)
+                        options = opts.Curve(line_width=self.vertical_mark_fontsize-2, show_grid=True)
                     else:
-                        options = opts.Curve(linewidth=6, show_grid=True)
+                        options = opts.Curve(linewidth=self.vertical_mark_fontsize-4, show_grid=True)
 
                 if vertical_mark is not None:
                     if by is not None:
@@ -1466,7 +1474,7 @@ class Deriv_dask:
                                 if np.abs(row_col-v) > 1.0:
                                     break
                                 text = hv.Text(row[x_axis]+del_x, max_y-del_y*0.1, col + "=" + str(v) + latexify.get_unit(col),
-                                    fontsize=24)
+                                    fontsize=self.vertical_mark_fontsize)
                                 if marks is None:
                                     marks = hv.VLine(
                                         x=row[x_axis],
@@ -1494,7 +1502,7 @@ class Deriv_dask:
                                     datashade=datashade,
                                     legend=False,
                                 ).opts(
-                                    apply_ranges=False).opts(opts.Scatter(s=s*2))
+                                    apply_ranges=False).opts(opts.Scatter(s=scatter_size))
                             else:
                                 marks = marks * df_mark.hvplot.scatter(
                                     x=x_axis,
@@ -1504,7 +1512,7 @@ class Deriv_dask:
                                     datashade=datashade,
                                     legend=False,
                                 ).opts(
-                                    apply_ranges=False).opts(opts.Scatter(s=s*2))
+                                    apply_ranges=False).opts(opts.Scatter(s=scatter_size))
                         return marks
 
                     if by is not None:
@@ -1528,7 +1536,7 @@ class Deriv_dask:
                     if self.backend == "matplotlib":
                         if len(plot_list) == 0:
                             overlay = hv.NdOverlay(
-                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=s*6, color=cmap_values[i]))
+                                {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size, color=cmap_values[i]))
                                 for i in range(len(types)) }
                             )
                             plot_list.append(plot_func(
@@ -1579,7 +1587,7 @@ class Deriv_dask:
                             label=None,
                             datashade=datashade,
                             alpha=alpha
-                        ).opts(opts.Scatter(size=2), **layout_kwargs)
+                        ).opts(opts.Scatter(size=scatter_size), **layout_kwargs)
                 else:
                     cmap = {}
                     for ty in types:
@@ -1630,12 +1638,12 @@ class Deriv_dask:
         all_plots = plot_list[0] + plot_list[1]
         for i in range(len(plot_list)-2):
             all_plots = all_plots + plot_list[i+2]
-        layout_kwargs = {}
-        if self.backend == "bokeh":
-            layout_kwargs["width"] = width
-            layout_kwargs["height"] = height
-        else:
-            layout_kwargs["fig_size"] = height/2
+        # layout_kwargs = {}
+        # if self.backend == "bokeh":
+        #     layout_kwargs["width"] = width
+        #     layout_kwargs["height"] = height
+        # else:
+        #     layout_kwargs["fig_size"] = height/2
 
         scatter_kwargs = {}
 
@@ -1653,11 +1661,10 @@ class Deriv_dask:
             opts.Layout(**layout_kwargs)
         ).cols(col_wrap)
         if self.backend == "matplotlib":
-            final_plots = final_plots.opts(sublabel_format="", tight=False)
+            final_plots = final_plots.opts(sublabel_format="", tight=True)
 
         renderer = hv.Store.renderers[self.backend].instance(
                     fig='png', dpi=300)
-        latexify.set_size(True)
 
         i = 0
         if prefix is None:
