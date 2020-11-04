@@ -168,7 +168,7 @@ inline A thermal_conductivity_dry_air(A T)
  * @return Thermal conductivity
  */
 template <class A>
-inline A thermal_conductivity_moist_air(A T, A qv)
+inline A thermal_conductivity_moist_air(A T, A qv, model_constants_t &cc)
 {
   // Thermal conductivity dry air
   A Kt = thermal_conductivity_dry_air(T);
@@ -176,7 +176,7 @@ inline A thermal_conductivity_moist_air(A T, A qv)
   A Kt_tilde = Kt/418.68;
   A Kv_tilde = (3.78e-5) + (2.0e-7)*(T - 273.15);
 
-  return ( Kt*( 1.0 - (1.17 - 1.02*(Kt_tilde/Kv_tilde))*(qv/(qv+Epsilon)) ) );
+  return ( Kt*( 1.0 - (1.17 - 1.02*(Kt_tilde/Kv_tilde))*(qv/(qv+cc.Epsilon)) ) );
 }
 
 
@@ -324,12 +324,12 @@ inline A specific_heat_water(A T)
  * @return Specific heat capacity
  */
 template <class A>
-inline A specific_heat_ice(A T)
+inline A specific_heat_ice(A T, model_constants_t &cc)
 {
 
   A T_frac = T/125.1;
 
-  return ( (-2.0572 + 0.14644*T + 0.06163*T*exp( -T_frac*T_frac ))/Mw );
+  return ( (-2.0572 + 0.14644*T + 0.06163*T*exp( -T_frac*T_frac ))/cc.M_w );
 
 }
 
@@ -344,10 +344,10 @@ inline A specific_heat_ice(A T)
  * @return Latent heat
  */
 template <class A>
-inline A latent_heat_water(A T)
+inline A latent_heat_water(A T, model_constants_t &cc)
 {
 
-  return ( ( 56579.0 - 42.212*T + exp( 0.1149*(281.6-T) ) )/Mw );
+  return ( ( 56579.0 - 42.212*T + exp( 0.1149*(281.6-T) ) )/cc.M_w );
 
 }
 
@@ -362,12 +362,12 @@ inline A latent_heat_water(A T)
  * @return Latent heat
  */
 template <class A>
-inline A latent_heat_ice(A T)
+inline A latent_heat_ice(A T, model_constants_t &cc)
 {
 
   A T_frac = T/123.75;
 
-  return ( ( polyval2(46782.5, 35.8925, -0.07414, T) + 541.5*exp(-T_frac*T_frac) )/Mw );
+  return ( ( polyval2(46782.5, 35.8925, -0.07414, T) + 541.5*exp(-T_frac*T_frac) )/cc.M_w );
 
 }
 
@@ -384,10 +384,10 @@ inline A latent_heat_ice(A T)
  * @return Latent heat
  */
 template <class A>
-inline A latent_heat_melt(A T)
+inline A latent_heat_melt(A T, model_constants_t &cc)
 {
   // Table A1
-  return 4.184e3 * (79.7+0.485*(T-T_freeze) - 2.5e-3*(T-T_freeze)*(T-T_freeze));
+  return 4.184e3 * (79.7+0.485*(T-cc.T_freeze) - 2.5e-3*(T-cc.T_freeze)*(T-cc.T_freeze));
 }
 
 
@@ -424,14 +424,14 @@ inline A latent_heat_evap(A T)
  * @return Saturation vapor pressure
  */
 template <class A>
-inline A saturation_pressure_water(A T)
+inline A saturation_pressure_water(A T, model_constants_t &cc)
 {
 #ifdef VANILLA_PRESSURE
   A Tinv = 1.0/T;
   A logT = log(T);
   return ( exp( 54.842763 - 6763.22*Tinv - 4.21*logT + 0.000367*T + tanh(0.0415*(T-218.8))*(53.878 - 1331.22*Tinv - 9.44523*logT + 0.014025*T) ) );
 #else
-  return p_sat_low_temp*exp(p_sat_const_a*(T-T_sat_low_temp)/(T-p_sat_const_b));
+  return cc.p_sat_low_temp*exp(cc.p_sat_const_a*(T-cc.T_sat_low_temp)/(T-cc.p_sat_const_b));
 #endif
 }
 
@@ -447,10 +447,10 @@ inline A saturation_pressure_water(A T)
  * @return Saturation vapor pressure
  */
 template <class A>
-inline A saturation_pressure_water_icon_deriv(A T, A T_deriv)
+inline A saturation_pressure_water_icon_deriv(A T, A T_deriv, model_constants_t &cc)
 {
-  return -( p_sat_low_temp*p_sat_const_a * (p_sat_const_b-T_sat_low_temp)
-    * T_deriv * exp(saturation_pressure_water(T)) )/( (T-p_sat_const_b)*(T-p_sat_const_b) );
+  return -( cc.p_sat_low_temp*cc.p_sat_const_a * (cc.p_sat_const_b-cc.T_sat_low_temp)
+    * T_deriv * exp(saturation_pressure_water(T)) )/( (T-cc.p_sat_const_b)*(T-cc.p_sat_const_b) );
 }
 
 
@@ -465,10 +465,11 @@ inline A saturation_pressure_water_icon_deriv(A T, A T_deriv)
 template <class A>
 inline A water_vapor_sat_ratio_dotzek(
     A p,
-    A T)
+    A T,
+    model_constants_t &cc)
 {
     A p_sat = saturation_pressure_water(T);
-    return (r_const/r1_const) / (p/p_sat + (r_const/r1_const)-1);
+    return (cc.r_const/cc.r1_const) / (p/p_sat + (cc.r_const/cc.r1_const)-1);
 }
 
 
@@ -482,10 +483,11 @@ inline A water_vapor_sat_ratio_dotzek(
 template <class A>
 inline A water_vapor_sat_ratio(
     A p,
-    A T)
+    A T,
+    model_constants_t &cc)
 {
     A p_sat = saturation_pressure_water(T);
-    return Epsilon*( p_sat/(p - p_sat) );
+    return cc.Epsilon*( p_sat/(p - p_sat) );
 }
 
 
@@ -500,12 +502,12 @@ inline A water_vapor_sat_ratio(
  * @return Saturation vapor pressure
  */
 template <class A>
-inline A saturation_pressure_ice(A T)
+inline A saturation_pressure_ice(A T, model_constants_t &cc)
 {
 #ifdef VANILLA_PRESSURE
     return ( exp( 9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T ) );
 #else
-    return ( p_sat_low_temp*exp(p_sat_ice_const_a*(T-T_sat_low_temp)/(T-p_sat_ice_const_b)) );
+    return ( cc.p_sat_low_temp*exp(cc.p_sat_ice_const_a*(T-cc.T_sat_low_temp)/(T-cc.p_sat_ice_const_b)) );
 #endif
 }
 
@@ -565,10 +567,11 @@ inline A mean_free_path(A p,
  */
 template <class A>
 inline A compute_pv(A T,
-		    A S)
+		    A S,
+            model_constants_t &cc)
 {
 
-  return ( S*saturation_pressure_water(T) );
+  return ( S*saturation_pressure_water(T, cc) );
 
 }
 
@@ -584,10 +587,11 @@ inline A compute_pv(A T,
 template <class A>
 inline A compute_pa(A p,
 		    A T,
-		    A S)
+		    A S,
+            model_constants_t &cc)
 {
 
-  return (p - compute_pv(T,S));
+  return (p - compute_pv(T,S, cc));
 
 }
 
@@ -603,10 +607,11 @@ inline A compute_pa(A p,
 template <class A>
 inline A compute_rhoa(A p,
 		      A T,
-		      A S)
+		      A S,
+    model_constants_t &cc)
 {
 
-  return ( compute_pa(p,T,S)/(Ra*T) );
+  return ( compute_pa(p,T,S, cc)/(cc.R_a*T) );
 
 }
 
@@ -624,12 +629,13 @@ template <class A>
 inline A compute_rhoh(
     A p,
     A T,
-    A S)
+    A S,
+    model_constants_t &cc)
 {
     // auto p_sat = p_sat_low_temp*exp(p_sat_const_a*(T-T_sat_low_temp)/(T-p_sat_const_b));
     // auto p_sat = exp( 9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T );
-    // return ( (p-S*p_sat)/(Ra*T) + S*p_sat/(Rv*T) );
-    return ( compute_pa(p, T, S)/(Ra*T) + compute_pv(T, S)/(Rv*T) );
+    // return ( (p-S*p_sat)/(Ra*T) + S*p_sat/(R_v*T) );
+    return ( compute_pa(p, T, S, cc)/(cc.R_a*T) + compute_pv(T, S, cc)/(cc.R_v*T) );
 
 }
 
@@ -645,10 +651,11 @@ inline A compute_rhoh(
 template <class A>
 inline A convert_S_to_qv(A p,
 			 A T,
-			 A S)
+			 A S,
+            model_constants_t &cc)
 {
 
-  return ( Epsilon*( compute_pv(T,S)/compute_pa(p,T,S) ) );
+  return ( cc.Epsilon*( compute_pv(T,S, cc)/compute_pa(p,T,S, cc) ) );
 
 }
 
@@ -664,12 +671,13 @@ inline A convert_S_to_qv(A p,
 template <class A>
 inline A convert_Si_to_qv(A p,
 			  A T,
-			  A Si)
+			  A Si,
+            model_constants_t &cc)
 {
 
-  A S = Si * ( saturation_pressure_ice(T)/saturation_pressure_water(T) );
+  A S = Si * ( saturation_pressure_ice(T, cc)/saturation_pressure_water(T, cc) );
 
-  return convert_S_to_qv(p, T, S);
+  return convert_S_to_qv(p, T, S, cc);
 
 }
 
@@ -685,10 +693,11 @@ inline A convert_Si_to_qv(A p,
 template <class A>
 inline A convert_qv_to_S(A p,
 			 A T,
-			 A qv)
+			 A qv,
+             model_constants_t &cc)
 {
 
-  return ( (p*qv)/((Epsilon + qv)*saturation_pressure_water(T)) );
+  return ( (p*qv)/((cc.Epsilon + qv)*saturation_pressure_water(T, cc)) );
 
 }
 
@@ -1154,12 +1163,12 @@ void setCoefficients(
     codi::RealReverse p_prime = y[p_idx]*ref.pref;
     codi::RealReverse T_prime = y[T_idx]*ref.Tref;
 
-    codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
-    codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
+    codi::RealReverse rho_prime = p_prime /( cc.R_a * T_prime );
+    codi::RealReverse L_vap_prime = latent_heat_water(T_prime, cc);
     codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
-    codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
-    codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(Rv*T_prime)) - 1.0);
-    codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
+    codi::RealReverse psat_prime = saturation_pressure_water(T_prime, cc);
+    codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(cc.R_v*T_prime)) - 1.0);
+    codi::RealReverse B_pp = (cc.R_v*T_prime)/((2.21/p_prime)*psat_prime);
 
 
     cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alpha_r-2.0)/(A_pp + B_pp) );
@@ -1182,21 +1191,21 @@ void setCoefficients(
     codi::RealReverse T_prime,
     model_constants_t &cc)
 {
-  codi::RealReverse rho_prime = p_prime /( Ra * T_prime );
-  codi::RealReverse L_vap_prime = latent_heat_water(T_prime);
-  codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
-  codi::RealReverse psat_prime = saturation_pressure_water(T_prime);
-  codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(Rv*T_prime)) - 1.0);
-  codi::RealReverse B_pp = (Rv*T_prime)/((2.21/p_prime)*psat_prime);
+    codi::RealReverse rho_prime = p_prime /( cc.R_a * T_prime );
+    codi::RealReverse L_vap_prime = latent_heat_water(T_prime, cc);
+    codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
+    codi::RealReverse psat_prime = saturation_pressure_water(T_prime, cc);
+    codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(cc.R_v*T_prime)) - 1.0);
+    codi::RealReverse B_pp = (cc.R_v*T_prime)/((2.21/p_prime)*psat_prime);
 
-  cc.a1_prime = cc.a1_scale;	// Constant coefficient
-  cc.a2_prime = cc.a2_scale;	// Constant coefficient
+    cc.a1_prime = cc.a1_scale;	// Constant coefficient
+    cc.a2_prime = cc.a2_scale;	// Constant coefficient
 
-  cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alpha_r-2.0)/(A_pp + B_pp) );
-  cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alpha_r*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
+    cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alpha_r-2.0)/(A_pp + B_pp) );
+    cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alpha_r*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
 
-  cc.d_prime = cc.d_scale;	// Constant coefficient
-  cc.inv_z = 1.0/parcel_height;
+    cc.d_prime = cc.d_scale;	// Constant coefficient
+    cc.inv_z = 1.0/cc.parcel_height;
 }
 
 
@@ -1314,6 +1323,101 @@ void setup_model_constants(
       model_constants_t &cc,
       reference_quantities_t &ref_quant)
 {
+    // Set constants
+    cc.q_crit_i = q_crit_i;
+    cc.D_crit_i = D_crit_i;
+    cc.D_conv_i = D_conv_i;
+    cc.q_crit_r = q_crit_r;
+    cc.D_crit_r = D_crit_r;
+    cc.q_crit_fr = q_crit_fr;
+    cc.D_coll_c = D_coll_c;
+    cc.q_crit = q_crit;
+    cc.D_conv_sg = D_conv_sg;
+    cc.D_conv_ig = D_conv_ig;
+    cc.x_conv = x_conv;
+    cc.parcel_height = parcel_height;
+    cc.alpha_spacefilling = alpha_spacefilling;
+    cc.T_nuc = T_nuc;
+    cc.T_freeze = T_freeze;
+    cc.T_f = T_f;
+    cc.D_eq = D_eq;
+    cc.rho_w = rho_w;
+    cc.rho_0 = rho_0;
+    cc.rho_vel = rho_vel;
+    cc.rho_vel_c = rho_vel_c;
+    cc.rho_ice = rho_ice;
+    cc.M_w = M_w;
+    cc.M_a = M_a;
+    cc.R_universal = R_universal;
+    cc.Epsilon = Epsilon;
+    cc.gravity_acc = gravity_acc;
+    cc.R_a = R_a;
+    cc.R_v = R_v;
+    cc.a_v = a_v;
+    cc.b_v = b_v;
+    cc.a_prime = a_prime;
+    cc.b_prime = b_prime;
+    cc.c_prime = c_prime;
+    cc.K_T = K_T;
+    cc.L_wd = L_wd;
+    cc.L_ed = L_ed;
+    cc.D_v = D_v;
+    cc.ecoll_min = ecoll_min;
+    cc.ecoll_gg = ecoll_gg;
+    cc.ecoll_gg_wet = ecoll_gg_wet;
+    cc.kin_visc_air = kin_visc_air;
+    cc.C_mult = C_mult;
+    cc.T_mult_min = T_mult_min;
+    cc.T_mult_max = T_mult_max;
+    cc.T_mult_opt = T_mult_opt;
+
+    cc.const0 = 1.0/(cc.D_coll_c - cc.cloud.d_crit_c);
+    cc.const3 = 1.0/(cc.T_mult_opt - cc.T_mult_min);
+    cc.const4 = 1.0/(cc.T_mult_opt - cc.T_mult_max);
+    cc.const5 = cc.alpha_spacefilling * cc.rho_w/cc.rho_ice;
+    cc.D_rainfrz_gh = D_rainfrz_gh;
+    cc.D_rainfrz_ig = D_rainfrz_ig;
+    cc.dv0 = dv0;
+    cc.p_sat_melt = p_sat_melt;
+    cc.cp = cp;
+    cc.k_b = k_b;
+    cc.a_HET = a_HET;
+    cc.b_HET = b_HET;
+    cc.N_sc = N_sc;
+    cc.n_f = n_f;
+    cc.N_avo = N_avo;
+    cc.na_dust = na_dust;
+    cc.na_soot = na_soot;
+    cc.na_orga = na_orga;
+    cc.ni_het_max = ni_het_max;
+    cc.ni_hom_max = ni_hom_max;
+    cc.a_dep = a_dep;
+    cc.b_dep = b_dep;
+    cc.c_dep = c_dep;
+    cc.d_dep = d_dep;
+    cc.nim_imm = nim_imm;
+    cc.nin_dep = nin_dep;
+    cc.alf_imm = alf_imm;
+    cc.bet_dep = bet_dep;
+    cc.bet_imm = bet_imm;
+    cc.r_const = r_const;
+    cc.r1_const = r1_const;
+    cc.cv = cv;
+    cc.p_sat_const_a = p_sat_const_a;
+    cc.p_sat_ice_const_a = p_sat_ice_const_a;
+    cc.p_sat_const_b = p_sat_const_b;
+    cc.p_sat_ice_const_b = p_sat_ice_const_b;
+    cc.p_sat_low_temp = p_sat_low_temp;
+    cc.T_sat_low_temp = T_sat_low_temp;
+    cc.alpha_depo = alpha_depo;
+    cc.r_0 = r_0;
+
+    cc.k_1_conv = k_1_conv;
+    cc.k_2_conv = k_2_conv;
+    cc.k_1_accr = k_1_accr;
+    cc.k_r = k_r;
+
+
     // Numerics
     cc.t_end_prime = input.t_end_prime;
     cc.t_end = input.t_end_prime/ref_quant.tref;
@@ -1338,10 +1442,10 @@ void setup_model_constants(
 
     // // Performance constants for warm cloud; COSMO
     cc.a1_scale = 1.0e-3;
-    cc.a2_scale = 1.72 / pow(Ra , 7./8.);
-    cc.e1_scale = 1.0 / sqrt(Ra);
-    cc.e2_scale = 9.1 / pow(Ra , 11./16.);
-    cc.d_scale = ( 130.0*tgamma(4.5) )/( 6.0*(1.0e3)*pow(M_PI*(8.0e6)*Ra , 1.0/8.0) );
+    cc.a2_scale = 1.72 / pow(cc.R_a , 7./8.);
+    cc.e1_scale = 1.0 / sqrt(cc.R_a);
+    cc.e2_scale = 9.1 / pow(cc.R_a , 11./16.);
+    cc.d_scale = ( 130.0*tgamma(4.5) )/( 6.0*(1.0e3)*pow(M_PI*(8.0e6)*cc.R_a , 1.0/8.0) );
 
     // Performance constants for warm cloud; IFS
     // The file constants.h also defines some constants as nar, ...
@@ -1350,6 +1454,15 @@ void setup_model_constants(
     const double F_acc = 2.0;
     const double lambda_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alpha_r);
 
+    for(auto &i: a_ccn)
+        cc.a_ccn.push_back(i);
+    for(auto &i: b_ccn)
+        cc.b_ccn.push_back(i);
+    for(auto &i: c_ccn)
+        cc.c_ccn.push_back(i);
+    for(auto &i: d_ccn)
+        cc.d_ccn.push_back(i);
+
     // cc.a1_scale = (1350. * F_aut)/pow(Nc , 1.79);
     // cc.a2_scale = 67.0 * F_acc;
     // cc.e1_scale = 2.0 * M_PI * cc.nar * ( (0.78 * tgamma(2.0 - cc.nbr))/(lambda_pp*lambda_pp) );
@@ -1357,6 +1470,24 @@ void setup_model_constants(
     //     * pow(cc.cr/cc.mu, 0.5) * pow(cc.Sc, 1.0/3.0) * pow(cc.rho0, 0.25)
     //     * (tgamma(cc.epsilonr + cc.nbr)/pow(lambda_pp ,cc.epsilonr));
     // cc.d_scale = 4.0e-3;
+
+    if(nuc_type == 6)
+    {
+        cc.na_dust = na_dust;
+        cc.na_soot = na_soot;
+        cc.na_orga = na_orga;
+    } else if(nuc_type == 7 || nuc_type == 5)
+    {
+        // Standard values
+        cc.na_dust = na_dust_2;
+        cc.na_soot = na_soot_2;
+        cc.na_orga = na_orga_2;
+    } else if(nuc_type == 8)
+    {
+        cc.na_dust = na_dust_3;
+        cc.na_soot = na_soot_3;
+        cc.na_orga = na_orga_3;
+    }
 
     // Inflow from above
     cc.B_prime = 0.0; //1.0e-7;
@@ -1415,9 +1546,11 @@ void setup_model_constants(
     cc.cloud.cap = 2.0;
     cc.cloud.vsedi_max = 1.0;
     cc.cloud.vsedi_min = 0.0;
+    cc.cloud.q_crit_c = 1.0e-6;
+    cc.cloud.d_crit_c = 1.0e-5;
     cc.cloud.c_s = 1.0 / cc.cloud.cap;
     cc.cloud.a_f = vent_coeff_a(cc.cloud, 1);
-    cc.cloud.b_f = vent_coeff_b(cc.cloud, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.cloud.b_f = vent_coeff_b(cc.cloud, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
     cc.cloud.c_z = moment_gamma(cc.cloud, 2);
 
     setup_cloud_autoconversion(cc.cloud, cc);
@@ -1474,7 +1607,7 @@ void setup_model_constants(
     cc.rain.g2 = table_r2.igf[table_r2.n_bins-1];
     cc.rain.c_s = 1.0 / cc.rain.cap;
     cc.rain.a_f = vent_coeff_a(cc.rain, 1);
-    cc.rain.b_f = vent_coeff_b(cc.rain, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.rain.b_f = vent_coeff_b(cc.rain, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
     cc.rain.c_z = moment_gamma(cc.rain, 2);
     setup_bulk_sedi(cc.rain);
 
@@ -1519,7 +1652,7 @@ void setup_model_constants(
     cc.graupel.c_s = 1.0 / cc.graupel.cap;
     cc.graupel.ecoll_c = 1.0;
     cc.graupel.a_f = vent_coeff_a(cc.graupel, 1);
-    cc.graupel.b_f = vent_coeff_b(cc.graupel, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.graupel.b_f = vent_coeff_b(cc.graupel, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
     cc.graupel.c_z = moment_gamma(cc.graupel, 2);
     setup_bulk_sedi(cc.graupel);
 
@@ -1556,7 +1689,7 @@ void setup_model_constants(
     cc.hail.c_s = 1.0 / cc.hail.cap;
     cc.hail.ecoll_c = 1.0;
     cc.hail.a_f = vent_coeff_a(cc.hail, 1);
-    cc.hail.b_f = vent_coeff_b(cc.hail, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.hail.b_f = vent_coeff_b(cc.hail, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
     cc.hail.c_z = moment_gamma(cc.hail, 2);
     setup_bulk_sedi(cc.hail);
 
@@ -1597,7 +1730,7 @@ void setup_model_constants(
     cc.ice.c_s = 1.0 / cc.ice.cap;
     cc.ice.ecoll_c = 0.80;
     cc.ice.a_f = vent_coeff_a(cc.ice, 1);
-    cc.ice.b_f = vent_coeff_b(cc.ice, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.ice.b_f = vent_coeff_b(cc.ice, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
     cc.ice.c_z = moment_gamma(cc.ice, 2);
     setup_bulk_sedi(cc.ice);
 
@@ -1639,7 +1772,7 @@ void setup_model_constants(
     cc.snow.c_s = 1.0 / cc.snow.cap;
     cc.snow.ecoll_c = 0.80;
     cc.snow.a_f = vent_coeff_a(cc.snow, 1);
-    cc.snow.b_f = vent_coeff_b(cc.snow, 1) * pow(N_sc, n_f) / sqrt(kin_visc_air);
+    cc.snow.b_f = vent_coeff_b(cc.snow, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
     cc.snow.c_z = moment_gamma(cc.snow, 2);
     setup_bulk_sedi(cc.snow);
 

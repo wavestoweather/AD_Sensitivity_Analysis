@@ -54,7 +54,7 @@
 
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
-#define num_par 56*6+17     /*!< Number of gradients */
+#define num_par 56*6+107+16     /*!< Number of gradients. 56 for each particle + model constants */
 
 #endif
 
@@ -80,7 +80,7 @@
 #if defined(TRACE_TIME)
 // Relative to ascent time
 double trace_time = 0;
-const double trace_start = 2500;
+const double trace_start = -1000;
 const double trace_end = 3500;
 bool trace = false;
 #else
@@ -125,7 +125,33 @@ const std::vector<std::string> output_par_idx =
 const std::vector<std::string> output_grad_idx =
     {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
     "dbeta_r", "ddelta1", "ddelta2", "dzeta", "drain_gfak", "dcloud_k_au",
-    "dcloud_k_sc", "dkc_autocon", "dinv_z",
+    "dcloud_k_sc", "dkc_autocon", "dinv_z", "dw",
+    "dq_crit_i", "dD_crit_i", "dD_conv_i", "dq_crit_r",
+    "dD_crit_r", "dq_crit_fr", "dD_coll_c", "dq_crit",
+    "dD_conv_sg", "dD_conv_ig", "dx_conv", "dparcel_height",
+    "dalpha_spacefilling", "dT_nuc", "dT_freeze", "dT_f",
+    "dD_eq", "drho_w", "drho_0", "drho_vel",
+    "drho_vel_c", "drho_ice", "dM_w", "dM_a",
+    "dR_universal", "dEpsilon", "dgravity_acc", "dR_a",
+    "dR_v", "da_v", "db_v", "da_prime",
+    "db_prime", "dc_prime", "dK_T", "dL_wd",
+    "dL_ed", "dD_v", "decoll_min", "decoll_gg",
+    "decoll_gg_wet", "dkin_visc_air", "dC_mult", "dT_mult_min",
+    "dT_mult_max", "dT_mult_opt", "dconst0", "dconst3",
+    "dconst4", "dconst5", "dD_rainfrz_ig", "ddv0",
+    "dp_sat_melt", "dcp", "dk_b", "da_HET",
+    "db_HET", "dN_sc", "dn_f", "dN_avo",
+    "dna_dust", "dna_soot", "dna_orga", "dni_het_max",
+    "dni_hom_max", "da_dep", "db_dep", "dc_dep",
+    "dd_dep", "dnim_imm", "dnin_dep", "dalf_imm",
+    "dbet_dep", "dbet_imm", "dr_const", "dr1_const",
+    "dcv", "dp_sat_const_a", "dp_sat_ice_const_a", "dp_sat_const_b",
+    "dp_sat_ice_const_b", "dp_sat_low_temp", "dT_sat_low_temp", "dalpha_depo",
+    "dr_0", "dk_1_conv", "dk_2_conv", "dk_1_accr",
+    "dk_r", "da_ccn_1", "da_ccn_2", "da_ccn_3", "da_ccn_4",
+    "db_ccn_1", "db_ccn_2", "db_ccn_3", "db_ccn_4",
+    "dc_ccn_1", "dc_ccn_2", "dc_ccn_3", "dc_ccn_4",
+    "dd_ccn_1", "dd_ccn_2", "dd_ccn_3", "dd_ccn_4",
     // Rain
     "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_min_x_act",
     "drain_min_x_nuc_homo", "drain_min_x_nuc_hetero", "drain_min_x_melt",
@@ -242,77 +268,84 @@ const double R_universal = 8.3144598;
  * Molar mass of water, unit: kg/mol
  * Source: http://www1.lsbu.ac.uk/water/water_properties.html
  */
-const double Mw = 0.018015265;
+const double M_w = 0.018015265;
 
 /**
  * Molar mass of dry air, unit: kg/mol
  * Source: Picard et al, 2008: Revised formula for the density of moist air
  */
-const double Ma = 0.02896546;
+const double M_a = 0.02896546;
 
 /**
  * Gas constant for water vapor, unit: J/(kg*K)
  */
-const double Rv = R_universal/Mw;
+const double R_v = R_universal/M_w; //  461.51 in ICON
 
 /**
  * Gas constant for dry air, unit: J/(kg*K)
-//  */
-const double Ra = R_universal/Ma;
+ */
+const double R_a = R_universal/M_a;
 
 /**
  * Quotient of the individual gas constants
  */
-const double Epsilon = Ra/Rv;
+const double Epsilon = R_a/R_v;
+
+/**
+ * Aerosol particle radius prior to freezing used in homogeneous nucleation.
+ */
+const double r_0 = 0.25e-6;
+
+/**
+ * Depostion coefficient for homogeneous ice nucleation.
+ * See Spichtinger & Gierens 2009.
+ */
+const double alpha_depo = 0.5;
 
 /**
  * Gravitational acceleration (m/s^2)
  */
-const double gravity_acc = 9.81;
+const double gravity_acc = 9.80665;
 
 /**
- * Treshold for ice selfcollection
+ * Treshold (ratio mass) for ice selfcollection
  */
 const double q_crit_i = 1.0e-6;
 /**
- * Treshold for ice selfcollection
+ * Treshold (diameter) for ice selfcollection
  */
 const double D_crit_i = 1.0e-4;
 
 /**
- * Threshold for ice conversion in selfcollection
+ * Threshold (diameter) for ice conversion in selfcollection
  */
 const double D_conv_i = 75.0e-6;
 
 /**
- * Threshold for ice rain riming and snow rain riming
+ * Threshold (ratio mass) for ice rain riming and snow rain riming
  */
 const double q_crit_r = 1.0e-5;
 /**
- * Threshold for ice rain riming and snow rain riming
+ * Threshold (diameter) for ice rain riming and snow rain riming
  */
 const double D_crit_r = 1.0e-4;
 
 /**
- * Threshold for rain freeze and cloud water
+ * Threshold (ratio mass) for rain freeze and cloud water
  */
 const double q_crit_fr = 1.0e-6;
-/**
- * Threshold for rain freeze and cloud water
- */
-const double q_crit_c = 1.0e-6;
 
 /**
- * Default threshold is 1e-4 g/m^3
+ * Default threshold (ratio mass) is 1e-4 g/m^3
  */
 const double q_crit = 1.0e-7;
 
 /**
- * Threshold for conversion snow to graupel, ice to graupel
+ * Threshold (diameter) for conversion snow to graupel, ice to graupel
  */
 const double D_conv_sg = 2.0e-4;
 /**
- * Threshold for conversion snow to graupel, ice to graupel
+ * Threshold (diameter) for conversion snow to graupel, ice to graupel
  */
 const double D_conv_ig = 2.0e-4;
 
@@ -322,14 +355,10 @@ const double D_conv_ig = 2.0e-4;
 const double x_conv = 1.0e-10;
 
 /**
- * Threshold for cloud drop collection efficiency
- */
-const double D_crit_c = 1.0e-5;
-
-/**
  * Upper bound for diameter in collision efficiency
  */
 const double D_coll_c = 4.0e-5;
+
 
 /**
  * Height of the trajectory package [m].
@@ -381,10 +410,6 @@ const double rho_vel_c = 1;//0.2;
  */
 const double rho_ice = 916.7;
 
-/**
- * Gas constant of water vapor from ICON mo_physical_constants
- */
-const double R_v = 461.51;
 
 /**
  * Various constants from ICON regarding evaporation from melting ice particles
@@ -443,7 +468,7 @@ const double ecoll_gg = 0.10;
  */
 const double ecoll_gg_wet = 0.40;
 /**
- * Kinematic viscosity of dry air from mo_physical_constants.f90 in
+ * Kinematic viscosity of dry air in
  * \f$\text{m}^2/\text{s}\f$.
  */
 const double kin_visc_air = 1.5e-5;
@@ -468,26 +493,6 @@ const double T_mult_max = 270.0;
  * Hallet-Mossop ice multiplication
  */
 const double T_mult_opt = 268.0;
-
-/**
- * Constant used in cloud riming.
- */
-const double const0 = 1.0/(D_coll_c - D_crit_c);
-/**
- * Hallet-Mossop ice multiplication.
- * Constant used in ice - x and snow - x riming.
- */
-const double const3 = 1.0/(T_mult_opt - T_mult_min);
-/**
- * Hallet-Mossop ice multiplication.
- * Constant used in ice - x and snow - x riming.
- */
-const double const4 = 1.0/(T_mult_opt - T_mult_max);
-/**
- * Constant for conversions ice -> graupel, snow -> graupel,
- * melting (used in riming).
- */
-const double const5 = alpha_spacefilling * rho_w/rho_ice;
 
 /**
  * Constant wether to use ice multiplication.
@@ -563,10 +568,6 @@ const double n_f = 0.333;
  */
 const double N_avo = 6.02214179e23;
 /**
- * Average gravity
- */
-const double grav = 9.80665;
-/**
  *  Molar weight of dry air in \f$\text{g}\cdot\text{mol}^{-1}\f$
  */
 const double amd = 28.97;
@@ -579,17 +580,17 @@ const double amw = 18.0154;
  * Constants for Phillips et al. ice nucleation scheme
  * initial number density of dust in \f$\text{m}^{-3}\f$, Phillips08
  */
-const double na_dust = 162.0e3;
+const double na_dust_phillips = 162.0e3;
 /**
  * Constants for Phillips et al. ice nucleation scheme
  * initial number density of soot in \f$\text{m}^{-3}\f$ Phillips08
  */
-const double na_soot = 15.0e6;
+const double na_soot_phillips = 15.0e6;
 /**
  * Constants for Phillips et al. ice nucleation scheme
  * initial number density of organics in \f$\text{m}^{-3}\f$, Phillips08
  */
-const double na_orga = 177.0e6;
+const double na_orga_phillips = 177.0e6;
 /**
  * Constants for Phillips et al. ice nucleation scheme
  * max number of IN between \f$1-10\f$ per liter, i.e. 1d3-10d3
@@ -667,22 +668,22 @@ const double bet_imm = 1.2293;           /*!< More parameters for Hande et al. n
 uint32_t auto_type = 3;
 
 /**
- * ccn_activation_hdcp2 after Hande et al (2015)
+ * ccn_activation_hdcp2 after Hande et al (2016)
  */
 const std::vector<double> a_ccn = {183230691.161, 0.10147358938,
                                 -0.2922395814, 229189886.226};
 /**
- * ccn_activation_hdcp2 after Hande et al (2015)
+ * ccn_activation_hdcp2 after Hande et al (2016)
  */
 const std::vector<double> b_ccn = {0.0001984051994, 4.473190485e-05,
                                 0.0001843225275, 0.0001986158191};
 /**
- * ccn_activation_hdcp2 after Hande et al (2015)
+ * ccn_activation_hdcp2 after Hande et al (2016)
  */
 const std::vector<double> c_ccn = {16.2420263911, 3.22011836758,
                                 13.8499423719, 16.2461600644};
 /**
- * ccn_activation_hdcp2 after Hande et al (2015)
+ * ccn_activation_hdcp2 after Hande et al (2016)
  */
 const std::vector<double> d_ccn = {287736034.13, 0.6258809883,
                                 0.8907491812, 360848977.55};
@@ -694,6 +695,74 @@ const std::vector<double> d_ccn = {287736034.13, 0.6258809883,
  * >6: SB (2006) from Cosmo 5.2 (cloud_nucleation(..))
  */
 const int nuc_type = 5;
+
+/**
+ * Coefficient for accretion of qc to qr.
+ */
+const double k_1_accr = 5.0e-4;
+/**
+ * Ceficcient for accretion of qc to qr.
+ */
+const double k_r = 5.78;
+
+#ifdef SB_CONV
+/**
+ * Exponent for autoconversion of qc to qr.
+ */
+const double k_1_conv = 400;
+/**
+ * Exponent for autoconversion of qc to qr.
+ */
+const double k_2_conv = 0.7;
+#else
+/**
+ * Exponent for autoconversion of qc to qr.
+ */
+const double k_1_conv = 600;
+/**
+ * Exponent for autoconversion of qc to qr.
+ */
+const double k_2_conv = 0.68;
+#endif
+
+/**
+ * Initial number density of dust [1/m^3] for nuc_type == 6
+ */
+const double na_dust = 160e4;
+/**
+ * Initial number density of dust [1/m^3] for nuc_type == 7 or 5
+ */
+const double na_dust_2 = 160e4;
+/**
+ * Initial number density of dust [1/m^3] for nuc_type == 8
+ */
+const double na_dust_3 = 70e4;
+
+/**
+ * Initial number density of soot [1/m^3] for nuc_type == 6
+ */
+const double na_soot = 30e6;
+/**
+ * Initial number density of soot [1/m^3] for nuc_type == 7 or 5
+ */
+const double na_soot_2 = 25e6;
+/**
+ * Initial number density of soot [1/m^3] for nuc_type == 8
+ */
+const double na_soot_3 = 0;
+
+/**
+ * Initial number density of organics [1/m^3] for nuc_type == 6
+ */
+const double na_orga = 0;
+/**
+ * Initial number density of organics [1/m^3] for nuc_type == 7 or 5
+ */
+const double na_orga_2 = 30e6;
+/**
+ * Initial number density of organics [1/m^3] for nuc_type == 8
+ */
+const double na_orga_3 = 0;
 
 /** Use nucleation based either on Hande et al. (true)
  * or Phillips et al. (false). This *should* depend
@@ -731,10 +800,6 @@ const double r_const = 287.04;
  */
 const double r1_const = 461.5;
 
-/**
- * Parameter for saturation adjustment
- */
-// const double cp = 1005.7;
 
 /**
  * Specific heat capacity of water vapor at constant pressure in
@@ -776,6 +841,8 @@ const double p_sat_low_temp = 610.78;
  * Parameter for saturation adjustment.
  */
 const double T_sat_low_temp = 273.15;
+
+
 
 const std::vector<std::vector<double> > afrac_dust = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},

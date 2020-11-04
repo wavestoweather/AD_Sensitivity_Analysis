@@ -233,7 +233,7 @@ if __name__ == "__main__":
     else:
         netcdf_path = "../data/conv_400_0_traj_t000000_p001.nc_wcb"
 
-    plot_singles = True
+    plot_singles = False
 
     # Define which output parameters you would like to plot
     out_params = ["QI", "NCICE", "QC", "NCCLOUD", "QR", "NCRAIN",

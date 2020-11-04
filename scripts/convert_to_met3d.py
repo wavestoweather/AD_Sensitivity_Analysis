@@ -413,163 +413,202 @@ def convert_wcb2(f, store_path, fl, ensemble):
         "long_name": "pressure",
         "units": "Pa",
         "positive": "down",
-        "axis": "z"}
+        "axis": "Z"}
     ds["z"].attrs = {
         "standard_name": "height",
         "long_name": "height above mean sea level",
+        "auxiliary_data": "yes",
         "units": "m AMSL"}
     ds["T"].attrs = {
         "standard_name": "air_temperature",
         "long_name": "temperature",
+        "auxiliary_data": "yes",
         "units": "K"}
     ds["S"].attrs = {
         "standard_name": "saturation",
         "long_name": "saturation",
+        "auxiliary_data": "yes",
         "units": "percentage"}
     ds["conv_400"].attrs = {
         "standard_name": "convective_400hPa_ascent",
-        "long_name": "convective 400hPa ascent"}
+        "long_name": "convective 400hPa ascent",
+        "auxiliary_data": "yes"}
     ds["conv_600"].attrs = {
         "standard_name": "convective_600hPa_ascent",
-        "long_name": "convective 600hPa ascent"}
+        "long_name": "convective 600hPa ascent",
+        "auxiliary_data": "yes"}
     ds["slan_400"].attrs = {
         "standard_name": "slantwise_400hPa_ascent",
-        "long_name": "slantwise 400hPa ascent"}
+        "long_name": "slantwise 400hPa ascent",
+        "auxiliary_data": "yes"}
     ds["slan_600"].attrs = {
         "standard_name": "slantwise_600hPa_ascent",
-        "long_name": "slantwise 600hPa ascent"}
+        "long_name": "slantwise 600hPa ascent",
+        "auxiliary_data": "yes"}
     ds["WCB_flag"].attrs = {
         "standard_name": "wcb_ascent",
-        "long_name": "WCB ascent"}
+        "long_name": "WCB ascent",
+        "auxiliary_data": "yes"}
     ds["dp2h"].attrs = {
         "standard_name": "2h_ascent_rate",
-        "long_name": "2h ascent rate"}
+        "long_name": "2h ascent rate",
+        "auxiliary_data": "yes"}
     ds["w"].attrs = {
         "standard_name": "ascend_velocity",
         "long_name": "ascend velocity",
+        "auxiliary_data": "yes",
         "units": "m s^-1"}
 
     ds["QV"].attrs = {
         "standard_name": "specific_humidity",
         "long_name": "specific humidity",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QC"].attrs = {
         "standard_name": "mass_fraction_of_cloud_liquid_water_in_air",
         "long_name": "specific cloud liquid water content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QR"].attrs = {
         "standard_name": "mass_fraction_of_rain_in_air",
         "long_name": "specific rain content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QS"].attrs = {
         "standard_name": "mass_fraction_of_snow_in_air",
         "long_name": "specific snow content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QI"].attrs = {
         "standard_name": "mass_fraction_of_cloud_ice_in_air",
         "long_name": "specific cloud ice content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QG"].attrs = {
         "standard_name": "mass_fraction_of_graupel_in_air",
         "long_name": "specific graupel content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
 
     ds["QR_IN"].attrs = {
         "standard_name": "sedi_influx_of_rain",
         "long_name": "sedimentation (from above) of rain droplet mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QS_IN"].attrs = {
         "standard_name": "sedi_influx_of_snow",
         "long_name": "sedimentation (from above) of snow crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QI_IN"].attrs = {
         "standard_name": "sedi_influx_of_cloud_ice",
         "long_name": "sedimentation (from above) of ice crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QG_IN"].attrs = {
         "standard_name": "sedi_influx_of_graupel",
         "long_name": "sedimentation (from above) of graupel mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
 
     ds["QR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain",
         "long_name": "sedimentation of rain droplet mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow",
         "long_name": "sedimentation of snow crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QI_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_cloud_ice",
         "long_name": "sedimentation of ice crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel",
         "long_name": "sedimentation of graupel mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
 
     ds["NCCLOUD"].attrs = {
         "standard_name": "specif_number_of_cloud_droplets_in_air",
         "long_name": "specific cloud droplet number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCRAIN"].attrs = {
         "standard_name": "specif_number_of_rain_drops_in_air",
         "long_name": "specific rain drop number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCSNOW"].attrs = {
         "standard_name": "specif_number_of_snow_flakes_in_air",
         "long_name": "specific snow flake number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCICE"].attrs = {
         "standard_name": "specif_number_of_cloud_ice_in_air",
         "long_name": "specific cloud ice number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCGRAUPEL"].attrs = {
         "standard_name": "specif_number_of_graupel_in_air",
         "long_name": "specific graupel number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
 
     ds["NR_IN"].attrs = {
         "standard_name": "sedi_influx_of_rain_number",
         "long_name": "sedimentation (from above) of specific rain drop number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NS_IN"].attrs = {
         "standard_name": "sedi_influx_of_snow_number",
         "long_name": "sedimentation (from above) of specific snow flake number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NI_IN"].attrs = {
         "standard_name": "sedi_influx_of_ics_number",
         "long_name": "sedimentation (from above) of specific cloud ice number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NG_IN"].attrs = {
         "standard_name": "sedi_influx_of_graupel_number",
         "long_name": "sedimentation (from above) of specific graupel number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
 
     ds["NR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain_number",
         "long_name": "sedimentation of rain droplet number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow_number",
         "long_name": "sedimentation of snow crystal number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NI_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_ice_number",
         "long_name": "sedimentation of ice crystal number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel_number",
         "long_name": "sedimentation of graupel number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
 
     ds["Q_TURBULENCE"].attrs = {
         "standard_name": "turbulence_flux",
         "long_name": "flux from turbulence",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["type"].attrs = {
         "standard_name": "trajectory_type",
-        "long_name": "trajectory type"}
+        "long_name": "trajectory type",
+        "auxiliary_data": "yes"}
 
     comp = dict(zlib=True, complevel=9)
     encoding = {var: comp for var in ds.data_vars}

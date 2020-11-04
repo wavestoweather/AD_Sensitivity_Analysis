@@ -297,13 +297,13 @@ int main(int argc, char** argv)
 #if defined MET3D && defined TURBULENCE
                 y_single_old[qv_idx] += inflow[qv_in_idx]/cc.num_sub_steps;
 #endif
-                register_everything(tape, cc);
+                cc.register_input(tape);
                 if(sub == 1)
                 {
                     codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
                     codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
                     codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
-                    y_single_old[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime);
+                    y_single_old[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime, cc);
                 }
 
 #if defined(RK4) || defined(RK4_ONE_MOMENT) || defined(OTHER)
@@ -323,16 +323,16 @@ int main(int argc, char** argv)
                     codi::RealReverse p_prime = y_single_new[p_idx]*ref_quant.pref;
                     codi::RealReverse qv_prime = y_single_new[qv_idx]*ref_quant.qref;
                     codi::RealReverse qc_prime = y_single_new[qc_idx]*ref_quant.qref;
-                    codi::RealReverse p_sat = saturation_pressure_water(T_prime);
+                    codi::RealReverse p_sat = saturation_pressure_water(T_prime, cc);
                     std::vector<codi::RealReverse> res(7);
 #ifdef TRACE_ENV
                     if(trace)
                         std::cout << "before sat ad S " << y_single_new[S_idx]
                             << "\nbefore sat ad S calc "
                             << convert_qv_to_S(
-                                y_single_new[p_idx].getValue()*ref_quant.pref,
-                                y_single_new[T_idx].getValue()*ref_quant.Tref,
-                                y_single_new[qv_idx].getValue()*ref_quant.qref) << "\n";
+                                p_prime,
+                                T_prime,
+                                qv_prime, cc) << "\n";
 #endif
                     for(auto& r: res) r = 0;
                     saturation_adjust(
@@ -341,7 +341,8 @@ int main(int argc, char** argv)
                         p_sat,
                         qv_prime,
                         qc_prime,
-                        res);
+                        res,
+                        cc);
                     y_single_new[qv_idx] += res[qv_idx]/ref_quant.qref;
                     y_single_new[qc_idx] += res[qc_idx]/ref_quant.qref;
                     y_single_new[T_idx] += res[T_idx]/ref_quant.Tref;
@@ -351,7 +352,8 @@ int main(int argc, char** argv)
                     y_single_new[S_idx] = convert_qv_to_S(
                         p_prime,
                         T_prime,
-                        qv_prime);
+                        qv_prime,
+                        cc);
 #ifdef TRACE_ENV
                     if(trace)
                         std::cout << "sat ad S " << y_single_new[S_idx]

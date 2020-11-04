@@ -611,169 +611,608 @@ struct gamma_table_t{
  * Structure for constants of a model. Includes particle constants as well.
  */
 struct model_constants_t{
-  //
-  // Physical constants warm cloud
-  //
-  double alpha_d; /*!< Accomodation coefficient */
+    //
+    // Physical constants warm cloud
+    //
+    double alpha_d; /*!< Accomodation coefficient */
 
-  codi::RealReverse Nc_prime; /*!< Number concentration of cloud droplets needed for one-moment scheme */
+    codi::RealReverse Nc_prime; /*!< Number concentration of cloud droplets needed for one-moment scheme */
 
-  codi::RealReverse a1_prime; /*!< Dimensional coefficient used in one-moment warm physics for qc and qr calculation */
-  codi::RealReverse a2_prime; /*!< Dimensional coefficient used in one-moment warm physics for qc and qr calculation */
-  codi::RealReverse e1_prime; /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
-  codi::RealReverse e2_prime; /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
-  codi::RealReverse B_prime;  /*!< Dimensional coefficient to simulate inflow from above in one-moment warm physics */
-  codi::RealReverse d_prime;  /*!< Dimensional coefficient used in one-moment warm physics qr calculation for sedimentation*/
+    codi::RealReverse a1_prime; /*!< Dimensional coefficient used in one-moment warm physics for qc and qr calculation */
+    codi::RealReverse a2_prime; /*!< Dimensional coefficient used in one-moment warm physics for qc and qr calculation */
+    codi::RealReverse e1_prime; /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
+    codi::RealReverse e2_prime; /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
+    codi::RealReverse B_prime;  /*!< Dimensional coefficient to simulate inflow from above in one-moment warm physics */
+    codi::RealReverse d_prime;  /*!< Dimensional coefficient used in one-moment warm physics qr calculation for sedimentation*/
 
-  codi::RealReverse dw; /*!< Change in buoancy */
+    codi::RealReverse dw; /*!< Change in buoancy */
 
-  codi::RealReverse gamma;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
-  codi::RealReverse betac;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
-  codi::RealReverse betar;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
-  codi::RealReverse delta1; /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
-  codi::RealReverse delta2; /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
-  codi::RealReverse zeta;   /*!< Exponents used in one-moment warm physics for qr calculation */
+    codi::RealReverse gamma;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
+    codi::RealReverse betac;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
+    codi::RealReverse betar;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
+    codi::RealReverse delta1; /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
+    codi::RealReverse delta2; /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
+    codi::RealReverse zeta;   /*!< Exponents used in one-moment warm physics for qr calculation */
 
-  /**
-   * Model constants for hail.
-   */
-  particle_model_constants_t hail;
-  /**
-   * Model constants for ice.
-   */
-  particle_model_constants_t ice;
-  /**
-   * Model constants for snow.
-   */
-  particle_model_constants_t snow;
-  /**
-   * Model constants for cloud.
-   */
-  particle_model_constants_t cloud;
-  /**
-   * Model constants for rain.
-   */
-  particle_model_constants_t rain;
-  /**
-   * Model constants for graupel.
-   */
-  particle_model_constants_t graupel;
+    /**
+     * Model constants for hail.
+     */
+    particle_model_constants_t hail;
+    /**
+     * Model constants for ice.
+     */
+    particle_model_constants_t ice;
+    /**
+     * Model constants for snow.
+     */
+    particle_model_constants_t snow;
+    /**
+     * Model constants for cloud.
+     */
+    particle_model_constants_t cloud;
+    /**
+     * Model constants for rain.
+     */
+    particle_model_constants_t rain;
+    /**
+     * Model constants for graupel.
+     */
+    particle_model_constants_t graupel;
 
-  /**
-   * Snow - cloud droplet riming.
-   */
-  collection_model_constants_t coeffs_scr;
-  /**
-   * Snow - rain droplet riming.
-   */
-  collection_model_constants_t coeffs_srr;
-  /**
-   * Ice - rain droplet riming.
-   */
-  collection_model_constants_t coeffs_irr;
-  /**
-   * Ice - cloud droplet riming.
-   */
-  collection_model_constants_t coeffs_icr;
-  /**
-   * Hail - rain droplet riming.
-   */
-  collection_model_constants_t coeffs_hrr;
-  /**
-   * Graupel - rain droplet riming.
-   */
-  collection_model_constants_t coeffs_grr;
-  /**
-   * Hail - cloud droplet riming.
-   */
-  collection_model_constants_t coeffs_hcr;
-  /**
-   * Graupel - cloud droplet riming.
-   */
-  collection_model_constants_t coeffs_gcr;
-  /**
-   * Snow - ice collection.
-   */
-  collection_model_constants_t coeffs_sic;
-  /**
-   * Hail - ice collection.
-   */
-  collection_model_constants_t coeffs_hic;
-  /**
-   * Graupel - ice collection.
-   */
-  collection_model_constants_t coeffs_gic;
-  /**
-   * Hail - snow collection.
-   */
-  collection_model_constants_t coeffs_hsc;
-  /**
-   * Graupel - snow collection.
-   */
-  collection_model_constants_t coeffs_gsc;
+    /**
+     * Snow - cloud droplet riming.
+     */
+    collection_model_constants_t coeffs_scr;
+    /**
+     * Snow - rain droplet riming.
+     */
+    collection_model_constants_t coeffs_srr;
+    /**
+     * Ice - rain droplet riming.
+     */
+    collection_model_constants_t coeffs_irr;
+    /**
+     * Ice - cloud droplet riming.
+     */
+    collection_model_constants_t coeffs_icr;
+    /**
+     * Hail - rain droplet riming.
+     */
+    collection_model_constants_t coeffs_hrr;
+    /**
+     * Graupel - rain droplet riming.
+     */
+    collection_model_constants_t coeffs_grr;
+    /**
+     * Hail - cloud droplet riming.
+     */
+    collection_model_constants_t coeffs_hcr;
+    /**
+     * Graupel - cloud droplet riming.
+     */
+    collection_model_constants_t coeffs_gcr;
+    /**
+     * Snow - ice collection.
+     */
+    collection_model_constants_t coeffs_sic;
+    /**
+     * Hail - ice collection.
+     */
+    collection_model_constants_t coeffs_hic;
+    /**
+     * Graupel - ice collection.
+     */
+    collection_model_constants_t coeffs_gic;
+    /**
+     * Hail - snow collection.
+     */
+    collection_model_constants_t coeffs_hsc;
+    /**
+     * Graupel - snow collection.
+     */
+    collection_model_constants_t coeffs_gsc;
 
-  //
-  // Technical constants
-  //
-  double t_end_prime;       /*!< End time in seconds for the simulation. */
-  double t_end;             /*!< End time for the simulation. */
-  double dt_prime;          /*!< Timestep size in seconds for the simulation. */
-  double dt;                /*!< Timestep size for the simulation. */
-  double dt_traject_prime;  /*!< Timestep size of the trajectory from the netCDF file. */
-  double dt_traject;        /*!< Timestep size of the trajectory from the netCDF file. */
-  uint64_t num_steps;       /*!< Number of timesteps to read from the netCDF file. */
+    //
+    // Technical constants
+    //
+    double t_end_prime;       /*!< End time in seconds for the simulation. */
+    double t_end;             /*!< End time for the simulation. */
+    double dt_prime;          /*!< Timestep size in seconds for the simulation. */
+    double dt;                /*!< Timestep size for the simulation. */
+    double dt_traject_prime;  /*!< Timestep size of the trajectory from the netCDF file. */
+    double dt_traject;        /*!< Timestep size of the trajectory from the netCDF file. */
+    uint64_t num_steps;       /*!< Number of timesteps to read from the netCDF file. */
 
-  /**
-   * Number of timesteps to simulate between each timestep of the netCDF file.
-   */
-  uint64_t num_sub_steps;
+    /**
+     * Number of timesteps to simulate between each timestep of the netCDF file.
+     */
+    uint64_t num_sub_steps;
 
-  //
-  // General performance constants
-  //
-  double dt_half;   /*!< dt/2 */
-  double dt_sixth;  /*!< dt/6 */
-  double dt_third;  /*!< dt/3 */
+    //
+    // General performance constants
+    //
+    double dt_half;   /*!< dt/2 */
+    double dt_sixth;  /*!< dt/6 */
+    double dt_third;  /*!< dt/3 */
 
-  codi::RealReverse a1_scale; /*!< Performance constants warm cloud */
-  codi::RealReverse a2_scale; /*!< Performance constants warm cloud */
-  codi::RealReverse e1_scale; /*!< Performance constants warm cloud */
-  codi::RealReverse e2_scale; /*!< Performance constants warm cloud */
-  codi::RealReverse d_scale;  /*!< Performance constants warm cloud */
-  codi::RealReverse rain_gfak = 1.0; /*!< Coefficient for gamma evaluation in rain evaporation */
-  codi::RealReverse cloud_k_au; /*!< Coefficient for autoconversion of cloud to rain */
-  codi::RealReverse cloud_k_sc; /*!< Coefficient for autoconversion of cloud to rain */
+    codi::RealReverse a1_scale; /*!< Performance constants warm cloud */
+    codi::RealReverse a2_scale; /*!< Performance constants warm cloud */
+    codi::RealReverse e1_scale; /*!< Performance constants warm cloud */
+    codi::RealReverse e2_scale; /*!< Performance constants warm cloud */
+    codi::RealReverse d_scale;  /*!< Performance constants warm cloud */
+    codi::RealReverse rain_gfak = 1.0; /*!< Coefficient for gamma evaluation in rain evaporation */
+    codi::RealReverse cloud_k_au; /*!< Coefficient for autoconversion of cloud to rain */
+    codi::RealReverse cloud_k_sc; /*!< Coefficient for autoconversion of cloud to rain */
 
-  /**
-   * Kernel for autoconversion
-   */
-  codi::RealReverse kc_autocon = 9.44e9;
+    /**
+     * Kernel for autoconversion
+     */
+    codi::RealReverse kc_autocon = 9.44e9;
 
-  /**
-   * Inverse layer thickness. Used for sedimentation.
-   * In Miltenberger (2016) the trajectories start every \f$100 \text{m}\f$
-   * between the surface and \f$4 \text{km}\f$ altitude using COSMO-2, which
-   * uses a mean spacing of \f$388 \text{m}\f$
-   * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
-   * at \f$23 \text{km}\f$.
-   */
-  codi::RealReverse inv_z;
+    /**
+     * Inverse layer thickness. Used for sedimentation.
+     * In Miltenberger (2016) the trajectories start every \f$100 \text{m}\f$
+     * between the surface and \f$4 \text{km}\f$ altitude using COSMO-2, which
+     * uses a mean spacing of \f$388 \text{m}\f$
+     * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
+     * at \f$23 \text{km}\f$.
+     */
+    codi::RealReverse inv_z;
 
-  const double nar = 0.22;      /*!< Constants for the IFS model. */
-  const double nbr = 2.2;       /*!< Constants for the IFS model. */
-  const double ar = M_PI / 6.0; /*!< Constants for the IFS model. */
-  const double br = 3.0;        /*!< Constants for the IFS model. */
-  const double cr = 386.8;      /*!< Constants for the IFS model. */
-  const double dr = 0.67;       /*!< Constants for the IFS model. */
-  const double Sc = 0.6;        /*!< Constants for the IFS model. */
-  const double mu = 16.0e-6;    /*!< Constants for the IFS model. */
-  const double rho0 = 1.0;      /*!< Constants for the IFS model. Why not 1.225? */
+    /// Parameters used in warm physics
+    const double nar = 0.22;      /*!< Constants for the IFS model. */
+    const double nbr = 2.2;       /*!< Constants for the IFS model. */
+    const double ar = M_PI / 6.0; /*!< Constants for the IFS model. */
+    const double br = 3.0;        /*!< Constants for the IFS model. */
+    const double cr = 386.8;      /*!< Constants for the IFS model. */
+    const double dr = 0.67;       /*!< Constants for the IFS model. */
+    const double Sc = 0.6;        /*!< Constants for the IFS model. */
+    const double mu = 16.0e-6;    /*!< Constants for the IFS model. */
+    const double rho0 = 1.0;      /*!< Constants for the IFS model. Why not 1.225? */
 
-  const double alpha_r = 1.0/(br + 1.0 - nbr);   /*!< Constants for the IFS model. */
-  const double epsilonr = 0.5*dr + 2.5 - nbr;   /*!< Constants for the IFS model. */
+    const double alpha_r = 1.0/(br + 1.0 - nbr);   /*!< Constants for the IFS model. */
+    const double epsilonr = 0.5*dr + 2.5 - nbr;   /*!< Constants for the IFS model. */
 
-  double scaling_fact; /*!< Scaling factor. */
+    double scaling_fact; /*!< Scaling factor. */
 
+    // See constants.h for a descripition of those.
+    codi::RealReverse q_crit_i;
+    codi::RealReverse D_crit_i;
+    codi::RealReverse D_conv_i;
+    codi::RealReverse q_crit_r;
+    codi::RealReverse D_crit_r;
+    codi::RealReverse q_crit_fr;
+    codi::RealReverse D_coll_c;
+    codi::RealReverse q_crit;
+    codi::RealReverse D_conv_sg;
+    codi::RealReverse D_conv_ig;
+    codi::RealReverse x_conv;
+    codi::RealReverse parcel_height;
+    codi::RealReverse alpha_spacefilling;
+    codi::RealReverse T_nuc;
+    codi::RealReverse T_freeze;
+    codi::RealReverse T_f;
+    codi::RealReverse D_eq;
+    codi::RealReverse rho_w;
+    codi::RealReverse rho_0;
+    codi::RealReverse rho_vel;
+    codi::RealReverse rho_vel_c;
+    codi::RealReverse rho_ice;
+    codi::RealReverse M_w;
+    codi::RealReverse M_a;
+    codi::RealReverse R_universal;
+    codi::RealReverse Epsilon;
+    codi::RealReverse gravity_acc;
+    codi::RealReverse R_a;
+    codi::RealReverse R_v;
+    codi::RealReverse a_v;
+    codi::RealReverse b_v;
+    codi::RealReverse a_prime;
+    codi::RealReverse b_prime;
+    codi::RealReverse c_prime;
+    codi::RealReverse K_T;
+    codi::RealReverse L_wd;
+    codi::RealReverse L_ed;
+    codi::RealReverse D_v;
+    codi::RealReverse ecoll_min;
+    codi::RealReverse ecoll_gg;
+    codi::RealReverse ecoll_gg_wet;
+    codi::RealReverse kin_visc_air;
+    codi::RealReverse C_mult;
+    codi::RealReverse T_mult_min;
+    codi::RealReverse T_mult_max;
+    codi::RealReverse T_mult_opt;
+
+    /**
+     * Constant used in cloud riming.
+     */
+    codi::RealReverse const0;
+    /**
+     * Hallet-Mossop ice multiplication.
+     * Constant used in ice - x and snow - x riming.
+     */
+    codi::RealReverse const3;
+    /**
+     * Hallet-Mossop ice multiplication.
+     * Constant used in ice - x and snow - x riming.
+     */
+    codi::RealReverse const4;
+    /**
+     * Constant for conversions ice -> graupel, snow -> graupel,
+     * melting (used in riming).
+     */
+    codi::RealReverse const5;
+    codi::RealReverse D_rainfrz_gh;
+    codi::RealReverse D_rainfrz_ig;
+    codi::RealReverse dv0;
+    codi::RealReverse p_sat_melt;
+    codi::RealReverse cp;
+    codi::RealReverse k_b;
+    codi::RealReverse a_HET;
+    codi::RealReverse b_HET;
+    codi::RealReverse N_sc;
+    codi::RealReverse n_f;
+    codi::RealReverse N_avo;
+    codi::RealReverse na_dust;
+    codi::RealReverse na_soot;
+    codi::RealReverse na_orga;
+    codi::RealReverse ni_het_max;
+    codi::RealReverse ni_hom_max;
+    codi::RealReverse a_dep;
+    codi::RealReverse b_dep;
+    codi::RealReverse c_dep;
+    codi::RealReverse d_dep;
+    codi::RealReverse nim_imm;
+    codi::RealReverse nin_dep;
+    codi::RealReverse alf_imm;
+    codi::RealReverse bet_dep;
+    codi::RealReverse bet_imm;
+    std::vector<codi::RealReverse> a_ccn;
+    std::vector<codi::RealReverse> b_ccn;
+    std::vector<codi::RealReverse> c_ccn;
+    std::vector<codi::RealReverse> d_ccn;
+    codi::RealReverse r_const;
+    codi::RealReverse r1_const;
+    codi::RealReverse cv;
+    codi::RealReverse p_sat_const_a;
+    codi::RealReverse p_sat_ice_const_a;
+    codi::RealReverse p_sat_const_b;
+    codi::RealReverse p_sat_ice_const_b;
+    codi::RealReverse p_sat_low_temp;
+    codi::RealReverse T_sat_low_temp;
+    codi::RealReverse alpha_depo;
+    codi::RealReverse r_0;
+
+    codi::RealReverse k_1_conv;
+    codi::RealReverse k_2_conv;
+    codi::RealReverse k_1_accr;
+    codi::RealReverse k_r;
+
+    /**
+     * Register the model parameters on the tape for codi::RealReverse.
+     *
+     * @param tape Tape where the parameters should be registered on.
+     */
+    void register_input(codi::RealReverse::TapeType &tape)
+    {
+#if defined(RK4_ONE_MOMENT)
+        // Dimensional coefficients
+        tape.registerInput(this->a1_prime);    // Autoconversion
+        tape.registerInput(this->a2_prime);    // Accretion
+        tape.registerInput(this->e1_prime);    // Evaporation
+        tape.registerInput(this->e2_prime);    // Evaporation
+        tape.registerInput(this->d_prime);     // Sedimentation
+        tape.registerInput(this->Nc_prime);    // Concentration of cloud droplets
+
+        // Exponents
+        tape.registerInput(this->gamma);       // Autoconversion
+        tape.registerInput(this->betac);       // Accretion
+        tape.registerInput(this->betar);       // Accretion
+        tape.registerInput(this->delta1);      // Evaporation
+        tape.registerInput(this->delta2);      // Evaporation
+        tape.registerInput(this->zeta);        // Sedimentation
+
+#elif defined(RK4ICE) || defined(RK4NOICE)
+        // Dimensional coefficients
+        tape.registerInput(this->a1_prime);    // Autoconversion
+        tape.registerInput(this->a2_prime);    // Accretion
+        tape.registerInput(this->e1_prime);    // Evaporation
+        tape.registerInput(this->e2_prime);    // Evaporation
+        tape.registerInput(this->d_prime);     // Sedimentation
+        tape.registerInput(this->Nc_prime);    // Concentration of cloud droplets
+
+        // Exponents
+        tape.registerInput(this->gamma);       // Autoconversion
+        tape.registerInput(this->betac);       // Accretion
+        tape.registerInput(this->betar);       // Accretion
+        tape.registerInput(this->delta1);      // Evaporation
+        tape.registerInput(this->delta2);      // Evaporation
+        tape.registerInput(this->zeta);        // Sedimentation
+
+        // ICON parameters
+        tape.registerInput(this->rain_gfak);
+        tape.registerInput(this->cloud_k_au);
+        tape.registerInput(this->cloud_k_sc);
+        tape.registerInput(this->kc_autocon);
+        tape.registerInput(this->inv_z);
+
+        // Everything else
+        tape.registerInput(this->dw);
+        tape.registerInput(this->q_crit_i);
+        tape.registerInput(this->D_crit_i);
+        tape.registerInput(this->D_conv_i);
+        tape.registerInput(this->q_crit_r);
+        tape.registerInput(this->D_crit_r);
+        tape.registerInput(this->q_crit_fr);
+        tape.registerInput(this->D_coll_c);
+        tape.registerInput(this->q_crit);
+        tape.registerInput(this->D_conv_sg);
+        tape.registerInput(this->D_conv_ig);
+        tape.registerInput(this->x_conv);
+        tape.registerInput(this->parcel_height);
+        tape.registerInput(this->alpha_spacefilling);
+        tape.registerInput(this->T_nuc);
+        tape.registerInput(this->T_freeze);
+        tape.registerInput(this->T_f);
+        tape.registerInput(this->D_eq);
+        tape.registerInput(this->rho_w);
+        tape.registerInput(this->rho_0);
+        tape.registerInput(this->rho_vel);
+        tape.registerInput(this->rho_vel_c);
+        tape.registerInput(this->rho_ice);
+        tape.registerInput(this->M_w);
+        tape.registerInput(this->M_a);
+        tape.registerInput(this->R_universal);
+        tape.registerInput(this->Epsilon);
+        tape.registerInput(this->gravity_acc);
+        tape.registerInput(this->R_a);
+        tape.registerInput(this->R_v);
+        tape.registerInput(this->a_v);
+        tape.registerInput(this->b_v);
+        tape.registerInput(this->a_prime);
+        tape.registerInput(this->b_prime);
+        tape.registerInput(this->c_prime);
+        tape.registerInput(this->K_T);
+        tape.registerInput(this->L_wd);
+        tape.registerInput(this->L_ed);
+        tape.registerInput(this->D_v);
+        tape.registerInput(this->ecoll_min);
+        tape.registerInput(this->ecoll_gg);
+        tape.registerInput(this->ecoll_gg_wet);
+        tape.registerInput(this->kin_visc_air);
+        tape.registerInput(this->C_mult);
+        tape.registerInput(this->T_mult_min);
+        tape.registerInput(this->T_mult_max);
+        tape.registerInput(this->T_mult_opt);
+        tape.registerInput(this->const0);
+        tape.registerInput(this->const3);
+        tape.registerInput(this->const4);
+        tape.registerInput(this->const5);
+        tape.registerInput(this->D_rainfrz_ig);
+        tape.registerInput(this->dv0);
+        tape.registerInput(this->p_sat_melt);
+        tape.registerInput(this->cp);
+        tape.registerInput(this->k_b);
+        tape.registerInput(this->a_HET);
+        tape.registerInput(this->b_HET);
+        tape.registerInput(this->N_sc);
+        tape.registerInput(this->n_f);
+        tape.registerInput(this->N_avo);
+        tape.registerInput(this->na_dust);
+        tape.registerInput(this->na_soot);
+        tape.registerInput(this->na_orga);
+        tape.registerInput(this->ni_het_max);
+        tape.registerInput(this->ni_hom_max);
+        tape.registerInput(this->a_dep);
+        tape.registerInput(this->b_dep);
+        tape.registerInput(this->c_dep);
+        tape.registerInput(this->d_dep);
+        tape.registerInput(this->nim_imm);
+        tape.registerInput(this->nin_dep);
+        tape.registerInput(this->alf_imm);
+        tape.registerInput(this->bet_dep);
+        tape.registerInput(this->bet_imm);
+        tape.registerInput(this->r_const);
+        tape.registerInput(this->r1_const);
+        tape.registerInput(this->cv);
+        tape.registerInput(this->p_sat_const_a);
+        tape.registerInput(this->p_sat_ice_const_a);
+        tape.registerInput(this->p_sat_const_b);
+        tape.registerInput(this->p_sat_ice_const_b);
+        tape.registerInput(this->p_sat_low_temp);
+        tape.registerInput(this->T_sat_low_temp);
+        tape.registerInput(this->alpha_depo);
+        tape.registerInput(this->r_0);
+        tape.registerInput(this->k_1_conv);
+        tape.registerInput(this->k_2_conv);
+        tape.registerInput(this->k_1_accr);
+        tape.registerInput(this->k_r);
+        for(auto &i: this->a_ccn)
+            tape.registerInput(i);
+        for(auto &i: this->b_ccn)
+            tape.registerInput(i);
+        for(auto &i: this->c_ccn)
+            tape.registerInput(i);
+        for(auto &i: this->d_ccn)
+            tape.registerInput(i);
+#endif
+        this->rain.register_input(tape);
+        this->cloud.register_input(tape);
+        this->hail.register_input(tape);
+        this->ice.register_input(tape);
+        this->snow.register_input(tape);
+        this->graupel.register_input(tape);
+    }
+
+    /**
+     * Get the gradients of all its members. You need to register them on a
+     * type before to get meaningful values.
+     *
+     * @param out_vec On out: Stores all gradients.
+     */
+    template<class T>
+    void get_gradient(T &out_vec)
+    {
+#if defined(RK4_ONE_MOMENT)
+        out_vec[0] = this->a1_prime.getGradient();
+        out_vec[1] = this->a2_prime.getGradient();
+        out_vec[2] = this->e1_prime.getGradient();
+        out_vec[3] = this->e2_prime.getGradient();
+        out_vec[4] = this->d_prime.getGradient();
+
+        out_vec[5] = this->gamma.getGradient();
+        out_vec[6] = this->betac.getGradient();
+        out_vec[7] = this->betar.getGradient();
+        out_vec[8] = this->delta1.getGradient();
+        out_vec[9] = this->delta2.getGradient();
+        out_vec[10] = this->zeta.getGradient();
+
+        out_vec[11] = this->Nc_prime.getGradient();
+
+#elif defined(RK4ICE) || defined(RK4NOICE)
+        out_vec[0] = this->a1_prime.getGradient();
+        out_vec[1] = this->a2_prime.getGradient();
+        out_vec[2] = this->e1_prime.getGradient();
+        out_vec[3] = this->e2_prime.getGradient();
+        out_vec[4] = this->d_prime.getGradient();
+
+        out_vec[5] = this->gamma.getGradient();
+        out_vec[6] = this->betac.getGradient();
+        out_vec[7] = this->betar.getGradient();
+        out_vec[8] = this->delta1.getGradient();
+        out_vec[9] = this->delta2.getGradient();
+        out_vec[10] = this->zeta.getGradient();
+
+        out_vec[11] = this->Nc_prime.getGradient();
+
+        out_vec[12] = this->rain_gfak.getGradient();
+        out_vec[13] = this->cloud_k_au.getGradient();
+        out_vec[14] = this->cloud_k_sc.getGradient();
+        out_vec[15] = this->kc_autocon.getGradient();
+        out_vec[16] = this->inv_z.getGradient();
+
+        out_vec[17] = this->dw.getGradient();
+        out_vec[18] = this->q_crit_i.getGradient();
+        out_vec[19] = this->D_crit_i.getGradient();
+        out_vec[20] = this->D_conv_i.getGradient();
+        out_vec[21] = this->q_crit_r.getGradient();
+        out_vec[22] = this->D_crit_r.getGradient();
+        out_vec[23] = this->q_crit_fr.getGradient();
+        out_vec[24] = this->D_coll_c.getGradient();
+        out_vec[25] = this->q_crit.getGradient();
+        out_vec[26] = this->D_conv_sg.getGradient();
+        out_vec[27] = this->D_conv_ig.getGradient();
+        out_vec[28] = this->x_conv.getGradient();
+        out_vec[29] = this->parcel_height.getGradient();
+        out_vec[30] = this->alpha_spacefilling.getGradient();
+        out_vec[31] = this->T_nuc.getGradient();
+        out_vec[32] = this->T_freeze.getGradient();
+        out_vec[33] = this->T_f.getGradient();
+        out_vec[34] = this->D_eq.getGradient();
+        out_vec[35] = this->rho_w.getGradient();
+        out_vec[36] = this->rho_0.getGradient();
+        out_vec[37] = this->rho_vel.getGradient();
+        out_vec[38] = this->rho_vel_c.getGradient();
+        out_vec[39] = this->rho_ice.getGradient();
+        out_vec[40] = this->M_w.getGradient();
+        out_vec[41] = this->M_a.getGradient();
+        out_vec[42] = this->R_universal.getGradient();
+        out_vec[43] = this->Epsilon.getGradient();
+        out_vec[44] = this->gravity_acc.getGradient();
+        out_vec[45] = this->R_a.getGradient();
+        out_vec[46] = this->R_v.getGradient();
+        out_vec[47] = this->a_v.getGradient();
+        out_vec[48] = this->b_v.getGradient();
+        out_vec[49] = this->a_prime.getGradient();
+        out_vec[50] = this->b_prime.getGradient();
+        out_vec[51] = this->c_prime.getGradient();
+        out_vec[52] = this->K_T.getGradient();
+        out_vec[53] = this->L_wd.getGradient();
+        out_vec[54] = this->L_ed.getGradient();
+        out_vec[55] = this->D_v.getGradient();
+        out_vec[56] = this->ecoll_min.getGradient();
+        out_vec[57] = this->ecoll_gg.getGradient();
+        out_vec[58] = this->ecoll_gg_wet.getGradient();
+        out_vec[59] = this->kin_visc_air.getGradient();
+        out_vec[60] = this->C_mult.getGradient();
+        out_vec[61] = this->T_mult_min.getGradient();
+        out_vec[62] = this->T_mult_max.getGradient();
+        out_vec[63] = this->T_mult_opt.getGradient();
+        out_vec[64] = this->const0.getGradient();
+        out_vec[65] = this->const3.getGradient();
+        out_vec[66] = this->const4.getGradient();
+        out_vec[67] = this->const5.getGradient();
+        out_vec[68] = this->D_rainfrz_ig.getGradient();
+        out_vec[69] = this->dv0.getGradient();
+        out_vec[70] = this->p_sat_melt.getGradient();
+        out_vec[71] = this->cp.getGradient();
+        out_vec[72] = this->k_b.getGradient();
+        out_vec[73] = this->a_HET.getGradient();
+        out_vec[74] = this->b_HET.getGradient();
+        out_vec[75] = this->N_sc.getGradient();
+        out_vec[76] = this->n_f.getGradient();
+        out_vec[77] = this->N_avo.getGradient();
+        out_vec[78] = this->na_dust.getGradient();
+        out_vec[79] = this->na_soot.getGradient();
+        out_vec[80] = this->na_orga.getGradient();
+        out_vec[81] = this->ni_het_max.getGradient();
+        out_vec[82] = this->ni_hom_max.getGradient();
+        out_vec[83] = this->a_dep.getGradient();
+        out_vec[84] = this->b_dep.getGradient();
+        out_vec[85] = this->c_dep.getGradient();
+        out_vec[86] = this->d_dep.getGradient();
+        out_vec[87] = this->nim_imm.getGradient();
+        out_vec[88] = this->nin_dep.getGradient();
+        out_vec[89] = this->alf_imm.getGradient();
+        out_vec[90] = this->bet_dep.getGradient();
+        out_vec[91] = this->bet_imm.getGradient();
+        out_vec[92] = this->r_const.getGradient();
+        out_vec[93] = this->r1_const.getGradient();
+        out_vec[94] = this->cv.getGradient();
+        out_vec[95] = this->p_sat_const_a.getGradient();
+        out_vec[96] = this->p_sat_ice_const_a.getGradient();
+        out_vec[97] = this->p_sat_const_b.getGradient();
+        out_vec[98] = this->p_sat_ice_const_b.getGradient();
+        out_vec[99] = this->p_sat_low_temp.getGradient();
+        out_vec[100] = this->T_sat_low_temp.getGradient();
+        out_vec[101] = this->alpha_depo.getGradient();
+        out_vec[102] = this->r_0.getGradient();
+        out_vec[103] = this->k_1_conv.getGradient();
+        out_vec[104] = this->k_2_conv.getGradient();
+        out_vec[105] = this->k_1_accr.getGradient();
+        out_vec[106] = this->k_r.getGradient();
+
+
+        uint64_t idx = 107;
+        for(auto &i: this->a_ccn)
+        {
+            out_vec[idx] = i.getGradient();
+            idx++;
+        }
+        for(auto &i: this->b_ccn)
+        {
+            out_vec[idx] = i.getGradient();
+            idx++;
+        }
+        for(auto &i: this->c_ccn)
+        {
+            out_vec[idx] = i.getGradient();
+            idx++;
+        }
+        for(auto &i: this->d_ccn)
+        {
+            out_vec[idx] = i.getGradient();
+            idx++;
+        }
+
+        this->rain.get_gradient(out_vec, idx);
+        this->cloud.get_gradient(out_vec, idx);
+        this->graupel.get_gradient(out_vec, idx);
+        this->hail.get_gradient(out_vec, idx);
+        this->ice.get_gradient(out_vec, idx);
+        this->snow.get_gradient(out_vec, idx);
+#endif
+    }
 };
 
 

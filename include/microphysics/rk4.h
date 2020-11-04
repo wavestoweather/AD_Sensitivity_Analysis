@@ -387,10 +387,7 @@ void RK4_step_2_sb_ice(
     codi::RealReverse T_prime = ynew[T_idx]*ref.Tref;
     codi::RealReverse p_prime = ynew[p_idx]*ref.pref;
     codi::RealReverse qv_prime = ynew[qv_idx]*ref.qref;
-    ynew[S_idx] = convert_qv_to_S(
-                        p_prime,
-                        T_prime,
-                        qv_prime);
+    ynew[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime, cc);
 }
 
 /** @} */ // end of group rk

@@ -305,21 +305,27 @@ def get_statistics_xarray(df, group, flag=None):
 
     return groupy.median(), groupy.quantile(.25), groupy.quantile(.75)
 
-def add_attrs(ds, ref_ds_path):
-    ds_2 = xr.open_dataset(ref_ds_path, decode_times=False)
-    duration = ds_2.attrs["duration_in_sec"]
-    pollon = ds_2.attrs["pollon"]
-    pollat = ds_2.attrs["pollat"]
-    output_timestep_in_sec = ds_2.attrs["output_timestep_in_sec"]
+def add_attrs(ds, ref_ds_path=None, attrs=None):
+    if ref_ds_path is not None:
+        ds_2 = xr.open_dataset(ref_ds_path, decode_times=False)
+        duration = ds_2.attrs["duration_in_sec"]
+        pollon = ds_2.attrs["pollon"]
+        pollat = ds_2.attrs["pollat"]
+        output_timestep_in_sec = ds_2.attrs["output_timestep_in_sec"]
 
-    ds.attrs = {
-        "duration_in_sec": duration,
-        "pollon": pollon,
-        "pollat": pollat,
-        "output_timestep_in_sec": output_timestep_in_sec,
-        "cloud_type": 2723}
+        ds.attrs = {
+            "duration_in_sec": duration,
+            "pollon": pollon,
+            "pollat": pollat,
+            "output_timestep_in_sec": output_timestep_in_sec,
+            "cloud_type": 2723}
 
-    ds["time"].attrs = ds_2["time"].attrs
+        ds["time"].attrs = ds_2["time"].attrs
+
+    if attrs is not None:
+        ds.attrs = attrs["ds"]
+        ds["time"].attrs = attrs["time"]
+
     ds["time_after_ascent"].attrs = {
         "standard_name": "time_after_ascent",
         "long_name": "time after rapid ascent started",
@@ -341,157 +347,194 @@ def add_attrs(ds, ref_ds_path):
     ds["z"].attrs = {
         "standard_name": "height",
         "long_name": "height above mean sea level",
+        "auxiliary_data": "yes",
         "units": "m AMSL"}
     ds["T"].attrs = {
         "standard_name": "air_temperature",
         "long_name": "temperature",
+        "auxiliary_data": "yes",
         "units": "K"}
     ds["S"].attrs = {
         "standard_name": "saturation",
         "long_name": "saturation",
+        "auxiliary_data": "yes",
         "units": "percentage"}
     ds["conv_400"].attrs = {
         "standard_name": "convective_400hPa_ascent",
-        "long_name": "convective 400hPa ascent"}
+        "long_name": "convective 400hPa ascent",
+        "auxiliary_data": "yes"}
     ds["conv_600"].attrs = {
         "standard_name": "convective_600hPa_ascent",
-        "long_name": "convective 600hPa ascent"}
+        "long_name": "convective 600hPa ascent",
+        "auxiliary_data": "yes"}
     ds["slan_400"].attrs = {
         "standard_name": "slantwise_400hPa_ascent",
-        "long_name": "slantwise 400hPa ascent"}
+        "long_name": "slantwise 400hPa ascent",
+        "auxiliary_data": "yes"}
     ds["slan_600"].attrs = {
         "standard_name": "slantwise_600hPa_ascent",
-        "long_name": "slantwise 600hPa ascent"}
+        "long_name": "slantwise 600hPa ascent",
+        "auxiliary_data": "yes"}
     ds["w"].attrs = {
         "standard_name": "ascend_velocity",
         "long_name": "ascend velocity",
+        "auxiliary_data": "yes",
         "units": "m s^-1"}
 
     ds["QV"].attrs = {
         "standard_name": "specific_humidity",
         "long_name": "specific humidity",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QC"].attrs = {
         "standard_name": "mass_fraction_of_cloud_liquid_water_in_air",
         "long_name": "specific cloud liquid water content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QR"].attrs = {
         "standard_name": "mass_fraction_of_rain_in_air",
         "long_name": "specific rain content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QS"].attrs = {
         "standard_name": "mass_fraction_of_snow_in_air",
         "long_name": "specific snow content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QI"].attrs = {
         "standard_name": "mass_fraction_of_cloud_ice_in_air",
         "long_name": "specific cloud ice content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QG"].attrs = {
         "standard_name": "mass_fraction_of_graupel_in_air",
         "long_name": "specific graupel content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
 
     ds["QR_IN"].attrs = {
         "standard_name": "sedi_influx_of_rain",
         "long_name": "sedimentation (from above) of rain droplet mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QS_IN"].attrs = {
         "standard_name": "sedi_influx_of_snow",
         "long_name": "sedimentation (from above) of snow crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QI_IN"].attrs = {
         "standard_name": "sedi_influx_of_cloud_ice",
         "long_name": "sedimentation (from above) of ice crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QG_IN"].attrs = {
         "standard_name": "sedi_influx_of_graupel",
         "long_name": "sedimentation (from above) of graupel mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
 
     ds["QR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain",
         "long_name": "sedimentation of rain droplet mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow",
         "long_name": "sedimentation of snow crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QI_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_cloud_ice",
         "long_name": "sedimentation of ice crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel",
         "long_name": "sedimentation of graupel mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
 
     ds["NCCLOUD"].attrs = {
         "standard_name": "specif_number_of_cloud_droplets_in_air",
         "long_name": "specific cloud droplet number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCRAIN"].attrs = {
         "standard_name": "specif_number_of_rain_drops_in_air",
         "long_name": "specific rain drop number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCSNOW"].attrs = {
         "standard_name": "specif_number_of_snow_flakes_in_air",
         "long_name": "specific snow flake number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCICE"].attrs = {
         "standard_name": "specif_number_of_cloud_ice_in_air",
         "long_name": "specific cloud ice number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCGRAUPEL"].attrs = {
         "standard_name": "specif_number_of_graupel_in_air",
         "long_name": "specific graupel number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
 
     ds["NR_IN"].attrs = {
         "standard_name": "sedi_influx_of_rain_number",
         "long_name": "sedimentation (from above) of specific rain drop number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NS_IN"].attrs = {
         "standard_name": "sedi_influx_of_snow_number",
         "long_name": "sedimentation (from above) of specific snow flake number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NI_IN"].attrs = {
         "standard_name": "sedi_influx_of_ics_number",
         "long_name": "sedimentation (from above) of specific cloud ice number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NG_IN"].attrs = {
         "standard_name": "sedi_influx_of_graupel_number",
         "long_name": "sedimentation (from above) of specific graupel number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
 
     ds["NR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain_number",
         "long_name": "sedimentation of rain droplet number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow_number",
         "long_name": "sedimentation of snow crystal number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NI_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_ice_number",
         "long_name": "sedimentation of ice crystal number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel_number",
         "long_name": "sedimentation of graupel number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
 
     ds["Q_TURBULENCE"].attrs = {
         "standard_name": "turbulence_flux",
         "long_name": "flux from turbulence",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["type"].attrs = {
         "standard_name": "trajectory_type",
-        "long_name": "trajectory type"}
+        "long_name": "trajectory type",
+        "auxiliary_data": "yes"}
 
     return ds
 
-def do_the_stuff_more(store_path, version="no exclusions", fls=["conv_400", "conv_600", "slan_400", "slan_600"]):
+def do_the_stuff_more(store_path, version="no exclusions", fls=["conv_400", "conv_600", "slan_400", "slan_600"], file_list=None):
     """
     Versions
     --------
@@ -874,51 +917,76 @@ def do_the_stuff_more_slan_600():
         print("storing done in {} s".format(t_c2 - t_c), flush=True)
 
 
-def merge_stuff():
-    store_path_tmp = "/data/project/wcb/netcdf/tmp/"
-    store_path = "/data/project/wcb/netcdf/traj_stats/"
-    for var in ["medi/", "quan25/", "quan75/"]:
-        ds_list = []
-        file_list = []
-        for f in os.listdir(store_path_tmp + var):
-            if os.path.isfile(os.path.join(store_path_tmp + var, f)):
-                file_list.append(os.path.join(store_path_tmp + var, f))
+def merge_stuff(input_path, output,
+    ensembles=["conv_400", "conv_600", "slan_400", "slan_600"], dropna=False):
+    """
+    Merge statistical trajectories to a single file.
+    Each category given in ensembles will be merged to a single ensemble.
+    The trajectories will be enumerated accordingly.
 
-        file_list = np.sort(np.asarray(file_list))
+    Parmaters
+    ---------
+    input_path: string
+        Path to trajectory files.
+    output: string
+        Path + name where new file shall be stored.
+    ensembles: list of string
+        Categories to merge into a single ensembles (must be present in filename).
 
-        t_c = timer()
+    Returns
+    -------
+    xarray.DataSet
+        The merged dataset.
+    """
+    file_list = []
+    for f in os.listdir(input_path):
+        file_list.append(os.path.join(input_path, f))
+    file_list = np.sort(np.asarray(file_list))
+    ds_list = []
+    for ens in ensembles:
+        ds_ens = []
         for f in file_list:
-            ds_list.append(xr.open_dataset(f))
+            if ens in f:
+                ds_tmp = xr.open_dataset(f, decode_times=False)
+                # Unfortunately, we need to make sure the time coordinates
+                # are somewhat similar ie modulo 20
+                # Since we are merging "representatives" the exact time
+                # should not matter
+                ds_tmp["time"] = ds_tmp["time"] - ds_tmp["time"]%20
+                ds_ens.append(ds_tmp)
+        ds_list.append(xr.combine_nested(ds_ens, concat_dim="trajectory"))
+    merged_ds = xr.combine_nested(ds_list, concat_dim="ensemble")
+    min_t = merged_ds["time"].min()
+    max_t = merged_ds["time"].max()
 
-        t_c2 = timer()
-        print("loading done in {} s".format(t_c2-t_c), flush=True)
-        # Make id and time columns instead of MultiIndex
-        t_c = timer()
-        merged = xr.concat(ds_list, dim="time")
-        ds_list = None
-        t_c2 = timer()
-        print("Merging done in {} s".format(t_c2-t_c), flush=True)
-        print(merged)
-        for flag in ["conv_600", "conv_400", "slan_400", "slan_600"]:
-            merged[flag] = False
-        t_c = timer()
-        slan_600 = merged["P"].rolling(dim={"time": window_slan_600}, min_periods=1).reduce(
-            differ_slan, **{"hPa": 600, "min_window": window_slan_600_min}).fillna(False).astype(dtype=bool)
-        merged = merged.assign(slan_600=slan_600)
-        t_c2 = timer()
-        print("Got slan_600 in {} s".format(t_c2-t_c), flush=True)
+    attrs = {
+        "time": {
+            "standard_name": "time",
+            "long_name": "time",
+            "units": "seconds since 2016-09-20 00:00:00",
+            "trajectory_starttime": "2016-09-20 00:00:00",
+            "forecast_inittime": "2016-09-20 00:00:00"
+        },
+        "ds": {
+            "duration_in_sec": (max_t-min_t).item(),
+            "pollon": 160.,
+            "pollat": 51.,
+            "output_timestep_in_sec": 20,
+            "cloud_type": 2723
+        }
+    }
+    merged_ds = add_attrs(merged_ds, attrs=attrs)
+    if dropna:
+        merged_ds = merged_ds.dropna(dim="time", how="any")
+        print(merged_ds)
 
-        t_c = timer()
-        final_path = store_path + "slan_600"
-        if var == "medi/":
-            final_path += "_median.nc_wcb"
-        elif var == "quan25/":
-            final_path += "_quan25.nc_wcb"
-        else:
-            final_path += "_quan75.nc_wcb"
-        merged.to_netcdf(final_path)
-        t_c2 = timer()
-        print("storing done in {} s".format(t_c2 - t_c), flush=True)
+    comp = dict(zlib=True, complevel=9)
+    encoding = {var: comp for var in merged_ds.data_vars}
+
+    merged_ds.to_netcdf(output, compute=True, engine="netcdf4",
+        encoding=encoding, format="NETCDF4", mode="w")
+    return merged_ds
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -939,6 +1007,6 @@ if __name__ == "__main__":
         file_list.append(os.path.join(path, f))
 
     file_list = np.sort(np.asarray(file_list))
-    do_the_stuff_more(store_path, "no exclusions", flags)
+    do_the_stuff_more(store_path, "no exclusions", flags, file_list)
 
 

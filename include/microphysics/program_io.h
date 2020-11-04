@@ -420,7 +420,6 @@ void load_nc_parameters(
     nc.qs_var.getVar(startp, countp, &nc.qs);
     nc.qv_var.getVar(startp, countp, &nc.qv);
 
-    double psat_prime = saturation_pressure_water(nc.t);
 #if !defined WCB2 && !defined MET3D
     // We are reading in hPa. Convert to Pa
     nc.p        *= 100;
@@ -1152,17 +1151,11 @@ int read_init_netcdf(
         y_init[sub_idx] = 0;
 #endif
 
-    // DEBUG Set qv to qv_sat
-    // double psat_prime = saturation_pressure_water(y_init[T_idx]*ref_quant.Tref);
-    // y_init[qv_idx] = psat_prime/(Rv*y_init[T_idx]*ref_quant.Tref) / ref_quant.qref;
-    // y_init[qv_idx] = Epsilon*( psat_prime/(y_init[p_idx]*ref_quant.pref - psat_prime) ) / ref_quant.qref;
 #ifdef SAT_CALC
         y_init[S_idx]  = convert_qv_to_S(
             y_init[p_idx]*ref_quant.pref,
             y_init[T_idx]*ref_quant.Tref,
             y_init[qv_idx]*ref_quant.qref);
-        // y_init[S_idx]  = y_init[qv_idx]*ref_quant.qref * Rv * y_init[T_idx]*ref_quant.Tref
-        //     / psat_prime;
 #endif
 
     } catch(netCDF::exceptions::NcException& e)
@@ -1426,18 +1419,12 @@ void read_netcdf_write_stream(
 #if defined MET3D && defined TURBULENCE
         inflow[qv_in_idx] = nc_params.qturb;
 #endif
-        // DEBUG Set qv to qv_sat
-        // y_single_old[qv_idx] = water_vapor_sat_ratio_2(y_single_old[T_idx].getValue()*ref_quant.Tref);
-        // double psat_prime = saturation_pressure_water(y_single_old[T_idx].getValue()*ref_quant.Tref);
-        // y_single_old[qv_idx] = psat_prime/(Rv*y_single_old[T_idx]*ref_quant.Tref) / ref_quant.qref;
-        // y_single_old[qv_idx] = Epsilon*( psat_prime/(y_single_old[p_idx]*ref_quant.pref - psat_prime) ) / ref_quant.qref;
+
 #ifdef SAT_CALC
         y_single_old[S_idx]  = convert_qv_to_S(
             y_single_old[p_idx].getValue()*ref_quant.pref,
             y_single_old[T_idx].getValue()*ref_quant.Tref,
             y_single_old[qv_idx].getValue()*ref_quant.qref);
-        // y_single_old[qv_idx]*ref_quant.qref * Rv * y_single_old[T_idx]*ref_quant.Tref
-        //    / psat_prime;
 #endif
 
 #if defined WCB || defined WCB2

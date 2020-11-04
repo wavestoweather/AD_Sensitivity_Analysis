@@ -48,8 +48,6 @@ class Deriv_dask:
     data : Dic of pd.Dataframe
         Keys are output parameters, values are its derivatives
         for every timestep as pandas.Dataframe.
-    n_timesteps : int
-        Number of timesteps.
     clusternames : Dic of lsit of string
         Keys are output parameters where the value is a list of column names
         that hold a clustering assignment.
@@ -61,7 +59,6 @@ class Deriv_dask:
         A dataframe after compute() was used that can be used as cache.
     """
     data = {}
-    n_timesteps = 0
     cluster_names = {}
     threads = 0
     font_dic = {}
@@ -96,7 +93,6 @@ class Deriv_dask:
         self.data = dask_loader.load_mult_derivates_direc_dic(
             direc, parquet, netcdf, columns, file_ending)
 
-        self.n_timesteps = len(np.unique(self.data["step"].compute()))
         self.cluster_names = {}
         # self.font_dic = {
         #     "title": 20,
@@ -193,17 +189,6 @@ class Deriv_dask:
         """
         return self.data.keys()
 
-    def get_n_timesteps(self):
-        """
-        Get the number of simulated timesteps of the data.
-
-        Returns
-        -------
-        int
-            Number of simulated timesteps
-        """
-        return self.n_timesteps
-
     def cache_data(self, in_params, out_params, x_axis="step",
         y_axis=None,mapped=None,
         trajectories=None, frac=None, min_x=None, max_x=None, nth=None,
@@ -215,7 +200,7 @@ class Deriv_dask:
         Parameters
         ----------
         in_params : list of string
-            Plot the derivatives with respect to those in this list.
+            Load the derivatives with respect to those in this list..
         out_params : list of string
             List of keys to plot the derivatives for.
         x_axis : string
@@ -275,9 +260,13 @@ class Deriv_dask:
         if mapped is not None:
             df = df.loc[df[mapped]]
 
-        df = df.loc[df["Output Parameter"].isin(out_params)]
+        if "Output Parameter" in df:
+            df = df.loc[df["Output Parameter"].isin(out_params)]
 
-        all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
+            all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
+        else:
+            all_params = list(set(["trajectory", "type"] + in_params + [x_axis] + out_params))
+
         if y_axis is not None and not y_axis in all_params:
             all_params.append(y_axis)
         if compute:
@@ -298,7 +287,7 @@ class Deriv_dask:
         fig_type='svg', datashade=True, by=None,  alpha=[1, 1],
         rolling_avg=20, rolling_avg_par=20, max_per_deriv=10,
         width=1959, height=1224, ratio_type="vanilla", ratio_window=None,
-        vertical_mark=None, plot_singles=False, xticks=20, **kwargs):
+        vertical_mark=None, plot_singles=False, xticks=10, **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
         At the bottom: Derivative with respect to that output parameter.
@@ -1242,9 +1231,9 @@ class Deriv_dask:
 
     def plot_grid_one_param(self, out_param, y_axis, x_axis="step",
         twin_axis=None, by=None, hue="type", col_wrap=4, trajectories=None,
-        width=1280, height=800, log=[False, False],
+        width=1959, height=1224, log=[False, False],
         vertical_mark=None, cross_mark=None, datashade=False, prefix=None, alpha=1,
-        plot_path="pics/", yticks=10, xticks=20, decimals=-3, rolling_avg=20,
+        plot_path="pics/", yticks=10, xticks=10, decimals=-3, rolling_avg=20,
         kind="scatter", plot_singles=False, s=None, formatter_limits=None, **kwargs):
         """
         Plot a grid for comparing multiple output parameters or
@@ -1365,7 +1354,10 @@ class Deriv_dask:
             layout_kwargs["fig_inches"] = fig_inches
 
         plot_list = []
-        df_tmp_out = df.loc[df["Output Parameter"] == out_param]
+        if "Output Parameter" in df:
+            df_tmp_out = df.loc[df["Output Parameter"] == out_param]
+        else:
+            df_tmp_out = df
         # df_tmp_out["qi"] = da.fabs(df_tmp_out["qi"]) # sign error?
         if trajectories is not None:
             if isinstance(trajectories[0], int):
