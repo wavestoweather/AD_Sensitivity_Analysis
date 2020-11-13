@@ -59,6 +59,15 @@ int main(int argc, char** argv)
     // Some datafiles I used for testing
     // const char* file = "/data/project/wcb/netcdf/vladiana_met/conv_400_0_traj_t000000_p001.nc_wcb";
     // const char* file = "/data/project/wcb/netcdf/vladiana_met_stats/no_exclusions_conv_400_median.nc_wcb";
+    const char* file_config = argv[2];
+    model_constants_t cc;
+    std::vector<segment_t> segments;
+    int err = read_config(file_config, cc, segments);
+    if(err != 0)
+        std::cout << "Parsing config file failed with errorcode: "
+                  << err << "\n";
+
+    print_segments(segments);
 
     int traj_id;
 

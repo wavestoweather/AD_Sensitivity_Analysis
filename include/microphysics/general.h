@@ -186,6 +186,52 @@ void print_constants(model_constants_t &cc)
 }
 
 /**
+ * Print segments for ensembles.
+ *
+ * @param segments Vector of segments.
+ */
+void print_segments(std::vector<segment_t> &segments)
+{
+    std::cout << "\nSegments for ensembles:\n"
+              << "----------------\n";
+    uint32_t i = 1;
+    for(auto &segment: segments)
+    {
+        std::cout << "----Segment No. " << i << "\n"
+                  << "----Number of members for each perturbed parameter: " << segment.n_members << "\n"
+                  << "----Number of perturbed parameters: " << segment.params.size() << "\n"
+                  << "----Number of segments defined with this configuration: " << segment.n_segments << "\n";
+        if(segment.method != -1)
+            std::cout << "----Method to determine segment start: " << segment.method << "\n";
+        if(segment.value_name != -1)
+            std::cout << "----Parameter that has to reach given value for ensemble start: " << segment.value_name << "\n";
+        if(!std::isnan(segment.value))
+            std::cout << "----Value for parameter to start an ensemble: " << segment.value << "\n";
+        if(segment.out_param != -1)
+            std::cout << "----Parameter is a sensitivity to output parameter: " << segment.out_param << "\n";
+
+        uint32_t j = 1;
+        for(auto &param: segment.params)
+        {
+            std::cout << "--------Param No. " << j << "\n"
+                      << "--------Parameter to perturb: " << param.name << "\n"
+                      << "--------Output parameter type: " << param.out_name << "\n"
+                      << "--------Mean for normal distribution used in perturbing: " << param.mean << "\n"
+                      << "--------Is parameter specific for particle: " << param.particle_param << "\n";
+            if(!isnan(param.sigma))
+                std::cout << "--------Variance for normal distribution: " << param.sigma << "\n";
+            if(!isnan(param.sigma_perc))
+                std::cout << "--------Variance in percentage: " << param.sigma_perc << "\n";
+
+            j++;
+        }
+
+        i++;
+    }
+    std::cout << "\n";
+}
+
+/**
  * Print all given input parameters
  *
  * @param in Struct where the input parameters are stored.

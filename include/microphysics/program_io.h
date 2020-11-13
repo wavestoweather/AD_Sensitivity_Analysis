@@ -1,6 +1,8 @@
 #ifndef PROGRAM_IO_H
 #define PROGRAM_IO_H
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 #include <stdlib.h>
 #include <cmath>
 #include <string>
@@ -14,12 +16,154 @@
 #include "types.h"
 #include "general.h"
 using namespace netCDF;
-
+using boost::property_tree::ptree;
 
 /** @defgroup io Input/Output Functions
  * Functions to load data and setup and initialize structs.
  * @{
  */
+
+/**
+ * Go over all parameters to be perturbed. Perturbing is done by drawing a
+ * (pseudo) random number from a normal distribution with mean the set value
+ * in cc and width defined by the config.
+ * Consists of nodes for each model, vapor, cloud, rain, ice, hail, graupel,
+ * snow, where each of those consists of at least one node param with:
+ * name: name of parameter to be perturbed
+ * sigma: Width for normal distribution
+ * sigma_perc: Width as percentage from already set value for
+ * normal distribution
+ */
+int parse_param_config(
+    std::string param_type,
+    ptree &pt,
+    segment_t &segment,
+    model_constants_t &cc)
+{
+    for(auto &it: pt)
+    {
+        param_t param(param_type);
+        ptree param_pt = it.second;
+        for(auto &param_it: param_pt)
+        {
+            auto first = param_it.first;
+#ifdef DEBUG_XML
+            std::cout << "iterate over param. first: " << first << "\n";
+#endif
+            if(first == "name")
+            {
+#ifdef DEBUG_XML
+                std::cout << "name: " << param_it.second.data() << "\n";
+#endif
+                param.add_name(param_it.second.data(), cc);
+            }else if(first == "sigma")
+            {
+                param.add_sigma(std::stod(param_it.second.data()));
+            }else if(first == "sigma_perc")
+            {
+                param.add_sigma_perc(std::stod(param_it.second.data()));
+            }
+        }
+        if(param.check() == 0)
+            segment.add_param(param);
+    }
+    return segment.check();
+}
+
+/**
+ * Parse configuration for a segment.
+ * Segment can consist of
+ * when_value: Value at which ensemble shall start
+ * when_name: Name of parameter for value given above
+ * when_method: Method can be "sign_flip" where a change of sign (where zero)
+ * is considered without sign) introduces a new ensemble start
+ * when_counter: How many times ensemble shall start when condition defined
+ * above is reached
+ * when_sens: If when_name is a derivative, we need to define to which it is
+ * sensitive
+ * amount: How many ensemble members for each perturbed parameter shall be
+ * started
+ */
+int parse_segment_config(
+    ptree &pt,
+    model_constants_t &cc,
+    std::vector<segment_t> &segments)
+{
+    int err = 0;
+    segment_t segment;
+    for(auto& it: pt)
+    {
+        auto first = it.first;
+
+#ifdef DEBUG_XML
+        std::cout << "iterate over segment: first: " << it.first << "\n";
+#endif
+        if(first == "when_value")
+        {
+            segment.add_value(std::stod(it.second.data()));
+        }else if(first == "when_name")
+        {
+            segment.add_value_name(it.second.data());
+        }else if(first == "when_method")
+        {
+            segment.add_method(it.second.data());
+        }else if(first == "when_counter")
+        {
+            segment.add_counter(std::stoi(it.second.data()));
+        }else if(first == "when_sens")
+        {
+            segment.add_out_param(it.second.data());
+        }else if(first == "amount")
+        {
+            segment.add_amount(std::stoi(it.second.data()));
+        }else
+        {
+            err = parse_param_config(it.first, it.second, segment, cc);
+            if(err != 0)
+            {
+                std::cout << "Parsing xml configuration failed parsing param.\n"
+                        << "Is your configuration valid?\n"
+                        << "ABORTING!\n";
+                return err;
+            }
+        }
+    }
+    err = segment.check();
+    segments.push_back(segment);
+    return err;
+}
+
+/**
+ *
+ *
+ */
+int read_config(
+    std::string filename,
+    model_constants_t &cc,
+    std::vector<segment_t> &segments)
+{
+    int err = 0;
+    ptree pt;
+    boost::property_tree::read_xml(filename, pt);
+#ifdef DEBUG_XML
+    std::cout << "read_xml from " << filename << " successful\n" << std::flush;
+#endif
+    for(auto &it: pt.get_child("ensemble"))
+    {
+        auto first = it.first;
+#ifdef DEBUG_XML
+    std::cout << "iterator ensemble first: " << it.first << "\n";
+#endif
+        if(first == "segment")
+        {
+            ptree new_pt = it.second;
+            err = parse_segment_config(new_pt, cc, segments);
+            if(err != 0)
+                return err;
+        }
+    }
+    return err;
+}
 
 /**
  * Based on

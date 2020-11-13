@@ -37,6 +37,9 @@ from timeit import default_timer as timer
 import pandas
 import xarray as xr
 
+# pandas.options.mode.chained_assignment = 'raise'
+
+
 class Deriv_dask:
     """
     Class that holds a dictionary of output parameters with its derivatives
@@ -287,7 +290,8 @@ class Deriv_dask:
         fig_type='svg', datashade=True, by=None,  alpha=[1, 1],
         rolling_avg=20, rolling_avg_par=20, max_per_deriv=10,
         width=1959, height=1224, ratio_type="vanilla", ratio_window=None,
-        vertical_mark=None, plot_singles=False, xticks=10, **kwargs):
+        vertical_mark=None, plot_singles=False, xticks=10,
+        param_method="", deriv_method="", **kwargs):
         """
         Plot two plots in two rows. At the top: Output parameter.
         At the bottom: Derivative with respect to that output parameter.
@@ -410,6 +414,8 @@ class Deriv_dask:
             it is the same as "per_timestep".
             "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
             derivative but per output parameter. (that *should* be the vanilla version)
+            "x_weighted": Append this to any ratio type to use the inverse of the
+            output parameter value as weight. Only works with "x_per_out_param".
         ratio_window : dic of list
             Overides ratio_type and switches to a derivative ratio calculation
             per output param if "ratio_type" has "per_out_param" in it.
@@ -427,6 +433,12 @@ class Deriv_dask:
             Plot every plot individually as well.
         xticks : int
             Number of ticks on all x-axis.
+        param_method : string
+            Alternative way to define which plot to use for the param plot.
+            Options are "scatter", "hexbin", "errorband", "percentile".
+        deriv_method : string
+            Alternative way to define which plot to use for the derivative plot.
+            Options are "scatter", "hexbin", "heatmap", "heatmap_error"
         kwargs : dict
             Keyword arguments are passed down matplotlib.
         """
@@ -515,57 +527,61 @@ class Deriv_dask:
             t = timer()
 
         def recalc_ratios(ratio_df):
-            # TODO: Add if by is not None: go over all types and do that stuff.
+            if "weighted" in ratio_type and "per_out_param" in ratio_type:
+                out_par = np.unique(ratio_df["Output Parameter"])[0]
+                ratio_df.loc[:, in_params] = ratio_df[in_params].div(ratio_df[out_par], axis=0)
             if ratio_window is not None:
                 col = list(ratio_window.keys())[0]
                 edges = np.sort(ratio_window[col])
                 for i in range(len(edges)+1):
-
                     if i == 0:
                         df_edge = ratio_df.loc[ratio_df[col] < edges[i]]
                         max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
                         if max_val == 0:
                             continue
-                        ratio_df[in_params] = ratio_df.apply(
+                        ratio_df.loc[:, in_params] = ratio_df.apply(
                             lambda x: x[in_params]/max_val if x[col] < edges[i] else x[in_params], axis=1)
                     elif i == len(edges):
                         df_edge = ratio_df.loc[ratio_df[col] >= edges[i-1]]
                         max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
                         if max_val == 0:
                             continue
-                        ratio_df[in_params] = ratio_df.apply(
+                        ratio_df.loc[:, in_params] = ratio_df.apply(
                             lambda x: x[in_params]/max_val if x[col] >= edges[i-1] else x[in_params], axis=1)
                     else:
                         df_edge = ratio_df.loc[(ratio_df[col] < edges[i]) & (ratio_df[col] >= edges[i-1])]
                         max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
                         if max_val == 0:
                             continue
-                        ratio_df[in_params] = ratio_df.apply(
-                            lambda x: x[in_params]/max_val if ((x[col] < edges[i]) and (x[col] >= edges[i-1])) else x[in_params], axis=1)
+                        ratio_df.loc[:, in_params] = ratio_df.apply(
+                            lambda x: x[in_params]/max_val if (
+                                (x[col] < edges[i]) and (x[col] >= edges[i-1])) else x[in_params], axis=1)
             elif "per_timestep" in ratio_type:
                 # Get series of max values over all timesteps (equals index)
                 max_vals = ratio_df[in_params].apply(lambda x: np.max(np.abs(x)), axis=1)
-                ratio_df[in_params] = ratio_df[in_params].div(max_vals, axis=0)
-                t2 = timer()
-                print("Recalculating ratios done in {} s".format(t2-t))
+                ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_vals, axis=0)
             elif "window" in ratio_type:
                 max_val = ratio_df[in_params].apply(lambda x: np.max(np.abs(x))).max()
-                ratio_df[in_params] = ratio_df[in_params].div(max_val)
-                t2 = timer()
-                print("Recalculating ratios done in {} s".format(t2-t))
+                ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_val)
             elif "per_xaxis" in ratio_type:
                 ratio_df = ratio_df.set_index(x_axis)
                 max_vals = ratio_df.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
                 if x_axis == "timestep" or x_axis == "step" or x_axis == "time_after_ascent":
-                    ratio_df[in_params] = ratio_df[in_params].div(max_vals, axis="index")
+                    ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_vals, axis="index")
                 else:
-                    ratio_df[in_params] = ratio_df[in_params].div(max_vals)
-                t2 = timer()
-                print("Recalculating ratios done in {} s".format(t2-t))
+                    ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_vals)
+            ratio_df.loc[:, in_params] = ratio_df[in_params].fillna(0)
+            t2 = timer()
+            print("Recalculating ratios done in {} s".format(t2-t))
             return ratio_df
 
+
         if not "per_out_param" in ratio_type:
-            df = recalc_ratios(df)
+            if by is not None:
+                for ty in np.unique(df["type"]):
+                    df.loc[df["type"] == ty] = recalc_ratios(df.loc[df["type"] == ty])
+            else:
+                df = recalc_ratios(df)
             t = timer()
 
         deriv_title = "Deriv. Ratio"
@@ -586,7 +602,11 @@ class Deriv_dask:
                 y_axis = out_par
             df_tmp_out = df.loc[df["Output Parameter"] == out_par]
             if "per_out_param" in ratio_type:
-                df_tmp_out = recalc_ratios(df_tmp_out)
+                if by is not None:
+                    for ty in np.unique(df_tmp_out["type"]):
+                        df_tmp_out.loc[df_tmp_out["type"] == ty] = recalc_ratios(df_tmp_out.loc[df_tmp_out["type"] == ty])
+                else:
+                    df_tmp_out = recalc_ratios(df_tmp_out)
                 t = timer()
 
             # This is for the matplotlib backend
@@ -653,7 +673,7 @@ class Deriv_dask:
                 else:
                     df_tmp = df[in_params+[x_axis] + add_cols]
                     df_tmp = df_tmp.melt([x_axis] + add_cols, var_name="Derivatives",
-                                         value_name=deriv_col_name)
+                                        value_name=deriv_col_name)
                 t2 = timer()
                 print("Melting done in {} s".format(t2-t), flush=True)
 
@@ -668,7 +688,9 @@ class Deriv_dask:
                     t = timer()
                 df_tmp["Derivatives"] = df_tmp["Derivatives"].apply(latexify.parse_word)
 
-                if percentile is not None:
+                if "percentile" in globals() or param_method == "percentile":
+                    if percentile not in globals():
+                        percentile = [0.25, 0.5, 0.75]
                     if y_axis == x_axis:
                         print("x-axis and y-axis are the same. Cannot plot that with percentiles!")
                         return
@@ -711,7 +733,7 @@ class Deriv_dask:
                             ylabel=latexify.parse_word(y_axis),
                             **kwargs)
                     )
-                elif errorband:
+                elif param_method == "errorband" or errorband:
                     df_group = df[[x_axis, y_axis, "trajectory"] + add_cols]
                     if log[0]:
                         # Apply should be more expensive
@@ -737,6 +759,24 @@ class Deriv_dask:
                             value_label=latexify.parse_word(y_axis),
                             label="sd")
                     )
+                elif hexbin[0] or param_method == "hexbin":
+                    if y_axis == x_axis:
+                        df_group = df[[x_axis, "trajectory"] + add_cols]
+                    else:
+                        df_group = df[[x_axis, y_axis, "trajectory"] + add_cols]
+                    if log[0]:
+                        # Apply should be more expensive
+                        df_group[y_axis] = da.log(da.fabs(df_group[y_axis]))
+                    param_plot = df_group.hvplot.hexbin(
+                        x=x_axis,
+                        y=y_axis,
+                        title="Values of {}".format(latexify.parse_word(y_axis)),
+                        label=None,
+                        clabel="Count",
+                        cmap="viridis",
+                        logz=True,
+                        gridsize=100
+                    ).options(ylabel=latexify.parse_word(y_axis))
                 elif by is not None:
                     if y_axis == x_axis:
                         df_group = df[[x_axis, by] + add_cols]
@@ -805,31 +845,13 @@ class Deriv_dask:
                         if self.backend == "bokeh":
                             points = hv.Points(
                                 ([np.NaN for i in range(len(list(cmap.keys())))],
-                                 [np.NaN for i in range(len(list(cmap.keys())))],
-                                 list(cmap.keys())), vdims=by)
+                                [np.NaN for i in range(len(list(cmap.keys())))],
+                                list(cmap.keys())), vdims=by)
                             legend = points.options(
                                 color=by,
                                 cmap=cmap,
                                 show_legend=True)
                             param_plot = (legend * param_plot).opts(aspect=aspect)
-                elif hexbin[0]:
-                    if y_axis == x_axis:
-                        df_group = df[[x_axis, "trajectory"] + add_cols]
-                    else:
-                        df_group = df[[x_axis, y_axis, "trajectory"] + add_cols]
-                    if log[0]:
-                        # Apply should be more expensive
-                        df_group[y_axis] = da.log(da.fabs(df_group[y_axis]))
-                    param_plot = df_group.hvplot.hexbin(
-                        x=x_axis,
-                        y=y_axis,
-                        title="Values of {}".format(latexify.parse_word(y_axis)),
-                        label=None,
-                        clabel="Count",
-                        cmap="viridis",
-                        logz=True,
-                        gridsize=100
-                    ).options(ylabel=latexify.parse_word(y_axis))
                 else:
                     if y_axis == x_axis:
                         df_group = df[[x_axis, "trajectory"] + add_cols]
@@ -837,7 +859,7 @@ class Deriv_dask:
                         df_group = df[[x_axis, y_axis, "trajectory"] + add_cols]
                     if log[0]:
                         # Apply should be more expensive
-                         df_group[y_axis] = da.log(da.fabs(df_group[y_axis]))
+                        df_group[y_axis] = da.log(da.fabs(df_group[y_axis]))
                     param_plot = df_group.hvplot.scatter(
                         x=x_axis,
                         y=y_axis,
@@ -850,7 +872,7 @@ class Deriv_dask:
                 print("Setting up upper plot done in {} s".format(t2-t))
                 t = timer()
 
-                if hexbin[1]:
+                if hexbin[1] or deriv_method == "hexbin":
                     deriv_plot = df_tmp.hvplot.hexbin(
                         x=x_axis,
                         y=deriv_col_name,
@@ -863,6 +885,27 @@ class Deriv_dask:
                         cmap="viridis",
                         colorbar=True
                     )
+                elif  "heatmap" in deriv_method:
+                    if self.backend == "matplotlib":
+                        timely_data = df_tmp.drop("type", axis=1).groupby(x_axis).sum().reset_index()
+                        plot_data = pandas.melt(
+                            timely_data,
+                            id_vars=[x_axis],
+                            var_name="Derivatives",
+                            value_name=deriv_col_name)
+                        heat_plot = hv.HeatMap(
+                            plot_data,
+                            label=deriv_title + " for {}".format(out_par)
+                        )
+                        # Add an errorbar
+                        if "error" in deriv_method:
+                            aggr = hv.Dataset(heat_plot).aggregate(x_axis, np.mean, np.std)
+                            aggr_plot = hv.ErrorBars(aggr) * hv.Curve(aggr)
+                            deriv_plot = (heat_plot + aggr_plot).cols(1)
+                        else:
+                            deriv_plot = heat_plot
+                    else:
+                        print(f"heatmap not tested for backend {self.backend}")
                 else:
                     colors = plt.get_cmap("tab10")
                     all_derives = df_tmp["Derivatives"].unique()
@@ -925,8 +968,8 @@ class Deriv_dask:
                         if self.backend == "bokeh":
                             points_deriv = hv.Points(
                                 ([np.NaN for i in range(len(all_derives))],
-                                 [np.NaN for i in range(len(all_derives))],
-                                 list(cmap.keys())), vdims="Derivatives")
+                                [np.NaN for i in range(len(all_derives))],
+                                list(cmap.keys())), vdims="Derivatives")
                             legend_deriv = points_deriv.options(
                                 color="Derivatives",
                                 cmap=cmap,
@@ -993,7 +1036,7 @@ class Deriv_dask:
                                     ).opts(
                                         color="black",
                                         ylim=(min_y-del_y*0.1,
-                                              max_y+del_y*0.1)) * text
+                                            max_y+del_y*0.1)) * text
                                 param_plot = param_plot * mark
                                 # For the derivatives
                                 text = hv.Text(
@@ -1007,7 +1050,7 @@ class Deriv_dask:
                                     ).opts(
                                         color="black",
                                         ylim=(min_y_deriv-del_y_deriv*0.1,
-                                              max_y_deriv+del_y_deriv*0.1)) * text
+                                            max_y_deriv+del_y_deriv*0.1)) * text
                                 deriv_plot = deriv_plot * mark
                                 scale += 1
                     t2 = timer()
@@ -1017,7 +1060,8 @@ class Deriv_dask:
                 # Add second y-axis if given
                 if twin is not None:
                     param_plot = param_plot * twin
-                    deriv_plot = deriv_plot * twin
+                    if "heatmap" not in deriv_method or "hexbin" != deriv_method or not hexbin[1]:
+                        deriv_plot = deriv_plot * twin
 
                 layout = param_plot + deriv_plot
 
@@ -1043,9 +1087,9 @@ class Deriv_dask:
                 else:
                     layout_kwargs["fig_inches"] = fig_inches
 
-               # Matplotlib uses a horrible colormap as default...
+            # Matplotlib uses a horrible colormap as default...
                 curve_kwargs = kwargs.copy()
-                if percentile is not None:
+                if "percentile" in globals():
                     if self.backend == "matplotlib":
                         if len(percentile) <= 10:
                             curve_kwargs["color"] = hv.Cycle("tab10")
@@ -1057,7 +1101,7 @@ class Deriv_dask:
                         elif len(percentile) <= 20:
                             curve_kwargs["color"] = hv.Cycle("Category20")
 
-                if errorband:
+                if errorband or param_method == "errorband":
                     both_plots = layout.opts(
                         opts.Area(
                             xticks=xticks,
@@ -1075,7 +1119,7 @@ class Deriv_dask:
                             **scatter_kwargs),
                         opts.Layout(**layout_kwargs)
                     ).cols(1)
-                elif percentile is not None:
+                elif "percentile" in globals() or param_method == "percentile":
                     both_plots = layout.opts(
                         opts.Area(
                             xticks=xticks,
@@ -1095,19 +1139,40 @@ class Deriv_dask:
                         opts.Layout(**layout_kwargs)
                     ).cols(1)
                 else:
-                    if not hexbin[0] and not hexbin[1]:
-                        both_plots = layout.opts(
-                            opts.Scatter(
-                                xticks=xticks,
-                                xaxis="bottom",
-                                fontsize=self.font_dic,
-                                show_grid=True,
-                                show_legend=True,
-                                xlabel=latexify.parse_word(x_axis),
-                                **scatter_kwargs),
-                            opts.Layout(**layout_kwargs)
-                        ).cols(1)
-                    elif hexbin[0] and hexbin[1]:
+                    if( (not hexbin[0] and not hexbin[1]) and
+                        (not "hexbin" == param_method and not "hexbin" == deriv_method) ):
+                        if "heatmap" in deriv_method:
+                            both_plots = layout.opts(
+                                opts.Scatter(
+                                    xticks=xticks,
+                                    xaxis="bottom",
+                                    fontsize=self.font_dic,
+                                    show_grid=True,
+                                    show_legend=True,
+                                    xlabel=latexify.parse_word(x_axis),
+                                    **scatter_kwargs),
+                                opts.HeatMap(
+                                    # width=width,
+                                    logz=True,
+                                    xaxis=None,
+                                    colorbar=True,
+                                    cmap="viridis"),
+                                opts.Layout(**layout_kwargs)
+                            ).cols(1)
+                        else:
+                            both_plots = layout.opts(
+                                opts.Scatter(
+                                    xticks=xticks,
+                                    xaxis="bottom",
+                                    fontsize=self.font_dic,
+                                    show_grid=True,
+                                    show_legend=True,
+                                    xlabel=latexify.parse_word(x_axis),
+                                    **scatter_kwargs),
+                                opts.Layout(**layout_kwargs)
+                            ).cols(1)
+                    elif( (hexbin[0] and hexbin[1]) or
+                        ("hexbin" == deriv_method and "hexbin" == param_method) ):
                         both_plots = layout.opts(
                             opts.HexTiles(**opts_arg),
                             opts.Layout(**layout_kwargs)
@@ -1214,7 +1279,7 @@ class Deriv_dask:
                                 break
                     else:
                         while (len(sorted_tuples) > 0
-                               and np.abs(sorted_tuples[-1][1]/v_max) > 0.1):
+                            and np.abs(sorted_tuples[-1][1]/v_max) > 0.1):
                             p, v = sorted_tuples.pop()
                             in_params_2.append(p)
                             if len(in_params_2) == max_per_deriv:
@@ -1389,7 +1454,7 @@ class Deriv_dask:
                 color="gray",
                 datashade=datashade,
                 legend=False,
-            ).opts(initial_hooks=[twinx], apply_ranges=False).opts(opts.Scatter(s=s))
+            ).opts(initial_hooks=[twinx], apply_ranges=False).opts(opts.Scatter(s=scatter_size))
 
         add_cols = []
         if vertical_mark is not None:
@@ -1437,7 +1502,7 @@ class Deriv_dask:
 
                 if kind == "scatter":
                     plot_func = df_group.hvplot.scatter
-                    options = opts.Scatter(s=s)
+                    options = opts.Scatter(s=scatter_size)
                 else:
                     plot_func = df_group.hvplot.line
                     if self.backend == "bokeh":

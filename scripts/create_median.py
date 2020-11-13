@@ -332,18 +332,18 @@ def add_attrs(ds, ref_ds_path=None, attrs=None):
         "units": "seconds since start of convective/slantwise ascent"}
     ds["lon"].attrs = {
         "standard_name": "longitude",
-        "long_name": "rotated longitude",
-        "units": "degrees"}
+        "long_name": "longitude",
+        "units": "degrees_east"}
     ds["lat"].attrs = {
         "standard_name": "latitude",
-        "long_name": "rotated latitude",
-        "units": "degrees"}
+        "long_name": "latitude",
+        "units": "degrees_north"}
     ds["pressure"].attrs = {
         "standard_name": "air_pressure",
         "long_name": "pressure",
         "units": "Pa",
         "positive": "down",
-        "axis": "z"}
+        "axis": "Z"}
     ds["z"].attrs = {
         "standard_name": "height",
         "long_name": "height above mean sea level",
@@ -918,11 +918,15 @@ def do_the_stuff_more_slan_600():
 
 
 def merge_stuff(input_path, output,
-    ensembles=["conv_400", "conv_600", "slan_400", "slan_600"], dropna=False):
+    ensembles=["conv_400", "conv_600", "slan_400", "slan_600"], dropna=None,
+    max_diff=None, complevel=9):
     """
     Merge statistical trajectories to a single file.
     Each category given in ensembles will be merged to a single ensemble.
-    The trajectories will be enumerated accordingly.
+    The time coordinates are set %20 to align them.
+    Longitude and Latitude are set, such that they do not deviate too much
+    for plotting in 3D.
+
 
     Parmaters
     ---------
@@ -932,6 +936,17 @@ def merge_stuff(input_path, output,
         Path + name where new file shall be stored.
     ensembles: list of string
         Categories to merge into a single ensembles (must be present in filename).
+    dropna: string
+        "drop": Remove all NaNs such that only coordinates with values are left.
+        "fill": Fill values with first and then last valid numbers
+        "999": Fill values with -999.99
+        None: Do nothing
+    max_diff: float
+        Maximum allowed difference for consecutive timesteps of longitude and
+        latitude. Use 0.012 for roughly 180 km/h max velocity. If None is given
+        the coordinates will not be touched.
+    complevel: int
+        Compression level to use (0-9)
 
     Returns
     -------
@@ -953,6 +968,25 @@ def merge_stuff(input_path, output,
                 # Since we are merging "representatives" the exact time
                 # should not matter
                 ds_tmp["time"] = ds_tmp["time"] - ds_tmp["time"]%20
+                max_t = 25000
+                if "slan" in f:
+                    max_t = 82000
+                ds_tmp = ds_tmp.where(ds_tmp["time_after_ascent"] <= max_t)
+                if max_diff is not None:
+                    def adjust(ds_tmp, key):
+                        ll = np.asarray(ds_tmp[key])
+                        before = ll[0, 0, 0]
+                        for i, l in enumerate(ll[0, 0, :]):
+                            if np.abs(before-l) > max_diff:
+                                ll[0, 0, i] = before + np.sign(l-before)*max_diff
+                                before = ll[0, 0, i]
+                            else:
+                                before = l
+                        ds_tmp[key] = (ds_tmp[key].dims, ll)
+                        return ds_tmp
+                    ds_tmp = adjust(ds_tmp, "lon")
+                    ds_tmp = adjust(ds_tmp, "lat")
+
                 ds_ens.append(ds_tmp)
         ds_list.append(xr.combine_nested(ds_ens, concat_dim="trajectory"))
     merged_ds = xr.combine_nested(ds_list, concat_dim="ensemble")
@@ -976,11 +1010,17 @@ def merge_stuff(input_path, output,
         }
     }
     merged_ds = add_attrs(merged_ds, attrs=attrs)
-    if dropna:
+    if dropna == "drop":
         merged_ds = merged_ds.dropna(dim="time", how="any")
         print(merged_ds)
+    elif dropna == "fill":
+        params = ["pressure", "lat", "lon", "QV", "QC", "QR"]
+        for par in params:
+            merged_ds[par] = merged_ds[par].ffill("time").bfill("time")
+    elif dropna == "999":
+        merged_ds = merged_ds.fillna(-999.99)
 
-    comp = dict(zlib=True, complevel=9)
+    comp = dict(zlib=True, complevel=complevel)
     encoding = {var: comp for var in merged_ds.data_vars}
 
     merged_ds.to_netcdf(output, compute=True, engine="netcdf4",
