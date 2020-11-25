@@ -176,7 +176,7 @@ inline A thermal_conductivity_moist_air(A T, A qv, model_constants_t &cc)
   A Kt_tilde = Kt/418.68;
   A Kv_tilde = (3.78e-5) + (2.0e-7)*(T - 273.15);
 
-  return ( Kt*( 1.0 - (1.17 - 1.02*(Kt_tilde/Kv_tilde))*(qv/(qv+cc.Epsilon)) ) );
+  return ( Kt*( 1.0 - (1.17 - 1.02*(Kt_tilde/Kv_tilde))*(qv/(qv+get_at(cc.constants, Cons_idx::Epsilon))) ) );
 }
 
 
@@ -329,7 +329,7 @@ inline A specific_heat_ice(A T, model_constants_t &cc)
 
   A T_frac = T/125.1;
 
-  return ( (-2.0572 + 0.14644*T + 0.06163*T*exp( -T_frac*T_frac ))/cc.M_w );
+  return ( (-2.0572 + 0.14644*T + 0.06163*T*exp( -T_frac*T_frac ))/get_at(cc.constants, Cons_idx::M_w) );
 
 }
 
@@ -347,7 +347,7 @@ template <class A>
 inline A latent_heat_water(A T, model_constants_t &cc)
 {
 
-  return ( ( 56579.0 - 42.212*T + exp( 0.1149*(281.6-T) ) )/cc.M_w );
+  return ( ( 56579.0 - 42.212*T + exp( 0.1149*(281.6-T) ) )/get_at(cc.constants, Cons_idx::M_w) );
 
 }
 
@@ -367,7 +367,7 @@ inline A latent_heat_ice(A T, model_constants_t &cc)
 
   A T_frac = T/123.75;
 
-  return ( ( polyval2(46782.5, 35.8925, -0.07414, T) + 541.5*exp(-T_frac*T_frac) )/cc.M_w );
+  return ( ( polyval2(46782.5, 35.8925, -0.07414, T) + 541.5*exp(-T_frac*T_frac) )/get_at(cc.constants, Cons_idx::M_w) );
 
 }
 
@@ -387,7 +387,8 @@ template <class A>
 inline A latent_heat_melt(A T, model_constants_t &cc)
 {
   // Table A1
-  return 4.184e3 * (79.7+0.485*(T-cc.T_freeze) - 2.5e-3*(T-cc.T_freeze)*(T-cc.T_freeze));
+  return 4.184e3 * (79.7+0.485*(T-get_at(cc.constants, Cons_idx::T_freeze))
+    - 2.5e-3*(T-get_at(cc.constants, Cons_idx::T_freeze))*(T-get_at(cc.constants, Cons_idx::T_freeze)));
 }
 
 
@@ -429,28 +430,14 @@ inline A saturation_pressure_water(A T, model_constants_t &cc)
 #ifdef VANILLA_PRESSURE
   A Tinv = 1.0/T;
   A logT = log(T);
-  return ( exp( 54.842763 - 6763.22*Tinv - 4.21*logT + 0.000367*T + tanh(0.0415*(T-218.8))*(53.878 - 1331.22*Tinv - 9.44523*logT + 0.014025*T) ) );
+  return ( exp( 54.842763 - 6763.22*Tinv - 4.21*logT + 0.000367*T
+    + tanh(0.0415*(T-218.8))*(53.878 - 1331.22*Tinv - 9.44523*logT + 0.014025*T) ) );
 #else
-  return cc.p_sat_low_temp*exp(cc.p_sat_const_a*(T-cc.T_sat_low_temp)/(T-cc.p_sat_const_b));
+  return get_at(cc.constants, Cons_idx::p_sat_low_temp)
+    * exp(get_at(cc.constants, Cons_idx::p_sat_const_a)
+    * (T-get_at(cc.constants, Cons_idx::T_sat_low_temp))
+    / (T-get_at(cc.constants, Cons_idx::p_sat_const_b)));
 #endif
-}
-
-
-/**
- * Change of saturation vapor pressure over a flat surface of liquid water
- * in Pa given a change of temperature.
- *
- * Validity range: ?
- *
- * @param T Temperature in Kelvin
- * @param T_deriv Temperature change in Kelvin
- * @return Saturation vapor pressure
- */
-template <class A>
-inline A saturation_pressure_water_icon_deriv(A T, A T_deriv, model_constants_t &cc)
-{
-  return -( cc.p_sat_low_temp*cc.p_sat_const_a * (cc.p_sat_const_b-cc.T_sat_low_temp)
-    * T_deriv * exp(saturation_pressure_water(T)) )/( (T-cc.p_sat_const_b)*(T-cc.p_sat_const_b) );
 }
 
 
@@ -469,7 +456,10 @@ inline A water_vapor_sat_ratio_dotzek(
     model_constants_t &cc)
 {
     A p_sat = saturation_pressure_water(T);
-    return (cc.r_const/cc.r1_const) / (p/p_sat + (cc.r_const/cc.r1_const)-1);
+    return (get_at(cc.constants, Cons_idx::r_const)
+        / get_at(cc.constants, Cons_idx::r1_const))
+        / (p/p_sat + (get_at(cc.constants, Cons_idx::r_const)
+        / get_at(cc.constants, Cons_idx::r1_const))-1);
 }
 
 
@@ -487,7 +477,7 @@ inline A water_vapor_sat_ratio(
     model_constants_t &cc)
 {
     A p_sat = saturation_pressure_water(T);
-    return cc.Epsilon*( p_sat/(p - p_sat) );
+    return get_at(cc.constants, Cons_idx::Epsilon)*( p_sat/(p - p_sat) );
 }
 
 
@@ -507,7 +497,10 @@ inline A saturation_pressure_ice(A T, model_constants_t &cc)
 #ifdef VANILLA_PRESSURE
     return ( exp( 9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T ) );
 #else
-    return ( cc.p_sat_low_temp*exp(cc.p_sat_ice_const_a*(T-cc.T_sat_low_temp)/(T-cc.p_sat_ice_const_b)) );
+    return ( get_at(cc.constants, Cons_idx::p_sat_low_temp)
+        * exp(get_at(cc.constants, Cons_idx::p_sat_ice_const_a)
+        * (T-get_at(cc.constants, Cons_idx::T_sat_low_temp))
+        / (T-get_at(cc.constants, Cons_idx::p_sat_ice_const_b))) );
 #endif
 }
 
@@ -611,7 +604,7 @@ inline A compute_rhoa(A p,
     model_constants_t &cc)
 {
 
-  return ( compute_pa(p,T,S, cc)/(cc.R_a*T) );
+  return ( compute_pa(p,T,S, cc)/(get_at(cc.constants, Cons_idx::R_a)*T) );
 
 }
 
@@ -635,7 +628,8 @@ inline A compute_rhoh(
     // auto p_sat = p_sat_low_temp*exp(p_sat_const_a*(T-T_sat_low_temp)/(T-p_sat_const_b));
     // auto p_sat = exp( 9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T );
     // return ( (p-S*p_sat)/(Ra*T) + S*p_sat/(R_v*T) );
-    return ( compute_pa(p, T, S, cc)/(cc.R_a*T) + compute_pv(T, S, cc)/(cc.R_v*T) );
+    return ( compute_pa(p, T, S, cc)/(get_at(cc.constants, Cons_idx::R_a)*T)
+        + compute_pv(T, S, cc)/(get_at(cc.constants, Cons_idx::R_v)*T) );
 
 }
 
@@ -655,7 +649,7 @@ inline A convert_S_to_qv(A p,
             model_constants_t &cc)
 {
 
-  return ( cc.Epsilon*( compute_pv(T,S, cc)/compute_pa(p,T,S, cc) ) );
+  return ( get_at(cc.constants, Cons_idx::Epsilon)*( compute_pv(T,S, cc)/compute_pa(p,T,S, cc) ) );
 
 }
 
@@ -697,7 +691,8 @@ inline A convert_qv_to_S(A p,
              model_constants_t &cc)
 {
 
-  return ( (p*qv)/((cc.Epsilon + qv)*saturation_pressure_water(T, cc)) );
+  return ( (p*qv)/((get_at(cc.constants, Cons_idx::Epsilon) + qv)
+    * saturation_pressure_water(T, cc)) );
 
 }
 
@@ -919,14 +914,15 @@ inline A coll_delta(
     particle_model_constants_t &pc1,
     const uint64_t n)
 {
-    A tmp1 = (2.0*pc1.b_geo+pc1.nu+1.0+n)/pc1.mu;
-    A tmp2 = (pc1.nu+1.0)/pc1.mu;
-    A tmp3 = (pc1.nu+1.0)/pc1.mu;
-    A tmp4 = (pc1.nu+2.0)/pc1.mu;
+    A tmp1 = (2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+get_at(pc1.constants, Particle_cons_idx::nu)+1.0+n)
+        / get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp2 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp3 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp4 = (get_at(pc1.constants, Particle_cons_idx::nu)+2.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     return tgamma( tmp1 )
         / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), 2.0*pc1.b_geo+n)
-        / pow(tgamma( tmp4 ), 2.0*pc1.b_geo+n);
+        * pow(tgamma( tmp3 ), 2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+n)
+        / pow(tgamma( tmp4 ), 2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+n);
 }
 
 /**
@@ -978,22 +974,24 @@ inline A coll_delta_12(
     particle_model_constants_t &pc2,
     const uint64_t n)
 {
-    A tmp1 = (pc1.b_geo+pc1.nu+1.0)/pc1.mu;
-    A tmp2 = (pc1.nu+1.0)/pc1.mu;
-    A tmp3 = (pc1.nu+1.0)/pc1.mu;
-    A tmp4 = (pc1.nu+2.0)/pc1.mu;
+    A tmp1 = (get_at(pc1.constants, Particle_cons_idx::b_geo)+get_at(pc1.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp2 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp3 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp4 = (get_at(pc1.constants, Particle_cons_idx::nu)+2.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     A res =  2.0 * tgamma( tmp1 )
         / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), pc1.b_geo)
-        / pow(tgamma( tmp4 ), pc1.b_geo);
-    tmp1 = (pc2.b_geo+pc2.nu+1.0+n)/pc2.mu;
-    tmp2 = (pc2.nu+1.0)/pc2.mu;
-    tmp3 = (pc2.nu+1.0)/pc2.mu;
-    tmp4 = (pc2.nu+2.0)/pc2.mu;
+        * pow(tgamma( tmp3 ), get_at(pc1.constants, Particle_cons_idx::b_geo))
+        / pow(tgamma( tmp4 ), get_at(pc1.constants, Particle_cons_idx::b_geo));
+    tmp1 = (get_at(pc2.constants, Particle_cons_idx::b_geo)+get_at(pc2.constants, Particle_cons_idx::nu)+1.0+n)
+        / get_at(pc2.constants, Particle_cons_idx::mu);
+    tmp2 = (get_at(pc2.constants, Particle_cons_idx::nu)+1.0)/get_at(pc2.constants, Particle_cons_idx::mu);
+    tmp3 = (get_at(pc2.constants, Particle_cons_idx::nu)+1.0)/get_at(pc2.constants, Particle_cons_idx::mu);
+    tmp4 = (get_at(pc2.constants, Particle_cons_idx::nu)+2.0)/get_at(pc2.constants, Particle_cons_idx::mu);
     return res * tgamma( tmp1 )
         / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), pc2.b_geo+n)
-        / pow(tgamma( tmp4 ), pc2.b_geo+n);
+        * pow(tgamma( tmp3 ), get_at(pc2.constants, Particle_cons_idx::b_geo)+n)
+        / pow(tgamma( tmp4 ), get_at(pc2.constants, Particle_cons_idx::b_geo)+n);
 }
 
 /**
@@ -1008,14 +1006,16 @@ inline A coll_theta(
     particle_model_constants_t &pc1,
     const uint64_t n)
 {
-    A tmp1 = (2.0*pc1.b_vel+2.0*pc1.b_geo+pc1.nu+1.0+n)/pc1.mu;
-    A tmp2 = (2.0*pc1.b_geo+pc1.nu+1.0+n)/pc1.mu;
-    A tmp3 = (pc1.nu+1.0)/pc1.mu;
-    A tmp4 = (pc1.nu+2.0)/pc1.mu;
+    A tmp1 = (2.0*get_at(pc1.constants, Particle_cons_idx::b_vel)+2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)
+        + get_at(pc1.constants, Particle_cons_idx::nu)+1.0+n)/get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp2 = (2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+get_at(pc1.constants, Particle_cons_idx::nu)+1.0+n)
+        / get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp3 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp4 = (get_at(pc1.constants, Particle_cons_idx::nu)+2.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     return tgamma( tmp1 )
         / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), 2.0*pc1.b_vel)
-        / pow(tgamma( tmp4 ), 2.0*pc1.b_vel);
+        * pow(tgamma( tmp3 ), 2.0*get_at(pc1.constants, Particle_cons_idx::b_vel))
+        / pow(tgamma( tmp4 ), 2.0*get_at(pc1.constants, Particle_cons_idx::b_vel));
 }
 
 
@@ -1067,22 +1067,26 @@ inline A coll_theta_12(
     particle_model_constants_t &pc2,
     const uint64_t n)
 {
-    A tmp1 = (pc1.b_vel+2.0*pc1.b_geo+pc1.nu+1.0)/pc1.mu;
-    A tmp2 = (2.0*pc1.b_geo+pc1.nu+1.0)/pc1.mu;
-    A tmp3 = (pc1.nu+1.0)/pc1.mu;
-    A tmp4 = (pc1.nu+2.0)/pc1.mu;
+    A tmp1 = (get_at(pc1.constants, Particle_cons_idx::b_vel)+2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)
+        + get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp2 = (2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+get_at(pc1.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp3 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
+    A tmp4 = (get_at(pc1.constants, Particle_cons_idx::nu)+2.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     A res = 2.0 * tgamma( tmp1 )
         / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), pc1.b_vel)
-        / pow(tgamma( tmp4 ), pc1.b_vel);
-    tmp1 = (pc2.b_vel+2.0*pc2.b_geo+pc2.nu+1.0+n)/pc2.mu;
-    tmp2 = (2.0*pc2.b_geo+pc2.nu+1.0+n)/pc2.mu;
-    tmp3 = (pc2.nu+1.0)/pc2.mu;
-    tmp4 = (pc2.nu+2.0)/pc2.mu;
+        * pow(tgamma( tmp3 ), get_at(pc1.constants, Particle_cons_idx::b_vel))
+        / pow(tgamma( tmp4 ), get_at(pc1.constants, Particle_cons_idx::b_vel));
+    tmp1 = (get_at(pc2.constants, Particle_cons_idx::b_vel)+2.0*get_at(pc2.constants, Particle_cons_idx::b_geo)
+        + get_at(pc2.constants, Particle_cons_idx::nu)+1.0+n)/get_at(pc2.constants, Particle_cons_idx::mu);
+    tmp2 = (2.0*get_at(pc2.constants, Particle_cons_idx::b_geo)+get_at(pc2.constants, Particle_cons_idx::nu)+1.0+n)
+        / get_at(pc2.constants, Particle_cons_idx::mu);
+    tmp3 = (get_at(pc2.constants, Particle_cons_idx::nu)+1.0)/get_at(pc2.constants, Particle_cons_idx::mu);
+    tmp4 = (get_at(pc2.constants, Particle_cons_idx::nu)+2.0)/get_at(pc2.constants, Particle_cons_idx::mu);
     return res * tgamma( tmp1 )
         / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), pc2.b_vel)
-        / pow(tgamma( tmp4 ), pc2.b_vel);
+        * pow(tgamma( tmp3 ), get_at(pc2.constants, Particle_cons_idx::b_vel))
+        / pow(tgamma( tmp4 ), get_at(pc2.constants, Particle_cons_idx::b_vel));
 }
 
 
@@ -1102,9 +1106,13 @@ inline codi::RealReverse vent_coeff_a(
     particle_model_constants_t &pc,
     uint64_t n)
 {
-    return pc.a_ven * tgamma( (pc.nu+n+pc.b_geo)/pc.mu )
-        / tgamma( (pc.nu+1.0)/pc.mu )
-        * pow( tgamma((pc.nu+1.0)/pc.mu) / tgamma((pc.nu+2.0)/pc.mu), pc.b_geo+n-1.0 );
+    return get_at(pc.constants, Particle_cons_idx::a_ven)
+        * tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+n
+        + get_at(pc.constants, Particle_cons_idx::b_geo))/get_at(pc.constants, Particle_cons_idx::mu) )
+        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu) )
+        * pow( tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(pc.constants, Particle_cons_idx::mu)) / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+2.0)
+        / get_at(pc.constants, Particle_cons_idx::mu)), get_at(pc.constants, Particle_cons_idx::b_geo)+n-1.0 );
 }
 
 /**
@@ -1124,10 +1132,15 @@ inline codi::RealReverse vent_coeff_b(
     uint64_t n)
 {
     const double m_f = 0.5; // From PK, page 541
-    return pc.b_ven * tgamma( (pc.nu+n+(m_f+1.0)*pc.b_geo+m_f*pc.b_vel)/pc.mu )
-        / tgamma( (pc.nu+1.0)/pc.mu )
-        * pow( tgamma( (pc.nu+1.0)/pc.mu )
-            / tgamma( (pc.nu+2.0)/pc.mu), (m_f+1.0) * pc.b_geo + m_f*pc.b_vel+n-1.0);
+    return get_at(pc.constants, Particle_cons_idx::b_ven)
+        * tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+n+(m_f+1.0)
+        * get_at(pc.constants, Particle_cons_idx::b_geo)+m_f
+        * get_at(pc.constants, Particle_cons_idx::b_vel))/get_at(pc.constants, Particle_cons_idx::mu) )
+        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu) )
+        * pow( tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu) )
+        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+2.0)
+        / get_at(pc.constants, Particle_cons_idx::mu)), (m_f+1.0) * get_at(pc.constants, Particle_cons_idx::b_geo)
+        + m_f*get_at(pc.constants, Particle_cons_idx::b_vel)+n-1.0);
 }
 
 
@@ -1143,8 +1156,12 @@ inline codi::RealReverse moment_gamma(
     particle_model_constants_t &pc,
     uint64_t n)
 {
-    return tgamma( (n+pc.nu+1.0)/pc.mu ) / tgamma( (pc.nu+1.0)/pc.mu )
-        * pow(tgamma( (pc.nu+1.0)/pc.mu ) / tgamma( (pc.nu+2.0)/pc.mu), n);
+    return tgamma( (n+get_at(pc.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(pc.constants, Particle_cons_idx::mu) )
+        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu) )
+        * pow(tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(pc.constants, Particle_cons_idx::mu) )
+        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+2.0)/get_at(pc.constants, Particle_cons_idx::mu)), n);
 }
 
 
@@ -1163,20 +1180,23 @@ void setCoefficients(
     codi::RealReverse p_prime = y[p_idx]*ref.pref;
     codi::RealReverse T_prime = y[T_idx]*ref.Tref;
 
-    codi::RealReverse rho_prime = p_prime /( cc.R_a * T_prime );
+    codi::RealReverse rho_prime = p_prime /( get_at(cc.constants, Cons_idx::R_a) * T_prime );
     codi::RealReverse L_vap_prime = latent_heat_water(T_prime, cc);
     codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
     codi::RealReverse psat_prime = saturation_pressure_water(T_prime, cc);
-    codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(cc.R_v*T_prime)) - 1.0);
-    codi::RealReverse B_pp = (cc.R_v*T_prime)/((2.21/p_prime)*psat_prime);
+    codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))
+        * ((L_vap_prime/(get_at(cc.constants, Cons_idx::R_v)*T_prime)) - 1.0);
+    codi::RealReverse B_pp = (get_at(cc.constants, Cons_idx::R_v)*T_prime)/((2.21/p_prime)*psat_prime);
 
 
-    cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alpha_r-2.0)/(A_pp + B_pp) );
-    cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alpha_r*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
+    cc.constants[static_cast<int>(Cons_idx::e1_prime)] = cc.e1_scale
+        * ( pow(rho_prime, 2.0*cc.alpha_r-2.0)/(A_pp + B_pp) );
+    cc.constants[static_cast<int>(Cons_idx::e2_prime)] = cc.e2_scale
+        * ( pow(rho_prime, cc.alpha_r*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
 
-    cc.a1_prime = cc.a1_scale;	// Constant coefficient
-    cc.a2_prime = cc.a2_scale;	// Constant coefficient
-    cc.d_prime = cc.d_scale;	// Constant coefficient
+    cc.constants[static_cast<int>(Cons_idx::a1_prime)] = cc.a1_scale;	// Constant coefficient
+    cc.constants[static_cast<int>(Cons_idx::a2_prime)] = cc.a2_scale;	// Constant coefficient
+    cc.constants[static_cast<int>(Cons_idx::d_prime)] = cc.d_scale;	// Constant coefficient
 }
 
 /**
@@ -1191,21 +1211,20 @@ void setCoefficients(
     codi::RealReverse T_prime,
     model_constants_t &cc)
 {
-    codi::RealReverse rho_prime = p_prime /( cc.R_a * T_prime );
+    codi::RealReverse rho_prime = p_prime /( get_at(cc.constants, Cons_idx::R_a) * T_prime );
     codi::RealReverse L_vap_prime = latent_heat_water(T_prime, cc);
     codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
     codi::RealReverse psat_prime = saturation_pressure_water(T_prime, cc);
-    codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(cc.R_v*T_prime)) - 1.0);
-    codi::RealReverse B_pp = (cc.R_v*T_prime)/((2.21/p_prime)*psat_prime);
+    codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(get_at(cc.constants, Cons_idx::R_v)*T_prime)) - 1.0);
+    codi::RealReverse B_pp = (get_at(cc.constants, Cons_idx::R_v)*T_prime)/((2.21/p_prime)*psat_prime);
 
-    cc.a1_prime = cc.a1_scale;	// Constant coefficient
-    cc.a2_prime = cc.a2_scale;	// Constant coefficient
+    cc.constants[static_cast<int>(Cons_idx::a1_prime)] = cc.a1_scale;	// Constant coefficient
+    cc.constants[static_cast<int>(Cons_idx::a2_prime)] = cc.a2_scale;	// Constant coefficient
 
-    cc.e1_prime = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alpha_r-2.0)/(A_pp + B_pp) );
-    cc.e2_prime = cc.e2_scale * ( pow(rho_prime, cc.alpha_r*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
+    cc.constants[static_cast<int>(Cons_idx::e1_prime)] = cc.e1_scale * ( pow(rho_prime, 2.0*cc.alpha_r-2.0)/(A_pp + B_pp) );
+    cc.constants[static_cast<int>(Cons_idx::e2_prime)] = cc.e2_scale * ( pow(rho_prime, cc.alpha_r*cc.epsilonr - (7.0/4.0))/(A_pp + B_pp) );
 
-    cc.d_prime = cc.d_scale;	// Constant coefficient
-    cc.inv_z = 1.0/cc.parcel_height;
+    cc.constants[static_cast<int>(Cons_idx::d_prime)] = cc.d_scale;	// Constant coefficient
 }
 
 
@@ -1219,21 +1238,28 @@ void setup_cloud_autoconversion(
     particle_model_constants_t &pc,
     model_constants_t &cc)
 {
-    auto nu = pc.nu + 1.0;
-    auto mu = pc.mu;
-    if(pc.mu == 1.0)
+    auto nu = get_at(pc.constants, Particle_cons_idx::nu) + 1.0;
+    auto mu = get_at(pc.constants, Particle_cons_idx::mu);
+    if(get_at(pc.constants, Particle_cons_idx::mu) == 1.0)
     {
-        cc.cloud_k_au = cc.kc_autocon / pc.max_x * 0.05
+        cc.constants[static_cast<int>(Cons_idx::cloud_k_au)] =
+            get_at(cc.constants, Cons_idx::kc_autocon)
+            / get_at(pc.constants, Particle_cons_idx::max_x) * 0.05
             * (nu+1.0)*(nu+3.0) / pow(nu, 2);
-        cc.cloud_k_sc = cc.kc_autocon * (nu+1.0)/(nu);
+        cc.constants[static_cast<int>(Cons_idx::cloud_k_sc)] =
+            get_at(cc.constants, Cons_idx::kc_autocon) * (nu+1.0)/(nu);
     } else
     {
-        cc.cloud_k_au = cc.kc_autocon / pc.max_x * 0.05
+        cc.constants[static_cast<int>(Cons_idx::cloud_k_au)] =
+            get_at(cc.constants, Cons_idx::kc_autocon)
+            / get_at(pc.constants, Particle_cons_idx::max_x) * 0.05
             * (2.0 * tgamma((nu+3.0)/mu)
             * tgamma((nu+1.0)/mu) * pow(tgamma((nu)/mu), 2)
             - 1.0 * pow(tgamma((nu+2.0)/mu), 2) * pow(tgamma((nu)/mu), 2))
             / pow(tgamma((nu+1.0)/mu), 4);
-        cc.cloud_k_sc = cc.kc_autocon * pc.c_z;
+        cc.constants[static_cast<int>(Cons_idx::cloud_k_sc)] =
+            get_at(cc.constants, Cons_idx::kc_autocon)
+            * get_at(pc.constants, Particle_cons_idx::c_z);
     }
 }
 
@@ -1245,12 +1271,25 @@ void setup_cloud_autoconversion(
 void setup_bulk_sedi(
     particle_model_constants_t &pc)
 {
-    pc.alfa_n = pc.a_vel * tgamma( (pc.nu+pc.b_vel+1.0)/pc.mu )
-        / tgamma( (pc.nu+1.0)/pc.mu);
-    pc.alfa_q = pc.a_vel * tgamma( (pc.nu+pc.b_vel+2.0)/pc.mu )
-        / tgamma( (pc.nu+2.0)/pc.mu );
-    pc.lambda = tgamma( (pc.nu+1.0)/pc.mu )
-        / tgamma( (pc.nu+2.0)/pc.mu );
+    get_at(pc.constants, Particle_cons_idx::alfa_n) =
+        get_at(pc.constants, Particle_cons_idx::a_vel)
+        * tgamma( (get_at(pc.constants, Particle_cons_idx::nu)
+        + get_at(pc.constants, Particle_cons_idx::b_vel)+1.0)
+        / get_at(pc.constants, Particle_cons_idx::mu) )
+        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(pc.constants, Particle_cons_idx::mu));
+    get_at(pc.constants, Particle_cons_idx::alfa_q) =
+        get_at(pc.constants, Particle_cons_idx::a_vel)
+        * tgamma( (get_at(pc.constants, Particle_cons_idx::nu)
+        + get_at(pc.constants, Particle_cons_idx::b_vel)+2.0)
+        / get_at(pc.constants, Particle_cons_idx::mu) )
+        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+2.0)
+        / get_at(pc.constants, Particle_cons_idx::mu) );
+    get_at(pc.constants, Particle_cons_idx::lambda) =
+        tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(pc.constants, Particle_cons_idx::mu) )
+        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+2.0)
+        / get_at(pc.constants, Particle_cons_idx::mu) );
 }
 
 /**
@@ -1324,98 +1363,95 @@ void setup_model_constants(
       reference_quantities_t &ref_quant)
 {
     // Set constants
-    cc.q_crit_i = q_crit_i;
-    cc.D_crit_i = D_crit_i;
-    cc.D_conv_i = D_conv_i;
-    cc.q_crit_r = q_crit_r;
-    cc.D_crit_r = D_crit_r;
-    cc.q_crit_fr = q_crit_fr;
-    cc.D_coll_c = D_coll_c;
-    cc.q_crit = q_crit;
-    cc.D_conv_sg = D_conv_sg;
-    cc.D_conv_ig = D_conv_ig;
-    cc.x_conv = x_conv;
-    cc.parcel_height = parcel_height;
-    cc.alpha_spacefilling = alpha_spacefilling;
-    cc.T_nuc = T_nuc;
-    cc.T_freeze = T_freeze;
-    cc.T_f = T_f;
-    cc.D_eq = D_eq;
-    cc.rho_w = rho_w;
-    cc.rho_0 = rho_0;
-    cc.rho_vel = rho_vel;
-    cc.rho_vel_c = rho_vel_c;
-    cc.rho_ice = rho_ice;
-    cc.M_w = M_w;
-    cc.M_a = M_a;
-    cc.R_universal = R_universal;
-    cc.Epsilon = Epsilon;
-    cc.gravity_acc = gravity_acc;
-    cc.R_a = R_a;
-    cc.R_v = R_v;
-    cc.a_v = a_v;
-    cc.b_v = b_v;
-    cc.a_prime = a_prime;
-    cc.b_prime = b_prime;
-    cc.c_prime = c_prime;
-    cc.K_T = K_T;
-    cc.L_wd = L_wd;
-    cc.L_ed = L_ed;
-    cc.D_v = D_v;
-    cc.ecoll_min = ecoll_min;
-    cc.ecoll_gg = ecoll_gg;
-    cc.ecoll_gg_wet = ecoll_gg_wet;
-    cc.kin_visc_air = kin_visc_air;
-    cc.C_mult = C_mult;
-    cc.T_mult_min = T_mult_min;
-    cc.T_mult_max = T_mult_max;
-    cc.T_mult_opt = T_mult_opt;
+    cc.constants[static_cast<int>(Cons_idx::q_crit_i)] = q_crit_i;
+    cc.constants[static_cast<int>(Cons_idx::D_crit_i)] = D_crit_i;
+    cc.constants[static_cast<int>(Cons_idx::D_conv_i)] = D_conv_i;
+    cc.constants[static_cast<int>(Cons_idx::q_crit_r)] = q_crit_r;
+    cc.constants[static_cast<int>(Cons_idx::D_crit_r)] = D_crit_r;
+    cc.constants[static_cast<int>(Cons_idx::q_crit_fr)] = q_crit_fr;
+    cc.constants[static_cast<int>(Cons_idx::D_coll_c)] = D_coll_c;
+    cc.constants[static_cast<int>(Cons_idx::q_crit)] = q_crit;
+    cc.constants[static_cast<int>(Cons_idx::D_conv_sg)] = D_conv_sg;
+    cc.constants[static_cast<int>(Cons_idx::D_conv_ig)] = D_conv_ig;
+    cc.constants[static_cast<int>(Cons_idx::x_conv)] = x_conv;
+    cc.constants[static_cast<int>(Cons_idx::parcel_height)] = parcel_height;
+    cc.constants[static_cast<int>(Cons_idx::inv_z)] = 1.0/parcel_height;
+    cc.constants[static_cast<int>(Cons_idx::alpha_spacefilling)] = alpha_spacefilling;
+    cc.constants[static_cast<int>(Cons_idx::T_nuc)] = T_nuc;
+    cc.constants[static_cast<int>(Cons_idx::T_freeze)] = T_freeze;
+    cc.constants[static_cast<int>(Cons_idx::T_f)] = T_f;
+    cc.constants[static_cast<int>(Cons_idx::D_eq)] = D_eq;
+    cc.constants[static_cast<int>(Cons_idx::rho_w)] = rho_w;
+    cc.constants[static_cast<int>(Cons_idx::rho_0)] = rho_0;
+    cc.constants[static_cast<int>(Cons_idx::rho_vel)] = rho_vel;
+    cc.constants[static_cast<int>(Cons_idx::rho_vel_c)] = rho_vel_c;
+    cc.constants[static_cast<int>(Cons_idx::rho_ice)] = rho_ice;
+    cc.constants[static_cast<int>(Cons_idx::M_w)] = M_w;
+    cc.constants[static_cast<int>(Cons_idx::M_a)] = M_a;
+    cc.constants[static_cast<int>(Cons_idx::R_universal)] = R_universal;
+    cc.constants[static_cast<int>(Cons_idx::Epsilon)] = Epsilon;
+    cc.constants[static_cast<int>(Cons_idx::gravity_acc)] = gravity_acc;
+    cc.constants[static_cast<int>(Cons_idx::R_a)] = R_a;
+    cc.constants[static_cast<int>(Cons_idx::R_v)] = R_v;
+    cc.constants[static_cast<int>(Cons_idx::a_v)] = a_v;
+    cc.constants[static_cast<int>(Cons_idx::b_v)] = b_v;
+    cc.constants[static_cast<int>(Cons_idx::a_prime)] = a_prime;
+    cc.constants[static_cast<int>(Cons_idx::b_prime)] = b_prime;
+    cc.constants[static_cast<int>(Cons_idx::c_prime)] = c_prime;
+    cc.constants[static_cast<int>(Cons_idx::K_T)] = K_T;
+    cc.constants[static_cast<int>(Cons_idx::L_wd)] = L_wd;
+    cc.constants[static_cast<int>(Cons_idx::L_ed)] = L_ed;
+    cc.constants[static_cast<int>(Cons_idx::D_v)] = D_v;
+    cc.constants[static_cast<int>(Cons_idx::ecoll_min)] = ecoll_min;
+    cc.constants[static_cast<int>(Cons_idx::ecoll_gg)] = ecoll_gg;
+    cc.constants[static_cast<int>(Cons_idx::ecoll_gg_wet)] = ecoll_gg_wet;
+    cc.constants[static_cast<int>(Cons_idx::kin_visc_air)] = kin_visc_air;
+    cc.constants[static_cast<int>(Cons_idx::C_mult)] = C_mult;
+    cc.constants[static_cast<int>(Cons_idx::T_mult_min)] = T_mult_min;
+    cc.constants[static_cast<int>(Cons_idx::T_mult_max)] = T_mult_max;
+    cc.constants[static_cast<int>(Cons_idx::T_mult_opt)] = T_mult_opt;
+    cc.constants[static_cast<int>(Cons_idx::kc_autocon)] = kc_autocon;
+    cc.constants[static_cast<int>(Cons_idx::D_rainfrz_gh)] = D_rainfrz_gh;
+    cc.constants[static_cast<int>(Cons_idx::D_rainfrz_ig)] = D_rainfrz_ig;
+    cc.constants[static_cast<int>(Cons_idx::dv0)] = dv0;
+    cc.constants[static_cast<int>(Cons_idx::p_sat_melt)] = p_sat_melt;
+    cc.constants[static_cast<int>(Cons_idx::cp)] = cp;
+    cc.constants[static_cast<int>(Cons_idx::k_b)] = k_b;
+    cc.constants[static_cast<int>(Cons_idx::a_HET)] = a_HET;
+    cc.constants[static_cast<int>(Cons_idx::b_HET)] = b_HET;
+    cc.constants[static_cast<int>(Cons_idx::N_sc)] = N_sc;
+    cc.constants[static_cast<int>(Cons_idx::n_f)] = n_f;
+    cc.constants[static_cast<int>(Cons_idx::N_avo)] = N_avo;
+    cc.constants[static_cast<int>(Cons_idx::na_dust)] = na_dust;
+    cc.constants[static_cast<int>(Cons_idx::na_soot)] = na_soot;
+    cc.constants[static_cast<int>(Cons_idx::na_orga)] = na_orga;
+    cc.constants[static_cast<int>(Cons_idx::ni_het_max)] = ni_het_max;
+    cc.constants[static_cast<int>(Cons_idx::ni_hom_max)] = ni_hom_max;
+    cc.constants[static_cast<int>(Cons_idx::a_dep)] = a_dep;
+    cc.constants[static_cast<int>(Cons_idx::b_dep)] = b_dep;
+    cc.constants[static_cast<int>(Cons_idx::c_dep)] = c_dep;
+    cc.constants[static_cast<int>(Cons_idx::d_dep)] = d_dep;
+    cc.constants[static_cast<int>(Cons_idx::nim_imm)] = nim_imm;
+    cc.constants[static_cast<int>(Cons_idx::nin_dep)] = nin_dep;
+    cc.constants[static_cast<int>(Cons_idx::alf_imm)] = alf_imm;
+    cc.constants[static_cast<int>(Cons_idx::bet_dep)] = bet_dep;
+    cc.constants[static_cast<int>(Cons_idx::bet_imm)] = bet_imm;
+    cc.constants[static_cast<int>(Cons_idx::r_const)] = r_const;
+    cc.constants[static_cast<int>(Cons_idx::r1_const)] = r1_const;
+    cc.constants[static_cast<int>(Cons_idx::cv)] = cv;
+    cc.constants[static_cast<int>(Cons_idx::p_sat_const_a)] = p_sat_const_a;
+    cc.constants[static_cast<int>(Cons_idx::p_sat_ice_const_a)] = p_sat_ice_const_a;
+    cc.constants[static_cast<int>(Cons_idx::p_sat_const_b)] = p_sat_const_b;
+    cc.constants[static_cast<int>(Cons_idx::p_sat_ice_const_b)] = p_sat_ice_const_b;
+    cc.constants[static_cast<int>(Cons_idx::p_sat_low_temp)] = p_sat_low_temp;
+    cc.constants[static_cast<int>(Cons_idx::T_sat_low_temp)] = T_sat_low_temp;
+    cc.constants[static_cast<int>(Cons_idx::alpha_depo)] = alpha_depo;
+    cc.constants[static_cast<int>(Cons_idx::r_0)] = r_0;
 
-    cc.const0 = 1.0/(cc.D_coll_c - cc.cloud.d_crit_c);
-    cc.const3 = 1.0/(cc.T_mult_opt - cc.T_mult_min);
-    cc.const4 = 1.0/(cc.T_mult_opt - cc.T_mult_max);
-    cc.const5 = cc.alpha_spacefilling * cc.rho_w/cc.rho_ice;
-    cc.D_rainfrz_gh = D_rainfrz_gh;
-    cc.D_rainfrz_ig = D_rainfrz_ig;
-    cc.dv0 = dv0;
-    cc.p_sat_melt = p_sat_melt;
-    cc.cp = cp;
-    cc.k_b = k_b;
-    cc.a_HET = a_HET;
-    cc.b_HET = b_HET;
-    cc.N_sc = N_sc;
-    cc.n_f = n_f;
-    cc.N_avo = N_avo;
-    cc.na_dust = na_dust;
-    cc.na_soot = na_soot;
-    cc.na_orga = na_orga;
-    cc.ni_het_max = ni_het_max;
-    cc.ni_hom_max = ni_hom_max;
-    cc.a_dep = a_dep;
-    cc.b_dep = b_dep;
-    cc.c_dep = c_dep;
-    cc.d_dep = d_dep;
-    cc.nim_imm = nim_imm;
-    cc.nin_dep = nin_dep;
-    cc.alf_imm = alf_imm;
-    cc.bet_dep = bet_dep;
-    cc.bet_imm = bet_imm;
-    cc.r_const = r_const;
-    cc.r1_const = r1_const;
-    cc.cv = cv;
-    cc.p_sat_const_a = p_sat_const_a;
-    cc.p_sat_ice_const_a = p_sat_ice_const_a;
-    cc.p_sat_const_b = p_sat_const_b;
-    cc.p_sat_ice_const_b = p_sat_ice_const_b;
-    cc.p_sat_low_temp = p_sat_low_temp;
-    cc.T_sat_low_temp = T_sat_low_temp;
-    cc.alpha_depo = alpha_depo;
-    cc.r_0 = r_0;
-
-    cc.k_1_conv = k_1_conv;
-    cc.k_2_conv = k_2_conv;
-    cc.k_1_accr = k_1_accr;
-    cc.k_r = k_r;
+    cc.constants[static_cast<int>(Cons_idx::k_1_conv)] = k_1_conv;
+    cc.constants[static_cast<int>(Cons_idx::k_2_conv)] = k_2_conv;
+    cc.constants[static_cast<int>(Cons_idx::k_1_accr)] = k_1_accr;
+    cc.constants[static_cast<int>(Cons_idx::k_r)] = k_r;
 
 
     // Numerics
@@ -1442,10 +1478,10 @@ void setup_model_constants(
 
     // // Performance constants for warm cloud; COSMO
     cc.a1_scale = 1.0e-3;
-    cc.a2_scale = 1.72 / pow(cc.R_a , 7./8.);
-    cc.e1_scale = 1.0 / sqrt(cc.R_a);
-    cc.e2_scale = 9.1 / pow(cc.R_a , 11./16.);
-    cc.d_scale = ( 130.0*tgamma(4.5) )/( 6.0*(1.0e3)*pow(M_PI*(8.0e6)*cc.R_a , 1.0/8.0) );
+    cc.a2_scale = 1.72 / pow(get_at(cc.constants, Cons_idx::R_a) , 7./8.);
+    cc.e1_scale = 1.0 / sqrt(get_at(cc.constants, Cons_idx::R_a));
+    cc.e2_scale = 9.1 / pow(get_at(cc.constants, Cons_idx::R_a) , 11./16.);
+    cc.d_scale = ( 130.0*tgamma(4.5) )/( 6.0*(1.0e3)*pow(M_PI*(8.0e6)*get_at(cc.constants, Cons_idx::R_a) , 1.0/8.0) );
 
     // Performance constants for warm cloud; IFS
     // The file constants.h also defines some constants as nar, ...
@@ -1454,61 +1490,60 @@ void setup_model_constants(
     const double F_acc = 2.0;
     const double lambda_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alpha_r);
 
-    for(auto &i: a_ccn)
-        cc.a_ccn.push_back(i);
-    for(auto &i: b_ccn)
-        cc.b_ccn.push_back(i);
-    for(auto &i: c_ccn)
-        cc.c_ccn.push_back(i);
-    for(auto &i: d_ccn)
-        cc.d_ccn.push_back(i);
+    for(uint32_t i=0; i<4; i++)
+    {
+        cc.constants[static_cast<int>(Cons_idx::a_ccn_1)+i] = a_ccn[i];
+        cc.constants[static_cast<int>(Cons_idx::b_ccn_1)+i] = b_ccn[i];
+        cc.constants[static_cast<int>(Cons_idx::c_ccn_1)+i] = c_ccn[i];
+        cc.constants[static_cast<int>(Cons_idx::d_ccn_1)+i] = d_ccn[i];
+    }
 
     // cc.a1_scale = (1350. * F_aut)/pow(Nc , 1.79);
     // cc.a2_scale = 67.0 * F_acc;
     // cc.e1_scale = 2.0 * M_PI * cc.nar * ( (0.78 * tgamma(2.0 - cc.nbr))/(lambda_pp*lambda_pp) );
     // cc.e2_scale = cc.scaling_fact * 2.0 * M_PI * cc.nar * 0.31
-    //     * pow(cc.cr/cc.mu, 0.5) * pow(cc.Sc, 1.0/3.0) * pow(cc.rho0, 0.25)
+    //     * pow(cc.cr/get_at(cc.constants, Particle_cons_idx::mu), 0.5) * pow(cc.Sc, 1.0/3.0) * pow(cc.rho0, 0.25)
     //     * (tgamma(cc.epsilonr + cc.nbr)/pow(lambda_pp ,cc.epsilonr));
     // cc.d_scale = 4.0e-3;
 
     if(nuc_type == 6)
     {
-        cc.na_dust = na_dust;
-        cc.na_soot = na_soot;
-        cc.na_orga = na_orga;
+        cc.constants[static_cast<int>(Cons_idx::na_dust)] = na_dust;
+        cc.constants[static_cast<int>(Cons_idx::na_soot)] = na_soot;
+        cc.constants[static_cast<int>(Cons_idx::na_orga)] = na_orga;
     } else if(nuc_type == 7 || nuc_type == 5)
     {
         // Standard values
-        cc.na_dust = na_dust_2;
-        cc.na_soot = na_soot_2;
-        cc.na_orga = na_orga_2;
+        cc.constants[static_cast<int>(Cons_idx::na_dust)] = na_dust_2;
+        cc.constants[static_cast<int>(Cons_idx::na_soot)] = na_soot_2;
+        cc.constants[static_cast<int>(Cons_idx::na_orga)] = na_orga_2;
     } else if(nuc_type == 8)
     {
-        cc.na_dust = na_dust_3;
-        cc.na_soot = na_soot_3;
-        cc.na_orga = na_orga_3;
+        cc.constants[static_cast<int>(Cons_idx::na_dust)] = na_dust_3;
+        cc.constants[static_cast<int>(Cons_idx::na_soot)] = na_soot_3;
+        cc.constants[static_cast<int>(Cons_idx::na_orga)] = na_orga_3;
     }
 
     // Inflow from above
-    cc.B_prime = 0.0; //1.0e-7;
+    // cc.B_prime = 0.0; //1.0e-7;
 
     // // Exponents of the cloud model
     // // COSMO
-    cc.gamma = 1.0;
-    cc.betac = 1.0;
-    cc.betar = 7./8.;
-    cc.delta1 = 0.5;
-    cc.delta2 = 11./16.;
-    cc.zeta = 9./8.;
+    cc.constants[static_cast<int>(Cons_idx::gamma)] = 1.0;
+    cc.constants[static_cast<int>(Cons_idx::betac)] = 1.0;
+    cc.constants[static_cast<int>(Cons_idx::betar)] = 7./8.;
+    cc.constants[static_cast<int>(Cons_idx::delta1)] = 0.5;
+    cc.constants[static_cast<int>(Cons_idx::delta2)] = 11./16.;
+    cc.constants[static_cast<int>(Cons_idx::zeta)] = 9./8.;
 #if defined(RK4ICE) || defined(RK4NOICE)
     // Exponents of the cloud model
     // IFS
-    // cc.gamma = 2.47;
-    // cc.betac = 1.15;
-    // cc.betar = 1.15;
-    // cc.delta1 = 2.0/( cc.br + 1.0 - cc.nbr );
-    // cc.delta2 = ( 0.5*cc.dr + 2.5 - cc.nbr )/( cc.br + 1.0 - cc.nbr );
-    // cc.zeta = 1.0;
+    // get_at(cc.constants, Particle_cons_idx::gamma) = 2.47;
+    // get_at(cc.constants, Cons_idx::betac) = 1.15;
+    // get_at(cc.constants, Cons_idx::betar) = 1.15;
+    // get_at(cc.constants, Cons_idx::delta1) = 2.0/( cc.br + 1.0 - cc.nbr );
+    // get_at(cc.constants, Cons_idx::delta2) = ( 0.5*cc.dr + 2.5 - cc.nbr )/( cc.br + 1.0 - cc.nbr );
+    // get_at(cc.constants, Cons_idx::zeta) = 1.0;
 
     // ==================================================
     // Set rain constants
@@ -1517,264 +1552,296 @@ void setup_model_constants(
     // Cosmo5 although nue1nue1 would be okay too, I guess
     //// Cloud
 #ifdef SB_SHAPE
-    cc.cloud.nu = 1;
-    cc.cloud.mu = 1;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::nu)] = 1;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::mu)] = 1;
 #else
-    cc.cloud.nu = 0;
-    cc.cloud.mu = 1.0/3.0;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::nu)] = 0;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0;
 #endif
-    cc.cloud.max_x = 2.6e-10;
-    cc.cloud.min_x = 4.2e-15;
-    cc.cloud.min_x_act = 4.2e-15;
-    cc.cloud.min_x_nuc_homo = 4.2e-15;
-    cc.cloud.min_x_nuc_hetero = 4.2e-15;
-    cc.cloud.min_x_melt = 4.2e-15;
-    cc.cloud.min_x_evap = 4.2e-15;
-    cc.cloud.min_x_freezing = 4.2e-15;
-    cc.cloud.min_x_depo = 4.2e-15;
-    cc.cloud.min_x_collision = 4.2e-15;
-    cc.cloud.min_x_collection = 4.2e-15;
-    cc.cloud.min_x_conversion = 4.2e-15;
-    cc.cloud.min_x_sedimentation = 4.2e-15;
-    cc.cloud.min_x_riming = 4.2e-15;
-    cc.cloud.a_geo = 1.24e-1;
-    cc.cloud.b_geo = 0.333333;
-    cc.cloud.a_vel = 3.75e5;
-    cc.cloud.b_vel = 0.666667;
-    cc.cloud.a_ven = 0.78;
-    cc.cloud.b_ven = 0.308;
-    cc.cloud.cap = 2.0;
-    cc.cloud.vsedi_max = 1.0;
-    cc.cloud.vsedi_min = 0.0;
-    cc.cloud.q_crit_c = 1.0e-6;
-    cc.cloud.d_crit_c = 1.0e-5;
-    cc.cloud.c_s = 1.0 / cc.cloud.cap;
-    cc.cloud.a_f = vent_coeff_a(cc.cloud, 1);
-    cc.cloud.b_f = vent_coeff_b(cc.cloud, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
-    cc.cloud.c_z = moment_gamma(cc.cloud, 2);
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::max_x)] = 2.6e-10;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 4.2e-15;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 1.24e-1;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.333333;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 3.75e5;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.666667;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 1.0;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.0;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = 1.0e-6;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = 1.0e-5;
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::c_s)] = 1.0
+        / get_at(cc.cloud.constants, Particle_cons_idx::cap);
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(cc.cloud, 1);
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(cc.cloud, 1)
+        * pow(get_at(cc.constants, Cons_idx::N_sc), get_at(cc.constants, Cons_idx::n_f))
+        / sqrt(get_at(cc.constants, Cons_idx::kin_visc_air));
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(cc.cloud, 2);
 
     setup_cloud_autoconversion(cc.cloud, cc);
     setup_bulk_sedi(cc.cloud);
 
     //// Rain
 #ifdef SB_SHAPE
-    cc.rain.nu = -2.0/3.0; // SB: -2/3 COSMO: 0.0
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::nu)] = -2.0/3.0; // SB: -2/3 COSMO: 0.0
 #else
-     cc.rain.nu = 0; // SB: -2/3 COSMO: 0.0
+     cc.rain.constants[static_cast<int>(Particle_cons_idx::nu)] = 0; // SB: -2/3 COSMO: 0.0
 #endif
-    cc.rain.mu = 1.0/3.0; // SB: 1/3 COMSO: 1.0/3.0
-    cc.rain.max_x = 3.0e-6;
-    cc.rain.min_x = 2.6e-10;
-    cc.rain.min_x_act = 2.6e-10;
-    cc.rain.min_x_nuc_homo = 2.6e-10;
-    cc.rain.min_x_nuc_hetero = 2.6e-10;
-    cc.rain.min_x_melt = 2.6e-10;
-    cc.rain.min_x_evap = 2.6e-10;
-    cc.rain.min_x_freezing = 2.6e-10;
-    cc.rain.min_x_depo = 2.6e-10;
-    cc.rain.min_x_collision = 2.6e-10;
-    cc.rain.min_x_collection = 2.6e-10;
-    cc.rain.min_x_conversion = 2.6e-10;
-    cc.rain.min_x_sedimentation = 2.6e-10;
-    cc.rain.min_x_riming = 2.6e-10;
-    cc.rain.a_geo = 1.24e-1;
-    cc.rain.b_geo = 0.333333;
-    cc.rain.a_vel = 114.0137;
-    cc.rain.b_vel = 0.234370;
-    cc.rain.cap = 2.0;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0; // SB: 1/3 COMSO: 1.0/3.0
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::max_x)] = 3.0e-6;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 2.6e-10;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 1.24e-1;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.333333;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 114.0137;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.234370;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
 
     // From rainSBBcoeffs
-    cc.rain.alpha = 9.292;
-    cc.rain.beta = 9.623;
-    cc.rain.gamma = 6.222e2;
-    cc.rain.cmu0 = 6.0;
-    cc.rain.cmu1 = 3.0e1;
-    cc.rain.cmu2 = 1.0e3;
-    cc.rain.cmu3 = 1.1e-3;
-    cc.rain.cmu4 = 1.0;
-    cc.rain.cmu5 = 2.0;
-    cc.rain_gfak = 1.0;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::alpha)] = 9.292;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::beta)] = 9.623;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::gamma)] = 6.222e2;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::cmu0)] = 6.0;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::cmu1)] = 3.0e1;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::cmu2)] = 1.0e3;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::cmu3)] = 1.1e-3;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::cmu4)] = 1.0;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::cmu5)] = 2.0;
+    cc.constants[static_cast<int>(Cons_idx::rain_gfak)] = 1.0;
 
-    cc.rain.nm1 = (cc.rain.nu+1.0)/cc.rain.mu;
-    cc.rain.nm2 = (cc.rain.nu+2.0)/cc.rain.mu;
-    cc.rain.nm3 = (cc.rain.nu+3.0)/cc.rain.mu;
-    cc.rain.vsedi_max = 20.0;
-    cc.rain.vsedi_min = 0.1;
-    table_r1.init_gamma_table(n_lookup, n_lookup_hr_dummy, cc.rain.nm1.getValue());
-    table_r2.init_gamma_table(n_lookup, n_lookup_hr_dummy, cc.rain.nm2.getValue());
-    table_r3.init_gamma_table(n_lookup, n_lookup_hr_dummy, cc.rain.nm3.getValue());
-    cc.rain.g1 = table_r1.igf[table_r1.n_bins-1];
-    cc.rain.g2 = table_r2.igf[table_r2.n_bins-1];
-    cc.rain.c_s = 1.0 / cc.rain.cap;
-    cc.rain.a_f = vent_coeff_a(cc.rain, 1);
-    cc.rain.b_f = vent_coeff_b(cc.rain, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
-    cc.rain.c_z = moment_gamma(cc.rain, 2);
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::nm1)] =
+        (get_at(cc.rain.constants, Particle_cons_idx::nu)+1.0)/get_at(cc.rain.constants, Particle_cons_idx::mu);
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::nm2)] =
+        (get_at(cc.rain.constants, Particle_cons_idx::nu)+2.0)/get_at(cc.rain.constants, Particle_cons_idx::mu);
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::nm3)] =
+        (get_at(cc.rain.constants, Particle_cons_idx::nu)+3.0)/get_at(cc.rain.constants, Particle_cons_idx::mu);
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 20.0;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.1;
+    cc.table_r1.init_gamma_table(n_lookup, n_lookup_hr_dummy,
+        get_at(cc.rain.constants, Particle_cons_idx::nm1).getValue());
+    cc.table_r2.init_gamma_table(n_lookup, n_lookup_hr_dummy,
+        get_at(cc.rain.constants, Particle_cons_idx::nm2).getValue());
+    cc.table_r3.init_gamma_table(n_lookup, n_lookup_hr_dummy,
+        get_at(cc.rain.constants, Particle_cons_idx::nm3).getValue());
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::g1)] = cc.table_r1.igf[cc.table_r1.n_bins-1];
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::g2)] = cc.table_r2.igf[cc.table_r2.n_bins-1];
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::c_s)] = 1.0 / get_at(cc.rain.constants, Particle_cons_idx::cap);
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(cc.rain, 1);
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(cc.rain, 1)
+        * pow(get_at(cc.constants, Cons_idx::N_sc), get_at(cc.constants, Cons_idx::n_f))
+        / sqrt(get_at(cc.constants, Cons_idx::kin_visc_air));
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(cc.rain, 2);
     setup_bulk_sedi(cc.rain);
 
     //// Graupel
-    cc.graupel.nu = 1.0; // SB
-    cc.graupel.mu = 1.0/3.0; // SB
-    cc.graupel.max_x = 5.0e-4;
-    cc.graupel.min_x = 1.0e-9;
-    cc.graupel.min_x_act = 1.0e-9;
-    cc.graupel.min_x_nuc_homo = 1.0e-9;
-    cc.graupel.min_x_nuc_hetero = 1.0e-9;
-    cc.graupel.min_x_melt = 1.0e-9;
-    cc.graupel.min_x_evap = 1.0e-9;
-    cc.graupel.min_x_freezing = 1.0e-9;
-    cc.graupel.min_x_depo = 1.0e-9;
-    cc.graupel.min_x_collision = 1.0e-9;
-    cc.graupel.min_x_collection = 1.0e-9;
-    cc.graupel.min_x_conversion = 1.0e-9;
-    cc.graupel.min_x_sedimentation = 1.0e-9;
-    cc.graupel.min_x_riming = 1.0e-9;
-    cc.graupel.a_geo = 1.42e-1;
-    cc.graupel.b_geo = 0.314;
-    cc.graupel.a_vel = 86.89371;
-    cc.graupel.b_vel = 0.268325;
-    cc.graupel.a_ven = 0.78;
-    cc.graupel.b_ven = 0.308;
-    cc.graupel.cap = 2.0;
-    cc.graupel.vsedi_max = 30.0;
-    cc.graupel.vsedi_min = 0.1;
-    cc.graupel.d_crit_c = 100.0e-6;
-    cc.graupel.q_crit_c = 1.0e-6;
-    cc.graupel.s_vel = 0.0;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::nu)] = 1.0; // SB
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0; // SB
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::max_x)] = 5.0e-4;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 1.0e-9;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 1.42e-1;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.314;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 86.89371;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.268325;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 30.0;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.1;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = 100.0e-6;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = 1.0e-6;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::s_vel)] = 0.0;
 
-    cc.graupel.nm1 = (cc.graupel.nu+1.0)/cc.graupel.mu;
-    cc.graupel.nm2 = (cc.graupel.nu+2.0)/cc.graupel.mu;
-    codi::RealReverse a = (cc.graupel.nu+1.0)/cc.graupel.mu;
-    table_g1.init_gamma_table(n_lookup, n_lookup_hr_dummy, cc.graupel.nm1.getValue());
-    a = (cc.graupel.nu+2.0)/cc.graupel.mu;
-    table_g2.init_gamma_table(n_lookup, n_lookup_hr_dummy, cc.graupel.nm2.getValue());
-    cc.graupel.g1 = table_g1.igf[table_g1.n_bins-1];
-    cc.graupel.g2 = table_g2.igf[table_g2.n_bins-1];
-    cc.graupel.c_s = 1.0 / cc.graupel.cap;
-    cc.graupel.ecoll_c = 1.0;
-    cc.graupel.a_f = vent_coeff_a(cc.graupel, 1);
-    cc.graupel.b_f = vent_coeff_b(cc.graupel, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
-    cc.graupel.c_z = moment_gamma(cc.graupel, 2);
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::nm1)] =
+        (get_at(cc.graupel.constants, Particle_cons_idx::nu)+1.0)/get_at(cc.graupel.constants, Particle_cons_idx::mu);
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::nm2)] =
+        (get_at(cc.graupel.constants, Particle_cons_idx::nu)+2.0)/get_at(cc.graupel.constants, Particle_cons_idx::mu);
+    codi::RealReverse a = (get_at(cc.graupel.constants, Particle_cons_idx::nu)+1.0)/get_at(cc.graupel.constants, Particle_cons_idx::mu);
+    cc.table_g1.init_gamma_table(n_lookup, n_lookup_hr_dummy, get_at(cc.graupel.constants, Particle_cons_idx::nm1).getValue());
+    a = (get_at(cc.graupel.constants, Particle_cons_idx::nu)+2.0)/get_at(cc.graupel.constants, Particle_cons_idx::mu);
+    cc.table_g2.init_gamma_table(n_lookup, n_lookup_hr_dummy, get_at(cc.graupel.constants, Particle_cons_idx::nm2).getValue());
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::g1)] = cc.table_g1.igf[cc.table_g1.n_bins-1];
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::g2)] = cc.table_g2.igf[cc.table_g2.n_bins-1];
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::c_s)] = 1.0 / get_at(cc.graupel.constants, Particle_cons_idx::cap);
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = 1.0;
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(cc.graupel, 1);
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(cc.graupel, 1)
+        * pow(get_at(cc.constants, Cons_idx::N_sc), get_at(cc.constants, Cons_idx::n_f))
+        / sqrt(get_at(cc.constants, Cons_idx::kin_visc_air));
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(cc.graupel, 2);
     setup_bulk_sedi(cc.graupel);
 
     //// Hail
-    cc.hail.nu = 1.0;
-    cc.hail.mu = 1.0/3.0;
-    cc.hail.max_x = 5.0e-4;
-    cc.hail.min_x = 2.6e-9;
-    cc.hail.min_x_act= 2.6e-9;
-    cc.hail.min_x_nuc_homo = 2.6e-9;
-    cc.hail.min_x_nuc_hetero = 2.6e-9;
-    cc.hail.min_x_melt = 2.6e-9;
-    cc.hail.min_x_evap = 2.6e-9;
-    cc.hail.min_x_freezing = 2.6e-9;
-    cc.hail.min_x_depo = 2.6e-9;
-    cc.hail.min_x_collision = 2.6e-9;
-    cc.hail.min_x_collection = 2.6e-9;
-    cc.hail.min_x_conversion = 2.6e-9;
-    cc.hail.min_x_sedimentation = 2.6e-9;
-    cc.hail.min_x_riming = 2.6e-9;
-    cc.hail.a_geo = 0.1366;
-    cc.hail.b_geo = 1.0/3.0;
-    cc.hail.a_vel = 39.3;
-    cc.hail.b_vel = 0.166667;
-    cc.hail.a_ven = 0.78;
-    cc.hail.b_ven = 0.308;
-    cc.hail.cap = 2.0;
-    cc.hail.vsedi_max = 30.0;
-    cc.hail.vsedi_min = 0.1;
-    cc.hail.sc_coll_n = 1.0;
-    cc.hail.d_crit_c = 100.0e-6;
-    cc.hail.q_crit_c = 1.0e-6;
-    cc.hail.s_vel = 0.0;
-    cc.hail.c_s = 1.0 / cc.hail.cap;
-    cc.hail.ecoll_c = 1.0;
-    cc.hail.a_f = vent_coeff_a(cc.hail, 1);
-    cc.hail.b_f = vent_coeff_b(cc.hail, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
-    cc.hail.c_z = moment_gamma(cc.hail, 2);
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::nu)] = 1.0;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::max_x)] = 5.0e-4;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 2.6e-9;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 0.1366;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 1.0/3.0;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 39.3;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.166667;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 30.0;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.1;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::sc_coll_n)] = 1.0;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = 100.0e-6;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = 1.0e-6;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::s_vel)] = 0.0;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::c_s)] = 1.0 / get_at(cc.hail.constants, Particle_cons_idx::cap);
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = 1.0;
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(cc.hail, 1);
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(cc.hail, 1)
+        * pow(get_at(cc.constants, Cons_idx::N_sc), get_at(cc.constants, Cons_idx::n_f))
+        / sqrt(get_at(cc.constants, Cons_idx::kin_visc_air));
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(cc.hail, 2);
     setup_bulk_sedi(cc.hail);
 
     //// Ice
 #ifdef SB_SHAPE
-    cc.ice.nu = 1.0;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::nu)] = 1.0;
 #else
-    cc.ice.nu = 0.0; // COSMO 0.0, SB: 1.0
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::nu)] = 0.0; // COSMO 0.0, SB: 1.0
 #endif
-    cc.ice.mu = 1.0/3.0;
-    cc.ice.max_x = 1.0e-5;
-    cc.ice.min_x = 1.0e-12;
-    cc.ice.min_x_act = 1.0e-12;
-    cc.ice.min_x_nuc_homo = 1.0e-12;
-    cc.ice.min_x_nuc_hetero = 1.0e-12;
-    cc.ice.min_x_melt = 1.0e-12;
-    cc.ice.min_x_evap = 1.0e-12;
-    cc.ice.min_x_freezing = 1.0e-12;
-    cc.ice.min_x_depo = 1.0e-12;
-    cc.ice.min_x_collision = 1.0e-12;
-    cc.ice.min_x_collection = 1.0e-12;
-    cc.ice.min_x_conversion = 1.0e-12;
-    cc.ice.min_x_sedimentation = 1.0e-12;
-    cc.ice.min_x_riming = 1.0e-12;
-    cc.ice.a_geo = 0.835;
-    cc.ice.b_geo = 0.39;
-    cc.ice.a_vel = 2.77e1;
-    cc.ice.b_vel = 0.21579;
-    cc.ice.a_ven = 0.78;
-    cc.ice.b_ven = 0.308;
-    cc.ice.cap = 2.0;
-    cc.ice.vsedi_max = 3.0;
-    cc.ice.vsedi_min = 0.0;
-    cc.ice.sc_coll_n = 0.8;
-    cc.ice.d_crit_c = 150.0e-6;
-    cc.ice.q_crit_c = 1.0e-5;
-    cc.ice.s_vel = 0.05;
-    cc.ice.c_s = 1.0 / cc.ice.cap;
-    cc.ice.ecoll_c = 0.80;
-    cc.ice.a_f = vent_coeff_a(cc.ice, 1);
-    cc.ice.b_f = vent_coeff_b(cc.ice, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
-    cc.ice.c_z = moment_gamma(cc.ice, 2);
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::max_x)] = 1.0e-5;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 1.0e-12;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 0.835;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.39;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 2.77e1;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.21579;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 3.0;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.0;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::sc_coll_n)] = 0.8;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = 150.0e-6;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = 1.0e-5;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::s_vel)] = 0.05;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::c_s)] = 1.0 / get_at(cc.ice.constants, Particle_cons_idx::cap);
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = 0.80;
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(cc.ice, 1);
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(cc.ice, 1)
+        * pow(get_at(cc.constants, Cons_idx::N_sc), get_at(cc.constants, Cons_idx::n_f))
+        / sqrt(get_at(cc.constants, Cons_idx::kin_visc_air));
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(cc.ice, 2);
     setup_bulk_sedi(cc.ice);
 
     //// Snow
 #ifdef SB_SHAPE
-    cc.snow.nu = 1.0; // COSMO: 0.0, SB 1.0
-    cc.snow.mu = 1.0/3.0; // COSMO 0.5, SB: 1.0/3.0
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::nu)] = 1.0; // COSMO: 0.0, SB 1.0
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0; // COSMO 0.5, SB: 1.0/3.0
 #else
-    cc.snow.nu = 0.0; // COSMO: 0.0, SB 1.0
-    cc.snow.mu = 0.5; // COSMO 0.5, SB: 1.0/3.0
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::nu)] = 0.0; // COSMO: 0.0, SB 1.0
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::mu)] = 0.5; // COSMO 0.5, SB: 1.0/3.0
 #endif
-    cc.snow.max_x = 2.0e-5;
-    cc.snow.min_x = 1.0e-10;
-    cc.snow.min_x_act = 1.0e-10;
-    cc.snow.min_x_nuc_homo = 1.0e-10;
-    cc.snow.min_x_nuc_hetero = 1.0e-10;
-    cc.snow.min_x_melt = 1.0e-10;
-    cc.snow.min_x_evap = 1.0e-10;
-    cc.snow.min_x_freezing = 1.0e-10;
-    cc.snow.min_x_depo = 1.0e-10;
-    cc.snow.min_x_collision = 1.0e-10;
-    cc.snow.min_x_collection = 1.0e-10;
-    cc.snow.min_x_conversion = 1.0e-10;
-    cc.snow.min_x_sedimentation = 1.0e-10;
-    cc.snow.min_x_riming = 1.0e-10;
-    cc.snow.a_geo = 2.4;
-    cc.snow.b_geo = 0.455;
-    cc.snow.a_vel = 8.8;
-    cc.snow.b_vel = 0.15;
-    cc.snow.a_ven = 0.78;
-    cc.snow.b_ven = 0.308;
-    cc.snow.cap = 2.0;
-    cc.snow.vsedi_max = 3.0;
-    cc.snow.vsedi_min = 0.1;
-    cc.snow.sc_coll_n = 0.8;
-    cc.snow.d_crit_c = 150.0e-6;
-    cc.snow.q_crit_c = 1.0e-5;
-    cc.snow.s_vel = 0.25;
-    cc.snow.c_s = 1.0 / cc.snow.cap;
-    cc.snow.ecoll_c = 0.80;
-    cc.snow.a_f = vent_coeff_a(cc.snow, 1);
-    cc.snow.b_f = vent_coeff_b(cc.snow, 1) * pow(cc.N_sc, cc.n_f) / sqrt(cc.kin_visc_air);
-    cc.snow.c_z = moment_gamma(cc.snow, 2);
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::max_x)] = 2.0e-5;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 1.0e-10;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 2.4;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.455;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 8.8;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.15;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 3.0;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.1;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::sc_coll_n)] = 0.8;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = 150.0e-6;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = 1.0e-5;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::s_vel)] = 0.25;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::c_s)] = 1.0 / get_at(cc.snow.constants, Particle_cons_idx::cap);
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = 0.80;
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(cc.snow, 1);
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(cc.snow, 1)
+        * pow(get_at(cc.constants, Cons_idx::N_sc), get_at(cc.constants, Cons_idx::n_f))
+        / sqrt(get_at(cc.constants, Cons_idx::kin_visc_air));
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(cc.snow, 2);
     setup_bulk_sedi(cc.snow);
+
+    cc.constants[static_cast<int>(Cons_idx::const0)] =
+        1.0/(get_at(cc.constants, Cons_idx::D_coll_c)
+        - get_at(cc.cloud.constants, Particle_cons_idx::d_crit_c));
+    cc.constants[static_cast<int>(Cons_idx::const3)] =
+        1.0/(get_at(cc.constants, Cons_idx::T_mult_opt) - get_at(cc.constants, Cons_idx::T_mult_min));
+    cc.constants[static_cast<int>(Cons_idx::const4)] =
+        1.0/(get_at(cc.constants, Cons_idx::T_mult_opt) - get_at(cc.constants, Cons_idx::T_mult_max));
+    cc.constants[static_cast<int>(Cons_idx::const5)] =
+        get_at(cc.constants, Cons_idx::alpha_spacefilling)
+        * get_at(cc.constants, Cons_idx::rho_w)/get_at(cc.constants, Cons_idx::rho_ice);
 
     init_particle_collection_1(cc.snow, cc.cloud, cc.coeffs_scr);
     init_particle_collection_2(cc.snow, cc.rain, cc.coeffs_srr);
@@ -1792,27 +1859,27 @@ void setup_model_constants(
 
     // Setup graupel, snow and ice selfcollection
 
-    cc.graupel.sc_coll_n = M_PI/8.0
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::sc_coll_n)] = M_PI/8.0
         * (2.0*coll_delta_11(cc.graupel, cc.graupel, 0)
            + coll_delta_12(cc.graupel, cc.graupel, 0))
         * sqrt((2.0*coll_theta_11(cc.graupel, cc.graupel, 0)
            - coll_theta_12(cc.graupel, cc.graupel, 0)));
 
-    cc.snow.sc_delta_n = (2.0*coll_delta_11(cc.snow, cc.snow, 0)
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::sc_delta_n)] = (2.0*coll_delta_11(cc.snow, cc.snow, 0)
         + coll_delta_12(cc.snow, cc.snow, 0));
-    cc.snow.sc_theta_n = (2.0*coll_theta_11(cc.snow, cc.snow, 0)
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::sc_theta_n)] = (2.0*coll_theta_11(cc.snow, cc.snow, 0)
         - coll_theta_12(cc.snow, cc.snow, 0));
 
-    cc.ice.sc_delta_n = coll_delta_11(cc.ice, cc.ice, 0)
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::sc_delta_n)] = coll_delta_11(cc.ice, cc.ice, 0)
         + coll_delta_12(cc.ice, cc.ice, 0)
         + coll_delta_22(cc.ice, cc.ice, 0);
-    cc.ice.sc_delta_q = coll_delta_11(cc.ice, cc.ice, 0)
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::sc_delta_q)] = coll_delta_11(cc.ice, cc.ice, 0)
         + coll_delta_12(cc.ice, cc.ice, 1)
         + coll_delta_22(cc.ice, cc.ice, 1);
-    cc.ice.sc_theta_n = coll_theta_11(cc.ice, cc.ice, 0)
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::sc_theta_n)] = coll_theta_11(cc.ice, cc.ice, 0)
         - coll_theta_12(cc.ice, cc.ice, 0)
         + coll_theta_22(cc.ice, cc.ice, 0);
-    cc.ice.sc_theta_q = coll_theta_11(cc.ice, cc.ice, 0)
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::sc_theta_q)] = coll_theta_11(cc.ice, cc.ice, 0)
         - coll_theta_12(cc.ice, cc.ice, 1)
         + coll_theta_22(cc.ice, cc.ice, 1);
 #endif

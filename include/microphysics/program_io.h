@@ -3,6 +3,7 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <stdlib.h>
 #include <cmath>
 #include <string>
@@ -16,153 +17,132 @@
 #include "types.h"
 #include "general.h"
 using namespace netCDF;
-using boost::property_tree::ptree;
+
+namespace pt = boost::property_tree;
 
 /** @defgroup io Input/Output Functions
  * Functions to load data and setup and initialize structs.
  * @{
  */
 
-/**
- * Go over all parameters to be perturbed. Perturbing is done by drawing a
- * (pseudo) random number from a normal distribution with mean the set value
- * in cc and width defined by the config.
- * Consists of nodes for each model, vapor, cloud, rain, ice, hail, graupel,
- * snow, where each of those consists of at least one node param with:
- * name: name of parameter to be perturbed
- * sigma: Width for normal distribution
- * sigma_perc: Width as percentage from already set value for
- * normal distribution
- */
-int parse_param_config(
-    std::string param_type,
-    ptree &pt,
-    segment_t &segment,
-    model_constants_t &cc)
-{
-    for(auto &it: pt)
-    {
-        param_t param(param_type);
-        ptree param_pt = it.second;
-        for(auto &param_it: param_pt)
-        {
-            auto first = param_it.first;
-#ifdef DEBUG_XML
-            std::cout << "iterate over param. first: " << first << "\n";
-#endif
-            if(first == "name")
-            {
-#ifdef DEBUG_XML
-                std::cout << "name: " << param_it.second.data() << "\n";
-#endif
-                param.add_name(param_it.second.data(), cc);
-            }else if(first == "sigma")
-            {
-                param.add_sigma(std::stod(param_it.second.data()));
-            }else if(first == "sigma_perc")
-            {
-                param.add_sigma_perc(std::stod(param_it.second.data()));
-            }
-        }
-        if(param.check() == 0)
-            segment.add_param(param);
-    }
-    return segment.check();
-}
 
 /**
- * Parse configuration for a segment.
- * Segment can consist of
- * when_value: Value at which ensemble shall start
- * when_name: Name of parameter for value given above
- * when_method: Method can be "sign_flip" where a change of sign (where zero)
- * is considered without sign) introduces a new ensemble start
- * when_counter: How many times ensemble shall start when condition defined
- * above is reached
- * when_sens: If when_name is a derivative, we need to define to which it is
- * sensitive
- * amount: How many ensemble members for each perturbed parameter shall be
- * started
- */
-int parse_segment_config(
-    ptree &pt,
-    model_constants_t &cc,
-    std::vector<segment_t> &segments)
-{
-    int err = 0;
-    segment_t segment;
-    for(auto& it: pt)
-    {
-        auto first = it.first;
-
-#ifdef DEBUG_XML
-        std::cout << "iterate over segment: first: " << it.first << "\n";
-#endif
-        if(first == "when_value")
-        {
-            segment.add_value(std::stod(it.second.data()));
-        }else if(first == "when_name")
-        {
-            segment.add_value_name(it.second.data());
-        }else if(first == "when_method")
-        {
-            segment.add_method(it.second.data());
-        }else if(first == "when_counter")
-        {
-            segment.add_counter(std::stoi(it.second.data()));
-        }else if(first == "when_sens")
-        {
-            segment.add_out_param(it.second.data());
-        }else if(first == "amount")
-        {
-            segment.add_amount(std::stoi(it.second.data()));
-        }else
-        {
-            err = parse_param_config(it.first, it.second, segment, cc);
-            if(err != 0)
-            {
-                std::cout << "Parsing xml configuration failed parsing param.\n"
-                        << "Is your configuration valid?\n"
-                        << "ABORTING!\n";
-                return err;
-            }
-        }
-    }
-    err = segment.check();
-    segments.push_back(segment);
-    return err;
-}
-
-/**
- *
+ * Parse an ensemble configuration as an XML-file.
  *
  */
-int read_config(
+int load_ens_config(
     std::string filename,
     model_constants_t &cc,
     std::vector<segment_t> &segments)
 {
     int err = 0;
-    ptree pt;
-    boost::property_tree::read_xml(filename, pt);
-#ifdef DEBUG_XML
-    std::cout << "read_xml from " << filename << " successful\n" << std::flush;
-#endif
-    for(auto &it: pt.get_child("ensemble"))
+    pt::ptree pt;
+    boost::property_tree::read_json(filename, pt);
+
+    for(auto &it: pt.get_child("segments"))
     {
-        auto first = it.first;
-#ifdef DEBUG_XML
-    std::cout << "iterator ensemble first: " << it.first << "\n";
-#endif
-        if(first == "segment")
-        {
-            ptree new_pt = it.second;
-            err = parse_segment_config(new_pt, cc, segments);
-            if(err != 0)
-                return err;
-        }
+        segment_t segment;
+        SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
+        segments.push_back(segment);
+        if(segment.activated)
+            segment.perturb(cc);
     }
     return err;
+}
+
+
+/**
+ * Reads a checkpoint file including perturbed parameters if any, current
+ * time step, new id as string.
+ */
+template<class float_t>
+int load_checkpoint(
+    std::string filename,
+    model_constants_t &cc,
+    std::vector<float_t> &y,
+    std::vector<segment_t> &segments,
+    input_parameters_t &input)
+{
+    int err = 0;
+    pt::ptree pt;
+    boost::property_tree::read_json(filename, pt);
+    // Parse the model constants
+    SUCCESS_OR_DIE(cc.from_pt(pt));
+    // Parse the input parameters
+    SUCCESS_OR_DIE(input.from_pt(pt));
+    // Parse the segments
+    for(auto &it: pt.get_child("segments"))
+    {
+        segment_t segment;
+        SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
+        segments.push_back(segment);
+        if(segment.activated)
+            segment.perturb(cc);
+    }
+    for(auto &it: pt.get_child("Output Parameters"))
+    {
+        y[std::stoi(it.first)] = std::stod(it.second.data());
+    }
+
+    return err;
+}
+
+
+/**
+ * Creates a job-script for MOGON II and puts it on queue.
+ * If this is not possible (i.e. running on a local machine),
+ * the next jobs are started on the local machine.
+ * Also creates an XML-file as checkpoint for initialization to read the
+ * current status of the simulation for the next job(s).
+ *
+ * TODO:
+ * XML file needs the following information:
+ * id of branch where the ensemble is being created from
+ * Current state of the simulation such as mixing ratios, particle numbers
+ * ensemble state (i.e. which segments are done from the config_ens.xml),
+ * perturbed parameters.
+ * Also writes an ensemble config file.
+ */
+template<class float_t>
+void write_checkpoint(
+    std::string filename,
+    model_constants_t &cc,
+    std::vector<float_t> &y,
+    std::vector<segment_t> &segments,
+    input_parameters_t &input)
+{
+    pt::ptree checkpoint;
+    // First we add the ensemble configuration
+    pt::ptree segment_tree;
+    for(auto &s: segments)
+        s.put(segment_tree);
+    // for(auto &s: segments)
+    // {
+    //     segment_tree.push_back(std::make_pair("", s.get_pt()));
+    // }
+        // s.put(checkpoint);
+    checkpoint.add_child("segments", segment_tree);
+    // configuration from input_parameters_t
+    input.put(checkpoint);
+    // Model constants
+    cc.put(checkpoint);
+    // Current status of y
+    pt::ptree output_parameters;
+    for(uint32_t i=0; i<num_comp; i++)
+        output_parameters.put(std::to_string(i), y[i]);
+    checkpoint.add_child("Output Parameters", output_parameters);
+
+    uint32_t i = 0;
+    std::fstream outstream(filename + "_" + std::to_string(i)+ ".json", std::ios::out);
+    while(!outstream.good())
+    {
+        i++;
+        outstream.close();
+        outstream.clear();
+        outstream.open(filename + "_" + std::to_string(i)+ ".json", std::ios::out);
+    }
+    pt::write_json(outstream, checkpoint);
+    outstream.close();
 }
 
 /**
@@ -482,6 +462,7 @@ void load_nc_parameters_var(
 #endif
 }
 
+
 /**
  * Load the parameters from the netCDF file where load_nc_parameters_var()
  * must have been called beforehand.
@@ -734,10 +715,11 @@ void init_input_parameters(input_parameters_t &in)
 #endif
 }
 
+
 /**
  * String used to parse commandline input.
  */
-static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:?";
+static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c?";
 
 
 /**
@@ -1128,6 +1110,7 @@ int read_init_netcdf(
 #endif
     const char *input_file,
     const uint32_t traj,
+    const bool checkpoint_flag,
     model_constants_t &cc)
 {
     try
@@ -1200,108 +1183,110 @@ int read_init_netcdf(
 #endif
         load_nc_parameters(nc_params, startp, countp,
                            ref_quant, cc.num_sub_steps);
-        y_init[p_idx] = nc_params.p;
-        y_init[T_idx] = nc_params.t;
+        if(!checkpoint_flag)
+        {
+            y_init[p_idx] = nc_params.p;
+            y_init[T_idx] = nc_params.t;
 
-        y_init[S_idx] = nc_params.S;
+            y_init[S_idx] = nc_params.S;
 #ifdef SAT_CALC
-        y_init[S_idx] = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
-            / saturation_pressure_water(nc_params.t*ref_quant.Tref);
+            y_init[S_idx] = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+                / saturation_pressure_water(nc_params.t*ref_quant.Tref);
 #endif
-        y_init[qc_idx] = nc_params.qc;
-        y_init[qr_idx] = nc_params.qr;
-        y_init[qv_idx] = nc_params.qv;
+            y_init[qc_idx] = nc_params.qc;
+            y_init[qr_idx] = nc_params.qr;
+            y_init[qv_idx] = nc_params.qv;
 #if defined(RK4ICE)
-        y_init[qi_idx] = nc_params.qi;
-        y_init[qs_idx] = nc_params.qs;
+            y_init[qi_idx] = nc_params.qi;
+            y_init[qs_idx] = nc_params.qs;
 #endif
 #ifdef WCB
-        y_init[w_idx] = 0;
-  #if defined(RK4ICE)
-        y_init[qg_idx] = 0;
-  #endif
+            y_init[w_idx] = 0;
+#if defined(RK4ICE)
+            y_init[qg_idx] = 0;
+#endif
 #else
-        y_init[w_idx] = nc_params.w[0];
-  #if defined(RK4ICE)
-        y_init[qg_idx] = nc_params.qg;
-  #endif
+            y_init[w_idx] = nc_params.w[0];
+#if defined(RK4ICE)
+            y_init[qg_idx] = nc_params.qg;
+#endif
 #endif
 #if defined(RK4ICE)
-        y_init[qh_idx] = 0.0; // hail that is not in the trajectory
-        y_init[qh_out_idx] = 0.0;
-        y_init[Nh_out_idx] = 0.0;
+            y_init[qh_idx] = 0.0; // hail that is not in the trajectory
+            y_init[qh_out_idx] = 0.0;
+            y_init[Nh_out_idx] = 0.0;
 #endif
 #if defined WCB2 || defined MET3D
-        y_init[Nr_idx] = nc_params.Nr;
-        y_init[Nc_idx] = nc_params.Nc;
-  #if defined(RK4ICE)
-        // We can read the sedimentation from the original file like this
-        // y_init[qr_out_idx] = nc_params.QRout;
-        // y_init[Nr_out_idx] = nc_params.NRout;
-        // y_init[qi_out_idx] = nc_params.QIout;
-        // y_init[qs_out_idx] = nc_params.QSout;
-        // y_init[qg_out_idx] = nc_params.QGout;
-        // y_init[Ni_out_idx] = nc_params.NIout;
-        // y_init[Ns_out_idx] = nc_params.NSout;
-        // y_init[Ng_out_idx] = nc_params.NGout;
-        // But we actually want to set them to zero and calculate them
-        y_init[qr_out_idx] = 0;
-        y_init[Nr_out_idx] = 0;
-        y_init[qi_out_idx] = 0;
-        y_init[qs_out_idx] = 0;
-        y_init[qg_out_idx] = 0;
-        y_init[qh_out_idx] = 0;
-        y_init[Nh_out_idx] = 0;
-        y_init[Ni_out_idx] = 0;
-        y_init[Ns_out_idx] = 0;
-        y_init[Ng_out_idx] = 0;
+            y_init[Nr_idx] = nc_params.Nr;
+            y_init[Nc_idx] = nc_params.Nc;
+#if defined(RK4ICE)
+            // We can read the sedimentation from the original file like this
+            // y_init[qr_out_idx] = nc_params.QRout;
+            // y_init[Nr_out_idx] = nc_params.NRout;
+            // y_init[qi_out_idx] = nc_params.QIout;
+            // y_init[qs_out_idx] = nc_params.QSout;
+            // y_init[qg_out_idx] = nc_params.QGout;
+            // y_init[Ni_out_idx] = nc_params.NIout;
+            // y_init[Ns_out_idx] = nc_params.NSout;
+            // y_init[Ng_out_idx] = nc_params.NGout;
+            // But we actually want to set them to zero and calculate them
+            y_init[qr_out_idx] = 0;
+            y_init[Nr_out_idx] = 0;
+            y_init[qi_out_idx] = 0;
+            y_init[qs_out_idx] = 0;
+            y_init[qg_out_idx] = 0;
+            y_init[qh_out_idx] = 0;
+            y_init[Nh_out_idx] = 0;
+            y_init[Ni_out_idx] = 0;
+            y_init[Ns_out_idx] = 0;
+            y_init[Ng_out_idx] = 0;
 
-        y_init[Ni_idx] = nc_params.Ni;
-        y_init[Ns_idx] = nc_params.Ns;
-        y_init[Ng_idx] = nc_params.Ng;
-  #endif
+            y_init[Ni_idx] = nc_params.Ni;
+            y_init[Ns_idx] = nc_params.Ns;
+            y_init[Ng_idx] = nc_params.Ng;
+#endif
 #else
-        y_init[qr_out_idx] = 0.0;
-        y_init[Nr_out_idx] = 0;
-        y_init[Nc_idx] = 0;
-        y_init[Nr_idx] = 0;
-  #if defined(RK4ICE)
-        // We initialize the sedimentation with 0 for the stepper
-        y_init[qi_out_idx] = 0.0;
-        y_init[qs_out_idx] = 0.0;
-        y_init[qg_out_idx] = 0.0;
-        y_init[qh_out_idx] = 0;
-        y_init[Nh_out_idx] = 0;
-        y_init[Ni_out_idx] = 0;
-        y_init[Ns_out_idx] = 0;
-        y_init[Ng_out_idx] = 0;
-        y_init[Ni_idx] = 0;
-        y_init[Ns_idx] = 0;
-        y_init[Ng_idx] = 0;
-  #endif
+            y_init[qr_out_idx] = 0.0;
+            y_init[Nr_out_idx] = 0;
+            y_init[Nc_idx] = 0;
+            y_init[Nr_idx] = 0;
+#if defined(RK4ICE)
+            // We initialize the sedimentation with 0 for the stepper
+            y_init[qi_out_idx] = 0.0;
+            y_init[qs_out_idx] = 0.0;
+            y_init[qg_out_idx] = 0.0;
+            y_init[qh_out_idx] = 0;
+            y_init[Nh_out_idx] = 0;
+            y_init[Ni_out_idx] = 0;
+            y_init[Ns_out_idx] = 0;
+            y_init[Ng_out_idx] = 0;
+            y_init[Ni_idx] = 0;
+            y_init[Ns_idx] = 0;
+            y_init[Ng_idx] = 0;
+#endif
 #endif
 #if defined(RK4ICE) || defined(RK4NOICE)
     #ifdef MET3D
-        y_init[z_idx] = nc_params.z;
+            y_init[z_idx] = nc_params.z;
     #else
-        y_init[z_idx] = nc_params.z[0];
+            y_init[z_idx] = nc_params.z[0];
     #endif
 #endif
 #if defined(RK4ICE) || defined(RK4NOICE) || defined(MET3D)
-        nc_params.dw = (nc_params.w[1] - nc_params.w[0]);
-        cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
-        y_init[n_inact_idx] = 0;
-        y_init[depo_idx] = 0;
-        y_init[sub_idx] = 0;
+            nc_params.dw = (nc_params.w[1] - nc_params.w[0]);
+            cc.constants[static_cast<int>(Cons_idx::dw)] = nc_params.dw / (cc.dt*cc.num_sub_steps);
+            y_init[n_inact_idx] = 0;
+            y_init[depo_idx] = 0;
+            y_init[sub_idx] = 0;
 #endif
 
 #ifdef SAT_CALC
-        y_init[S_idx]  = convert_qv_to_S(
-            y_init[p_idx]*ref_quant.pref,
-            y_init[T_idx]*ref_quant.Tref,
-            y_init[qv_idx]*ref_quant.qref);
+            y_init[S_idx]  = convert_qv_to_S(
+                y_init[p_idx]*ref_quant.pref,
+                y_init[T_idx]*ref_quant.Tref,
+                y_init[qv_idx]*ref_quant.qref);
 #endif
-
+        }
     } catch(netCDF::exceptions::NcException& e)
     {
         std::cout << e.what() << std::endl;
@@ -1370,7 +1355,8 @@ void read_netcdf_write_stream(
 #ifdef MET3D
     uint32_t &ensemble,
 #endif
-    const uint32_t t)
+    const uint32_t t,
+    const bool checkpoint_flag)
 {
 #if defined WCB || defined WCB2
     startp[0] = t;
@@ -1411,14 +1397,14 @@ void read_netcdf_write_stream(
     y_single_old[Nh_out_idx] = 0;
 
     // Set values from a given trajectory
-    if(t==0 || input.start_over_env)
+    if((t==0 && !checkpoint_flag) || input.start_over_env)
     {
         y_single_old[p_idx]  = nc_params.p;     // p
         y_single_old[T_idx]  = nc_params.t;     // T
 #if defined(RK4ICE) || defined(RK4NOICE)
         y_single_old[w_idx]  = nc_params.w[0]; // w
         nc_params.dw = (nc_params.w[1] - nc_params.w[0]);
-        cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
+        cc.constants[static_cast<int>(Cons_idx::dw)] = nc_params.dw / (cc.dt*cc.num_sub_steps);
 #endif
 #ifdef MET3D
         y_single_old[z_idx] = nc_params.z;
@@ -1461,7 +1447,7 @@ void read_netcdf_write_stream(
 #endif
     }
 
-    if(t==0 || input.start_over)
+    if((t==0 && !checkpoint_flag) || input.start_over)
     {
         y_single_old[S_idx]  = nc_params.S;     // S
 #ifdef SAT_CALC
@@ -1512,22 +1498,22 @@ void read_netcdf_write_stream(
         y_single_old[Nc_idx] = nc_params.Nc;
         y_single_old[Nr_idx] = nc_params.Nr;
 #else
-        denom = (cc.cloud.max_x - cc.cloud.min_x) / 2.0 + cc.cloud.min_x;
+        denom = (get_at(cc.cloud.max_x - cc.cloud.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.cloud.constants, Particle_cons_idx::min_x);
         y_single_old[Nc_idx] = y_single_old[qc_idx] * ref_quant.qref / (denom); //*10e2);  // Nc
-        denom = (cc.rain.max_x - cc.rain.min_x) / 2 + cc.rain.min_x;
+        denom = (get_at(cc.rain.max_x - cc.rain.constants, Particle_cons_idx::min_x)) / 2 + get_at(cc.rain.constants, Particle_cons_idx::min_x);
         y_single_old[Nr_idx] = y_single_old[qr_idx] * ref_quant.qref / (denom); //*10e2);  // Nr
-        denom = cc.cloud.min_x / 2.0;
+        denom = get_at(cc.cloud.constants, Particle_cons_idx::min_x) / 2.0;
     #if defined(RK4ICE)
-        denom = (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x;
+        denom = (get_at(cc.ice.max_x - cc.ice.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.ice.constants, Particle_cons_idx::min_x);
         y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
-        denom = (cc.snow.max_x - cc.snow.min_x) / 2.0 + cc.snow.min_x;
+        denom = (get_at(cc.snow.max_x - cc.snow.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.snow.constants, Particle_cons_idx::min_x);
         y_single_old[Ns_idx] = y_single_old[qs_idx] * ref_quant.qref / (denom); //*10e2); // Ns
-        denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
+        denom = (get_at(cc.graupel.max_x - cc.graupel.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
         y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
     #endif
 #endif
         // Actually only needed for single moment schemes
-        cc.Nc_prime = y_single_old[Nc_idx];
+        cc.constants[static_cast<int>(Cons_idx::Nc_prime)] = y_single_old[Nc_idx];
 
 #if defined(FLUX) && !defined(WCB)
         inflow[qr_in_idx] = nc_params.QRin;
@@ -1881,6 +1867,17 @@ int parse_arguments(
                     break;
                 }
 #endif
+                case 'm':
+                {
+                    global_args.ens_config_flag = 1;
+                    global_args.ens_config_string = optarg;
+                    break;
+                }
+                case 'c':
+                {
+                    global_args.checkpoint_flag = 1;
+                    global_args.checkpoint_string = optarg;
+                }
                 case '?':
                 {
                     need_to_abort = true;

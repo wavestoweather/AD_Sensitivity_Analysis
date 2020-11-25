@@ -29,11 +29,11 @@ void get_gradients(
     model_constants_t &cc,
     codi::RealReverse::TapeType &tape)
 {
-    for(int ii = 0 ; ii < num_comp ; ii++)
+    for(uint32_t ii = 0 ; ii < num_comp ; ii++)
         tape.registerOutput(y_single_new[ii]);
 
     tape.setPassive();
-    for(int ii = 0 ; ii < num_comp ; ii++)
+    for(uint32_t ii = 0 ; ii < num_comp ; ii++)
     {
         y_single_new[ii].setGradient(1.0);
         tape.evaluate();

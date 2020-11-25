@@ -9,8 +9,8 @@
 #include <vector>
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_sf_legendre.h>
-#include "include/microphysics/physical_parameterizations.h"
 
+#include "include/microphysics/physical_parameterizations.h"
 #include "include/microphysics/program_io.h"
 #include "include/microphysics/constants.h"
 #include "include/microphysics/general.h"
@@ -66,19 +66,11 @@ int main(int argc, char** argv)
     int err;
     if( (err = parse_arguments(argc, argv, global_args)) != 0 ) return err;
 
-    set_input_from_arguments(global_args, input);
-    auto_type = input.auto_type;
-    load_lookup_table(ltabdminwgg);
-
-    int traj_id;
-#ifdef MET3D
-    uint32_t ensemble;
-#endif
+    std::vector<segment_t> segments;
     // ==================================================
     // Define the reference quantities
     // ==================================================
     reference_quantities_t ref_quant;
-
     ref_quant.Tref = 273.15;
 #ifdef WCB
     ref_quant.qref = 1.0e-6;
@@ -89,37 +81,47 @@ int main(int argc, char** argv)
     ref_quant.wref = 1.; // 10.0
     ref_quant.tref = 1.0;
     ref_quant.zref = 1.0;
-
     ref_quant.Nref = 1.0; 	// DUMMY
-
-    // Print the reference quantities
     print_reference_quantities(ref_quant);
 
-    // ==================================================
-    // Setup the model constants
-    // ==================================================
     model_constants_t cc;
-    setup_model_constants(input, cc, ref_quant);
+    // Collect the initial values in a separated vector
+    // Storage:
+    // See constants.h for storage order
+    std::vector<double> y_init(num_comp);
 
-    // ==================================================
-    // Allocate the memory
-    // ==================================================
+    if(global_args.checkpoint_flag)
+    {
+        load_checkpoint(global_args.checkpoint_string, cc, y_init, segments, input);
+    }
+    else
+    {
+        set_input_from_arguments(global_args, input);
+        setup_model_constants(input, cc, ref_quant);
+        if(global_args.ens_config_flag)
+            load_ens_config(global_args.ens_config_string, cc, segments);
+    }
+
+    auto_type = input.auto_type;
+    load_lookup_table(cc.ltabdminwgg);
+
+    int traj_id;
+#ifdef MET3D
+    uint32_t ensemble;
+#endif
 
     // Current time used in the iterations
     double time_old = 0.0;
     double time_new = 0.0;
 
-    // Collect the initial values in a separated vector
-    // Storage:
-    // See constants.h for storage order
-    std::vector<double> y_init(num_comp);
+
     nc_parameters_t nc_params;
     size_t lenp;
     if(read_init_netcdf(y_init, nc_params, lenp, ref_quant,
 #ifdef MET3D
         input.start_time,
 #endif
-        global_args.input_file, input.traj, cc) != 0)
+        input.INPUT_FILENAME.c_str(), input.traj, global_args.checkpoint_flag, cc) != 0)
     {
         return 1;
     }
@@ -130,7 +132,10 @@ int main(int argc, char** argv)
     }
 #endif
 
+
+#if defined(RK4_ONE_MOMENT)
     setCoefficients(y_init[0] , y_init[1], cc);
+#endif
 
     // Print the constants
     print_constants(cc);
@@ -195,19 +200,19 @@ int main(int argc, char** argv)
         int ncid;
         std::vector<size_t> startp, countp;
 
-        open_netcdf(ncid, startp, countp, global_args.input_file, input.traj);
+        open_netcdf(ncid, startp, countp, input.INPUT_FILENAME.c_str(), input.traj);
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
 
         // Loop over every timestep that is usually fixed to 20 s
         for(uint32_t t=0; t<cc.num_steps; ++t) //
         {
-            read_netcdf_write_stream(global_args.input_file, startp, countp,
+            read_netcdf_write_stream(input.INPUT_FILENAME.c_str(), startp, countp,
                 nc_params, cc, input, ref_quant, y_single_old, inflow, ids,
                 traj_id,
 #ifdef MET3D
                 ensemble,
 #endif
-                t);
+                t, global_args.checkpoint_flag);
             // Iterate over each substep
             for(uint32_t sub=1; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
             {
@@ -226,11 +231,13 @@ int main(int argc, char** argv)
 #endif
                 bool last_step = ( ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + !input.start_over))
                     || (sub == cc.num_sub_steps-input.start_over) );
+#if defined(RK4_ONE_MOMENT)
                 // Set the coefficients from the last timestep and from
                 // the input files
                 // *Should* only be necessary when parameters from the
                 // trajectory are used as start point
                 setCoefficients(y_single_old, cc, ref_quant);
+#endif
 #if defined(TRACE_SAT)
             if(trace)
                 std::cout << "Start qv_prime " << y_single_old[qv_idx]*ref_quant.qref << "\n";

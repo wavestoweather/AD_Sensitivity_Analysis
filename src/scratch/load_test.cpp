@@ -10,11 +10,12 @@
 #include <vector>
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_sf_legendre.h>
-#include "include/microphysics/physical_parameterizations.h"
 
+#include "include/microphysics/physical_parameterizations.h"
 #include "include/microphysics/program_io.h"
 #include "include/microphysics/constants.h"
 #include "include/microphysics/general.h"
+#include "include/microphysics/gradient_handle.h"
 
 #include <netcdf>
 
@@ -44,6 +45,7 @@ void print_params(
 
 int main(int argc, char** argv)
 {
+    std::cout << "~+~+~+~+~Starting Load Tests~+~+~+~+~\n";
     nc_parameters_t nc_params;
     reference_quantities_t ref_quant;
 
@@ -62,12 +64,33 @@ int main(int argc, char** argv)
     const char* file_config = argv[2];
     model_constants_t cc;
     std::vector<segment_t> segments;
-    int err = read_config(file_config, cc, segments);
-    if(err != 0)
-        std::cout << "Parsing config file failed with errorcode: "
-                  << err << "\n";
-
+    SUCCESS_OR_DIE(load_ens_config(file_config, cc, segments));
+    for(auto &s: segments)
+        SUCCESS_OR_DIE(s.check());
     print_segments(segments);
+
+    std::vector<double> y(num_comp);
+    // Populate y with some numbers
+    for(uint32_t i=0; i<num_comp; ++i)
+    {
+        y[i] = file[i%std::strlen(file)];
+    }
+
+    input_parameters_t input;
+    // Write a checkpoint file
+    write_checkpoint("tmp_checkpoint", cc, y, segments, input);
+
+    // and load it again
+    SUCCESS_OR_DIE(load_checkpoint("tmp_checkpoint_0.json", cc, y, segments, input));
+
+    // Perturb parameters
+
+    // Write again as checkpoint file
+
+    // load it again
+
+    // Check if parameters are still perturbed
+
 
     int traj_id;
 

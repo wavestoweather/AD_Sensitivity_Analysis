@@ -59,39 +59,39 @@ void print_particle_params(
     std::string title)
 {
     std::cout << title << "\n"
-        << "a_geo = " << pc.a_geo << "\n"
-        << "b_geo = " << pc.b_geo << "\n"
-        << "min_x = " << pc.min_x << "\n"
-        << "max_x = " << pc.max_x << "\n"
-        << "sc_theta_q = " << pc.sc_theta_q << "\n"
-        << "sc_delta_q = " << pc.sc_delta_q << "\n"
-        << "sc_theta_n = " << pc.sc_theta_n << "\n"
-        << "sc_delta_n = " << pc.sc_delta_n << "\n"
-        << "s_vel = " << pc.s_vel << "\n"
-        << "a_vel = " << pc.a_vel << "\n"
-        << "b_vel = " << pc.b_vel << "\n"
-        << "rho_v = " << pc.rho_v << "\n"
-        << "c_z = " << pc.c_z << "\n"
-        << "sc_coll_n = " << pc.sc_coll_n << "\n"
-        << "nu = " << pc.nu << "\n"
-        << "mu = " << pc.mu << "\n"
-        << "q_crit_c = " << pc.q_crit_c << "\n"
-        << "d_crit_c = " << pc.d_crit_c << "\n"
-        << "ecoll_c = " << pc.ecoll_c << "\n"
-        << "cap = " << pc.cap << "\n"
-        << "a_ven = " << pc.a_ven << "\n"
-        << "b_ven = " << pc.b_ven << "\n"
-        << "c_s = " << pc.c_s << "\n"
-        << "a_f = " << pc.a_f << "\n"
-        << "b_f = " << pc.b_f << "\n"
-        << "b_f (COSMO variant) = " << pc.b_f / pow(N_sc, n_f) * sqrt(kin_visc_air) << "\n"
-        << "alfa_n = " << pc.alfa_n << "\n"
-        << "alfa_q = " << pc.alfa_q << "\n"
-        << "lambda = " << pc.lambda << "\n"
-        << "vsedi_min = " << pc.vsedi_min << "\n"
-        << "vsedi_max = " << pc.vsedi_max << "\n"
-        << "g1 = " << pc.g1 << "\n"
-        << "g2 = " << pc.g2 << "\n"
+        << "a_geo = " << get_at(pc.constants, Particle_cons_idx::a_geo) << "\n"
+        << "b_geo = " << get_at(pc.constants, Particle_cons_idx::b_geo) << "\n"
+        << "min_x = " << get_at(pc.constants, Particle_cons_idx::min_x) << "\n"
+        << "max_x = " << get_at(pc.constants, Particle_cons_idx::max_x) << "\n"
+        << "sc_theta_q = " << get_at(pc.constants, Particle_cons_idx::sc_theta_q) << "\n"
+        << "sc_delta_q = " << get_at(pc.constants, Particle_cons_idx::sc_delta_q) << "\n"
+        << "sc_theta_n = " << get_at(pc.constants, Particle_cons_idx::sc_theta_n) << "\n"
+        << "sc_delta_n = " << get_at(pc.constants, Particle_cons_idx::sc_delta_n) << "\n"
+        << "s_vel = " << get_at(pc.constants, Particle_cons_idx::s_vel) << "\n"
+        << "a_vel = " << get_at(pc.constants, Particle_cons_idx::a_vel) << "\n"
+        << "b_vel = " << get_at(pc.constants, Particle_cons_idx::b_vel) << "\n"
+        << "rho_v = " << get_at(pc.constants, Particle_cons_idx::rho_v) << "\n"
+        << "c_z = " << get_at(pc.constants, Particle_cons_idx::c_z) << "\n"
+        << "sc_coll_n = " << get_at(pc.constants, Particle_cons_idx::sc_coll_n) << "\n"
+        << "nu = " << get_at(pc.constants, Particle_cons_idx::nu) << "\n"
+        << "mu = " << get_at(pc.constants, Particle_cons_idx::mu) << "\n"
+        << "q_crit_c = " << get_at(pc.constants, Particle_cons_idx::q_crit_c) << "\n"
+        << "d_crit_c = " << get_at(pc.constants, Particle_cons_idx::d_crit_c) << "\n"
+        << "ecoll_c = " << get_at(pc.constants, Particle_cons_idx::ecoll_c) << "\n"
+        << "cap = " << get_at(pc.constants, Particle_cons_idx::cap) << "\n"
+        << "a_ven = " << get_at(pc.constants, Particle_cons_idx::a_ven) << "\n"
+        << "b_ven = " << get_at(pc.constants, Particle_cons_idx::b_ven) << "\n"
+        << "c_s = " << get_at(pc.constants, Particle_cons_idx::c_s) << "\n"
+        << "a_f = " << get_at(pc.constants, Particle_cons_idx::a_f) << "\n"
+        << "b_f = " << get_at(pc.constants, Particle_cons_idx::b_f) << "\n"
+        << "b_f (COSMO variant) = " << get_at(pc.constants, Particle_cons_idx::b_f) / pow(N_sc, n_f) * sqrt(kin_visc_air) << "\n"
+        << "alfa_n = " << get_at(pc.constants, Particle_cons_idx::alfa_n) << "\n"
+        << "alfa_q = " << get_at(pc.constants, Particle_cons_idx::alfa_q) << "\n"
+        << "lambda = " << get_at(pc.constants, Particle_cons_idx::lambda) << "\n"
+        << "vsedi_min = " << get_at(pc.constants, Particle_cons_idx::vsedi_min) << "\n"
+        << "vsedi_max = " << get_at(pc.constants, Particle_cons_idx::vsedi_max) << "\n"
+        << "g1 = " << get_at(pc.constants, Particle_cons_idx::g1) << "\n"
+        << "g2 = " << get_at(pc.constants, Particle_cons_idx::g2) << "\n"
         << "\n";
 }
 
@@ -116,7 +116,7 @@ void print_reference_quantities(reference_quantities_t &ref)
 /**
  * Print constants given a model constants structure, namely integration
  * time, number of steps, scaling factors.
- *
+//  *
  * @param cc A structure with model constants.
  */
 void print_constants(model_constants_t &cc)
@@ -136,52 +136,52 @@ void print_constants(model_constants_t &cc)
         << "e2_scale: " << cc.e2_scale << "\n"
         << "d_scale: " << cc.d_scale << "\n"
         << "Scaling factor: " << cc.scaling_fact << "\n"
-        << "q_crit_i = " << cc.q_crit_i << "\n"
-        << "D_crit_i = " << cc.D_crit_i << "\n"
-        << "D_conv_i = " << cc.D_conv_i << "\n"
-        << "q_crit_r = " << cc.q_crit_r << "\n"
-        << "D_crit_r = " << cc.D_crit_r << "\n"
-        << "q_crit_fr = " << cc.q_crit_fr << "\n"
-        << "D_coll_c = " << cc.D_coll_c << "\n"
-        << "q_crit = " << cc.q_crit << "\n"
-        << "D_conv_sg = " << cc.D_conv_sg << "\n"
-        << "D_conv_ig = " << cc.D_conv_ig << "\n"
-        << "x_conv = " << cc.x_conv << "\n"
-        << "parcel_height = " << cc.parcel_height << "\n"
-        << "alpha_spacefilling = " << cc.alpha_spacefilling << "\n"
-        << "T_nuc = " << cc.T_nuc << "\n"
-        << "T_freeze = " << cc.T_freeze << "\n"
-        << "T_f = " << cc.T_f << "\n"
-        << "D_eq = " << cc.D_eq << "\n"
-        << "rho_w = " << cc.rho_w << "\n"
-        << "rho_0 = " << cc.rho_0 << "\n"
-        << "rho_vel = " << cc.rho_vel << "\n"
-        << "rho_vel_c = " << cc.rho_vel_c << "\n"
-        << "rho_ice = " << cc.rho_ice << "\n"
-        << "M_w = " << cc.M_w << "\n"
-        << "M_a = " << cc.M_a << "\n"
-        << "R_universal = " << cc.R_universal << "\n"
-        << "Epsilon = " << cc.Epsilon << "\n"
-        << "gravity_acc = " << cc.gravity_acc << "\n"
-        << "R_a = " << cc.R_a << "\n"
-        << "R_v = " << cc.R_v << "\n"
-        << "a_v = " << cc.a_v << "\n"
-        << "b_v = " << cc.b_v << "\n"
-        << "a_prime = " << cc.a_prime << "\n"
-        << "b_prime = " << cc.b_prime << "\n"
-        << "c_prime = " << cc.c_prime << "\n"
-        << "K_T = " << cc.K_T << "\n"
-        << "L_wd = " << cc.L_wd << "\n"
-        << "L_ed = " << cc.L_ed << "\n"
-        << "D_v = " << cc.D_v << "\n"
-        << "ecoll_min = " << cc.ecoll_min << "\n"
-        << "ecoll_gg = " << cc.ecoll_gg << "\n"
-        << "ecoll_gg_wet = " << cc.ecoll_gg_wet << "\n"
-        << "kin_visc_air = " << cc.kin_visc_air << "\n"
-        << "C_mult = " << cc.C_mult << "\n"
-        << "T_mult_min = " << cc.T_mult_min << "\n"
-        << "T_mult_max = " << cc.T_mult_max << "\n"
-        << "T_mult_opt = " << cc.T_mult_opt << "\n"
+        << "q_crit_i = " << get_at(cc.constants, Cons_idx::q_crit_i) << "\n"
+        << "D_crit_i = " << get_at(cc.constants, Cons_idx::D_crit_i) << "\n"
+        << "D_conv_i = " << get_at(cc.constants, Cons_idx::D_conv_i) << "\n"
+        << "q_crit_r = " << get_at(cc.constants, Cons_idx::q_crit_r) << "\n"
+        << "D_crit_r = " << get_at(cc.constants, Cons_idx::D_crit_r) << "\n"
+        << "q_crit_fr = " << get_at(cc.constants, Cons_idx::q_crit_fr) << "\n"
+        << "D_coll_c = " << get_at(cc.constants, Cons_idx::D_coll_c) << "\n"
+        << "q_crit = " << get_at(cc.constants, Cons_idx::q_crit) << "\n"
+        << "D_conv_sg = " << get_at(cc.constants, Cons_idx::D_conv_sg) << "\n"
+        << "D_conv_ig = " << get_at(cc.constants, Cons_idx::D_conv_ig) << "\n"
+        << "x_conv = " << get_at(cc.constants, Cons_idx::x_conv) << "\n"
+        << "parcel_height = " << get_at(cc.constants, Cons_idx::parcel_height) << "\n"
+        << "alpha_spacefilling = " << get_at(cc.constants, Cons_idx::alpha_spacefilling) << "\n"
+        << "T_nuc = " << get_at(cc.constants, Cons_idx::T_nuc) << "\n"
+        << "T_freeze = " << get_at(cc.constants, Cons_idx::T_freeze) << "\n"
+        << "T_f = " << get_at(cc.constants, Cons_idx::T_f) << "\n"
+        << "D_eq = " << get_at(cc.constants, Cons_idx::D_eq) << "\n"
+        << "rho_w = " << get_at(cc.constants, Cons_idx::rho_w) << "\n"
+        << "rho_0 = " << get_at(cc.constants, Cons_idx::rho_0) << "\n"
+        << "rho_vel = " << get_at(cc.constants, Cons_idx::rho_vel) << "\n"
+        << "rho_vel_c = " << get_at(cc.constants, Cons_idx::rho_vel_c) << "\n"
+        << "rho_ice = " << get_at(cc.constants, Cons_idx::rho_ice) << "\n"
+        << "M_w = " << get_at(cc.constants, Cons_idx::M_w) << "\n"
+        << "M_a = " << get_at(cc.constants, Cons_idx::M_a) << "\n"
+        << "R_universal = " << get_at(cc.constants, Cons_idx::R_universal) << "\n"
+        << "Epsilon = " << get_at(cc.constants, Cons_idx::Epsilon) << "\n"
+        << "gravity_acc = " << get_at(cc.constants, Cons_idx::gravity_acc) << "\n"
+        << "R_a = " << get_at(cc.constants, Cons_idx::R_a) << "\n"
+        << "R_v = " << get_at(cc.constants, Cons_idx::R_v) << "\n"
+        << "a_v = " << get_at(cc.constants, Cons_idx::a_v) << "\n"
+        << "b_v = " << get_at(cc.constants, Cons_idx::b_v) << "\n"
+        << "a_prime = " << get_at(cc.constants, Cons_idx::a_prime) << "\n"
+        << "b_prime = " << get_at(cc.constants, Cons_idx::b_prime) << "\n"
+        << "c_prime = " << get_at(cc.constants, Cons_idx::c_prime) << "\n"
+        << "K_T = " << get_at(cc.constants, Cons_idx::K_T) << "\n"
+        << "L_wd = " << get_at(cc.constants, Cons_idx::L_wd) << "\n"
+        << "L_ed = " << get_at(cc.constants, Cons_idx::L_ed) << "\n"
+        << "D_v = " << get_at(cc.constants, Cons_idx::D_v) << "\n"
+        << "ecoll_min = " << get_at(cc.constants, Cons_idx::ecoll_min) << "\n"
+        << "ecoll_gg = " << get_at(cc.constants, Cons_idx::ecoll_gg) << "\n"
+        << "ecoll_gg_wet = " << get_at(cc.constants, Cons_idx::ecoll_gg_wet) << "\n"
+        << "kin_visc_air = " << get_at(cc.constants, Cons_idx::kin_visc_air) << "\n"
+        << "C_mult = " << get_at(cc.constants, Cons_idx::C_mult) << "\n"
+        << "T_mult_min = " << get_at(cc.constants, Cons_idx::T_mult_min) << "\n"
+        << "T_mult_max = " << get_at(cc.constants, Cons_idx::T_mult_max) << "\n"
+        << "T_mult_opt = " << get_at(cc.constants, Cons_idx::T_mult_opt) << "\n"
         << std::endl << std::flush;
 }
 
@@ -195,10 +195,11 @@ void print_segments(std::vector<segment_t> &segments)
     std::cout << "\nSegments for ensembles:\n"
               << "----------------\n";
     uint32_t i = 1;
+    uint32_t total_members = 1;
     for(auto &segment: segments)
     {
         std::cout << "----Segment No. " << i << "\n"
-                  << "----Number of members for each perturbed parameter: " << segment.n_members << "\n"
+                  << "----Number of members: " << segment.n_members << "\n"
                   << "----Number of perturbed parameters: " << segment.params.size() << "\n"
                   << "----Number of segments defined with this configuration: " << segment.n_segments << "\n";
         if(segment.method != -1)
@@ -214,21 +215,22 @@ void print_segments(std::vector<segment_t> &segments)
         for(auto &param: segment.params)
         {
             std::cout << "--------Param No. " << j << "\n"
-                      << "--------Parameter to perturb: " << param.name << "\n"
-                      << "--------Output parameter type: " << param.out_name << "\n"
-                      << "--------Mean for normal distribution used in perturbing: " << param.mean << "\n"
-                      << "--------Is parameter specific for particle: " << param.particle_param << "\n";
+                      << "------------Parameter to perturb: " << param.name << "\n"
+                      << "------------Output parameter type: " << param.out_name << "\n"
+                      << "------------Mean for normal distribution used in perturbing: " << param.mean << "\n"
+                      << "------------Is parameter specific for particle: " << param.particle_param << "\n";
             if(!isnan(param.sigma))
-                std::cout << "--------Variance for normal distribution: " << param.sigma << "\n";
+                std::cout << "------------Variance for normal distribution: " << param.sigma << "\n";
             if(!isnan(param.sigma_perc))
-                std::cout << "--------Variance in percentage: " << param.sigma_perc << "\n";
+                std::cout << "------------Variance in percentage: " << param.sigma_perc << "\n";
 
             j++;
         }
-
+        total_members *= pow(segment.n_members, segment.n_segments);
         i++;
     }
-    std::cout << "\n";
+
+    std::cout << "Total number of trajectories (worst case): " << total_members << "\n\n";
 }
 
 /**

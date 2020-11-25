@@ -1,12 +1,16 @@
 #pragma once
+#include <boost/property_tree/ptree.hpp>
 #include "codi.hpp"
 #include <netcdf>
 #include <random>
 #include <unordered_map>
+#include <stdlib.h>
 #include <boost/math/special_functions/gamma.hpp>
 #include "include/misc/error.h"
+#include "constants.h"
 
 using namespace netCDF;
+namespace pt = boost::property_tree;
 
 
 /** @defgroup types Commonly Used Types
@@ -37,176 +41,13 @@ struct reference_quantities_t{
  */
 struct particle_model_constants_t{
 
-    /**
-     * Geometry coefficients.
-     */
-    codi::RealReverse a_geo; /*!< Coefficient for diameter size calculation */
-    codi::RealReverse b_geo; /*!< Exponent for diameter size calculation */
+    std::vector<codi::RealReverse> constants;
+    std::vector<uint32_t> perturbed_idx;
 
-    /**
-     * Minimum size of particle for mean meass calculation.
-     */
-    codi::RealReverse min_x;
-    /**
-     * Minimum size of particle for CCN activation (cloud) and
-     * ice activation (ice).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_act;
-    /**
-     * Minimum size of particle for homogenous nucleation (ice).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_nuc_homo;
-    /**
-     * Minimum size of particle for heterogeneous nucleation (ice).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_nuc_hetero;
-    /**
-     * Minimum size of particle for melting (snow, graupel, ice, hail).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_melt;
-    /**
-     * Minimum size of particle for evaporation (rain, snow, graupel, ice).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_evap;
-    /**
-     * Minimum size of particle for freezing (rain, cloud).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_freezing;
-    /**
-     * Minimum size of particle for vapor deposition (ice, snow, graupel, hail).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_depo;
-    /**
-     * Minimum size of particle for ice-ice collision.
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_collision;
-    /**
-     * Minimum size of particle for different collision processes
-     * (snow, rain, ice, snow, graupel).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_collection;
-    /**
-     * Minimum size of particle for conversion processes (cloud, graupel, ice).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_conversion;
-    /**
-     * Minimum size of particle for sedimentation (rain, ice, snow, graupel, hail).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_sedimentation;
-    /**
-     * Minimum size of particle for riming (cloud, rain, ice, snow, hail, graupel).
-     * *Should* be the same as min_x but is used to distinguish the
-     * influence of those processes.
-     */
-    codi::RealReverse min_x_riming;
-
-    codi::RealReverse max_x; /*!< Maximum size of particle. */
-    codi::RealReverse sc_theta_q; /*!< Coefficient for ice collision ratio mass. */
-    codi::RealReverse sc_delta_q; /*!< Coefficient for ice collision ratio mass. */
-    codi::RealReverse sc_theta_n; /*!< Coefficient for collision particle number (ice, snow). */
-    codi::RealReverse sc_delta_n; /*!< Coefficient for collision particle number (ice, snow). */
-    /**
-     * Variance for the assumed Gaussian velocity distributions used in collection and riming processes.
-     */
-    codi::RealReverse s_vel;
-    codi::RealReverse a_vel;    /*!< Coefficient for particle velocity. */
-    codi::RealReverse b_vel;    /*!< Exponent for particle velocity. */
-    /**
-     * Coefficient used in density correction for the increased terminal
-     * fall velocity with decreasing air density.
-     * \f[ \rho_v = (\rho/\rho_0)^{-\rho_{\text{vel}}} \f]
-     */
-    codi::RealReverse rho_v;
-    codi::RealReverse c_z; /*!< Coefficient for 2nd mass moment. */
-    codi::RealReverse sc_coll_n;    /*!< Coefficient in graupel self collection and cloud riming. */
-    codi::RealReverse cmu0; /*!< Coefficient for calculating the shape parameter \f$\mu\f$. */
-    codi::RealReverse cmu1; /*!< Coefficient for calculating the shape parameter \f$\mu\f$. */
-    codi::RealReverse cmu2; /*!< Coefficient for calculating the shape parameter \f$\mu\f$. */
-    codi::RealReverse cmu3; /*!< Constant for calculating the shape parameter \f$\mu\f$. */
-    codi::RealReverse cmu4; /*!< Constant for calculating the shape parameter \f$\mu\f$. */
-    codi::RealReverse cmu5; /*!< Exponent for calculating the shape parameter \f$\mu\f$. */
-    codi::RealReverse alpha; /*!< Constant in rain sedimentation. */
-    codi::RealReverse beta; /*!< Coefficient for rain sedimentation. */
-    codi::RealReverse gamma; /*!< Exponent for rain sedimentation. */
-    /**
-     * Right edge of incomplete gamma function,
-     * which had been initialized with \f[\text{nm}_1\f].
-     */
-    codi::RealReverse g1;
-    /**
-     * Right edge of incomplete gamma function,
-     * which had been initialized with \f[\text{nm}_2\f].
-     */
-    codi::RealReverse g2;
-    /**
-     * Shape parameter of the generalized \f$\Gamma$\f-distribution.
-     */
-    codi::RealReverse mu;
-    /**
-     * Shape parameter of the generalized \f$\Gamma$\f-distribution.
-     * i.e. used in rain sedimentation as coefficient.
-     */
-    codi::RealReverse nu;
-    /**
-     * Used for initializing the incomplete
-     * gamma function lookup table 1.
-     * Number of bins.
-     */
-    codi::RealReverse nm1;
-    /**
-     * Used for initializing the incomplete
-     * gamma function lookup table 2.
-     * Number of bins.
-     */
-    codi::RealReverse nm2;
-    /**
-     * Used for initializing the incomplete
-     * gamma function lookup table 3.
-     * Number of bins.
-     */
-    codi::RealReverse nm3;
-
-    codi::RealReverse q_crit_c; /*!<  Riming parameter. */
-    codi::RealReverse d_crit_c; /*!<  Riming parameter. */
-    codi::RealReverse ecoll_c;  /*!<  Riming coefficient. */
-    /**
-     * Coefficient for capacity of particle.
-     */
-    codi::RealReverse cap;
-    codi::RealReverse a_ven;    /*!< Vapor deposition coefficient. */
-    codi::RealReverse b_ven;    /*!< Currently unused parameter. */
-
-    codi::RealReverse c_s;  /*!< Inverse of capacity. Coefficient in evaporation and vapor deposition. */
-    codi::RealReverse a_f; /*!< Constant for average ventilation. Used in melting and ice-vapor processes. */
-    codi::RealReverse b_f; /*!< Coefficient for average ventilation. */
-
-    codi::RealReverse alfa_n;       /*!<  Sedimentation velocity coefficient. */
-    codi::RealReverse alfa_q;       /*!<  Sedimentation velocity coefficient. */
-    codi::RealReverse lambda;       /*!<  Sedimentation velocity coefficient. */
-    codi::RealReverse vsedi_min;    /*!<  Minimum sedimentation velocity parameter. */
-    codi::RealReverse vsedi_max;    /*!<  Maximum sedimentation velocity parameter. */
+    particle_model_constants_t()
+    {
+        constants.resize(static_cast<int>(Particle_cons_idx::n_items));
+    }
 
     /**
      * Register the model parameters on the tape for codi::RealReverse.
@@ -215,62 +56,8 @@ struct particle_model_constants_t{
      */
     void register_input(codi::RealReverse::TapeType &tape)
     {
-        tape.registerInput(this->a_geo);
-        tape.registerInput(this->b_geo);
-        tape.registerInput(this->min_x);
-        tape.registerInput(this->min_x_act);
-        tape.registerInput(this->min_x_nuc_homo);
-        tape.registerInput(this->min_x_nuc_hetero);
-        tape.registerInput(this->min_x_melt);
-        tape.registerInput(this->min_x_evap);
-        tape.registerInput(this->min_x_freezing);
-        tape.registerInput(this->min_x_depo);
-        tape.registerInput(this->min_x_collision);
-        tape.registerInput(this->min_x_collection);
-        tape.registerInput(this->min_x_conversion);
-        tape.registerInput(this->min_x_sedimentation);
-        tape.registerInput(this->min_x_riming);
-        tape.registerInput(this->max_x);
-        tape.registerInput(this->sc_theta_q);
-        tape.registerInput(this->sc_delta_q);
-        tape.registerInput(this->sc_theta_n);
-        tape.registerInput(this->sc_delta_n);
-        tape.registerInput(this->s_vel);
-        tape.registerInput(this->a_vel);
-        tape.registerInput(this->b_vel);
-        tape.registerInput(this->rho_v);
-        tape.registerInput(this->c_z);
-        tape.registerInput(this->sc_coll_n);
-        tape.registerInput(this->cmu0);
-        tape.registerInput(this->cmu1);
-        tape.registerInput(this->cmu2);
-        tape.registerInput(this->cmu3);
-        tape.registerInput(this->cmu4);
-        tape.registerInput(this->cmu5);
-        tape.registerInput(this->alpha);
-        tape.registerInput(this->beta);
-        tape.registerInput(this->gamma);
-        tape.registerInput(this->nu);
-        tape.registerInput(this->g1);
-        tape.registerInput(this->g2);
-        tape.registerInput(this->mu);
-        tape.registerInput(this->nm1);
-        tape.registerInput(this->nm2);
-        tape.registerInput(this->nm3);
-        tape.registerInput(this->q_crit_c);
-        tape.registerInput(this->d_crit_c);
-        tape.registerInput(this->ecoll_c);
-        tape.registerInput(this->cap);
-        tape.registerInput(this->a_ven);
-        tape.registerInput(this->b_ven);
-        tape.registerInput(this->c_s);
-        tape.registerInput(this->a_f);
-        tape.registerInput(this->b_f);
-        tape.registerInput(this->alfa_n);
-        tape.registerInput(this->alfa_q);
-        tape.registerInput(this->lambda);
-        tape.registerInput(this->vsedi_min);
-        tape.registerInput(this->vsedi_max);
+        for(auto &c: this->constants)
+            tape.registerInput(c);
     }
 
     /**
@@ -281,120 +68,51 @@ struct particle_model_constants_t{
      * @param idx Start index of out_vec where the gradients should be stored.
      */
     template<class T>
-    void get_gradient(T &out_vec, uint64_t &idx)
+    void get_gradient(T &out_vec, uint32_t &idx)
     {
-        out_vec[idx] = this->a_geo.getGradient();
-        idx++;
-        out_vec[idx] = this->b_geo.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_act.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_nuc_homo.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_nuc_hetero.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_melt.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_evap.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_freezing.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_depo.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_collision.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_collection.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_conversion.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_sedimentation.getGradient();
-        idx++;
-        out_vec[idx] = this->min_x_riming.getGradient();
-        idx++;
-        out_vec[idx] = this->max_x.getGradient();
-        idx++;
-        out_vec[idx] = this->sc_theta_q.getGradient();
-        idx++;
-        out_vec[idx] = this->sc_delta_q.getGradient();
-        idx++;
-        out_vec[idx] = this->sc_theta_n.getGradient();
-        idx++;
-        out_vec[idx] = this->sc_delta_n.getGradient();
-        idx++;
-        out_vec[idx] = this->s_vel.getGradient();
-        idx++;
-        out_vec[idx] = this->a_vel.getGradient();
-        idx++;
-        out_vec[idx] = this->b_vel.getGradient();
-        idx++;
-        out_vec[idx] = this->rho_v.getGradient();
-        idx++;
-        out_vec[idx] = this->c_z.getGradient();
-        idx++;
-        out_vec[idx] = this->sc_coll_n.getGradient();
-        idx++;
-        out_vec[idx] = this->cmu0.getGradient();
-        idx++;
-        out_vec[idx] = this->cmu1.getGradient();
-        idx++;
-        out_vec[idx] = this->cmu2.getGradient();
-        idx++;
-        out_vec[idx] = this->cmu3.getGradient();
-        idx++;
-        out_vec[idx] = this->cmu4.getGradient();
-        idx++;
-        out_vec[idx] = this->cmu5.getGradient();
-        idx++;
-        out_vec[idx] = this->alpha.getGradient();
-        idx++;
-        out_vec[idx] = this->beta.getGradient();
-        idx++;
-        out_vec[idx] = this->gamma.getGradient();
-        idx++;
-        out_vec[idx] = this->nu.getGradient();
-        idx++;
-        out_vec[idx] = this->g1.getGradient();
-        idx++;
-        out_vec[idx] = this->g2.getGradient();
-        idx++;
-        out_vec[idx] = this->mu.getGradient();
-        idx++;
-        out_vec[idx] = this->nm1.getGradient();
-        idx++;
-        out_vec[idx] = this->nm2.getGradient();
-        idx++;
-        out_vec[idx] = this->nm3.getGradient();
-        idx++;
-        out_vec[idx] = this->q_crit_c.getGradient();
-        idx++;
-        out_vec[idx] = this->d_crit_c.getGradient();
-        idx++;
-        out_vec[idx] = this->ecoll_c.getGradient();
-        idx++;
-        out_vec[idx] = this->cap.getGradient();
-        idx++;
-        out_vec[idx] = this->a_ven.getGradient();
-        idx++;
-        out_vec[idx] = this->b_ven.getGradient();
-        idx++;
-        out_vec[idx] = this->c_s.getGradient();
-        idx++;
-        out_vec[idx] = this->a_f.getGradient();
-        idx++;
-        out_vec[idx] = this->b_f.getGradient();
-        idx++;
-        out_vec[idx] = this->alfa_n.getGradient();
-        idx++;
-        out_vec[idx] = this->alfa_q.getGradient();
-        idx++;
-        out_vec[idx] = this->lambda.getGradient();
-        idx++;
-        out_vec[idx] = this->vsedi_min.getGradient();
-        idx++;
-        out_vec[idx] = this->vsedi_max.getGradient();
-        idx++;
+        for(auto &c: this->constants)
+        {
+            out_vec[idx] = c.getGradient();
+            idx++;
+        }
+    }
+
+    void put(pt::ptree &ptree, const std::string &type_name)
+    {
+        if(perturbed_idx.empty())
+            return;
+
+        pt::ptree perturbed;
+
+        for(uint32_t idx: perturbed_idx)
+        {
+            perturbed.put(std::to_string(idx), constants[idx]);
+        }
+        pt::ptree perturbed_vals;
+        perturbed_vals.add_child("perturbed", perturbed);
+        ptree.add_child(type_name, perturbed_vals);
+    }
+
+    /**
+     * Set any perturbed parameter from the property tree.
+     *
+     * @params ptree Property tree with key = idx of constants, values =
+     *         the perturbed values and one list 'perturbed' of indices.
+     *
+     * @returns Errorcode
+     */
+    int from_pt(pt::ptree &ptree)
+    {
+        int err = 0;
+        for(auto &it: ptree.get_child("perturbed"))
+        {
+            uint32_t idx = std::stoi(it.first);
+            this->constants[idx] = it.second.get_value<double>();
+            // uint32_t idx = it.second.get_value<uint32_t>();
+            perturbed_idx.push_back(idx);
+            // this->constants[idx] = ptree.get_child(std::to_string(idx)).second.get_value<double>();
+        }
+        return err;
     }
 };
 
@@ -614,28 +332,16 @@ struct gamma_table_t{
  * Structure for constants of a model. Includes particle constants as well.
  */
 struct model_constants_t{
+
+    /**
+     * Initial id of this simulation. Emerging ensembles from this
+     * have other ids which are set by reading a checkpoint file.
+     */
+    std::string id = "0";
     //
     // Physical constants warm cloud
     //
     double alpha_d; /*!< Accomodation coefficient */
-
-    codi::RealReverse Nc_prime; /*!< Number concentration of cloud droplets needed for one-moment scheme */
-
-    codi::RealReverse a1_prime; /*!< Dimensional coefficient used in one-moment warm physics for qc and qr calculation */
-    codi::RealReverse a2_prime; /*!< Dimensional coefficient used in one-moment warm physics for qc and qr calculation */
-    codi::RealReverse e1_prime; /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
-    codi::RealReverse e2_prime; /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
-    codi::RealReverse B_prime;  /*!< Dimensional coefficient to simulate inflow from above in one-moment warm physics */
-    codi::RealReverse d_prime;  /*!< Dimensional coefficient used in one-moment warm physics qr calculation for sedimentation*/
-
-    codi::RealReverse dw; /*!< Change in buoancy */
-
-    codi::RealReverse gamma;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
-    codi::RealReverse betac;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
-    codi::RealReverse betar;  /*!< Exponent used in one-moment warm physics for qc and qr calculation */
-    codi::RealReverse delta1; /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
-    codi::RealReverse delta2; /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
-    codi::RealReverse zeta;   /*!< Exponents used in one-moment warm physics for qr calculation */
 
     /**
      * Model constants for hail.
@@ -743,24 +449,6 @@ struct model_constants_t{
     codi::RealReverse e1_scale; /*!< Performance constants warm cloud */
     codi::RealReverse e2_scale; /*!< Performance constants warm cloud */
     codi::RealReverse d_scale;  /*!< Performance constants warm cloud */
-    codi::RealReverse rain_gfak = 1.0; /*!< Coefficient for gamma evaluation in rain evaporation */
-    codi::RealReverse cloud_k_au; /*!< Coefficient for autoconversion of cloud to rain */
-    codi::RealReverse cloud_k_sc; /*!< Coefficient for autoconversion of cloud to rain */
-
-    /**
-     * Kernel for autoconversion
-     */
-    codi::RealReverse kc_autocon = 9.44e9;
-
-    /**
-     * Inverse layer thickness. Used for sedimentation.
-     * In Miltenberger (2016) the trajectories start every \f$100 \text{m}\f$
-     * between the surface and \f$4 \text{km}\f$ altitude using COSMO-2, which
-     * uses a mean spacing of \f$388 \text{m}\f$
-     * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
-     * at \f$23 \text{km}\f$.
-     */
-    codi::RealReverse inv_z;
 
     /// Parameters used in warm physics
     const double nar = 0.22;      /*!< Constants for the IFS model. */
@@ -778,118 +466,25 @@ struct model_constants_t{
 
     double scaling_fact; /*!< Scaling factor. */
 
-    // See constants.h for a descripition of those.
-    codi::RealReverse q_crit_i;
-    codi::RealReverse D_crit_i;
-    codi::RealReverse D_conv_i;
-    codi::RealReverse q_crit_r;
-    codi::RealReverse D_crit_r;
-    codi::RealReverse q_crit_fr;
-    codi::RealReverse D_coll_c;
-    codi::RealReverse q_crit;
-    codi::RealReverse D_conv_sg;
-    codi::RealReverse D_conv_ig;
-    codi::RealReverse x_conv;
-    codi::RealReverse parcel_height;
-    codi::RealReverse alpha_spacefilling;
-    codi::RealReverse T_nuc;
-    codi::RealReverse T_freeze;
-    codi::RealReverse T_f;
-    codi::RealReverse D_eq;
-    codi::RealReverse rho_w;
-    codi::RealReverse rho_0;
-    codi::RealReverse rho_vel;
-    codi::RealReverse rho_vel_c;
-    codi::RealReverse rho_ice;
-    codi::RealReverse M_w;
-    codi::RealReverse M_a;
-    codi::RealReverse R_universal;
-    codi::RealReverse Epsilon;
-    codi::RealReverse gravity_acc;
-    codi::RealReverse R_a;
-    codi::RealReverse R_v;
-    codi::RealReverse a_v;
-    codi::RealReverse b_v;
-    codi::RealReverse a_prime;
-    codi::RealReverse b_prime;
-    codi::RealReverse c_prime;
-    codi::RealReverse K_T;
-    codi::RealReverse L_wd;
-    codi::RealReverse L_ed;
-    codi::RealReverse D_v;
-    codi::RealReverse ecoll_min;
-    codi::RealReverse ecoll_gg;
-    codi::RealReverse ecoll_gg_wet;
-    codi::RealReverse kin_visc_air;
-    codi::RealReverse C_mult;
-    codi::RealReverse T_mult_min;
-    codi::RealReverse T_mult_max;
-    codi::RealReverse T_mult_opt;
+    // See constants.h for a description of those.
+    std::vector<codi::RealReverse> constants;
 
     /**
-     * Constant used in cloud riming.
+     * Store any idx from perturbed parameters.
      */
-    codi::RealReverse const0;
-    /**
-     * Hallet-Mossop ice multiplication.
-     * Constant used in ice - x and snow - x riming.
-     */
-    codi::RealReverse const3;
-    /**
-     * Hallet-Mossop ice multiplication.
-     * Constant used in ice - x and snow - x riming.
-     */
-    codi::RealReverse const4;
-    /**
-     * Constant for conversions ice -> graupel, snow -> graupel,
-     * melting (used in riming).
-     */
-    codi::RealReverse const5;
-    codi::RealReverse D_rainfrz_gh;
-    codi::RealReverse D_rainfrz_ig;
-    codi::RealReverse dv0;
-    codi::RealReverse p_sat_melt;
-    codi::RealReverse cp;
-    codi::RealReverse k_b;
-    codi::RealReverse a_HET;
-    codi::RealReverse b_HET;
-    codi::RealReverse N_sc;
-    codi::RealReverse n_f;
-    codi::RealReverse N_avo;
-    codi::RealReverse na_dust;
-    codi::RealReverse na_soot;
-    codi::RealReverse na_orga;
-    codi::RealReverse ni_het_max;
-    codi::RealReverse ni_hom_max;
-    codi::RealReverse a_dep;
-    codi::RealReverse b_dep;
-    codi::RealReverse c_dep;
-    codi::RealReverse d_dep;
-    codi::RealReverse nim_imm;
-    codi::RealReverse nin_dep;
-    codi::RealReverse alf_imm;
-    codi::RealReverse bet_dep;
-    codi::RealReverse bet_imm;
-    std::vector<codi::RealReverse> a_ccn;
-    std::vector<codi::RealReverse> b_ccn;
-    std::vector<codi::RealReverse> c_ccn;
-    std::vector<codi::RealReverse> d_ccn;
-    codi::RealReverse r_const;
-    codi::RealReverse r1_const;
-    codi::RealReverse cv;
-    codi::RealReverse p_sat_const_a;
-    codi::RealReverse p_sat_ice_const_a;
-    codi::RealReverse p_sat_const_b;
-    codi::RealReverse p_sat_ice_const_b;
-    codi::RealReverse p_sat_low_temp;
-    codi::RealReverse T_sat_low_temp;
-    codi::RealReverse alpha_depo;
-    codi::RealReverse r_0;
+    std::vector<uint32_t> perturbed_idx;
 
-    codi::RealReverse k_1_conv;
-    codi::RealReverse k_2_conv;
-    codi::RealReverse k_1_accr;
-    codi::RealReverse k_r;
+    /**
+     * Structure to hold the new equidistant lookup table for
+     * graupel wetgrowth diameter
+     */
+    table_t ltabdminwgg;
+    gamma_table_t table_g1, table_g2, table_r1, table_r2, table_r3;
+
+    model_constants_t()
+    {
+        constants.resize(static_cast<int>(Cons_idx::n_items));
+    }
 
     /**
      * Register the model parameters on the tape for codi::RealReverse.
@@ -898,147 +493,8 @@ struct model_constants_t{
      */
     void register_input(codi::RealReverse::TapeType &tape)
     {
-#if defined(RK4_ONE_MOMENT)
-        // Dimensional coefficients
-        tape.registerInput(this->a1_prime);    // Autoconversion
-        tape.registerInput(this->a2_prime);    // Accretion
-        tape.registerInput(this->e1_prime);    // Evaporation
-        tape.registerInput(this->e2_prime);    // Evaporation
-        tape.registerInput(this->d_prime);     // Sedimentation
-        tape.registerInput(this->Nc_prime);    // Concentration of cloud droplets
-
-        // Exponents
-        tape.registerInput(this->gamma);       // Autoconversion
-        tape.registerInput(this->betac);       // Accretion
-        tape.registerInput(this->betar);       // Accretion
-        tape.registerInput(this->delta1);      // Evaporation
-        tape.registerInput(this->delta2);      // Evaporation
-        tape.registerInput(this->zeta);        // Sedimentation
-
-#elif defined(RK4ICE) || defined(RK4NOICE)
-        // Dimensional coefficients
-        tape.registerInput(this->a1_prime);    // Autoconversion
-        tape.registerInput(this->a2_prime);    // Accretion
-        tape.registerInput(this->e1_prime);    // Evaporation
-        tape.registerInput(this->e2_prime);    // Evaporation
-        tape.registerInput(this->d_prime);     // Sedimentation
-        tape.registerInput(this->Nc_prime);    // Concentration of cloud droplets
-
-        // Exponents
-        tape.registerInput(this->gamma);       // Autoconversion
-        tape.registerInput(this->betac);       // Accretion
-        tape.registerInput(this->betar);       // Accretion
-        tape.registerInput(this->delta1);      // Evaporation
-        tape.registerInput(this->delta2);      // Evaporation
-        tape.registerInput(this->zeta);        // Sedimentation
-
-        // ICON parameters
-        tape.registerInput(this->rain_gfak);
-        tape.registerInput(this->cloud_k_au);
-        tape.registerInput(this->cloud_k_sc);
-        tape.registerInput(this->kc_autocon);
-        tape.registerInput(this->inv_z);
-
-        // Everything else
-        tape.registerInput(this->dw);
-        tape.registerInput(this->q_crit_i);
-        tape.registerInput(this->D_crit_i);
-        tape.registerInput(this->D_conv_i);
-        tape.registerInput(this->q_crit_r);
-        tape.registerInput(this->D_crit_r);
-        tape.registerInput(this->q_crit_fr);
-        tape.registerInput(this->D_coll_c);
-        tape.registerInput(this->q_crit);
-        tape.registerInput(this->D_conv_sg);
-        tape.registerInput(this->D_conv_ig);
-        tape.registerInput(this->x_conv);
-        tape.registerInput(this->parcel_height);
-        tape.registerInput(this->alpha_spacefilling);
-        tape.registerInput(this->T_nuc);
-        tape.registerInput(this->T_freeze);
-        tape.registerInput(this->T_f);
-        tape.registerInput(this->D_eq);
-        tape.registerInput(this->rho_w);
-        tape.registerInput(this->rho_0);
-        tape.registerInput(this->rho_vel);
-        tape.registerInput(this->rho_vel_c);
-        tape.registerInput(this->rho_ice);
-        tape.registerInput(this->M_w);
-        tape.registerInput(this->M_a);
-        tape.registerInput(this->R_universal);
-        tape.registerInput(this->Epsilon);
-        tape.registerInput(this->gravity_acc);
-        tape.registerInput(this->R_a);
-        tape.registerInput(this->R_v);
-        tape.registerInput(this->a_v);
-        tape.registerInput(this->b_v);
-        tape.registerInput(this->a_prime);
-        tape.registerInput(this->b_prime);
-        tape.registerInput(this->c_prime);
-        tape.registerInput(this->K_T);
-        tape.registerInput(this->L_wd);
-        tape.registerInput(this->L_ed);
-        tape.registerInput(this->D_v);
-        tape.registerInput(this->ecoll_min);
-        tape.registerInput(this->ecoll_gg);
-        tape.registerInput(this->ecoll_gg_wet);
-        tape.registerInput(this->kin_visc_air);
-        tape.registerInput(this->C_mult);
-        tape.registerInput(this->T_mult_min);
-        tape.registerInput(this->T_mult_max);
-        tape.registerInput(this->T_mult_opt);
-        tape.registerInput(this->const0);
-        tape.registerInput(this->const3);
-        tape.registerInput(this->const4);
-        tape.registerInput(this->const5);
-        tape.registerInput(this->D_rainfrz_ig);
-        tape.registerInput(this->dv0);
-        tape.registerInput(this->p_sat_melt);
-        tape.registerInput(this->cp);
-        tape.registerInput(this->k_b);
-        tape.registerInput(this->a_HET);
-        tape.registerInput(this->b_HET);
-        tape.registerInput(this->N_sc);
-        tape.registerInput(this->n_f);
-        tape.registerInput(this->N_avo);
-        tape.registerInput(this->na_dust);
-        tape.registerInput(this->na_soot);
-        tape.registerInput(this->na_orga);
-        tape.registerInput(this->ni_het_max);
-        tape.registerInput(this->ni_hom_max);
-        tape.registerInput(this->a_dep);
-        tape.registerInput(this->b_dep);
-        tape.registerInput(this->c_dep);
-        tape.registerInput(this->d_dep);
-        tape.registerInput(this->nim_imm);
-        tape.registerInput(this->nin_dep);
-        tape.registerInput(this->alf_imm);
-        tape.registerInput(this->bet_dep);
-        tape.registerInput(this->bet_imm);
-        tape.registerInput(this->r_const);
-        tape.registerInput(this->r1_const);
-        tape.registerInput(this->cv);
-        tape.registerInput(this->p_sat_const_a);
-        tape.registerInput(this->p_sat_ice_const_a);
-        tape.registerInput(this->p_sat_const_b);
-        tape.registerInput(this->p_sat_ice_const_b);
-        tape.registerInput(this->p_sat_low_temp);
-        tape.registerInput(this->T_sat_low_temp);
-        tape.registerInput(this->alpha_depo);
-        tape.registerInput(this->r_0);
-        tape.registerInput(this->k_1_conv);
-        tape.registerInput(this->k_2_conv);
-        tape.registerInput(this->k_1_accr);
-        tape.registerInput(this->k_r);
-        for(auto &i: this->a_ccn)
-            tape.registerInput(i);
-        for(auto &i: this->b_ccn)
-            tape.registerInput(i);
-        for(auto &i: this->c_ccn)
-            tape.registerInput(i);
-        for(auto &i: this->d_ccn)
-            tape.registerInput(i);
-#endif
+        for(auto &c: this->constants)
+            tape.registerInput(c);
         this->rain.register_input(tape);
         this->cloud.register_input(tape);
         this->hail.register_input(tape);
@@ -1056,158 +512,11 @@ struct model_constants_t{
     template<class T>
     void get_gradient(T &out_vec)
     {
-#if defined(RK4_ONE_MOMENT)
-        out_vec[0] = this->a1_prime.getGradient();
-        out_vec[1] = this->a2_prime.getGradient();
-        out_vec[2] = this->e1_prime.getGradient();
-        out_vec[3] = this->e2_prime.getGradient();
-        out_vec[4] = this->d_prime.getGradient();
+        for(int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
+            out_vec[i] = this->constants[i].getGradient();
+#if defined(RK4ICE) || defined(RK4NOICE)
 
-        out_vec[5] = this->gamma.getGradient();
-        out_vec[6] = this->betac.getGradient();
-        out_vec[7] = this->betar.getGradient();
-        out_vec[8] = this->delta1.getGradient();
-        out_vec[9] = this->delta2.getGradient();
-        out_vec[10] = this->zeta.getGradient();
-
-        out_vec[11] = this->Nc_prime.getGradient();
-
-#elif defined(RK4ICE) || defined(RK4NOICE)
-        out_vec[0] = this->a1_prime.getGradient();
-        out_vec[1] = this->a2_prime.getGradient();
-        out_vec[2] = this->e1_prime.getGradient();
-        out_vec[3] = this->e2_prime.getGradient();
-        out_vec[4] = this->d_prime.getGradient();
-
-        out_vec[5] = this->gamma.getGradient();
-        out_vec[6] = this->betac.getGradient();
-        out_vec[7] = this->betar.getGradient();
-        out_vec[8] = this->delta1.getGradient();
-        out_vec[9] = this->delta2.getGradient();
-        out_vec[10] = this->zeta.getGradient();
-
-        out_vec[11] = this->Nc_prime.getGradient();
-
-        out_vec[12] = this->rain_gfak.getGradient();
-        out_vec[13] = this->cloud_k_au.getGradient();
-        out_vec[14] = this->cloud_k_sc.getGradient();
-        out_vec[15] = this->kc_autocon.getGradient();
-        out_vec[16] = this->inv_z.getGradient();
-
-        out_vec[17] = this->dw.getGradient();
-        out_vec[18] = this->q_crit_i.getGradient();
-        out_vec[19] = this->D_crit_i.getGradient();
-        out_vec[20] = this->D_conv_i.getGradient();
-        out_vec[21] = this->q_crit_r.getGradient();
-        out_vec[22] = this->D_crit_r.getGradient();
-        out_vec[23] = this->q_crit_fr.getGradient();
-        out_vec[24] = this->D_coll_c.getGradient();
-        out_vec[25] = this->q_crit.getGradient();
-        out_vec[26] = this->D_conv_sg.getGradient();
-        out_vec[27] = this->D_conv_ig.getGradient();
-        out_vec[28] = this->x_conv.getGradient();
-        out_vec[29] = this->parcel_height.getGradient();
-        out_vec[30] = this->alpha_spacefilling.getGradient();
-        out_vec[31] = this->T_nuc.getGradient();
-        out_vec[32] = this->T_freeze.getGradient();
-        out_vec[33] = this->T_f.getGradient();
-        out_vec[34] = this->D_eq.getGradient();
-        out_vec[35] = this->rho_w.getGradient();
-        out_vec[36] = this->rho_0.getGradient();
-        out_vec[37] = this->rho_vel.getGradient();
-        out_vec[38] = this->rho_vel_c.getGradient();
-        out_vec[39] = this->rho_ice.getGradient();
-        out_vec[40] = this->M_w.getGradient();
-        out_vec[41] = this->M_a.getGradient();
-        out_vec[42] = this->R_universal.getGradient();
-        out_vec[43] = this->Epsilon.getGradient();
-        out_vec[44] = this->gravity_acc.getGradient();
-        out_vec[45] = this->R_a.getGradient();
-        out_vec[46] = this->R_v.getGradient();
-        out_vec[47] = this->a_v.getGradient();
-        out_vec[48] = this->b_v.getGradient();
-        out_vec[49] = this->a_prime.getGradient();
-        out_vec[50] = this->b_prime.getGradient();
-        out_vec[51] = this->c_prime.getGradient();
-        out_vec[52] = this->K_T.getGradient();
-        out_vec[53] = this->L_wd.getGradient();
-        out_vec[54] = this->L_ed.getGradient();
-        out_vec[55] = this->D_v.getGradient();
-        out_vec[56] = this->ecoll_min.getGradient();
-        out_vec[57] = this->ecoll_gg.getGradient();
-        out_vec[58] = this->ecoll_gg_wet.getGradient();
-        out_vec[59] = this->kin_visc_air.getGradient();
-        out_vec[60] = this->C_mult.getGradient();
-        out_vec[61] = this->T_mult_min.getGradient();
-        out_vec[62] = this->T_mult_max.getGradient();
-        out_vec[63] = this->T_mult_opt.getGradient();
-        out_vec[64] = this->const0.getGradient();
-        out_vec[65] = this->const3.getGradient();
-        out_vec[66] = this->const4.getGradient();
-        out_vec[67] = this->const5.getGradient();
-        out_vec[68] = this->D_rainfrz_ig.getGradient();
-        out_vec[69] = this->dv0.getGradient();
-        out_vec[70] = this->p_sat_melt.getGradient();
-        out_vec[71] = this->cp.getGradient();
-        out_vec[72] = this->k_b.getGradient();
-        out_vec[73] = this->a_HET.getGradient();
-        out_vec[74] = this->b_HET.getGradient();
-        out_vec[75] = this->N_sc.getGradient();
-        out_vec[76] = this->n_f.getGradient();
-        out_vec[77] = this->N_avo.getGradient();
-        out_vec[78] = this->na_dust.getGradient();
-        out_vec[79] = this->na_soot.getGradient();
-        out_vec[80] = this->na_orga.getGradient();
-        out_vec[81] = this->ni_het_max.getGradient();
-        out_vec[82] = this->ni_hom_max.getGradient();
-        out_vec[83] = this->a_dep.getGradient();
-        out_vec[84] = this->b_dep.getGradient();
-        out_vec[85] = this->c_dep.getGradient();
-        out_vec[86] = this->d_dep.getGradient();
-        out_vec[87] = this->nim_imm.getGradient();
-        out_vec[88] = this->nin_dep.getGradient();
-        out_vec[89] = this->alf_imm.getGradient();
-        out_vec[90] = this->bet_dep.getGradient();
-        out_vec[91] = this->bet_imm.getGradient();
-        out_vec[92] = this->r_const.getGradient();
-        out_vec[93] = this->r1_const.getGradient();
-        out_vec[94] = this->cv.getGradient();
-        out_vec[95] = this->p_sat_const_a.getGradient();
-        out_vec[96] = this->p_sat_ice_const_a.getGradient();
-        out_vec[97] = this->p_sat_const_b.getGradient();
-        out_vec[98] = this->p_sat_ice_const_b.getGradient();
-        out_vec[99] = this->p_sat_low_temp.getGradient();
-        out_vec[100] = this->T_sat_low_temp.getGradient();
-        out_vec[101] = this->alpha_depo.getGradient();
-        out_vec[102] = this->r_0.getGradient();
-        out_vec[103] = this->k_1_conv.getGradient();
-        out_vec[104] = this->k_2_conv.getGradient();
-        out_vec[105] = this->k_1_accr.getGradient();
-        out_vec[106] = this->k_r.getGradient();
-
-
-        uint64_t idx = 107;
-        for(auto &i: this->a_ccn)
-        {
-            out_vec[idx] = i.getGradient();
-            idx++;
-        }
-        for(auto &i: this->b_ccn)
-        {
-            out_vec[idx] = i.getGradient();
-            idx++;
-        }
-        for(auto &i: this->c_ccn)
-        {
-            out_vec[idx] = i.getGradient();
-            idx++;
-        }
-        for(auto &i: this->d_ccn)
-        {
-            out_vec[idx] = i.getGradient();
-            idx++;
-        }
-
+        uint32_t idx = static_cast<uint32_t>(Cons_idx::n_items);
         this->rain.get_gradient(out_vec, idx);
         this->cloud.get_gradient(out_vec, idx);
         this->graupel.get_gradient(out_vec, idx);
@@ -1215,6 +524,131 @@ struct model_constants_t{
         this->ice.get_gradient(out_vec, idx);
         this->snow.get_gradient(out_vec, idx);
 #endif
+    }
+
+    /**
+     * Put any perturbed parameter to a property tree.
+     * This will compare the parameters to the constants
+     * available in constants.h, assuming this is only called during
+     * checkpoint writing.
+     *
+     * @params ptree Property tree, where a tree "model_constants" is being added.
+     */
+    void put(pt::ptree &ptree)
+    {
+        pt::ptree model_cons;
+        model_cons.put("id", id);
+
+        // technical parameters
+        model_cons.put("t_end_prime", t_end_prime);
+        model_cons.put("t_end", t_end);
+        model_cons.put("dt_prime", dt_prime);
+        model_cons.put("dt", dt);
+        model_cons.put("dt_traject_prime", dt_traject_prime);
+        model_cons.put("dt_traject", dt_traject);
+        model_cons.put("num_steps", num_steps);
+        model_cons.put("num_sub_steps", num_sub_steps);
+        model_cons.put("dt_half", dt_half);
+        model_cons.put("dt_sixth", dt_sixth);
+        model_cons.put("dt_third", dt_third);
+
+        if(!perturbed_idx.empty())
+        {
+            pt::ptree perturbed;
+            for(uint32_t idx: perturbed_idx)
+                perturbed.put(std::to_string(idx), constants[idx]);
+            model_cons.add_child("perturbed", perturbed);
+        }
+
+        // particle_model_constants
+        hail.put(model_cons, "hail");
+        ice.put(model_cons, "ice");
+        snow.put(model_cons, "snow");
+        cloud.put(model_cons, "cloud");
+        rain.put(model_cons, "rain");
+        graupel.put(model_cons, "graupel");
+
+        // collection coefficients depend completely on particle
+        // model constants and can be derived from there. So
+        // we skip adding that to the checkpoint.
+
+        ptree.add_child("model_constants", model_cons);
+    }
+
+    int from_pt(pt::ptree &ptree)
+    {
+        int err = 0;
+        for(auto &it: ptree.get_child("model_constants"))
+        {
+            auto first = it.first;
+            if(first == "id")
+            {
+                id = it.second.get_value<std::string>() + "_" + id;
+            } else if(first == "t_end_prime")
+            {
+                t_end_prime = it.second.get_value<double>();
+            } else if(first == "t_end")
+            {
+                t_end = it.second.get_value<double>();
+            } else if(first == "dt_prime")
+            {
+                dt_prime = it.second.get_value<double>();
+            } else if(first == "dt")
+            {
+                dt = it.second.get_value<double>();
+            } else if(first == "dt_traject_prime")
+            {
+                dt_traject_prime = it.second.get_value<double>();
+            } else if(first == "dt_traject")
+            {
+                dt_traject = it.second.get_value<double>();
+            } else if(first == "num_steps")
+            {
+                num_steps = it.second.get_value<uint64_t>();
+            } else if(first == "num_sub_steps")
+            {
+                num_sub_steps = it.second.get_value<uint64_t>();
+            } else if(first == "dt_half")
+            {
+                dt_half = it.second.get_value<double>();
+            } else if(first == "dt_sixth")
+            {
+                dt_sixth = it.second.get_value<double>();
+            } else if(first == "dt_third")
+            {
+                dt_third = it.second.get_value<double>();
+            } else if(first == "perturbed")
+            {
+                for(auto &it2: ptree.get_child("model_constants.perturbed"))
+                {
+                    uint32_t idx = std::stoi(it2.first);
+                    perturbed_idx.push_back(idx);
+                    this->constants[idx] = it2.second.get_value<double>();
+                }
+            } else if(first == "hail")
+            {
+
+            } else if(first == "ice")
+            {
+
+            } else if(first == "snow")
+            {
+
+            } else if(first == "cloud")
+            {
+
+            } else if(first == "rain")
+            {
+
+            } else if(first == "graupel")
+            {
+
+            } else
+            {
+                err = MODEL_CONS_CHECKPOINT_ERR;
+            }
+        }
+        return err;
     }
 };
 
@@ -1307,6 +741,12 @@ struct global_args_t{
   int delay_start_flag; /*!< Simulation starts at this time relative to ascend. */
   char* delay_start_string;
 #endif
+
+  int ens_config_flag; /*!< Configuration file for ensembles. */
+  char* ens_config_string;
+
+  int checkpoint_flag; /*!< Checkpoint file for the simulation. */
+  char* checkpoint_string;
 };
 
 
@@ -1315,35 +755,138 @@ struct global_args_t{
  */
 struct input_parameters_t{
 
-  // Numerics
-  double t_end_prime; /*!< End simulation time in seconds. */
-  double dt_prime; /*!< Timestep size in seconds for the simulation. */
-  double dt_traject_prime; /*!< Timestep size in seconds of the trajectory in the netCDF file. */
-  double dt_traject; /*!< Timestep size of the trajectory in the netCDF file. */
+    // Numerics
+    double t_end_prime; /*!< End simulation time in seconds. */
+    double dt_prime; /*!< Timestep size in seconds for the simulation. */
+    double dt_traject_prime; /*!< Timestep size in seconds of the trajectory in the netCDF file. */
+    double dt_traject; /*!< Timestep size of the trajectory in the netCDF file. */
 #ifdef MET3D
-  double start_time;
+    double start_time;
 #endif
-  int snapshot_index; /*!< Save a snapshot every snapshot_index iteration. */
-  /**
-   * Number of timesteps for the simulation between two
-   * datapoints from the netCDF file.
-   */
-  uint64_t num_sub_steps;
-  std::string OUTPUT_FILENAME; /*!< Filename for output. */
+    int snapshot_index; /*!< Save a snapshot every snapshot_index iteration. */
+    /**
+     * Number of timesteps for the simulation between two
+     * datapoints from the netCDF file.
+     */
+    uint64_t num_sub_steps;
+    std::string OUTPUT_FILENAME; /*!< Filename for output. */
 
-  std::string INPUT_FILENAME; /*!< Filename for input netCDF file. */
+    std::string INPUT_FILENAME; /*!< Filename for input netCDF file. */
 
-  bool start_over; /*!< Start over at new timestep of trajectory? */
-  bool start_over_env; /*!< Start over environment variables at new timestep of trajectory? */
-  bool fixed_iteration; /*!< Fix temperature and pressure at every iteration? */
+    bool start_over; /*!< Start over at new timestep of trajectory? */
+    bool start_over_env; /*!< Start over environment variables at new timestep of trajectory? */
+    bool fixed_iteration; /*!< Fix temperature and pressure at every iteration? */
 
-  double scaling_fact; /*!< Scaling factor. */
+    double scaling_fact; /*!< Scaling factor. */
 
-  uint32_t auto_type; /*!< Particle type. */
-  uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
-  uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
-  uint32_t progress_index; /*!< Index for updating progressbar. */
-  uint32_t ensemble = 0; /*!< Index of ensemble. */
+    uint32_t auto_type; /*!< Particle type. */
+    uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
+    uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
+    uint32_t progress_index; /*!< Index for updating progressbar. */
+    uint32_t ensemble = 0; /*!< Index of ensemble. */
+
+
+    void put(pt::ptree &ptree)
+    {
+        pt::ptree input_params;
+        input_params.put<double>("t_end_prime", t_end_prime);
+        input_params.put<double>("dt_prime", dt_prime);
+        input_params.put<double>("dt_traject_prime", dt_traject_prime);
+        input_params.put<double>("dt_traject", dt_traject);
+#ifdef MET3D
+        input_params.put<double>("start_time", start_time);
+#endif
+        input_params.put<int>("snapshot_index", snapshot_index);
+        input_params.put<uint64_t>("num_sub_steps", num_sub_steps);
+        input_params.put<std::string>("OUTPUT_FILENAME", OUTPUT_FILENAME);
+        input_params.put<std::string>("INPUT_FILENAME", INPUT_FILENAME);
+        input_params.put<bool>("start_over", start_over);
+        input_params.put<bool>("start_over_env", start_over_env);
+        input_params.put<bool>("fixed_iteration", fixed_iteration);
+        input_params.put<double>("scaling_fact", scaling_fact);
+        input_params.put<uint32_t>("auto_type", auto_type);
+        input_params.put<uint32_t>("traj", traj);
+        input_params.put<uint32_t>("write_index", write_index);
+        input_params.put<uint32_t>("progress_index", progress_index);
+        input_params.put<uint32_t>("ensemble", ensemble);
+        ptree.add_child("input_params", input_params);
+    }
+
+    /**
+     * Set values from property tree used in reading checkpoint files.
+     */
+    int from_pt(pt::ptree &ptree)
+    {
+        int err = 0;
+        for(auto &it: ptree.get_child("input_params"))
+        {
+            auto first = it.first;
+            if(first == "t_end_prime")
+            {
+                t_end_prime = it.second.get_value<double>();
+            } else if(first == "dt_prime")
+            {
+                dt_prime = it.second.get_value<double>();
+            } else if(first == "dt_traject_prime")
+            {
+                dt_traject_prime = it.second.get_value<double>();
+            } else if(first == "dt_traject")
+            {
+                dt_traject = it.second.get_value<double>();
+#ifdef MET3D
+            } else if(first == "start_time")
+            {
+                start_time = it.second.get_value<double>();
+#endif
+            } else if(first == "snapshot_index")
+            {
+                snapshot_index = it.second.get_value<int>();
+            } else if(first == "num_sub_steps")
+            {
+                num_sub_steps = it.second.get_value<uint64_t>();
+            } else if(first == "OUTPUT_FILENAME")
+            {
+                OUTPUT_FILENAME = it.second.data();
+            } else if(first == "INPUT_FILENAME")
+            {
+                INPUT_FILENAME = it.second.data();
+            } else if(first == "start_over")
+            {
+                start_over = (it.second.data() == "1"
+                    || it.second.data() == "true") ? true : false;
+            } else if(first == "start_over_env")
+            {
+                start_over_env = (it.second.data() == "1"
+                    || it.second.data() == "true") ? true : false;
+            } else if(first == "fixed_iteration")
+            {
+                fixed_iteration = (it.second.data() == "1"
+                    || it.second.data() == "true") ? true : false;
+            } else if(first == "scaling_fact")
+            {
+                scaling_fact = it.second.get_value<double>();
+            } else if(first == "auto_type")
+            {
+                auto_type = it.second.get_value<uint32_t>();
+            } else if(first == "traj")
+            {
+                traj = it.second.get_value<uint32_t>();
+            } else if(first == "write_index")
+            {
+                write_index = it.second.get_value<uint32_t>();
+            } else if(first == "progress_index")
+            {
+                progress_index = it.second.get_value<uint32_t>();
+            } else if(first == "ensemble")
+            {
+                ensemble = it.second.get_value<uint32_t>();
+            } else
+            {
+                err = INPUT_NAME_CHECKPOINT_ERR;
+            }
+        }
+        return err;
+    }
 };
 
 struct param_t{
@@ -1351,159 +894,15 @@ struct param_t{
     double sigma = std::nan("");
     double sigma_perc = std::nan("");
     int err = 0;
-    int name = -1;
+    uint32_t name = -1;
     int out_name = -1;
     bool particle_param = false;
     // std::function<double()> dis;
     std::normal_distribution<double> dis;
+    std::string param_name;
+    std::string outparam_name;
 
-    enum Param {
-        a_1, a_2, e_1, e_2, d,
-        N_c, model_gamma, beta_c, beta_r,
-        delta1, delta2, zeta, rain_gfak,
-        cloud_k_au, cloud_k_sc, kc_autocon, inv_z,
-        w, q_crit_i, D_crit_i, D_conv_i,
-        q_crit_r, D_crit_r, q_crit_fr, D_coll_c,
-        q_crit, D_conv_sg, D_conv_ig, x_conv,
-        parcel_height, alpha_spacefilling, T_nuc, T_freeze,
-        T_f, D_eq, rho_w, rho_0,
-        rho_vel, rho_vel_c, rho_ice, M_w,
-        M_a, R_universal, Epsilon, gravity_acc,
-        R_a, R_v, a_v, b_v,
-        a_prime, b_prime, c_prime, K_T,
-        L_wd, L_ed, D_v, ecoll_min,
-        ecoll_gg, ecoll_gg_wet, kin_visc_air, C_mult,
-        T_mult_min, T_mult_max, T_mult_opt, const0,
-        const3, const4, const5, D_rainfrz_ig,
-        dv0, p_sat_melt, cp, k_b,
-        a_HET, b_HET, N_sc, n_f,
-        N_avo, na_dust, na_soot, na_orga,
-        ni_het_max, ni_hom_max, a_dep, b_dep,
-        c_dep, d_dep, nim_imm, nin_dep,
-        alf_imm, bet_dep, bet_imm, r_const,
-        r1_const, cv, p_sat_const_a, p_sat_ice_const_a,
-        p_sat_const_b, p_sat_ice_const_b, p_sat_low_temp, T_sat_low_temp,
-        alpha_depo, r_0, k_1_conv, k_2_conv,
-        k_1_accr, k_r, a_ccn_1, a_ccn_2,
-        a_ccn_3, a_ccn_4, b_ccn_1, b_ccn_2,
-        b_ccn_3, b_ccn_4, c_ccn_1, c_ccn_2,
-        c_ccn_3, c_ccn_4, d_ccn_1, d_ccn_2,
-        d_ccn_3, d_ccn_4
-    };
-    enum ParticleParam {
-        a_geo, b_geo,
-        min_x, min_x_act, min_x_nuc_homo, min_x_nuc_hetero,
-        min_x_melt, min_x_evap, min_x_freezing, min_x_depo,
-        min_x_collision, min_x_collection, min_x_conversion, min_x_sedimentation,
-        min_x_riming, max_x, sc_theta_q, sc_delta_q,
-        sc_theta_n, sc_delta_n, s_vel, a_vel,
-        b_vel, rho_v, c_z, sc_coll_n,
-        cmu0, cmu1, cmu2, cmu3,
-        cmu4, cmu5, alpha, beta,
-        gamma, nu, g1, g2,
-        mu, nm1, nm2, nm3,
-        q_crit_c, d_crit_c, ecoll_c, cap,
-        a_ven, b_ven, c_s, a_f,
-        b_f, alfa_n, alfa_q, lambda,
-        vsedi_min, vsedi_max
-    };
-    std::unordered_map<std::string, Param> const table_param = {
-        {"a_1", Param::a_1}, {"a_2", Param::a_2},
-        {"e_1", Param::e_1}, {"e_2", Param::e_2},
-        {"d", Param::d}, {"N_c", Param::N_c},
-        {"gamma", Param::model_gamma}, {"beta_c", Param::beta_c},
-        {"beta_r", Param::beta_r}, {"delta1", Param::delta1},
-        {"delta2", Param::delta2}, {"zeta", Param::zeta},
-        {"rain_gfak", Param::rain_gfak}, {"cloud_k_au", Param::cloud_k_au},
-        {"cloud_k_sc", Param::cloud_k_sc}, {"kc_autocon", Param::kc_autocon},
-        {"inv_z", Param::inv_z}, {"w", Param::w},
-        {"q_crit_i", Param::q_crit_i}, {"D_crit_i", Param::D_crit_i},
-        {"D_conv_i", Param::D_conv_i}, {"q_crit_r", Param::q_crit_r},
-        {"D_crit_r", Param::D_crit_r}, {"q_crit_fr", Param::q_crit_fr},
-        {"D_coll_c", Param::D_coll_c}, {"q_crit", Param::q_crit},
-        {"D_conv_sg", Param::D_conv_sg}, {"D_conv_ig", Param::D_conv_ig},
-        {"x_conv", Param::x_conv}, {"parcel_height", Param::parcel_height},
-        {"alpha_spacefilling", Param::alpha_spacefilling}, {"T_nuc", Param::T_nuc},
-        {"T_freeze", Param::T_freeze}, {"T_f", Param::T_f},
-        {"D_eq", Param::D_eq}, {"rho_w", Param::rho_w},
-        {"rho_0", Param::rho_0}, {"rho_vel", Param::rho_vel},
-        {"rho_vel_c", Param::rho_vel_c}, {"rho_ice", Param::rho_ice},
-        {"M_w", Param::M_w}, {"M_a", Param::M_a},
-        {"R_universal", Param::R_universal}, {"Epsilon", Param::Epsilon},
-        {"gravity_acc", Param::gravity_acc}, {"R_a", Param::R_a},
-        {"R_v", Param::R_v}, {"a_v", Param::a_v},
-        {"b_v", Param::b_v}, {"a_prime", Param::a_prime},
-        {"b_prime", Param::b_prime}, {"c_prime", Param::c_prime},
-        {"K_T", Param::K_T}, {"L_wd", Param::L_wd},
-        {"L_ed", Param::L_ed}, {"D_v", Param::D_v},
-        {"ecoll_min", Param::ecoll_min}, {"ecoll_gg", Param::ecoll_gg},
-        {"ecoll_gg_wet", Param::ecoll_gg_wet}, {"kin_visc_air", Param::kin_visc_air},
-        {"C_mult", Param::C_mult}, {"T_mult_min", Param::T_mult_min},
-        {"T_mult_max", Param::T_mult_max}, {"T_mult_opt", Param::T_mult_opt},
-        {"const0", Param::const0}, {"const3", Param::const3},
-        {"const4", Param::const4}, {"const5", Param::const5},
-        {"D_rainfrz_ig", Param::D_rainfrz_ig}, {"dv0", Param::dv0},
-        {"p_sat_melt", Param::p_sat_melt}, {"cp", Param::cp},
-        {"k_b", Param::k_b}, {"a_HET", Param::a_HET},
-        {"b_HET", Param::b_HET}, {"N_sc", Param::N_sc},
-        {"n_f", Param::n_f}, {"N_avo", Param::N_avo},
-        {"na_dust", Param::na_dust}, {"na_soot", Param::na_soot},
-        {"na_orga", Param::na_orga}, {"ni_het_max", Param::ni_het_max},
-        {"ni_hom_max", Param::ni_hom_max}, {"a_dep", Param::a_dep},
-        {"b_dep", Param::b_dep}, {"c_dep", Param::c_dep},
-        {"d_dep", Param::d_dep}, {"nim_imm", Param::nim_imm},
-        {"nin_dep", Param::nin_dep}, {"alf_imm", Param::alf_imm},
-        {"bet_dep", Param::bet_dep}, {"bet_imm", Param::bet_imm},
-        {"r_const", Param::r_const}, {"r1_const", Param::r1_const},
-        {"cv", Param::cv}, {"p_sat_const_a", Param::p_sat_const_a},
-        {"p_sat_ice_const_a", Param::p_sat_ice_const_a}, {"p_sat_const_b", Param::p_sat_const_b},
-        {"p_sat_ice_const_b", Param::p_sat_ice_const_b}, {"p_sat_low_temp", Param::p_sat_low_temp},
-        {"T_sat_low_temp", Param::T_sat_low_temp}, {"alpha_depo", Param::alpha_depo},
-        {"r_0", Param::r_0}, {"k_1_conv", Param::k_1_conv},
-        {"k_2_conv", Param::k_2_conv}, {"k_1_accr", Param::k_1_accr},
-        {"k_r", Param::k_r}, {"a_ccn_1", Param::a_ccn_1},
-        {"a_ccn_2", Param::a_ccn_2}, {"a_ccn_3", Param::a_ccn_3},
-        {"a_ccn_4", Param::a_ccn_4}, {"b_ccn_1", Param::b_ccn_1},
-        {"b_ccn_2", Param::b_ccn_2}, {"b_ccn_3", Param::b_ccn_3},
-        {"b_ccn_4", Param::b_ccn_4}, {"c_ccn_1", Param::c_ccn_1},
-        {"c_ccn_2", Param::c_ccn_2}, {"c_ccn_3", Param::c_ccn_3},
-        {"c_ccn_4", Param::c_ccn_4}, {"d_ccn_1", Param::d_ccn_1},
-        {"d_ccn_2", Param::d_ccn_2}, {"d_ccn_3", Param::d_ccn_3},
-        {"d_ccn_4", Param::d_ccn_4}
-    };
-    std::unordered_map<std::string, ParticleParam> const table_particle_param = {
-        {"a_geo", ParticleParam::a_geo},
-        {"b_geo", ParticleParam::b_geo}, {"min_x", ParticleParam::min_x},
-        {"min_x_act", ParticleParam::min_x_act}, {"min_x_nuc_homo", ParticleParam::min_x_nuc_homo},
-        {"min_x_nuc_hetero", ParticleParam::min_x_nuc_hetero}, {"min_x_melt", ParticleParam::min_x_melt},
-        {"min_x_evap", ParticleParam::min_x_evap}, {"min_x_freezing", ParticleParam::min_x_freezing},
-        {"min_x_depo", ParticleParam::min_x_depo}, {"min_x_collision", ParticleParam::min_x_collision},
-        {"min_x_collection", ParticleParam::min_x_collection}, {"min_x_conversion", ParticleParam::min_x_conversion},
-        {"min_x_sedimentation", ParticleParam::min_x_sedimentation}, {"min_x_riming", ParticleParam::min_x_riming},
-        {"max_x", ParticleParam::max_x}, {"sc_theta_q", ParticleParam::sc_theta_q},
-        {"sc_delta_q", ParticleParam::sc_delta_q}, {"sc_theta_n", ParticleParam::sc_theta_n},
-        {"sc_delta_n", ParticleParam::sc_delta_n}, {"s_vel", ParticleParam::s_vel},
-        {"a_vel", ParticleParam::a_vel}, {"b_vel", ParticleParam::b_vel},
-        {"rho_v", ParticleParam::rho_v}, {"c_z", ParticleParam::c_z},
-        {"sc_coll_n", ParticleParam::sc_coll_n}, {"cmu0", ParticleParam::cmu0},
-        {"cmu1", ParticleParam::cmu1}, {"cmu2", ParticleParam::cmu2},
-        {"cmu3", ParticleParam::cmu3}, {"cmu4", ParticleParam::cmu4},
-        {"cmu5", ParticleParam::cmu5}, {"alpha", ParticleParam::alpha},
-        {"beta", ParticleParam::beta}, {"gamma", ParticleParam::gamma},
-        {"nu", ParticleParam::nu}, {"g1", ParticleParam::g1},
-        {"g2", ParticleParam::g2}, {"mu", ParticleParam::mu},
-        {"nm1", ParticleParam::nm1}, {"nm2", ParticleParam::nm2},
-        {"nm3", ParticleParam::nm3}, {"q_crit_c", ParticleParam::q_crit_c},
-        {"d_crit_c", ParticleParam::d_crit_c}, {"ecoll_c", ParticleParam::ecoll_c},
-        {"cap", ParticleParam::cap}, {"a_ven", ParticleParam::a_ven},
-        {"b_ven", ParticleParam::b_ven}, {"c_s", ParticleParam::c_s},
-        {"a_f", ParticleParam::a_f}, {"b_f", ParticleParam::b_f},
-        {"alfa_n", ParticleParam::alfa_n}, {"alfa_q", ParticleParam::alfa_q},
-        {"lambda", ParticleParam::lambda}, {"vsedi_min", ParticleParam::vsedi_min},
-        {"vsedi_max", ParticleParam::vsedi_max}
-    };
-
-    enum OutParam {
+    enum class OutParam: uint32_t {
         model, cloud, rain, ice, graupel, hail, snow
     };
     std::unordered_map<std::string, OutParam> const table_out_param = {
@@ -1513,607 +912,85 @@ struct param_t{
         {"hail", OutParam::hail}, {"snow", OutParam::snow}
     };
 
+    param_t()
+    {}
+
     param_t(std::string param_type)
+    {
+       add_type(param_type);
+    }
+
+    void add_type(std::string param_type)
     {
         auto it = table_out_param.find(param_type);
         if(it != table_out_param.end())
         {
-            out_name = it->second;
-            if(out_name != model)
+            out_name = static_cast<int>(it->second);
+            if(out_name != static_cast<int>(OutParam::model))
                 particle_param = true;
+            outparam_name = param_type;
         } else
         {
             err = OUTPARAM_CONFIG_ERR;
         }
     }
 
+    void add_mean(double m)
+    {
+        mean = m;
+    }
+
     void add_name(std::string n, model_constants_t &cc)
     {
-        if(particle_param)
+        param_name = n;
+        // Checkpoint files already provide a mean value
+        if(std::isnan(mean))
         {
-            auto it = table_particle_param.find(n);
-            if(it != table_particle_param.end())
+            if(particle_param)
             {
-                particle_model_constants_t *pt;
-                switch(out_name)
+                auto it = table_particle_param.find(n);
+                if(it != table_particle_param.end())
                 {
-                    case cloud:
-                        pt = &(cc.cloud);
-                        break;
-                    case rain:
-                        pt = &(cc.rain);
-                        break;
-                    case snow:
-                        pt = &(cc.snow);
-                        break;
-                    case graupel:
-                        pt = &(cc.graupel);
-                        break;
-                    case hail:
-                        pt = &(cc.hail);
-                        break;
-                    case ice:
-                        pt = &(cc.ice);
-                        break;
-                }
-                name = it->second;
-                switch(name)
+                    particle_model_constants_t *pt_model;
+                    switch(out_name)
+                    {
+                        case static_cast<uint32_t>(OutParam::cloud):
+                            pt_model = &(cc.cloud);
+                            break;
+                        case static_cast<uint32_t>(OutParam::rain):
+                            pt_model = &(cc.rain);
+                            break;
+                        case static_cast<uint32_t>(OutParam::snow):
+                            pt_model = &(cc.snow);
+                            break;
+                        case static_cast<uint32_t>(OutParam::graupel):
+                            pt_model = &(cc.graupel);
+                            break;
+                        case static_cast<uint32_t>(OutParam::hail):
+                            pt_model = &(cc.hail);
+                            break;
+                        case static_cast<uint32_t>(OutParam::ice):
+                            pt_model = &(cc.ice);
+                            break;
+                    }
+                    name = static_cast<uint32_t>(it->second);
+                    mean = pt_model->constants[name].getValue();
+                } else
                 {
-                    case a_geo:
-                        mean = pt->a_geo.getValue();
-                        break;
-                    case b_geo:
-                        mean = pt->b_geo.getValue();
-                        break;
-                    case min_x:
-                        mean = pt->min_x.getValue();
-                        break;
-                    case min_x_act:
-                        mean = pt->min_x_act.getValue();
-                        break;
-                    case min_x_nuc_homo:
-                        mean = pt->min_x_nuc_homo.getValue();
-                        break;
-                    case min_x_nuc_hetero:
-                        mean = pt->min_x_nuc_hetero.getValue();
-                        break;
-                    case min_x_melt:
-                        mean = pt->min_x_melt.getValue();
-                        break;
-                    case min_x_evap:
-                        mean = pt->min_x_evap.getValue();
-                        break;
-                    case min_x_freezing:
-                        mean = pt->min_x_freezing.getValue();
-                        break;
-                    case min_x_depo:
-                        mean = pt->min_x_depo.getValue();
-                        break;
-                    case min_x_collision:
-                        mean = pt->min_x_collision.getValue();
-                        break;
-                    case min_x_collection:
-                        mean = pt->min_x_collection.getValue();
-                        break;
-                    case min_x_conversion:
-                        mean = pt->min_x_conversion.getValue();
-                        break;
-                    case min_x_sedimentation:
-                        mean = pt->min_x_sedimentation.getValue();
-                        break;
-                    case min_x_riming:
-                        mean = pt->min_x_riming.getValue();
-                        break;
-                    case max_x:
-                        mean = pt->max_x.getValue();
-                        break;
-                    case sc_theta_q:
-                        mean = pt->sc_theta_q.getValue();
-                        break;
-                    case sc_delta_q:
-                        mean = pt->sc_delta_q.getValue();
-                        break;
-                    case sc_theta_n:
-                        mean = pt->sc_theta_n.getValue();
-                        break;
-                    case sc_delta_n:
-                        mean = pt->sc_delta_n.getValue();
-                        break;
-                    case s_vel:
-                        mean = pt->s_vel.getValue();
-                        break;
-                    case a_vel:
-                        mean = pt->a_vel.getValue();
-                        break;
-                    case b_vel:
-                        mean = pt->b_vel.getValue();
-                        break;
-                    case rho_v:
-                        mean = pt->rho_v.getValue();
-                        break;
-                    case c_z:
-                        mean = pt->c_z.getValue();
-                        break;
-                    case sc_coll_n:
-                        mean = pt->sc_coll_n.getValue();
-                        break;
-                    case cmu0:
-                        mean = pt->cmu0.getValue();
-                        break;
-                    case cmu1:
-                        mean = pt->cmu1.getValue();
-                        break;
-                    case cmu2:
-                        mean = pt->cmu2.getValue();
-                        break;
-                    case cmu3:
-                        mean = pt->cmu3.getValue();
-                        break;
-                    case cmu4:
-                        mean = pt->cmu4.getValue();
-                        break;
-                    case cmu5:
-                        mean = pt->cmu5.getValue();
-                        break;
-                    case alpha:
-                        mean = pt->alpha.getValue();
-                        break;
-                    case beta:
-                        mean = pt->beta.getValue();
-                        break;
-                    case gamma:
-                        mean = pt->gamma.getValue();
-                        break;
-                    case nu:
-                        mean = pt->nu.getValue();
-                        break;
-                    case g1:
-                        mean = pt->g1.getValue();
-                        break;
-                    case g2:
-                        mean = pt->g2.getValue();
-                        break;
-                    case mu:
-                        mean = pt->mu.getValue();
-                        break;
-                    case nm1:
-                        mean = pt->nm1.getValue();
-                        break;
-                    case nm2:
-                        mean = pt->nm2.getValue();
-                        break;
-                    case nm3:
-                        mean = pt->nm3.getValue();
-                        break;
-                    case q_crit_c:
-                        mean = pt->q_crit_c.getValue();
-                        break;
-                    case d_crit_c:
-                        mean = pt->d_crit_c.getValue();
-                        break;
-                    case ecoll_c:
-                        mean = pt->ecoll_c.getValue();
-                        break;
-                    case cap:
-                        mean = pt->cap.getValue();
-                        break;
-                    case a_ven:
-                        mean = pt->a_ven.getValue();
-                        break;
-                    case b_ven:
-                        mean = pt->b_ven.getValue();
-                        break;
-                    case c_s:
-                        mean = pt->c_s.getValue();
-                        break;
-                    case a_f:
-                        mean = pt->a_f.getValue();
-                        break;
-                    case b_f:
-                        mean = pt->b_f.getValue();
-                        break;
-                    case alfa_n:
-                        mean = pt->alfa_n.getValue();
-                        break;
-                    case alfa_q:
-                        mean = pt->alfa_q.getValue();
-                        break;
-                    case lambda:
-                        mean = pt->lambda.getValue();
-                        break;
-                    case vsedi_min:
-                        mean = pt->vsedi_min.getValue();
-                        break;
-                    case vsedi_max:
-                        mean = pt->vsedi_max.getValue();
-                        break;
+                    err = PARAM_CONFIG_ERR;
                 }
-            } else
-            {
-                err = PARAM_CONFIG_ERR;
             }
-        }
-        else
-        {
-            auto it = table_param.find(n);
-            if(it != table_param.end())
+            else
             {
-                name = it->second;
-                switch(name)
+                auto it = table_param.find(n);
+                if(it != table_param.end())
                 {
-                    case a_1:
-                        mean = cc.a1_prime.getValue();
-                        break;
-                    case a_2:
-                        mean = cc.a2_prime.getValue();
-                        break;
-                    case e_1:
-                        mean = cc.e1_prime.getValue();
-                        break;
-                    case e_2:
-                        mean = cc.e2_prime.getValue();
-                        break;
-                    case d:
-                        mean = cc.d_prime.getValue();
-                        break;
-                    case N_c:
-                        mean = cc.Nc_prime.getValue();
-                        break;
-                    case model_gamma:
-                        mean = cc.gamma.getValue();
-                        break;
-                    case beta_c:
-                        mean = cc.betac.getValue();
-                        break;
-                    case beta_r:
-                        mean = cc.betar.getValue();
-                        break;
-                    case delta1:
-                        mean = cc.delta1.getValue();
-                        break;
-                    case delta2:
-                        mean = cc.delta2.getValue();
-                        break;
-                    case zeta:
-                        mean = cc.zeta.getValue();
-                        break;
-                    case rain_gfak:
-                        mean = cc.rain_gfak.getValue();
-                        break;
-                    case cloud_k_au:
-                        mean = cc.cloud_k_au.getValue();
-                        break;
-                    case cloud_k_sc:
-                        mean = cc.cloud_k_sc.getValue();
-                        break;
-                    case kc_autocon:
-                        mean = cc.kc_autocon.getValue();
-                        break;
-                    case inv_z:
-                        mean = cc.inv_z.getValue();
-                        break;
-                    case w:
-                        mean = cc.dw.getValue();
-                        break;
-                    case q_crit_i:
-                        mean = cc.q_crit_i.getValue();
-                        break;
-                    case D_crit_i:
-                        mean = cc.D_crit_i.getValue();
-                        break;
-                    case D_conv_i:
-                        mean = cc.D_conv_i.getValue();
-                        break;
-                    case q_crit_r:
-                        mean = cc.q_crit_r.getValue();
-                        break;
-                    case D_crit_r:
-                        mean = cc.D_crit_r.getValue();
-                        break;
-                    case q_crit_fr:
-                        mean = cc.q_crit_fr.getValue();
-                        break;
-                    case D_coll_c:
-                        mean = cc.D_coll_c.getValue();
-                        break;
-                    case q_crit:
-                        mean = cc.q_crit.getValue();
-                        break;
-                    case D_conv_sg:
-                        mean = cc.D_conv_sg.getValue();
-                        break;
-                    case D_conv_ig:
-                        mean = cc.D_conv_ig.getValue();
-                        break;
-                    case x_conv:
-                        mean = cc.x_conv.getValue();
-                        break;
-                    case parcel_height:
-                        mean = cc.parcel_height.getValue();
-                        break;
-                    case alpha_spacefilling:
-                        mean = cc.alpha_spacefilling.getValue();
-                        break;
-                    case T_nuc:
-                        mean = cc.T_nuc.getValue();
-                        break;
-                    case T_freeze:
-                        mean = cc.T_freeze.getValue();
-                        break;
-                    case T_f:
-                        mean = cc.T_f.getValue();
-                        break;
-                    case D_eq:
-                        mean = cc.D_eq.getValue();
-                        break;
-                    case rho_w:
-                        mean = cc.rho_w.getValue();
-                        break;
-                    case rho_0:
-                        mean = cc.rho_0.getValue();
-                        break;
-                    case rho_vel:
-                        mean = cc.rho_vel.getValue();
-                        break;
-                    case rho_vel_c:
-                        mean = cc.rho_vel_c.getValue();
-                        break;
-                    case rho_ice:
-                        mean = cc.rho_ice.getValue();
-                        break;
-                    case M_w:
-                        mean = cc.M_w.getValue();
-                        break;
-                    case M_a:
-                        mean = cc.M_a.getValue();
-                        break;
-                    case R_universal:
-                        mean = cc.R_universal.getValue();
-                        break;
-                    case Epsilon:
-                        mean = cc.Epsilon.getValue();
-                        break;
-                    case gravity_acc:
-                        mean = cc.gravity_acc.getValue();
-                        break;
-                    case R_a:
-                        mean = cc.R_a.getValue();
-                        break;
-                    case R_v:
-                        mean = cc.R_v.getValue();
-                        break;
-                    case a_v:
-                        mean = cc.a_v.getValue();
-                        break;
-                    case b_v:
-                        mean = cc.b_v.getValue();
-                        break;
-                    case a_prime:
-                        mean = cc.a_prime.getValue();
-                        break;
-                    case b_prime:
-                        mean = cc.b_prime.getValue();
-                        break;
-                    case c_prime:
-                        mean = cc.c_prime.getValue();
-                        break;
-                    case K_T:
-                        mean = cc.K_T.getValue();
-                        break;
-                    case L_wd:
-                        mean = cc.L_wd.getValue();
-                        break;
-                    case L_ed:
-                        mean = cc.L_ed.getValue();
-                        break;
-                    case D_v:
-                        mean = cc.D_v.getValue();
-                        break;
-                    case ecoll_min:
-                        mean = cc.ecoll_min.getValue();
-                        break;
-                    case ecoll_gg:
-                        mean = cc.ecoll_gg.getValue();
-                        break;
-                    case ecoll_gg_wet:
-                        mean = cc.ecoll_gg_wet.getValue();
-                        break;
-                    case kin_visc_air:
-                        mean = cc.kin_visc_air.getValue();
-                        break;
-                    case C_mult:
-                        mean = cc.C_mult.getValue();
-                        break;
-                    case T_mult_min:
-                        mean = cc.T_mult_min.getValue();
-                        break;
-                    case T_mult_max:
-                        mean = cc.T_mult_max.getValue();
-                        break;
-                    case T_mult_opt:
-                        mean = cc.T_mult_opt.getValue();
-                        break;
-                    case const0:
-                        mean = cc.const0.getValue();
-                        break;
-                    case const3:
-                        mean = cc.const3.getValue();
-                        break;
-                    case const4:
-                        mean = cc.const4.getValue();
-                        break;
-                    case const5:
-                        mean = cc.const5.getValue();
-                        break;
-                    case D_rainfrz_ig:
-                        mean = cc.D_rainfrz_ig.getValue();
-                        break;
-                    case dv0:
-                        mean = cc.dv0.getValue();
-                        break;
-                    case p_sat_melt:
-                        mean = cc.p_sat_melt.getValue();
-                        break;
-                    case cp:
-                        mean = cc.cp.getValue();
-                        break;
-                    case k_b:
-                        mean = cc.k_b.getValue();
-                        break;
-                    case a_HET:
-                        mean = cc.a_HET.getValue();
-                        break;
-                    case b_HET:
-                        mean = cc.b_HET.getValue();
-                        break;
-                    case N_sc:
-                        mean = cc.N_sc.getValue();
-                        break;
-                    case n_f:
-                        mean = cc.n_f.getValue();
-                        break;
-                    case N_avo:
-                        mean = cc.N_avo.getValue();
-                        break;
-                    case na_dust:
-                        mean = cc.na_dust.getValue();
-                        break;
-                    case na_soot:
-                        mean = cc.na_soot.getValue();
-                        break;
-                    case na_orga:
-                        mean = cc.na_orga.getValue();
-                        break;
-                    case ni_het_max:
-                        mean = cc.ni_het_max.getValue();
-                        break;
-                    case ni_hom_max:
-                        mean = cc.ni_hom_max.getValue();
-                        break;
-                    case a_dep:
-                        mean = cc.a_dep.getValue();
-                        break;
-                    case b_dep:
-                        mean = cc.b_dep.getValue();
-                        break;
-                    case c_dep:
-                        mean = cc.c_dep.getValue();
-                        break;
-                    case d_dep:
-                        mean = cc.d_dep.getValue();
-                        break;
-                    case nim_imm:
-                        mean = cc.nim_imm.getValue();
-                        break;
-                    case nin_dep:
-                        mean = cc.nin_dep.getValue();
-                        break;
-                    case alf_imm:
-                        mean = cc.alf_imm.getValue();
-                        break;
-                    case bet_dep:
-                        mean = cc.bet_dep.getValue();
-                        break;
-                    case bet_imm:
-                        mean = cc.bet_imm.getValue();
-                        break;
-                    case r_const:
-                        mean = cc.r_const.getValue();
-                        break;
-                    case r1_const:
-                        mean = cc.r1_const.getValue();
-                        break;
-                    case cv:
-                        mean = cc.cv.getValue();
-                        break;
-                    case p_sat_const_a:
-                        mean = cc.p_sat_const_a.getValue();
-                        break;
-                    case p_sat_ice_const_a:
-                        mean = cc.p_sat_ice_const_a.getValue();
-                        break;
-                    case p_sat_const_b:
-                        mean = cc.p_sat_const_b.getValue();
-                        break;
-                    case p_sat_ice_const_b:
-                        mean = cc.p_sat_ice_const_b.getValue();
-                        break;
-                    case p_sat_low_temp:
-                        mean = cc.p_sat_low_temp.getValue();
-                        break;
-                    case T_sat_low_temp:
-                        mean = cc.T_sat_low_temp.getValue();
-                        break;
-                    case alpha_depo:
-                        mean = cc.alpha_depo.getValue();
-                        break;
-                    case r_0:
-                        mean = cc.r_0.getValue();
-                        break;
-                    case k_1_conv:
-                        mean = cc.k_1_conv.getValue();
-                        break;
-                    case k_2_conv:
-                        mean = cc.k_2_conv.getValue();
-                        break;
-                    case k_1_accr:
-                        mean = cc.k_1_accr.getValue();
-                        break;
-                    case k_r:
-                        mean = cc.k_r.getValue();
-                        break;
-                    case a_ccn_1:
-                        mean = cc.a_ccn[0].getValue();
-                        break;
-                    case a_ccn_2:
-                        mean = cc.a_ccn[1].getValue();
-                        break;
-                    case a_ccn_3:
-                        mean = cc.a_ccn[2].getValue();
-                        break;
-                    case a_ccn_4:
-                        mean = cc.a_ccn[3].getValue();
-                        break;
-                    case b_ccn_1:
-                        mean = cc.b_ccn[0].getValue();
-                        break;
-                    case b_ccn_2:
-                        mean = cc.b_ccn[1].getValue();
-                        break;
-                    case b_ccn_3:
-                        mean = cc.b_ccn[2].getValue();
-                        break;
-                    case b_ccn_4:
-                        mean = cc.b_ccn[3].getValue();
-                        break;
-                    case c_ccn_1:
-                        mean = cc.c_ccn[0].getValue();
-                        break;
-                    case c_ccn_2:
-                        mean = cc.c_ccn[1].getValue();
-                        break;
-                    case c_ccn_3:
-                        mean = cc.c_ccn[2].getValue();
-                        break;
-                    case c_ccn_4:
-                        mean = cc.c_ccn[3].getValue();
-                        break;
-                    case d_ccn_1:
-                        mean = cc.d_ccn[0].getValue();
-                        break;
-                    case d_ccn_2:
-                        mean = cc.d_ccn[1].getValue();
-                        break;
-                    case d_ccn_3:
-                        mean = cc.d_ccn[2].getValue();
-                        break;
-                    case d_ccn_4:
-                        mean = cc.d_ccn[3].getValue();
-                        break;
+                    name = static_cast<uint32_t>(it->second);
+                    mean = get_at(cc.constants, name).getValue();
+                } else
+                {
+                    err = PARAM_CONFIG_ERR;
                 }
-            } else
-            {
-                err = PARAM_CONFIG_ERR;
             }
         }
         if(!isnan(sigma) && err != PARAM_CONFIG_ERR)
@@ -2156,8 +1033,7 @@ struct param_t{
         {
             std::cout << "Error in config file:\n"
                       << "You did not specify the parameter to perturb or "
-                      << "you have a typo at <name>typo</name>\n"
-                      << "Skipping this parameter.\n";
+                      << "you have a typo at <name>typo</name>\n";
             err = MISSING_PARAM_CONFIG_ERR;
             return err;
         }
@@ -2175,21 +1051,67 @@ struct param_t{
             case PARAM_CONFIG_ERR:
                 std::cout << "Error in config file:\n"
                           << "You used a parameter to perturb that does "
-                          << "not exist.\n"
-                          << "Skipping this parameter.\n";
+                          << "not exist.\n";
                 return err;
 
             case OUTPARAM_CONFIG_ERR:
                 std::cout << "Error in config file:\n"
                           << "You used an output parameter that does "
-                          << "not exist.\n"
-                          << "Skipping this parameter.\n";
+                          << "not exist.\n";
                 return err;
 
             default:
                 return err;
 
         }
+    }
+
+    void put(pt::ptree &ptree)
+    {
+        if(err != 0)
+            return;
+        pt::ptree param;
+        param.put("mean", mean);
+        param.put("name", param_name);
+        if(!isnan(sigma))
+            param.put("sigma", sigma);
+        else
+            param.put("sigma_perc", sigma_perc);
+        param.put("type", outparam_name);
+        // ptree.add_child("params.", param);
+        ptree.push_back(std::make_pair("", param));
+    }
+
+    int from_pt(pt::ptree &ptree, model_constants_t &cc)
+    {
+        int err = 0;
+        add_type(ptree.get<std::string>("type"));
+        if(err != 0)
+            return err;
+        for(auto &it: ptree)
+        {
+            auto first = it.first;
+            if(first == "name")
+            {
+                add_name(it.second.get_value<std::string>(), cc);
+            } else if(first == "sigma_perc")
+            {
+                add_sigma_perc(it.second.get_value<double>());
+            } else if(first == "sigma")
+            {
+                add_sigma(it.second.get_value<double>());
+            } else if(first == "mean")
+            {
+                add_mean(it.second.get_value<double>());
+            } else if(first == "type")
+            {
+                // Needs to be done before the for-loop.
+            } else
+            {
+                err = PARAM_CONFIG_ERR;
+            }
+        }
+        return err;
     }
 };
 
@@ -2202,7 +1124,9 @@ struct segment_t
     int out_param = -1;
     uint32_t n_segments = 1;
     uint32_t err = 0;
-    byte old_sign = 0;
+    char old_sign = 0;
+    std::unordered_map<std::string, std::string> tree_strings;
+    bool activated = false;
 
     enum Method {
         impact_change, sign_flip, value_method
@@ -2616,6 +1540,7 @@ struct segment_t
         if(it != table_param.end())
         {
             value_name = it->second;
+            tree_strings.insert({"when_name", n});
         } else
         {
             err = VALUE_NAME_CONFIG_ERR;
@@ -2628,6 +1553,7 @@ struct segment_t
         if(it != table_method.end())
         {
             method = it->second;
+            tree_strings.insert({"when_method", m});
         } else
         {
             err = METHOD_CONFIG_ERR;
@@ -2648,6 +1574,7 @@ struct segment_t
         if(it != table_out_param.end())
         {
             out_param = it->second;
+            tree_strings.insert({"when_sens", p});
         } else
         {
             err = OUTPARAM_CONFIG_ERR;
@@ -2668,11 +1595,11 @@ struct segment_t
             err = N_MEMBERS_CONFIG_ERR;
         else if(n_segments < 1)
             err = N_SEGMENTS_CONFIG_ERR;
-        else if(value_name == -1)
+        else if(value_name == -1 && method != Method::impact_change)
             err = VALUE_NAME_CONFIG_ERR;
         else if(method == -1)
             err = METHOD_CONFIG_ERR;
-        else if(out_param == -1)
+        else if(out_param == -1 && value_name>=Param::rain_a_geo)
             err = OUTPARAM_CONFIG_ERR;
         switch(err)
         {
@@ -2680,39 +1607,34 @@ struct segment_t
                 std::cout << "Error in config file:\n"
                           << "The name of the parameter used to determine "
                           << "when to start an ensemble is not defined or "
-                          << "does not exist.\n"
-                          << "Skipping this segment\n";
+                          << "does not exist.\n";
                 n_segments = 0;
-                return err
-            case METHOD_CONFIG_ERR
+                return err;
+            case METHOD_CONFIG_ERR:
                 std::cout << "Error in config file:\n"
                           << "The name of the method used to determine "
                           << "when to start an ensemble is not defined or "
-                          << "does not exist.\n"
-                          << "Skipping this segment\n";
+                          << "does not exist.\n";
                 n_segments = 0;
-                return err
+                return err;
             case OUTPARAM_CONFIG_ERR:
                 std::cout << "Error in config file:\n"
                           << "The name of the output parameter used to determine "
                           << "when to start an ensemble is not defined or "
-                          << "does not exist.\n"
-                          << "Skipping this segment\n";
+                          << "does not exist.\n";
                 n_segments = 0;
-                return err
+                return err;
             case N_MEMBERS_CONFIG_ERR:
                 std::cout << "Error in config file:\n"
                           << "The number of members for an ensemble must be "
                           << "2 or higher. One simulation always runs without "
-                          << "perturbed parameters for comparison.\n"
-                          << "Skipping this segment\n";
+                          << "perturbed parameters for comparison.\n";
                 n_segments = 0;
                 return err;
             case N_SEGMENTS_CONFIG_ERR:
                 std::cout << "Error in config file:\n"
                           << "The number of segments must be at least 1 in "
-                          << "order to start at least 1 ensemble.\n"
-                          << "Skipping this segment\n";
+                          << "order to start at least 1 ensemble.\n";
                 n_segments = 0;
                 return err;
         }
@@ -2721,56 +1643,152 @@ struct segment_t
         return err;
     }
 
+    /**
+     * Check if perturbing is necessary.
+     *
+     */
     template<class float_t>
-    void perturb_check(model_constants_t &cc, std::vector<float_t> &gradients)
+    bool perturb_check(model_constants_t &cc, std::vector<float_t> &gradients)
     {
         // TODO: Add derivatives and current state
         if(n_segments == 0)
-            return;
+            return false;
+        int idx;
         switch(method)
         {
             case impact_change:
-                int idx = value_name - num_comp;
+                idx = value_name - num_comp;
 
 
                 break;
             case sign_flip:
-                int idx = value_name - num_comp;
-                if(byte == 0)
+                idx = value_name - num_comp;
+                if(old_sign == 0)
                 {
-                    // set sign
+                    // set sign; no perturbing needed.
                     if(gradients[idx] == 0)
-                        break;
-                    byte = (gradients[idx] > 0) ? 1 : 2;
+                        return false;
+                    old_sign = (gradients[idx] > 0) ? 1 : 2;
+                    return false;
                 } else
                 {
-                    if(byte == 1 && gradients[idx] < 0)
+                    // check if a sign change happend
+                    if(old_sign == 1 && gradients[idx] < 0)
                     {
-                        // Perturb parameters
-                        // idea: Run a new script that allocates
-                        // the necessary stuff using
-                        // stdlib.h
-                        // system("next_job.job")
-                        // Other idea: create a checkpoint that
-                        // can be used as start for more processes
                         n_segments--;
-                    }else if(byte == 0 && gradients[idx] > 0)
+                        activated = true;
+                        return true;
+                    }else if(old_sign == 0 && gradients[idx] > 0)
                     {
                         // Perturb parameters
                         n_segments--;
+                        activated = true;
+                        return true;
                     }
+                    return false;
                 }
                 break;
             case value_method:
                 if(out_param != -1)
                 {
-                    int idx = value_name - num_comp;
+                    idx = value_name - num_comp;
                 } else
                 {
 
                 }
                 break;
         }
+    }
+
+    void perturb(model_constants_t &cc)
+    {
+
+    }
+
+    void put(pt::ptree &ptree) // pt::ptree &ptree
+    {
+        pt::ptree segment;
+        if( (err != 0 || n_segments < 1) && !activated)
+            return;
+
+        if(!isnan(value))
+        {
+            segment.put("when_value", value);
+        }
+        if(value_name != -1)
+        {
+            segment.put("when_name", tree_strings.find("when_name")->second);
+        }
+        if(out_param != -1)
+        {
+            segment.put("when_sens", tree_strings.find("when_sens")->second);
+        }
+        if(n_segments != 1)
+        {
+            segment.put("when_counter", n_segments);
+        }
+        if(method != value_method)
+        {
+            segment.put("when_method",  tree_strings.find("when_method")->second);
+        }
+        if(n_members != 1)
+        {
+            segment.put("amount", n_members);
+        }
+        if(activated)
+        {
+            segment.put("activated", true);
+            activated = false;
+        }
+        pt::ptree param_tree;
+        for(auto &p: params)
+            p.put(param_tree);
+        segment.add_child("params", param_tree);
+        ptree.push_back(std::make_pair("", segment));
+    }
+
+    /**
+     * Used to read from a checkpoint file where the mean for the gaussians
+     * to draw from is given.
+     */
+    int from_pt(pt::ptree &ptree, model_constants_t &cc)
+    {
+        int err = 0;
+        for(auto &it: ptree)
+        {
+            auto first = it.first;
+            if(first == "when_value")
+            {
+                add_value(it.second.get_value<double>());
+            } else if(first == "when_name")
+            {
+                add_value_name(it.second.get_value<std::string>());
+            } else if(first == "amount")
+            {
+                add_amount(it.second.get_value<uint32_t>());
+            } else if(first == "when_method")
+            {
+                add_method(it.second.get_value<std::string>());
+            } else if(first == "when_counter")
+            {
+                add_counter(it.second.get_value<uint32_t>());
+            } else if(first == "when_sens")
+            {
+                add_out_param(it.second.get_value<std::string>());
+            } else if(first == "params")
+            {
+                for(auto &param_it: ptree.get_child(first))
+                {
+                    param_t param;
+                    err = param.from_pt(param_it.second, cc);
+                    add_param(param);
+                }
+            } else
+            {
+                err = SEGMENTS_CHECKPOINT_ERR;
+            }
+        }
+        return err;
     }
 };
 
