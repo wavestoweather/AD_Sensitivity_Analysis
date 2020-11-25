@@ -72,9 +72,7 @@ int main(int argc, char** argv)
     std::vector<double> y(num_comp);
     // Populate y with some numbers
     for(uint32_t i=0; i<num_comp; ++i)
-    {
         y[i] = file[i%std::strlen(file)];
-    }
 
     input_parameters_t input;
     // Write a checkpoint file
@@ -82,18 +80,27 @@ int main(int argc, char** argv)
 
     // and load it again
     SUCCESS_OR_DIE(load_checkpoint("tmp_checkpoint_0.json", cc, y, segments, input));
+    for(auto &s: segments)
+        SUCCESS_OR_DIE(s.check());
 
-    // Perturb parameters
+    // Perturb parameters for one segment
+    segments[0].perturb(cc);
+    // Loading it later and checking it would fail, if the following line
+    // were missing. This is only needed for the test case here.
+    // During operation, we would load the checkpoint first and then
+    // perturb.
+    segments[0].n_segments++;
 
     // Write again as checkpoint file
+    write_checkpoint("tmp_checkpoint_perturbed", cc, y, segments, input);
 
-    // load it again
+    // Load it again
+    SUCCESS_OR_DIE(load_checkpoint("tmp_checkpoint_perturbed_0.json", cc, y, segments, input));
 
-    // Check if parameters are still perturbed
-
+    for(auto &s: segments)
+        SUCCESS_OR_DIE(s.check());
 
     int traj_id;
-
     try
     {
         int dimid, ncid;

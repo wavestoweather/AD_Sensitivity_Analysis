@@ -3,6 +3,7 @@
 
 #include "codi.hpp"
 #include <cmath>
+#include <random>
 
 /** @defgroup constants Constants
  * Various constants for accessing data in the right order and model constants
@@ -72,6 +73,13 @@
 #else
 #define num_inflows 8       /*!< Number of parameters for inflowing stuff */
 #endif
+
+////////////////////////////////////////////////////////////////////////////////
+// Random generators
+////////////////////////////////////////////////////////////////////////////////
+
+std::random_device rand_device{};
+std::mt19937 rand_generator{rand_device()};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constants

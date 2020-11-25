@@ -625,24 +625,55 @@ struct model_constants_t{
                     perturbed_idx.push_back(idx);
                     this->constants[idx] = it2.second.get_value<double>();
                 }
+            // below from here: perturbed particle models
             } else if(first == "hail")
             {
-
+                for(auto &it2: ptree.get_child("model_constants.hail.perturbed"))
+                {
+                    uint32_t idx = std::stoi(it2.first);
+                    this->hail.perturbed_idx.push_back(idx);
+                    this->hail.constants[idx] = it2.second.get_value<double>();
+                }
             } else if(first == "ice")
             {
-
+                for(auto &it2: ptree.get_child("model_constants.ice.perturbed"))
+                {
+                    uint32_t idx = std::stoi(it2.first);
+                    this->ice.perturbed_idx.push_back(idx);
+                    this->ice.constants[idx] = it2.second.get_value<double>();
+                }
             } else if(first == "snow")
             {
-
+                for(auto &it2: ptree.get_child("model_constants.snow.perturbed"))
+                {
+                    uint32_t idx = std::stoi(it2.first);
+                    this->snow.perturbed_idx.push_back(idx);
+                    this->snow.constants[idx] = it2.second.get_value<double>();
+                }
             } else if(first == "cloud")
             {
-
+                for(auto &it2: ptree.get_child("model_constants.cloud.perturbed"))
+                {
+                    uint32_t idx = std::stoi(it2.first);
+                    this->cloud.perturbed_idx.push_back(idx);
+                    this->cloud.constants[idx] = it2.second.get_value<double>();
+                }
             } else if(first == "rain")
             {
-
+                for(auto &it2: ptree.get_child("model_constants.rain.perturbed"))
+                {
+                    uint32_t idx = std::stoi(it2.first);
+                    this->rain.perturbed_idx.push_back(idx);
+                    this->rain.constants[idx] = it2.second.get_value<double>();
+                }
             } else if(first == "graupel")
             {
-
+                for(auto &it2: ptree.get_child("model_constants.graupel.perturbed"))
+                {
+                    uint32_t idx = std::stoi(it2.first);
+                    this->graupel.perturbed_idx.push_back(idx);
+                    this->graupel.constants[idx] = it2.second.get_value<double>();
+                }
             } else
             {
                 err = MODEL_CONS_CHECKPOINT_ERR;
@@ -1112,6 +1143,41 @@ struct param_t{
             }
         }
         return err;
+    }
+
+    void perturb(model_constants_t &cc)
+    {
+        if(particle_param)
+        {
+            particle_model_constants_t *pt_model;
+            switch(out_name)
+            {
+                case static_cast<uint32_t>(OutParam::cloud):
+                    pt_model = &(cc.cloud);
+                    break;
+                case static_cast<uint32_t>(OutParam::rain):
+                    pt_model = &(cc.rain);
+                    break;
+                case static_cast<uint32_t>(OutParam::snow):
+                    pt_model = &(cc.snow);
+                    break;
+                case static_cast<uint32_t>(OutParam::graupel):
+                    pt_model = &(cc.graupel);
+                    break;
+                case static_cast<uint32_t>(OutParam::hail):
+                    pt_model = &(cc.hail);
+                    break;
+                case static_cast<uint32_t>(OutParam::ice):
+                    pt_model = &(cc.ice);
+                    break;
+            }
+            pt_model->constants[name] = dis(rand_generator);
+            pt_model->perturbed_idx.push_back(name);
+        } else
+        {
+            cc.constants[name] = dis(rand_generator);
+            cc.perturbed_idx.push_back(name);
+        }
     }
 };
 
@@ -1675,13 +1741,11 @@ struct segment_t
                     // check if a sign change happend
                     if(old_sign == 1 && gradients[idx] < 0)
                     {
-                        n_segments--;
                         activated = true;
                         return true;
                     }else if(old_sign == 0 && gradients[idx] > 0)
                     {
                         // Perturb parameters
-                        n_segments--;
                         activated = true;
                         return true;
                     }
@@ -1702,7 +1766,15 @@ struct segment_t
 
     void perturb(model_constants_t &cc)
     {
+        // Sanity check if had been done already
+        if(n_segments == 0)
+            return;
 
+        // Perturb every param
+        for(auto &p: params)
+            p.perturb(cc);
+        n_segments--;
+        activated = false;
     }
 
     void put(pt::ptree &ptree) // pt::ptree &ptree
