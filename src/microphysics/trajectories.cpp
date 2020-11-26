@@ -114,19 +114,17 @@ int main(int argc, char** argv)
 
     nc_parameters_t nc_params;
     size_t lenp;
-    if(read_init_netcdf(y_init, nc_params, lenp, ref_quant,
+    SUCCESS_OR_DIE(read_init_netcdf(y_init, nc_params, lenp, ref_quant,
 #ifdef MET3D
         input.start_time,
 #endif
-        input.INPUT_FILENAME.c_str(), input.traj, global_args.checkpoint_flag, cc) != 0)
-    {
-        return 1;
-    }
+        input.INPUT_FILENAME.c_str(), input.traj, global_args.checkpoint_flag,
+        cc, input.current_time_idx));
+
 #ifdef MET3D
-    if(write_attributes(input.INPUT_FILENAME, input.OUTPUT_FILENAME) != 0)
-    {
-        return 1;
-    }
+    // The attributes do not change, hence we need only one file for each ensemble
+    if(!global_args.checkpoint_flag)
+        SUCCESS_OR_DIE(write_attributes(input.INPUT_FILENAME, input.OUTPUT_FILENAME));
 #endif
 
 
@@ -153,18 +151,13 @@ int main(int argc, char** argv)
     for(int ii = 0 ; ii < num_comp ; ii++)
         y_single_old[ii] = y_init[ii];
 
-    // ==================================================
-    // Arrange the Output
-    // ==================================================
-    if(write_reference_quantities(input.OUTPUT_FILENAME, ref_quant) != 0)
-    {
-        return 1;
-    }
 
-    if(write_headers(input.OUTPUT_FILENAME) != 0)
-    {
-        return 1;
-    }
+    // Reference quantities should not change in an ensemble
+    if(!global_args.checkpoint_flag)
+        SUCCESS_OR_DIE(write_reference_quantities(input.OUTPUT_FILENAME, ref_quant));
+
+    SUCCESS_OR_DIE(write_headers(input.OUTPUT_FILENAME));
+
 #ifdef TRACE_QC
     print_particle_params(cc.cloud, "cloud");
 #endif

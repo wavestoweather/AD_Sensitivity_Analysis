@@ -583,7 +583,7 @@ struct model_constants_t{
             auto first = it.first;
             if(first == "id")
             {
-                id = it.second.get_value<std::string>() + "_" + id;
+                id = it.second.get_value<std::string>() + "-" + id;
             } else if(first == "t_end_prime")
             {
                 t_end_prime = it.second.get_value<double>();
@@ -851,7 +851,7 @@ struct input_parameters_t{
     double dt_traject_prime; /*!< Timestep size in seconds of the trajectory in the netCDF file. */
     double dt_traject; /*!< Timestep size of the trajectory in the netCDF file. */
 #ifdef MET3D
-    double start_time;
+    double start_time; /*!< start time in seconds relativ to ascend */
 #endif
     int snapshot_index; /*!< Save a snapshot every snapshot_index iteration. */
     /**
@@ -876,7 +876,8 @@ struct input_parameters_t{
     uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
     uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
     uint32_t progress_index; /*!< Index for updating progressbar. */
-    uint32_t ensemble = 0; /*!< Index of ensemble. */
+    uint32_t ensemble; /*!< Index of ensemble. */
+    uint64_t current_time_idx; /*!< Index of time for and from checkpoint files. */
 
     input_parameters_t()
     {
@@ -887,13 +888,13 @@ struct input_parameters_t{
         dt_traject = 20;       // Seconds; fixed from paper
         // Filename for output
 #if defined(RK4)
-        OUTPUT_FILENAME = "data/rain_OUTPUT.txt";
+        OUTPUT_FILENAME = "data/id0_rain_OUTPUT.txt";
 #endif
 #if defined(RK4NOICE)
-        OUTPUT_FILENAME = "data/sb_OUTPUT.txt";
+        OUTPUT_FILENAME = "data/id0_sb_OUTPUT.txt";
 #endif
 #if defined(RK4ICE)
-        OUTPUT_FILENAME = "data/sb_ice_OUTPUT.txt";
+        OUTPUT_FILENAME = "data/id0_sb_ice_OUTPUT.txt";
 #endif
         CHECKPOINT_FILENAME = "";
         ENS_CONFIG_FILENAME = "",
@@ -910,12 +911,68 @@ struct input_parameters_t{
         traj = 0;
         write_index = 100000;
         progress_index = 1000;
+        ensemble = 0;
 #ifdef MET3D
         start_time = std::nan("");
 #endif
+        current_time_idx = 0;
+        id = 0;
     }
 
-    void put(pt::ptree &ptree, const double &current_time) const
+    /**
+     * Change the output filename such that it starts with "idx-y-z_"
+     * where x-y are the ids of preceding trajectories and z is the current id
+     *
+     * @params all_ids String of form x-y-z with x,y and z positive ints
+     *                 and z being the current id.
+     */
+    void set_outputfile_id(const std::string &all_ids)
+    {
+        std::string preceeding_ids = "";
+        if(all_ids.length() > 1)
+            preceeding_ids = all_ids.substr(0, all_ids.length()-2);
+
+        if(preceeding_ids == "")
+        {
+            std::string id_str = "id" + std::to_string(id) + "_";
+            auto pos = OUTPUT_FILENAME.find("/");
+            if(pos == std::string::npos)
+            {
+                OUTPUT_FILENAME.insert(0, id_str);
+            } else
+            {
+                OUTPUT_FILENAME.insert(pos+1, id_str);
+            }
+
+        } else // or not
+        {
+            std::string id_str = "id" + all_ids + "_";
+            std::string to_replace = "id" + preceeding_ids + "_";
+            auto pos = OUTPUT_FILENAME.find(to_replace);
+
+            OUTPUT_FILENAME.replace(pos, to_replace.length(), id_str);
+
+            if(pos != std::string::npos)
+            {
+                // This *should* always be the correct branch
+                OUTPUT_FILENAME.replace(pos, to_replace.length(), id_str);
+            } else
+            {
+                // If for any weird reason, "id" is not part of OUTPUT_FILENAME:
+                // Add to beginning of the filename. Check for any path characters
+                auto pos_folder = OUTPUT_FILENAME.find("/");
+                if(pos == std::string::npos)
+                {
+                    OUTPUT_FILENAME.insert(0, id_str);
+                } else
+                {
+                    OUTPUT_FILENAME.insert(pos_folder+1, id_str);
+                }
+            }
+        }
+    }
+
+    void put(pt::ptree &ptree, const uint64_t &time_idx) const
     {
         pt::ptree input_params;
         input_params.put<double>("t_end_prime", t_end_prime);
@@ -923,7 +980,7 @@ struct input_parameters_t{
         input_params.put<double>("dt_traject_prime", dt_traject_prime);
         input_params.put<double>("dt_traject", dt_traject);
 #ifdef MET3D
-        input_params.put<double>("start_time", current_time);
+        input_params.put<double>("start_time", start_time);
 #endif
         input_params.put<int>("snapshot_index", snapshot_index);
         input_params.put<uint64_t>("num_sub_steps", num_sub_steps);
@@ -938,13 +995,13 @@ struct input_parameters_t{
         input_params.put<uint32_t>("write_index", write_index);
         input_params.put<uint32_t>("progress_index", progress_index);
         input_params.put<uint32_t>("ensemble", ensemble);
+        input_params.put<uint64_t>("current_time_idx", time_idx);
         ptree.add_child("input_params", input_params);
     }
 
     void put(pt::ptree &ptree) const
     {
-        put(ptree, start_time);
-        pt::ptree input_params;
+        put(ptree, current_time_idx);
     }
 
     /**

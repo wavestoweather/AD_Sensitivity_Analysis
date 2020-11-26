@@ -72,6 +72,9 @@ int load_checkpoint(
     setup_model_constants(input, cc, ref_quant);
     // Parse the model constants
     SUCCESS_OR_DIE(cc.from_pt(pt));
+    // cc.id are the preceeding ids
+    input.set_outputfile_id(cc.id);
+
 
     // Parse the segments
     for(auto &it: pt.get_child("segments"))
@@ -1048,7 +1051,8 @@ int read_init_netcdf(
     const char *input_file,
     const uint32_t traj,
     const bool checkpoint_flag,
-    model_constants_t &cc)
+    model_constants_t &cc,
+    uint32_t start_time_idx=0)
 {
     try
     {
@@ -1078,7 +1082,7 @@ int read_init_netcdf(
         nc_inq_dimid(ncid, "time", &dimid);
 #endif
         nc_inq_dimlen(ncid, dimid, &n_timesteps);
-        uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1;
+        uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1 - start_time_idx;
         cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
 
         init_nc_parameters(nc_params, lenp, n_timesteps);
@@ -1099,11 +1103,11 @@ int read_init_netcdf(
         startp.push_back(0); // time
         startp.push_back(traj); // trajectory id
 #elif defined MET3D
-        uint64_t start_time_idx = 0;
+
         startp.push_back(0); // ensemble
         startp.push_back(traj); // trajectory
         startp.push_back(start_time_idx); // time
-        if(!std::isnan(start_time))
+        if(!std::isnan(start_time) && !checkpoint_flag)
         {
             double rel_start_time;
             // Get relative start time of trajectory

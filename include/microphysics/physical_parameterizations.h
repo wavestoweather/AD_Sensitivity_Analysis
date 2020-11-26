@@ -1362,6 +1362,7 @@ void setup_model_constants(
       model_constants_t &cc,
       const reference_quantities_t &ref_quant)
 {
+    cc.id = std::to_string(input.id);
     // Set constants
     cc.constants[static_cast<int>(Cons_idx::q_crit_i)] = q_crit_i;
     cc.constants[static_cast<int>(Cons_idx::D_crit_i)] = D_crit_i;
