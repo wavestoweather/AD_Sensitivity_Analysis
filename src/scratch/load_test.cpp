@@ -75,11 +75,13 @@ int main(int argc, char** argv)
         y[i] = file[i%std::strlen(file)];
 
     input_parameters_t input;
+    double current_time = 0;
     // Write a checkpoint file
-    write_checkpoint("tmp_checkpoint", cc, y, segments, input);
+    write_checkpoint("tmp_checkpoint", cc, y, segments, input, current_time);
 
     // and load it again
-    SUCCESS_OR_DIE(load_checkpoint("tmp_checkpoint_0.json", cc, y, segments, input));
+    SUCCESS_OR_DIE(load_checkpoint("tmp_checkpoint_0.json",
+        cc, y, segments, input, ref_quant));
     for(auto &s: segments)
         SUCCESS_OR_DIE(s.check());
 
@@ -92,10 +94,11 @@ int main(int argc, char** argv)
     segments[0].n_segments++;
 
     // Write again as checkpoint file
-    write_checkpoint("tmp_checkpoint_perturbed", cc, y, segments, input);
+    write_checkpoint("tmp_checkpoint_perturbed", cc, y, segments, input, current_time);
 
     // Load it again
-    SUCCESS_OR_DIE(load_checkpoint("tmp_checkpoint_perturbed_0.json", cc, y, segments, input));
+    SUCCESS_OR_DIE(load_checkpoint("tmp_checkpoint_perturbed_0.json",
+        cc, y, segments, input, ref_quant));
 
     for(auto &s: segments)
         SUCCESS_OR_DIE(s.check());

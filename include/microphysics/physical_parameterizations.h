@@ -1358,9 +1358,9 @@ void init_particle_collection_2(
  * Setup model constants and gamma tables.
  */
 void setup_model_constants(
-      input_parameters_t &input,
+      const input_parameters_t &input,
       model_constants_t &cc,
-      reference_quantities_t &ref_quant)
+      const reference_quantities_t &ref_quant)
 {
     // Set constants
     cc.constants[static_cast<int>(Cons_idx::q_crit_i)] = q_crit_i;

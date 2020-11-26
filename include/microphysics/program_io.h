@@ -57,19 +57,22 @@ int load_ens_config(
  */
 template<class float_t>
 int load_checkpoint(
-    std::string filename,
+    const std::string &filename,
     model_constants_t &cc,
     std::vector<float_t> &y,
     std::vector<segment_t> &segments,
-    input_parameters_t &input)
+    input_parameters_t &input,
+    const reference_quantities_t &ref_quant)
 {
     int err = 0;
     pt::ptree pt;
     boost::property_tree::read_json(filename, pt);
-    // Parse the model constants
-    SUCCESS_OR_DIE(cc.from_pt(pt));
     // Parse the input parameters
     SUCCESS_OR_DIE(input.from_pt(pt));
+    setup_model_constants(input, cc, ref_quant);
+    // Parse the model constants
+    SUCCESS_OR_DIE(cc.from_pt(pt));
+
     // Parse the segments
     for(auto &it: pt.get_child("segments"))
     {
@@ -95,35 +98,25 @@ int load_checkpoint(
  * Also creates an XML-file as checkpoint for initialization to read the
  * current status of the simulation for the next job(s).
  *
- * TODO:
- * XML file needs the following information:
- * id of branch where the ensemble is being created from
- * Current state of the simulation such as mixing ratios, particle numbers
- * ensemble state (i.e. which segments are done from the config_ens.xml),
- * perturbed parameters.
- * Also writes an ensemble config file.
  */
 template<class float_t>
 void write_checkpoint(
-    std::string filename,
-    model_constants_t &cc,
-    std::vector<float_t> &y,
+    const std::string &filename,
+    const model_constants_t &cc,
+    const std::vector<float_t> &y,
     std::vector<segment_t> &segments,
-    input_parameters_t &input)
+    const input_parameters_t &input,
+    const double &current_time)
 {
     pt::ptree checkpoint;
     // First we add the ensemble configuration
     pt::ptree segment_tree;
     for(auto &s: segments)
         s.put(segment_tree);
-    // for(auto &s: segments)
-    // {
-    //     segment_tree.push_back(std::make_pair("", s.get_pt()));
-    // }
-        // s.put(checkpoint);
+
     checkpoint.add_child("segments", segment_tree);
     // configuration from input_parameters_t
-    input.put(checkpoint);
+    input.put(checkpoint, current_time);
     // Model constants
     cc.put(checkpoint);
     // Current status of y
@@ -144,6 +137,34 @@ void write_checkpoint(
     pt::write_json(outstream, checkpoint);
     outstream.close();
 }
+
+
+/**
+ * Create a bash script that executes this very same program by loading
+ * a checkpoint file
+ * (gnuparallel) starting n processes
+ * (slurm) submitting it as a slurm job with n processes
+ */
+void create_script_gnuparallel(
+    const std::string &checkpoint_file,
+    const uint32_t n_processes,
+    const std::string which="gnuparallel",
+    const bool start=false)
+{
+    if(which == "gnuparallel")
+    {
+        std::string script = "#!/bin/bash\n"
+            "parallel -u -j " + std::to_string(n_processes)
+            + " --no-notice --delay .2 build/apps/src/microphysics/./trajectories "
+            "-c " + checkpoint_file + " -g {1} :::{0.."
+            + std::to_string(n_processes-1) + "}\n";
+    } else if(which == "slurm")
+    {
+
+    }
+}
+
+
 
 /**
  * Based on
@@ -676,105 +697,6 @@ void load_nc_parameters(
 
 
 /**
- * Initialize the input parameters to default values.
- *
- * @param in Structure where to store the input parameters.
- */
-void init_input_parameters(input_parameters_t &in)
-{
-  // Numerics
-  in.t_end_prime = 100.0;	// Seconds
-  in.dt_prime = 0.01;		// Seconds
-  in.snapshot_index = 200;
-  in.dt_traject = 20;       // Seconds; fixed from paper
-  // Filename for output
-#if defined(RK4)
-   in.OUTPUT_FILENAME = "data/rain_OUTPUT.txt";
-#endif
-#if defined(RK4NOICE)
-    in.OUTPUT_FILENAME = "data/sb_OUTPUT.txt";
-#endif
-#if defined(RK4ICE)
-    in.OUTPUT_FILENAME = "data/sb_ice_OUTPUT.txt";
-#endif
-
-  // Filename for input
-  in.INPUT_FILENAME = "/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/foehn201305_case/foehn201305_warming.nc";
-
-  // Scaling factor
-  in.scaling_fact = 1.0;	// No scaling
-  in.start_over = true;
-  in.start_over_env = true;
-  in.fixed_iteration = false;
-  in.auto_type = 3;
-  in.traj = 0;
-  in.write_index = 100000;
-  in.progress_index = 1000;
-#ifdef MET3D
-  in.start_time = std::nan("");
-#endif
-}
-
-
-/**
- * String used to parse commandline input.
- */
-static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c?";
-
-
-/**
- * Initialize global args for parsing command line arguments.
- *
- * @param arg Struct that shall be initialized.
- */
-void init_global_args(global_args_t &arg)
-{
-
-  arg.final_time_flag = 0;
-  arg.final_time_string = nullptr;
-
-  arg.timestep_flag = 0;
-  arg.timestep_string = nullptr;
-
-  arg.snapshot_index_flag = 0;
-  arg.snapshot_index_string = nullptr;
-
-  arg.output_flag = 0;
-  arg.output_string = nullptr;
-
-  arg.scaling_fact_flag = 0;
-  arg.scaling_fact_string = nullptr;
-
-  arg.input_flag = 0;
-  arg.input_file = nullptr;
-
-  arg.start_over_flag = 0;
-  arg.start_over_string = nullptr;
-
-  arg.start_over_env_flag = 0;
-  arg.start_over_env_string = nullptr;
-
-  arg.fixed_iteration_flag = 0;
-  arg.fixed_iteration_string = nullptr;
-
-  arg.auto_type_flag = 0;
-  arg.auto_type_string = nullptr;
-
-  arg.traj_flag = 0;
-  arg.traj_string = nullptr;
-
-  arg.write_flag = 0;
-  arg.write_string = nullptr;
-
-  arg.progress_index_flag = 0;
-  arg.progress_index_string = nullptr;
-#ifdef MET3D
-  arg.delay_start_flag = 0;
-  arg.delay_start_string = nullptr;
-#endif
-}
-
-/**
  * Set the input parameters with the data from the global arguments.
  *
  * @param arg Stuct with command line arguments.
@@ -852,6 +774,21 @@ void set_input_from_arguments(global_args_t &arg ,
       in.start_time = std::strtod(arg.delay_start_string, nullptr);
   }
 #endif
+
+  // Ensemble configuration file
+  if(1 == arg.ens_config_flag){
+    in.ENS_CONFIG_FILENAME = arg.ens_config_string;
+  }
+
+  // Checkpoint file
+  if(1 == arg.checkpoint_flag){
+    in.CHECKPOINT_FILENAME = arg.checkpoint_string;
+  }
+
+  // ID for this process
+  if(1 == arg.gnu_id_flag){
+    in.id = std::stoi(arg.gnu_id_string);
+  }
 }
 
 
@@ -1765,9 +1702,12 @@ int parse_arguments(
     char** argv,
     global_args_t &global_args)
 {
+    /**
+     * String used to parse commandline input.
+     */
+    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g?";
     bool need_to_abort = false;
     int opt;
-    init_global_args(global_args);
 
     if(argc < 2)
     {
@@ -1877,6 +1817,13 @@ int parse_arguments(
                 {
                     global_args.checkpoint_flag = 1;
                     global_args.checkpoint_string = optarg;
+                    break;
+                }
+                case 'g':
+                {
+                    global_args.gnu_id_flag = 1;
+                    global_args.gnu_id_string = optarg;
+                    break;
                 }
                 case '?':
                 {
@@ -1898,10 +1845,9 @@ int parse_arguments(
     }
 
     if(need_to_abort){
-        std::cout << "ABORTING." << std::endl; // Report error
-        return 1;
+        return ARGUMENT_ERR;
     }
-    return 0;
+    return SUCCESS;
 }
 
 /** @} */ // end of group io

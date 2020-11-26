@@ -21,7 +21,9 @@ enum
     INPUT_NAME_CHECKPOINT_ERR = 9,
     NC_TRAJ_IDX_ERR = 10,
     MODEL_CONS_CHECKPOINT_ERR = 11,
-    SEGMENTS_CHECKPOINT_ERR = 12
+    SEGMENTS_CHECKPOINT_ERR = 12,
+    DISTRIBUTION_CONFIG_ERR = 13,
+    ARGUMENT_ERR = 14
 };
 
 // Credits to http://www.gpi-site.com/ for this function and the name

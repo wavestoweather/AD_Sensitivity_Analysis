@@ -61,10 +61,9 @@
 int main(int argc, char** argv)
 {
     input_parameters_t input;
-    init_input_parameters(input);
     global_args_t global_args;
     int err;
-    if( (err = parse_arguments(argc, argv, global_args)) != 0 ) return err;
+    SUCCESS_OR_DIE(parse_arguments(argc, argv, global_args));
 
     std::vector<segment_t> segments;
     // ==================================================
@@ -86,13 +85,12 @@ int main(int argc, char** argv)
 
     model_constants_t cc;
     // Collect the initial values in a separated vector
-    // Storage:
     // See constants.h for storage order
     std::vector<double> y_init(num_comp);
 
     if(global_args.checkpoint_flag)
     {
-        load_checkpoint(global_args.checkpoint_string, cc, y_init, segments, input);
+        load_checkpoint(global_args.checkpoint_string, cc, y_init, segments, input, ref_quant);
     }
     else
     {
@@ -113,7 +111,6 @@ int main(int argc, char** argv)
     // Current time used in the iterations
     double time_old = 0.0;
     double time_new = 0.0;
-
 
     nc_parameters_t nc_params;
     size_t lenp;

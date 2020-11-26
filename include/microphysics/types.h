@@ -68,7 +68,7 @@ struct particle_model_constants_t{
      * @param idx Start index of out_vec where the gradients should be stored.
      */
     template<class T>
-    void get_gradient(T &out_vec, uint32_t &idx)
+    void get_gradient(T &out_vec, uint32_t &idx) const
     {
         for(auto &c: this->constants)
         {
@@ -77,7 +77,7 @@ struct particle_model_constants_t{
         }
     }
 
-    void put(pt::ptree &ptree, const std::string &type_name)
+    void put(pt::ptree &ptree, const std::string &type_name) const
     {
         if(perturbed_idx.empty())
             return;
@@ -238,7 +238,7 @@ struct gamma_table_t{
      * @param x Coordinate at which to evaluate the gamma function.
      */
     template <class A>
-    A look_lo(A x)
+    A look_lo(A x) const
     {
         A xt = max(min(x, this->x[this->n_bins-1]), 0.0);
         double tmp = xt.getValue()*this->odx;
@@ -254,7 +254,7 @@ struct gamma_table_t{
      * @param x Coordinate at which to evaluate the gamma function.
      */
     template <class A>
-    A look_up(A x)
+    A look_up(A x) const
     {
         A xt = max(min(x, this->x[this->n_bins-1]), 0.0);
         double tmp = xt.getValue()*this->odx;
@@ -510,7 +510,7 @@ struct model_constants_t{
      * @param out_vec On out: Stores all gradients.
      */
     template<class T>
-    void get_gradient(T &out_vec)
+    void get_gradient(T &out_vec) const
     {
         for(int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
             out_vec[i] = this->constants[i].getGradient();
@@ -534,7 +534,7 @@ struct model_constants_t{
      *
      * @params ptree Property tree, where a tree "model_constants" is being added.
      */
-    void put(pt::ptree &ptree)
+    void put(pt::ptree &ptree) const
     {
         pt::ptree model_cons;
         model_cons.put("id", id);
@@ -730,54 +730,113 @@ struct nc_parameters_t{
  */
 struct global_args_t{
 
-  int final_time_flag; /*!< Using a final simulation time? */
-  char* final_time_string;
+    int final_time_flag; /*!< Using a final simulation time? */
+    char* final_time_string;
 
-  int timestep_flag; /*!< Timestep in seconds specified? */
-  char* timestep_string;
+    int timestep_flag; /*!< Timestep in seconds specified? */
+    char* timestep_string;
 
-  int snapshot_index_flag; /*!< Snapshot every x iterations specified? */
-  char* snapshot_index_string;
+    int snapshot_index_flag; /*!< Snapshot every x iterations specified? */
+    char* snapshot_index_string;
 
-  int output_flag; /*!< Output path specified? */
-  char* output_string;
+    int output_flag; /*!< Output path specified? */
+    char* output_string;
 
-  int input_flag; /*!< Input netCDF file specified? */
-  char* input_file;
+    int input_flag; /*!< Input netCDF file specified? */
+    char* input_file;
 
-  int scaling_fact_flag; /*!< Scaling factor specified? */
-  char* scaling_fact_string;
+    int scaling_fact_flag; /*!< Scaling factor specified? */
+    char* scaling_fact_string;
 
-  int start_over_flag; /*!< Reload mixing ratios and particle numbers from trajectory every few seconds? */
-  char* start_over_string;
+    int start_over_flag; /*!< Reload mixing ratios and particle numbers from trajectory every few seconds? */
+    char* start_over_string;
 
-  int start_over_env_flag; /*!< Reload pressure, temperature and ascent from trajectory every few seconds? */
-  char* start_over_env_string;
+    int start_over_env_flag; /*!< Reload pressure, temperature and ascent from trajectory every few seconds? */
+    char* start_over_env_string;
 
-  int fixed_iteration_flag; /*!< Fix p, T, w during microphysics? */
-  char* fixed_iteration_string;
+    int fixed_iteration_flag; /*!< Fix p, T, w during microphysics? */
+    char* fixed_iteration_string;
 
-  int auto_type_flag; /*!< Particle type specified? */
-  char* auto_type_string;
+    int auto_type_flag; /*!< Particle type specified? */
+    char* auto_type_string;
 
-  int traj_flag; /*!< Trajectory to use specified? */
-  char* traj_string;
+    int traj_flag; /*!< Trajectory to use specified? */
+    char* traj_string;
 
-  int write_flag; /*!< Snapshot is flushed every x iterations. */
-  char* write_string;
+    int write_flag; /*!< Snapshot is flushed every x iterations. */
+    char* write_string;
 
-  int progress_index_flag; /*!< Progressbar is updated every x iterations. */
-  char* progress_index_string;
+    int progress_index_flag; /*!< Progressbar is updated every x iterations. */
+    char* progress_index_string;
 #ifdef MET3D
-  int delay_start_flag; /*!< Simulation starts at this time relative to ascend. */
-  char* delay_start_string;
+    int delay_start_flag; /*!< Simulation starts at this time relative to ascend. */
+    char* delay_start_string;
 #endif
 
-  int ens_config_flag; /*!< Configuration file for ensembles. */
-  char* ens_config_string;
+    int ens_config_flag; /*!< Configuration file for ensembles. */
+    char* ens_config_string;
 
-  int checkpoint_flag; /*!< Checkpoint file for the simulation. */
-  char* checkpoint_string;
+    int checkpoint_flag; /*!< Checkpoint file for the simulation. */
+    char* checkpoint_string;
+
+    int gnu_id_flag; /*!< ID given for this instance, i.e. thread_id or id by GNU parallel. */
+    char* gnu_id_string;
+
+    global_args_t()
+    {
+        final_time_flag = 0;
+        final_time_string = nullptr;
+
+        timestep_flag = 0;
+        timestep_string = nullptr;
+
+        snapshot_index_flag = 0;
+        snapshot_index_string = nullptr;
+
+        output_flag = 0;
+        output_string = nullptr;
+
+        scaling_fact_flag = 0;
+        scaling_fact_string = nullptr;
+
+        input_flag = 0;
+        input_file = nullptr;
+
+        start_over_flag = 0;
+        start_over_string = nullptr;
+
+        start_over_env_flag = 0;
+        start_over_env_string = nullptr;
+
+        fixed_iteration_flag = 0;
+        fixed_iteration_string = nullptr;
+
+        auto_type_flag = 0;
+        auto_type_string = nullptr;
+
+        traj_flag = 0;
+        traj_string = nullptr;
+
+        write_flag = 0;
+        write_string = nullptr;
+
+        progress_index_flag = 0;
+        progress_index_string = nullptr;
+
+#ifdef MET3D
+        delay_start_flag = 0;
+        delay_start_string = nullptr;
+#endif
+
+        ens_config_flag = 0;
+        ens_config_string = nullptr;
+
+        checkpoint_flag = 0;
+        checkpoint_string = nullptr;
+
+        gnu_id_flag = 0;
+        gnu_id_string = nullptr;
+    }
 };
 
 
@@ -800,9 +859,12 @@ struct input_parameters_t{
      * datapoints from the netCDF file.
      */
     uint64_t num_sub_steps;
-    std::string OUTPUT_FILENAME; /*!< Filename for output. */
 
+    std::string OUTPUT_FILENAME; /*!< Filename for output. */
     std::string INPUT_FILENAME; /*!< Filename for input netCDF file. */
+    std::string ENS_CONFIG_FILENAME; /*!< Filename for ensemble configuration file. */
+    std::string CHECKPOINT_FILENAME; /*!< Filename for checkpoint file. */
+    uint32_t id; /*!< ID given for this instance, i.e. thread_id or id by GNU parallel. */
 
     bool start_over; /*!< Start over at new timestep of trajectory? */
     bool start_over_env; /*!< Start over environment variables at new timestep of trajectory? */
@@ -816,8 +878,44 @@ struct input_parameters_t{
     uint32_t progress_index; /*!< Index for updating progressbar. */
     uint32_t ensemble = 0; /*!< Index of ensemble. */
 
+    input_parameters_t()
+    {
+        // Numerics
+        t_end_prime = 100.0;	// Seconds
+        dt_prime = 0.01;		// Seconds
+        snapshot_index = 200;
+        dt_traject = 20;       // Seconds; fixed from paper
+        // Filename for output
+#if defined(RK4)
+        OUTPUT_FILENAME = "data/rain_OUTPUT.txt";
+#endif
+#if defined(RK4NOICE)
+        OUTPUT_FILENAME = "data/sb_OUTPUT.txt";
+#endif
+#if defined(RK4ICE)
+        OUTPUT_FILENAME = "data/sb_ice_OUTPUT.txt";
+#endif
+        CHECKPOINT_FILENAME = "";
+        ENS_CONFIG_FILENAME = "",
 
-    void put(pt::ptree &ptree)
+        // Filename for input
+        INPUT_FILENAME = "/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/foehn201305_case/foehn201305_warming.nc";
+
+        // Scaling factor
+        scaling_fact = 1.0;	// No scaling
+        start_over = true;
+        start_over_env = true;
+        fixed_iteration = false;
+        auto_type = 3;
+        traj = 0;
+        write_index = 100000;
+        progress_index = 1000;
+#ifdef MET3D
+        start_time = std::nan("");
+#endif
+    }
+
+    void put(pt::ptree &ptree, const double &current_time) const
     {
         pt::ptree input_params;
         input_params.put<double>("t_end_prime", t_end_prime);
@@ -825,7 +923,7 @@ struct input_parameters_t{
         input_params.put<double>("dt_traject_prime", dt_traject_prime);
         input_params.put<double>("dt_traject", dt_traject);
 #ifdef MET3D
-        input_params.put<double>("start_time", start_time);
+        input_params.put<double>("start_time", current_time);
 #endif
         input_params.put<int>("snapshot_index", snapshot_index);
         input_params.put<uint64_t>("num_sub_steps", num_sub_steps);
@@ -841,6 +939,12 @@ struct input_parameters_t{
         input_params.put<uint32_t>("progress_index", progress_index);
         input_params.put<uint32_t>("ensemble", ensemble);
         ptree.add_child("input_params", input_params);
+    }
+
+    void put(pt::ptree &ptree) const
+    {
+        put(ptree, start_time);
+        pt::ptree input_params;
     }
 
     /**
@@ -928,10 +1032,13 @@ struct param_t{
     uint32_t name = -1;
     int out_name = -1;
     bool particle_param = false;
-    // std::function<double()> dis;
-    std::normal_distribution<double> dis;
+
+    std::function<double()> get_rand; /*!< distribution used for random number generation. */
+    std::normal_distribution<double> normal_dis;
+    std::uniform_real_distribution<double> uniform_dis;
     std::string param_name;
     std::string outparam_name;
+    std::string func_name = "";
 
     enum class OutParam: uint32_t {
         model, cloud, rain, ice, graupel, hail, snow
@@ -969,6 +1076,8 @@ struct param_t{
     void add_mean(double m)
     {
         mean = m;
+        if(!isnan(sigma_perc) && isnan(sigma))
+            sigma = mean*sigma_perc;
     }
 
     void add_name(std::string n, model_constants_t &cc)
@@ -1036,26 +1145,45 @@ struct param_t{
 
     void add_sigma(double s)
     {
-        if(!isnan(mean))
-        {
-            // dis.param(std::normal_distribution<double>::param_type(mean, s));
-            dis = std::normal_distribution<double>(mean, s);
-            sigma = s;
-        }
-        else
-            sigma = s;
+        sigma = s;
+        if(!isnan(mean) && func_name != "")
+            add_rand_function(func_name);
     }
 
     void add_sigma_perc(double s)
     {
         if(!isnan(mean))
         {
-            dis = std::normal_distribution<double>(mean, s*mean);
             sigma_perc = s;
             sigma = s*mean;
+            if(func_name != "")
+                add_rand_function(func_name);
         }
         else
             sigma_perc = s;
+    }
+
+    void add_rand_function(std::string name)
+    {
+        if(func_name == "")
+            func_name = name;
+        if(!isnan(sigma_perc) && isnan(sigma) && !isnan(mean))
+            sigma = mean*sigma_perc;
+        if(!isnan(mean) && !isnan(sigma))
+        {
+            if(func_name == "normal")
+            {
+                normal_dis = std::normal_distribution<double>(mean, sigma);
+                get_rand = std::bind(normal_dis, rand_generator);
+            } else if(func_name == "uniform")
+            {
+                uniform_dis = std::uniform_real_distribution<double>(mean-sigma, mean+sigma);
+                get_rand = std::bind(uniform_dis, rand_generator);
+            } else
+            {
+                err = DISTRIBUTION_CONFIG_ERR;
+            }
+        }
     }
 
     int check()
@@ -1076,6 +1204,8 @@ struct param_t{
             err = MISSING_VARIANCE_CONFIG_ERR;
             return err;
         }
+        if(func_name == "")
+            err = DISTRIBUTION_CONFIG_ERR;
 
         switch(err)
         {
@@ -1090,14 +1220,25 @@ struct param_t{
                           << "You used an output parameter that does "
                           << "not exist.\n";
                 return err;
-
+            case DISTRIBUTION_CONFIG_ERR:
+                std::cout << "Error in config file:\n"
+                          << "No such function for generating random "
+                          << "numbers in perturbing parameters:\n"
+                          << "name: " << func_name << "\n"
+                          << "Options are:\n"
+                          << "normal: normal distribution with mean=mean "
+                          << "or mean=default value of parameter and sigma"
+                          << "=sigma or sigma=mean*sigma_perc\n"
+                          << "uniform: uniform distribution from mean-sigma "
+                          << "to mean+sigma and mean, sigma as above\n";
+                return err;
             default:
                 return err;
 
         }
     }
 
-    void put(pt::ptree &ptree)
+    void put(pt::ptree &ptree) const
     {
         if(err != 0)
             return;
@@ -1108,6 +1249,7 @@ struct param_t{
             param.put("sigma", sigma);
         else
             param.put("sigma_perc", sigma_perc);
+        param.put("rand_func", func_name);
         param.put("type", outparam_name);
         // ptree.add_child("params.", param);
         ptree.push_back(std::make_pair("", param));
@@ -1137,7 +1279,9 @@ struct param_t{
             } else if(first == "type")
             {
                 // Needs to be done before the for-loop.
-            } else
+            } else if(first == "rand_func")
+                add_rand_function(it.second.get_value<std::string>());
+            else
             {
                 err = PARAM_CONFIG_ERR;
             }
@@ -1145,7 +1289,7 @@ struct param_t{
         return err;
     }
 
-    void perturb(model_constants_t &cc)
+    void perturb(model_constants_t &cc) const
     {
         if(particle_param)
         {
@@ -1171,11 +1315,11 @@ struct param_t{
                     pt_model = &(cc.ice);
                     break;
             }
-            pt_model->constants[name] = dis(rand_generator);
+            pt_model->constants[name] = get_rand();
             pt_model->perturbed_idx.push_back(name);
         } else
         {
-            cc.constants[name] = dis(rand_generator);
+            cc.constants[name] = get_rand();
             cc.perturbed_idx.push_back(name);
         }
     }
@@ -1777,7 +1921,7 @@ struct segment_t
         activated = false;
     }
 
-    void put(pt::ptree &ptree) // pt::ptree &ptree
+    void put(pt::ptree &ptree) const
     {
         pt::ptree segment;
         if( (err != 0 || n_segments < 1) && !activated)
@@ -1810,7 +1954,6 @@ struct segment_t
         if(activated)
         {
             segment.put("activated", true);
-            activated = false;
         }
         pt::ptree param_tree;
         for(auto &p: params)

@@ -269,7 +269,7 @@ void display_usage()
 {
 
   std::cout << "\n"
-	    << "USAGE of the program in water cloud mode:\n"
+	    << "USAGE of the program:\n"
 	    << "Invoke the program on the command line with\n"
 	    << "$ ./main PARAMETERS\n"
 	    << "where PARAMETERS are the following parameters:\n"
@@ -290,6 +290,9 @@ void display_usage()
 #ifdef MET3D
         << "-n: No simulation until given time (relative to ascend).\n"
 #endif
+        << "-m: Name of an ensemble configuration file.\n"
+        << "-c: Name of a checkpoint file.\n"
+        << "-g: ID (uint) for this instance.\n"
 	    << "-?: This help message.\n"
 	    << std::endl;
 }
