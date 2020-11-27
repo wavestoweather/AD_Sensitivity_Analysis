@@ -9,6 +9,7 @@
 #include <string>
 #include <netcdf>
 #include <vector>
+#include <sys/stat.h>
 #include "constants.h"
 #include <iostream>
 #include <fstream>
@@ -75,7 +76,6 @@ int load_checkpoint(
     // cc.id are the preceeding ids
     input.set_outputfile_id(cc.id);
 
-
     // Parse the segments
     for(auto &it: pt.get_child("segments"))
     {
@@ -95,16 +95,25 @@ int load_checkpoint(
 
 
 /**
+ * Check if a file exists.
+ */
+inline bool exists(const std::string& name) {
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+}
+
+/**
  * Creates a job-script for MOGON II and puts it on queue.
  * If this is not possible (i.e. running on a local machine),
  * the next jobs are started on the local machine.
  * Also creates an XML-file as checkpoint for initialization to read the
  * current status of the simulation for the next job(s).
  *
+ * @param filename Filename for the checkpoint file. On out: added _idx-y.json
  */
 template<class float_t>
 void write_checkpoint(
-    const std::string &filename,
+    std::string &filename,
     const model_constants_t &cc,
     const std::vector<float_t> &y,
     std::vector<segment_t> &segments,
@@ -129,16 +138,29 @@ void write_checkpoint(
     checkpoint.add_child("Output Parameters", output_parameters);
 
     uint32_t i = 0;
-    std::fstream outstream(filename + "_" + std::to_string(i)+ ".json", std::ios::out);
-    while(!outstream.good())
+    std::string actual_filename = filename + "_id" + cc.id + "_0000.json";
+    while(exists(actual_filename))
     {
         i++;
-        outstream.close();
-        outstream.clear();
-        outstream.open(filename + "_" + std::to_string(i)+ ".json", std::ios::out);
+        if(i < 10)
+            actual_filename = filename + "_id" + cc.id + "_000" + std::to_string(i) + ".json";
+        else if(i < 100)
+            actual_filename = filename + "_id" + cc.id + "_00" + std::to_string(i) + ".json";
+        else if(i < 1000)
+            actual_filename = filename + "_id" + cc.id + "_0" + std::to_string(i) + ".json";
+        else
+            actual_filename = filename + "_id" + cc.id + "_" + std::to_string(i) + ".json";
     }
+
+    // filename = filename + "_id" + cc.id + ".json";
+    std::fstream outstream(actual_filename, std::ios::out);
+    filename = actual_filename;
     pt::write_json(outstream, checkpoint);
     outstream.close();
+    // deactivate all segments, so we know, another instance is going
+    // to process this
+    for(auto &s: segments)
+        s.activated = false;
 }
 
 
@@ -150,17 +172,43 @@ void write_checkpoint(
  */
 void create_script_gnuparallel(
     const std::string &checkpoint_file,
+    const model_constants_t &cc,
     const uint32_t n_processes,
     const std::string which="gnuparallel",
     const bool start=false)
 {
     if(which == "gnuparallel")
     {
-        std::string script = "#!/bin/bash\n"
-            "parallel -u -j " + std::to_string(n_processes)
+        std::string script = "parallel -j " + std::to_string(n_processes)
             + " --no-notice --delay .2 build/apps/src/microphysics/./trajectories "
             "-c " + checkpoint_file + " -g {1} :::{0.."
-            + std::to_string(n_processes-1) + "}\n";
+            + std::to_string(n_processes-1) + "}";
+        if(start)
+        {
+            const char* runscript = (script + " &").c_str();
+            std::system(runscript);
+        } else
+        {
+            // Save as a script
+            std::string script_name = "execute_id" + cc.id + "_0000.sh";
+            uint32_t i = 0;
+            while(exists(script_name))
+            {
+                i++;
+                if(i < 10)
+                    script_name = "execute_id" + cc.id + "_000" + std::to_string(i) + ".sh";
+                else if(i < 100)
+                    script_name = "execute_id" + cc.id + "_00" + std::to_string(i) + ".sh";
+                else if(i < 1000)
+                    script_name = "execute_id" + cc.id + "_0" + std::to_string(i) + ".sh";
+                else
+                    script_name = "execute_id" + cc.id + "_" + std::to_string(i) + ".sh";
+            }
+
+            std::ofstream out(script_name);
+            out << "#!/bin/bash\n" << script << "\n";
+            out.close();
+        }
     } else if(which == "slurm")
     {
 
@@ -1709,7 +1757,7 @@ int parse_arguments(
     /**
      * String used to parse commandline input.
      */
-    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g?";
+    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g:?";
     bool need_to_abort = false;
     int opt;
 

@@ -47,6 +47,8 @@ struct particle_model_constants_t{
     particle_model_constants_t()
     {
         constants.resize(static_cast<int>(Particle_cons_idx::n_items));
+        // This makes debugging easier, so pleaase leave it.
+        std::fill(constants.begin(), constants.end(), 0);
     }
 
     /**
@@ -484,6 +486,7 @@ struct model_constants_t{
     model_constants_t()
     {
         constants.resize(static_cast<int>(Cons_idx::n_items));
+        std::fill(constants.begin(), constants.end(), 0);
     }
 
     /**
@@ -1082,20 +1085,20 @@ struct input_parameters_t{
 };
 
 struct param_t{
-    double mean = std::nan("");
-    double sigma = std::nan("");
-    double sigma_perc = std::nan("");
-    int err = 0;
-    uint32_t name = -1;
-    int out_name = -1;
-    bool particle_param = false;
+    double mean;
+    double sigma;
+    double sigma_perc;
+    int err;
+    uint32_t name;
+    int out_name;
+    bool particle_param;
 
     std::function<double()> get_rand; /*!< distribution used for random number generation. */
     std::normal_distribution<double> normal_dis;
     std::uniform_real_distribution<double> uniform_dis;
     std::string param_name;
     std::string outparam_name;
-    std::string func_name = "";
+    std::string func_name;
 
     enum class OutParam: uint32_t {
         model, cloud, rain, ice, graupel, hail, snow
@@ -1108,7 +1111,16 @@ struct param_t{
     };
 
     param_t()
-    {}
+    {
+        mean            = std::nan("");
+        sigma           = std::nan("");
+        sigma_perc      = std::nan("");
+        err             = 0;
+        name            = -1;
+        out_name        = -1;
+        particle_param  = false;
+        func_name       = "";
+    }
 
     param_t(std::string param_type)
     {
@@ -1385,24 +1397,36 @@ struct param_t{
 struct segment_t
 {
     std::vector<param_t> params;
-    double value = std::nan("");
-    uint32_t n_members = 1;
-    int value_name = -1;
-    int out_param = -1;
-    uint32_t n_segments = 1;
-    uint32_t err = 0;
-    char old_sign = 0;
+    double value;
+    /**
+     * Used to track the value for perturbing in case the tracked value
+     * is not exactly equal to value but rather jumps around value.
+     */
+    double old_value;
+    uint32_t n_members;
+    int value_name;
+    int value_name_sig; /*<! Which parameter had the most significant impact so far >*/
+    int out_param; /*<! Which output parameter in case of sensitivity methods >*/
+    uint32_t n_segments;
+    uint32_t err;
+    char old_sign;
     std::unordered_map<std::string, std::string> tree_strings;
-    bool activated = false;
+    bool activated;
+    /**
+     * Allowed tolerance for value_method. If the value jumps, i.e. due to
+     * large time steps, it may jump by tol*value from below/above value
+     * to above/below it.
+     */
+    const double tol = 1e-5;
 
     enum Method {
-        impact_change, sign_flip, value_method
+        impact_change, sign_flip, value_method, repeated_time
     };
     std::unordered_map<std::string, Method> const table_method = {
         {"impact_change", Method::impact_change}, {"sign_flip", Method::sign_flip},
-        {"value", Method::value_method}
+        {"value", Method::value_method}, {"repeated_time", Method::repeated_time}
     };
-    int method = value_method;
+    int method;
     enum Param {
         pressure, T, w, S, QC, QR, QV, NCCLOUD, NCRAIN,
         QI, NCICE, QS, NCSNOW, QG, NCGRAUPEL, QH, NCHAIL,
@@ -1780,15 +1804,30 @@ struct segment_t
         {"snow_vsedi_min", Param::snow_vsedi_min}, {"snow_vsedi_max", Param::snow_vsedi_max}
     };
 
-    enum OutParam {
-        vapor, cloud, rain, ice, graupel, hail, snow
-    };
-    std::unordered_map<std::string, OutParam> const table_out_param = {
-        {"snow", OutParam::snow}, {"vapor", OutParam::vapor},
-        {"cloud", OutParam::cloud}, {"rain", OutParam::rain},
-        {"ice", OutParam::ice}, {"graupel", OutParam::graupel},
-        {"hail", OutParam::hail}
-    };
+    segment_t()
+    {
+        value           = std::nan("");
+        old_value       = std::nan("");
+        n_members       = 1;
+        value_name      = -1;
+        value_name_sig  = -1;
+        out_param       = -1;
+        n_segments      = 1;
+        err             = 0;
+        old_sign        = 0;
+        activated       = false;
+        method          = value_method;
+    }
+
+    // enum OutParam {
+    //     vapor, cloud, rain, ice, graupel, hail, snow
+    // };
+    // std::unordered_map<std::string, OutParam> const table_out_param = {
+    //     {"snow", OutParam::snow}, {"vapor", OutParam::vapor},
+    //     {"cloud", OutParam::cloud}, {"rain", OutParam::rain},
+    //     {"ice", OutParam::ice}, {"graupel", OutParam::graupel},
+    //     {"hail", OutParam::hail}
+    // };
 
 
     void add_param(param_t &param)
@@ -1803,11 +1842,17 @@ struct segment_t
 
     void add_value_name(std::string n)
     {
+        if(method == impact_change)
+        {
+            value_name = -1;
+            return;
+        }
         auto it = table_param.find(n);
         if(it != table_param.end())
         {
             value_name = it->second;
-            tree_strings.insert({"when_name", n});
+            std::string key = "when_name";
+            tree_strings.insert(std::make_pair(key, n));
         } else
         {
             err = VALUE_NAME_CONFIG_ERR;
@@ -1820,7 +1865,12 @@ struct segment_t
         if(it != table_method.end())
         {
             method = it->second;
-            tree_strings.insert({"when_method", m});
+            std::string key = "when_method";
+            tree_strings.insert(std::make_pair(key, m));
+            if(method == repeated_time)
+                n_members = 1;
+            if(method == impact_change)
+                value_name = -1;
         } else
         {
             err = METHOD_CONFIG_ERR;
@@ -1837,19 +1887,34 @@ struct segment_t
 
     void add_out_param(std::string p)
     {
-        auto it = table_out_param.find(p);
-        if(it != table_out_param.end())
+        auto it = std::find(output_par_idx.begin(), output_par_idx.end(), p);
+        if(it != output_par_idx.end())
         {
-            out_param = it->second;
-            tree_strings.insert({"when_sens", p});
+            out_param = std::distance(output_par_idx.begin(), it);
+            std::string key = "when_sens";
+            tree_strings.insert(std::make_pair(key, p));
         } else
         {
             err = OUTPARAM_CONFIG_ERR;
         }
+        // auto it = table_out_param.find(p);
+        // if(it != table_out_param.end())
+        // {
+        //     out_param = it->second;
+        //     tree_strings.insert({"when_sens", p});
+        // } else
+        // {
+        //     err = OUTPARAM_CONFIG_ERR;
+        // }
     }
 
     void add_amount(int a)
     {
+        if(method == repeated_time)
+        {
+            n_members = 1;
+            return;
+        }
         if(a > 1)
             n_members = a;
         else
@@ -1915,36 +1980,58 @@ struct segment_t
      *
      */
     template<class float_t>
-    bool perturb_check(model_constants_t &cc, std::vector<float_t> &gradients)
+    bool perturb_check(
+        const model_constants_t &cc,
+        const std::vector< std::array<double, num_par > > &gradients,
+        const std::vector<float_t> &y,
+        const double timestep)
     {
-        // TODO: Add derivatives and current state
         if(n_segments == 0)
             return false;
         int idx;
         switch(method)
         {
             case impact_change:
-                idx = value_name - num_comp;
-
-
-                break;
+            {
+                auto it_minmax = std::minmax_element(gradients[out_param].begin(),
+                    gradients[out_param].end());
+                auto it_max = (*it_minmax.second > abs(*it_minmax.first)) ? it_minmax.second : it_minmax.first;
+                idx = std::distance(gradients[out_param].begin(), it_max);
+                if(value_name_sig != -1)
+                {
+                    if(idx != value_name_sig)
+                    {
+                        value_name_sig = idx;
+                        activated = true;
+                        return true;
+                    }
+                    return false;
+                } else // First time we check the highest impact
+                {
+                    value_name_sig = idx;
+                    return false;
+                }
+                return false;
+            }
             case sign_flip:
+            {
+                // the first num_comp many values refer to output parameters
                 idx = value_name - num_comp;
                 if(old_sign == 0)
                 {
                     // set sign; no perturbing needed.
-                    if(gradients[idx] == 0)
+                    if(gradients[out_param][idx] == 0)
                         return false;
-                    old_sign = (gradients[idx] > 0) ? 1 : 2;
+                    old_sign = (gradients[out_param][idx] > 0) ? 1 : 2;
                     return false;
                 } else
                 {
                     // check if a sign change happend
-                    if(old_sign == 1 && gradients[idx] < 0)
+                    if(old_sign == 1 && gradients[out_param][idx] < 0)
                     {
                         activated = true;
                         return true;
-                    }else if(old_sign == 0 && gradients[idx] > 0)
+                    }else if(old_sign == 0 && gradients[out_param][idx] > 0)
                     {
                         // Perturb parameters
                         activated = true;
@@ -1952,17 +2039,46 @@ struct segment_t
                     }
                     return false;
                 }
-                break;
+                return false;
+            }
             case value_method:
+            {
+                double current_value;
+                // If value is an output parameter or a sensitivity
                 if(out_param != -1)
+                    current_value = gradients[out_param][value_name - num_comp];
+                else
+                    current_value = gradients[out_param][value_name];
+                if(current_value == value)
                 {
-                    idx = value_name - num_comp;
-                } else
-                {
-
+                    activated = true;
+                    return true;
                 }
-                break;
+
+                if(std::isnan(old_value))
+                {
+                    old_value = current_value;
+                    return false;
+                }
+
+                if( signbit(value-current_value) != signbit(value-old_value)
+                    && fabs(value-current_value) < fabs(value*tol) )
+                {
+                    activated = true;
+                    return true;
+                }
+                old_value = current_value;
+                return false;
+            case repeated_time:
+                if(std::fmod(timestep, value) == 0)
+                {
+                    activated = true;
+                    return true;
+                }
+                return false;
+            }
         }
+        return false;
     }
 
     void perturb(model_constants_t &cc)
@@ -1974,7 +2090,9 @@ struct segment_t
         // Perturb every param
         for(auto &p: params)
             p.perturb(cc);
-        n_segments--;
+        // Perturbing every few timesteps is done indefenitely
+        if(method != repeated_time)
+            n_segments--;
         activated = false;
     }
 

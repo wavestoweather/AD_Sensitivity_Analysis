@@ -45,7 +45,6 @@ void v1pav2(double y[],
   for(int ii = 0 ; ii < num_comp ; ii++){
     y[ii] = v1[ii] + a*v2[ii];
   }
-
 }
 
 /**
@@ -258,8 +257,13 @@ void print_input_parameters(input_parameters_t &in)
         << "Start over pressure, temperature and ascent at each timestep of a trajectory?: " << in.start_over_env << "\n"
         << "Fix temperature and pressure at each substep?: " << in.fixed_iteration << "\n"
         << "Auto type for rain evaporation (1, 2, 3): " << in.auto_type << "\n"
-        << "Trajectory used: " << in.traj
-        << std::endl << std::flush;
+        << "Trajectory used: " << in.traj << "\n"
+        << "Instance id: " << in.id << "\n";
+        if(in.ENS_CONFIG_FILENAME != "")
+            std::cout << "Ensemble configuration file: " << in.ENS_CONFIG_FILENAME << "\n";
+        if(in.CHECKPOINT_FILENAME != "")
+            std::cout << "Checkpoint file: " << in.CHECKPOINT_FILENAME << "\n";
+        std::cout << std::endl << std::flush;
 }
 
 /**

@@ -99,11 +99,13 @@ int main(int argc, char** argv)
         if(global_args.ens_config_flag)
             load_ens_config(global_args.ens_config_string, cc, segments);
     }
+    for(auto &s: segments)
+        SUCCESS_OR_DIE(s.check());
 
     auto_type = input.auto_type;
     load_lookup_table(cc.ltabdminwgg);
 
-    int traj_id;
+    int traj_id = -1;
 #ifdef MET3D
     uint32_t ensemble;
 #endif
@@ -181,7 +183,7 @@ int main(int argc, char** argv)
     print_particle_params(cc.hail, "hail");
 #endif
 
-    ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps, input.progress_index, "simulation step", std::cout);
+    // ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps, input.progress_index, "simulation step", std::cout);
     // Loop for timestepping: BEGIN
     try
     {
@@ -358,13 +360,7 @@ int main(int argc, char** argv)
 #endif
                 }
 #endif
-                // y_single_new[S_idx] = convert_qv_to_S(
-                //         y_single_new[p_idx].getValue()*ref_quant.pref,
-                //         y_single_new[T_idx].getValue()*ref_quant.Tref,
-                //         y_single_new[qv_idx].getValue()*ref_quant.qref);
-                // CODIPACK: BEGIN
                 get_gradients(y_single_new, y_diff, cc, tape);
-                // CODIPACK: END
 
                 // Time update
                 time_new = (sub + t*cc.num_sub_steps)*cc.dt;
@@ -381,9 +377,41 @@ int main(int argc, char** argv)
                 // Interchange old and new for next step
                 time_old = time_new;
                 y_single_old.swap(y_single_new);
+
+                // Check if parameter shall be perturbed
+                for(auto &s: segments)
+                {
+                    bool perturb = s.perturb_check(
+                        cc, y_diff, y_single_old, time_old);
+                    if(perturb)
+                    {
+                        // Perturb this instance
+                        if(s.n_members == 1)
+                        {
+                            s.perturb(cc);
+                        } else // Create a checkpoint for new members
+                        {
+                            std::string checkpoint_filename = "checkpoint";
+                            write_checkpoint(
+                                checkpoint_filename,
+                                cc,
+                                y_single_old,
+                                segments,
+                                input,
+                                time_old);
+                            create_script_gnuparallel(
+                                checkpoint_filename,
+                                cc,
+                                s.n_members,
+                                "gnuparallel",
+                                false);
+                        }
+                    }
+                }
+
                 // While debugging, the bar is not useful.
 #if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR) && !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
-                pbar.progress(sub + t*cc.num_sub_steps);
+                // pbar.progress(sub + t*cc.num_sub_steps);
 #endif
                 // In case that the sub timestep%timestep is not 0
                 if( last_step )
@@ -397,11 +425,11 @@ int main(int argc, char** argv)
         sediment_q_total = 0;
 #endif
         }
-        pbar.finish();
+        // pbar.finish();
         nc_close(ncid);
     } catch(netCDF::exceptions::NcException& e)
     {
-        pbar.finish();
+        // pbar.finish();
         std::cout << e.what() << std::endl;
         std::cout << "ABORTING." << std::endl;
         return 1;
