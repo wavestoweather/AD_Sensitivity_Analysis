@@ -62,7 +62,6 @@ int main(int argc, char** argv)
 {
     input_parameters_t input;
     global_args_t global_args;
-    int err;
     SUCCESS_OR_DIE(parse_arguments(argc, argv, global_args));
 
     std::vector<segment_t> segments;
@@ -438,4 +437,5 @@ int main(int argc, char** argv)
     for(int ii = 0 ; ii < num_comp ; ii++)
         out_diff[ii].close();
     std::cout << "-------------------FINISHED-------------------\n\n\n";
+    exit(0);
 }

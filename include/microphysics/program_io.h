@@ -313,7 +313,7 @@ bool load_lookup_table(
         // Read the values, one value per line
         for(uint64_t n4=0; n4<table.n4; ++n4)
             for(uint64_t n3=0; n3<table.n3; ++n3)
-                for(uint64_t i=0; i<anzT_wg_loc; ++i)
+                for(int i=0; i<anzT_wg_loc; ++i)
                     for(uint64_t n1=0; n1<table.n1; ++n1)
                     {
                         std::getline(data, line);
@@ -347,7 +347,7 @@ bool load_lookup_table(
         for(uint64_t i=0; i<table.n2; ++i)
         {
             uint64_t iu = 0;
-            for(uint64_t j=0; j<anzT_wg_loc-1; ++j)
+            for(int j=0; j<anzT_wg_loc-1; ++j)
             {
                 if(table.x2[i] >= Tvec_wg_g_loc[j]
                     && table.x2[i] <= Tvec_wg_g_loc[j+1])
@@ -709,7 +709,7 @@ void load_nc_parameters(
     nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
     // there is only a single value for that since each type
     // is divided into different files in the input
-    if(nc.type[0] == "")
+    if(std::strcmp(nc.type[0], "") == 0)
     {
         nc.type_var.getVar(nc.type);
     }
@@ -1030,6 +1030,7 @@ int write_headers(
         fname += suffix;
 
         out_diff[ii].open(fname);
+        // std::cout << ii << " Opened " << fname << " at " << out_diff[ii] << "\n";
         out_diff[ii].precision(10);
         if( !out_diff[ii].is_open() )
         {

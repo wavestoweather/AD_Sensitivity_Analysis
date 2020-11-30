@@ -68,7 +68,7 @@ void RK4_step(
 #endif
     }
     if(fixed)
-        for(int ii=0; ii<update_idx; ++ii)
+        for(uint32_t ii=0; ii<update_idx; ++ii)
             ytmp[ii] = yold[ii];
 
     //
@@ -91,7 +91,7 @@ void RK4_step(
 #endif
     }
     if(fixed)
-        for(int ii=0; ii<update_idx; ++ii)
+        for(uint32_t ii=0; ii<update_idx; ++ii)
             ytmp[ii] = yold[ii];
 
     //
@@ -114,7 +114,7 @@ void RK4_step(
 #endif
     }
     if(fixed)
-        for(int ii=0; ii<update_idx; ++ii)
+        for(uint32_t ii=0; ii<update_idx; ++ii)
             ytmp[ii] = yold[ii];
 
     //
@@ -135,7 +135,7 @@ void RK4_step(
     }
 
     if(fixed)
-        for(int ii=0; ii < update_idx; ii++)
+        for(uint32_t ii=0; ii < update_idx; ii++)
             ynew[ii] = yold[ii];
 
 }

@@ -1089,7 +1089,7 @@ struct param_t{
     double sigma;
     double sigma_perc;
     int err;
-    uint32_t name;
+    int name;
     int out_name;
     bool particle_param;
 
@@ -1194,7 +1194,7 @@ struct param_t{
                 auto it = table_param.find(n);
                 if(it != table_param.end())
                 {
-                    name = static_cast<uint32_t>(it->second);
+                    name = static_cast<int>(it->second);
                     mean = get_at(cc.constants, name).getValue();
                 } else
                 {
@@ -1362,7 +1362,7 @@ struct param_t{
     {
         if(particle_param)
         {
-            particle_model_constants_t *pt_model;
+            particle_model_constants_t *pt_model = nullptr;
             switch(out_name)
             {
                 case static_cast<uint32_t>(OutParam::cloud):
@@ -1383,6 +1383,8 @@ struct param_t{
                 case static_cast<uint32_t>(OutParam::ice):
                     pt_model = &(cc.ice);
                     break;
+                default:
+                    std::cout << "Error in perturbing...\n";
             }
             pt_model->constants[name] = get_rand();
             pt_model->perturbed_idx.push_back(name);
@@ -2048,7 +2050,7 @@ struct segment_t
                 if(out_param != -1)
                     current_value = gradients[out_param][value_name - num_comp];
                 else
-                    current_value = gradients[out_param][value_name];
+                    current_value = y[value_name].getValue();
                 if(current_value == value)
                 {
                     activated = true;

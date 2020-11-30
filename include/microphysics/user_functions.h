@@ -271,20 +271,23 @@ void saturation_adjust(
     float_t qv = qv_prime;
     float_t qc = qc_prime;
     float_t T = T_prime;
-    // exchanged with convert_S_to_qv(p, T, S)
-    // This method calculates the saturated amount of qv using p_sat according
-    // to Dotzek. We ignore that and calculate saturation differently.
-    auto q_sat_f = [&](
-        const float_t &p_sat,
-        const float_t &p)
-    {
-        return get_at(cc.constants, Cons_idx::Epsilon) * p_sat / (p - (1-get_at(cc.constants, Cons_idx::Epsilon))*p_sat);
-    };
 
-    auto temp_p_dt = [&](
+    auto temp_p_dt = [](
         const float_t &T,
-        const float_t p)
+        const float_t &p,
+        const model_constants_t &cc)
     {
+        // auto A = get_at(cc.constants, Cons_idx::p_sat_const_a);
+        // auto B = get_at(cc.constants, Cons_idx::T_sat_low_temp);
+        // auto C = get_at(cc.constants, Cons_idx::p_sat_const_b);
+        // auto D = get_at(cc.constants, Cons_idx::Epsilon);
+        // auto upper = A * (B-C);
+        // auto upper2 = (1+(D-1)*p)*p;
+        // auto upper3 = upper*upper2;
+        // auto below = (T-C) * (T-C);
+        // auto result = upper3/below;
+        // return result;
+        // return upper3/below;
         return get_at(cc.constants, Cons_idx::p_sat_const_a)
             * (get_at(cc.constants, Cons_idx::T_sat_low_temp)-get_at(cc.constants, Cons_idx::p_sat_const_b))
             * ( 1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*p ) * p
@@ -313,7 +316,11 @@ void saturation_adjust(
         // Do the Newton
         for(uint32_t i=0; i<1; ++i)
         {
-            T_dt0 = temp_p_dt(T_prime, T_qd0);
+            T_dt0 = get_at(cc.constants, Cons_idx::p_sat_const_a)
+                * (get_at(cc.constants, Cons_idx::T_sat_low_temp)-get_at(cc.constants, Cons_idx::p_sat_const_b))
+                * ( 1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*T_qd0 ) * T_qd0
+                / ( (T_prime-get_at(cc.constants, Cons_idx::p_sat_const_b))*(T_prime-get_at(cc.constants, Cons_idx::p_sat_const_b)) );
+            // T_dt0 = temp_p_dt(T_prime, T_qd0, cc);
             T = ( Th-get_at(cc.constants, Cons_idx::L_wd)*(T_qd0-T_dt0*T_prime) )
                 / ( get_at(cc.constants, Cons_idx::cp)+get_at(cc.constants, Cons_idx::L_wd)*T_dt0 );
             // After Dotzek ...
@@ -324,7 +331,11 @@ void saturation_adjust(
         }
 
         // Get ratio mixing "back"
-        T_dt0 = temp_p_dt(T, T_qd0);
+        T_dt0 = get_at(cc.constants, Cons_idx::p_sat_const_a)
+                * (get_at(cc.constants, Cons_idx::T_sat_low_temp)-get_at(cc.constants, Cons_idx::p_sat_const_b))
+                * ( 1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*T_qd0 ) * T_qd0
+                / ( (T-get_at(cc.constants, Cons_idx::p_sat_const_b))*(T-get_at(cc.constants, Cons_idx::p_sat_const_b)) );
+        // T_dt0 = temp_p_dt(T, T_qd0, cc);
         float_t T_gn = ( Th - get_at(cc.constants, Cons_idx::L_wd)*(T_qd0-T_dt0*T) )
             / ( get_at(cc.constants, Cons_idx::cp)+get_at(cc.constants, Cons_idx::L_wd)*T_dt0 );
         T_qd0 += T_dt0*(T_gn-T);

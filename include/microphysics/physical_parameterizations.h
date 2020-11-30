@@ -842,23 +842,18 @@ A wet_growth_diam(
         A tmp = (p_lok - table.x1[0]) * table.odx1;
         uint64_t tmp_d = floor(tmp)+1;
         uint64_t iu =  std::min(tmp_d, table.n1-1 );
-        // uint64_t iu =  (uint64_t) min(tmp_d, (codi::RealReverse) (table.n1-1 )).getValue();
-        uint64_t io = iu + 1;
         A T_lok = min( max( T, table.x2[0] ), table.x2[table.n2-1] );
         tmp = (T_lok - table.x2[0]) * table.odx2;
         tmp_d = floor(tmp)+1;
         uint64_t ju = std::min(tmp_d, table.n2-1);
-        uint64_t jo = ju + 1;
         A qw_lok = min( max( qw, table.x3[0] ), table.x3[table.n3-1] );
         tmp = (qw_lok - table.x3[0]) * table.odx3;
         tmp_d = floor(tmp)+1;
         uint64_t ku = std::min(tmp_d, table.n3-1 );
-        uint64_t ko = ku + 1;
         A qi_lok = min( max( qi, table.x4[0] ), table.x4[table.n4-1] );
         tmp = (qi_lok - table.x4[0]) * table.odx4;
         tmp_d = floor(tmp)+1;
         uint64_t lu = std::min(tmp_d, table.n4-1);
-        uint64_t lo = lu + 1;
 
         std::vector<A> h1(16);
         std::vector<A> h2(8);
@@ -866,7 +861,7 @@ A wet_growth_diam(
         std::vector<A> h4(2);
         // Tetra linear interpolation by Dmin
         for(uint64_t i=0; i<16; ++i)
-            h1[i] = table.get(iu + i/8, ju + (i%8)/4, ku + (i%4)/2, lo+i%2);
+            h1[i] = table.get(iu + i/8, ju + (i%8)/4, ku + (i%4)/2, lu+i%2);
 
         for(uint64_t i=0; i<8; ++i)
         {
@@ -1486,11 +1481,12 @@ void setup_model_constants(
 
     // Performance constants for warm cloud; IFS
     // The file constants.h also defines some constants as nar, ...
+#ifndef MET3D
     const double Nc = 50; 	// 50 over ocean; 300 over land
     const double F_aut = 1.5;
     const double F_acc = 2.0;
     const double lambda_pp = pow(cc.nar * cc.ar * tgamma(cc.br + 1.0) , cc.alpha_r);
-
+#endif
     for(uint32_t i=0; i<4; i++)
     {
         cc.constants[static_cast<int>(Cons_idx::a_ccn_1)+i] = a_ccn[i];

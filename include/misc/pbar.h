@@ -118,7 +118,6 @@ public:
         if(rem_time >= 60)
             rem_string = rem_string + std::to_string(int(rem_time%3600/60)) + "min ";
         rem_string = rem_string + std::to_string(int(rem_time%60)) + "s";
-        int old_precision = out->precision();
         *out << bar << right_string << rem_string << "    \r" << std::flush;
     }
 

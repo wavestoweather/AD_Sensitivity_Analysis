@@ -49,12 +49,12 @@
 #define sub_idx 32          /*!< Sublimination number */
 
 #if defined(RK4_ONE_MOMENT)
-#define num_comp 9         /*!< Number of output elements of a model */
+#define num_comp 9          /*!< Number of output elements of a model */
 #define num_par 12          /*!< Number of gradients */
 
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
-#define num_par 56*6+107+16     /*!< Number of gradients. 56 for each particle + model constants */
+#define num_par 56*6+124    /*!< Number of gradients. 56 for each particle + model constants */
 
 #endif
 
@@ -1607,6 +1607,8 @@ std::stringstream out_tmp;
 std::ofstream outfile;
 std::ofstream out_diff[num_comp];
 std::stringstream out_diff_tmp[num_comp];
+// std::vector<std::ofstream> out_diff(num_comp);
+// std::vector<std::stringstream> out_diff_tmp(num_comp);
 
 /** @} */ // end of group constants
 
