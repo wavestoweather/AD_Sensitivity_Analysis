@@ -272,45 +272,15 @@ void saturation_adjust(
     float_t qc = qc_prime;
     float_t T = T_prime;
 
-    auto temp_p_dt = [](
-        const float_t &T,
-        const float_t &p,
-        const model_constants_t &cc)
-    {
-        // auto A = get_at(cc.constants, Cons_idx::p_sat_const_a);
-        // auto B = get_at(cc.constants, Cons_idx::T_sat_low_temp);
-        // auto C = get_at(cc.constants, Cons_idx::p_sat_const_b);
-        // auto D = get_at(cc.constants, Cons_idx::Epsilon);
-        // auto upper = A * (B-C);
-        // auto upper2 = (1+(D-1)*p)*p;
-        // auto upper3 = upper*upper2;
-        // auto below = (T-C) * (T-C);
-        // auto result = upper3/below;
-        // return result;
-        // return upper3/below;
-        return get_at(cc.constants, Cons_idx::p_sat_const_a)
-            * (get_at(cc.constants, Cons_idx::T_sat_low_temp)-get_at(cc.constants, Cons_idx::p_sat_const_b))
-            * ( 1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*p ) * p
-            / ( (T-get_at(cc.constants, Cons_idx::p_sat_const_b))*(T-get_at(cc.constants, Cons_idx::p_sat_const_b)) );
-    };
-
     T = T - get_at(cc.constants, Cons_idx::L_wd)*qc_prime/get_at(cc.constants, Cons_idx::cp);
     qv = qc_prime + qv_prime;
     qc = 0;
-    // After Dotzek...
-    // float_t p_sat_2 = saturation_pressure_water(T);
-    // float_t delta_q = q_sat_f(p_sat_2, p_prime) - qv;
-    // ... our version:
     float_t delta_q = convert_S_to_qv(p_prime, T, float_t(1), cc) - qv;
     if(delta_q < 0)
     {
         // Handle over saturation
         // Adjust temperature
         float_t Th = get_at(cc.constants, Cons_idx::cp)*T + get_at(cc.constants, Cons_idx::L_wd)*qv;
-        // After Dotzek...
-        // p_sat_2 = saturation_pressure_water(T_prime, cc);
-        // float_t T_qd0 = q_sat_f(p_sat_2, p_prime);
-        // ... our version
         float_t T_qd0 = convert_S_to_qv(p_prime, T_prime, float_t(1), cc);
         float_t T_dt0;
         // Do the Newton
@@ -320,13 +290,8 @@ void saturation_adjust(
                 * (get_at(cc.constants, Cons_idx::T_sat_low_temp)-get_at(cc.constants, Cons_idx::p_sat_const_b))
                 * ( 1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*T_qd0 ) * T_qd0
                 / ( (T_prime-get_at(cc.constants, Cons_idx::p_sat_const_b))*(T_prime-get_at(cc.constants, Cons_idx::p_sat_const_b)) );
-            // T_dt0 = temp_p_dt(T_prime, T_qd0, cc);
             T = ( Th-get_at(cc.constants, Cons_idx::L_wd)*(T_qd0-T_dt0*T_prime) )
                 / ( get_at(cc.constants, Cons_idx::cp)+get_at(cc.constants, Cons_idx::L_wd)*T_dt0 );
-            // After Dotzek ...
-            // p_sat_2 = saturation_pressure_water(T);
-            // T_qd0 = q_sat_f(p_sat_2, p_prime);
-            // ... our version
             T_qd0 = convert_S_to_qv(p_prime, T, float_t(1), cc);
         }
 
@@ -335,7 +300,6 @@ void saturation_adjust(
                 * (get_at(cc.constants, Cons_idx::T_sat_low_temp)-get_at(cc.constants, Cons_idx::p_sat_const_b))
                 * ( 1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*T_qd0 ) * T_qd0
                 / ( (T-get_at(cc.constants, Cons_idx::p_sat_const_b))*(T-get_at(cc.constants, Cons_idx::p_sat_const_b)) );
-        // T_dt0 = temp_p_dt(T, T_qd0, cc);
         float_t T_gn = ( Th - get_at(cc.constants, Cons_idx::L_wd)*(T_qd0-T_dt0*T) )
             / ( get_at(cc.constants, Cons_idx::cp)+get_at(cc.constants, Cons_idx::L_wd)*T_dt0 );
         T_qd0 += T_dt0*(T_gn-T);
