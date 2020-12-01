@@ -146,6 +146,10 @@ class Deriv:
         df["Output Parameter"].attrs = {
             "standard_name": "output_parameter",
             "long_name": "Output parameter for sensitivities"}
+        df["instance_id"] = df["instance_id"].astype(str)
+        df["instance_id"].attrs = {
+            "standard_name": "instance_id",
+            "long_name": "Instance ID"}
 
         if dropna:
             ds_complete = xr.Dataset.from_dataframe(df.set_index(
@@ -275,7 +279,7 @@ class Deriv:
         for col in df:
             if col in ["LONGITUDE", "LATITUDE", "MAP", "dp2h",
                        "conv_400", "conv_600", "slan_400", "slan_600",
-                       "lon", "lat", "WCB_flag"]:
+                       "lon", "lat", "WCB_flag", "instance_id"]:
                 continue
             cols.append(col)
         for k in self.data:

@@ -94,7 +94,8 @@ mappings = {"lat_heat": "Latent Heating",
             "dp_sat_ice_const_b":   r"$\partial p_{\mathrm{sat}, \mathrm{ice}, b}$",
             "dp_sat_low_temp":      r"$\partial p_{\mathrm{sat}, \mathrm{low}, T}$",
             "dT_sat_low_temp":      r"$\partial T_{\mathrm{sat}, \mathrm{low}, T}$",
-            "ddv0":                 r"$D_{0, \mathrm{vapor}}$"}
+            "ddv0":                 r"$D_{0, \mathrm{vapor}}$",
+            "instance_id":          "Instance ID"}
 
 
 # A dictionary of all the derivatives where the key refers to the

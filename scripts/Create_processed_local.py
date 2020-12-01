@@ -15,6 +15,10 @@ file_type = sys.argv[1]
 direc_path = sys.argv[2]
 store_path = sys.argv[3]
 input_type = sys.argv[4]
+change_traj_idx = False
+if len(sys.argv) > 5:
+    if sys.argv[5] == "True":
+        change_traj_idx = True
 filt = False
 EPSILON = 0.0
 ncpus = None
@@ -24,6 +28,9 @@ for f in os.listdir(direc_path):
     file_list.append(os.path.join(direc_path, f))
 file_list = np.sort(file_list)
 print("Running for {} trajectories".format(len(file_list)//35))
+new_traj_idx = 0
+n_files_per_run = 34
+max_traj_idx = (len(file_list)-2)/n_files_per_run
 
 # wcb#####_traj#_MAP_t#####_p###
 # where # is a number.
@@ -51,6 +58,20 @@ def parse_attr(f):
                 attributes[key][column_key].append((line.split("=")[0], line.split("=")[1]))
     return attributes
 
+# Get reference and attribute first
+ref = ""
+sim = ""
+att = None
+traj = -1
+for f_this in file_list:
+    if "attributes" in f_this:
+        att = f_this
+    if "reference" in f_this:
+        ref = f_this
+        traj = f_this.split("_traj")[-1]
+        traj = traj.split("_MAP")[0]
+        traj = int(traj)
+
 for f_this in file_list:
     if "diff" in f_this or "reference" in f_this or "attributes" in f_this:
         continue
@@ -66,22 +87,12 @@ for f_this in file_list:
     files = file_list[idx]
     t = timer()
     load_f = []
-    ref = ""
     sim = ""
-    att = None
-    traj = -1
 
     for f in files:
-        if "attributes" in f:
-            att = f
-        elif "diff" in f:
+        if "diff" in f:
             load_f.append(f)
-        elif "reference" in f:
-            ref = f
-            traj = f.split("_traj")[-1]
-            traj = traj.split("_MAP")[0]
-            traj = int(traj)
-        else:
+        elif not "reference" in f and not "attributes" in f:
             sim = f
             suffix = f[:-4]
             suffix = suffix.split("/")[-1]
@@ -145,6 +156,16 @@ for f_this in file_list:
     t2 = timer()
     print("Adding finished in {} s".format(t2-t))
 
+    if change_traj_idx:
+        print("Changing trajectory id")
+        t = timer()
+        for key in df_dic_mapped.data:
+            df_dic_mapped.data[key]["trajectory"] = new_traj_idx
+        new_traj_idx += 1
+        t2 = timer()
+        print("Changing done in {} s".format(t2-t))
+
+
     if input_type != "MET3D":
         print("Shift the timesteps such that t=0 is the start of the ascent")
         t = timer()
@@ -185,20 +206,44 @@ for f_this in file_list:
     t2 = timer()
     if not input_type == "MET3D":
         print("Saving done in {} s".format(t2-t))
+
 if input_type == "MET3D":
     t = timer()
+    comp = dict(zlib=True, complevel=5)
     for suffix in datasets:
-        for i, data in enumerate(datasets[suffix]):
-            comp = dict(zlib=True, complevel=5)
-            encoding = {var: comp for var in data.data_vars}
-            f_name = store_path + "/" + suffix
-            data.to_netcdf(
-                    f_name + f"_derivs_{i:03}.nc_wcb",
-                    encoding=encoding,
-                    compute=True,
-                    engine="netcdf4",
-                    format="NETCDF4",
-                    mode="w")
+        f_name = store_path + "/" + suffix
+        encoding = {var: comp for var in datasets[suffix][0].data_vars}
+        ds = None
+        for data in datasets[suffix]:
+            # print("###")
+            # print(np.unique(data["instance_id"]))
+            # print(data)
+            # print("----")
+            if ds is None:
+                ds = data
+            else:
+                ds.merge(data)
+        ds.to_netcdf(
+            f_name + f"_derivs.nc_wcb",
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w")
+
+    # Create separate files for each trajectory
+    # for suffix in datasets:
+    #     f_name = store_path + "/" + suffix
+    #     for i, data in enumerate(datasets[suffix]):
+    #         encoding = {var: comp for var in data.data_vars}
+    #         f_name = store_path + "/" + suffix
+    #         data.to_netcdf(
+    #                 f_name + f"_derivs_{i:03}.nc_wcb",
+    #                 encoding=encoding,
+    #                 compute=True,
+    #                 engine="netcdf4",
+    #                 format="NETCDF4",
+    #                 mode="w")
     t2 = timer()
     print("Saving done in {} s".format(t2-t))
 
