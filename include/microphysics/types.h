@@ -110,9 +110,7 @@ struct particle_model_constants_t{
         {
             uint32_t idx = std::stoi(it.first);
             this->constants[idx] = it.second.get_value<double>();
-            // uint32_t idx = it.second.get_value<uint32_t>();
             perturbed_idx.push_back(idx);
-            // this->constants[idx] = ptree.get_child(std::to_string(idx)).second.get_value<double>();
         }
         return err;
     }
@@ -878,7 +876,7 @@ struct input_parameters_t{
     uint32_t auto_type; /*!< Particle type. */
     uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
     uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
-    uint32_t progress_index; /*!< Index for updating progressbar. */
+    uint64_t progress_index; /*!< Index for updating progressbar. */
     uint32_t ensemble; /*!< Index of ensemble. */
     uint64_t current_time_idx; /*!< Index of time for and from checkpoint files. */
 
@@ -935,10 +933,11 @@ struct input_parameters_t{
         if(all_ids.length() > 1)
             preceeding_ids = all_ids.substr(0, all_ids.length()-2);
 
+        // master branch
         if(preceeding_ids == "")
         {
             std::string id_str = "id" + std::to_string(id) + "_";
-            auto pos = OUTPUT_FILENAME.find("/");
+            auto pos = OUTPUT_FILENAME.rfind("/");
             if(pos == std::string::npos)
             {
                 OUTPUT_FILENAME.insert(0, id_str);
@@ -947,13 +946,13 @@ struct input_parameters_t{
                 OUTPUT_FILENAME.insert(pos+1, id_str);
             }
 
-        } else // or not
+        } else // subsequent ensemble members
         {
             std::string id_str = "id" + all_ids + "_";
             std::string to_replace = "id" + preceeding_ids + "_";
-            auto pos = OUTPUT_FILENAME.find(to_replace);
+            auto pos = OUTPUT_FILENAME.rfind(to_replace);
 
-            OUTPUT_FILENAME.replace(pos, to_replace.length(), id_str);
+            // OUTPUT_FILENAME.replace(pos, to_replace.length(), id_str);
 
             if(pos != std::string::npos)
             {
@@ -963,7 +962,7 @@ struct input_parameters_t{
             {
                 // If for any weird reason, "id" is not part of OUTPUT_FILENAME:
                 // Add to beginning of the filename. Check for any path characters
-                auto pos_folder = OUTPUT_FILENAME.find("/");
+                auto pos_folder = OUTPUT_FILENAME.rfind("/");
                 if(pos == std::string::npos)
                 {
                     OUTPUT_FILENAME.insert(0, id_str);
@@ -996,7 +995,7 @@ struct input_parameters_t{
         input_params.put<uint32_t>("auto_type", auto_type);
         input_params.put<uint32_t>("traj", traj);
         input_params.put<uint32_t>("write_index", write_index);
-        input_params.put<uint32_t>("progress_index", progress_index);
+        input_params.put<uint64_t>("progress_index", progress_index);
         input_params.put<uint32_t>("ensemble", ensemble);
         input_params.put<uint64_t>("current_time_idx", time_idx);
         ptree.add_child("input_params", input_params);
@@ -1071,10 +1070,13 @@ struct input_parameters_t{
                 write_index = it.second.get_value<uint32_t>();
             } else if(first == "progress_index")
             {
-                progress_index = it.second.get_value<uint32_t>();
+                progress_index = it.second.get_value<uint64_t>();
             } else if(first == "ensemble")
             {
                 ensemble = it.second.get_value<uint32_t>();
+            } else if(first == "current_time_idx")
+            {
+                current_time_idx = it.second.get_value<uint64_t>();
             } else
             {
                 err = INPUT_NAME_CHECKPOINT_ERR;
@@ -1152,13 +1154,13 @@ struct param_t{
     void add_name(std::string n, model_constants_t &cc)
     {
         param_name = n;
-        // Checkpoint files already provide a mean value
-        if(std::isnan(mean))
+        if(particle_param)
         {
-            if(particle_param)
+            auto it = table_particle_param.find(n);
+            if(it != table_particle_param.end())
             {
-                auto it = table_particle_param.find(n);
-                if(it != table_particle_param.end())
+                name = static_cast<uint32_t>(it->second);
+                if(std::isnan(mean))
                 {
                     particle_model_constants_t *pt_model;
                     switch(out_name)
@@ -1182,26 +1184,26 @@ struct param_t{
                             pt_model = &(cc.ice);
                             break;
                     }
-                    name = static_cast<uint32_t>(it->second);
                     mean = pt_model->constants[name].getValue();
-                } else
-                {
-                    err = PARAM_CONFIG_ERR;
                 }
-            }
-            else
+            } else
             {
-                auto it = table_param.find(n);
-                if(it != table_param.end())
-                {
-                    name = static_cast<int>(it->second);
+                err = PARAM_CONFIG_ERR;
+            }
+        } else
+        {
+            auto it = table_param.find(n);
+            if(it != table_param.end())
+            {
+                name = static_cast<int>(it->second);
+                if(std::isnan(mean))
                     mean = get_at(cc.constants, name).getValue();
-                } else
-                {
-                    err = PARAM_CONFIG_ERR;
-                }
+            } else
+            {
+                err = PARAM_CONFIG_ERR;
             }
         }
+
         if(!isnan(sigma) && err != PARAM_CONFIG_ERR)
         {
             add_sigma(sigma);
@@ -1879,12 +1881,9 @@ struct segment_t
         }
     }
 
-    void add_counter(int c)
+    void add_counter(uint32_t c)
     {
-        if(c > 0)
-            n_segments = c;
-        else
-            err = N_SEGMENTS_CONFIG_ERR;
+        n_segments = c;
     }
 
     void add_out_param(std::string p)
@@ -1899,15 +1898,6 @@ struct segment_t
         {
             err = OUTPARAM_CONFIG_ERR;
         }
-        // auto it = table_out_param.find(p);
-        // if(it != table_out_param.end())
-        // {
-        //     out_param = it->second;
-        //     tree_strings.insert({"when_sens", p});
-        // } else
-        // {
-        //     err = OUTPARAM_CONFIG_ERR;
-        // }
     }
 
     void add_amount(int a)
@@ -1927,7 +1917,7 @@ struct segment_t
     {
         if(n_members == 1)
             err = N_MEMBERS_CONFIG_ERR;
-        else if(n_segments < 1)
+        else if(n_segments < 0)
             err = N_SEGMENTS_CONFIG_ERR;
         else if(value_name == -1 && method != Method::impact_change)
             err = VALUE_NAME_CONFIG_ERR;
@@ -2083,6 +2073,14 @@ struct segment_t
         return false;
     }
 
+    void deactivate()
+    {
+        // Perturbing every few timesteps is done indefenitely
+        if(method != repeated_time)
+            n_segments--;
+        activated = false;
+    }
+
     void perturb(model_constants_t &cc)
     {
         // Sanity check if had been done already
@@ -2092,18 +2090,15 @@ struct segment_t
         // Perturb every param
         for(auto &p: params)
             p.perturb(cc);
-        // Perturbing every few timesteps is done indefenitely
-        if(method != repeated_time)
-            n_segments--;
-        activated = false;
+        // When perturbing is done, deativate
+        deactivate();
     }
 
     void put(pt::ptree &ptree) const
     {
-        pt::ptree segment;
         if( (err != 0 || n_segments < 1) && !activated)
             return;
-
+        pt::ptree segment;
         if(!isnan(value))
         {
             segment.put("when_value", value);
@@ -2118,6 +2113,7 @@ struct segment_t
         }
         if(n_segments != 1)
         {
+            std::cout << "set when_counter to " << n_segments << "\n";
             segment.put("when_counter", n_segments);
         }
         if(method != value_method)
@@ -2167,6 +2163,9 @@ struct segment_t
             } else if(first == "when_sens")
             {
                 add_out_param(it.second.get_value<std::string>());
+            } else if(first == "activated")
+            {
+                activated = it.second.get_value<bool>();
             } else if(first == "params")
             {
                 for(auto &param_it: ptree.get_child(first))

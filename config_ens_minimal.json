@@ -1,39 +1,8 @@
 {
     "segments": [
         {
-            "when_value": 235.40,
-            "when_name": "T",
-            "amount": 3,
-            "params": [
-                {
-                    "name": "b_geo",
-                    "sigma": 0.1,
-                    "type": "ice",
-                    "rand_func": "uniform"
-                },
-                {
-                    "name": "b_vel",
-                    "sigma_perc": 10,
-                    "type": "ice",
-                    "rand_func": "uniform"
-                },
-                {
-                    "name": "b_geo",
-                    "sigma": 0.1,
-                    "type": "snow",
-                    "rand_func": "uniform"
-                },
-                {
-                    "name": "b_vel",
-                    "sigma_perc": 10,
-                    "type": "snow",
-                    "rand_func": "uniform"
-                }
-            ]
-        },
-        {
             "when_method": "sign_flip",
-            "when_counter": 2,
+            "when_counter": 1,
             "when_name": "cloud_min_x_act",
             "when_sens": "QV",
             "amount": 3,

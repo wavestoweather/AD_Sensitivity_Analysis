@@ -81,9 +81,11 @@ int load_checkpoint(
     {
         segment_t segment;
         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
-        segments.push_back(segment);
+
         if(segment.activated)
             segment.perturb(cc);
+
+        segments.push_back(segment);
     }
     for(auto &it: pt.get_child("Output Parameters"))
     {
@@ -160,7 +162,7 @@ void write_checkpoint(
     // deactivate all segments, so we know, another instance is going
     // to process this
     for(auto &s: segments)
-        s.activated = false;
+        s.deactivate();
 }
 
 
@@ -170,7 +172,7 @@ void write_checkpoint(
  * (gnuparallel) starting n processes
  * (slurm) submitting it as a slurm job with n processes
  */
-void create_script_gnuparallel(
+void create_run_script(
     const std::string &checkpoint_file,
     const model_constants_t &cc,
     const uint32_t n_processes,
@@ -179,36 +181,33 @@ void create_script_gnuparallel(
 {
     if(which == "gnuparallel")
     {
-        std::string script = "parallel -j " + std::to_string(n_processes)
+        std::string script = "parallel -u -j " + std::to_string(n_processes-1)
             + " --no-notice --delay .2 build/apps/src/microphysics/./trajectories "
-            "-c " + checkpoint_file + " -g {1} :::{0.."
-            + std::to_string(n_processes-1) + "}";
-        if(start)
-        {
-            const char* runscript = (script + " &").c_str();
-            std::system(runscript);
-        } else
-        {
-            // Save as a script
-            std::string script_name = "execute_id" + cc.id + "_0000.sh";
-            uint32_t i = 0;
-            while(exists(script_name))
-            {
-                i++;
-                if(i < 10)
-                    script_name = "execute_id" + cc.id + "_000" + std::to_string(i) + ".sh";
-                else if(i < 100)
-                    script_name = "execute_id" + cc.id + "_00" + std::to_string(i) + ".sh";
-                else if(i < 1000)
-                    script_name = "execute_id" + cc.id + "_0" + std::to_string(i) + ".sh";
-                else
-                    script_name = "execute_id" + cc.id + "_" + std::to_string(i) + ".sh";
-            }
+            "-c " + checkpoint_file + " -g {1} ::: {0.."
+            + std::to_string(n_processes-2) + "}";
 
-            std::ofstream out(script_name);
-            out << "#!/bin/bash\n" << script << "\n";
-            out.close();
+        // Save as a script
+        std::string script_name = "execute_id" + cc.id + "_0000.sh";
+        uint32_t i = 0;
+        while(exists(script_name))
+        {
+            i++;
+            if(i < 10)
+                script_name = "execute_id" + cc.id + "_000" + std::to_string(i) + ".sh";
+            else if(i < 100)
+                script_name = "execute_id" + cc.id + "_00" + std::to_string(i) + ".sh";
+            else if(i < 1000)
+                script_name = "execute_id" + cc.id + "_0" + std::to_string(i) + ".sh";
+            else
+                script_name = "execute_id" + cc.id + "_" + std::to_string(i) + ".sh";
         }
+        std::ofstream out(script_name);
+        out << "#!/bin/bash\n" << script << ( (start) ? " &\n" : "\n" );
+        out.close();
+
+        if(start)
+            std::system(("./" + script_name).c_str());
+
     } else if(which == "slurm")
     {
 
@@ -817,7 +816,7 @@ void set_input_from_arguments(global_args_t &arg ,
 
   // Progressbar index
   if(1 == arg.progress_index_flag){
-      in.progress_index = std::stoi(arg.progress_index_string);
+      in.progress_index = std::stoull(arg.progress_index_string);
   }
 #ifdef MET3D
   // Simulation start time
@@ -898,7 +897,8 @@ int write_attributes(
     outfile.precision(10);
     if( !outfile.is_open() )
     {
-        std::cout << "ERROR while opening the attribute file. Aborting." << std::endl;
+        std::cout << "ERROR while opening the attribute file:\n"
+                  << out_filename << "_attributes.txt\n. Aborting.\n";
         return 1;
     }
     // Global attributes
@@ -1013,7 +1013,8 @@ int write_headers(
         << "time,"
         << "time_after_ascent,"
         << "type,"
-        << "ensemble,";
+        << "ensemble,"
+        << "instance_id,";
 #endif
     for(uint32_t i=0; i<output_par_idx.size(); ++i)
         out_tmp << output_par_idx[i]  <<
@@ -1030,13 +1031,13 @@ int write_headers(
         fname += suffix;
 
         out_diff[ii].open(fname);
-        // std::cout << ii << " Opened " << fname << " at " << out_diff[ii] << "\n";
-        out_diff[ii].precision(10);
+
         if( !out_diff[ii].is_open() )
         {
             std::cout << "ERROR while opening outputfile. Aborting." << std::endl;
             return 1;
         }
+        out_diff[ii].precision(10);
         out_diff_tmp[ii]
             << std::setprecision(10)
             << "step,"
@@ -1062,7 +1063,8 @@ int write_headers(
             << "time,"
             << "time_after_ascent,"
             << "type,"
-            << "ensemble,";
+            << "ensemble,"
+            << "instance_id,";
 #endif
         for(uint32_t i=0; i<output_grad_idx.size(); ++i)
             out_diff_tmp[ii] << output_grad_idx[i]  <<
@@ -1164,7 +1166,6 @@ int read_init_netcdf(
             // Calculate the needed index
             start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
         }
-        // std::cout << "got start time idx " << start_time_idx << "\n";
         nc_params.time_idx = start_time_idx;
         startp[2] = start_time_idx;
 #else
@@ -1573,7 +1574,8 @@ void read_netcdf_write_stream(
         out_tmp << nc_params.time_abs[t + nc_params.time_idx] << ","
                 << nc_params.time_rel << ","
                 << nc_params.type[0] << ","
-                << ensemble << ",";
+                << ensemble << ","
+                << cc.id << ",";
 #endif
         for(int ii = 0 ; ii < num_comp; ii++)
             out_tmp << y_single_old[ii] <<
@@ -1614,7 +1616,8 @@ void read_netcdf_write_stream(
         out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] << ","
                          << nc_params.time_rel << ","
                          << nc_params.type[0] << ","
-                         << ensemble << ",";
+                         << ensemble << ","
+                         << cc.id << ",";
 #endif
             for(int jj = 0 ; jj < num_par ; jj++)
                 out_diff_tmp[ii] << 0.0
@@ -1647,8 +1650,6 @@ void write_output(
     if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {
-        // std::cout << "buffering\n";
-        // Write the results to the output file
 #if defined WCB || defined WCB2
         out_tmp << time_new << "," << traj_id << ","
                 << (nc_params.lon[0] + sub*nc_params.dlon) << ","
@@ -1676,7 +1677,8 @@ void write_output(
         out_tmp << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","
                 << nc_params.time_rel + sub*cc.dt << ","
                 << nc_params.type[0] << ","
-                << ensemble << ",";
+                << ensemble << ","
+                << cc.id << ",";
             double abs_time = sub *cc.dt + nc_params.time_abs[t + nc_params.time_idx];
 #endif
         for(int ii = 0 ; ii < num_comp; ii++)
@@ -1717,7 +1719,8 @@ void write_output(
             out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","
                          << nc_params.time_rel + sub*cc.dt << ","
                          << nc_params.type[0] << ","
-                         << ensemble << ",";
+                         << ensemble << ","
+                         << cc.id << ",";
 #endif
             for(int jj = 0 ; jj < num_par ; jj++)
                 out_diff_tmp[ii] << y_diff[ii][jj]
@@ -1728,7 +1731,6 @@ void write_output(
     if( (0 == (sub + t*cc.num_sub_steps) % write_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {
-        // std::cout << "Writing to file\n";
         outfile << out_tmp.rdbuf();
         for(int ii = 0 ; ii < num_comp ; ii++)
         {

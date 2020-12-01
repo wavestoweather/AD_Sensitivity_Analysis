@@ -86,20 +86,25 @@ int main(int argc, char** argv)
     // Collect the initial values in a separated vector
     // See constants.h for storage order
     std::vector<double> y_init(num_comp);
+    set_input_from_arguments(global_args, input);
 
     if(global_args.checkpoint_flag)
     {
         load_checkpoint(global_args.checkpoint_string, cc, y_init, segments, input, ref_quant);
+        print_segments(segments);
     }
     else
     {
-        set_input_from_arguments(global_args, input);
         setup_model_constants(input, cc, ref_quant);
         if(global_args.ens_config_flag)
+        {
             load_ens_config(global_args.ens_config_string, cc, segments);
+            for(auto &s: segments)
+                SUCCESS_OR_DIE(s.check());
+            print_segments(segments);
+        }
+        input.set_outputfile_id(cc.id);
     }
-    for(auto &s: segments)
-        SUCCESS_OR_DIE(s.check());
 
     auto_type = input.auto_type;
     load_lookup_table(cc.ltabdminwgg);
@@ -182,7 +187,7 @@ int main(int argc, char** argv)
     print_particle_params(cc.hail, "hail");
 #endif
 
-    // ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps, input.progress_index, "simulation step", std::cout);
+    ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps, input.progress_index, "simulation step", std::cout);
     // Loop for timestepping: BEGIN
     try
     {
@@ -204,10 +209,10 @@ int main(int argc, char** argv)
                 ensemble,
 #endif
                 t, global_args.checkpoint_flag);
+
             // Iterate over each substep
             for(uint32_t sub=1; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
             {
-                // std::cout << "sub=" << sub << "\n";
 #if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
 #if defined(TRACE_TIME)
 #if defined(MET3D)
@@ -217,7 +222,7 @@ int main(int argc, char** argv)
 #endif
 #endif
                 if(trace)
-                    std::cout << "timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
+                    std::cout << cc.id << " timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
 
 #endif
                 bool last_step = ( ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + !input.start_over))
@@ -398,19 +403,20 @@ int main(int argc, char** argv)
                                 segments,
                                 input,
                                 time_old);
-                            create_script_gnuparallel(
+                            create_run_script(
                                 checkpoint_filename,
                                 cc,
                                 s.n_members,
                                 "gnuparallel",
-                                false);
+                                true);
                         }
                     }
                 }
 
                 // While debugging, the bar is not useful.
 #if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR) && !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
-                // pbar.progress(sub + t*cc.num_sub_steps);
+                if(input.progress_index > 0)
+                    pbar.progress(sub + t*cc.num_sub_steps);
 #endif
                 // In case that the sub timestep%timestep is not 0
                 if( last_step )
@@ -424,11 +430,13 @@ int main(int argc, char** argv)
         sediment_q_total = 0;
 #endif
         }
-        // pbar.finish();
+        if(input.progress_index > 0)
+            pbar.finish();
         nc_close(ncid);
     } catch(netCDF::exceptions::NcException& e)
     {
-        // pbar.finish();
+        if(input.progress_index > 0)
+            pbar.finish();
         std::cout << e.what() << std::endl;
         std::cout << "ABORTING." << std::endl;
         return 1;
