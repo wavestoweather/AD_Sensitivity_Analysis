@@ -140,6 +140,7 @@ def plot_my_thing(path, netcdf_path, prefix, min_x=None, max_x=None, time_offset
             trajectories=trajectories,
             min_x=min_x,
             max_x=max_x)
+
         for col in out_params:
             if "OUT" in col:
                 deriv_4.cache[col] = np.abs(deriv_4.cache[col])
@@ -183,7 +184,7 @@ def plot_my_thing(path, netcdf_path, prefix, min_x=None, max_x=None, time_offset
             cross_mark=cross_mark,
             plot_path=store_path,
             plot_singles=plot_singles,
-            alpha=1,
+            alpha=0.2,
             formatter_limits=(-2,2),
             s=20,
             kind="scatter")

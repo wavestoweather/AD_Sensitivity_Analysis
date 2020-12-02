@@ -169,6 +169,33 @@ class Deriv:
                             ds_complete[col].attrs = attributes[key][col]
         return ds_complete
 
+    def get_dataframe(self, add_columns=None, dropna=False):
+        df = None
+        for k in self.data:
+            tmp_df = self.data[k]
+            if add_columns is not None:
+                for col in add_columns:
+                    tmp_df[col] = add_columns[col]
+            if df is None:
+                df = tmp_df
+            else:
+                df = df.append(tmp_df)
+        df["Output Parameter"] = df["Output Parameter"].astype(str)
+        df["Output Parameter"].attrs = {
+            "standard_name": "output_parameter",
+            "long_name": "Output parameter for sensitivities"}
+        df["instance_id"] = df["instance_id"].astype(str)
+        df["instance_id"].attrs = {
+            "standard_name": "instance_id",
+            "long_name": "Instance ID"}
+
+        if dropna:
+            df_complete = df.set_index(
+                ["Output Parameter", "ensemble", "trajectory", "time"]).dropna()
+        else:
+            df_complete = df.set_index(
+                ["Output Parameter", "ensemble", "trajectory", "time"])
+        return df_complete
 
     def to_netcdf(self, f_name, add_columns=None, dropna=False, met3d=False, attr=None):
         """

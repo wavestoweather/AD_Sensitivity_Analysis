@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
-from loader import load_mult_derivates_directory
+from loader import load_mult_derivates_directory, parse_attr
 from loader import load_nc, rotate_df, norm_deriv, ratio_deriv
 import loader as loader
 import numpy as np
@@ -10,6 +10,7 @@ from Deriv import Deriv
 from Sim import Sim
 from timeit import default_timer as timer
 import xarray as xr
+import pandas as pd
 
 file_type = sys.argv[1]
 direc_path = sys.argv[2]
@@ -19,6 +20,7 @@ change_traj_idx = False
 if len(sys.argv) > 5:
     if sys.argv[5] == "True":
         change_traj_idx = True
+separate_files = False
 filt = False
 EPSILON = 0.0
 ncpus = None
@@ -37,26 +39,6 @@ max_traj_idx = (len(file_list)-2)/n_files_per_run
 processed_trajectories = []
 failed_trajectories = []
 datasets = {}
-def parse_attr(f):
-    print(f)
-    attributes = {}
-    key = None
-    column_key = None
-    opened = open(f, "r")
-    for line in opened:
-        print(line)
-        if "[" in line and "]" in line:
-            key = line.replace("[", "").replace("]", "")
-            attributes[key] = []
-        elif key == "Global attributes":
-            attributes[key].append((line.split("=")[0], line.split("=")[1]))
-        else:
-            if "column" in line:
-                column_key = line.split("=")[1]
-                attributes[key][column_key] = []
-            else:
-                attributes[key][column_key].append((line.split("=")[0], line.split("=")[1]))
-    return attributes
 
 # Get reference and attribute first
 ref = ""
@@ -189,11 +171,16 @@ for f_this in file_list:
                 store_path, compression="snappy", low_memory=True, attr=att)
         elif file_type == "netcdf":
             f_name = store_path + "/" + suffix
-            if input_type == "MET3D":
+            if input_type == "MET3D" and separate_files:
                 if suffix in datasets:
                     datasets[suffix].append(df_dic_mapped.get_netcdf_ready_data(attr=att))
                 else:
                     datasets[suffix] = [df_dic_mapped.get_netcdf_ready_data(attr=att)]
+            elif input_type == "MET3D":
+                if suffix in datasets:
+                    datasets[suffix] = datasets[suffix].append(df_dic_mapped.get_dataframe())
+                else:
+                    datasets[suffix] = df_dic_mapped.get_dataframe()
             else:
                 df_dic_mapped.to_netcdf(f_name)
         else:
@@ -210,40 +197,63 @@ for f_this in file_list:
 if input_type == "MET3D":
     t = timer()
     comp = dict(zlib=True, complevel=5)
-    for suffix in datasets:
-        f_name = store_path + "/" + suffix
-        encoding = {var: comp for var in datasets[suffix][0].data_vars}
-        ds = None
-        for data in datasets[suffix]:
-            # print("###")
-            # print(np.unique(data["instance_id"]))
-            # print(data)
-            # print("----")
-            if ds is None:
-                ds = data
-            else:
-                ds.merge(data)
-        ds.to_netcdf(
-            f_name + f"_derivs.nc_wcb",
-            encoding=encoding,
-            compute=True,
-            engine="netcdf4",
-            format="NETCDF4",
-            mode="w")
 
-    # Create separate files for each trajectory
-    # for suffix in datasets:
-    #     f_name = store_path + "/" + suffix
-    #     for i, data in enumerate(datasets[suffix]):
-    #         encoding = {var: comp for var in data.data_vars}
-    #         f_name = store_path + "/" + suffix
-    #         data.to_netcdf(
-    #                 f_name + f"_derivs_{i:03}.nc_wcb",
-    #                 encoding=encoding,
-    #                 compute=True,
-    #                 engine="netcdf4",
-    #                 format="NETCDF4",
-    #                 mode="w")
+    if not separate_files:
+        # Used in ensemble methods where types are all the same
+        for suffix in datasets:
+            f_name = store_path + "/" + suffix
+            # Fill values for certain columns
+            traj_idx = np.unique( datasets[suffix].index.get_level_values("trajectory") )
+            time_idx = np.unique( datasets[suffix].index.get_level_values("time") )
+            output_idx = np.unique( datasets[suffix].index.get_level_values("Output Parameter") )
+            ens_idx = np.unique( datasets[suffix].index.get_level_values("ensemble") )
+
+            idx = pd.MultiIndex.from_product(
+                [output_idx, ens_idx, traj_idx, time_idx],
+                names=["Output Parameter", "ensemble", "trajectory", "time"])
+            datasets[suffix] = datasets[suffix].reindex(idx)
+
+            datasets[suffix]["time_after_ascent"] = datasets[suffix]["time_after_ascent"].fillna(method="bfill", axis=0).fillna(method="ffill", axis=0)
+            datasets[suffix]["instance_id"] = datasets[suffix]["instance_id"].fillna(method="bfill", axis=0).fillna(method="ffill", axis=0)
+            datasets[suffix]["type"] = datasets[suffix]["type"].fillna(method="bfill", axis=0).fillna(method="ffill", axis=0)
+            datasets[suffix]["slan_400"] = datasets[suffix]["slan_400"].fillna(method="bfill", axis=0).fillna(method="ffill", axis=0)
+            datasets[suffix]["slan_600"] = datasets[suffix]["slan_600"].fillna(method="bfill", axis=0).fillna(method="ffill", axis=0)
+            datasets[suffix]["conv_400"] = datasets[suffix]["conv_400"].fillna(method="bfill", axis=0).fillna(method="ffill", axis=0)
+            datasets[suffix]["conv_600"] = datasets[suffix]["conv_600"].fillna(method="bfill", axis=0).fillna(method="ffill", axis=0)
+
+            datasets[suffix] = xr.Dataset.from_dataframe(datasets[suffix])
+            encoding = {var: comp for var in datasets[suffix].data_vars}
+
+            attributes = parse_attr(att)
+            for key in attributes:
+                if key == "Global attributes":
+                    datasets[suffix].attrs = attributes[key]
+                else:
+                    for col in attributes[key]:
+                        if col in datasets[suffix]:
+                            datasets[suffix][col].attrs = attributes[key][col]
+
+            datasets[suffix].to_netcdf(
+                f_name + f"_derivs.nc_wcb",
+                encoding=encoding,
+                compute=True,
+                engine="netcdf4",
+                format="NETCDF4",
+                mode="w")
+    else:
+        # Create separate files for each trajectory
+        for suffix in datasets:
+            f_name = store_path + "/" + suffix
+            for i, data in enumerate(datasets[suffix]):
+                encoding = {var: comp for var in data.data_vars}
+                f_name = store_path + "/" + suffix
+                data.to_netcdf(
+                        f_name + f"_derivs_{i:03}.nc_wcb",
+                        encoding=encoding,
+                        compute=True,
+                        engine="netcdf4",
+                        format="NETCDF4",
+                        mode="w")
     t2 = timer()
     print("Saving done in {} s".format(t2-t))
 

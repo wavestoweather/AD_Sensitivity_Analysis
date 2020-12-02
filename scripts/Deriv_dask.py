@@ -266,9 +266,13 @@ class Deriv_dask:
         if "Output Parameter" in df:
             df = df.loc[df["Output Parameter"].isin(out_params)]
 
-            all_params = list(set(["Output Parameter", "trajectory", "type"] + in_params + [x_axis] + out_params))
+            all_params = list(set(
+                ["Output Parameter", "trajectory", "type", "instance_id"]
+                + in_params + [x_axis] + out_params))
         else:
-            all_params = list(set(["trajectory", "type"] + in_params + [x_axis] + out_params))
+            all_params = list(set(
+                ["trajectory", "type", "instance_id"]
+                + in_params + [x_axis] + out_params))
 
         if y_axis is not None and not y_axis in all_params:
             all_params.append(y_axis)
