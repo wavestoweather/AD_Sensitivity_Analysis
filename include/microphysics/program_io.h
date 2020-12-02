@@ -74,7 +74,7 @@ int load_checkpoint(
     // Parse the model constants
     SUCCESS_OR_DIE(cc.from_pt(pt));
     // cc.id are the preceeding ids
-    input.set_outputfile_id(cc.id);
+    input.set_outputfile_id(cc.id, cc.ensemble_id);
 
     // Parse the segments
     for(auto &it: pt.get_child("segments"))
@@ -116,7 +116,7 @@ inline bool exists(const std::string& name) {
 template<class float_t>
 void write_checkpoint(
     std::string &filename,
-    const model_constants_t &cc,
+    model_constants_t &cc,
     const std::vector<float_t> &y,
     std::vector<segment_t> &segments,
     const input_parameters_t &input,
@@ -139,7 +139,7 @@ void write_checkpoint(
         output_parameters.put(std::to_string(i), y[i]);
     checkpoint.add_child("Output Parameters", output_parameters);
 
-    uint32_t i = 0;
+    uint64_t i = 0;
     std::string actual_filename = filename + "_id" + cc.id + "_0000.json";
     while(exists(actual_filename))
     {
@@ -163,6 +163,8 @@ void write_checkpoint(
     // to process this
     for(auto &s: segments)
         s.deactivate();
+
+    cc.ensemble_id++;
 }
 
 
@@ -1103,7 +1105,8 @@ int read_init_netcdf(
     const uint32_t traj,
     const bool checkpoint_flag,
     model_constants_t &cc,
-    uint32_t start_time_idx=0)
+    double current_time)
+    // uint32_t start_time_idx=0)
 {
     try
     {
@@ -1119,7 +1122,7 @@ int read_init_netcdf(
         nc_inq_dimid(ncid, "id", &dimid);
 #endif
         nc_inq_dimlen(ncid, dimid, &lenp);
-        std::cout << "Number of trajectories in netCDF file: " << lenp << "\n";
+        std::cout << "Number of trajectories in netCDF file: " << lenp << "\n" << std::flush;
         if(lenp <= traj)
         {
             std::cout << "You asked for trajectory with index " << traj
@@ -1133,8 +1136,6 @@ int read_init_netcdf(
         nc_inq_dimid(ncid, "time", &dimid);
 #endif
         nc_inq_dimlen(ncid, dimid, &n_timesteps);
-        uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1 - start_time_idx;
-        cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
 
         init_nc_parameters(nc_params, lenp, n_timesteps);
         netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
@@ -1157,7 +1158,9 @@ int read_init_netcdf(
 
         startp.push_back(0); // ensemble
         startp.push_back(traj); // trajectory
-        startp.push_back(start_time_idx); // time
+        startp.push_back(0); // time
+        uint64_t start_time_idx = 0;
+
         if(!std::isnan(start_time) && !checkpoint_flag)
         {
             double rel_start_time;
@@ -1165,7 +1168,21 @@ int read_init_netcdf(
             nc_params.time_rel_var.getVar(startp, countp, &rel_start_time);
             // Calculate the needed index
             start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
+        } else if(checkpoint_flag && !std::isnan(current_time) && std::isnan(start_time))
+        {
+            start_time_idx = ceil(current_time/20.0);
+        } else if(checkpoint_flag && !std::isnan(current_time) && !std::isnan(start_time))
+        {
+            double rel_start_time;
+            // Get relative start time of trajectory
+            nc_params.time_rel_var.getVar(startp, countp, &rel_start_time);
+            // Calculate the needed index
+            start_time_idx = ceil(start_time-rel_start_time + current_time)/cc.dt_traject;
         }
+
+        uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1 - start_time_idx;
+        cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+
         nc_params.time_idx = start_time_idx;
         startp[2] = start_time_idx;
 #else

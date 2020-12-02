@@ -338,6 +338,10 @@ struct model_constants_t{
      * have other ids which are set by reading a checkpoint file.
      */
     std::string id = "0";
+    /**
+     *  Running id for the ensembles starting from this instance.
+     */
+    uint64_t ensemble_id = 0;
     //
     // Physical constants warm cloud
     //
@@ -552,6 +556,7 @@ struct model_constants_t{
         model_cons.put("dt_half", dt_half);
         model_cons.put("dt_sixth", dt_sixth);
         model_cons.put("dt_third", dt_third);
+        model_cons.put("ensemble_id", ensemble_id);
 
         if(!perturbed_idx.empty())
         {
@@ -618,6 +623,9 @@ struct model_constants_t{
             } else if(first == "dt_third")
             {
                 dt_third = it.second.get_value<double>();
+            } else if(first == "ensemble_id")
+            {
+                ensemble_id = it.second.get_value<uint64_t>();
             } else if(first == "perturbed")
             {
                 for(auto &it2: ptree.get_child("model_constants.perturbed"))
@@ -878,7 +886,7 @@ struct input_parameters_t{
     uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
     uint64_t progress_index; /*!< Index for updating progressbar. */
     uint32_t ensemble; /*!< Index of ensemble. */
-    uint64_t current_time_idx; /*!< Index of time for and from checkpoint files. */
+    double current_time; /*!< Time for and from checkpoint files. */
 
     input_parameters_t()
     {
@@ -916,7 +924,7 @@ struct input_parameters_t{
 #ifdef MET3D
         start_time = std::nan("");
 #endif
-        current_time_idx = 0;
+        current_time = std::nan("");;
         id = 0;
     }
 
@@ -927,16 +935,25 @@ struct input_parameters_t{
      * @params all_ids String of form x-y-z with x,y and z positive ints
      *                 and z being the current id.
      */
-    void set_outputfile_id(const std::string &all_ids)
+    void set_outputfile_id(
+        const std::string &all_ids,
+        uint64_t ensemble_id)
     {
         std::string preceeding_ids = "";
         if(all_ids.length() > 1)
             preceeding_ids = all_ids.substr(0, all_ids.length()-2);
 
+        std::string ens_string = "_ensID_";
+        if(ensemble_id == 0)
+            ens_string += "0000";
+        else
+            for(int64_t i=ensemble_id; i<1000; i*=10)
+                ens_string += "0";
+
         // master branch
         if(preceeding_ids == "")
         {
-            std::string id_str = "id" + std::to_string(id) + "_";
+            std::string id_str = "id" + std::to_string(id) + ens_string + std::to_string(ensemble_id) + "_";
             auto pos = OUTPUT_FILENAME.rfind("/");
             if(pos == std::string::npos)
             {
@@ -948,16 +965,14 @@ struct input_parameters_t{
 
         } else // subsequent ensemble members
         {
-            std::string id_str = "id" + all_ids + "_";
+            std::string id_str = "id" + all_ids + ens_string + std::to_string(ensemble_id) + "_";
             std::string to_replace = "id" + preceeding_ids + "_";
             auto pos = OUTPUT_FILENAME.rfind(to_replace);
-
-            // OUTPUT_FILENAME.replace(pos, to_replace.length(), id_str);
 
             if(pos != std::string::npos)
             {
                 // This *should* always be the correct branch
-                OUTPUT_FILENAME.replace(pos, to_replace.length(), id_str);
+                OUTPUT_FILENAME.replace(pos, to_replace.length()+11, id_str);
             } else
             {
                 // If for any weird reason, "id" is not part of OUTPUT_FILENAME:
@@ -974,7 +989,7 @@ struct input_parameters_t{
         }
     }
 
-    void put(pt::ptree &ptree, const uint64_t &time_idx) const
+    void put(pt::ptree &ptree, const double &time) const
     {
         pt::ptree input_params;
         input_params.put<double>("t_end_prime", t_end_prime);
@@ -997,13 +1012,13 @@ struct input_parameters_t{
         input_params.put<uint32_t>("write_index", write_index);
         input_params.put<uint64_t>("progress_index", progress_index);
         input_params.put<uint32_t>("ensemble", ensemble);
-        input_params.put<uint64_t>("current_time_idx", time_idx);
+        input_params.put<double>("current_time", time);
         ptree.add_child("input_params", input_params);
     }
 
     void put(pt::ptree &ptree) const
     {
-        put(ptree, current_time_idx);
+        put(ptree, current_time);
     }
 
     /**
@@ -1074,9 +1089,9 @@ struct input_parameters_t{
             } else if(first == "ensemble")
             {
                 ensemble = it.second.get_value<uint32_t>();
-            } else if(first == "current_time_idx")
+            } else if(first == "current_time")
             {
-                current_time_idx = it.second.get_value<uint64_t>();
+                current_time = it.second.get_value<double>();
             } else
             {
                 err = INPUT_NAME_CHECKPOINT_ERR;
@@ -2076,7 +2091,7 @@ struct segment_t
     void deactivate()
     {
         // Perturbing every few timesteps is done indefenitely
-        if(method != repeated_time)
+        if(method != repeated_time && n_segments > 0)
             n_segments--;
         activated = false;
     }
@@ -2113,7 +2128,6 @@ struct segment_t
         }
         if(n_segments != 1)
         {
-            std::cout << "set when_counter to " << n_segments << "\n";
             segment.put("when_counter", n_segments);
         }
         if(method != value_method)

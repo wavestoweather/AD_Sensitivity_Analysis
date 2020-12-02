@@ -245,8 +245,11 @@ void print_input_parameters(input_parameters_t &in)
         << "Time to integrate: " << in.t_end_prime << " Seconds\n"
         << "Timestep: " << in.dt_prime << " Seconds\n"
 #ifdef MET3D
-        << "Start time (relative to ascend): " << in.start_time << " Seconds\n"
+        << "Start time (relative to ascend): " << in.start_time << " Seconds" << "\n"
 #endif
+        << ( (in.CHECKPOINT_FILENAME != "")
+        ?   "Start time from checkpoint: " + std::to_string(in.current_time) + "\n"
+        :   "" )
 	    << "Snapshot index: " << in.snapshot_index << "\n"
         << "Write index: " << in.write_index << "\n"
         << "Progressbar index: " << in.progress_index << "\n"
@@ -258,12 +261,19 @@ void print_input_parameters(input_parameters_t &in)
         << "Fix temperature and pressure at each substep?: " << in.fixed_iteration << "\n"
         << "Auto type for rain evaporation (1, 2, 3): " << in.auto_type << "\n"
         << "Trajectory used: " << in.traj << "\n"
-        << "Instance id: " << in.id << "\n";
-        if(in.ENS_CONFIG_FILENAME != "")
-            std::cout << "Ensemble configuration file: " << in.ENS_CONFIG_FILENAME << "\n";
-        if(in.CHECKPOINT_FILENAME != "")
-            std::cout << "Checkpoint file: " << in.CHECKPOINT_FILENAME << "\n";
-        std::cout << std::endl << std::flush;
+        << "Instance id: " << in.id << "\n"
+        << ( (in.ENS_CONFIG_FILENAME != "")
+        ?   "Ensemble configuration file: " + in.ENS_CONFIG_FILENAME + "\n"
+        :   "" )
+        << ( (in.CHECKPOINT_FILENAME != "")
+        ?   "Checkpoint file: " + in.CHECKPOINT_FILENAME + "\n"
+        :   "" )
+        << std::endl << std::flush;
+        // if(in.ENS_CONFIG_FILENAME != "")
+        //     std::cout << "Ensemble configuration file: " << in.ENS_CONFIG_FILENAME << "\n";
+        // if(in.CHECKPOINT_FILENAME != "")
+        //     std::cout << "Checkpoint file: " << in.CHECKPOINT_FILENAME << "\n";
+        // std::cout << std::endl << std::flush;
 }
 
 /**

@@ -103,12 +103,10 @@ int main(int argc, char** argv)
                 SUCCESS_OR_DIE(s.check());
             print_segments(segments);
         }
-        input.set_outputfile_id(cc.id);
+        input.set_outputfile_id(cc.id, cc.ensemble_id);
     }
-
     auto_type = input.auto_type;
     load_lookup_table(cc.ltabdminwgg);
-
     int traj_id = -1;
 #ifdef MET3D
     uint32_t ensemble;
@@ -125,7 +123,7 @@ int main(int argc, char** argv)
         input.start_time,
 #endif
         input.INPUT_FILENAME.c_str(), input.traj, global_args.checkpoint_flag,
-        cc, input.current_time_idx));
+        cc, input.current_time));
 
 #ifdef MET3D
     // The attributes do not change, hence we need only one file for each ensemble
@@ -198,7 +196,12 @@ int main(int argc, char** argv)
 
         open_netcdf(ncid, startp, countp, input.INPUT_FILENAME.c_str(), input.traj);
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
+        uint32_t sub_start = 1;
+        if(global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0)
+            sub_start = std::fmod(input.current_time, cc.dt_prime)
+                    / (cc.dt_prime/(cc.num_sub_steps-input.start_over));
 
+        // std::cout << "current_time " << input.current_time << ", sub_start " << sub_start << "\n";
         // Loop over every timestep that is usually fixed to 20 s
         for(uint32_t t=0; t<cc.num_steps; ++t) //
         {
@@ -209,9 +212,8 @@ int main(int argc, char** argv)
                 ensemble,
 #endif
                 t, global_args.checkpoint_flag);
-
             // Iterate over each substep
-            for(uint32_t sub=1; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
+            for(uint32_t sub=sub_start; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
             {
 #if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
 #if defined(TRACE_TIME)
@@ -423,12 +425,13 @@ int main(int argc, char** argv)
                     break;
             } // End substep
 #ifdef TRACE_QG
-        if(trace)
-            std::cout << "\nSediment total q: " << sediment_q_total
-                    << "\nSediment total N: " << sediment_n_total << "\n";
-        sediment_n_total = 0;
-        sediment_q_total = 0;
+            if(trace)
+                std::cout << "\nSediment total q: " << sediment_q_total
+                        << "\nSediment total N: " << sediment_n_total << "\n";
+            sediment_n_total = 0;
+            sediment_q_total = 0;
 #endif
+            sub_start = 1;
         }
         if(input.progress_index > 0)
             pbar.finish();
