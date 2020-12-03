@@ -2,6 +2,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include "codi.hpp"
 #include <netcdf>
+#include "ncType.h"
 #include <random>
 #include <unordered_map>
 #include <stdlib.h>
@@ -2197,4 +2198,564 @@ struct segment_t
     }
 };
 
+
+struct IO_handle_t{
+    // for txt files
+    std::stringstream out_tmp;
+    std::ofstream outfile;
+    std::ofstream out_diff[num_comp];
+    std::stringstream out_diff_tmp[num_comp];
+    uint64_t n_snapshots;
+
+    std::string filetype;
+    // for netCDF files and a vector for each column
+    // columns: output parameter + gradients + time_afer_ascent + type + flags
+    // fast index: record
+    // each array = one column
+    // slow index: num_comp
+    std::array<std::vector<double>, num_comp+num_par+2 > output_buffer;
+    std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
+    std::array<std::vector<std::string>, 1 > output_buffer_str;
+    // std::vector<std::vector<uint64_t> output_buffer_int;
+    NcFile datafile;
+    std::vector<NcDim> dim_vector;
+    std::vector<NcVar> var_vector;
+    uint64_t n_ens;
+    uint64_t n_trajs;
+    uint64_t total_snapshots;
+
+
+    IO_handle_t(
+        const std::string filetype,
+        const std::string filename,
+        const uint64_t n_trajs,
+        const uint64_t n_ens,
+        const model_constants_t &cc,
+        const reference_quantities_t &ref_quant,
+        const std::string in_filename,
+        const uint32_t write_index,
+        const uint32_t snapshot_index)
+    {
+        this->n_trajs = n_trajs;
+        this->n_ens = n_ens;
+        this->filetype = filetype;
+        if(filetype == "netcdf")
+        {
+            n_snapshots = 0;
+            // Allocate memory for the buffer
+            // maximum number of snapshots we are going to get
+            total_snapshots = std::ceil( ((float)write_index)/snapshot_index );
+            const uint64_t vec_size = n_trajs * n_ens * total_snapshots; // n_snapshots * num_comp;
+            const uint64_t vec_size_grad = num_comp * n_trajs * n_ens * total_snapshots;
+            for(uint32_t i=0; i<num_comp; i++)
+                output_buffer[i].resize(vec_size);
+
+            for(uint32_t i=num_comp; i<num_comp+num_par; i++)
+                output_buffer[i].resize(vec_size_grad);
+
+            output_buffer[num_comp+num_par].resize(vec_size);          // time after ascent
+            output_buffer[num_comp+num_par+1].resize(total_snapshots); // just time index
+
+            for(uint32_t i=0; i<output_buffer_flags.size(); i++)
+                output_buffer_flags[i].resize(vec_size);
+            for(uint32_t i=0; i<output_buffer_str.size(); i++)
+                output_buffer_str[i].resize(vec_size);
+
+            datafile.open(filename + ".nc_wcb", NcFile::write);
+            // datafile = NcFile(filename + ".nc_wcb", NcFile::write);
+             // Add dimensions
+            NcDim param_dim = datafile.addDim("Output Parameter", num_comp);
+            NcDim ens_dim = datafile.addDim("ensemble", n_ens); // input.ensemble
+            NcDim traj_dim = datafile.addDim("trajectory", n_trajs); // cc.id would be good
+            NcDim time_dim = datafile.addDim("time"); // unlimited dimension
+
+            NcVar param_var = datafile.addVar("Output Parameter", ncString, param_dim);
+            NcVar ens_var = datafile.addVar("ensemble", ncInt64, ens_dim);
+            NcVar traj_var = datafile.addVar("trajectory", ncInt64, traj_dim);
+
+            // Add dim data
+            param_var.putVar(output_par_idx.data());
+            ens_var.putVar(&n_ens);
+            traj_var.putVar(&n_trajs);
+
+            // NcVar param_var = datafile.addVar("time", NcDouble, time_dim);
+
+            // Add attributes
+
+            std::vector<NcDim> dim_vector;
+            dim_vector.push_back(time_dim);
+            dim_vector.push_back(traj_dim);
+            dim_vector.push_back(ens_dim);
+
+            std::vector<NcVar> var_vector;
+            // idea: reduce storage amount by storing output data independent from output parameter
+            for(auto &out_par: output_par_idx)
+                var_vector.push_back(datafile.addVar(out_par, ncDouble, dim_vector));
+            std::vector<NcDim> dim_vector_grad;
+            dim_vector_grad.push_back(time_dim);
+            dim_vector_grad.push_back(traj_dim);
+            dim_vector_grad.push_back(ens_dim);
+            dim_vector_grad.push_back(param_dim);
+            for(auto &out_grad: output_grad_idx)
+                var_vector.push_back(datafile.addVar(out_grad, ncDouble, dim_vector_grad));
+
+            var_vector.push_back(datafile.addVar("time_after_ascent", ncDouble, dim_vector));
+            var_vector.push_back(datafile.addVar("time", ncDouble, time_dim));
+            var_vector.push_back(datafile.addVar("conv_400", ncByte, dim_vector));
+            var_vector.push_back(datafile.addVar("conv_600", ncByte, dim_vector));
+            var_vector.push_back(datafile.addVar("slan_400", ncByte, dim_vector));
+            var_vector.push_back(datafile.addVar("slan_600", ncByte, dim_vector));
+            var_vector.push_back(datafile.addVar("type", ncString, dim_vector));
+            // var_vector.push_back(datafile.addVar("instance_id", ncString, dim_vector));
+
+            // Add attributes
+
+            NcFile in_datafile(in_filename, NcFile::read);
+            // global attributes
+            auto attributes = in_datafile.getAtts();
+            for(auto & name_attr: attributes)
+            {
+                auto attribute = name_attr.second;
+                NcType type = attribute.getType();
+                if(type.getName() == "double")
+                {
+                    std::vector<float> values(1);
+                    attribute.getValues(values.data());
+                    // auto att_name = attribute.getName();
+                    // auto type_name = type.getName();
+                    // auto values_n = values[0];
+                    datafile.putAtt(attribute.getName(), type, values[0]);
+                } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
+                {
+                    std::vector<int> values(1);
+                    attribute.getValues(values.data());
+                    // auto att_name = attribute.getName();
+                    // auto type_name = type.getName();
+                    // auto values_n = values[0];
+                    datafile.putAtt(attribute.getName(), type, values[0]);
+                } else if(type.getName() == "char")
+                {
+                    std::string values;
+                    attribute.getValues(values);
+                    // auto att_name = attribute.getName();
+                    // auto type_name = type.getName();
+                    // auto values_n = values[0];
+                    datafile.putAtt(attribute.getName(), values);
+                }
+            }
+            // column attributes
+            // TODO: Find the corresponding names and then add them
+            auto vars = datafile.getVars();
+            for(auto & name_var: vars)
+            {
+                auto var = name_var.second;
+                auto name = name_var.first;
+                auto attributes = var.getAtts();
+                for(auto & name_attr: attributes)
+                {
+                    auto attribute = name_attr.second;
+                    NcType type = attribute.getType();
+                    if(type.getName() == "double" || type.getName() == "float")
+                    {
+                        std::vector<double> values(1);
+                        attribute.getValues(values.data());
+                        auto att_name = attribute.getName();
+                        auto values_n = values[0];
+                    } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
+                    {
+                        std::vector<int> values(1);
+                        attribute.getValues(values.data());
+                        auto att_name = attribute.getName();
+                        auto values_n = values[0];
+                    } else if(type.getName() == "char")
+                    {
+                        std::string values;
+                        attribute.getValues(values);
+                        auto att_name = attribute.getName();
+                        auto values_n = values[0];
+                    }
+                }
+            }
+        } else
+        {
+            // write attributes
+#ifdef MET3D
+            std::ofstream outfile_att;
+            outfile_att.open(filename + "_attributes.txt");
+            outfile_att.precision(10);
+            if( !outfile_att.is_open() )
+            {
+                std::cout << "ERROR while opening the attribute file:\n"
+                        << filename << "_attributes.txt\n. Aborting.\n";
+                exit(EXIT_FAILURE);
+            }
+            // Global attributes
+            outfile_att << "[Global attributes]\n";
+            NcFile datafile(in_filename, NcFile::read);
+            auto attributes = datafile.getAtts(); // <string, NcGroupAtt>
+            for(auto & name_attr: attributes)
+            {
+                NcGroupAtt attribute = name_attr.second;
+                NcType type = attribute.getType();
+                if(type.getName() == "double")
+                {
+                    std::vector<float> values(1);
+                    attribute.getValues(values.data());
+                    outfile_att << "name=" << attribute.getName() << "\n"
+                                << "type=" << type.getName() << "\n"
+                                << "values=" << values[0] << "\n";
+                } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
+                {
+                    std::vector<int> values(1);
+                    attribute.getValues(values.data());
+                    outfile_att << "name=" << attribute.getName() << "\n"
+                                << "type=" << type.getName() << "\n"
+                                << "values=" << values[0] << "\n";
+                } else if(type.getName() == "char")
+                {
+                    std::string values;
+                    attribute.getValues(values);
+                    outfile_att << "name=" << attribute.getName() << "\n"
+                            << "type=" << type.getName() << "\n"
+                            << "values=" << values << "\n";
+                }
+            }
+
+            // Column attributes
+            outfile_att << "[Non global attributes]\n";
+            auto vars = datafile.getVars();
+            for(auto & name_var: vars)
+            {
+                auto var = name_var.second;
+                auto name = name_var.first;
+                outfile_att << "column=" << name << "\n";
+                auto attributes = var.getAtts();
+                for(auto & name_attr: attributes)
+                {
+                    auto attribute = name_attr.second;
+                    NcType type = attribute.getType();
+                    if(type.getName() == "double" || type.getName() == "float")
+                    {
+                        std::vector<double> values(1);
+                        attribute.getValues(values.data());
+                        outfile_att << attribute.getName() << "=" << values[0] << "\n";
+                    } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
+                    {
+                        std::vector<int> values(1);
+                        attribute.getValues(values.data());
+                        outfile_att << attribute.getName() << "=" << values[0] << "\n";
+                    } else if(type.getName() == "char")
+                    {
+                        std::string values;
+                        attribute.getValues(values);
+                        outfile_att << attribute.getName() << "=" << values << "\n";
+                    }
+                }
+            }
+            outfile_att.close();
+#endif
+            // write reference quantities
+            std::ofstream outfile_refs;
+            outfile_refs.open(filename + "_reference_values.txt");
+            outfile_refs.precision(10);
+
+            if( !outfile_refs.is_open() )
+            {
+                std::cout << "ERROR while opening the reference file. Aborting." << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            // Write the reference quantities
+            outfile_refs << ref_quant.Tref << " "
+                << ref_quant.pref << " "
+                << ref_quant.qref << " "
+                << ref_quant.Nref << " "
+                << ref_quant.wref << " "
+                << ref_quant.tref << " "
+                << ref_quant.zref << "\n";
+
+            outfile_refs.close();
+
+            // write headers
+            std::string suffix = ".txt";
+            std::string full_filename;
+            full_filename = filename;
+            full_filename += suffix;
+
+            outfile.open(full_filename);
+            outfile.precision(10);
+
+            if( !outfile.is_open() )
+            {
+                std::cout << "ERROR while opening the outputfile. Aborting." << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            // Append the initial values and write headers
+            out_tmp << std::setprecision(10) << "step,trajectory,lon,lat,"
+#if defined WCB
+                << "MAP,";
+#endif
+#if defined WCB2
+                << "WCB_flag,"
+                << "dp2h,"
+#endif
+#if defined WCB2 || defined MET3D
+                << "conv_400,"
+                << "conv_600,"
+                << "slan_400,"
+                << "slan_600,";
+#endif
+#if defined MET3D
+            out_tmp
+                << "time,"
+                << "time_after_ascent,"
+                << "type,"
+                << "ensemble,"
+                << "instance_id,";
+#endif
+            for(uint32_t i=0; i<output_par_idx.size(); ++i)
+                out_tmp << output_par_idx[i]  <<
+                    ((i < output_par_idx.size()-1) ? "," : "\n");
+
+            std::string basename = "_diff_";
+            std::string fname;
+
+            for(int ii = 0; ii < num_comp; ii++)
+            {
+                fname = filename;
+                fname += basename;
+                fname += std::to_string(ii);
+                fname += suffix;
+
+                out_diff[ii].open(fname);
+
+                if( !out_diff[ii].is_open() )
+                {
+                    std::cout << "ERROR while opening outputfile. Aborting." << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                out_diff[ii].precision(10);
+                out_diff_tmp[ii]
+                    << std::setprecision(10)
+                    << "step,"
+                    << "trajectory,"
+                    << "Output Parameter,"
+                    << "lon,"
+                    << "lat,"
+#if defined WCB
+                    << "MAP,";
+#endif
+#if defined WCB2
+                    << "WCB_flag,"
+                    << "dp2h,"
+#endif
+#if defined WCB2 || defined MET3D
+                    << "conv_400,"
+                    << "conv_600,"
+                    << "slan_400,"
+                    << "slan_600,";
+#endif
+#if defined MET3D
+                out_diff_tmp[ii]
+                    << "time,"
+                    << "time_after_ascent,"
+                    << "type,"
+                    << "ensemble,"
+                    << "instance_id,";
+#endif
+                for(uint32_t i=0; i<output_grad_idx.size(); ++i)
+                    out_diff_tmp[ii] << output_grad_idx[i]  <<
+                        ((i < output_grad_idx.size()-1) ? "," : "\n");
+            } // End loop over all components
+        }
+    }
+
+    /**
+     * Writes data either to a stringstream for txt files or to different vectors
+     * for netCDF files.
+     */
+    void buffer(const model_constants_t &cc,
+        const nc_parameters_t &nc_params,
+        const std::vector<codi::RealReverse> &y_single_new,
+        const std::vector< std::array<double, num_par > >  &y_diff,
+        const uint32_t sub,
+        const uint32_t t,
+        const double time_new,
+        const uint32_t traj_id,
+        const uint32_t ensemble,
+        const reference_quantities_t &ref_quant)
+    {
+        if(filetype == "netcdf")
+        {
+            const uint64_t offset_grad = n_trajs*n_ens*num_comp;
+            const uint64_t offset = n_trajs*n_ens;
+
+            // output parameters
+            for(uint64_t i=0; i<num_comp; i++)
+                output_buffer[i][n_snapshots*offset] = y_single_new[i].getValue();
+
+            // gradients
+            for(uint64_t i=0; i<num_comp; i++) // gradient sensitive to output parameter i
+                for(uint64_t j=0; j<num_par; j++) // gradient of input parameter j
+                    output_buffer[num_comp+j][n_snapshots + i*offset_grad] = y_diff[i][j];
+
+            // time after ascent
+            output_buffer[num_comp+num_par][n_snapshots*offset] =
+                nc_params.time_rel + sub*cc.dt;
+            // time index
+            output_buffer[num_comp+num_par+1][n_snapshots] =
+                nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt;
+
+            // flags
+            output_buffer_flags[0][n_snapshots*offset] = nc_params.conv_400;
+            output_buffer_flags[1][n_snapshots*offset] = nc_params.conv_600;
+            output_buffer_flags[2][n_snapshots*offset] = nc_params.slan_400;
+            output_buffer_flags[3][n_snapshots*offset] = nc_params.slan_600;
+
+            // type
+            output_buffer_str[0][n_snapshots*offset] = nc_params.type[0];
+        } else
+        {
+#if defined WCB || defined WCB2
+            out_tmp << time_new << "," << traj_id << ","
+                    << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                    << (nc_params.lat[0] + sub*nc_params.dlat) << ","
+                    << nc_params.ascent_flag << ",";
+#elif defined MET3D
+            out_tmp << sub + t*cc.num_sub_steps << "," << traj_id << ","
+                    << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                    << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
+#else
+            out_tmp << time_new << "," << traj_id << ","
+                    << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                    << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
+#endif
+#if defined WCB2 || defined MET3D
+            out_tmp
+#if defined WCB2
+                    << nc_params.dp2h << ","
+#endif
+                    << nc_params.conv_400 << ","
+                    << nc_params.conv_600 << ","
+                    << nc_params.slan_400 << ","
+                    << nc_params.slan_600 << ",";
+#endif
+#ifdef MET3D
+            out_tmp << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","
+                    << nc_params.time_rel + sub*cc.dt << ","
+                    << nc_params.type[0] << ","
+                    << ensemble << ","
+                    << cc.id << ",";
+#endif
+            for(int ii = 0 ; ii < num_comp; ii++)
+                out_tmp << y_single_new[ii]
+                    << ((ii == num_comp-1) ? "\n" : ",");
+
+            for(int ii = 0 ; ii < num_comp ; ii++)
+            {
+#if defined WCB || defined WCB2
+                out_diff_tmp[ii] << time_new << "," << traj_id << ","
+                                << output_par_idx[ii] << ","
+                                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                                << (nc_params.lat[0] + sub*nc_params.dlat) << ","
+                                << nc_params.ascent_flag << ",";
+#elif defined MET3D
+                out_diff_tmp[ii] << sub + t*cc.num_sub_steps << "," << traj_id << ","
+                                << output_par_idx[ii] << ","
+                                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                                << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
+#else
+                out_diff_tmp[ii] << time_new << "," << traj_id << ","
+                                << output_par_idx[ii] << ","
+                                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
+                                << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
+#endif
+#if defined WCB2 || defined MET3D
+                out_diff_tmp[ii]
+#if defined WCB2
+                    << nc_params.dp2h << ","
+#endif
+                    << nc_params.conv_400 << ","
+                    << nc_params.conv_600 << ","
+                    << nc_params.slan_400 << ","
+                    << nc_params.slan_600 << ",";
+#endif
+#if defined MET3D
+                out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","
+                            << nc_params.time_rel + sub*cc.dt << ","
+                            << nc_params.type[0] << ","
+                            << ensemble << ","
+                            << cc.id << ",";
+#endif
+                for(int jj = 0 ; jj < num_par ; jj++)
+                    out_diff_tmp[ii] << y_diff[ii][jj]
+                        << ((jj==num_par-1) ? "\n" : ",");
+            }
+        }
+        n_snapshots++;
+    }
+
+    /**
+     * Write the buffered data to disk although an actual write operation
+     * is not guaranteed until the program is finished.
+     */
+    void flush_buffer()
+    {
+        if(filetype == "netcdf")
+        {
+            std::vector<uint64_t> startp, countp;
+            startp.push_back(0);
+            countp.push_back(n_snapshots); // number of snapshots so far
+            // time index
+            var_vector[num_comp+num_par+1].putVar(startp, countp,
+                output_buffer[num_comp+num_par+1].data());
+
+            startp.push_back(0);
+            startp.push_back(0);
+
+            countp.push_back(n_ens);
+            countp.push_back(n_trajs);
+
+            for(uint64_t i=0; i<num_comp; i++)
+                var_vector[i].putVar(startp, countp,
+                    output_buffer[i].data());
+
+            // time after ascent
+            var_vector[num_comp+num_par].putVar(startp, countp,
+                output_buffer[num_comp+num_par].data());
+
+            // flags
+            for(uint64_t i=0; i<output_buffer_flags.size(); i++)
+                var_vector[i+output_buffer.size()].putVar(startp, countp,
+                output_buffer_flags[i].data());
+
+            // type
+            for(uint64_t i=0; i<output_buffer_str.size(); i++)
+                var_vector[i+output_buffer.size()+output_buffer_flags.size()].putVar(
+                    startp, countp, output_buffer_str[i].data());
+
+            // gradients
+            startp.push_back(0);
+            countp.push_back(num_comp);
+
+            // gradients
+            for(uint64_t j=0; j<num_par; j++)
+                var_vector[num_comp+j].putVar(startp, countp,
+                    output_buffer[num_comp+j].data());
+        } else
+        {
+            outfile << out_tmp.rdbuf();
+            for(int ii = 0 ; ii < num_comp ; ii++)
+            {
+                out_diff[ii] << out_diff_tmp[ii].rdbuf();
+                out_diff_tmp[ii].str( std::string() );
+                out_diff_tmp[ii].clear();
+            }
+            out_tmp.str( std::string() );
+            out_tmp.clear();
+        }
+        n_snapshots = 0;
+    }
+};
 /** @} */ // end of group types

@@ -855,32 +855,13 @@ void set_input_from_arguments(global_args_t &arg ,
  * @param ref_quant reference_quantities_t with all the reference values.
  * @return Errorcode (0=no errors; 1=simulation breaking error)
  */
-int write_reference_quantities(
-    std::string &out_filename,
-    reference_quantities_t &ref_quant)
-{
-    std::ofstream outfile_refs;
-    outfile_refs.open(out_filename + "_reference_values.txt");
-    outfile_refs.precision(10);
-
-    if( !outfile_refs.is_open() )
-    {
-        std::cout << "ERROR while opening the reference file. Aborting." << std::endl;
-        return 1;
-    }
-
-    // Write the reference quantities
-    outfile_refs << ref_quant.Tref << " "
-	       << ref_quant.pref << " "
-	       << ref_quant.qref << " "
-	       << ref_quant.Nref << " "
-	       << ref_quant.wref << " "
-	       << ref_quant.tref << " "
-           << ref_quant.zref << "\n";
-
-    outfile_refs.close();
-    return 0;
-}
+// int write_reference_quantities(
+//     std::string &out_filename,
+//     reference_quantities_t &ref_quant)
+// {
+//     // done in iohandler
+//     return 0;
+// }
 
 #ifdef MET3D
 /**
@@ -890,85 +871,12 @@ int write_reference_quantities(
  * @param out_filename String with filename
  * @return Errorcode (0=no errors; 1=simulation breaking error)
  */
-int write_attributes(
-    std::string &in_filename,
-    std::string &out_filename)
-{
-    std::ofstream outfile;
-    outfile.open(out_filename + "_attributes.txt");
-    outfile.precision(10);
-    if( !outfile.is_open() )
-    {
-        std::cout << "ERROR while opening the attribute file:\n"
-                  << out_filename << "_attributes.txt\n. Aborting.\n";
-        return 1;
-    }
-    // Global attributes
-    outfile << "[Global attributes]\n";
-    netCDF::NcFile datafile(in_filename, netCDF::NcFile::read);
-    auto attributes = datafile.getAtts();
-    for(auto & name_attr: attributes)
-    {
-        auto attribute = name_attr.second;
-        netCDF::NcType type = attribute.getType();
-        if(type.getName() == "double")
-        {
-            std::vector<float> values(1);
-            attribute.getValues(values.data());
-            outfile << "name=" << attribute.getName() << "\n"
-                        << "type=" << type.getName() << "\n"
-                        << "values=" << values[0] << "\n";
-        } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
-        {
-            std::vector<int> values(1);
-            attribute.getValues(values.data());
-            outfile << "name=" << attribute.getName() << "\n"
-                        << "type=" << type.getName() << "\n"
-                        << "values=" << values[0] << "\n";
-        } else if(type.getName() == "char")
-        {
-            std::string values;
-            attribute.getValues(values);
-            outfile << "name=" << attribute.getName() << "\n"
-                    << "type=" << type.getName() << "\n"
-                    << "values=" << values << "\n";
-        }
-    }
-
-    // Column attributes
-    outfile << "[Non global attributes]\n";
-    auto vars = datafile.getVars();
-    for(auto & name_var: vars)
-    {
-        auto var = name_var.second;
-        auto name = name_var.first;
-        outfile << "column=" << name << "\n";
-        auto attributes = var.getAtts();
-        for(auto & name_attr: attributes)
-        {
-            auto attribute = name_attr.second;
-            netCDF::NcType type = attribute.getType();
-            if(type.getName() == "double" || type.getName() == "float")
-            {
-                std::vector<double> values(1);
-                attribute.getValues(values.data());
-                outfile << attribute.getName() << "=" << values[0] << "\n";
-            } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
-            {
-                std::vector<int> values(1);
-                attribute.getValues(values.data());
-                outfile << attribute.getName() << "=" << values[0] << "\n";
-            } else if(type.getName() == "char")
-            {
-                std::string values;
-                attribute.getValues(values);
-                outfile << attribute.getName() << "=" << values << "\n";
-            }
-        }
-    }
-    outfile.close();
-    return 0;
-}
+// int write_attributes(
+//     std::string &in_filename,
+//     std::string &out_filename)
+// {
+//     // done in iohandler
+// }
 #endif
 
 /**
@@ -978,103 +886,11 @@ int write_attributes(
  * @param out_filename String with filename.
  * @return Errorcode (0=no errors; 1=simulation breaking error)
  */
-int write_headers(
-    std::string &out_filename)
-{
-    std::string suffix = ".txt";
-    std::string full_filename;
-    full_filename = out_filename;
-    full_filename += suffix;
-
-    outfile.open(full_filename);
-    outfile.precision(10);
-
-    if( !outfile.is_open() )
-    {
-        std::cout << "ERROR while opening the outputfile. Aborting." << std::endl;
-        return 1;
-    }
-
-    // Append the initial values and write headers
-    out_tmp << std::setprecision(10) << "step,trajectory,lon,lat,"
-#if defined WCB
-        << "MAP,";
-#endif
-#if defined WCB2
-        << "WCB_flag,"
-        << "dp2h,"
-#endif
-#if defined WCB2 || defined MET3D
-        << "conv_400,"
-        << "conv_600,"
-        << "slan_400,"
-        << "slan_600,";
-#endif
-#if defined MET3D
-    out_tmp
-        << "time,"
-        << "time_after_ascent,"
-        << "type,"
-        << "ensemble,"
-        << "instance_id,";
-#endif
-    for(uint32_t i=0; i<output_par_idx.size(); ++i)
-        out_tmp << output_par_idx[i]  <<
-            ((i < output_par_idx.size()-1) ? "," : "\n");
-
-    std::string basename = "_diff_";
-    std::string fname;
-
-    for(int ii = 0; ii < num_comp; ii++)
-    {
-        fname = out_filename;
-        fname += basename;
-        fname += std::to_string(ii);
-        fname += suffix;
-
-        out_diff[ii].open(fname);
-
-        if( !out_diff[ii].is_open() )
-        {
-            std::cout << "ERROR while opening outputfile. Aborting." << std::endl;
-            return 1;
-        }
-        out_diff[ii].precision(10);
-        out_diff_tmp[ii]
-            << std::setprecision(10)
-            << "step,"
-            << "trajectory,"
-            << "Output Parameter,"
-            << "lon,"
-            << "lat,"
-#if defined WCB
-            << "MAP,";
-#endif
-#if defined WCB2
-            << "WCB_flag,"
-            << "dp2h,"
-#endif
-#if defined WCB2 || defined MET3D
-            << "conv_400,"
-            << "conv_600,"
-            << "slan_400,"
-            << "slan_600,";
-#endif
-#if defined MET3D
-        out_diff_tmp[ii]
-            << "time,"
-            << "time_after_ascent,"
-            << "type,"
-            << "ensemble,"
-            << "instance_id,";
-#endif
-        for(uint32_t i=0; i<output_grad_idx.size(); ++i)
-            out_diff_tmp[ii] << output_grad_idx[i]  <<
-                ((i < output_grad_idx.size()-1) ? "," : "\n");
-    } // End loop over all components
-
-    return 0;
-}
+// int write_headers(
+//     std::string &out_filename)
+// {
+//     // io_handler creation
+// }
 
 
 /**
@@ -1364,7 +1180,8 @@ void read_netcdf_write_stream(
     uint32_t &ensemble,
 #endif
     const uint32_t t,
-    const bool checkpoint_flag)
+    const bool checkpoint_flag,
+    IO_handle_t &io_handler)
 {
 #if defined WCB || defined WCB2
     startp[0] = t;
@@ -1564,82 +1381,11 @@ void read_netcdf_write_stream(
             y_single_old[T_idx].getValue()*ref_quant.Tref,
             y_single_old[qv_idx].getValue()*ref_quant.qref);
 #endif
-
-#if defined WCB || defined WCB2
-        out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
-                << nc_params.lon[0] << "," << nc_params.lat[0] << ","
-                << nc_params.ascent_flag << ",";
-#elif defined MET3D
-        out_tmp << t*cc.num_sub_steps << "," << traj_id << ","
-                << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
-#else
-        out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
-                << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
-#endif
-#if defined WCB2 || defined MET3D
-        out_tmp
-#if defined WCB2
-            << nc_params.dp2h << ","
-#endif
-            << nc_params.conv_400 << ","
-            << nc_params.conv_600 << ","
-            << nc_params.slan_400 << ","
-            << nc_params.slan_600 << ",";
-#endif
-#ifdef MET3D
-        // time, time after ascent, type
-        out_tmp << nc_params.time_abs[t + nc_params.time_idx] << ","
-                << nc_params.time_rel << ","
-                << nc_params.type[0] << ","
-                << ensemble << ","
-                << cc.id << ",";
-#endif
-        for(int ii = 0 ; ii < num_comp; ii++)
-            out_tmp << y_single_old[ii] <<
-                ((ii == num_comp-1) ? "\n" : ",");
-
-        for(int ii = 0 ; ii < num_comp ; ii++)
-        {
-#if defined WCB || defined WCB2
-            out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
-                            << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << nc_params.lon[0] << ","
-                            << nc_params.lat[0] << ","
-                            << nc_params.ascent_flag << ",";
-#elif defined MET3D
-            out_diff_tmp[ii] << t*cc.num_sub_steps << ","
-                            << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << nc_params.lon[0] << ","
-                            << nc_params.lat[0] << ",";
-#else
-            out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
-                            << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << nc_params.lon[0] << ","
-                            << nc_params.lat[0] << ",";
-#endif
-#if defined WCB2 || defined MET3D
-            out_diff_tmp[ii]
-#if defined WCB2
-                << nc_params.dp2h << ","
-#endif
-                << nc_params.conv_400 << ","
-                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                << nc_params.slan_600 << ",";
-#endif
-#if defined MET3D
-        out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] << ","
-                         << nc_params.time_rel << ","
-                         << nc_params.type[0] << ","
-                         << ensemble << ","
-                         << cc.id << ",";
-#endif
-            for(int jj = 0 ; jj < num_par ; jj++)
-                out_diff_tmp[ii] << 0.0
-                    << ((jj==num_par-1) ? "\n" : ",");
-        }
+        std::vector< std::array<double, num_par > >  y_diff(num_comp);
+        for(auto &y_d: y_diff)
+            y_d.fill(0);
+        io_handler.buffer(cc, nc_params, y_single_old, y_diff, 0, t,
+            (t*cc.num_sub_steps)*cc.dt, traj_id, ensemble, ref_quant);
     }
 }
 
@@ -1662,103 +1408,24 @@ void write_output(
 #ifdef MET3D
     const uint32_t ensemble,
 #endif
-    const bool last_step)
+    const bool last_step,
+    IO_handle_t &io_handler,
+    const reference_quantities_t &ref_quant)
 {
     if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {
-#if defined WCB || defined WCB2
-        out_tmp << time_new << "," << traj_id << ","
-                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                << (nc_params.lat[0] + sub*nc_params.dlat) << ","
-                << nc_params.ascent_flag << ",";
-#elif defined MET3D
-        out_tmp << sub + t*cc.num_sub_steps << "," << traj_id << ","
-                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
-#else
-        out_tmp << time_new << "," << traj_id << ","
-                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
-#endif
-#if defined WCB2 || defined MET3D
-        out_tmp
-#if defined WCB2
-                << nc_params.dp2h << ","
-#endif
-                << nc_params.conv_400 << ","
-                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                << nc_params.slan_600 << ",";
-#endif
-#ifdef MET3D
-        out_tmp << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","
-                << nc_params.time_rel + sub*cc.dt << ","
-                << nc_params.type[0] << ","
-                << ensemble << ","
-                << cc.id << ",";
-            double abs_time = sub *cc.dt + nc_params.time_abs[t + nc_params.time_idx];
-#endif
-        for(int ii = 0 ; ii < num_comp; ii++)
-            out_tmp << y_single_new[ii]
-                << ((ii == num_comp-1) ? "\n" : ",");
+        io_handler.buffer(cc, nc_params, y_single_new, y_diff, sub, t,
+            time_new, traj_id, ensemble, ref_quant);
 
-        // CODIPACK: BEGIN
-        for(int ii = 0 ; ii < num_comp ; ii++)
-        {
-#if defined WCB || defined WCB2
-            out_diff_tmp[ii] << time_new << "," << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                            << (nc_params.lat[0] + sub*nc_params.dlat) << ","
-                            << nc_params.ascent_flag << ",";
-#elif defined MET3D
-            out_diff_tmp[ii] << sub + t*cc.num_sub_steps << "," << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                            << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
-#else
-            out_diff_tmp[ii] << time_new << "," << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                            << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
-#endif
-#if defined WCB2 || defined MET3D
-            out_diff_tmp[ii]
-#if defined WCB2
-                << nc_params.dp2h << ","
-#endif
-                << nc_params.conv_400 << ","
-                << nc_params.conv_600 << ","
-                << nc_params.slan_400 << ","
-                << nc_params.slan_600 << ",";
-#endif
-#if defined MET3D
-            out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","
-                         << nc_params.time_rel + sub*cc.dt << ","
-                         << nc_params.type[0] << ","
-                         << ensemble << ","
-                         << cc.id << ",";
-#endif
-            for(int jj = 0 ; jj < num_par ; jj++)
-                out_diff_tmp[ii] << y_diff[ii][jj]
-                    << ((jj==num_par-1) ? "\n" : ",");
-        }
-        // CODIPACK: END
     }
     if( (0 == (sub + t*cc.num_sub_steps) % write_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {
-        outfile << out_tmp.rdbuf();
-        for(int ii = 0 ; ii < num_comp ; ii++)
-        {
-            out_diff[ii] << out_diff_tmp[ii].rdbuf();
-            out_diff_tmp[ii].str( std::string() );
-            out_diff_tmp[ii].clear();
-        }
-        out_tmp.str( std::string() );
-        out_tmp.clear();
+        io_handler.flush_buffer();
     }
 }
+
 
 /**
  * Parse the arguments and store them in global_args.

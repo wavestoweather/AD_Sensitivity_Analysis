@@ -127,8 +127,8 @@ int main(int argc, char** argv)
 
 #ifdef MET3D
     // The attributes do not change, hence we need only one file for each ensemble
-    if(!global_args.checkpoint_flag)
-        SUCCESS_OR_DIE(write_attributes(input.INPUT_FILENAME, input.OUTPUT_FILENAME));
+    // if(!global_args.checkpoint_flag)
+    //     SUCCESS_OR_DIE(write_attributes(input.INPUT_FILENAME, input.OUTPUT_FILENAME));
 #endif
 
 
@@ -157,10 +157,13 @@ int main(int argc, char** argv)
 
 
     // Reference quantities should not change in an ensemble
-    if(!global_args.checkpoint_flag)
-        SUCCESS_OR_DIE(write_reference_quantities(input.OUTPUT_FILENAME, ref_quant));
+    // if(!global_args.checkpoint_flag)
+        // SUCCESS_OR_DIE(write_reference_quantities(input.OUTPUT_FILENAME, ref_quant));
 
-    SUCCESS_OR_DIE(write_headers(input.OUTPUT_FILENAME));
+    // SUCCESS_OR_DIE(write_headers(input.OUTPUT_FILENAME));
+    // Currently we only load one trajectory per instance
+    IO_handle_t io_handler("netcdf", input.OUTPUT_FILENAME, 1, 1, cc,
+        ref_quant, input.INPUT_FILENAME, input.write_index, input.snapshot_index);
 
 #ifdef TRACE_QC
     print_particle_params(cc.cloud, "cloud");
@@ -211,7 +214,7 @@ int main(int argc, char** argv)
 #ifdef MET3D
                 ensemble,
 #endif
-                t, global_args.checkpoint_flag);
+                t, global_args.checkpoint_flag, io_handler);
             // Iterate over each substep
             for(uint32_t sub=sub_start; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
             {
@@ -378,7 +381,7 @@ int main(int argc, char** argv)
 #ifdef MET3D
                     ensemble,
 #endif
-                    last_step);
+                    last_step, io_handler, ref_quant);
 
                 // Interchange old and new for next step
                 time_old = time_new;
@@ -444,9 +447,9 @@ int main(int argc, char** argv)
         std::cout << "ABORTING." << std::endl;
         return 1;
     }
-    outfile.close();
-    for(int ii = 0 ; ii < num_comp ; ii++)
-        out_diff[ii].close();
+    // outfile.close();
+    // for(int ii = 0 ; ii < num_comp ; ii++)
+    //     out_diff[ii].close();
     std::cout << "-------------------FINISHED-------------------\n\n\n";
     exit(0);
 }

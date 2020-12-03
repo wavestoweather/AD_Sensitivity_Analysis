@@ -1603,10 +1603,13 @@ const uint32_t n_lookup_hr_dummy = 10;
 /**
  * Used for writing outputs.
  */
-std::stringstream out_tmp;
-std::ofstream outfile;
-std::ofstream out_diff[num_comp];
-std::stringstream out_diff_tmp[num_comp];
+// std::stringstream out_tmp;
+// std::ofstream outfile;
+// std::ofstream out_diff[num_comp];
+// std::stringstream out_diff_tmp[num_comp];
+// uint64_t n_snapshots = 0;
+
+
 // std::vector<std::ofstream> out_diff(num_comp);
 // std::vector<std::stringstream> out_diff_tmp(num_comp);
 
