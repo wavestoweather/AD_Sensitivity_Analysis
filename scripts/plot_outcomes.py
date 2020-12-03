@@ -180,11 +180,12 @@ def plot_my_thing(path, netcdf_path, prefix, min_x=None, max_x=None, time_offset
             y_axis=out_params + ["Q_total", "Si", "S"],
             col_wrap=2,
             rolling_avg=None,
-            vertical_mark=vertical_mark,
+            vertical_mark=vertical_mark,# vertical_mark
             cross_mark=cross_mark,
             plot_path=store_path,
             plot_singles=plot_singles,
-            alpha=0.2,
+            datashade=True,
+            alpha=0.02,
             formatter_limits=(-2,2),
             s=20,
             kind="scatter")
@@ -263,7 +264,7 @@ if __name__ == "__main__":
     #     twin_axis="pressure", cross_mark=False)
     plot_all(path, netcdf_path, store_path, suffixes, in_params, out_params,
         plot_singles=plot_singles,
-        twin_axis=None, cross_mark=True)
-    plot_all(path, netcdf_path, store_path, suffixes, in_params, out_params,
-        plot_singles=plot_singles,
         twin_axis=None, cross_mark=False)
+    # plot_all(path, netcdf_path, store_path, suffixes, in_params, out_params,
+    #     plot_singles=plot_singles,
+    #     twin_axis=None, cross_mark=True)

@@ -53,6 +53,9 @@ for f_this in file_list:
         traj = f_this.split("_traj")[-1]
         traj = traj.split("_MAP")[0]
         traj = int(traj)
+print("Found reference: {}".format(ref))
+if input_type == "MET3D":
+    print(f"Found attributes: {att}")
 
 for f_this in file_list:
     if "diff" in f_this or "reference" in f_this or "attributes" in f_this:
@@ -80,11 +83,7 @@ for f_this in file_list:
             suffix = suffix.split("/")[-1]
             suffix = suffix.split("_")
             suffix = suffix[-2] + "_" + suffix[-1]
-    print("Found reference: {}".format(ref))
     print("Found sim: {}".format(sim))
-    if input_type == "MET3D":
-        print(f"Found attributes: {att}")
-    print
     try:
         df_dic_mapped = Deriv(direc=direc_path,
                             filt=filt,
@@ -94,9 +93,10 @@ for f_this in file_list:
                             suffix=suffix,
                             threads=ncpus)
     except:
-        print("Reading the files failed. Continue with the next")
+        print("~+~+~+~+~+~+~+~+\nReading the files failed. Continue with the next\n")
         failed_trajectories.append(prefix)
-        continue
+        break
+        # continue
 
     df_sim_mapped = Sim()
     df_sim_mapped.load_file(
@@ -184,10 +184,10 @@ for f_this in file_list:
             else:
                 df_dic_mapped.to_netcdf(f_name)
         else:
-            print("No such file format: {}".format(file_type))
+            print("\nNo such file format: {}".format(file_type))
             failed_trajectories.append(prefix)
     except Exception as e:
-        print("FAILED: {}".format(prefix))
+        print("\nFAILED: {}".format(prefix))
         print(str(e))
         failed_trajectories.append(prefix)
     t2 = timer()

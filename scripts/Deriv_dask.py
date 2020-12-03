@@ -1396,6 +1396,9 @@ class Deriv_dask:
         import dask.array as da
         import math
         import pandas
+        from holoviews.operation.datashader import datashade as dsshade
+        dsshade.dynamic = False
+
         if formatter_limits is not None:
             matplotlib.rcParams['axes.formatter.limits'] = formatter_limits
 
@@ -1498,6 +1501,10 @@ class Deriv_dask:
 
                 del_x = (max_x-min_x)*0.1
                 del_y = (max_y-min_y)
+
+                # datashade cannot handle only zero valued plots
+                if min_y == max_y and datashade:
+                    continue
 
                 if min_y == max_y:
                     min_y = max_y - 1
@@ -1604,7 +1611,6 @@ class Deriv_dask:
                                 x=x_axis,
                                 y=y,
                                 by=by,
-                                title="Values of of {}".format(latexify.parse_word(y)),
                                 color=cmap_values,
                                 label=None,
                                 ylabel=latexify.parse_word(y),
@@ -1613,6 +1619,7 @@ class Deriv_dask:
                                 alpha=alpha,
                                 legend=False
                             ).opts(options).opts(
+                                title="Values of of {}".format(latexify.parse_word(y)),
                                 aspect=aspect,
                                 ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
                                 xlim=(min_x, max_x),
@@ -1622,7 +1629,6 @@ class Deriv_dask:
                                     x=x_axis,
                                     y=y,
                                     by=by,
-                                    title="Values of of {}".format(latexify.parse_word(y)),
                                     color=cmap_values,
                                     label=None,
                                     ylabel=latexify.parse_word(y),
@@ -1631,6 +1637,7 @@ class Deriv_dask:
                                     alpha=alpha,
                                     legend=False
                                 ).opts(options).opts(
+                                    title="Values of of {}".format(latexify.parse_word(y)),
                                     aspect=aspect,
                                     ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
                                     xlim=(min_x, max_x),
@@ -1649,31 +1656,67 @@ class Deriv_dask:
                             datashade=datashade,
                             alpha=alpha
                         ).opts(opts.Scatter(size=scatter_size), **layout_kwargs)
+
                 else:
-                    cmap = {}
-                    for ty in types:
-                        cmap[ty] = self.cmap[ty]
-                    param_plot = df_group[df_group[y] != 0].hvplot.scatter(
-                        x=x_axis,
-                        y=y,
-                        by=by,
-                        title="Values of of {}".format(latexify.parse_word(y)),
-                        cmap=cmap,
-                        label=None,
-                        ylabel=latexify.parse_word(y),
-                        xlabel=latexify.parse_word(x_axis),
-                        datashade=datashade
-                    ).opts(aspect=aspect)
-                    if self.backend == "bokeh":
-                        points = hv.Points(
-                            ([np.NaN for i in range(len(list(cmap.keys())))],
-                             [np.NaN for i in range(len(list(cmap.keys())))],
-                             list(cmap.keys())), vdims=by)
-                        legend = points.options(
-                            color=by,
+                    lim_multiplier = 0.1
+                    if twin is not None:
+                        lim_multiplier = 0.7
+                    if len(plot_list) == 0:
+                        cmap = {}
+                        for ty in types:
+                            cmap[ty] = self.cmap[ty]
+
+                        overlay = hv.NdOverlay(
+                            {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(
+                                opts.Scatter(s=scatter_size*8, color=cmap[types[i]]))
+                            for i in range(len(types)) }
+                        )
+
+                        plot_list.append(plot_func(
+                            x=x_axis,
+                            y=y,
+                            by=by,
                             cmap=cmap,
-                            show_legend=True)
-                        param_plot = (legend * param_plot).opts(aspect=aspect, **layout_kwargs)
+                            label=None,
+                            ylabel=latexify.parse_word(y),
+                            xlabel=latexify.parse_word(x_axis),
+                            datashade=datashade,
+                            width=width,
+                            height=height,
+                            dynamic=False,
+                            ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
+                            xlim=(min_x, max_x),
+                            dynspread=True,
+                            yticks=yticks,
+                            aspect=aspect).opts(
+                                title="Values of of {}".format(latexify.parse_word(y))
+                            ) * overlay)
+
+                    else:
+                        plot_list.append(plot_func(
+                                x=x_axis,
+                                y=y,
+                                by=by,
+                                cmap=cmap,
+                                label=None,
+                                ylabel=latexify.parse_word(y),
+                                xlabel=latexify.parse_word(x_axis),
+                                datashade=datashade,
+                                width=width,
+                                height=height,
+                                dynamic=False,
+                                ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
+                                xlim=(min_x, max_x),
+                                dynspread=True,
+                                yticks=yticks,
+                                aspect=aspect).opts(
+                                title="Values of of {}".format(latexify.parse_word(y))
+                                ))
+
+                    if marks is not None:
+                        plot_list[-1] = (plot_list[-1] * marks)
+                    if twin is not None:
+                        plot_list[-1] = (plot_list[-1] * twin)
                 if add_col_tmp is not None:
                     add_cols.append(add_col_tmp)
             else:
@@ -1721,30 +1764,32 @@ class Deriv_dask:
                 **scatter_kwargs),
             opts.Layout(**layout_kwargs)
         ).cols(col_wrap)
+
         if self.backend == "matplotlib":
             final_plots = final_plots.opts(sublabel_format="", tight=True)
 
+        if datashade:
+            final_plots = final_plots.opts(plot=dict(width=width, height=height))
+
         renderer = hv.Store.renderers[self.backend].instance(
-                    fig='png', dpi=300)
+                fig='png', dpi=300)
 
         i = 0
         if prefix is None:
             prefix = "plt_grid_"
-
-        save = (plot_path + prefix + x_axis + "_" + "{:03d}".format(i))
-        while os.path.isfile(save + ".png"):
-            i = i+1
-            save = (plot_path + prefix + x_axis + "_" + "{:03d}".format(i))
 
         if self.backend == "bokeh":
             hvplot.show(final_plots)
             self.plots.append(final_plots)
         else:
             filetype = ".png"
-            if datashade:
-                filetype = ".html"
-                self.plots.append(final_plots)
-            print("Saving to " + save + filetype, flush=True)
+            self.plots.append(final_plots)
+
+            save = (plot_path + prefix + x_axis + "_" + "{:03d}".format(i))
+            while os.path.isfile(save + filetype):
+                i = i+1
+                save = (plot_path + prefix + x_axis + "_" + "{:03d}".format(i))
+
             renderer.save(final_plots, save)
             display_file = save
             # Store every image as an individual one as well
@@ -1753,9 +1798,10 @@ class Deriv_dask:
                     y_name = y_axis[j]
                     i = 0
                     save = (plot_path + prefix + x_axis + "_" + y_name + "_{:03d}".format(i))
-                    while os.path.isfile(save + ".png"):
+                    while os.path.isfile(save + filetype):
                         i = i+1
                         save = (plot_path + prefix + x_axis + "_" + y_name + "_{:03d}".format(i))
+
                     pl = pl.opts(
                         opts.Scatter(
                             xticks=xticks,
@@ -1764,6 +1810,7 @@ class Deriv_dask:
                             show_grid=True,
                             show_legend=True,
                             **scatter_kwargs)).opts(aspect=aspect, **layout_kwargs)
+                    print(f"Plot to {save}")
                     renderer.save(pl, save)
             try:
                 from IPython.display import Image, display
