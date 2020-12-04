@@ -2205,7 +2205,8 @@ struct IO_handle_t{
     std::ofstream outfile;
     std::ofstream out_diff[num_comp];
     std::stringstream out_diff_tmp[num_comp];
-    uint64_t n_snapshots;
+    uint64_t n_snapshots; // number of buffered snapshots
+    uint64_t flushed_snapshots;
 
     std::string filetype;
     // for netCDF files and a vector for each column
@@ -2213,17 +2214,17 @@ struct IO_handle_t{
     // fast index: record
     // each array = one column
     // slow index: num_comp
-    std::array<std::vector<double>, num_comp+num_par+2 > output_buffer;
+    std::array<std::vector<double>, num_comp+num_par+4 > output_buffer;
     std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
     std::array<std::vector<std::string>, 1 > output_buffer_str;
-    // std::vector<std::vector<uint64_t> output_buffer_int;
+    std::array<std::vector<uint64_t>, 1 > output_buffer_int;
     NcFile datafile;
     std::vector<NcDim> dim_vector;
     std::vector<NcVar> var_vector;
     uint64_t n_ens;
     uint64_t n_trajs;
     uint64_t total_snapshots;
-
+    std::string filename;
 
     IO_handle_t(
         const std::string filetype,
@@ -2239,143 +2240,257 @@ struct IO_handle_t{
         this->n_trajs = n_trajs;
         this->n_ens = n_ens;
         this->filetype = filetype;
+        this->filename = filename;
         if(filetype == "netcdf")
         {
+            flushed_snapshots = 0;
             n_snapshots = 0;
             // Allocate memory for the buffer
             // maximum number of snapshots we are going to get
-            total_snapshots = std::ceil( ((float)write_index)/snapshot_index );
+            total_snapshots = std::ceil( ((float)write_index)/snapshot_index ) + 1;
             const uint64_t vec_size = n_trajs * n_ens * total_snapshots; // n_snapshots * num_comp;
             const uint64_t vec_size_grad = num_comp * n_trajs * n_ens * total_snapshots;
             for(uint32_t i=0; i<num_comp; i++)
                 output_buffer[i].resize(vec_size);
-
+            // std::cout << "resize from " << num_comp << " to " << num_par+num_comp
+            //           << " with size " << vec_size_grad << "\n" << std::flush;
             for(uint32_t i=num_comp; i<num_comp+num_par; i++)
                 output_buffer[i].resize(vec_size_grad);
 
             output_buffer[num_comp+num_par].resize(vec_size);          // time after ascent
             output_buffer[num_comp+num_par+1].resize(total_snapshots); // just time index
+            output_buffer[num_comp+num_par+2].resize(vec_size);        // lat
+            output_buffer[num_comp+num_par+3].resize(vec_size);        // lon
 
             for(uint32_t i=0; i<output_buffer_flags.size(); i++)
                 output_buffer_flags[i].resize(vec_size);
             for(uint32_t i=0; i<output_buffer_str.size(); i++)
                 output_buffer_str[i].resize(vec_size);
+            for(uint32_t i=0; i<output_buffer_int.size(); i++)
+                output_buffer_int[i].resize(vec_size);
+            try
+            {
+                datafile.open(filename + ".nc_wcb", NcFile::newFile);
+            }
+            catch(const std::exception& e)
+            {
+                std::cout << "Error creating output file:\n"
+                          << filename << ".nc_wcb Does the file already exist?"
+                          << "\nAborting";
+                std::cerr << e.what() << '\n';
+                exit(NC_ERR);
+            }
 
-            datafile.open(filename + ".nc_wcb", NcFile::write);
             // datafile = NcFile(filename + ".nc_wcb", NcFile::write);
              // Add dimensions
             NcDim param_dim = datafile.addDim("Output Parameter", num_comp);
-            NcDim ens_dim = datafile.addDim("ensemble", n_ens); // input.ensemble
-            NcDim traj_dim = datafile.addDim("trajectory", n_trajs); // cc.id would be good
+            NcDim ens_dim = datafile.addDim("ensemble", n_ens);
+            NcDim traj_dim = datafile.addDim("trajectory", n_trajs);
             NcDim time_dim = datafile.addDim("time"); // unlimited dimension
 
             NcVar param_var = datafile.addVar("Output Parameter", ncString, param_dim);
             NcVar ens_var = datafile.addVar("ensemble", ncInt64, ens_dim);
-            NcVar traj_var = datafile.addVar("trajectory", ncInt64, traj_dim);
+            NcVar traj_var = datafile.addVar("trajectory", ncString, traj_dim);
 
             // Add dim data
-            param_var.putVar(output_par_idx.data());
-            ens_var.putVar(&n_ens);
-            traj_var.putVar(&n_trajs);
+            // We currently only support a single ensemble
+            uint32_t ens = 0;
+            ens_var.putVar(&ens);
+            traj_var.putVar(&cc.id);
 
-            // NcVar param_var = datafile.addVar("time", NcDouble, time_dim);
+            std::vector<uint64_t> startp, countp;
+            startp.push_back(0);
+            countp.push_back(1);
+            for(const auto &p: output_par_idx)
+            {
+                param_var.putVar(startp, countp, &p);
+                startp[0]++;
+            }
 
-            // Add attributes
-
-            std::vector<NcDim> dim_vector;
             dim_vector.push_back(time_dim);
             dim_vector.push_back(traj_dim);
             dim_vector.push_back(ens_dim);
 
-            std::vector<NcVar> var_vector;
             // idea: reduce storage amount by storing output data independent from output parameter
             for(auto &out_par: output_par_idx)
-                var_vector.push_back(datafile.addVar(out_par, ncDouble, dim_vector));
+                var_vector.emplace_back(datafile.addVar(out_par, ncDouble, dim_vector));
             std::vector<NcDim> dim_vector_grad;
             dim_vector_grad.push_back(time_dim);
             dim_vector_grad.push_back(traj_dim);
             dim_vector_grad.push_back(ens_dim);
             dim_vector_grad.push_back(param_dim);
             for(auto &out_grad: output_grad_idx)
-                var_vector.push_back(datafile.addVar(out_grad, ncDouble, dim_vector_grad));
+                var_vector.emplace_back(datafile.addVar(out_grad, ncDouble, dim_vector_grad));
 
-            var_vector.push_back(datafile.addVar("time_after_ascent", ncDouble, dim_vector));
-            var_vector.push_back(datafile.addVar("time", ncDouble, time_dim));
-            var_vector.push_back(datafile.addVar("conv_400", ncByte, dim_vector));
-            var_vector.push_back(datafile.addVar("conv_600", ncByte, dim_vector));
-            var_vector.push_back(datafile.addVar("slan_400", ncByte, dim_vector));
-            var_vector.push_back(datafile.addVar("slan_600", ncByte, dim_vector));
-            var_vector.push_back(datafile.addVar("type", ncString, dim_vector));
+            // std::vector<NcDim> time_dim_vector = {time_dim};
+
+            var_vector.emplace_back(datafile.addVar("time_after_ascent", ncDouble, dim_vector));
+            var_vector.emplace_back(datafile.addVar("time", ncDouble, time_dim));
+            var_vector.emplace_back(datafile.addVar("conv_400", ncByte, dim_vector));
+            var_vector.emplace_back(datafile.addVar("conv_600", ncByte, dim_vector));
+            var_vector.emplace_back(datafile.addVar("slan_400", ncByte, dim_vector));
+            var_vector.emplace_back(datafile.addVar("slan_600", ncByte, dim_vector));
+            var_vector.emplace_back(datafile.addVar("type", ncString, dim_vector));
+            var_vector.emplace_back(datafile.addVar("lat", ncDouble, dim_vector));
+            var_vector.emplace_back(datafile.addVar("lon", ncDouble, dim_vector));
+            var_vector.emplace_back(datafile.addVar("step", ncUint64, dim_vector));
+
+
+            // std::vector<uint64_t> startp2, countp2;
+            // startp2.push_back(0);
+            // countp2.push_back(100);
+            // var_vector[num_comp+num_par+1].putVar(startp2, countp2,
+            //     output_buffer[num_comp+num_par+1].data());
+
+
+            // datafile.close();
+
             // var_vector.push_back(datafile.addVar("instance_id", ncString, dim_vector));
 
             // Add attributes
-
+//             std::cout << "read ncfile:" << in_filename << "\n" << std::flush;
             NcFile in_datafile(in_filename, NcFile::read);
+//             std::cout << "add attributes global\n" << std::flush;
             // global attributes
             auto attributes = in_datafile.getAtts();
             for(auto & name_attr: attributes)
             {
                 auto attribute = name_attr.second;
+                // std::cout << "name=" << attribute.getName() << "\n" << std::flush;
                 NcType type = attribute.getType();
                 if(type.getName() == "double")
                 {
                     std::vector<float> values(1);
                     attribute.getValues(values.data());
-                    // auto att_name = attribute.getName();
-                    // auto type_name = type.getName();
-                    // auto values_n = values[0];
                     datafile.putAtt(attribute.getName(), type, values[0]);
-                } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
+                } else if(type.getName() == "int64"
+                    || type.getName() == "int32" || type.getName() == "int")
                 {
                     std::vector<int> values(1);
                     attribute.getValues(values.data());
-                    // auto att_name = attribute.getName();
-                    // auto type_name = type.getName();
-                    // auto values_n = values[0];
                     datafile.putAtt(attribute.getName(), type, values[0]);
                 } else if(type.getName() == "char")
                 {
                     std::string values;
                     attribute.getValues(values);
-                    // auto att_name = attribute.getName();
-                    // auto type_name = type.getName();
-                    // auto values_n = values[0];
                     datafile.putAtt(attribute.getName(), values);
                 }
             }
+            // std::cout << "added attributes global\n" << std::flush;
             // column attributes
-            // TODO: Find the corresponding names and then add them
-            auto vars = datafile.getVars();
+            // Output Parameter is new. Hence we add it like that:
+            std::string att_name = "long_name";
+            std::string att_val = "gradients are calculated w.r.t. this output parameter";
+            param_var.putAtt(
+                att_name,
+                att_val);
+            att_name = "standard_name";
+            att_val = "output_parameter";
+            param_var.putAtt(
+                att_name,
+                att_val);
+            // Same for step
+            uint32_t offset = num_comp+num_par;
+            NcVar *var = &var_vector[offset+9];
+            att_val = "step";
+            var->putAtt(
+                att_name,
+                att_val);
+            att_name = "long_name";
+            att_val = "simulation step";
+            var->putAtt(
+                att_name,
+                att_val);
+//             std::cout << "before in_datafile.getVars();\n" << std::flush;
+
+//             // TODO: Find the corresponding names and then add them
+            auto vars = in_datafile.getVars();
+//             std::cout << "in_datafile.getVars();\n" << std::flush;
             for(auto & name_var: vars)
             {
-                auto var = name_var.second;
-                auto name = name_var.first;
-                auto attributes = var.getAtts();
+                auto column_name = name_var.first;
+                // std::cout << "Searching for " << column_name << "\n" << std::flush;
+                auto it = std::find(output_par_idx.begin(), output_par_idx.end(), column_name);
+                if(it != output_par_idx.end())
+                {
+                    uint32_t idx = std::distance(output_par_idx.begin(), it);
+                    var = &var_vector[idx];
+                }
+                else if(column_name == "time_after_ascent")
+                    var = &var_vector[offset];
+                else if(column_name == "time")
+                    var = &var_vector[offset+1];
+                else if(column_name == "conv_400")
+                    var = &var_vector[offset+2];
+                else if(column_name == "conv_600")
+                    var = &var_vector[offset+3];
+                else if(column_name == "slan_400")
+                    var = &var_vector[offset+4];
+                else if(column_name == "slan_600")
+                    var = &var_vector[offset+5];
+                else if(column_name == "type")
+                    var = &var_vector[offset+6];
+                else if(column_name == "lat")
+                    var = &var_vector[offset+7];
+                else if(column_name == "lon")
+                    var = &var_vector[offset+8];
+                else if(column_name == "ensemble")
+                    var = &ens_var;
+                else if(column_name == "trajectory")
+                    var = &traj_var;
+                else if(column_name == "Q_TURBULENCE")
+#if defined MET3D && defined TURBULENCE
+                    var = &var_vector[offset+10];
+#else
+                    continue;
+#endif
+                else
+                    continue;
+                // std::cout << "Add attribtues\n" << std::flush;
+                auto attributes = name_var.second.getAtts();
                 for(auto & name_attr: attributes)
                 {
+                    // ie _FillValue, long_name, standard_name
                     auto attribute = name_attr.second;
                     NcType type = attribute.getType();
                     if(type.getName() == "double" || type.getName() == "float")
                     {
                         std::vector<double> values(1);
-                        attribute.getValues(values.data());
-                        auto att_name = attribute.getName();
-                        auto values_n = values[0];
-                    } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
+                        var->putAtt(
+                            attribute.getName(),
+                            type,
+                            values.size(),
+                            values.data());
+                    } else if(type.getName() == "int64"
+                        || type.getName() == "int32" || type.getName() == "int")
                     {
                         std::vector<int> values(1);
-                        attribute.getValues(values.data());
-                        auto att_name = attribute.getName();
-                        auto values_n = values[0];
+                        var->putAtt(
+                            attribute.getName(),
+                            type,
+                            values.size(),
+                            values.data());
+                    } else if(type.getName() == "uint64"
+                        || type.getName() == "uint32" || type.getName() == "uint")
+                    {
+                        std::vector<uint64_t> values(1);
+                        var->putAtt(
+                            attribute.getName(),
+                            type,
+                            values.size(),
+                            values.data());
                     } else if(type.getName() == "char")
                     {
                         std::string values;
                         attribute.getValues(values);
-                        auto att_name = attribute.getName();
-                        auto values_n = values[0];
+                        var->putAtt(
+                            attribute.getName(),
+                            values);
                     }
                 }
             }
+//             std::cout << "added attributes column\n" << std::flush;
+            in_datafile.close();
         } else
         {
             // write attributes
@@ -2404,7 +2519,8 @@ struct IO_handle_t{
                     outfile_att << "name=" << attribute.getName() << "\n"
                                 << "type=" << type.getName() << "\n"
                                 << "values=" << values[0] << "\n";
-                } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
+                } else if(type.getName() == "int64"
+                    || type.getName() == "int32" || type.getName() == "int")
                 {
                     std::vector<int> values(1);
                     attribute.getValues(values.data());
@@ -2439,7 +2555,8 @@ struct IO_handle_t{
                         std::vector<double> values(1);
                         attribute.getValues(values.data());
                         outfile_att << attribute.getName() << "=" << values[0] << "\n";
-                    } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
+                    } else if(type.getName() == "int64"
+                        || type.getName() == "int32" || type.getName() == "int")
                     {
                         std::vector<int> values(1);
                         attribute.getValues(values.data());
@@ -2588,7 +2705,7 @@ struct IO_handle_t{
     {
         if(filetype == "netcdf")
         {
-            const uint64_t offset_grad = n_trajs*n_ens*num_comp;
+            // const uint64_t offset_grad = n_trajs*n_ens*num_comp;
             const uint64_t offset = n_trajs*n_ens;
 
             // output parameters
@@ -2596,16 +2713,30 @@ struct IO_handle_t{
                 output_buffer[i][n_snapshots*offset] = y_single_new[i].getValue();
 
             // gradients
+            // std::cout << num_comp << " to "
+            //           << num_comp+num_par
+            //           << " vs " << n_snapshots + 0*offset
+            //           << " to " << n_snapshots + num_comp*offset << "\n" << std::flush;
             for(uint64_t i=0; i<num_comp; i++) // gradient sensitive to output parameter i
                 for(uint64_t j=0; j<num_par; j++) // gradient of input parameter j
-                    output_buffer[num_comp+j][n_snapshots + i*offset_grad] = y_diff[i][j];
+                    output_buffer[num_comp+j][n_snapshots + i*offset] = y_diff[i][j];
 
+            // std::cout << "Done\n" << std::flush;
             // time after ascent
             output_buffer[num_comp+num_par][n_snapshots*offset] =
                 nc_params.time_rel + sub*cc.dt;
+
             // time index
             output_buffer[num_comp+num_par+1][n_snapshots] =
                 nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt;
+
+            // lat
+            output_buffer[num_comp+num_par+2][n_snapshots*offset] =
+                (nc_params.lat[0] + sub*nc_params.dlat);
+
+            // lon
+            output_buffer[num_comp+num_par+3][n_snapshots*offset] =
+                (nc_params.lon[0] + sub*nc_params.dlon);
 
             // flags
             output_buffer_flags[0][n_snapshots*offset] = nc_params.conv_400;
@@ -2615,6 +2746,15 @@ struct IO_handle_t{
 
             // type
             output_buffer_str[0][n_snapshots*offset] = nc_params.type[0];
+
+            // trajectory
+            // output_buffer_str[0][n_snapshots*offset] = cc.id;
+
+            // simulation step
+            output_buffer_int[0][n_snapshots*offset] = sub + t*cc.num_sub_steps;
+
+            // ensemble
+            // output_buffer_int[1][n_snapshots*offset] = ensemble;
         } else
         {
 #if defined WCB || defined WCB2
@@ -2697,19 +2837,32 @@ struct IO_handle_t{
     }
 
     /**
-     * Write the buffered data to disk although an actual write operation
-     * is not guaranteed until the program is finished.
+     * Write the buffered data to disk.
      */
     void flush_buffer()
     {
         if(filetype == "netcdf")
         {
+            // datafile.open(filename + ".nc_wcb", NcFile::write);
             std::vector<uint64_t> startp, countp;
             startp.push_back(0);
             countp.push_back(n_snapshots); // number of snapshots so far
+            // std::cout << "n_snapshots " << n_snapshots
+            //           << ", total: " << total_snapshots
+            //           << ", num_comp+num_par+1 " << num_comp+num_par+1
+            //           << ", sizes+1 " << output_par_idx.size() + output_grad_idx.size()+1
+            //           << ", buffer size " << output_buffer[num_comp+num_par+1].size()
+            //           << "\n" << std::flush;
+            // for(uint32_t i=0; i<n_snapshots; i++)
+            //     std::cout << i << ", " << output_buffer[num_comp+num_par+1][i] << "\n";
+            // std::cout << "dimcount " << var_vector[num_comp+num_par+1].getDimCount() << "\n";
+            // std::cout << "name: " << var_vector[num_comp+num_par+1].getName() << "\n";
+            // std::cout << "type: " << var_vector[num_comp+num_par+1].getType().getName() << "\n";
+            // std::cout << "That's all folks!\n" << std::flush;
             // time index
             var_vector[num_comp+num_par+1].putVar(startp, countp,
                 output_buffer[num_comp+num_par+1].data());
+            // std::cout << "Writing done\n" << std::flush;
 
             startp.push_back(0);
             startp.push_back(0);
@@ -2721,28 +2874,58 @@ struct IO_handle_t{
                 var_vector[i].putVar(startp, countp,
                     output_buffer[i].data());
 
+            uint64_t offset = num_comp+num_par;
             // time after ascent
-            var_vector[num_comp+num_par].putVar(startp, countp,
+            var_vector[offset].putVar(startp, countp,
                 output_buffer[num_comp+num_par].data());
 
+            offset += 2;
             // flags
             for(uint64_t i=0; i<output_buffer_flags.size(); i++)
-                var_vector[i+output_buffer.size()].putVar(startp, countp,
+                var_vector[offset+i].putVar(startp, countp,
                 output_buffer_flags[i].data());
 
+            offset += output_buffer_flags.size();
             // type
+            std::vector<uint64_t> startp_str, countp_str;
+            for(auto &p: startp)
+                startp_str.push_back(p);
+            for(auto _: countp)
+                countp_str.push_back(0);
+            countp_str[0] = 1;
             for(uint64_t i=0; i<output_buffer_str.size(); i++)
-                var_vector[i+output_buffer.size()+output_buffer_flags.size()].putVar(
-                    startp, countp, output_buffer_str[i].data());
+                for(uint64_t j=0; j<output_buffer_str[i].size(); j++)
+                {
+                    var_vector[offset+i].putVar(
+                        startp_str, countp_str, &output_buffer_str[i][j]);
+                    startp_str[0]++;
+                }
 
+            offset += output_buffer_str.size();
+            // lat
+            var_vector[offset].putVar(startp, countp,
+                output_buffer[num_comp+num_par+2].data());
+
+            offset += 1;
+            // lon
+            var_vector[offset].putVar(startp, countp,
+                output_buffer[num_comp+num_par+3].data());
+
+            offset += 1;
+            // step
+            var_vector[offset].putVar(startp, countp,
+                output_buffer_int[0].data());
+
+            offset = num_comp;
             // gradients
             startp.push_back(0);
             countp.push_back(num_comp);
 
-            // gradients
             for(uint64_t j=0; j<num_par; j++)
-                var_vector[num_comp+j].putVar(startp, countp,
+                var_vector[offset+j].putVar(startp, countp,
                     output_buffer[num_comp+j].data());
+
+            // datafile.close();
         } else
         {
             outfile << out_tmp.rdbuf();
@@ -2755,6 +2938,7 @@ struct IO_handle_t{
             out_tmp.str( std::string() );
             out_tmp.clear();
         }
+        flushed_snapshots = n_snapshots;
         n_snapshots = 0;
     }
 };

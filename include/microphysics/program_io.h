@@ -441,7 +441,6 @@ void load_nc_parameters_var(
     nc.lon_var      = datafile.getVar("lon");
 #endif
     nc.z_var        = datafile.getVar("z");
-
 #if defined WCB || defined WCB2
     nc.p_var        = datafile.getVar("P");
     nc.t_var        = datafile.getVar("T");
@@ -845,55 +844,6 @@ void set_input_from_arguments(global_args_t &arg ,
 
 
 /**
- * Write the file with reference values ending with
- * "__reference_values.txt" that can be read in Python with
- * Numpy. The order is:
- * Temperature, pressure, mixing ratio, particle number, ascent velocity,
- * time, height.
- *
- * @param out_filename String with filename.
- * @param ref_quant reference_quantities_t with all the reference values.
- * @return Errorcode (0=no errors; 1=simulation breaking error)
- */
-// int write_reference_quantities(
-//     std::string &out_filename,
-//     reference_quantities_t &ref_quant)
-// {
-//     // done in iohandler
-//     return 0;
-// }
-
-#ifdef MET3D
-/**
- * Write all attributes to a separate file to use later again.
- *
- * @param in_filename Path to netcdf input file to read attributes from
- * @param out_filename String with filename
- * @return Errorcode (0=no errors; 1=simulation breaking error)
- */
-// int write_attributes(
-//     std::string &in_filename,
-//     std::string &out_filename)
-// {
-//     // done in iohandler
-// }
-#endif
-
-/**
- * Write the header for simulation results files and for files with
- * derivatives which have "_diff_" in their name.
- *
- * @param out_filename String with filename.
- * @return Errorcode (0=no errors; 1=simulation breaking error)
- */
-// int write_headers(
-//     std::string &out_filename)
-// {
-//     // io_handler creation
-// }
-
-
-/**
  * Read initial values from the netcdf file and stores them to y_init.
  * Also stores the amount of trajectories in the input file to lenp and
  * several quantities to cc such as the number of steps to simulate and
@@ -1110,6 +1060,7 @@ int read_init_netcdf(
                 y_init[T_idx]*ref_quant.Tref,
                 y_init[qv_idx]*ref_quant.qref);
 #endif
+        nc_close(ncid);
         }
     } catch(netCDF::exceptions::NcException& e)
     {
@@ -1132,12 +1083,12 @@ int read_init_netcdf(
  * @params input_file Char array of input file
  */
 void open_netcdf(
-    int &ncid,
     std::vector<size_t> &startp,
     std::vector<size_t> &countp,
     const char *input_file,
     const uint32_t traj)
 {
+    int ncid;
     nc_open(input_file, NC_NOWRITE, &ncid);
 #if defined WCB || defined WCB2
     startp.push_back(1);          // time
@@ -1155,6 +1106,7 @@ void open_netcdf(
 #ifdef MET3D
     countp.push_back(1);
 #endif
+    nc_close(ncid);
 }
 
 
@@ -1190,12 +1142,10 @@ void read_netcdf_write_stream(
 #else
     startp[1] = t+1;
 #endif
-
     netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
     load_nc_parameters_var(nc_params, datafile);
     load_nc_parameters(nc_params, startp, countp,
                         ref_quant, cc.num_sub_steps);
-
     netCDF::NcVar id_var;
 #ifdef MET3D
     id_var = datafile.getVar("trajectory");
@@ -1381,6 +1331,7 @@ void read_netcdf_write_stream(
             y_single_old[T_idx].getValue()*ref_quant.Tref,
             y_single_old[qv_idx].getValue()*ref_quant.qref);
 #endif
+        datafile.close();
         std::vector< std::array<double, num_par > >  y_diff(num_comp);
         for(auto &y_d: y_diff)
             y_d.fill(0);

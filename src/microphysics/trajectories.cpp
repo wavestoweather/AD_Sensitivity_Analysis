@@ -125,13 +125,6 @@ int main(int argc, char** argv)
         input.INPUT_FILENAME.c_str(), input.traj, global_args.checkpoint_flag,
         cc, input.current_time));
 
-#ifdef MET3D
-    // The attributes do not change, hence we need only one file for each ensemble
-    // if(!global_args.checkpoint_flag)
-    //     SUCCESS_OR_DIE(write_attributes(input.INPUT_FILENAME, input.OUTPUT_FILENAME));
-#endif
-
-
 #if defined(RK4_ONE_MOMENT)
     setCoefficients(y_init[0] , y_init[1], cc);
 #endif
@@ -155,16 +148,9 @@ int main(int argc, char** argv)
     for(int ii = 0 ; ii < num_comp ; ii++)
         y_single_old[ii] = y_init[ii];
 
-
-    // Reference quantities should not change in an ensemble
-    // if(!global_args.checkpoint_flag)
-        // SUCCESS_OR_DIE(write_reference_quantities(input.OUTPUT_FILENAME, ref_quant));
-
-    // SUCCESS_OR_DIE(write_headers(input.OUTPUT_FILENAME));
     // Currently we only load one trajectory per instance
     IO_handle_t io_handler("netcdf", input.OUTPUT_FILENAME, 1, 1, cc,
         ref_quant, input.INPUT_FILENAME, input.write_index, input.snapshot_index);
-
 #ifdef TRACE_QC
     print_particle_params(cc.cloud, "cloud");
 #endif
@@ -194,17 +180,13 @@ int main(int argc, char** argv)
     {
         // Needed to read from trajectory file
         std::vector<int> ids(lenp);
-        int ncid;
         std::vector<size_t> startp, countp;
-
-        open_netcdf(ncid, startp, countp, input.INPUT_FILENAME.c_str(), input.traj);
+        open_netcdf(startp, countp, input.INPUT_FILENAME.c_str(), input.traj);
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
         uint32_t sub_start = 1;
         if(global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0)
             sub_start = std::fmod(input.current_time, cc.dt_prime)
                     / (cc.dt_prime/(cc.num_sub_steps-input.start_over));
-
-        // std::cout << "current_time " << input.current_time << ", sub_start " << sub_start << "\n";
         // Loop over every timestep that is usually fixed to 20 s
         for(uint32_t t=0; t<cc.num_steps; ++t) //
         {
@@ -413,7 +395,7 @@ int main(int argc, char** argv)
                                 cc,
                                 s.n_members,
                                 "gnuparallel",
-                                true);
+                                false);
                         }
                     }
                 }
@@ -438,7 +420,6 @@ int main(int argc, char** argv)
         }
         if(input.progress_index > 0)
             pbar.finish();
-        nc_close(ncid);
     } catch(netCDF::exceptions::NcException& e)
     {
         if(input.progress_index > 0)
@@ -447,9 +428,6 @@ int main(int argc, char** argv)
         std::cout << "ABORTING." << std::endl;
         return 1;
     }
-    // outfile.close();
-    // for(int ii = 0 ; ii < num_comp ; ii++)
-    //     out_diff[ii].close();
     std::cout << "-------------------FINISHED-------------------\n\n\n";
     exit(0);
 }
