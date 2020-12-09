@@ -181,7 +181,7 @@ int main(int argc, char** argv)
         // Needed to read from trajectory file
         std::vector<int> ids(lenp);
         std::vector<size_t> startp, countp;
-        open_netcdf(startp, countp, input.INPUT_FILENAME.c_str(), input.traj);
+        resize_counter(startp, countp, input.traj);
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
         uint32_t sub_start = 1;
         if(global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0)

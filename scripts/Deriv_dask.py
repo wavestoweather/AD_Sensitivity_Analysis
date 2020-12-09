@@ -263,16 +263,14 @@ class Deriv_dask:
         if mapped is not None:
             df = df.loc[df[mapped]]
 
+        all_params = list(set(
+                ["trajectory", "type"]
+                + in_params + [x_axis] + out_params))
+        if "instance_id" in df:
+            all_params.append("instance_id")
         if "Output Parameter" in df:
             df = df.loc[df["Output Parameter"].isin(out_params)]
-
-            all_params = list(set(
-                ["Output Parameter", "trajectory", "type", "instance_id"]
-                + in_params + [x_axis] + out_params))
-        else:
-            all_params = list(set(
-                ["trajectory", "type", "instance_id"]
-                + in_params + [x_axis] + out_params))
+            all_params.append("Output Parameter")
 
         if y_axis is not None and not y_axis in all_params:
             all_params.append(y_axis)
@@ -1505,6 +1503,8 @@ class Deriv_dask:
                 # datashade cannot handle only zero valued plots
                 if min_y == max_y and datashade:
                     continue
+                if datashade and df_group.empty:
+                    continue
 
                 if min_y == max_y:
                     min_y = max_y - 1
@@ -1739,9 +1739,12 @@ class Deriv_dask:
                     label=None,
                     datashade=datashade
                 ).opts(**layout_kwargs)
-        all_plots = plot_list[0] + plot_list[1]
-        for i in range(len(plot_list)-2):
-            all_plots = all_plots + plot_list[i+2]
+        if len(plot_list) > 1:
+            all_plots = plot_list[0] + plot_list[1]
+            for i in range(len(plot_list)-2):
+                all_plots = all_plots + plot_list[i+2]
+        else:
+            all_plots = (plot_list[0])
         # layout_kwargs = {}
         # if self.backend == "bokeh":
         #     layout_kwargs["width"] = width

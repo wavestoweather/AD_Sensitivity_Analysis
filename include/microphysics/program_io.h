@@ -153,8 +153,6 @@ void write_checkpoint(
         else
             actual_filename = filename + "_id" + cc.id + "_" + std::to_string(i) + ".json";
     }
-
-    // filename = filename + "_id" + cc.id + ".json";
     std::fstream outstream(actual_filename, std::ios::out);
     filename = actual_filename;
     pt::write_json(outstream, checkpoint);
@@ -872,39 +870,31 @@ int read_init_netcdf(
     const bool checkpoint_flag,
     model_constants_t &cc,
     double current_time)
-    // uint32_t start_time_idx=0)
 {
     try
     {
-        int dimid, ncid;
-        size_t n_timesteps;
-        // Get the amount of trajectories
-        nc_open(input_file, NC_NOWRITE, &ncid);
+        netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
 #ifdef WCB
-        nc_inq_dimid(ncid, "ntra", &dimid);
+        lenp = datafile.getDim("ntra").getSize();
 #elif defined MET3D
-        nc_inq_dimid(ncid, "trajectory", &dimid);
+        lenp = datafile.getDim("trajectory").getSize();
 #else
-        nc_inq_dimid(ncid, "id", &dimid);
+        lenp = datafile.getDim("id").getSize();
 #endif
-        nc_inq_dimlen(ncid, dimid, &lenp);
         std::cout << "Number of trajectories in netCDF file: " << lenp << "\n" << std::flush;
         if(lenp <= traj)
         {
             std::cout << "You asked for trajectory with index " << traj
                       << " which does not exist. ABORTING.\n";
-            return 1;
+            return NC_TRAJ_IDX_ERR;
         }
-        // Get the amount of timesteps
 #ifdef WCB
-        nc_inq_dimid(ncid, "ntim", &dimid);
+        uint32_t n_timesteps = datafile.getDim("ntim").getSize();
 #else
-        nc_inq_dimid(ncid, "time", &dimid);
+        uint32_t n_timesteps = datafile.getDim("time").getSize();
 #endif
-        nc_inq_dimlen(ncid, dimid, &n_timesteps);
 
         init_nc_parameters(nc_params, lenp, n_timesteps);
-        netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
         load_nc_parameters_var(nc_params, datafile);
 #ifdef MET3D
         // Get the time coordinates
@@ -1060,7 +1050,6 @@ int read_init_netcdf(
                 y_init[T_idx]*ref_quant.Tref,
                 y_init[qv_idx]*ref_quant.qref);
 #endif
-        nc_close(ncid);
         }
     } catch(netCDF::exceptions::NcException& e)
     {
@@ -1074,22 +1063,17 @@ int read_init_netcdf(
 
 
 /**
- * Open NETCDF file for reading and store some information in ncid, startp,
- * countp.
+ * Resize startp and countp.
  *
- * @param ncid On out: contains id of netcdf file (needed for closing it)
  * @param startp On out: contains dimensions info for reading
  * @params countp On out: contains dimensions info for reading
  * @params input_file Char array of input file
  */
-void open_netcdf(
+void resize_counter(
     std::vector<size_t> &startp,
     std::vector<size_t> &countp,
-    const char *input_file,
     const uint32_t traj)
 {
-    int ncid;
-    nc_open(input_file, NC_NOWRITE, &ncid);
 #if defined WCB || defined WCB2
     startp.push_back(1);          // time
     startp.push_back(traj); // trajectory
@@ -1106,7 +1090,6 @@ void open_netcdf(
 #ifdef MET3D
     countp.push_back(1);
 #endif
-    nc_close(ncid);
 }
 
 

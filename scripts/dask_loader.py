@@ -304,7 +304,11 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
             try:
                 # Try reading netcdf files in bulk
                 # Works only if no multiindex is given
-                df = xr.open_mfdataset(direc + "/" + file_ending, parallel=True).to_dask_dataframe()
+                df = xr.open_mfdataset(
+                    direc + "/" + file_ending,
+                    parallel=True,
+                    decode_times=False).to_dask_dataframe(
+                        dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
             except:
                 # Last fallback which works for most netcdf files
                 df = None

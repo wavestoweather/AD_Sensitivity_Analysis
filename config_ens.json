@@ -3,11 +3,11 @@
         {
             "when_value": 235.40,
             "when_name": "T",
-            "amount": 4,
+            "amount": 17,
             "params": [
                 {
                     "name": "b_geo",
-                    "sigma": 0.1,
+                    "sigma_perc": 10,
                     "type": "ice",
                     "rand_func": "uniform"
                 },
@@ -19,7 +19,7 @@
                 },
                 {
                     "name": "b_geo",
-                    "sigma": 0.1,
+                    "sigma_perc": 10,
                     "type": "snow",
                     "rand_func": "uniform"
                 },
@@ -36,7 +36,7 @@
             "when_counter": 2,
             "when_name": "cloud_min_x_act",
             "when_sens": "QV",
-            "amount": 4,
+            "amount": 9,
             "params": [
                 {
                     "name": "min_x_act",
@@ -48,13 +48,13 @@
         },
         {
             "when_method": "impact_change",
-            "when_counter": 3,
+            "when_counter": 4,
             "when_sens": "QV",
-            "amount": 4,
+            "amount": 5,
             "params": [
                 {
                     "name": "b_geo",
-                    "sigma": 0.1,
+                    "sigma_perc": 10,
                     "type": "ice",
                     "rand_func": "uniform"
                 },
@@ -66,7 +66,7 @@
                 },
                 {
                     "name": "a_geo",
-                    "sigma": 0.1,
+                    "sigma_perc": 10,
                     "type": "snow",
                     "rand_func": "uniform"
                 },
