@@ -16,14 +16,14 @@ START_TIME="-1000"
 WRITE_INDEX="1000"
 SNAPSHOT_INDEX="1"
 TARGET_TIME_AFTER_START="26000"
-FILENAME="compressed_big"
+FILENAME="compressed_smaller_625"
 
 SUFF="_outSat_sbShape_sbConv"
 
 # OUTPUT_PATH="/data/project/wcb/sim_results/ens_test/${FILENAME}${SUFF}/"
 OUTPUT_PATH="/data/project/wcb/netcdf/ens_test_sim_result/${FILENAME}${SUFF}/"
 
-ENSEMBLE_CONFIG="config_ens.json"
+ENSEMBLE_CONFIG="config_ens_smaller.json"
 if [ ! -d "$OUTPUT_PATH" ]
 then
     mkdir -p "$OUTPUT_PATH"

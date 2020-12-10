@@ -181,7 +181,10 @@ void create_run_script(
 {
     if(which == "gnuparallel")
     {
-        std::string script = "parallel -u -j " + std::to_string(n_processes-1)
+        uint32_t j = n_processes - 1;
+        if(j>4)
+            j = 4;
+        std::string script = "parallel -u -j " + std::to_string(j)
             + " --no-notice --delay .2 build/apps/src/microphysics/./trajectories "
             "-c " + checkpoint_file + " -g {1} ::: {0.."
             + std::to_string(n_processes-2) + "}";

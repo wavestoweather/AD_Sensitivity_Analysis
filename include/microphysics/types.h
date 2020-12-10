@@ -941,8 +941,11 @@ struct input_parameters_t{
         uint64_t ensemble_id)
     {
         std::string preceeding_ids = "";
-        if(all_ids.length() > 1)
-            preceeding_ids = all_ids.substr(0, all_ids.length()-2);
+        if(all_ids != "0")
+        {
+            auto found = all_ids.find_last_of("-");
+            preceeding_ids = all_ids.substr(0, found);
+        }
 
         std::string ens_string = "_ensID_";
         if(ensemble_id == 0)
@@ -1429,7 +1432,7 @@ struct segment_t
     int out_param; /*<! Which output parameter in case of sensitivity methods >*/
     uint32_t n_segments;
     uint32_t err;
-    char old_sign;
+    uint32_t old_sign;
     std::unordered_map<std::string, std::string> tree_strings;
     bool activated;
     /**
@@ -1452,7 +1455,7 @@ struct segment_t
         QI, NCICE, QS, NCSNOW, QG, NCGRAUPEL, QH, NCHAIL,
         QI_OUT, QS_OUT, QR_OUT, QG_OUT, QH_OUT, latent_heat,
         latent_cool, NI_OUT, NS_OUT, NR_OUT, NG_OUT,
-        NH_OUT, z, Inactive, eposition, sublimination,
+        NH_OUT, z, Inactive, deposition, sublimination,
         a_1, a_2, e_1, e_2, d, N_c, gamma, beta_c,
         beta_r, delta1, delta2, zeta, rain_gfak, cloud_k_au,
         cloud_k_sc, kc_autocon, inv_z, dw, q_crit_i,
@@ -1465,7 +1468,7 @@ struct segment_t
         K_T, L_wd, L_ed, D_v, ecoll_min, ecoll_gg,
         ecoll_gg_wet, kin_visc_air, C_mult, T_mult_min,
         T_mult_max, T_mult_opt, const0, const3, const4,
-        const5, D_rainfrz_ig, dv0, p_sat_melt, cp,
+        const5, D_rainfrz_gh, D_rainfrz_ig, dv0, p_sat_melt, cp,
         k_b, a_HET, b_HET, N_sc, n_f, N_avo, na_dust,
         na_soot, na_orga, ni_het_max, ni_hom_max, a_dep,
         b_dep, c_dep, d_dep, nim_imm, nin_dep, alf_imm,
@@ -1591,7 +1594,7 @@ struct segment_t
         {"NI_OUT", Param::NI_OUT}, {"NS_OUT", Param::NS_OUT},
         {"NR_OUT", Param::NR_OUT}, {"NG_OUT", Param::NG_OUT},
         {"NH_OUT", Param::NH_OUT}, {"z", Param::z},
-        {"Inactive", Param::Inactive}, {"eposition", Param::eposition},
+        {"Inactive", Param::Inactive}, {"deposition", Param::deposition},
         {"sublimination", Param::sublimination}, {"a_1", Param::a_1},
         {"a_2", Param::a_2}, {"e_1", Param::e_1},
         {"e_2", Param::e_2}, {"d", Param::d},
@@ -1626,7 +1629,8 @@ struct segment_t
         {"T_mult_min", Param::T_mult_min}, {"T_mult_max", Param::T_mult_max},
         {"T_mult_opt", Param::T_mult_opt}, {"const0", Param::const0},
         {"const3", Param::const3}, {"const4", Param::const4},
-        {"const5", Param::const5}, {"D_rainfrz_ig", Param::D_rainfrz_ig},
+        {"const5", Param::const5}, {"D_rainfrz_gh", Param::D_rainfrz_gh},
+        {"D_rainfrz_ig", Param::D_rainfrz_ig},
         {"dv0", Param::dv0}, {"p_sat_melt", Param::p_sat_melt},
         {"cp", Param::cp}, {"k_b", Param::k_b},
         {"a_HET", Param::a_HET}, {"b_HET", Param::b_HET},
@@ -1871,6 +1875,8 @@ struct segment_t
         if(it != table_param.end())
         {
             value_name = it->second;
+            std::cout << "string " << n << ", first " << it->first
+                      << " second " << it->second << "\n";
             std::string key = "when_name";
             tree_strings.insert(std::make_pair(key, n));
         } else
@@ -2025,6 +2031,8 @@ struct segment_t
             {
                 // the first num_comp many values refer to output parameters
                 idx = value_name - num_comp;
+                // std::cout << "idx " << idx << ", grad " << gradients[out_param][idx] << "\n"
+                //           << "old_sign " << old_sign << ", out_param " << out_param << "\n";
                 if(old_sign == 0)
                 {
                     // set sign; no perturbing needed.
@@ -2038,11 +2046,13 @@ struct segment_t
                     if(old_sign == 1 && gradients[out_param][idx] < 0)
                     {
                         activated = true;
+                        old_sign = 2;
                         return true;
-                    }else if(old_sign == 0 && gradients[out_param][idx] > 0)
+                    }else if(old_sign == 2 && gradients[out_param][idx] > 0)
                     {
                         // Perturb parameters
                         activated = true;
+                        old_sign = 1;
                         return true;
                     }
                     return false;
@@ -2056,7 +2066,13 @@ struct segment_t
                 if(out_param != -1)
                     current_value = gradients[out_param][value_name - num_comp];
                 else
+                {
                     current_value = y[value_name].getValue();
+                    if(value_name == T_idx)
+                        current_value *= 273.15;
+                    else if(value_name == p_idx)
+                        current_value *= 1.0e5;
+                }
                 if(current_value == value)
                 {
                     activated = true;
@@ -2070,7 +2086,7 @@ struct segment_t
                 }
 
                 if( signbit(value-current_value) != signbit(value-old_value)
-                    && fabs(value-current_value) < fabs(value*tol) )
+                    || fabs(value-current_value) < fabs(value*tol) )
                 {
                     activated = true;
                     return true;

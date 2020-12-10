@@ -288,8 +288,16 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
                         df = ds.to_dask_dataframe(
                             dim_order=["ensemble", "trajectory", "time"])
         else:
-            df = xr.open_dataset(direc + "/" + file_ending, decode_times=False)
-            df = df.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+            ds = xr.open_dataset(direc + "/" + file_ending, decode_times=False)
+            if "Output Parameter" in ds:
+                if "Output Parameter" not in ds.dims:
+                    ds = ds.expand_dims("Output Parameter")
+                    ds = ds.set_coords(["Output Parameter"])
+                df = ds.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+            else:
+                ds["Output Parameter"] = "placeholer"
+                ds = ds.expand_dims("Output Parameter")
+                df = ds.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
         # The performance of the following command is not the best.
 
         # df = xr.open_mfdataset(

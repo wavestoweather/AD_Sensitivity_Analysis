@@ -1452,7 +1452,7 @@ class Deriv_dask:
                     + " " + latexify.get_unit(twin_axis, brackets=True))
                 plot.handles["axis"] = twinax
             if log[1]:
-                df_tmp_out[twin_axisy] = da.log(da.fabs(df_tmp_out[twin_axis]))
+                df_tmp_out[twin_axis] = da.log(da.fabs(df_tmp_out[twin_axis]))
             twin = df_tmp_out.hvplot.scatter(
                 x=x_axis,
                 y=twin_axis,
@@ -1689,7 +1689,8 @@ class Deriv_dask:
                             dynspread=True,
                             yticks=yticks,
                             aspect=aspect).opts(
-                                title="Values of of {}".format(latexify.parse_word(y))
+                                title="Values of of {}".format(latexify.parse_word(y),
+                                fontsize=self.font_dic)
                             ) * overlay)
 
                     else:
@@ -1710,7 +1711,8 @@ class Deriv_dask:
                                 dynspread=True,
                                 yticks=yticks,
                                 aspect=aspect).opts(
-                                title="Values of of {}".format(latexify.parse_word(y))
+                                title="Values of of {}".format(latexify.parse_word(y),
+                                fontsize=self.font_dic)
                                 ))
 
                     if marks is not None:

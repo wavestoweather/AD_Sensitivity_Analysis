@@ -443,7 +443,7 @@ in_params_descr_dic = {
     "dcloud_a_geo": "Coefficient for diameter size calculation",
     "dcloud_b_geo": "Exponent for diameter size calculation",
     "dcloud_min_x": "Minimum size of the particle used in one-moment schemes",
-    "dcloud_min_x_act": "Minimum size of particle for",
+    "dcloud_min_x_act": "Minimum size of particle for CCN activation",
     "dcloud_min_x_nuc_homo": "Not used",
     "dcloud_min_x_nuc_hetero": "Not used",
     "dcloud_min_x_melt": "Not used",
