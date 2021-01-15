@@ -197,7 +197,6 @@ def plot_all(path, netcdf_path, store_path, suffixes, in_params, out_params,
     for suff in suffixes:
         files = sorted(glob(path + "/*"))
         for f in files:
-            # print(f"Plotting for {f}")
             just_f = f.split("/")[-1]
             number = just_f.split("derivs_")[-1].split(".nc_wcb")[0]
             plot_my_thing(path,

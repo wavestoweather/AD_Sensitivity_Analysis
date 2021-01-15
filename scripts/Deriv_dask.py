@@ -282,6 +282,156 @@ class Deriv_dask:
         print("Loading done in {} s".format(t2-t))
         t = timer()
 
+    def get_important_sensitivities(self, in_params, out_params=None, n=None,
+        ratio_type="vanilla", ratio_window=None, vertical_mark=None,
+        verbose=False, x_axis="timestep"):
+        """
+        Parameters
+        ----------
+        in_params : list of string
+            List of all input parameters to be considered.
+        out_params : list of string
+            List of output parameters to get the most sensitive parameters for.
+        n : int
+            Get the n most important parameters.
+        ratio_type : String
+            "vanilla": Use the derivative ratio in the file that *should* use the
+            highest derivative over all times for each output parameter as denominator.
+            "per_timestep": Use the highest derivative per timestep as denominator.
+            "window": Use the highest derivative in the given window by min_x and max_x.
+            "per_xaxis": Use the highest derivative per x_axis value. If x_axis is "timestep"
+            it is the same as "per_timestep".
+            "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
+            derivative but per output parameter. (that *should* be the vanilla version)
+            "x_weighted": Append this to any ratio type to use the inverse of the
+            output parameter value as weight. Only works with "x_per_out_param".
+        ratio_window : dic of list
+            Overides ratio_type and switches to a derivative ratio calculation
+            per output param if "ratio_type" has "per_out_param" in it.
+            Calculate the derivative ratio in windows
+            where the key is a column name and the list consists of values
+            at which a new window starts, i.e. {"T": [235, 273]} results
+            in three windows with T < 235K, 235 <= T < 273K and 237K <= T.
+        vertical_mark : dic of list
+            A dictionary containing column names and values where a horizontal
+            line should be created whenever the x_axis value intersects
+            with the given value, i.e. {"T": [273, 235]} with x_axis in time
+            marks all times, where a trajectory reached that temperature.
+            Recommended to use with a single trajectory.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A dataframe with the parameters and their respective,
+            highest sensitivities. Column names are "Output Parameter",
+            "description", "parameter", "value", "latex", "gradient_value"
+        """
+        if self.cache is None:
+            print("You have to cache the data first using cache_data(..)")
+            return None
+        df = self.cache.copy()
+        if verbose:
+            t = timer()
+
+        def recalc_ratios(ratio_df):
+            if "weighted" in ratio_type and "per_out_param" in ratio_type:
+                out_par = np.unique(ratio_df["Output Parameter"])[0]
+                ratio_df.loc[:, in_params] = ratio_df[in_params].div(ratio_df[out_par], axis=0)
+            if ratio_window is not None:
+                col = list(ratio_window.keys())[0]
+                edges = np.sort(ratio_window[col])
+                for i in range(len(edges)+1):
+                    if i == 0:
+                        df_edge = ratio_df.loc[ratio_df[col] < edges[i]]
+                        max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                        if max_val == 0:
+                            continue
+                        ratio_df.loc[:, in_params] = ratio_df.apply(
+                            lambda x: x[in_params]/max_val if x[col] < edges[i] else x[in_params], axis=1)
+                    elif i == len(edges):
+                        df_edge = ratio_df.loc[ratio_df[col] >= edges[i-1]]
+                        max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                        if max_val == 0:
+                            continue
+                        ratio_df.loc[:, in_params] = ratio_df.apply(
+                            lambda x: x[in_params]/max_val if x[col] >= edges[i-1] else x[in_params], axis=1)
+                    else:
+                        df_edge = ratio_df.loc[(ratio_df[col] < edges[i]) & (ratio_df[col] >= edges[i-1])]
+                        max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                        if max_val == 0:
+                            continue
+                        ratio_df.loc[:, in_params] = ratio_df.apply(
+                            lambda x: x[in_params]/max_val if (
+                                (x[col] < edges[i]) and (x[col] >= edges[i-1])) else x[in_params], axis=1)
+            elif "per_timestep" in ratio_type:
+                # Get series of max values over all timesteps (equals index)
+                max_vals = ratio_df[in_params].apply(lambda x: np.max(np.abs(x)), axis=1)
+                ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_vals, axis=0)
+            elif "window" in ratio_type:
+                max_val = ratio_df[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_val)
+            elif "per_xaxis" in ratio_type:
+                ratio_df = ratio_df.set_index(x_axis)
+                max_vals = ratio_df.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
+                if x_axis == "timestep" or x_axis == "step" or x_axis == "time_after_ascent":
+                    ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_vals, axis="index")
+                else:
+                    ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_vals)
+            ratio_df.loc[:, in_params] = ratio_df[in_params].fillna(0)
+            if verbose:
+                t2 = timer()
+                print("Recalculating ratios done in {} s".format(t2-t))
+            return ratio_df
+
+        if out_params is None:
+            out_params = df["Output Parameter"].unique()
+        if "per_out_param" not in ratio_type:
+            df = recalc_ratios(df)
+            if verbose:
+                t = timer()
+
+        dic_sorted = {"Output Parameter": [], "description": [],
+            "parameter": [], "value": [], "latex": [], "gradient_value": []}
+        for out_par in out_params:
+            df_tmp_out = df.loc[df["Output Parameter"] == out_par]
+            if "per_out_param" in ratio_type:
+                df_tmp_out = recalc_ratios(df_tmp_out)
+                if verbose:
+                    t = timer()
+
+            sorted_tuples = []
+            for in_p in in_params:
+                value = np.abs(df_tmp_out[in_p].min())
+                max_val = np.abs(df_tmp_out[in_p].max())
+                if max_val > value:
+                    value = max_val
+                if value != 0 and not np.isnan(value):
+                    sorted_tuples.append((in_p, value))
+            sorted_tuples.sort(key=lambda tup: tup[1])
+            if verbose:
+                t2 = timer()
+                print("Sorting done in {} s".format(t2-t), flush=True)
+            for i, tup in enumerate(sorted_tuples[::-1]):
+                if n is not None and i == n:
+                    break
+                p, g = tup
+                dic_sorted["Output Parameter"].append(out_par)
+                dic_sorted["parameter"].append(p)
+                dic_sorted["gradient_value"].append(g)
+                try:
+                    dic_sorted["value"].append(latexify.in_params_value_dic[p])
+                except:
+                    dic_sorted["value"].append("no value provided")
+                try:
+                    dic_sorted["description"].append(latexify.in_params_descr_dic[p])
+                except:
+                    dic_sorted["description"].append("no description provided")
+                dic_sorted["latex"].append(latexify.parse_word(p))
+        df_sorted = pandas.DataFrame.from_dict(dic_sorted)
+        return df_sorted
+
+
+
     def plot_two_ds(self, in_params, out_params, x_axis="timestep",
         y_axis=None, twin_axis=None, decimals=-3, mapped=None,
         trajectories=None, scatter=False, n_plots=None, percentile=None,
@@ -641,6 +791,7 @@ class Deriv_dask:
             # Sort the derivatives
             if sort:
                 sorted_tuples = []
+
                 for in_p in in_params:
                     if log[1]:
                         value = np.log(np.abs(df_tmp_out[in_p].min()))
@@ -1377,7 +1528,9 @@ class Deriv_dask:
             Number of consecutive rows for a rolling average
             for the left y-axis.
         kind : string
-            Can be "scatter" for a scatter plot, else defaults to line plot.
+            "scatter" for a scatter plot,
+            "hexbin" for hexagonal bins with logarithmic count
+            and viridis colormap, else defaults to line plot.
         plot_singles : bool
             Plot every plot as an individual plot in addition to the grid of
             plots.
@@ -1396,7 +1549,7 @@ class Deriv_dask:
         import pandas
         from holoviews.operation.datashader import datashade as dsshade
         dsshade.dynamic = False
-
+        fontscale = width/2100
         if formatter_limits is not None:
             matplotlib.rcParams['axes.formatter.limits'] = formatter_limits
 
@@ -1422,6 +1575,9 @@ class Deriv_dask:
             layout_kwargs["height"] = height
         else:
             layout_kwargs["fig_inches"] = fig_inches
+
+        if kind == "hexbin":
+            datashade = False
 
         plot_list = []
         if "Output Parameter" in df:
@@ -1513,7 +1669,24 @@ class Deriv_dask:
 
                 if kind == "scatter":
                     plot_func = df_group.hvplot.scatter
-                    options = opts.Scatter(s=scatter_size)
+                    if datashade:
+                        options = opts.Scatter(show_grid=True)
+                    else:
+                        options = opts.Scatter(s=scatter_size, show_grid=True)
+                elif kind == "hexbin":
+                    def agg(x):
+                        # print(f"{y}: {np.shape(x)} -- {np.sum(x)}, {np.log(np.sum(x))}")
+                        return np.log(np.sum(x))
+
+                    plot_func = df_group.hvplot.hexbin
+                    if self.backend == "matplotlib":
+                        options = opts.HexTiles(colorbar=False, cmap="viridis",
+                            logz=False, show_grid=True, gridsize=int(np.ceil(width/20)),
+                            aggregator=agg)
+                    else:
+                        options = opts.HexTiles(colorbar=False, cmap="viridis",
+                            logz=False, show_grid=True, tools=['hover'], gridsize=int(np.ceil(width/10)),
+                            aggregator=agg)
                 else:
                     plot_func = df_group.hvplot.line
                     if self.backend == "bokeh":
@@ -1623,7 +1796,9 @@ class Deriv_dask:
                                 aspect=aspect,
                                 ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
                                 xlim=(min_x, max_x),
-                                yticks=yticks) * overlay)
+                                yticks=yticks,
+                                xticks=xticks,
+                                fontscale=fontscale) * overlay)
                         else:
                             plot_list.append(plot_func(
                                     x=x_axis,
@@ -1641,7 +1816,9 @@ class Deriv_dask:
                                     aspect=aspect,
                                     ylim=(min_y-del_y*lim_multiplier, max_y+del_y*lim_multiplier),
                                     xlim=(min_x, max_x),
-                                    yticks=yticks))
+                                    yticks=yticks,
+                                    xticks=xticks,
+                                    fontscale=fontscale))
                         if marks is not None:
                             plot_list[-1] = (plot_list[-1] * marks)
                         if twin is not None:
@@ -1655,7 +1832,7 @@ class Deriv_dask:
                             label=None,
                             datashade=datashade,
                             alpha=alpha
-                        ).opts(opts.Scatter(size=scatter_size), **layout_kwargs)
+                        ).opts(opts.Scatter(size=scatter_size, fontscale=fontscale), **layout_kwargs)
 
                 else:
                     lim_multiplier = 0.1
@@ -1688,9 +1865,12 @@ class Deriv_dask:
                             xlim=(min_x, max_x),
                             dynspread=True,
                             yticks=yticks,
-                            aspect=aspect).opts(
-                                title="Values of of {}".format(latexify.parse_word(y),
-                                fontsize=self.font_dic)
+                            xticks=xticks,
+                            aspect=aspect).opts(options).opts(
+                                show_grid=True,
+                                fontscale=fontscale,
+                                title="Values of of {}".format(latexify.parse_word(y)
+                                )
                             ) * overlay)
 
                     else:
@@ -1710,9 +1890,11 @@ class Deriv_dask:
                                 xlim=(min_x, max_x),
                                 dynspread=True,
                                 yticks=yticks,
-                                aspect=aspect).opts(
-                                title="Values of of {}".format(latexify.parse_word(y),
-                                fontsize=self.font_dic)
+                                xticks=xticks,
+                                aspect=aspect).opts(options).opts(
+                                    show_grid=True,
+                                    fontscale=fontscale,
+                                    title="Values of of {}".format(latexify.parse_word(y))
                                 ))
 
                     if marks is not None:
@@ -1763,7 +1945,7 @@ class Deriv_dask:
             opts.Scatter(
                 xticks=xticks,
                 xaxis="bottom",
-                fontsize=self.font_dic,
+                # fontsize=self.font_dic,
                 show_grid=True,
                 show_legend=True,
                 **scatter_kwargs),
