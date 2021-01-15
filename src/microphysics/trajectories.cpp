@@ -98,7 +98,7 @@ int main(int argc, char** argv)
         setup_model_constants(input, cc, ref_quant);
         if(global_args.ens_config_flag)
         {
-            load_ens_config(global_args.ens_config_string, cc, segments);
+            load_ens_config(global_args.ens_config_string, cc, segments, input, ref_quant);
             for(auto &s: segments)
                 SUCCESS_OR_DIE(s.check());
             print_segments(segments);
@@ -111,7 +111,8 @@ int main(int argc, char** argv)
 #ifdef MET3D
     uint32_t ensemble;
 #endif
-
+    // if(input.id == 0)
+    //     return 0;
     // Current time used in the iterations
     double time_old = 0.0;
     double time_new = 0.0;
@@ -173,7 +174,9 @@ int main(int argc, char** argv)
 #ifdef TRACE_QH
     print_particle_params(cc.hail, "hail");
 #endif
-
+    // bool checked_unphys_r = false;
+    // bool checked_unphys_h = false;
+    // bool checked_unphys_g = false;
     ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps, input.progress_index, "simulation step", std::cout);
     // Loop for timestepping: BEGIN
     try
@@ -379,7 +382,7 @@ int main(int argc, char** argv)
                         // Perturb this instance
                         if(s.n_members == 1)
                         {
-                            s.perturb(cc);
+                            s.perturb(cc, ref_quant, input);
                         } else // Create a checkpoint for new members
                         {
                             std::string checkpoint_filename = "checkpoint";
@@ -399,7 +402,75 @@ int main(int argc, char** argv)
                         }
                     }
                 }
-
+                // if(!checked_unphys_r && y_single_new[qr_idx]*ref_quant.qref > 1.0)
+                // {
+                //     std::cout << "\n####################### ERROR DETECTED! ##############\n"
+                //               << "checkpoint file: " << input.CHECKPOINT_FILENAME << "\n"
+                //               << "Instance id: " << input.id << "\n"
+                //               << "Error in qr. Dumping current state:\n"
+                //               << "qv: " << y_single_new[qv_idx]*ref_quant.qref << "\n"
+                //               << "qc: " << y_single_new[qv_idx]*ref_quant.qref << "\n"
+                //               << "Nc: " << y_single_new[Nc_idx] << "\n"
+                //               << "qr: " << y_single_new[qr_idx]*ref_quant.qref << "\n"
+                //               << "Nr: " << y_single_new[Nr_idx] << "\n"
+                //               << "qg: " << y_single_new[qg_idx]*ref_quant.qref << "\n"
+                //               << "Ng: " << y_single_new[Ng_idx] << "\n"
+                //               << "qh: " << y_single_new[qh_idx]*ref_quant.qref << "\n"
+                //               << "Nh: " << y_single_new[Nh_idx] << "\n"
+                //               << "qi: " << y_single_new[qi_idx]*ref_quant.qref << "\n"
+                //               << "Ni: " << y_single_new[Ni_idx] << "\n"
+                //               << "qs: " << y_single_new[qs_idx]*ref_quant.qref << "\n"
+                //               << "Ns: " << y_single_new[Ns_idx] << "\n"
+                //               << "time: " << time_new << "\n"
+                //               << "############################################\n";
+                //     checked_unphys_r = true;
+                // }
+                // if(!checked_unphys_g && y_single_new[qg_idx]*ref_quant.qref > 1.0)
+                // {
+                //     std::cout << "\n####################### ERROR DETECTED! ##############\n"
+                //               << "checkpoint file: " << input.CHECKPOINT_FILENAME << "\n"
+                //               << "Instance id: " << input.id << "\n"
+                //               << "Error in qg. Dumping current state:\n"
+                //               << "qv: " << y_single_new[qv_idx]*ref_quant.qref << "\n"
+                //               << "qc: " << y_single_new[qv_idx]*ref_quant.qref << "\n"
+                //               << "Nc: " << y_single_new[Nc_idx] << "\n"
+                //               << "qr: " << y_single_new[qr_idx]*ref_quant.qref << "\n"
+                //               << "Nr: " << y_single_new[Nr_idx] << "\n"
+                //               << "qg: " << y_single_new[qg_idx]*ref_quant.qref << "\n"
+                //               << "Ng: " << y_single_new[Ng_idx] << "\n"
+                //               << "qh: " << y_single_new[qh_idx]*ref_quant.qref << "\n"
+                //               << "Nh: " << y_single_new[Nh_idx] << "\n"
+                //               << "qi: " << y_single_new[qi_idx]*ref_quant.qref << "\n"
+                //               << "Ni: " << y_single_new[Ni_idx] << "\n"
+                //               << "qs: " << y_single_new[qs_idx]*ref_quant.qref << "\n"
+                //               << "Ns: " << y_single_new[Ns_idx] << "\n"
+                //               << "time: " << time_new << "\n"
+                //               << "############################################\n";
+                //     checked_unphys_g = true;
+                // }
+                // if(!checked_unphys_h && y_single_new[qh_idx]*ref_quant.qref > 1.0)
+                // {
+                //     std::cout << "\n####################### ERROR DETECTED! ##############\n"
+                //               << "checkpoint file: " << input.CHECKPOINT_FILENAME << "\n"
+                //               << "Instance id: " << input.id << "\n"
+                //               << "Error in qh. Dumping current state:\n"
+                //               << "qv: " << y_single_new[qv_idx]*ref_quant.qref << "\n"
+                //               << "qc: " << y_single_new[qv_idx]*ref_quant.qref << "\n"
+                //               << "Nc: " << y_single_new[Nc_idx] << "\n"
+                //               << "qr: " << y_single_new[qr_idx]*ref_quant.qref << "\n"
+                //               << "Nr: " << y_single_new[Nr_idx] << "\n"
+                //               << "qg: " << y_single_new[qg_idx]*ref_quant.qref << "\n"
+                //               << "Ng: " << y_single_new[Ng_idx] << "\n"
+                //               << "qh: " << y_single_new[qh_idx]*ref_quant.qref << "\n"
+                //               << "Nh: " << y_single_new[Nh_idx] << "\n"
+                //               << "qi: " << y_single_new[qi_idx]*ref_quant.qref << "\n"
+                //               << "Ni: " << y_single_new[Ni_idx] << "\n"
+                //               << "qs: " << y_single_new[qs_idx]*ref_quant.qref << "\n"
+                //               << "Ns: " << y_single_new[Ns_idx] << "\n"
+                //               << "time: " << time_new << "\n"
+                //               << "############################################\n";
+                //     checked_unphys_h = true;
+                // }
                 // While debugging, the bar is not useful.
 #if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR) && !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
                 if(input.progress_index > 0)

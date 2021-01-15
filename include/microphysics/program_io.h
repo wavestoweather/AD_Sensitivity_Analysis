@@ -34,7 +34,9 @@ namespace pt = boost::property_tree;
 int load_ens_config(
     std::string filename,
     model_constants_t &cc,
-    std::vector<segment_t> &segments)
+    std::vector<segment_t> &segments,
+    input_parameters_t &input,
+    const reference_quantities_t &ref_quant)
 {
     int err = 0;
     pt::ptree pt;
@@ -46,7 +48,7 @@ int load_ens_config(
         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
         segments.push_back(segment);
         if(segment.activated)
-            segment.perturb(cc);
+            segment.perturb(cc, ref_quant, input);
     }
     return err;
 }
@@ -83,7 +85,9 @@ int load_checkpoint(
         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
 
         if(segment.activated)
-            segment.perturb(cc);
+        {
+            segment.perturb(cc, ref_quant, input);
+        }
 
         segments.push_back(segment);
     }
@@ -160,7 +164,7 @@ void write_checkpoint(
     // deactivate all segments, so we know, another instance is going
     // to process this
     for(auto &s: segments)
-        s.deactivate();
+        s.deactivate(true);
 
     cc.ensemble_id++;
 }
@@ -182,8 +186,8 @@ void create_run_script(
     if(which == "gnuparallel")
     {
         uint32_t j = n_processes - 1;
-        if(j>4)
-            j = 4;
+        if(j>NPROCS)
+            j = NPROCS;
         std::string script = "parallel -u -j " + std::to_string(j)
             + " --no-notice --delay .2 build/apps/src/microphysics/./trajectories "
             "-c " + checkpoint_file + " -g {1} ::: {0.."
@@ -390,7 +394,7 @@ bool load_lookup_table(
         return true;
     } else
     {
-        std::cout << "Error loading " << filename << ". Does the file exist?\n";
+        std::cerr << "Error loading " << filename << ". Does the file exist?\n";
         return false;
     }
 }
@@ -887,7 +891,7 @@ int read_init_netcdf(
         std::cout << "Number of trajectories in netCDF file: " << lenp << "\n" << std::flush;
         if(lenp <= traj)
         {
-            std::cout << "You asked for trajectory with index " << traj
+            std::cerr << "You asked for trajectory with index " << traj
                       << " which does not exist. ABORTING.\n";
             return NC_TRAJ_IDX_ERR;
         }
@@ -927,9 +931,13 @@ int read_init_netcdf(
             nc_params.time_rel_var.getVar(startp, countp, &rel_start_time);
             // Calculate the needed index
             start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
+            uint64_t n_timesteps_input = ceil((cc.t_end-start_time)/20.0)-1;
+            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         } else if(checkpoint_flag && !std::isnan(current_time) && std::isnan(start_time))
         {
-            start_time_idx = ceil(current_time/20.0);
+            start_time_idx = ceil(current_time/cc.dt_traject);
+            uint64_t n_timesteps_input = ceil((cc.t_end-current_time)/20.0)-1;
+            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         } else if(checkpoint_flag && !std::isnan(current_time) && !std::isnan(start_time))
         {
             double rel_start_time;
@@ -937,10 +945,13 @@ int read_init_netcdf(
             nc_params.time_rel_var.getVar(startp, countp, &rel_start_time);
             // Calculate the needed index
             start_time_idx = ceil(start_time-rel_start_time + current_time)/cc.dt_traject;
+            uint64_t n_timesteps_input = ceil((cc.t_end-current_time-start_time)/20.0)-1;
+            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+        } else
+        {
+            uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1 - start_time_idx;
+            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         }
-
-        uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1 - start_time_idx;
-        cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
 
         nc_params.time_idx = start_time_idx;
         startp[2] = start_time_idx;
@@ -1356,6 +1367,7 @@ void write_output(
             time_new, traj_id, ensemble, ref_quant);
 
     }
+
     if( (0 == (sub + t*cc.num_sub_steps) % write_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {

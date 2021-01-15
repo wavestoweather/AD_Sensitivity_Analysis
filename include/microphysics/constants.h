@@ -1323,11 +1323,11 @@ const double rho_ice = 916.7;
 
 
 /**
- * Various constants from ICON regarding evaporation from melting ice particles
+ * Constant used in rain evaporation after Seifert (2008)
  */
 const double a_v = 0.78;
 /**
- * Various constants from ICON regarding evaporation from melting ice particles
+ * Coefficient used in rain evaporation after Seifert (2008)
  */
 const double b_v = 0.308;
 
@@ -1336,13 +1336,13 @@ const double b_v = 0.308;
  */
 const double N_Sc = 0.71;
 /**
- * Various constants from ICON regarding evaporation from melting ice particles
+ * Various coefficients from ICON regarding evaporation from melting ice particles
  */const double a_prime = 9.65;
 /**
- * Various constants from ICON regarding evaporation from melting ice particles
+ * Various coefficients from ICON regarding evaporation from melting ice particles
  */const double b_prime = 9.80;
 /**
- * Various constants from ICON regarding evaporation from melting ice particles
+ * Various coefficients from ICON regarding evaporation from melting ice particles
  */const double c_prime = 600;
 
 /**
@@ -1457,11 +1457,11 @@ const bool nuc_c_type = false;
 #endif
 
 /**
- * Cons_idxeters for rain freeze with data of Barklie and Gokhale (PK page 350).
+ * Exponent for rain freeze with data of Barklie and Gokhale (PK page 350).
  */
 const double a_HET = 0.65;
 /**
- * Cons_idxeters for rain freeze with data of Barklie and Gokhale (PK page 350)
+ * Coefficient for rain freeze with data of Barklie and Gokhale (PK page 350)
  */
 const double b_HET = 200.0;
 

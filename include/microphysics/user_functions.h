@@ -2104,13 +2104,26 @@ void vapor_dep_relaxation(
             dep_graupel = xfac * tau_g_i;
             dep_hail    = xfac * tau_h_i;
 
-            // Is that even necessary?
             if(qvsidiff < 0.0)
             {
                 dep_ice     = max(dep_ice,      -qi_prime/cc.dt_prime);
                 dep_snow    = max(dep_snow,     -qs_prime/cc.dt_prime);
                 dep_graupel = max(dep_graupel,  -qg_prime/cc.dt_prime);
                 dep_hail    = max(dep_hail,     -qh_prime/cc.dt_prime);
+            } else
+            {
+                float_t tmp_sum = dep_ice + dep_graupel + dep_snow + dep_hail;
+                if(tmp_sum > qv_prime/cc.dt_prime)
+                {
+                    dep_ice = dep_ice/tmp_sum * qv_prime/cc.dt_prime;
+                    dep_snow = dep_snow/tmp_sum * qv_prime/cc.dt_prime;
+                    dep_graupel = dep_graupel/tmp_sum * qv_prime/cc.dt_prime;
+                    dep_hail = dep_hail/tmp_sum * qv_prime/cc.dt_prime;
+                }
+                // dep_ice     = min(dep_ice,      qi_prime/cc.dt_prime);
+                // dep_snow    = min(dep_snow,     qs_prime/cc.dt_prime);
+                // dep_graupel = min(dep_graupel,  qg_prime/cc.dt_prime);
+                // dep_hail    = min(dep_hail,     qh_prime/cc.dt_prime);
             }
 
             float_t dep_sum = dep_ice + dep_graupel + dep_snow + dep_hail;

@@ -1451,8 +1451,13 @@ void setup_model_constants(
 
 
     // Numerics
+#ifdef MET3D
+    cc.t_end_prime = input.t_end_prime + input.start_time;;
+#else
     cc.t_end_prime = input.t_end_prime;
-    cc.t_end = input.t_end_prime/ref_quant.tref;
+#endif
+
+    cc.t_end = cc.t_end_prime/ref_quant.tref;
     // Time of the substeps
     cc.dt = input.dt_prime/ref_quant.tref;
     cc.dt_prime = input.dt_prime;

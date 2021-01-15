@@ -248,7 +248,7 @@ void print_input_parameters(input_parameters_t &in)
         << "Start time (relative to ascend): " << in.start_time << " Seconds" << "\n"
 #endif
         << ( (in.CHECKPOINT_FILENAME != "")
-        ?   "Start time from checkpoint: " + std::to_string(in.current_time) + "\n"
+        ?   "Start time from checkpoint (relative to ascend): " + std::to_string(in.current_time + in.start_time) + "\n"
         :   "" )
 	    << "Snapshot index: " << in.snapshot_index << "\n"
         << "Write index: " << in.write_index << "\n"
@@ -316,7 +316,7 @@ void display_usage()
  */
 void display_error_on_command_line()
 {
-  std::cout << "==> ERROR: An error occured while dealing with the command line arguments!"
+  std::cerr << "==> ERROR: An error occured while dealing with the command line arguments!"
 	    << std::endl;
 }
 /** @} */ // end of group general

@@ -1280,7 +1280,7 @@ struct param_t{
     {
         if(name == -1)
         {
-            std::cout << "Error in config file:\n"
+            std::cerr << "Error in config file:\n"
                       << "You did not specify the parameter to perturb or "
                       << "you have a typo at <name>typo</name>\n";
             err = MISSING_PARAM_CONFIG_ERR;
@@ -1288,7 +1288,7 @@ struct param_t{
         }
         if(isnan(sigma) && isnan(sigma_perc))
         {
-            std::cout << "Error in config file:\n"
+            std::cerr << "Error in config file:\n"
                       << "You did not specify the variance for "
                       << "perturbing the parameter.\n";
             err = MISSING_VARIANCE_CONFIG_ERR;
@@ -1300,18 +1300,18 @@ struct param_t{
         switch(err)
         {
             case PARAM_CONFIG_ERR:
-                std::cout << "Error in config file:\n"
+                std::cerr << "Error in config file:\n"
                           << "You used a parameter to perturb that does "
                           << "not exist.\n";
                 return err;
 
             case OUTPARAM_CONFIG_ERR:
-                std::cout << "Error in config file:\n"
+                std::cerr << "Error in config file:\n"
                           << "You used an output parameter that does "
                           << "not exist.\n";
                 return err;
             case DISTRIBUTION_CONFIG_ERR:
-                std::cout << "Error in config file:\n"
+                std::cerr << "Error in config file:\n"
                           << "No such function for generating random "
                           << "numbers in perturbing parameters:\n"
                           << "name: " << func_name << "\n"
@@ -1433,6 +1433,7 @@ struct segment_t
     uint32_t n_segments;
     uint32_t err;
     uint32_t old_sign;
+    double duration; /*<! Maximum duration integration time for this ensemble >*/
     std::unordered_map<std::string, std::string> tree_strings;
     bool activated;
     /**
@@ -1839,6 +1840,7 @@ struct segment_t
         n_segments      = 1;
         err             = 0;
         old_sign        = 0;
+        duration        = 0;
         activated       = false;
         method          = value_method;
     }
@@ -1875,8 +1877,6 @@ struct segment_t
         if(it != table_param.end())
         {
             value_name = it->second;
-            std::cout << "string " << n << ", first " << it->first
-                      << " second " << it->second << "\n";
             std::string key = "when_name";
             tree_strings.insert(std::make_pair(key, n));
         } else
@@ -1893,8 +1893,6 @@ struct segment_t
             method = it->second;
             std::string key = "when_method";
             tree_strings.insert(std::make_pair(key, m));
-            if(method == repeated_time)
-                n_members = 1;
             if(method == impact_change)
                 value_name = -1;
         } else
@@ -1906,6 +1904,11 @@ struct segment_t
     void add_counter(uint32_t c)
     {
         n_segments = c;
+    }
+
+    void add_duration(double t)
+    {
+        duration = t;
     }
 
     void add_out_param(std::string p)
@@ -1924,11 +1927,6 @@ struct segment_t
 
     void add_amount(int a)
     {
-        if(method == repeated_time)
-        {
-            n_members = 1;
-            return;
-        }
         if(a > 1)
             n_members = a;
         else
@@ -1941,7 +1939,9 @@ struct segment_t
             err = N_MEMBERS_CONFIG_ERR;
         else if(n_segments < 0)
             err = N_SEGMENTS_CONFIG_ERR;
-        else if(value_name == -1 && method != Method::impact_change)
+        else if( value_name == -1
+                && method != Method::impact_change
+                && method != Method::repeated_time )
             err = VALUE_NAME_CONFIG_ERR;
         else if(method == -1)
             err = METHOD_CONFIG_ERR;
@@ -1950,35 +1950,35 @@ struct segment_t
         switch(err)
         {
             case VALUE_NAME_CONFIG_ERR:
-                std::cout << "Error in config file:\n"
+                std::cerr << "Error in config file:\n"
                           << "The name of the parameter used to determine "
                           << "when to start an ensemble is not defined or "
                           << "does not exist.\n";
                 n_segments = 0;
                 return err;
             case METHOD_CONFIG_ERR:
-                std::cout << "Error in config file:\n"
+                std::cerr << "Error in config file:\n"
                           << "The name of the method used to determine "
                           << "when to start an ensemble is not defined or "
                           << "does not exist.\n";
                 n_segments = 0;
                 return err;
             case OUTPARAM_CONFIG_ERR:
-                std::cout << "Error in config file:\n"
+                std::cerr << "Error in config file:\n"
                           << "The name of the output parameter used to determine "
                           << "when to start an ensemble is not defined or "
                           << "does not exist.\n";
                 n_segments = 0;
                 return err;
             case N_MEMBERS_CONFIG_ERR:
-                std::cout << "Error in config file:\n"
+                std::cerr << "Error in config file:\n"
                           << "The number of members for an ensemble must be "
                           << "2 or higher. One simulation always runs without "
                           << "perturbed parameters for comparison.\n";
                 n_segments = 0;
                 return err;
             case N_SEGMENTS_CONFIG_ERR:
-                std::cout << "Error in config file:\n"
+                std::cerr << "Error in config file:\n"
                           << "The number of segments must be at least 1 in "
                           << "order to start at least 1 ensemble.\n";
                 n_segments = 0;
@@ -2105,20 +2105,41 @@ struct segment_t
         return false;
     }
 
-    void deactivate()
+    /**
+     * Deactivates the segment so it is not used anymore/decreases the amount
+     * of possible usages of this segment. If this is a repeated_time segment
+     * without a fixed duration it will not decrease the possible amounts of
+     * usages. The same applies with duration if keep_repeated is true, which
+     * can be used to spawn huge ensembles for a limited time.
+     */
+    void deactivate(const bool keep_repeated=false)
     {
+        if(!activated) return;
         // Perturbing every few timesteps is done indefenitely
-        if(method != repeated_time && n_segments > 0)
+        // unless a fixed duration is given at which the ensembles should stop
+        if( (method != repeated_time && n_segments > 0)
+            || (method == repeated_time && n_segments > 0 && duration != 0 && !keep_repeated) )
             n_segments--;
         activated = false;
     }
 
-    void perturb(model_constants_t &cc)
+    void perturb(model_constants_t &cc, const reference_quantities_t &ref_quant,
+        input_parameters_t &input)
     {
         // Sanity check if had been done already
         if(n_segments == 0)
             return;
 
+        // Change the number of time steps if a fixed duration is given
+        if(duration != 0)
+        {
+            if(duration + input.current_time + input.start_time < cc.t_end_prime)
+            {
+                cc.t_end_prime = duration + input.current_time + input.start_time;
+                cc.t_end = cc.t_end_prime/ref_quant.tref;
+                input.t_end_prime = duration;
+            }
+        }
         // Perturb every param
         for(auto &p: params)
             p.perturb(cc);
@@ -2159,6 +2180,10 @@ struct segment_t
         {
             segment.put("activated", true);
         }
+        if(duration > 0)
+        {
+            segment.put("duration", duration);
+        }
         pt::ptree param_tree;
         for(auto &p: params)
             p.put(param_tree);
@@ -2197,6 +2222,9 @@ struct segment_t
             } else if(first == "activated")
             {
                 activated = it.second.get_value<bool>();
+            } else if(first == "duration")
+            {
+                add_duration(it.second.get_value<double>());
             } else if(first == "params")
             {
                 for(auto &param_it: ptree.get_child(first))
@@ -2291,7 +2319,7 @@ struct IO_handle_t{
             }
             catch(const std::exception& e)
             {
-                std::cout << "Error creating output file:\n"
+                std::cerr << "Error creating output file:\n"
                           << filename << ".nc_wcb Does the file already exist?"
                           << "\nAborting";
                 std::cerr << e.what() << '\n';
@@ -2637,7 +2665,7 @@ struct IO_handle_t{
             outfile_att.precision(10);
             if( !outfile_att.is_open() )
             {
-                std::cout << "ERROR while opening the attribute file:\n"
+                std::cerr << "ERROR while opening the attribute file:\n"
                         << filename << "_attributes.txt\n. Aborting.\n";
                 exit(EXIT_FAILURE);
             }
@@ -2715,7 +2743,7 @@ struct IO_handle_t{
 
             if( !outfile_refs.is_open() )
             {
-                std::cout << "ERROR while opening the reference file. Aborting." << std::endl;
+                std::cerr << "ERROR while opening the reference file. Aborting." << std::endl;
                 exit(EXIT_FAILURE);
             }
 
@@ -2741,7 +2769,7 @@ struct IO_handle_t{
 
             if( !outfile.is_open() )
             {
-                std::cout << "ERROR while opening the outputfile. Aborting." << std::endl;
+                std::cerr << "ERROR while opening the outputfile. Aborting." << std::endl;
                 exit(EXIT_FAILURE);
             }
 
@@ -2786,7 +2814,7 @@ struct IO_handle_t{
 
                 if( !out_diff[ii].is_open() )
                 {
-                    std::cout << "ERROR while opening outputfile. Aborting." << std::endl;
+                    std::cerr << "ERROR while opening outputfile. Aborting." << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 out_diff[ii].precision(10);
@@ -3022,7 +3050,7 @@ struct IO_handle_t{
         if(filetype == "netcdf")
         {
             std::vector<uint64_t> startp, countp;
-            startp.push_back(0);
+            startp.push_back(flushed_snapshots);
             countp.push_back(n_snapshots); // number of snapshots so far
             // time index
             var_vector[num_comp+num_par+1].putVar(startp, countp,
@@ -3057,15 +3085,24 @@ struct IO_handle_t{
                 countp_str.push_back(p);
             countp_str[0] = 1;
 
+            // std::cout << "\nstartp_str: ";
+            // for(auto &p: startp_str) std::cout << p << ", ";
+            // std::cout << "\ncountp_str: ";
+            // for(auto &p: countp_str) std::cout << p << ", ";
+            // std::cout << "\nn_snapshots " << n_snapshots << "\n";
+
+
+
             for(uint64_t i=0; i<output_buffer_str.size(); i++)
             {
-                startp_str[0] = 0;
+                // startp_str[0] = 0;
+                // write one string at a time.
                 for(const auto &t: output_buffer_str[i])
                 {
                     var_vector[offset+i].putVar(
                         startp_str, countp_str, &t);
                     startp_str[0]++;
-                    if(startp_str[0] == n_snapshots)
+                    if(startp_str[0]-startp[0] == n_snapshots)
                         break;
                 }
             }
@@ -3105,8 +3142,9 @@ struct IO_handle_t{
             out_tmp.str( std::string() );
             out_tmp.clear();
         }
-        flushed_snapshots = n_snapshots;
+        flushed_snapshots += n_snapshots;
         n_snapshots = 0;
+
     }
 };
 /** @} */ // end of group types
