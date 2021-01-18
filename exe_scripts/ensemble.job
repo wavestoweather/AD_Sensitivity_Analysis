@@ -18,6 +18,7 @@ module load data/netCDF-C++4/4.3.0-foss-2018a
 module load devel/Boost/1.68.0-foss-2018a
 
 # Store working directory to be safe
+cd ..
 SAVEDPWD=$(pwd)
 export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}
 SUFF="config_ens_separate"
@@ -60,7 +61,7 @@ if [ ! -d "${AD_SIM_HOME}/build/apps/src/microphysics/" ]
 then
     mkdir -p "${AD_SIM_HOME}/build/apps/src/microphysics/"
 fi
-cp ${SAVEPWD}/build/apps/src/microphysics/trajectories ${AD_SIM_HOME}/build/apps/src/microphysics/
+cp ${SAVEDPWD}/build/apps/src/microphysics/trajectories ${AD_SIM_HOME}/build/apps/src/microphysics/
 
 if [ ! -d "${AD_SIM_HOME}/data/" ]
 then
