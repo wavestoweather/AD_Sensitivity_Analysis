@@ -1,12 +1,14 @@
 GCC=g++
 PCC=scorep-g++
-GCCFLAGS= --std=c++14 -pthread -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf -Wall #-DLIKWID_PERFMON #  -ffast-math
+#
+GCCFLAGS=--std=c++14 -pthread -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf -Wall #-DLIKWID_PERFMON #  -ffast-math
 GCCINCLUDES=-I.
 TIMESTEPPER=-DRK4ICE
 ATMOFLAGS=-DCONSTANT_DROP=FALSE
 SEASON=-DAUTUMN
 FLUX=-DFLUX
-SOURCE=-DMET3D -DSB_CONV -DSB_SHAPE
+SOURCE=-DMET3D -DSB_CONV -DSB_SHAPE -DNPROCS=4
+# -DTRACE_QG
 
 BUILD=build
 OBJ_DIR=$(BUILD)/objects
@@ -43,7 +45,7 @@ netcdf: build $(TARGETS_NETCDF)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
-	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) $(TIMESTEPPER) $(SEASON) $(FLUX) $(SOURCE) -o $@ -c $<
+	$(GCC) $(GCCINCLUDES) $(SOURCE) $(GCCFLAGS) $(TIMESTEPPER) $(SEASON) $(FLUX) -o $@ -c $<
 
 $(TARGETS): $(OBJECTS)
 	@mkdir -p $(@D)

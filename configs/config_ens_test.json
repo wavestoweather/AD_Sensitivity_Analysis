@@ -1,0 +1,46 @@
+{
+    "segments": [
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 5,
+            "params": [
+                {
+                    "name": "min_x_act",
+                    "sigma_perc": 1,
+                    "type": "cloud",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 5,
+            "params": [
+                {
+                    "name": "max_x",
+                    "sigma_perc": 1,
+                    "type": "cloud",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 5,
+            "params": [
+                {
+                    "name": "max_x",
+                    "sigma_perc": 1,
+                    "type": "rain",
+                    "rand_func": "uniform"
+                }
+            ]
+        }
+    ]
+}

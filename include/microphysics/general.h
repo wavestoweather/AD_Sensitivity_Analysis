@@ -268,6 +268,7 @@ void print_input_parameters(input_parameters_t &in)
         << ( (in.CHECKPOINT_FILENAME != "")
         ?   "Checkpoint file: " + in.CHECKPOINT_FILENAME + "\n"
         :   "" )
+        << "Folder name for newly generated checkpoints: " << in.FOLDER_NAME << "\n"
         << std::endl << std::flush;
         // if(in.ENS_CONFIG_FILENAME != "")
         //     std::cout << "Ensemble configuration file: " << in.ENS_CONFIG_FILENAME << "\n";
@@ -307,6 +308,8 @@ void display_usage()
         << "-m: Name of an ensemble configuration file.\n"
         << "-c: Name of a checkpoint file.\n"
         << "-g: ID (uint) for this instance.\n"
+        << "-h: Path and name to subsequent folders for any checkpoints and "
+        << "execution scripts from this simulation.\n"
 	    << "-?: This help message.\n"
 	    << std::endl;
 }

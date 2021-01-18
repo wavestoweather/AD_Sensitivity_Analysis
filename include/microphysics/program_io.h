@@ -144,18 +144,18 @@ void write_checkpoint(
     checkpoint.add_child("Output Parameters", output_parameters);
 
     uint64_t i = 0;
-    std::string actual_filename = filename + "_id" + cc.id + "_0000.json";
+    std::string actual_filename = filename + "/checkpoint_id" + cc.id + "_0000.json";
     while(exists(actual_filename))
     {
         i++;
         if(i < 10)
-            actual_filename = filename + "_id" + cc.id + "_000" + std::to_string(i) + ".json";
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_000" + std::to_string(i) + ".json";
         else if(i < 100)
-            actual_filename = filename + "_id" + cc.id + "_00" + std::to_string(i) + ".json";
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_00" + std::to_string(i) + ".json";
         else if(i < 1000)
-            actual_filename = filename + "_id" + cc.id + "_0" + std::to_string(i) + ".json";
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_0" + std::to_string(i) + ".json";
         else
-            actual_filename = filename + "_id" + cc.id + "_" + std::to_string(i) + ".json";
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_" + std::to_string(i) + ".json";
     }
     std::fstream outstream(actual_filename, std::ios::out);
     filename = actual_filename;
@@ -177,6 +177,7 @@ void write_checkpoint(
  * (slurm) submitting it as a slurm job with n processes
  */
 void create_run_script(
+    const std::string &foldername,
     const std::string &checkpoint_file,
     const model_constants_t &cc,
     const uint32_t n_processes,
@@ -189,24 +190,24 @@ void create_run_script(
         if(j>NPROCS)
             j = NPROCS;
         std::string script = "parallel -u -j " + std::to_string(j)
-            + " --no-notice --delay .2 build/apps/src/microphysics/./trajectories "
+            + " --no-notice --delay .2 ${AD_SIM_HOME}/build/apps/src/microphysics/./trajectories "
             "-c " + checkpoint_file + " -g {1} ::: {0.."
             + std::to_string(n_processes-2) + "}";
 
         // Save as a script
-        std::string script_name = "execute_id" + cc.id + "_0000.sh";
+        std::string script_name = foldername + "/execute_id" + cc.id + "_0000.sh";
         uint32_t i = 0;
         while(exists(script_name))
         {
             i++;
             if(i < 10)
-                script_name = "execute_id" + cc.id + "_000" + std::to_string(i) + ".sh";
+                script_name = foldername + "/execute_id" + cc.id + "_000" + std::to_string(i) + ".sh";
             else if(i < 100)
-                script_name = "execute_id" + cc.id + "_00" + std::to_string(i) + ".sh";
+                script_name = foldername + "/execute_id" + cc.id + "_00" + std::to_string(i) + ".sh";
             else if(i < 1000)
-                script_name = "execute_id" + cc.id + "_0" + std::to_string(i) + ".sh";
+                script_name = foldername + "/execute_id" + cc.id + "_0" + std::to_string(i) + ".sh";
             else
-                script_name = "execute_id" + cc.id + "_" + std::to_string(i) + ".sh";
+                script_name = foldername + "/execute_id" + cc.id + "_" + std::to_string(i) + ".sh";
         }
         std::ofstream out(script_name);
         out << "#!/bin/bash\n" << script << ( (start) ? " &\n" : "\n" );
@@ -845,6 +846,11 @@ void set_input_from_arguments(global_args_t &arg ,
   if(1 == arg.gnu_id_flag){
     in.id = std::stoi(arg.gnu_id_string);
   }
+
+  // Folder name for new generated checkpoints
+  if(1 == arg.folder_name_flag){
+    in.FOLDER_NAME = arg.folder_name_string;
+  }
 }
 
 
@@ -1393,7 +1399,7 @@ int parse_arguments(
     /**
      * String used to parse commandline input.
      */
-    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g:?";
+    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g:h:?";
     bool need_to_abort = false;
     int opt;
 
@@ -1511,6 +1517,12 @@ int parse_arguments(
                 {
                     global_args.gnu_id_flag = 1;
                     global_args.gnu_id_string = optarg;
+                    break;
+                }
+                case 'h':
+                {
+                    global_args.folder_name_flag = 1;
+                    global_args.folder_name_string = optarg;
                     break;
                 }
                 case '?':

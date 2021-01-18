@@ -1549,7 +1549,7 @@ class Deriv_dask:
         import pandas
         from holoviews.operation.datashader import datashade as dsshade
         dsshade.dynamic = False
-        fontscale = width/2100
+        fontscale = width/2200
         if formatter_limits is not None:
             matplotlib.rcParams['axes.formatter.limits'] = formatter_limits
 
@@ -1681,11 +1681,11 @@ class Deriv_dask:
                     plot_func = df_group.hvplot.hexbin
                     if self.backend == "matplotlib":
                         options = opts.HexTiles(colorbar=False, cmap="viridis",
-                            logz=False, show_grid=True, gridsize=int(np.ceil(width/20)),
+                            logz=False, show_grid=True, gridsize=int(np.ceil(width/30)),
                             aggregator=agg)
                     else:
-                        options = opts.HexTiles(colorbar=False, cmap="viridis",
-                            logz=False, show_grid=True, tools=['hover'], gridsize=int(np.ceil(width/10)),
+                        options = opts.HexTiles(colorbar=False,
+                            logz=False, show_grid=True, tools=['hover'], gridsize=int(np.ceil(width/30)),
                             aggregator=agg)
                 else:
                     plot_func = df_group.hvplot.line
@@ -1775,7 +1775,7 @@ class Deriv_dask:
                     if twin is not None:
                         lim_multiplier = 0.7
                     if self.backend == "matplotlib":
-                        if len(plot_list) == 0:
+                        if len(plot_list) == 0 and kind != "hexbin":
                             overlay = hv.NdOverlay(
                                 {types[i]: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size*8, color=cmap_values[i]))
                                 for i in range(len(types)) }
@@ -1838,7 +1838,9 @@ class Deriv_dask:
                     lim_multiplier = 0.1
                     if twin is not None:
                         lim_multiplier = 0.7
-                    if len(plot_list) == 0:
+                    if kind == "hexbin":
+                        cmap = "viridis"
+                    if len(plot_list) == 0 and kind != "hexbin":
                         cmap = {}
                         for ty in types:
                             cmap[ty] = self.cmap[ty]

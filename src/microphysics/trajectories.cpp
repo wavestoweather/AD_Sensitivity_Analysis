@@ -385,7 +385,7 @@ int main(int argc, char** argv)
                             s.perturb(cc, ref_quant, input);
                         } else // Create a checkpoint for new members
                         {
-                            std::string checkpoint_filename = "checkpoint";
+                            std::string checkpoint_filename = input.FOLDER_NAME;
                             write_checkpoint(
                                 checkpoint_filename,
                                 cc,
@@ -394,6 +394,7 @@ int main(int argc, char** argv)
                                 input,
                                 time_old);
                             create_run_script(
+                                input.FOLDER_NAME,
                                 checkpoint_filename,
                                 cc,
                                 s.n_members,

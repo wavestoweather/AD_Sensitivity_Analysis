@@ -792,6 +792,9 @@ struct global_args_t{
     int gnu_id_flag; /*!< ID given for this instance, i.e. thread_id or id by GNU parallel. */
     char* gnu_id_string;
 
+    int folder_name_flag;
+    char* folder_name_string;
+
     global_args_t()
     {
         final_time_flag = 0;
@@ -846,6 +849,9 @@ struct global_args_t{
 
         gnu_id_flag = 0;
         gnu_id_string = nullptr;
+
+        folder_name_flag = 0;
+        folder_name_string = nullptr;
     }
 };
 
@@ -874,6 +880,7 @@ struct input_parameters_t{
     std::string INPUT_FILENAME; /*!< Filename for input netCDF file. */
     std::string ENS_CONFIG_FILENAME; /*!< Filename for ensemble configuration file. */
     std::string CHECKPOINT_FILENAME; /*!< Filename for checkpoint file. */
+    std::string FOLDER_NAME; /*!< Folder name for newly generated checkpoints. */
     uint32_t id; /*!< ID given for this instance, i.e. thread_id or id by GNU parallel. */
 
     bool start_over; /*!< Start over at new timestep of trajectory? */
@@ -907,8 +914,8 @@ struct input_parameters_t{
         OUTPUT_FILENAME = "data/id0_sb_ice_OUTPUT.txt";
 #endif
         CHECKPOINT_FILENAME = "";
-        ENS_CONFIG_FILENAME = "",
-
+        ENS_CONFIG_FILENAME = "";
+        FOLDER_NAME = "";
         // Filename for input
         INPUT_FILENAME = "/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/foehn201305_case/foehn201305_warming.nc";
 
@@ -1017,6 +1024,7 @@ struct input_parameters_t{
         input_params.put<uint64_t>("progress_index", progress_index);
         input_params.put<uint32_t>("ensemble", ensemble);
         input_params.put<double>("current_time", time);
+        input_params.put<std::string>("FOLDER_NAME", FOLDER_NAME);
         ptree.add_child("input_params", input_params);
     }
 
@@ -1096,6 +1104,9 @@ struct input_parameters_t{
             } else if(first == "current_time")
             {
                 current_time = it.second.get_value<double>();
+            } else if(first == "FOLDER_NAME")
+            {
+                FOLDER_NAME = it.second.data();
             } else
             {
                 err = INPUT_NAME_CHECKPOINT_ERR;
@@ -2932,7 +2943,7 @@ struct IO_handle_t{
             // gradients
             for(uint64_t i=0; i<num_comp; i++) // gradient sensitive to output parameter i
                 for(uint64_t j=0; j<num_par; j++) // gradient of input parameter j
-                    output_buffer[num_comp+j][n_snapshots + i*offset] = y_diff[i][j];
+                    output_buffer[num_comp+j][i + n_snapshots*offset*num_comp] = y_diff[i][j];
 
             // time after ascent
             output_buffer[num_comp+num_par][n_snapshots*offset] =

@@ -1,0 +1,340 @@
+{
+    "segments": [
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x_act",
+                    "sigma_perc": 1,
+                    "type": "cloud",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "max_x",
+                    "sigma_perc": 1,
+                    "type": "cloud",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "max_x",
+                    "sigma_perc": 1,
+                    "type": "rain",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x_freezing",
+                    "sigma_perc": 1,
+                    "type": "rain",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x_riming",
+                    "sigma_perc": 1,
+                    "type": "rain",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x",
+                    "sigma_perc": 1,
+                    "type": "rain",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x_act",
+                    "sigma_perc": 1,
+                    "type": "ice",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x",
+                    "sigma_perc": 1,
+                    "type": "snow",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x_depo",
+                    "sigma_perc": 1,
+                    "type": "snow",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "max_x",
+                    "sigma_perc": 1,
+                    "type": "snow",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "b_geo",
+                    "sigma_perc": 1,
+                    "type": "snow",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "b_geo",
+                    "sigma_perc": 1,
+                    "type": "ice",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x",
+                    "sigma_perc": 1,
+                    "type": "ice",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x",
+                    "sigma_perc": 1,
+                    "type": "ice",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x_depo",
+                    "sigma_perc": 1,
+                    "type": "ice",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "b_vel",
+                    "sigma_perc": 1,
+                    "type": "ice",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "c_s",
+                    "sigma_perc": 1,
+                    "type": "ice",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x_riming",
+                    "sigma_perc": 1,
+                    "type": "ice",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x_act",
+                    "sigma_perc": 1,
+                    "type": "ice",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "a_geo",
+                    "sigma_perc": 1,
+                    "type": "graupel",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "b_vel",
+                    "sigma_perc": 1,
+                    "type": "graupel",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "max_x",
+                    "sigma_perc": 1,
+                    "type": "graupel",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "b_geo",
+                    "sigma_perc": 1,
+                    "type": "graupel",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "b_v",
+                    "sigma_perc": 1,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        }
+    ]
+}
