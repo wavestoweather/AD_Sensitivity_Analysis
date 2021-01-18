@@ -85,6 +85,8 @@ then
 fi
 cp ${SAVE_ENSEMBLECONFIG} ${ENSEMBLE_CONFIG}
 
+cp ${SAVEDPWD}/dmin_wetgrowth_lookup.dat ${AD_SIM_HOME}/
+
 # Environmental conditions
 SCALING_FACTOR="1.0"
 AUTO_TYPE="3"
