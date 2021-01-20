@@ -70,6 +70,7 @@ class Deriv_dask:
     colors = None
     cmap = None
     cache = None
+    cmap_particles = None
 
     def __init__(self, direc, parquet=True, netcdf=False, columns=None,
         backend="matplotlib", file_ending="*.nc_wcb"):
@@ -133,6 +134,24 @@ class Deriv_dask:
                 "Convective 400hPa 75. Quantile": matplotlib.colors.to_hex(colors(14)[0:-1]),
                 "Convective 400hPa": matplotlib.colors.to_hex(colors(15)[0:-1])}
             self.colors = colors
+            self.cmap_particles = {
+                "QV": matplotlib.colors.to_hex([153/255, 204/255, 255/255]),
+                "QC": matplotlib.colors.to_hex([102/255, 178/255, 255/255]),
+                "QR": matplotlib.colors.to_hex([51/255, 153/255, 255/255]),
+                "QI": matplotlib.colors.to_hex([215/255, 255/255, 255/255]),
+                "QS": matplotlib.colors.to_hex([170/255, 255/255, 255/255]),
+                "QG": matplotlib.colors.to_hex([0/255, 255/255, 255/255]),
+                "QH": matplotlib.colors.to_hex([0/255, 204/255, 204/255]),
+                "NC": matplotlib.colors.to_hex([0/255, 102/255, 255/255]),
+                "NR": matplotlib.colors.to_hex([0/255, 0/255, 255/255]),
+                "NI": matplotlib.colors.to_hex([102/255, 204/255, 255/255]),
+                "NS": matplotlib.colors.to_hex([51/255, 204/255, 255/255]),
+                "NG": matplotlib.colors.to_hex([0/255, 204/255, 255/255]),
+                "NH": matplotlib.colors.to_hex([0/255, 153/255, 204/255]),
+                "S": matplotlib.colors.to_hex([0/255, 204/255, 0/255]),
+                "latent_heat": matplotlib.colors.to_hex([255/255, 51/255, 0/255]),
+                "latent_cool": matplotlib.colors.to_hex([255/255, 153/255, 0/255]),
+            }
         else:
             colors = Category20c[20]
             self.cmap = {"Slantwise 600hPa 25. Quantile":  colors[0],
@@ -281,6 +300,58 @@ class Deriv_dask:
         t2 = timer()
         print("Loading done in {} s".format(t2-t))
         t = timer()
+
+    def __recalc_ratios(self, ratio_df, ratio_type, ratio_window, in_params,
+        verbose=False):
+
+        if "weighted" in ratio_type and "per_out_param" in ratio_type:
+                out_par = np.unique(ratio_df["Output Parameter"])[0]
+                ratio_df.loc[:, in_params] = ratio_df[in_params].div(ratio_df[out_par], axis=0)
+        if ratio_window is not None:
+            col = list(ratio_window.keys())[0]
+            edges = np.sort(ratio_window[col])
+            for i in range(len(edges)+1):
+                if i == 0:
+                    df_edge = ratio_df.loc[ratio_df[col] < edges[i]]
+                    max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                    if max_val == 0:
+                        continue
+                    ratio_df.loc[:, in_params] = ratio_df.apply(
+                        lambda x: x[in_params]/max_val if x[col] < edges[i] else x[in_params], axis=1)
+                elif i == len(edges):
+                    df_edge = ratio_df.loc[ratio_df[col] >= edges[i-1]]
+                    max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                    if max_val == 0:
+                        continue
+                    ratio_df.loc[:, in_params] = ratio_df.apply(
+                        lambda x: x[in_params]/max_val if x[col] >= edges[i-1] else x[in_params], axis=1)
+                else:
+                    df_edge = ratio_df.loc[(ratio_df[col] < edges[i]) & (ratio_df[col] >= edges[i-1])]
+                    max_val = df_edge[in_params].apply(lambda x: np.max(np.abs(x))).max()
+                    if max_val == 0:
+                        continue
+                    ratio_df.loc[:, in_params] = ratio_df.apply(
+                        lambda x: x[in_params]/max_val if (
+                            (x[col] < edges[i]) and (x[col] >= edges[i-1])) else x[in_params], axis=1)
+        elif "per_timestep" in ratio_type:
+            # Get series of max values over all timesteps (equals index)
+            max_vals = ratio_df[in_params].apply(lambda x: np.max(np.abs(x)), axis=1)
+            ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_vals, axis=0)
+        elif "window" in ratio_type:
+            max_val = ratio_df[in_params].apply(lambda x: np.max(np.abs(x))).max()
+            ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_val)
+        elif "per_xaxis" in ratio_type:
+            ratio_df = ratio_df.set_index(x_axis)
+            max_vals = ratio_df.groupby(x_axis)[in_params].apply(lambda x: np.max(np.abs(x))).max(axis=1)
+            if x_axis == "timestep" or x_axis == "step" or x_axis == "time_after_ascent":
+                ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_vals, axis="index")
+            else:
+                ratio_df.loc[:, in_params] = ratio_df[in_params].div(max_vals)
+        ratio_df.loc[:, in_params] = ratio_df[in_params].fillna(0)
+        if verbose:
+            t2 = timer()
+            print("Recalculating ratios done in {} s".format(t2-t))
+        return ratio_df
 
     def get_important_sensitivities(self, in_params, out_params=None, n=None,
         ratio_type="vanilla", ratio_window=None, vertical_mark=None,
@@ -1961,7 +2032,7 @@ class Deriv_dask:
             final_plots = final_plots.opts(plot=dict(width=width, height=height))
 
         renderer = hv.Store.renderers[self.backend].instance(
-                fig='png', dpi=300)
+            fig='png', dpi=300)
 
         i = 0
         if prefix is None:
@@ -2001,6 +2072,240 @@ class Deriv_dask:
                             **scatter_kwargs)).opts(aspect=aspect, **layout_kwargs)
                     print(f"Plot to {save}")
                     renderer.save(pl, save)
+            try:
+                from IPython.display import Image, display
+                display(Image(display_file + filetype, width=width))
+            except:
+                pass
+
+    def get_mse(self, out_params, df_all, in_params=None,
+        ratio_type="vanilla", ratio_window=None):
+        """
+        Create a pandas.Dataframe with columns
+        MSE, Sensitivity, Output Parameter
+
+        Returns
+        -------
+        pandas.Dataframe with MSE, Sensitivity, Output Parameter and Perturbed
+        Parameter
+        """
+        import pandas
+        pandas.options.mode.chained_assignment = None  # default='warn'
+
+        mean = self.cache
+        if mean is None:
+            print("Cached data is None. Make sure to cache your data using")
+            print("self.cache_data()\nABORTING")
+            return
+        if in_params is None:
+            in_params = np.unique(df_all["Perturbed Parameter"])
+
+        # Calculate MSE
+        df_dic = {"MSE": np.asarray([]),
+            "Sensitivity": np.asarray([]),
+            "Output Parameter": np.asarray([]),
+            "Perturbed Parameter": np.asarray([])}
+        for i in pb(range(len(out_params))):
+            out_param = out_params[i]
+            sens_df = self.__recalc_ratios(mean.loc[mean["Output Parameter"] == out_param],
+                ratio_type, ratio_window, in_params)
+            mean_values = np.reshape(np.asarray(sens_df[out_param]), (1, 1, len(sens_df[out_param].index)))
+            # print( df_all.loc[df_all["Perturbed Parameter"] == in_params[0]][out_param].dropna() )
+            # print("right side:")
+            # print(np.shape(mean_values))
+            # unfortunately numpy uses a lot of memory. This works only for small datasets
+            # mean_squared_error = ( (df_all[out_param]-mean_values)**2).mean( axis=(1, 2, 3) ).values
+            mean_squared_error = [
+                np.mean((df_all.sel({"Perturbed Parameter": mp})[out_param] - mean_values)**2)
+                    for mp in in_params]
+                    # df_all.loc[df_all["Perturbed Parameter"] == mp][out_param].dropna() - mean_values)**2)
+                # for mp in in_params]
+            df_dic["MSE"] = np.append(df_dic["MSE"], mean_squared_error)
+            df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
+                [np.max(np.abs(sens_df[mp])) for mp in in_params])
+            df_dic["Output Parameter"] = np.append(df_dic["Output Parameter"],
+                [out_param for _ in in_params])
+            df_dic["Perturbed Parameter"] = np.append(df_dic["Perturbed Parameter"],
+                in_params)
+        return pandas.DataFrame.from_dict(df_dic)
+
+
+
+    def plot_mse(self, out_params, other_trajectories=None, mse_df=None,
+        in_params=None,
+        width=1959, height=1224,
+        datashade=False, prefix=None, alpha=1,
+        plot_path="pics/", yticks=10, xticks=10, decimals=3,
+        ratio_type="vanilla", ratio_window=None,
+        s=None, formatter_limits=None, logx=False, logy=False):
+        """
+        Plot mean squared error over maximal sensitivity calculated
+        via the given ratio type (i.e. sensitivity per timestep) and given
+        the trajectory to use for sensitivities and mean (i.e. the original trajectory
+        from which model parameters have been perturbed).
+        Supports only matplotlib at the moment.
+
+        Parameters
+        ----------
+        out_params : list of string
+            List of output parameters to plot the datapoints for.
+        other_trajectories : xarray.DataSet
+            Dataframe with output parameters for each of the perturbed
+            parameters.
+            Dimensions are "Perturbed Parameter", "time", "trajectory",
+            "ensemble". Either this or mse_df need to be given.
+        mse_df : pandas.Dataframe
+            Dataframe with pre calculated MSE values from get_mse().
+        in_params : list of string
+            List of model parameters to consider for the plot. If none is
+            given, use all.
+        width : int
+            The width of the plot (bokeh) or the relative width of the plot
+            (matplotlib).
+        height : int
+            The height of the plot (bokeh) or the relative height of the plot
+            (matplotlib).
+        datashade : bool
+            Wether to use datashade for plotting the data.
+        prefix : string
+            Prefix to add to the filename.
+        alpha : List of floats
+            Alpha values for top [0] and bottom [1] graph.
+        plot_path : string
+            Path to the folder to save the image.
+        yticks : int
+            Number of ticks on all y-axis.
+        xticks : int
+            Number of ticks on all x-axis.
+        decimals : int
+            For rounding the right y-axis, if provided by "twin_axis".
+            From numpy: Number of decimal places to round to (default: 0).
+            If decimals is negative, it specifies the number of
+            positions to the left of the decimal point.
+        ratio_type : String
+            "vanilla": Use the derivative ratio in the file that *should* use the
+            highest derivative over all times for each output parameter as denominator.
+            "per_timestep": Use the highest derivative per timestep as denominator.
+            "window": Use the highest derivative in the given window by min_x and max_x.
+            "per_xaxis": Use the highest derivative per x_axis value. If x_axis is "timestep"
+            it is the same as "per_timestep".
+            "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
+            derivative but per output parameter. (that *should* be the vanilla version)
+            "x_weighted": Append this to any ratio type to use the inverse of the
+            output parameter value as weight. Only works with "x_per_out_param".
+        ratio_window : dic of list
+            Overides ratio_type and switches to a derivative ratio calculation
+            per output param if "ratio_type" has "per_out_param" in it.
+            Calculate the derivative ratio in windows
+            where the key is a column name and the list consists of values
+            at which a new window starts, i.e. {"T": [235, 273]} results
+            in three windows with T < 235K, 235 <= T < 273K and 237K <= T.
+        s : int
+            Can be used to adjust the size of the scatter dots.
+        formatter_limits : tuple of ints
+            Lower and upper limits for formatting x- and y-axis.
+        """
+        if mse_df is None and other_trajectories is None:
+            print("Either mse_df or other_trajectories for calculating mse_df must be given!")
+            return
+        if mse_df is None:
+            mse_df = self.get_mse(out_params, other_trajectories, in_params,
+                ratio_type, ratio_window)
+
+        import hvplot.dask # adds hvplot method to dask objects
+        import hvplot.pandas
+        from holoviews.operation.datashader import datashade as dsshade
+        from holoviews import opts
+        import holoviews as hv
+
+
+        dsshade.dynamic = False
+        fontscale = width/2200
+        if formatter_limits is not None:
+            matplotlib.rcParams['axes.formatter.limits'] = formatter_limits
+
+        df = self.cache
+        if df is None:
+            print("Cached data is None. Make sure to cache your data using")
+            print("self.cache_data()\nABORTING")
+            return
+        hv.extension(self.backend)
+
+        aspect = width/height
+        if s is None:
+            scatter_size = int(height/200)
+        else:
+            scatter_size = s
+
+        fig_inches = width/300
+        if width < height:
+            fig_inches = height/300
+        layout_kwargs = {}
+        if  self.backend == "bokeh":
+            layout_kwargs["width"] = width
+            layout_kwargs["height"] = height
+        else:
+            layout_kwargs["fig_inches"] = fig_inches
+
+
+        # mse_df = self.get_mse(other_trajectories, df, in_params)
+
+        if not datashade:
+            if len(out_params) <= 10:
+                cmap = plt.get_cmap("tab10")
+            else:
+                cmap = plt.get_cmap("tab20")
+
+
+            if self.backend == "matplotlib":
+                cmap_values = []
+                for out_param in out_params:
+                    cmap_values.append( matplotlib.colors.to_hex(self.cmap_particles[out_param]))
+
+                # overlay = hv.NdOverlay(
+                #     {out_param: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size*8, color=self.cmap_particles[out_param]))
+                #     for out_param in out_params }
+                # )
+
+                mse_plot = mse_df.hvplot.scatter(
+                        x="Sensitivity",
+                        y="MSE",
+                        by="Output Parameter",
+                        title="MSE over Sensitvity to Model Parameters",
+                        color=cmap_values,
+                        datashade=datashade,
+                        alpha=alpha,
+                        legend=True,
+                        yticks=yticks,
+                        xticks=xticks,
+                        logx=logx,
+                        logy=logy
+                    ).opts(
+                        aspect=aspect,
+
+                        fontscale=fontscale)
+
+
+        renderer = hv.Store.renderers[self.backend].instance(
+            fig='png', dpi=300)
+        i = 0
+        if prefix is None:
+            prefix = "mse"
+
+        if self.backend == "bokeh":
+            hvplot.show(mse_plot)
+            self.plots.append(mse_plot)
+        else:
+            filetype = ".png"
+            self.plots.append(mse_plot)
+
+            save = (plot_path + prefix + "_" + "{:03d}".format(i))
+            while os.path.isfile(save + filetype):
+                i = i+1
+                save = (plot_path + prefix + "_" + "{:03d}".format(i))
+
+            renderer.save(mse_plot, save)
+            display_file = save
             try:
                 from IPython.display import Image, display
                 display(Image(display_file + filetype, width=width))

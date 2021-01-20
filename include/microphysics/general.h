@@ -19,6 +19,9 @@
  */
 void printy(const double y[])
 {
+#ifdef SILENT_MODE
+    return;
+#endif
   std::cout << "\n";
   for(int ii = 0 ; ii < num_comp ; ii++){
     std::cout << "y[" << std::to_string(ii) << "] = " << y[ii] << "\n";
@@ -57,6 +60,9 @@ void print_particle_params(
     particle_model_constants_t &pc,
     std::string title)
 {
+#ifdef SILENT_MODE
+    return;
+#endif
     std::cout << title << "\n"
         << "a_geo = " << get_at(pc.constants, Particle_cons_idx::a_geo) << "\n"
         << "b_geo = " << get_at(pc.constants, Particle_cons_idx::b_geo) << "\n"
@@ -102,6 +108,9 @@ void print_particle_params(
  */
 void print_reference_quantities(reference_quantities_t &ref)
 {
+#ifdef SILENT_MODE
+    return;
+#endif
   std::cout << "\nReference quantities\n"
 	    << "--------------------\n"
         << "Temperature: " << ref.Tref << " Kelvin\n"
@@ -120,7 +129,9 @@ void print_reference_quantities(reference_quantities_t &ref)
  */
 void print_constants(model_constants_t &cc)
 {
-
+#ifdef SILENT_MODE
+    return;
+#endif
   std::cout << "\nModel constants:\n"
         << "----------------\n"
         << "Final integration time: " << cc.t_end_prime << " seconds\n"
@@ -191,6 +202,9 @@ void print_constants(model_constants_t &cc)
  */
 void print_segments(std::vector<segment_t> &segments)
 {
+#ifdef SILENT_MODE
+    return;
+#endif
     std::cout << "\nSegments for ensembles:\n"
               << "----------------\n";
     uint32_t i = 1;
@@ -239,7 +253,10 @@ void print_segments(std::vector<segment_t> &segments)
  */
 void print_input_parameters(input_parameters_t &in)
 {
-  std::cout << "\n"
+#ifdef SILENT_MODE
+    return;
+#endif
+    std::cout << "\n"
 	    << "Technical input parameters:\n"
 	    << "---------------------------\n"
         << "Time to integrate: " << in.t_end_prime << " Seconds\n"

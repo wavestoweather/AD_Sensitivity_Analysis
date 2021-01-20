@@ -500,6 +500,10 @@ int main(int argc, char** argv)
         std::cout << "ABORTING." << std::endl;
         return 1;
     }
+#ifdef SILENT_MODE
+    exit(0);
+#else
     std::cout << "-------------------FINISHED-------------------\n\n\n";
     exit(0);
+#endif
 }
