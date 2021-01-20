@@ -2,7 +2,7 @@
 #SBATCH --job-name=wcb_ensemble
 #SBATCH --output=logs/wcb_ensemble_%A.out
 #SBATCH --error=logs/wcb_ensemble_%A.err
-#SBATCH --time=5:00:00
+#SBATCH --time=2:30:00
 #SBATCH -p parallel
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
@@ -11,7 +11,7 @@
 #SBATCH -C skylake
 #SBATCH --signal=B:SIGUSR2@300 # e.g. signal 5 minutes before the job will end
                                # time, here, is defined in seconds.
-
+module purge
 module load tools/parallel/20181122
 module load numlib/GSL/2.5-GCCcore-6.4.0
 module load data/netCDF-C++4/4.3.0-foss-2018a
@@ -46,7 +46,8 @@ cleanup(){
     then
         mkdir -p "${SAVE_OUTPUTPATH}"
     fi
-    cp {OUTPUT_PATH}/* ${SAVE_OUTPUTPATH}/ &
+    echo "copying from ${OUTPUT_PATH}* to ${SAVE_OUTPUTPATH}"
+    find ${OUTPUT_PATH} -type f -name "*.nc_wcb" -exec cp {} ${SAVE_OUTPUTPATH} \; &
     wait
     exit 0
 }
@@ -74,9 +75,9 @@ then
     mkdir -p "${AD_SIM_HOME}/tmp/"
 fi
 
-if [ ! -d "${OUTPUT_PATH}/" ]
+if [ ! -d "${OUTPUT_PATH}" ]
 then
-    mkdir -p "${OUTPUT_PATH}/"
+    mkdir -p "${OUTPUT_PATH}"
 fi
 
 if [ ! -d "${AD_SIM_HOME}/configs/" ]
