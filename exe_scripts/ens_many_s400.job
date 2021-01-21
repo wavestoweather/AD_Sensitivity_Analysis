@@ -1,0 +1,180 @@
+#!/bin/bash
+#SBATCH --job-name=s400_stat_model
+#SBATCH --output=logs/s400_stat_model_%a_%A.out
+#SBATCH --error=logs/s400_stat_model_%a_%A.err
+#SBATCH --time=24:00:00 # Should be enough time for about 30 parameters
+#SBATCH -p parallel
+#SBATCH --nodes=1
+#SBATCH --ntasks=32
+#SBATCH -A m2_zdvresearch
+#SBATCH --mem-per-cpu=1500
+#SBATCH -C skylake
+#SBATCH --signal=B:SIGUSR2@300 # e.g. signal 5 minutes before the job will end
+                               # time, here, is defined in seconds.
+
+module purge
+module load tools/parallel/20181122
+module load numlib/GSL/2.5-GCCcore-6.4.0
+module load data/netCDF-C++4/4.3.0-foss-2018a
+module load devel/Boost/1.68.0-foss-2018a
+
+# Store working directory to be safe
+cd ..
+SAVEDPWD=$(pwd)
+export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}
+
+
+ID_NUMBER=1
+if [ $# -eq 0]
+then
+    ID_NUMBER=$SLURM_ARRAY_TASK_ID
+else
+    ID_NUMBER=$1
+fi
+
+SAVE_INPUTFILENAME="/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana_stats/no_exclusions_slan_400_median.nc_wcb"
+INPUT_FILENAME="${AD_SIM_HOME}/data/no_exclusions_slan_400_median.nc_wcb"
+SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/perturbed_ensembles/slan_400_median/"
+OUTPUT_PATH="${AD_SIM_HOME}/output/"
+SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/all${ID_NUMBER}/"
+
+# We define a bash function to do the cleaning when the signal is caught
+cleanup(){
+    # Note: The following only works on single with output on the node,
+    #       where the jobscript is running.
+    for ENSEMBLE_CONFIG in ${AD_SIM_HOME}/configs/all/*
+    do
+        SUFF=${ENSEMBLE_CONFIG##*/}
+        SUFF=${SUFF%.*}
+	find ${SAVE_OUTPUTPATH}${SUFF}/ -type -f -name "*.nc_wcb" -exec rm {} \;
+        find ${OUTPUT_PATH}${SUFF}/ -type f -name "*.nc_wcb" -exec cp {} ${SAVE_OUTPUTPATH}${SUFF}/ \; &
+        wait
+    done
+    exit 0
+}
+
+# Register the cleanup function when SIGUSR2 is sent,
+# ten minutes before the job gets killed
+trap 'cleanup' SIGUSR2
+
+# Copy executable, input file, configuration file
+# Create directories for temporary files, output data
+if [ ! -d "${AD_SIM_HOME}/build/apps/src/microphysics/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/build/apps/src/microphysics/"
+fi
+cp ${SAVEDPWD}/build/apps/src/microphysics/trajectories ${AD_SIM_HOME}/build/apps/src/microphysics/
+
+if [ ! -d "${AD_SIM_HOME}/data/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/data/"
+fi
+cp ${SAVE_INPUTFILENAME} ${AD_SIM_HOME}/data/
+
+if [ ! -d "${AD_SIM_HOME}/tmp/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/tmp/"
+fi
+
+if [ ! -d "${AD_SIM_HOME}/configs/all" ]
+then
+    mkdir -p "${AD_SIM_HOME}/configs/all"
+fi
+
+cp ${SAVE_ENSEMBLECONFIG}* ${AD_SIM_HOME}/configs/all/
+cp ${SAVEDPWD}/dmin_wetgrowth_lookup.dat ${AD_SIM_HOME}/
+cd ${AD_SIM_HOME}
+
+for ENSEMBLE_CONFIG in ${AD_SIM_HOME}/configs/all/*
+do
+    SUFF=${ENSEMBLE_CONFIG##*/}
+    SUFF=${SUFF%.*}
+
+    NEW_CHECKPOINTS=${AD_SIM_HOME}/tmp/${SUFF}
+    if [ ! -d "$NEW_CHECKPOINTS" ]
+    then
+        mkdir -p "$NEW_CHECKPOINTS"
+    fi
+
+    if [ ! -d ${OUTPUT_PATH}${SUFF} ]
+    then
+        mkdir -p ${OUTPUT_PATH}${SUFF}
+    fi
+
+    if [ ! -d ${SAVE_OUTPUTPATH}${SUFF} ]
+    then
+        mkdir -p ${SAVE_OUTPUTPATH}${SUFF}
+    fi
+
+    # Environmental conditions
+    SCALING_FACTOR="1.0"
+    AUTO_TYPE="3"
+    TIMESTEP="20"
+
+    # Output variables
+    PROGRESSBAR="0"
+    START_TIME="-2800"
+    WRITE_INDEX="1000"
+    SNAPSHOT_INDEX="1"
+    TARGET_TIME_AFTER_START="83000"
+
+    # Output variables
+    PROGRESSBAR="0"
+    START_TIME="-2800"
+    WRITE_INDEX="1000"
+    SNAPSHOT_INDEX="1"
+    TARGET_TIME_AFTER_START="83000"
+
+    # Operational variables
+    START_OVER="0"
+    START_OVER_ENVIRONMENT="1"
+    FIXED_ITERATION="0"
+
+    ${AD_SIM_HOME}/build/apps/src/microphysics/./trajectories -w ${WRITE_INDEX} -a ${AUTO_TYPE} \
+    -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME_AFTER_START} -d ${TIMESTEP} \
+    -i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} \
+    -o ${OUTPUT_PATH}${SUFF}"/wcb${TARGET_TIME_AFTER_START}_traj0_MAP_t000000_p001" \
+    -e ${START_OVER_ENVIRONMENT} \
+    -p ${PROGRESSBAR} \
+    -n ${START_TIME} \
+    -l ${INPUT_FILENAME} -r 0 -g 0 \
+    -m ${ENSEMBLE_CONFIG} \
+    -h ${NEW_CHECKPOINTS}
+
+    declare -a arr_files
+    declare -a old_files
+
+    array_not_contains () {
+        local array="$1[@]"
+        local seeking=$2
+        local in=0
+        for element in "${!array}"; do
+            if [[ $element == "$seeking" ]]; then
+                in=1
+                break
+            fi
+        done
+        return $in
+    }
+
+    while true
+    do
+        for entry in "${NEW_CHECKPOINTS}/execute_id*"
+        do
+            array_not_contains old_files ${entry} && arr_files=("${arr_files[@]}" "$entry")
+        done
+        if [ ${#arr_files[@]} == 0 ]
+        then
+            break
+        fi
+        for entry in ${arr_files[@]}
+        do
+            /bin/bash ${entry}
+            old_files=("${old_files[@]}" "$entry")
+        done
+        unset arr_files
+    done
+done
+
+# Call the cleanup function when everything went fine
+cleanup
