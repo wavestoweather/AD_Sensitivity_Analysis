@@ -1418,15 +1418,7 @@ struct param_t{
                 default:
                     std::cout << "Error in perturbing...\n";
             }
-            std::cout << "perturbing " << out_name << "->" << name << "\n"
-                << " with min " << uniform_dis.min()
-                << " max " << uniform_dis.max() << "\n"
-                << " param a " << uniform_dis.a()
-                << " param b " << uniform_dis.b() << "\n"
-                << "pt_model current: " << pt_model->constants[name] << "\n";
-
             pt_model->constants[name] = get_rand();
-            std::cout << "Got " << pt_model->constants[name] << "\n";
             pt_model->perturbed_idx.push_back(name);
         } else
         {
