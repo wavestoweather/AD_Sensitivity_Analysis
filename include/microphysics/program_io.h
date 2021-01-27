@@ -190,8 +190,8 @@ void create_run_script(
         if(j>NPROCS)
             j = NPROCS;
         std::string script = "parallel -u -j " + std::to_string(j)
-            + " --no-notice --delay .2 ${AD_SIM_HOME}/build/apps/src/microphysics/./trajectories "
-            "-c " + checkpoint_file + " -g {1} ::: {0.."
+            + " --no-notice --delay .2 '${AD_SIM_HOME}/build/apps/src/microphysics/./trajectories "
+            "-c " + checkpoint_file + " -g {1} > ${AD_SIM_HOME}/exe_scripts/logs/rain_max_x/rain_max_x_{1}.log' ::: {0.."
             + std::to_string(n_processes-2) + "}";
 
         // Save as a script

@@ -1053,9 +1053,14 @@ void ice_self_collection(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni, get_at(cc.ice.constants, Particle_cons_idx::min_x_collision), get_at(cc.ice.constants, Particle_cons_idx::max_x));
-    codi::RealReverse D_i = particle_diameter(x_i, get_at(cc.ice.constants, Particle_cons_idx::a_geo), get_at(cc.ice.constants, Particle_cons_idx::b_geo));
-    if(Ni > 0.0 && qi_prime > get_at(cc.constants, Cons_idx::q_crit_i) && D_i > get_at(cc.constants, Cons_idx::D_crit_i))
+    codi::RealReverse x_i = particle_mean_mass(qi_prime, Ni,
+        get_at(cc.ice.constants, Particle_cons_idx::min_x_collision),
+        get_at(cc.ice.constants, Particle_cons_idx::max_x));
+    codi::RealReverse D_i = particle_diameter(x_i,
+        get_at(cc.ice.constants, Particle_cons_idx::a_geo),
+        get_at(cc.ice.constants, Particle_cons_idx::b_geo));
+    if(Ni > 0.0 && qi_prime > get_at(cc.constants, Cons_idx::q_crit_i)
+        && D_i > get_at(cc.constants, Cons_idx::D_crit_i))
     {
         float_t x_conv_i = pow(get_at(cc.constants, Cons_idx::D_conv_i)
             / get_at(cc.snow.constants, Particle_cons_idx::a_geo),
@@ -1063,14 +1068,21 @@ void ice_self_collection(
         // efficiency depends on temperature here (Cotton et al 1986)
         // also Straka 1989, page 53
         float_t e_coll = min(pow(10, 0.035*T_c-0.7), 0.2);
-        float_t vel_i = particle_velocity(x_i, get_at(cc.ice.constants, Particle_cons_idx::a_vel), get_at(cc.ice.constants, Particle_cons_idx::b_vel)) * get_at(cc.ice.constants, Particle_cons_idx::rho_v);
+        float_t vel_i = particle_velocity(x_i,
+                get_at(cc.ice.constants, Particle_cons_idx::a_vel),
+                get_at(cc.ice.constants, Particle_cons_idx::b_vel)
+            ) * get_at(cc.ice.constants, Particle_cons_idx::rho_v);
 
         float_t delta_n = M_PI/4.0 * e_coll * get_at(cc.ice.constants, Particle_cons_idx::sc_delta_n)
             * Ni * Ni * D_i * D_i * sqrt(
-                get_at(cc.ice.constants, Particle_cons_idx::sc_theta_n) * vel_i * vel_i + 2.0 * get_at(cc.ice.constants, Particle_cons_idx::s_vel) * get_at(cc.ice.constants, Particle_cons_idx::s_vel));
+                get_at(cc.ice.constants, Particle_cons_idx::sc_theta_n) * vel_i * vel_i
+                + 2.0 * get_at(cc.ice.constants, Particle_cons_idx::s_vel)
+                * get_at(cc.ice.constants, Particle_cons_idx::s_vel));
         float_t delta_q = M_PI/4.0 * e_coll * get_at(cc.ice.constants, Particle_cons_idx::sc_delta_q)
             * Ni * qi_prime * D_i * D_i * sqrt(
-                get_at(cc.ice.constants, Particle_cons_idx::sc_theta_q) * vel_i * vel_i + 2.0 * get_at(cc.ice.constants, Particle_cons_idx::s_vel) * get_at(cc.ice.constants, Particle_cons_idx::s_vel));
+                get_at(cc.ice.constants, Particle_cons_idx::sc_theta_q) * vel_i * vel_i
+                + 2.0 * get_at(cc.ice.constants, Particle_cons_idx::s_vel)
+                * get_at(cc.ice.constants, Particle_cons_idx::s_vel));
 
         delta_q = min(delta_q, qi_prime/cc.dt_prime);
         delta_n = min(min( delta_n, delta_q/x_conv_i), Ni/cc.dt_prime);

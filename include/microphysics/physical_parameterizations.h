@@ -1086,7 +1086,8 @@ inline A coll_theta_12(
 
 
 /**
- * Calculate the model constant \f$a_f = \overline{a}_{\text{vent},n}\f$ of a particle model that is used
+ * Calculate the model constant \f$a_f = \overline{a}_{\text{vent},n}\f$
+ * of a particle model that is used
  * for vaporization and melting processes with formulas such as
  * \f[ a_f + b_f \sqrt{d \cdot v} \f]
  * where \f$d\f$ is the diameter of the particle to melt/vaporize and
@@ -1603,7 +1604,7 @@ void setup_model_constants(
      cc.rain.constants[static_cast<int>(Particle_cons_idx::nu)] = 0; // SB: -2/3 COSMO: 0.0
 #endif
     cc.rain.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0; // SB: 1/3 COMSO: 1.0/3.0
-    cc.rain.constants[static_cast<int>(Particle_cons_idx::max_x)] = 3.0e-6;
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::max_x)] = 3.0e-6; // 3.0e-6;
     cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x)] = 2.6e-10;
     cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 2.6e-10;
     cc.rain.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 2.6e-10;
