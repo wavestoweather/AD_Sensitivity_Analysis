@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=wcb_ensemble_least
+#SBATCH --job-name=wcb_least_ensemble
 #SBATCH --output=logs/wcb_ensemble_least_%A.out
 #SBATCH --error=logs/wcb_ensemble_least_%A.err
-#SBATCH --time=2:30:00
+#SBATCH --time=5:00:00
 #SBATCH -p parallel
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
@@ -47,6 +47,7 @@ cleanup(){
         mkdir -p "${SAVE_OUTPUTPATH}"
     fi
     echo "copying from ${OUTPUT_PATH}* to ${SAVE_OUTPUTPATH}"
+    find ${SAVE_OUTPUTPATH} -type f -name "*.nc_wcb" -exec rm {} \;
     find ${OUTPUT_PATH} -type f -name "*.nc_wcb" -exec cp {} ${SAVE_OUTPUTPATH} \; &
     # for f in ${OUTPUT_PATH}*
     # do

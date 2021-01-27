@@ -11,7 +11,7 @@
 #SBATCH -C skylake
 #SBATCH --signal=B:SIGUSR2@300 # e.g. signal 5 minutes before the job will end
                                # time, here, is defined in seconds.
-
+# send with sbatch --array=1,15 ens_many_s600.job
 module purge
 module load tools/parallel/20181122
 module load numlib/GSL/2.5-GCCcore-6.4.0
@@ -24,7 +24,7 @@ SAVEDPWD=$(pwd)
 export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}
 
 ID_NUMBER=1
-if [ $# -eq 0]
+if [ $# -eq 0 ]
 then
     ID_NUMBER=$SLURM_ARRAY_TASK_ID
 else
@@ -45,7 +45,7 @@ cleanup(){
     do
         SUFF=${ENSEMBLE_CONFIG##*/}
         SUFF=${SUFF%.*}
-	find ${SAVE_OUTPUTPATH}${SUFF}/ -type -f -name "*.nc_wcb" -exec rm {} \;
+	    find ${SAVE_OUTPUTPATH}${SUFF}/ -type f -name "*.nc_wcb" -exec rm {} \;
         find ${OUTPUT_PATH}${SUFF}/ -type f -name "*.nc_wcb" -exec cp {} ${SAVE_OUTPUTPATH}${SUFF}/ \; &
         wait
     done

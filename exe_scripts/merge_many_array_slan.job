@@ -1,0 +1,36 @@
+#!/bin/bash
+#SBATCH --job-name=arr_many_merge
+#SBATCH --output=logs/arr_many_merge_%a_%A.out
+#SBATCH --error=logs/arr_many_merge_%a_%A.err
+#SBATCH --time=3:00:00
+#SBATCH -p parallel
+#SBATCH --ntasks=5
+#SBATCH -A m2_zdvresearch
+#SBATCH --mem=64GB # up to 40GB for convective
+#SBATCH -C skylake
+
+# usage sbatch --array=0-88 merge_many_array.job /lustre/project/m2_zdvresearch/mahieron/perturbed_ensembles/slan_600_median/
+
+module purge
+module load tools/parallel/20181122
+module load lang/Python/3.7.4-GCCcore-8.3.0
+source  /home/mahieron/plot_env/bin/activate
+echo "Merging output from ${1} with ID ${SLURM_ARRAY_TASK_ID}"
+
+f_list=( $(ls -d ${1}*/ | sed 's/\/$//') )
+length=${#f_list[*]}
+
+ID_NUMBER=$SLURM_ARRAY_TASK_ID
+N_PROCESSES=5
+let IDX_START=$ID_NUMBER*$N_PROCESSES
+
+echo $IDX_START
+if (( $IDX_START + $N_PROCESSES > $length - 1 ))
+then
+    let N_PROCESSES=$length-$IDX_START
+fi
+
+this_list=${f_list[@]:$IDX_START:$N_PROCESSES}
+
+parallel -j $N_PROCESSES --no-notice 'python ../scripts/merge.py {}/ {}.nc_wcb' ::: ${this_list[@]}
+

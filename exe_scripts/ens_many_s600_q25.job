@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=s400_stat_model
-#SBATCH --output=logs/s400_stat_model_%a_%A.out
-#SBATCH --error=logs/s400_stat_model_%a_%A.err
+#SBATCH --job-name=s600q25_stat_model
+#SBATCH --output=logs/s600q25_stat_model_%a_%A.out
+#SBATCH --error=logs/s600q25_stat_model_%a_%A.err
 #SBATCH --time=24:00:00 # Should be enough time for about 30 parameters
 #SBATCH -p parallel
 #SBATCH --nodes=1
@@ -11,7 +11,7 @@
 #SBATCH -C skylake
 #SBATCH --signal=B:SIGUSR2@300 # e.g. signal 5 minutes before the job will end
                                # time, here, is defined in seconds.
-
+# send with sbatch --array=1,15 ens_many_s600.job
 module purge
 module load tools/parallel/20181122
 module load numlib/GSL/2.5-GCCcore-6.4.0
@@ -31,9 +31,9 @@ else
     ID_NUMBER=$1
 fi
 
-SAVE_INPUTFILENAME="/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana_stats/no_exclusions_slan_400_median.nc_wcb"
-INPUT_FILENAME="${AD_SIM_HOME}/data/no_exclusions_slan_400_median.nc_wcb"
-SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/perturbed_ensembles/slan_400_median/"
+SAVE_INPUTFILENAME="/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana_stats/no_exclusions_slan_600_quan25.nc_wcb"
+INPUT_FILENAME="${AD_SIM_HOME}/data/no_exclusions_slan_600_quan25.nc_wcb"
+SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/perturbed_ensembles/slan_600_quan25/"
 OUTPUT_PATH="${AD_SIM_HOME}/output/"
 SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/all${ID_NUMBER}/"
 

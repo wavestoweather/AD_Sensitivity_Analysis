@@ -2,7 +2,7 @@
 #SBATCH --job-name=wcb_ensemble
 #SBATCH --output=logs/wcb_ensemble_%A.out
 #SBATCH --error=logs/wcb_ensemble_%A.err
-#SBATCH --time=2:30:00
+#SBATCH --time=3:00:00
 #SBATCH -p parallel
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
@@ -47,6 +47,7 @@ cleanup(){
         mkdir -p "${SAVE_OUTPUTPATH}"
     fi
     echo "copying from ${OUTPUT_PATH}* to ${SAVE_OUTPUTPATH}"
+    find ${SAVE_OUTPUTPATH} -type f -name "*.nc_wcb" -exec rm {} \;
     find ${OUTPUT_PATH} -type f -name "*.nc_wcb" -exec cp {} ${SAVE_OUTPUTPATH} \; &
     wait
     exit 0

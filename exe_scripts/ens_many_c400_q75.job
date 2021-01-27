@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=s400_stat_model
-#SBATCH --output=logs/s400_stat_model_%a_%A.out
-#SBATCH --error=logs/s400_stat_model_%a_%A.err
-#SBATCH --time=24:00:00 # Should be enough time for about 30 parameters
+#SBATCH --job-name=c400q75_stat_model
+#SBATCH --output=logs/c400q75_stat_model_%a_%A.out
+#SBATCH --error=logs/c400q75_stat_model_%a_%A.err
+#SBATCH --time=3:30:00 # Should be enough time for about 30 parameters
 #SBATCH -p parallel
 #SBATCH --nodes=1
 #SBATCH --ntasks=32
@@ -31,9 +31,9 @@ else
     ID_NUMBER=$1
 fi
 
-SAVE_INPUTFILENAME="/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana_stats/no_exclusions_slan_400_median.nc_wcb"
-INPUT_FILENAME="${AD_SIM_HOME}/data/no_exclusions_slan_400_median.nc_wcb"
-SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/perturbed_ensembles/slan_400_median/"
+SAVE_INPUTFILENAME="/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana_stats/no_exclusions_conv_400_quan75.nc_wcb"
+INPUT_FILENAME="${AD_SIM_HOME}/data/no_exclusions_conv_400_quan75.nc_wcb"
+SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/perturbed_ensembles/conv_400_quan75/"
 OUTPUT_PATH="${AD_SIM_HOME}/output/"
 SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/all${ID_NUMBER}/"
 
@@ -115,14 +115,14 @@ do
     START_TIME="-2800"
     WRITE_INDEX="1000"
     SNAPSHOT_INDEX="1"
-    TARGET_TIME_AFTER_START="83000"
+    TARGET_TIME_AFTER_START="26000"
 
     # Output variables
     PROGRESSBAR="0"
     START_TIME="-2800"
     WRITE_INDEX="1000"
     SNAPSHOT_INDEX="1"
-    TARGET_TIME_AFTER_START="83000"
+    TARGET_TIME_AFTER_START="26000"
 
     # Operational variables
     START_OVER="0"
