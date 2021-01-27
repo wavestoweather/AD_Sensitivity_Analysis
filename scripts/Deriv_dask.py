@@ -2361,7 +2361,7 @@ class Deriv_dask:
         if not abs_x and log_x:
             sign = np.sign(mse_df["Sensitivity"]) * (-1)
             mse_df["Sensitivity"] = np.log(np.abs(mse_df["Sensitivity"]))
-            mse_df["Sensitivity"] = mse_df["Sensitivity"] + (-1) * np.min(mse_df["Sensitivity"])
+            mse_df["Sensitivity"] = mse_df["Sensitivity"] - np.min(mse_df["Sensitivity"])
             mse_df["Sensitivity"] *= sign
         if not abs_y and log_y:
             sign = np.sign(mse_df["MSE"])
@@ -2373,6 +2373,7 @@ class Deriv_dask:
             xlabel = xlabel
         if log_y:
             ylabel = "Log "
+        hspace = 0.05
 
         # Plot all into one plot
         if kind == "single_plot":
@@ -2467,8 +2468,16 @@ class Deriv_dask:
                 colors[rt] =  matplotlib.colors.to_hex(cmap(i)[0:-1])
                 cmap_values.append(colors[rt])
 
+            def format_tick(v, pos, max_tick):
+                if pos:
+                    upper = v-max_tick
+                    return f"1e{upper:2.1f}"
+                else:
+                    upper = max_tick-v
+                    return f"-1e{upper:2.1f}"
+
+            this_x_ticks = int(np.floor(xticks/2))
             if log_x and not abs_x:
-                this_x_ticks = np.floor(xticks/2)
                 pos_plot = mse_df.loc[mse_df["Sensitivity"] >= 0].hvplot.hist(
                     y="Sensitivity",
                     by="Ratio Type",
@@ -2478,20 +2487,14 @@ class Deriv_dask:
 
                 max_y = 0
                 for key in pos_plot:
-                    max_x_tick = np.ceil(np.max(key["Sensitivity"])/10)*10
+                    max_x_tick = np.max(key["Sensitivity"])
                     min_x_tick = 0
                     delta_tick = max_x_tick/(this_x_ticks-1)
                     max_y = np.max(key["Sensitivity_count"])
 
-                def format_tick(v, pos, max_tick):
-                    if pos:
-                        upper = v-max_tick
-                        return f"1e{upper:2.1f}"
-                    else:
-                        upper = max_tick-v
-                        return f"-1e{upper:2.1f}"
-
-                pos_x_ticks = [ (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, True, max_x_tick)) for i in range(this_x_ticks)]
+                pos_x_ticks = [
+                    (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, True, max_x_tick))
+                    for i in range(this_x_ticks)]
 
                 neg_plot = mse_df.loc[mse_df["Sensitivity"] < 0].hvplot.hist(
                     y="Sensitivity",
@@ -2503,11 +2506,13 @@ class Deriv_dask:
                 for key in neg_plot:
                     if np.max(key["Sensitivity_count"]) > max_y:
                         max_y = np.max(key["Sensitivity_count"])
-                    max_x_tick = np.floor(np.min(key["Sensitivity"])/10)*10
+                    max_x_tick = np.min(key["Sensitivity"])
                     min_x_tick = 0
                     delta_tick = max_x_tick/(this_x_ticks-1)
 
-                neg_x_ticks = [ (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, False, max_x_tick)) for i in range(this_x_ticks)]
+                neg_x_ticks = [
+                    (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, False, max_x_tick))
+                    for i in range(this_x_ticks)]
                 y_lim = (0, max_y)
 
                 pos_plot = pos_plot.opts(
@@ -2521,8 +2526,8 @@ class Deriv_dask:
                         xticks=neg_x_ticks,
                         ylim=y_lim)
 
-                text_pos = hv.Text(0, 0, '/           ')
-                text_neg = hv.Text(0, 0, '           /')
+                text_pos = hv.Text(0, 0, '/          ')
+                text_neg = hv.Text(0, 0, '          /')
 
                 all_plots = (neg_plot * text_neg + pos_plot * text_pos).opts(
                     tight=False,
@@ -2532,7 +2537,7 @@ class Deriv_dask:
                     shared_axes=False,
                     fontscale=fontscale)
 
-                all_plots = hv.GridSpace(all_plots)
+                # all_plots = hv.GridSpace(all_plots)
             else:
                 all_plots = mse_df.hvplot.hist(
                     y="Sensitivity",
@@ -2546,23 +2551,138 @@ class Deriv_dask:
                         fontscale=fontscale).options(xlabel="")#, xaxis="bare")
 
             for out_param in out_params:
-
-                # TODO: Make log_x version
                 tmp_df = mse_df.loc[mse_df["Output Parameter"] == out_param]
                 min_y = tmp_df["MSE"].min()
                 max_y = tmp_df["MSE"].max()
                 delta_y = (max_y-min_y)/20
-                print(f"{out_param}, ({min_y}, {max_y}), delta {delta_y}")
                 min_y -= delta_y
                 max_y += delta_y
                 if log_x and not abs_x:
+                    if hist:
+                        hspace = 0
+
+                    split_ellipse = True
+                    this_x_ticks = int(np.floor(xticks/2))
                     # Make two scatter plots with correct ticks
-                    print("not yet implemented")
-                    # Make two histograms
+                    pos_plot = tmp_df.loc[tmp_df["Sensitivity"] >= 0].hvplot.scatter(
+                            x="Sensitivity",
+                            y="MSE",
+                            by="Ratio Type",
+                            datashade=False,
+                            alpha=alpha,
+                            legend=False,
+                            grid=False,
+                            xlim=(-2, max_x),
+                            ylim=(min_y, max_y),
+                            color=cmap_values
+                        )
+                    # Get cosest value to zero for proper ticks
+                    max_x_tick = np.max(tmp_df["Sensitivity"])
+                    if -1*np.min(tmp_df["Sensitivity"]) > max_x_tick:
+                        max_x_tick = -1*np.min(tmp_df["Sensitivity"])
+                    delta_tick = max_x_tick/(this_x_ticks-1)
+                    pos_x_ticks = [
+                        (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, True, max_x_tick))
+                        for i in range(this_x_ticks)]
+
+                    neg_plot = tmp_df.loc[tmp_df["Sensitivity"] < 0].hvplot.scatter(
+                            x="Sensitivity",
+                            y="MSE",
+                            by="Ratio Type",
+                            datashade=False,
+                            alpha=alpha,
+                            legend=False,
+                            grid=False,
+                            xlim=(min_x, 2),
+                            ylim=(min_y, max_y),
+                            color=cmap_values
+                        )
+                    neg_x_ticks = [
+                        (np.min(tmp_df["Sensitivity"]) + i*delta_tick,
+                            format_tick(np.min(tmp_df["Sensitivity"]) + i*delta_tick, False, -max_x_tick))
+                        for i in range(this_x_ticks)]
+
+                    pos_plot = pos_plot.opts(
+                            opts.Scatter(s=scatter_size)
+                        ).opts(
+                            aspect=aspect/2,
+                            xticks=pos_x_ticks,
+                            fontscale=fontscale).options(
+                                ylabel=ylabel + out_param + " MSE",
+                                xlabel="",
+                                yaxis=False)
+
+                    neg_plot = neg_plot.opts(
+                            opts.Scatter(s=scatter_size)
+                        ).opts(
+                            aspect=aspect/2,
+                            xticks=neg_x_ticks,
+                            fontscale=fontscale).options(
+                                ylabel=ylabel + out_param + " MSE",
+                                xlabel="")
+
+                    # Make three histograms
+                    if hist:
+                        xdist_pos = tmp_df.loc[tmp_df["Sensitivity"] >= 0].hvplot.hist(
+                            y="Sensitivity",
+                            by="Ratio Type",
+                            alpha=alpha,
+                            legend=False,
+                            color=cmap_values)
+                        xdist_neg = tmp_df.loc[tmp_df["Sensitivity"] < 0].hvplot.hist(
+                            y="Sensitivity",
+                            by="Ratio Type",
+                            alpha=alpha,
+                            legend=False,
+                            color=cmap_values)
+                        ydist = tmp_df.hvplot.hist(
+                            y="MSE",
+                            by="Ratio Type",
+                            alpha=alpha,
+                            legend=False,
+                            color=cmap_values)
 
                     # Make two ellipses
+                    if confidence is not None:
+                        ells_pos = correl_conf_ell(
+                            df=tmp_df.loc[tmp_df["Sensitivity"] >= 0],
+                            x="Sensitivity",
+                            y="MSE",
+                            by="Ratio Type",
+                            confidence=confidence,
+                            color=colors)
+                        ells_neg = correl_conf_ell(
+                            df=tmp_df.loc[tmp_df["Sensitivity"] <= 0],
+                            x="Sensitivity",
+                            y="MSE",
+                            by="Ratio Type",
+                            confidence=confidence,
+                            color=colors)
+                        if ells_neg is not None:
+                            neg_plot = (neg_plot * ells_neg)
+                        if ells_pos is not None:
+                            pos_plot = (pos_plot * ells_pos)
+
+
+                    # Add small break lines
+                    text_pos = hv.Text(0, min_y, '/   ')
+                    text_neg = hv.Text(0, min_y, '   /')
 
                     # put it all together
+                    if hist:
+                        all_neg_plot = (neg_plot * text_neg << hv.Empty()
+                                    << xdist_neg.opts(xaxis="bare", xlim=(min_x, 2)))
+                        all_pos_plot = (pos_plot * text_pos
+                                    << ydist.opts(yaxis="bare", xlim=(min_y, max_y))
+                                    << xdist_pos.opts(xaxis="bare", xlim=(-2, max_x)))
+                        mse_plot = (all_neg_plot + all_pos_plot)
+                    else:
+                        mse_plot = (neg_plot * text_neg + pos_plot * text_pos)
+
+                    if all_plots is None:
+                        all_plots = mse_plot
+                    else:
+                        all_plots += mse_plot
                 else:
                     mse_plot = tmp_df.hvplot.scatter(
                             x="Sensitivity",
@@ -2639,9 +2759,16 @@ class Deriv_dask:
                                     << xdist.opts(xaxis="bare", xlim=(min_x, max_x)))
 
                     all_plots += mse_plot
-
-            mse_plot = all_plots.cols(1).opts(
-                sublabel_format="", tight=True).opts(opts.Layout(**layout_kwargs))
+            if log_x and not abs_x:
+                mse_plot = all_plots.opts(
+                    tight=False,
+                    sublabel_format="",
+                    hspace=hspace,
+                    shared_axes=False,
+                    fontscale=fontscale).cols(2)
+            else:
+                mse_plot = all_plots.cols(1).opts(
+                    sublabel_format="", tight=True).opts(opts.Layout(**layout_kwargs))
 
         # Save image to disk
         renderer = hv.Store.renderers[self.backend].instance(
