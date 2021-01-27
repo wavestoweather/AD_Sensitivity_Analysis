@@ -1,0 +1,18 @@
+{
+    "segments": [
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "b_vel",
+                    "sigma_perc": 10,
+                    "type": "snow",
+                    "rand_func": "uniform"
+                }
+            ]
+        }
+    ]
+}
