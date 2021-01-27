@@ -2,7 +2,31 @@ import matplotlib as mpl
 import numpy as np
 
 physical_params = ["dw", "dEpsilon", "drho_ice", "dT_freeze", "drho_w",
-    "dM_w", "dM_a", "dgravity_acc", "drho_0", "dK_T", "dR_a"]
+    "dM_w", "dM_a", "dgravity_acc", "drho_0", "dK_T", "dR_a",
+    "dT_sat_low_temp", "dp_sat_const_a", "dp_sat_const_b",
+    "dp_sat_ice_const_a", "dp_sat_low_temp",
+    "dcloud_nm1", "dcloud_nm2", "dcloud_nm3",
+    "drain_nm1", "drain_nm2", "drain_nm3",
+    "dice_nm1", "dice_nm2", "dice_nm3",
+    "dsnow_nm1", "dsnow_nm2", "dsnow_nm3",
+    "dhail_nm1", "dhail_nm2", "dhail_nm3",
+    "dgraupel_nm1", "dgraupel_nm2", "dgraupel_nm3",
+    "dL_wd", "dcp",
+    # Not exactly physical parameters, but derived ones that
+    # shouldn't be considered for analysis
+    "dice_sc_delta_q", "dice_sc_delta_n",
+    "dice_sc_theta_n", "dice_sc_theta_q",
+    "dsnow_sc_delta_q", "dsnow_sc_delta_n",
+    "dsnow_sc_theta_n", "dsnow_sc_theta_q",
+    "drain_sc_delta_q", "drain_sc_delta_n",
+    "drain_sc_theta_n", "drain_sc_theta_q",
+    "dhail_sc_delta_q", "dhail_sc_delta_n",
+    "dhail_sc_theta_n", "dhail_sc_theta_q",
+    "dgraupel_sc_delta_q", "dgraupel_sc_delta_n",
+    "dgraupel_sc_theta_n", "dgraupel_sc_theta_q",
+    "dcloud_sc_delta_q", "dcloud_sc_delta_n",
+    "dcloud_sc_theta_n", "dcloud_sc_theta_q",
+    "dgraupel_sc_coll_n"]
 
 json_particle_cons = ["a_geo", "b_geo", "min_x",
     "min_x_act", "min_x_nuc_homo", "min_x_nuc_hetero",

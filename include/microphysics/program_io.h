@@ -894,7 +894,9 @@ int read_init_netcdf(
 #else
         lenp = datafile.getDim("id").getSize();
 #endif
+#ifndef SILENT_MODE
         std::cout << "Number of trajectories in netCDF file: " << lenp << "\n" << std::flush;
+#endif
         if(lenp <= traj)
         {
             std::cerr << "You asked for trajectory with index " << traj

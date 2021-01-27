@@ -36,6 +36,9 @@ from bokeh.palettes import Category20c
 from timeit import default_timer as timer
 import pandas
 import xarray as xr
+from glob import glob
+from scipy.stats import chi2
+
 
 # pandas.options.mode.chained_assignment = 'raise'
 
@@ -301,7 +304,7 @@ class Deriv_dask:
         print("Loading done in {} s".format(t2-t))
         t = timer()
 
-    def __recalc_ratios(self, ratio_df, ratio_type, ratio_window, in_params,
+    def _recalc_ratios(self, ratio_df, ratio_type, ratio_window, in_params,
         verbose=False):
 
         if "weighted" in ratio_type and "per_out_param" in ratio_type:
@@ -2078,8 +2081,8 @@ class Deriv_dask:
             except:
                 pass
 
-    def get_mse(self, out_params, df_all, in_params=None,
-        ratio_type="vanilla", ratio_window=None):
+    def get_mse(self, out_params, others_df=None, others_path=None,
+        in_params=None, ratio_type="vanilla", ratio_window=None):
         """
         Create a pandas.Dataframe with columns
         MSE, Sensitivity, Output Parameter
@@ -2097,47 +2100,119 @@ class Deriv_dask:
             print("Cached data is None. Make sure to cache your data using")
             print("self.cache_data()\nABORTING")
             return
-        if in_params is None:
-            in_params = np.unique(df_all["Perturbed Parameter"])
 
-        # Calculate MSE
-        df_dic = {"MSE": np.asarray([]),
-            "Sensitivity": np.asarray([]),
-            "Output Parameter": np.asarray([]),
-            "Perturbed Parameter": np.asarray([])}
-        for i in pb(range(len(out_params))):
-            out_param = out_params[i]
-            sens_df = self.__recalc_ratios(mean.loc[mean["Output Parameter"] == out_param],
-                ratio_type, ratio_window, in_params)
-            mean_values = np.reshape(np.asarray(sens_df[out_param]), (1, 1, len(sens_df[out_param].index)))
-            # print( df_all.loc[df_all["Perturbed Parameter"] == in_params[0]][out_param].dropna() )
-            # print("right side:")
-            # print(np.shape(mean_values))
-            # unfortunately numpy uses a lot of memory. This works only for small datasets
-            # mean_squared_error = ( (df_all[out_param]-mean_values)**2).mean( axis=(1, 2, 3) ).values
-            mean_squared_error = [
-                np.mean((df_all.sel({"Perturbed Parameter": mp})[out_param] - mean_values)**2)
-                    for mp in in_params]
-                    # df_all.loc[df_all["Perturbed Parameter"] == mp][out_param].dropna() - mean_values)**2)
-                # for mp in in_params]
-            df_dic["MSE"] = np.append(df_dic["MSE"], mean_squared_error)
-            df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
-                [np.max(np.abs(sens_df[mp])) for mp in in_params])
-            df_dic["Output Parameter"] = np.append(df_dic["Output Parameter"],
-                [out_param for _ in in_params])
-            df_dic["Perturbed Parameter"] = np.append(df_dic["Perturbed Parameter"],
-                in_params)
+        if others_df is None and others_path is None:
+            print("Either provide a loaded dataframe others_df or a path to the other files")
+            return
+        if others_df is None and in_params is None:
+            print("You need to provide in_params in addition to to others_df")
+            return
+
+        if others_path is not None:
+            files = sorted(glob(others_path + "*.nc_wcb"))
+            df_dic = {"MSE": np.asarray([]),
+                "Sensitivity": np.asarray([]),
+                "Output Parameter": np.asarray([]),
+                "Perturbed Parameter": np.asarray([]),
+                "Ratio Type": np.asarray([])}
+            # Pre calculate the sensitivities
+            sens_dic = {}
+            mean_dic = {}
+            for i in pb(range(len(out_params))):
+                #out_param in out_params:
+                out_param = out_params[i]
+                mean_dic[out_param] = np.reshape(np.asarray(
+                    mean.loc[mean["Output Parameter"] == out_param][out_param]),
+                    (len(mean.loc[mean["Output Parameter"] == out_param][out_param].index), 1, 1))
+                if isinstance(ratio_type, list):
+                    sens_dic[out_param] = {}
+                    for rt in ratio_type:
+                        sens_dic[out_param][rt] = self._recalc_ratios(mean.loc[mean["Output Parameter"] == out_param],
+                            rt, ratio_window, in_params)
+                else:
+                    sens_dic[out_param] = self._recalc_ratios(mean.loc[mean["Output Parameter"] == out_param],
+                        ratio_type, ratio_window, in_params)
+
+            for i in pb(range(len(files))):
+                f = files[i]
+                perturbed_param = "d" + f.split("/")[-1][0:-7]
+                if perturbed_param not in in_params:
+                    continue
+                ds = xr.open_dataset(f, decode_times=False)[out_params].compute()
+
+                for out_param in out_params:
+                    def add_to_df(sens_df, rt):
+                        mean_squared_error = [
+                            np.mean( (ds[out_param] - mean_dic[out_param])**2 ) ]
+                        df_dic["MSE"] = np.append(df_dic["MSE"], mean_squared_error)
+                        sens_idx = np.argmax(np.abs(sens_df[perturbed_param]))
+                        df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
+                            [ sens_df[perturbed_param].iloc[sens_idx] ])
+                        df_dic["Output Parameter"] = np.append(df_dic["Output Parameter"],
+                            [out_param])
+                        df_dic["Perturbed Parameter"] = np.append(df_dic["Perturbed Parameter"],
+                            [perturbed_param])
+                        df_dic["Ratio Type"] = np.append(df_dic["Ratio Type"],
+                            [rt])
+                    if isinstance(ratio_type, list):
+                        for rt in ratio_type:
+                            add_to_df(sens_dic[out_param][rt], rt)
+                    else:
+                        add_to_df(sens_dic[out_param], ratio_type)
+        else:
+            if in_params is None:
+                in_params = np.unique(others_df["Perturbed Parameter"])
+
+            # Calculate MSE
+            df_dic = {"MSE": np.asarray([]),
+                "Sensitivity": np.asarray([]),
+                "Output Parameter": np.asarray([]),
+                "Perturbed Parameter": np.asarray([]),
+                "Ratio Type": np.asarray([])}
+            for i in pb(range(len(out_params))):
+                out_param = out_params[i]
+                tmp_df = mean.loc[mean["Output Parameter"] == out_param]
+                mean_values = np.reshape(np.asarray(tmp_df[out_param]), (1, 1, len(tmp_df[out_param].index)))
+
+                def add_to_df(sens_df, rt):
+                    # unfortunately numpy uses a lot of memory. This works only for small datasets
+                    # mean_squared_error = ( (others_df[out_param]-mean_values)**2).mean( axis=(1, 2, 3) ).values
+                    mean_squared_error = [
+                        np.mean((others_df.sel({"Perturbed Parameter": mp})[out_param] - mean_values)**2)
+                            for mp in in_params]
+                            # others_df.loc[others_df["Perturbed Parameter"] == mp][out_param].dropna() - mean_values)**2)
+                        # for mp in in_params]
+                    df_dic["MSE"] = np.append(df_dic["MSE"], mean_squared_error)
+                    sens_idx = [ np.argmax(np.abs(sens_df[mp])) for mp in in_params ]
+                    df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
+                        [ sens_df[mp].iloc[sens_idx[i]] for i, mp in enumerate(in_params) ])
+                        # [ np.max(np.abs(sens_df[mp])) for mp in in_params ])
+                    df_dic["Output Parameter"] = np.append(df_dic["Output Parameter"],
+                        [out_param for _ in in_params])
+                    df_dic["Perturbed Parameter"] = np.append(df_dic["Perturbed Parameter"],
+                        in_params)
+                    df_dic["Ratio Type"] = np.append(df_dic["Ratio Type"], [rt
+                        for _ in in_params])
+                if isinstance(ratio_type, list):
+                    for rt in ratio_type:
+                        add_to_df(self._recalc_ratios(tmp_df,
+                            rt, ratio_window, in_params), rt)
+                else:
+                    add_to_df(self._recalc_ratios(tmp_df,
+                        ratio_type, ratio_window, in_params), ratio_type)
         return pandas.DataFrame.from_dict(df_dic)
 
 
 
-    def plot_mse(self, out_params, other_trajectories=None, mse_df=None,
+    def plot_mse(self, out_params, others_df=None, mse_df_=None,
         in_params=None,
         width=1959, height=1224,
         datashade=False, prefix=None, alpha=1,
         plot_path="pics/", yticks=10, xticks=10, decimals=3,
         ratio_type="vanilla", ratio_window=None,
-        s=None, formatter_limits=None, logx=False, logy=False):
+        s=None, formatter_limits=None, log_x=False, log_y=False, confidence=None,
+        hist=False, kind="grid_plot", abs_x=False, abs_y=False,
+        split_ellipse=False, **kwargs):
         """
         Plot mean squared error over maximal sensitivity calculated
         via the given ratio type (i.e. sensitivity per timestep) and given
@@ -2149,7 +2224,7 @@ class Deriv_dask:
         ----------
         out_params : list of string
             List of output parameters to plot the datapoints for.
-        other_trajectories : xarray.DataSet
+        others_df : xarray.DataSet
             Dataframe with output parameters for each of the perturbed
             parameters.
             Dimensions are "Perturbed Parameter", "time", "trajectory",
@@ -2204,13 +2279,40 @@ class Deriv_dask:
             Can be used to adjust the size of the scatter dots.
         formatter_limits : tuple of ints
             Lower and upper limits for formatting x- and y-axis.
+        log_x : bool
+            Log x-axis.
+        log_y : bool
+            Log y-axis.
+        confidence : float
+            Plot a confidence ellipse around each sample with confidence
+            between 0 and 1.
+        hist : bool
+            Plot histograms around each sample
+        kind : string
+            "single_plot": A single plot with all the data. May be
+                off if different output parameters are used due to
+                different scalings.
+            "grid_plot": Multiple plots that can have histograms and
+                confidence ellipses as well.
+        abs_x : bool
+            Use absolute value of sensitivities.
+        abs_y : bool
+            Use absolute value of MSE.
+        split_ellipse : bool
+            Create two confidence ellipses, on for sensitivity >= 0
+            and another for sensitvity <= 0.
+        kwargs : Dict of args
+            Arguments are passed to ellipse, i.e. {"color": "red"}
         """
-        if mse_df is None and other_trajectories is None:
-            print("Either mse_df or other_trajectories for calculating mse_df must be given!")
+        if mse_df_ is None and others_df is None:
+            print("Either mse_df or others_df for calculating mse_df must be given!")
             return
-        if mse_df is None:
-            mse_df = self.get_mse(out_params, other_trajectories, in_params,
+        if mse_df_ is None:
+            mse_df = self.get_mse(out_params, others_df, in_params,
                 ratio_type, ratio_window)
+        else:
+            mse_df = mse_df_.copy()
+        mse_df = mse_df.loc[mse_df["Sensitivity"] != 0]
 
         import hvplot.dask # adds hvplot method to dask objects
         import hvplot.pandas
@@ -2247,45 +2349,301 @@ class Deriv_dask:
         else:
             layout_kwargs["fig_inches"] = fig_inches
 
+        if abs_x:
+            mse_df["Sensitivity"] = np.abs(mse_df["Sensitivity"])
+            if log_x:
+                mse_df["Sensitivity"] = np.log(mse_df["Sensitivity"])
+        if abs_y:
+            mse_df["MSE"] = np.abs(mse_df["MSE"])
+            if log_y:
+                mse_df["MSE"] = np.log(mse_df["MSE"])
 
-        # mse_df = self.get_mse(other_trajectories, df, in_params)
+        if not abs_x and log_x:
+            sign = np.sign(mse_df["Sensitivity"]) * (-1)
+            mse_df["Sensitivity"] = np.log(np.abs(mse_df["Sensitivity"]))
+            mse_df["Sensitivity"] = mse_df["Sensitivity"] + (-1) * np.min(mse_df["Sensitivity"])
+            mse_df["Sensitivity"] *= sign
+        if not abs_y and log_y:
+            sign = np.sign(mse_df["MSE"])
+            mse_df["MSE"] = sign * np.log(np.abs(mse_df["MSE"]))
 
-        if not datashade:
-            if len(out_params) <= 10:
-                cmap = plt.get_cmap("tab10")
+        xlabel = "Sensitivity Ratio"
+        ylabel = ""
+        if log_x:
+            xlabel = xlabel
+        if log_y:
+            ylabel = "Log "
+
+        # Plot all into one plot
+        if kind == "single_plot":
+            if not datashade:
+                if self.backend == "matplotlib":
+                    cmap_values = []
+                    for out_param in out_params:
+                        cmap_values.append( matplotlib.colors.to_hex(self.cmap_particles[out_param]))
+                    mse_plot = mse_df.hvplot.scatter(
+                            x="Sensitivity",
+                            y="MSE",
+                            by="Output Parameter",
+                            title=ylabel + "MSE over " + xlabel + " to Model Parameters",
+                            color=cmap_values,
+                            datashade=datashade,
+                            alpha=alpha,
+                            legend=True,
+                            yticks=yticks,
+                            xticks=xticks,
+                            # log_x=log_x,
+                            # log_y=log_y
+                        ).opts(
+                            aspect=aspect,
+                            fontscale=fontscale).options(
+                                xlabel=xlabel,
+                                ylabel=ylabel
+                            )
+        # Gridded plot with every output parameter on y
+        # and sensitivity calculations on x
+        # and different ratio types as "by"
+        if kind == "grid_plot":
+            # Only tested with matplotlib
+            def correl_conf_ell(df, x, y, by=None, confidence=0.95, color=None,
+                **kwargs):
+                new_kwargs = kwargs
+                if color is not None:
+                    new_kwargs["color"] = color
+                chisq = chi2.ppf(confidence, 2)
+                def create_ellipse(x, y, **kwargs):
+                    cov = np.cov(x, y)
+                    eigen, eigenv = np.linalg.eig(cov)
+                    mean_x = np.mean(x)
+                    mean_y = np.mean(y)
+                    if eigen[0] > eigen[1]:
+                        bigger_idx = 0
+                    else:
+                        bigger_idx = 1
+                    rot = np.arctan2(eigenv[bigger_idx][1], eigenv[bigger_idx][0])
+                    if rot < 0:
+                        rot += np.pi
+                    major_scale = chisq * np.sqrt(eigen[bigger_idx])
+                    minor_scale = chisq * np.sqrt(eigen[(1+bigger_idx)%2])
+                    if bigger_idx == 1:
+                        scale = (major_scale, minor_scale)
+                    else:
+                        scale = (minor_scale, major_scale)
+                    scale = (major_scale, minor_scale)
+                    return (hv.Ellipse(mean_x, mean_y, scale, orientation=-rot).opts(**kwargs) )
+                if by is None:
+                    x = df[x]
+                    y = df[y]
+                    return create_ellipse(x, y, **new_kwargs)
+                else:
+                    by_list = np.unique(df[by])
+                    ells = None
+                    for b in by_list:
+                        new_kwargs = kwargs
+                        if color is not None:
+                            new_kwargs["color"] = color[b]
+                        df_tmp = df.loc[df[by] == b]
+                        if ells is None:
+                            ells = create_ellipse(df_tmp[x], df_tmp[y], **new_kwargs)
+                        else:
+                            ells = ells * create_ellipse(df_tmp[x], df_tmp[y], **new_kwargs)
+                    return ells
+
+            if abs_x and not log_x:
+                min_x = -0.05
+            elif not log_x:
+                min_x = -1.05
             else:
-                cmap = plt.get_cmap("tab20")
+                min_x = np.min(mse_df["Sensitivity"]) - 0.1
+            if not log_x:
+                max_x = 1.05
+            else:
+                max_x = np.max(mse_df["Sensitivity"]) + 0.1
 
+            cmap = plt.get_cmap("tab10")
+            colors = {}
+            cmap_values = []
+            for i, rt in enumerate(np.unique(mse_df["Ratio Type"])):
+                colors[rt] =  matplotlib.colors.to_hex(cmap(i)[0:-1])
+                cmap_values.append(colors[rt])
 
-            if self.backend == "matplotlib":
-                cmap_values = []
-                for out_param in out_params:
-                    cmap_values.append( matplotlib.colors.to_hex(self.cmap_particles[out_param]))
+            if log_x and not abs_x:
+                this_x_ticks = np.floor(xticks/2)
+                pos_plot = mse_df.loc[mse_df["Sensitivity"] >= 0].hvplot.hist(
+                    y="Sensitivity",
+                    by="Ratio Type",
+                    alpha=0.5,
+                    legend=True,
+                    grid=False)
 
-                # overlay = hv.NdOverlay(
-                #     {out_param: hv.Scatter((np.NaN, np.NaN)).opts(opts.Scatter(s=scatter_size*8, color=self.cmap_particles[out_param]))
-                #     for out_param in out_params }
-                # )
+                max_y = 0
+                for key in pos_plot:
+                    max_x_tick = np.ceil(np.max(key["Sensitivity"])/10)*10
+                    min_x_tick = 0
+                    delta_tick = max_x_tick/(this_x_ticks-1)
+                    max_y = np.max(key["Sensitivity_count"])
 
-                mse_plot = mse_df.hvplot.scatter(
-                        x="Sensitivity",
-                        y="MSE",
-                        by="Output Parameter",
-                        title="MSE over Sensitvity to Model Parameters",
-                        color=cmap_values,
-                        datashade=datashade,
-                        alpha=alpha,
-                        legend=True,
-                        yticks=yticks,
-                        xticks=xticks,
-                        logx=logx,
-                        logy=logy
-                    ).opts(
+                def format_tick(v, pos, max_tick):
+                    if pos:
+                        upper = v-max_tick
+                        return f"1e{upper:2.1f}"
+                    else:
+                        upper = max_tick-v
+                        return f"-1e{upper:2.1f}"
+
+                pos_x_ticks = [ (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, True, max_x_tick)) for i in range(this_x_ticks)]
+
+                neg_plot = mse_df.loc[mse_df["Sensitivity"] < 0].hvplot.hist(
+                    y="Sensitivity",
+                    by="Ratio Type",
+                    alpha=0.5,
+                    legend=False,
+                    grid=False)
+
+                for key in neg_plot:
+                    if np.max(key["Sensitivity_count"]) > max_y:
+                        max_y = np.max(key["Sensitivity_count"])
+                    max_x_tick = np.floor(np.min(key["Sensitivity"])/10)*10
+                    min_x_tick = 0
+                    delta_tick = max_x_tick/(this_x_ticks-1)
+
+                neg_x_ticks = [ (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, False, max_x_tick)) for i in range(this_x_ticks)]
+                y_lim = (0, max_y)
+
+                pos_plot = pos_plot.opts(
+                        aspect=aspect/2,
+                        fontscale=fontscale).options(xlabel="", yaxis=False).opts(
+                        xticks=pos_x_ticks,
+                        ylim=y_lim)
+                neg_plot = neg_plot.opts(
+                        aspect=aspect/2,
+                        fontscale=fontscale).options(xlabel="").opts(
+                        xticks=neg_x_ticks,
+                        ylim=y_lim)
+
+                text_pos = hv.Text(0, 0, '/           ')
+                text_neg = hv.Text(0, 0, '           /')
+
+                all_plots = (neg_plot * text_neg + pos_plot * text_pos).opts(
+                    tight=False,
+                    title=ylabel + "MSE over " + xlabel + " to Model Parameters",
+                    sublabel_format="",
+                    hspace=0.05,
+                    shared_axes=False,
+                    fontscale=fontscale)
+
+                all_plots = hv.GridSpace(all_plots)
+            else:
+                all_plots = mse_df.hvplot.hist(
+                    y="Sensitivity",
+                    by="Ratio Type",
+                    alpha=alpha,
+                    legend=True,
+                    grid=True,
+                    title=ylabel + "MSE over " + xlabel + " to Model Parameters",
+                    color=cmap_values).opts(
                         aspect=aspect,
+                        fontscale=fontscale).options(xlabel="")#, xaxis="bare")
 
-                        fontscale=fontscale)
+            for out_param in out_params:
 
+                # TODO: Make log_x version
+                tmp_df = mse_df.loc[mse_df["Output Parameter"] == out_param]
+                min_y = tmp_df["MSE"].min()
+                max_y = tmp_df["MSE"].max()
+                delta_y = (max_y-min_y)/20
+                print(f"{out_param}, ({min_y}, {max_y}), delta {delta_y}")
+                min_y -= delta_y
+                max_y += delta_y
+                if log_x and not abs_x:
+                    # Make two scatter plots with correct ticks
+                    print("not yet implemented")
+                    # Make two histograms
 
+                    # Make two ellipses
+
+                    # put it all together
+                else:
+                    mse_plot = tmp_df.hvplot.scatter(
+                            x="Sensitivity",
+                            y="MSE",
+                            by="Ratio Type",
+                            datashade=False,
+                            alpha=alpha,
+                            legend=False,
+                            grid=True,
+                            xlim=(min_x, max_x),
+                            ylim=(min_y, max_y),
+                            color=cmap_values
+                        ).opts(
+                            opts.Scatter(s=scatter_size)
+                        ).opts(
+                            aspect=aspect,
+                            fontscale=fontscale).options(
+                                ylabel=ylabel + out_param + " MSE", xlabel="")
+                    # Adding histograms around those
+                    if hist:
+                        xdist = tmp_df.hvplot.hist(
+                            y="Sensitivity",
+                            by="Ratio Type",
+                            alpha=alpha,
+                            legend=False,
+                            color=cmap_values)
+                        ydist = tmp_df.hvplot.hist(
+                            y="MSE",
+                            by="Ratio Type",
+                            alpha=alpha,
+                            legend=False,
+                            color=cmap_values)
+
+                    if out_param == out_params[-1]:
+                        mse_plot = mse_plot.options(xlabel=xlabel)
+                    else:
+                        mse_plot = mse_plot.opts(xaxis="bare")
+
+                    if confidence is not None:
+                        if split_ellipse:
+                            ells_pos = correl_conf_ell(
+                                df=tmp_df.loc[tmp_df["Sensitivity"] >= 0],
+                                x="Sensitivity",
+                                y="MSE",
+                                by="Ratio Type",
+                                confidence=confidence,
+                                color=colors)
+                            ells_neg = correl_conf_ell(
+                                df=tmp_df.loc[tmp_df["Sensitivity"] <= 0],
+                                x="Sensitivity",
+                                y="MSE",
+                                by="Ratio Type",
+                                confidence=confidence,
+                                color=colors)
+                            if ells_pos is not None and ells_neg is not None:
+                                mse_plot = (mse_plot * ells_pos * ells_neg)
+                            elif ells_pos is None:
+                                mse_plot = (mse_plot * ells_neg)
+                            elif ells_neg is None:
+                                mse_plot = (mse_plot * ells_pos)
+                        else:
+                            ells = correl_conf_ell(
+                                df=tmp_df,
+                                x="Sensitivity",
+                                y="MSE",
+                                by="Ratio Type",
+                                confidence=confidence,
+                                color=colors)
+
+                            mse_plot = (mse_plot * ells)
+                    if hist:
+                        mse_plot = (mse_plot
+                                    << ydist.opts(yaxis="bare", xlim=(min_y, max_y))
+                                    << xdist.opts(xaxis="bare", xlim=(min_x, max_x)))
+
+                    all_plots += mse_plot
+
+            mse_plot = all_plots.cols(1).opts(
+                sublabel_format="", tight=True).opts(opts.Layout(**layout_kwargs))
+
+        # Save image to disk
         renderer = hv.Store.renderers[self.backend].instance(
             fig='png', dpi=300)
         i = 0

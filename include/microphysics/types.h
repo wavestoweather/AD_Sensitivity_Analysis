@@ -1178,7 +1178,7 @@ struct param_t{
     {
         mean = m;
         if(!isnan(sigma_perc) && isnan(sigma))
-            sigma = mean*sigma_perc;
+            sigma = mean*sigma_perc/100;
     }
 
     void add_name(std::string n, model_constants_t &cc)
@@ -1253,15 +1253,13 @@ struct param_t{
 
     void add_sigma_perc(double s)
     {
+        sigma_perc = s;
         if(!isnan(mean))
         {
-            sigma_perc = s;
-            sigma = s*mean;
+            sigma = sigma_perc*mean/100;
             if(func_name != "")
                 add_rand_function(func_name);
         }
-        else
-            sigma_perc = s;
     }
 
     void add_rand_function(std::string name)
@@ -1269,7 +1267,7 @@ struct param_t{
         if(func_name == "")
             func_name = name;
         if(!isnan(sigma_perc) && isnan(sigma) && !isnan(mean))
-            sigma = mean*sigma_perc;
+            sigma = mean*sigma_perc/100;
         if(!isnan(mean) && !isnan(sigma))
         {
             if(func_name == "normal")
@@ -1329,7 +1327,7 @@ struct param_t{
                           << "Options are:\n"
                           << "normal: normal distribution with mean=mean "
                           << "or mean=default value of parameter and sigma"
-                          << "=sigma or sigma=mean*sigma_perc\n"
+                          << "=sigma or sigma=mean*sigma_perc/100\n"
                           << "uniform: uniform distribution from mean-sigma "
                           << "to mean+sigma and mean, sigma as above\n";
                 return err;
@@ -1381,7 +1379,9 @@ struct param_t{
             {
                 // Needs to be done before the for-loop.
             } else if(first == "rand_func")
+            {
                 add_rand_function(it.second.get_value<std::string>());
+            }
             else
             {
                 err = PARAM_CONFIG_ERR;

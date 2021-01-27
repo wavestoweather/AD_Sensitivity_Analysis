@@ -1086,7 +1086,8 @@ inline A coll_theta_12(
 
 
 /**
- * Calculate the model constant \f$a_f = \overline{a}_{\text{vent},n}\f$ of a particle model that is used
+ * Calculate the model constant \f$a_f = \overline{a}_{\text{vent},n}\f$
+ * of a particle model that is used
  * for vaporization and melting processes with formulas such as
  * \f[ a_f + b_f \sqrt{d \cdot v} \f]
  * where \f$d\f$ is the diameter of the particle to melt/vaporize and

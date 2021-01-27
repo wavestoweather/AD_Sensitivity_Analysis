@@ -1612,9 +1612,10 @@ const int nuc_type = 5;
  */
 const double k_1_accr = 5.0e-4;
 /**
- * Ceficcient for accretion of qc to qr.
+ * Coeficcient for accretion of qc to qr.
  */
 const double k_r = 5.78;
+// const double k_r = 5.28;
 
 #ifdef SB_CONV
 /**
