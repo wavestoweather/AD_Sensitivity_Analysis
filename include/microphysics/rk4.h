@@ -68,7 +68,7 @@ void RK4_step(
 #endif
     }
     if(fixed)
-        for(int ii=0; ii<update_idx; ++ii)
+        for(uint32_t ii=0; ii<update_idx; ++ii)
             ytmp[ii] = yold[ii];
 
     //
@@ -91,7 +91,7 @@ void RK4_step(
 #endif
     }
     if(fixed)
-        for(int ii=0; ii<update_idx; ++ii)
+        for(uint32_t ii=0; ii<update_idx; ++ii)
             ytmp[ii] = yold[ii];
 
     //
@@ -114,7 +114,7 @@ void RK4_step(
 #endif
     }
     if(fixed)
-        for(int ii=0; ii<update_idx; ++ii)
+        for(uint32_t ii=0; ii<update_idx; ++ii)
             ytmp[ii] = yold[ii];
 
     //
@@ -135,7 +135,7 @@ void RK4_step(
     }
 
     if(fixed)
-        for(int ii=0; ii < update_idx; ii++)
+        for(uint32_t ii=0; ii < update_idx; ii++)
             ynew[ii] = yold[ii];
 
 }
@@ -222,18 +222,18 @@ void set_limits(
     model_constants_t &cc)
 {
     if(nuc_type > 0)
-        y[Nc_idx] = min(min(max(y[Nc_idx], y[qc_idx]*ref.qref/cc.cloud.max_x),
-            y[qc_idx]*ref.qref/cc.cloud.min_x), 5e9);
-    y[Nr_idx] = min(max(y[Nr_idx], y[qr_idx]*ref.qref/cc.rain.max_x),
-        y[qr_idx]*ref.qref/cc.rain.min_x);
-    y[Ni_idx] = min(max(y[Ni_idx], y[qi_idx]*ref.qref/cc.ice.max_x),
-        y[qi_idx]*ref.qref/cc.ice.min_x);
-    y[Ns_idx] = min(max(y[Ns_idx], y[qs_idx]*ref.qref/cc.snow.max_x),
-        y[qs_idx]*ref.qref/cc.snow.min_x);
-    y[Ng_idx] = min(max(y[Ng_idx], y[qg_idx]*ref.qref/cc.graupel.max_x),
-        y[qg_idx]*ref.qref/cc.graupel.min_x);
-    y[Nh_idx] = min(max(y[Nh_idx], y[qh_idx]*ref.qref/cc.hail.max_x),
-        y[qh_idx]*ref.qref/cc.hail.min_x);
+        y[Nc_idx] = min(min(max(y[Nc_idx], y[qc_idx]*ref.qref/get_at(cc.cloud.constants, Particle_cons_idx::max_x)),
+            y[qc_idx]*ref.qref/get_at(cc.cloud.constants, Particle_cons_idx::min_x)), 5e9);
+    y[Nr_idx] = min(max(y[Nr_idx], y[qr_idx]*ref.qref/get_at(cc.rain.constants, Particle_cons_idx::max_x)),
+        y[qr_idx]*ref.qref/get_at(cc.rain.constants, Particle_cons_idx::min_x));
+    y[Ni_idx] = min(max(y[Ni_idx], y[qi_idx]*ref.qref/get_at(cc.ice.constants, Particle_cons_idx::max_x)),
+        y[qi_idx]*ref.qref/get_at(cc.ice.constants, Particle_cons_idx::min_x));
+    y[Ns_idx] = min(max(y[Ns_idx], y[qs_idx]*ref.qref/get_at(cc.snow.constants, Particle_cons_idx::max_x)),
+        y[qs_idx]*ref.qref/get_at(cc.snow.constants, Particle_cons_idx::min_x));
+    y[Ng_idx] = min(max(y[Ng_idx], y[qg_idx]*ref.qref/get_at(cc.graupel.constants, Particle_cons_idx::max_x)),
+        y[qg_idx]*ref.qref/get_at(cc.graupel.constants, Particle_cons_idx::min_x));
+    y[Nh_idx] = min(max(y[Nh_idx], y[qh_idx]*ref.qref/get_at(cc.hail.constants, Particle_cons_idx::max_x)),
+        y[qh_idx]*ref.qref/get_at(cc.hail.constants, Particle_cons_idx::min_x));
     // Set everything negative to zero
     y[qv_idx] = (y[qv_idx] < 0) ? 0 : y[qv_idx];
     y[qc_idx] = (y[qc_idx] < 0) ? 0 : y[qc_idx];
@@ -383,6 +383,11 @@ void RK4_step_2_sb_ice(
     sediment_q = 0;
     sediment_n_total += cc.dt_sixth*sediment_n;
     sediment_n = 0;
+    // Explicit calculation of saturation
+    codi::RealReverse T_prime = ynew[T_idx]*ref.Tref;
+    codi::RealReverse p_prime = ynew[p_idx]*ref.pref;
+    codi::RealReverse qv_prime = ynew[qv_idx]*ref.qref;
+    ynew[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime, cc);
 }
 
 /** @} */ // end of group rk

@@ -14,12 +14,9 @@ met_dims = ["ensemble", "trajectory", "time", "start_lon",
             "start_lat", "start_isobaric"]
 
 path = "/data/project/wcb/netcdf/vladiana"
+# path = "/lustre/project/m2_jgu-tapt/cosmo_output/vladiana/traj"
 store_path = "/data/project/wcb/netcdf/vladiana_met/"
-file_list = []
-for f in os.listdir(path):
-    if ".nc_wcb" in f:
-        file_list.append(os.path.join(path, f))
-file_list = np.sort(file_list)
+# /lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana
 
 # 400 hPa and 600 hPa ascent
 window_conv_400 = 1 * 3 * 60
@@ -78,9 +75,7 @@ def differ(x, axis, hPa, debug=False):
     # Get minimum length of window with value >= hPa
     min_lengths = np.full(np.shape(both), np.inf)
     counter = 0
-    # if debug:
-    #     with open("log2", "a+") as f:
-    #         f.write("timestep, curr_sum, min_len, len(window), start, end, startP, endP\n")
+
     for ens in range(len(differences)):
         if not both[ens].any():
             continue
@@ -108,17 +103,12 @@ def differ(x, axis, hPa, debug=False):
 
                         curr_sum += window[end]
                         end += 1
-                    # if debug:
-                    #     print("curr_sum {} at start {}, end {}, timestep {}".format(curr_sum, start, end, timestep))
                     # Check, if a smaller window exists where the ascend is done by pushing the start
                     while(curr_sum <= -hPa*100 and start < len(window)):
                         if(end-start < min_len):
                             min_len = end-start
                         curr_sum -= window[start]
                         start += 1
-                # if debug:
-                #     with open("log2", "a+") as f:
-                #         f.write("{}, {}, {}, {}, {}, {}, {}, {}\n".format(timestep, curr_sum, min_len, len(window), start, end, x[timestep][0][start], x[timestep][0][end]))
                 min_lengths[ens][traj][timestep] = min_len
 
     # Take the minimum overall and that's whenever True shall stand
@@ -143,17 +133,6 @@ def differ(x, axis, hPa, debug=False):
             return_bools_tmp[timestep] = (min_lengths_trans[timestep] == min_len_traj)
         return_bools.append(np.transpose(return_bools_tmp))
 
-    # if debug:
-    #     with open("return_log", "a+") as fout:
-    #         for line in return_bools_transposed:
-    #             fout.write(np.array2string(line))
-    #             fout.write("\n")
-    #             fout.write("min lenghts ({})\n".format(min_len_traj))
-    #             fout.write(np.array2string(min_lengths))
-
-    # if debug:
-    #     with open("set_log", "a+") as fout:
-    #         fout.write("start, length, min_length, start+length, set_start, set_end\n")
     # Shift everything such that the beginning starts at the actual start and ends accordingly
     for ens in range(len(return_bools)):
         for traj in range(len(return_bools[ens])):
@@ -161,99 +140,92 @@ def differ(x, axis, hPa, debug=False):
                 continue
             min_len_traj = min_len_traj_all[ens]
             vals, start, length = find_runs(return_bools[ens][traj])
-            # if debug:
-            #     print("vals:")
-            #     print(vals)
-            #     print("start:")
-            #     print(start)
-            #     print("length:")
-            #     print(length)
-            #     print("returner")
-            #     print(return_bools_transposed[traj])
+
             for i in range(len(vals)):
                 if vals[i] > 0:
                     set_start = int(start[i] - min_len_traj[traj])
-                    set_end = set_start + min_len_traj[traj] + 1#  + length[i] #
+                    set_end = set_start + min_len_traj[traj] + 1
 
                     if length[i] > min_len_traj[traj]:
-                        set_end = set_start + length[i] + 1 # - window_size + min_len_traj[traj]
-                        # if debug:
-                        #     print("length is bigger then minimum length")
-                        #     print("window_size {}, length-window_size {}, min_len {}, this_length: {}".format(window_size, length[i]-window_size, min_len_traj[traj], length[i] - window_size + min_len_traj[traj] + 1))
-                            # with open("set_log", "a+") as fout:
-                            #     fout.write("length is bigger then minimum length\n")
-                            #     fout.write("window_size {}, length-window_size {}, min_len {}, this_length: {}\n".format(window_size, length[i]-window_size, min_len_traj[traj], length[i] - window_size + min_len_traj[traj] + 1))
-                    # if debug:
-                        # with open("set_log", "a+") as fout:
-                        #     fout.write("{}, {}, {}, {}, {}, {}\n".format(start[i], length[i], min_len_traj[traj], start[i]+length[i], set_start, int(set_end)))
+                        set_end = set_start + length[i] + 1
+
                     return_bools[ens][traj][start[i]:length[i]+start[i]] = False
                     return_bools[ens][traj][set_start:int(set_end)] = True
 
-    # return_bools = np.transpose(return_bools_transposed)
     return return_bools
 
 def differ_slan(x, axis, hPa, min_window):
-    window_size = len(x[0][0])
-    ascent = np.argmax(x, axis=axis) < np.argmin(x, axis=2)
+    window_size = len(x[0][0][0])
+    ascent = np.argmax(x, axis=axis) < np.argmin(x, axis=3)
     amount = np.max(x, axis=axis) - np.min(x, axis=axis) >= hPa*100
     both = np.logical_and(ascent, amount)
 
     # Calculate the differences within every window
-    differences = np.diff(x, axis=2)
+    differences = np.diff(x, axis=3)
     # Get minimum length of window with value >= hPa
     min_lengths = np.full(np.shape(both), np.inf)
-    for timestep in range(len(differences)):
-        if not both[timestep].any():
-            # No trajectory in this timestep satisfies
-            # the constraint
+
+
+    for ens in range(len(differences)):
+        if not both[ens].any():
             continue
-        for traj in range(len(differences[timestep])):
-            if not both[timestep][traj].any():
+        for traj in range(len(differences[ens])):
+            if not both[ens][traj].any():
+                # No timestep in this trajectory satisfies
+                # the constraint
                 continue
-            window = differences[timestep][traj]
-            start = 0
-            end = 0
-            curr_sum = 0
-            min_len = np.inf
-            while(end < len(window)):
-                while( (curr_sum > -hPa*100 and end < len(window)) or (np.isnan(curr_sum)) ):
-                    if (curr_sum >= 0 and window[end] < 0 or np.isnan(curr_sum) ):
-                        start = end
-                        curr_sum = 0
-                    curr_sum += window[end]
-                    end += 1
-                while(curr_sum <= -hPa*100 and start < len(window)):
-                    if(end-start < min_len and end-start >= min_window):
-                        min_len = end-start
-                    curr_sum -= window[start]
-                    start += 1
-            min_lengths[timestep][traj] = min_len
+            for timestep in range(len(differences[ens][traj])):
+                if not both[ens][traj][timestep].any():
+                    continue
+                window = differences[ens][traj][timestep]
+                start = 0
+                end = 0
+                curr_sum = 0
+                min_len = np.inf
+                while(end < len(window)):
+                    while( (curr_sum > -hPa*100 and end < len(window)) or (np.isnan(curr_sum)) ):
+                        if (curr_sum >= 0 and window[end] < 0 or np.isnan(curr_sum) ):
+                            start = end
+                            curr_sum = 0
+                        curr_sum += window[end]
+                        end += 1
+                    while(curr_sum <= -hPa*100 and start < len(window)):
+                        if(end-start < min_len and end-start >= min_window):
+                            min_len = end-start
+                        curr_sum -= window[start]
+                        start += 1
+                min_lengths[ens][traj][timestep] = min_len
     # Take the minimum overall and that's whenever True shall stand
     # Those are minimum window sizes for every trajectory
-
-    min_len_traj = np.nanmin(min_lengths, axis=0)
-    min_len_traj[min_len_traj == np.inf] = -1
-    return_bools = np.full(np.shape(both), 0)#, dtype=bool)
-
-    for timestep in range(len(return_bools)):
-        return_bools[timestep] = (min_lengths[timestep] == min_len_traj)
-    return_bools_transposed = np.transpose(return_bools)
+    return_bools = []
+    min_len_traj_all = []
+    for ens in range(len(x)):
+        min_len_traj = np.nanmin(min_lengths[ens], axis=1)
+        min_len_traj_all.append(min_len_traj)
+        min_len_traj[min_len_traj == np.inf] = -1
+        return_bools_tmp = np.full(np.shape(both[ens]), 0)#, dtype=bool)
+        return_bools_tmp = np.transpose(return_bools_tmp)
+        min_lengths_trans = min_lengths[ens].transpose()
+        for timestep in range(len(return_bools_tmp)):
+            return_bools_tmp[timestep] = (min_lengths_trans[timestep] == min_len_traj)
+        return_bools.append(np.transpose(return_bools_tmp))
 
     # Shift everything such that the beginning starts at the actual start and ends accordingly
-    for traj in range(len(return_bools_transposed)):
-        if min_len_traj[traj] <= -1:
-            continue
-        vals, start, length = find_runs(return_bools_transposed[traj])
-        for i in range(len(vals)):
-            if vals[i] > 0:
-                set_start = int(start[i] - min_len_traj[traj]) # + 1
-                set_end = set_start + min_len_traj[traj] + 1 # min_len_traj[traj] + set_start
-                if length[i] > min_len_traj[traj]:
-                    set_end = set_start + length[i] + 1 # - window_size + min_len_traj[traj] + 1
-                return_bools_transposed[traj][start[i]:length[i]+start[i]] = False
-                return_bools_transposed[traj][set_start:int(set_end)] = True
+    for ens in range(len(return_bools)):
+        for traj in range(len(return_bools[ens])):
+            if min_len_traj_all[ens][traj] == -1:
+                continue
+            vals, start, length = find_runs(return_bools[ens][traj])
+            for i in range(len(vals)):
+                if vals[i] > 0:
+                    set_start = int(start[i] - min_len_traj[traj])
+                    set_end = set_start + min_len_traj[traj] + 1
 
-    return_bools = np.transpose(return_bools_transposed)
+                    if length[i] > min_len_traj[traj]:
+                        set_end = set_start + length[i] + 1
+
+                    return_bools[ens][traj][start[i]:length[i]+start[i]] = False
+                    return_bools[ens][traj][set_start:int(set_end)] = True
     return return_bools
 
 def add_norm_time(df, norm_col, group, columns=None, flag=None):
@@ -300,6 +272,7 @@ def add_turb_flux(ds):
 
 def convert_wcb2(f, store_path, fl, ensemble):
     ds = xr.open_dataset(f).to_dataframe().reset_index()
+
     ds.rename(columns={
         "id": "trajectory",
         "longitude": "lon",
@@ -323,7 +296,7 @@ def convert_wcb2(f, store_path, fl, ensemble):
     ds = ds[ds.lon != -999]
     ds = ds[ds.lat != -999]
     ds = ds[ds.z != -999]
-    ds = ds.dropna(how="any")
+    ds = ds.dropna(how="all")
 
     ds = xr.Dataset.from_dataframe(ds.set_index(["ensemble", "trajectory", "time"])) # ,
     # Set flag
@@ -440,163 +413,202 @@ def convert_wcb2(f, store_path, fl, ensemble):
         "long_name": "pressure",
         "units": "Pa",
         "positive": "down",
-        "axis": "z"}
+        "axis": "Z"}
     ds["z"].attrs = {
         "standard_name": "height",
         "long_name": "height above mean sea level",
+        "auxiliary_data": "yes",
         "units": "m AMSL"}
     ds["T"].attrs = {
         "standard_name": "air_temperature",
         "long_name": "temperature",
+        "auxiliary_data": "yes",
         "units": "K"}
     ds["S"].attrs = {
         "standard_name": "saturation",
         "long_name": "saturation",
+        "auxiliary_data": "yes",
         "units": "percentage"}
     ds["conv_400"].attrs = {
         "standard_name": "convective_400hPa_ascent",
-        "long_name": "convective 400hPa ascent"}
+        "long_name": "convective 400hPa ascent",
+        "auxiliary_data": "yes"}
     ds["conv_600"].attrs = {
         "standard_name": "convective_600hPa_ascent",
-        "long_name": "convective 600hPa ascent"}
+        "long_name": "convective 600hPa ascent",
+        "auxiliary_data": "yes"}
     ds["slan_400"].attrs = {
         "standard_name": "slantwise_400hPa_ascent",
-        "long_name": "slantwise 400hPa ascent"}
+        "long_name": "slantwise 400hPa ascent",
+        "auxiliary_data": "yes"}
     ds["slan_600"].attrs = {
         "standard_name": "slantwise_600hPa_ascent",
-        "long_name": "slantwise 600hPa ascent"}
+        "long_name": "slantwise 600hPa ascent",
+        "auxiliary_data": "yes"}
     ds["WCB_flag"].attrs = {
         "standard_name": "wcb_ascent",
-        "long_name": "WCB ascent"}
+        "long_name": "WCB ascent",
+        "auxiliary_data": "yes"}
     ds["dp2h"].attrs = {
         "standard_name": "2h_ascent_rate",
-        "long_name": "2h ascent rate"}
+        "long_name": "2h ascent rate",
+        "auxiliary_data": "yes"}
     ds["w"].attrs = {
         "standard_name": "ascend_velocity",
         "long_name": "ascend velocity",
+        "auxiliary_data": "yes",
         "units": "m s^-1"}
 
     ds["QV"].attrs = {
         "standard_name": "specific_humidity",
         "long_name": "specific humidity",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QC"].attrs = {
         "standard_name": "mass_fraction_of_cloud_liquid_water_in_air",
         "long_name": "specific cloud liquid water content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QR"].attrs = {
         "standard_name": "mass_fraction_of_rain_in_air",
         "long_name": "specific rain content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QS"].attrs = {
         "standard_name": "mass_fraction_of_snow_in_air",
         "long_name": "specific snow content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QI"].attrs = {
         "standard_name": "mass_fraction_of_cloud_ice_in_air",
         "long_name": "specific cloud ice content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
     ds["QG"].attrs = {
         "standard_name": "mass_fraction_of_graupel_in_air",
         "long_name": "specific graupel content",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1"}
 
     ds["QR_IN"].attrs = {
         "standard_name": "sedi_influx_of_rain",
         "long_name": "sedimentation (from above) of rain droplet mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QS_IN"].attrs = {
         "standard_name": "sedi_influx_of_snow",
         "long_name": "sedimentation (from above) of snow crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QI_IN"].attrs = {
         "standard_name": "sedi_influx_of_cloud_ice",
         "long_name": "sedimentation (from above) of ice crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QG_IN"].attrs = {
         "standard_name": "sedi_influx_of_graupel",
         "long_name": "sedimentation (from above) of graupel mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
 
     ds["QR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain",
         "long_name": "sedimentation of rain droplet mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow",
         "long_name": "sedimentation of snow crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QI_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_cloud_ice",
         "long_name": "sedimentation of ice crystal mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
     ds["QG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel",
         "long_name": "sedimentation of graupel mixing ratio",
+        "auxiliary_data": "yes",
         "units": "kg kg^-1 s^-1"}
 
     ds["NCCLOUD"].attrs = {
         "standard_name": "specif_number_of_cloud_droplets_in_air",
         "long_name": "specific cloud droplet number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCRAIN"].attrs = {
         "standard_name": "specif_number_of_rain_drops_in_air",
         "long_name": "specific rain drop number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCSNOW"].attrs = {
         "standard_name": "specif_number_of_snow_flakes_in_air",
         "long_name": "specific snow flake number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCICE"].attrs = {
         "standard_name": "specif_number_of_cloud_ice_in_air",
         "long_name": "specific cloud ice number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
     ds["NCGRAUPEL"].attrs = {
         "standard_name": "specif_number_of_graupel_in_air",
         "long_name": "specific graupel number",
+        "auxiliary_data": "yes",
         "units": "kg^-1"}
 
     ds["NR_IN"].attrs = {
         "standard_name": "sedi_influx_of_rain_number",
         "long_name": "sedimentation (from above) of specific rain drop number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NS_IN"].attrs = {
         "standard_name": "sedi_influx_of_snow_number",
         "long_name": "sedimentation (from above) of specific snow flake number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NI_IN"].attrs = {
         "standard_name": "sedi_influx_of_ics_number",
         "long_name": "sedimentation (from above) of specific cloud ice number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NG_IN"].attrs = {
         "standard_name": "sedi_influx_of_graupel_number",
         "long_name": "sedimentation (from above) of specific graupel number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
 
     ds["NR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain_number",
         "long_name": "sedimentation of rain droplet number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow_number",
         "long_name": "sedimentation of snow crystal number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NI_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_ice_number",
         "long_name": "sedimentation of ice crystal number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["NG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel_number",
         "long_name": "sedimentation of graupel number",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
 
     ds["Q_TURBULENCE"].attrs = {
         "standard_name": "turbulence_flux",
         "long_name": "flux from turbulence",
+        "auxiliary_data": "yes",
         "units": "kg^-1 s^-1"}
     ds["type"].attrs = {
         "standard_name": "trajectory_type",
-        "long_name": "trajectory type"}
+        "long_name": "trajectory type",
+        "auxiliary_data": "yes"}
 
     comp = dict(zlib=True, complevel=9)
     encoding = {var: comp for var in ds.data_vars}
@@ -608,13 +620,29 @@ def convert_wcb2(f, store_path, fl, ensemble):
         format="NETCDF4",
         mode="w")
 
-for flag in ["conv_400", "conv_600", "slan_400"]:
-    print(f"#################### {flag} ######################")
-    for i in pb.progressbar(range(len(file_list)), redirect_stdout=True):
-        convert_wcb2(
-            f = file_list[i],
-            store_path=store_path + flag + "_" + str(i) + "_" + file_list[i].split("/")[-1],
-            fl=flag,
-            ensemble=i)
-    #     break
-    # break
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1:
+        path = sys.argv[1]
+    if len(sys.argv) > 2:
+        store_path = sys.argv[2]
+        if store_path[-1] != "/":
+            store_path += "/"
+    if len(sys.argv) > 3:
+        flags = [sys.argv[3]]
+    else:
+        flags = ["conv_400", "conv_600", "slan_400", "slan_600"]
+    file_list = []
+    for f in os.listdir(path):
+        if ".nc_wcb" in f:
+            file_list.append(os.path.join(path, f))
+    file_list = np.sort(file_list)
+    for flag in flags:
+        print(f"#################### {flag} ######################")
+        for i in pb.progressbar(range(len(file_list)), redirect_stdout=True):
+            convert_wcb2(
+                f = file_list[i],
+                store_path=store_path + flag + "_" + str(i) + "_" + file_list[i].split("/")[-1],
+                fl=flag,
+                ensemble=i)
+

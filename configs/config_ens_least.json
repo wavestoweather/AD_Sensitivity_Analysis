@@ -1,0 +1,270 @@
+{
+    "segments": [
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "k_sc",
+                    "sigma_perc": 10,
+                    "type": "cloud",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "a_vel",
+                    "sigma_perc": 10,
+                    "type": "cloud",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "k_au",
+                    "sigma_perc": 10,
+                    "type": "cloud",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "gamma",
+                    "sigma_perc": 10,
+                    "type": "rain",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "c_z",
+                    "sigma_perc": 10,
+                    "type": "rain",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "cmu2",
+                    "sigma_perc": 10,
+                    "type": "rain",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "cmu3",
+                    "sigma_perc": 10,
+                    "type": "rain",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "C_mult",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "na_orga",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "na_soot",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "d_ccn_4",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "d_ccn_1",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "b_HET",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "a_ccn_1",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "a_ccn_4",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "const0",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "na_dust",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "ecoll_gg_wet",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        },
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 129,
+            "params": [
+                {
+                    "name": "k_1_conv",
+                    "sigma_perc": 10,
+                    "type": "model",
+                    "rand_func": "uniform"
+                }
+            ]
+        }
+    ]
+}

@@ -3,7 +3,7 @@
 
 #include "codi.hpp"
 #include <cmath>
-#include "types.h"
+#include <random>
 
 /** @defgroup constants Constants
  * Various constants for accessing data in the right order and model constants
@@ -49,12 +49,12 @@
 #define sub_idx 32          /*!< Sublimination number */
 
 #if defined(RK4_ONE_MOMENT)
-#define num_comp 9         /*!< Number of output elements of a model */
+#define num_comp 9          /*!< Number of output elements of a model */
 #define num_par 12          /*!< Number of gradients */
 
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
-#define num_par 56*6+17     /*!< Number of gradients */
+#define num_par 56*6+124    /*!< Number of gradients. 56 for each particle + model constants */
 
 #endif
 
@@ -67,7 +67,19 @@
 #define Ns_in_idx 5         /*!< Snow input index for another vector */
 #define Nr_in_idx 6         /*!< Rain input index for another vector */
 #define Ng_in_idx 7         /*!< Graupel input index for another vector */
+#if defined MET3D && defined TURBULENCE
+#define qv_in_idx 8         /*!< Vapor input index for another vector */
+#define num_inflows 9       /*!< Number of parameters for inflowing stuff */
+#else
 #define num_inflows 8       /*!< Number of parameters for inflowing stuff */
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// Random generators
+////////////////////////////////////////////////////////////////////////////////
+
+std::random_device rand_device{};
+std::mt19937 rand_generator{rand_device()};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -76,8 +88,8 @@
 #if defined(TRACE_TIME)
 // Relative to ascent time
 double trace_time = 0;
-const double trace_start = 4400;
-const double trace_end = 4800;
+const double trace_start = -1000;
+const double trace_end = 3500;
 bool trace = false;
 #else
 bool trace = true;
@@ -121,7 +133,33 @@ const std::vector<std::string> output_par_idx =
 const std::vector<std::string> output_grad_idx =
     {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
     "dbeta_r", "ddelta1", "ddelta2", "dzeta", "drain_gfak", "dcloud_k_au",
-    "dcloud_k_sc", "dkc_autocon", "dinv_z",
+    "dcloud_k_sc", "dkc_autocon", "dinv_z", "dw",
+    "dq_crit_i", "dD_crit_i", "dD_conv_i", "dq_crit_r",
+    "dD_crit_r", "dq_crit_fr", "dD_coll_c", "dq_crit",
+    "dD_conv_sg", "dD_conv_ig", "dx_conv", "dparcel_height",
+    "dalpha_spacefilling", "dT_nuc", "dT_freeze", "dT_f",
+    "dD_eq", "drho_w", "drho_0", "drho_vel",
+    "drho_vel_c", "drho_ice", "dM_w", "dM_a",
+    "dR_universal", "dEpsilon", "dgravity_acc", "dR_a",
+    "dR_v", "da_v", "db_v", "da_prime",
+    "db_prime", "dc_prime", "dK_T", "dL_wd",
+    "dL_ed", "dD_v", "decoll_min", "decoll_gg",
+    "decoll_gg_wet", "dkin_visc_air", "dC_mult", "dT_mult_min",
+    "dT_mult_max", "dT_mult_opt", "dconst0", "dconst3",
+    "dconst4", "dconst5", "dD_rainfrz_gh", "dD_rainfrz_ig", "ddv0",
+    "dp_sat_melt", "dcp", "dk_b", "da_HET",
+    "db_HET", "dN_sc", "dn_f", "dN_avo",
+    "dna_dust", "dna_soot", "dna_orga", "dni_het_max",
+    "dni_hom_max", "da_dep", "db_dep", "dc_dep",
+    "dd_dep", "dnim_imm", "dnin_dep", "dalf_imm",
+    "dbet_dep", "dbet_imm", "dr_const", "dr1_const",
+    "dcv", "dp_sat_const_a", "dp_sat_ice_const_a", "dp_sat_const_b",
+    "dp_sat_ice_const_b", "dp_sat_low_temp", "dT_sat_low_temp", "dalpha_depo",
+    "dr_0", "dk_1_conv", "dk_2_conv", "dk_1_accr",
+    "dk_r", "da_ccn_1", "da_ccn_2", "da_ccn_3", "da_ccn_4",
+    "db_ccn_1", "db_ccn_2", "db_ccn_3", "db_ccn_4",
+    "dc_ccn_1", "dc_ccn_2", "dc_ccn_3", "dc_ccn_4",
+    "dd_ccn_1", "dd_ccn_2", "dd_ccn_3", "dd_ccn_4",
     // Rain
     "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_min_x_act",
     "drain_min_x_nuc_homo", "drain_min_x_nuc_hetero", "drain_min_x_melt",
@@ -222,6 +260,905 @@ const std::vector<std::string> output_grad_idx =
     "dsnow_b_f", "dsnow_alfa_n", "dsnow_alfa_q", "dsnow_lambda",
     "dsnow_vsedi_min", "dsnow_vsedi_max"};
 #endif
+/**
+ * Descriptions for every parameter used in the output netCDF file.
+ */
+const std::vector<std::string> output_grad_descr =
+    {"Dimensional coefficient used in one-moment warm physics for qc and qr calculation",
+    "Dimensional coefficient used in one-moment warm physics for qc and qr calculation",
+    "Dimensional coefficients used in one-moment warm physics for temperature calculation",
+    "Dimensional coefficients used in one-moment warm physics for temperature calculation",
+    "Dimensional coefficient used in one-moment warm physics qr calculation for sedimentation",
+    "Number concentration of cloud droplets needed for one-moment scheme",
+    "Exponent used in one-moment warm physics for qc and qr calculation",
+    "Exponent used in one-moment warm physics for qc and qr calculation",
+    "Exponent used in one-moment warm physics for qc and qr calculation",
+    "Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation",
+    "Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation",
+    "Exponents used in one-moment warm physics for qr calculation",
+    "Coefficient for gamma evaluation in rain evaporation",
+    "Coefficient for autoconversion of cloud to rain",
+    "Coefficient for autoconversion of cloud to rain",
+    "Kernel for autoconversion",
+    "Inverse of air parcel size (height) used in explicit sedimentation",
+    "Change in buoancy",
+    "Treshold (ratio mass) for ice selfcollection",
+    "Treshold (diameter) for ice selfcollection",
+    "Threshold (diameter) for ice conversion in selfcollection",
+    "Threshold (ratio mass) for ice rain riming and snow rain riming",
+    "Threshold (diameter) for ice rain riming and snow rain riming",
+    "Threshold (ratio mass) for rain freeze and cloud water",
+    "Upper bound for diameter in collision efficiency",
+    "Default threshold (ratio mass)",
+    "Threshold (diameter) for conversion snow to graupel, ice to graupel",
+    "Threshold (diameter) for conversion snow to graupel, ice to graupel",
+    "Minimum mass of conversion due to riming",
+    "Height of the trajectory package",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Molar mass of water",
+    "Molar mass of dry air",
+    "Universal gas constant",
+    "Quotient of the individual gas constants",
+    "Gravitational acceleration",
+    "Gas constant for dry air",
+    "Gas constant for water vapor",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Heat conductivity of air",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Kinematic viscosity of dry air",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Diffusivity of water vapor in air at $0^\\circ	ext{C}$",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Parameter for saturation adjustment. Constant saturated water vapor pressure",
+    "Parameter for saturation adjustment. Constant saturated ice pressure",
+    "Parameter for saturation adjustment. Constant saturated water vapor pressure",
+    "Parameter for saturation adjustment. Constant saturated ice pressure",
+    "Parameter for saturation adjustment. Saturated water vapor pressure at $T = 233$K",
+    "Parameter for saturation adjustment",
+    "Depostion coefficient for homogeneous ice nucleation",
+    "Aerosol particle radius prior to freezing used in homogeneous nucleation",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Coefficient for diameter size calculation",
+    "Exponent for diameter size calculation",
+    "Minimum size of the particle used in one-moment schemes",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Minimum size of particle for evaporation",
+    "Minimum size of particle for freezing",
+    "Not used",
+    "Not used",
+    "Minimum size of particle for different collision processes",
+    "Not used",
+    "Minimum size of particle for sedimentation",
+    "Minimum size of particle for riming",
+    "Maximum size of particle",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Coefficient for particle velocity",
+    "Exponent for particle velocity",
+    "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
+    "Coefficient for 2nd mass moment",
+    "Not used",
+    "Coefficient for calculating the shape parameter $\\mu$",
+    "Coefficient for calculating the shape parameter $\\mu$",
+    "Coefficient for calculating the shape parameter $\\mu$",
+    "Constant for calculating the shape parameter $\\mu$",
+    "Constant for calculating the shape parameter $\\mu$",
+    "Exponent for calculating the shape parameter $\\mu$",
+    "Constant in rain sedimentation",
+    "Coefficient for rain sedimentation",
+    "Exponent for rain sedimentation",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Right edge of incomplete gamma function,  which had been initialized with $\\text{nm}_1$",
+    "Right edge of incomplete gamma function,  which had been initialized with $\\text{nm}_2$",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Number of bins of the incomplete gamma function lookup table 1",
+    "Number of bins of the incomplete gamma function lookup table 2",
+    "Number of bins of the incomplete gamma function lookup table 3",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Coefficient for capacity of particle",
+    "Not used",
+    "Not used",
+    "Inverse of capacity. Coefficient in evaporation and vapor deposition",
+    "Constant for average ventilation. Used in melting and ice-vapor processes.",
+    "Coefficient for average ventilation",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Coefficient for diameter size calculation",
+    "Exponent for diameter size calculation",
+    "Minimum size of the particle used in one-moment schemes",
+    "Minimum size of particle for",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Minimum size of particle for freezing",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Minimum size of particle for conversion processes",
+    "Not used",
+    "Minimum size of particle for riming",
+    "Maximum size of particle",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Coefficient for particle velocity",
+    "Exponent for particle velocity",
+    "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
+    "Coefficient for 2nd mass moment",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Not used",
+    "Not used",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Coefficient for capacity of particle",
+    "Not used",
+    "Not used",
+    "Inverse of capacity. Coefficient in evaporation and vapor deposition",
+    "Constant for average ventilation. Used in melting and ice-vapor processes.",
+    "Coefficient for average ventilation",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Coefficient for diameter size calculation",
+    "Exponent for diameter size calculation",
+    "Minimum size of the particle used in one-moment schemes",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Minimum size of particle for melting",
+    "Minimum size of particle for evaporation",
+    "Not used",
+    "Minimum size of particle for vapor deposition",
+    "Not used",
+    "Minimum size of particle for different collision processes",
+    "Minimum size of particle for conversion processes",
+    "Minimum size of particle for sedimentation",
+    "Minimum size of particle for riming",
+    "Maximum size of particle",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Variance for the assumed Gaussian velocity distributions used in collection and riming processes",
+    "Coefficient for particle velocity",
+    "Exponent for particle velocity",
+    "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
+    "Coefficient for 2nd mass moment",
+    "Coefficient in graupel self collection and cloud riming",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Right edge of incomplete gamma function,  which had been initialized with $\\text{nm}_1$",
+    "Right edge of incomplete gamma function,  which had been initialized with $\\text{nm}_2$",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Number of bins of the incomplete gamma function lookup table 1",
+    "Number of bins of the incomplete gamma function lookup table 2",
+    "Not used",
+    "Riming parameter",
+    "Riming parameter",
+    "Riming coefficient. Maximum collision efficiency with cloud droplets",
+    "Coefficient for capacity of particle",
+    "Vapor deposition coefficient",
+    "Not used",
+    "Inverse of capacity. Coefficient in evaporation and vapor deposition",
+    "Constant for average ventilation. Used in melting and ice-vapor processes.",
+    "Coefficient for average ventilation",
+    "Sedimentation velocity coefficient",
+    "Sedimentation velocity coefficient",
+    "Sedimentation velocity coefficient",
+    "Minimum sedimentation velocity parameter",
+    "Maximum sedimentation velocity parameter",
+    "Coefficient for diameter size calculation",
+    "Exponent for diameter size calculation",
+    "Minimum size of the particle used in one-moment schemes",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Minimum size of particle for melting",
+    "Not used",
+    "Not used",
+    "Minimum size of particle for vapor deposition",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Minimum size of particle for sedimentation",
+    "Minimum size of particle for riming",
+    "Maximum size of particle",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Variance for the assumed Gaussian velocity distributions used in collection and riming processes",
+    "Coefficient for particle velocity",
+    "Exponent for particle velocity",
+    "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
+    "Coefficient for 2nd mass moment",
+    "Coefficient in graupel self collection and cloud riming",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Not used",
+    "Not used",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Riming parameter",
+    "Riming parameter",
+    "Riming coefficient. Maximum collision efficiency with cloud droplets",
+    "Coefficient for capacity of particle",
+    "Vapor deposition coefficient",
+    "Not used",
+    "Inverse of capacity. Coefficient in evaporation and vapor deposition",
+    "Constant for average ventilation. Used in melting and ice-vapor processes.",
+    "Coefficient for average ventilation",
+    "Sedimentation velocity coefficient",
+    "Sedimentation velocity coefficient",
+    "Sedimentation velocity coefficient",
+    "Minimum sedimentation velocity parameter",
+    "Maximum sedimentation velocity parameter",
+    "Coefficient for diameter size calculation",
+    "Exponent for diameter size calculation",
+    "Minimum size of the particle used in one-moment schemes",
+    "Minimum size of particle for ice activation",
+    "Minimum size of particle for homogenous nucleation",
+    "Minimum size of particle for heterogeneous nucleation",
+    "Minimum size of particle for melting",
+    "Minimum size of particle for evaporation",
+    "Not used",
+    "Minimum size of particle for vapor deposition",
+    "Minimum size of particle for ice-ice collision",
+    "Minimum size of particle for different collision processes",
+    "Minimum size of particle for conversion processes",
+    "Minimum size of particle for sedimentation",
+    "Minimum size of particle for riming",
+    "Maximum size of particle",
+    "Not used",
+    "Not used",
+    "Coefficient for collision particle number",
+    "Coefficient for collision particle number",
+    "Variance for the assumed Gaussian velocity distributions used in collection and riming processes",
+    "Coefficient for particle velocity",
+    "Exponent for particle velocity",
+    "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
+    "Coefficient for 2nd mass moment",
+    "Coefficient in graupel self collection and cloud riming",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Not used",
+    "Not used",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Riming parameter",
+    "Riming parameter",
+    "Riming coefficient. Maximum collision efficiency with cloud droplets",
+    "Coefficient for capacity of particle",
+    "Vapor deposition coefficient",
+    "Not used",
+    "Inverse of capacity. Coefficient in evaporation and vapor deposition",
+    "Constant for average ventilation. Used in melting and ice-vapor processes.",
+    "Coefficient for average ventilation",
+    "Sedimentation velocity coefficient",
+    "Sedimentation velocity coefficient",
+    "Sedimentation velocity coefficient",
+    "Minimum sedimentation velocity parameter",
+    "Maximum sedimentation velocity parameter",
+    "Coefficient for diameter size calculation",
+    "Exponent for diameter size calculation",
+    "Minimum size of the particle used in one-moment schemes",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Minimum size of particle for melting",
+    "Minimum size of particle for evaporation",
+    "Not used",
+    "Minimum size of particle for vapor deposition",
+    "Not used",
+    "Minimum size of particle for different collision processes",
+    "Not used",
+    "Minimum size of particle for sedimentation",
+    "Minimum size of particle for riming",
+    "Maximum size of particle",
+    "Not used",
+    "Not used",
+    "Coefficient for collision particle number",
+    "Coefficient for collision particle number",
+    "Variance for the assumed Gaussian velocity distributions used in collection and riming processes",
+    "Coefficient for particle velocity",
+    "Exponent for particle velocity",
+    "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
+    "Coefficient for 2nd mass moment",
+    "Coefficient in graupel self collection and cloud riming",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Not used",
+    "Not used",
+    "Shape parameter of the generalized $\\Gamma$-distribution",
+    "Not used",
+    "Not used",
+    "Not used",
+    "Riming parameter",
+    "Riming parameter",
+    "Riming coefficient. Maximum collision efficiency with cloud droplets",
+    "Coefficient for capacity of particle",
+    "Vapor deposition coefficient",
+    "Not used",
+    "Inverse of capacity. Coefficient in evaporation and vapor deposition",
+    "Constant for average ventilation. Used in melting and ice-vapor processes.",
+    "Coefficient for average ventilation",
+    "Sedimentation velocity coefficient",
+    "Sedimentation velocity coefficient",
+    "Sedimentation velocity coefficient",
+    "Minimum sedimentation velocity parameter",
+    "Maximum sedimentation velocity parameter"};
+
+enum class Cons_idx: uint32_t{
+    a1_prime,   /*!< Dimensional coefficient used in one-moment warm physics for qc and qr calculation */
+    a2_prime,   /*!< Dimensional coefficient used in one-moment warm physics for qc and qr calculation */
+    e1_prime,   /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
+    e2_prime,   /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
+    d_prime,    /*!< Dimensional coefficient used in one-moment warm physics qr calculation for sedimentation*/
+
+    gamma,      /*!< Exponent used in one-moment warm physics for qc and qr calculation */
+    betac,      /*!< Exponent used in one-moment warm physics for qc and qr calculation */
+    betar,      /*!< Exponent used in one-moment warm physics for qc and qr calculation */
+    delta1,     /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
+    delta2,     /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
+    zeta,       /*!< Exponents used in one-moment warm physics for qr calculation */
+    Nc_prime,   /*!< Number concentration of cloud droplets needed for one-moment scheme */
+#if defined(RK4ICE) || defined(RK4NOICE)
+    rain_gfak,  /*!< Coefficient for gamma evaluation in rain evaporation */
+    cloud_k_au, /*!< Coefficient for autoconversion of cloud to rain */
+    cloud_k_sc, /*!< Coefficient for autoconversion of cloud to rain */
+    kc_autocon, /*!< Kernel for autoconversion */
+    /**
+     * Inverse layer thickness. Used for sedimentation.
+     * In Miltenberger (2016) the trajectories start every \f$100 \text{m}\f$
+     * between the surface and \f$4 \text{km}\f$ altitude using COSMO-2, which
+     * uses a mean spacing of \f$388 \text{m}\f$
+     * with \f$13 \text{m}\f$ close to the surface and \f$1190 \text{m}\f$
+     * at \f$23 \text{km}\f$.
+     */
+    inv_z,
+
+    dw, /*!< Change in buoancy */
+    q_crit_i,
+    D_crit_i,
+    D_conv_i,
+    q_crit_r,
+    D_crit_r,
+    q_crit_fr,
+    D_coll_c,
+    q_crit,
+    D_conv_sg,
+    D_conv_ig,
+    x_conv,
+    parcel_height,
+    alpha_spacefilling,
+    T_nuc,
+    T_freeze,
+    T_f,
+    D_eq,
+    rho_w,
+    rho_0,
+    rho_vel,
+    rho_vel_c,
+    rho_ice,
+    M_w,
+    M_a,
+    R_universal,
+    Epsilon,
+    gravity_acc,
+    R_a,
+    R_v,
+    a_v,
+    b_v,
+    a_prime,
+    b_prime,
+    c_prime,
+    K_T,
+    L_wd,
+    L_ed,
+    D_v,
+    ecoll_min,
+    ecoll_gg,
+    ecoll_gg_wet,
+    kin_visc_air,
+    C_mult,
+    T_mult_min,
+    T_mult_max,
+    T_mult_opt,
+
+    /**
+     * Constant used in cloud riming.
+     */
+    const0,
+    /**
+     * Hallet-Mossop ice multiplication.
+     * Constant used in ice - x and snow - x riming.
+     */
+    const3,
+    /**
+     * Hallet-Mossop ice multiplication.
+     * Constant used in ice - x and snow - x riming.
+     */
+    const4,
+    /**
+     * Constant for conversions ice -> graupel, snow -> graupel,
+     * melting (used in riming).
+     */
+    const5,
+    D_rainfrz_gh,
+    D_rainfrz_ig,
+    dv0,
+    p_sat_melt,
+    cp,
+    k_b,
+    a_HET,
+    b_HET,
+    N_sc,
+    n_f,
+    N_avo,
+    na_dust,
+    na_soot,
+    na_orga,
+    ni_het_max,
+    ni_hom_max,
+    a_dep,
+    b_dep,
+    c_dep,
+    d_dep,
+    nim_imm,
+    nin_dep,
+    alf_imm,
+    bet_dep,
+    bet_imm,
+    r_const,
+    r1_const,
+    cv,
+    p_sat_const_a,
+    p_sat_ice_const_a,
+    p_sat_const_b,
+    p_sat_ice_const_b,
+    p_sat_low_temp,
+    T_sat_low_temp,
+    alpha_depo,
+    r_0,
+    k_1_conv,
+    k_2_conv,
+    k_1_accr,
+    k_r,
+    a_ccn_1, a_ccn_2, a_ccn_3, a_ccn_4,
+    b_ccn_1, b_ccn_2, b_ccn_3, b_ccn_4,
+    c_ccn_1, c_ccn_2, c_ccn_3, c_ccn_4,
+    d_ccn_1, d_ccn_2, d_ccn_3, d_ccn_4,
+#endif
+    n_items
+};
+
+/**
+ * Mapping of json configuration names to parameters in a model_constants_t
+ */
+std::unordered_map<std::string, Cons_idx> const table_param = {
+    {"a_1", Cons_idx::a1_prime}, {"a_2", Cons_idx::a2_prime},
+    {"e_1", Cons_idx::e1_prime}, {"e_2", Cons_idx::e2_prime},
+    {"d", Cons_idx::d_prime}, {"N_c", Cons_idx::Nc_prime},
+    {"gamma", Cons_idx::gamma}, {"beta_c", Cons_idx::betac},
+    {"beta_r", Cons_idx::betar}, {"delta1", Cons_idx::delta1},
+    {"delta2", Cons_idx::delta2}, {"zeta", Cons_idx::zeta},
+    {"rain_gfak", Cons_idx::rain_gfak}, {"cloud_k_au", Cons_idx::cloud_k_au},
+    {"cloud_k_sc", Cons_idx::cloud_k_sc}, {"kc_autocon", Cons_idx::kc_autocon},
+    {"inv_z", Cons_idx::inv_z}, {"dw", Cons_idx::dw},
+    {"q_crit_i", Cons_idx::q_crit_i}, {"D_crit_i", Cons_idx::D_crit_i},
+    {"D_conv_i", Cons_idx::D_conv_i}, {"q_crit_r", Cons_idx::q_crit_r},
+    {"D_crit_r", Cons_idx::D_crit_r}, {"q_crit_fr", Cons_idx::q_crit_fr},
+    {"D_coll_c", Cons_idx::D_coll_c}, {"q_crit", Cons_idx::q_crit},
+    {"D_conv_sg", Cons_idx::D_conv_sg}, {"D_conv_ig", Cons_idx::D_conv_ig},
+    {"x_conv", Cons_idx::x_conv}, {"parcel_height", Cons_idx::parcel_height},
+    {"alpha_spacefilling", Cons_idx::alpha_spacefilling}, {"T_nuc", Cons_idx::T_nuc},
+    {"T_freeze", Cons_idx::T_freeze}, {"T_f", Cons_idx::T_f},
+    {"D_eq", Cons_idx::D_eq}, {"rho_w", Cons_idx::rho_w},
+    {"rho_0", Cons_idx::rho_0}, {"rho_vel", Cons_idx::rho_vel},
+    {"rho_vel_c", Cons_idx::rho_vel_c}, {"rho_ice", Cons_idx::rho_ice},
+    {"M_w", Cons_idx::M_w}, {"M_a", Cons_idx::M_a},
+    {"R_universal", Cons_idx::R_universal}, {"Epsilon", Cons_idx::Epsilon},
+    {"gravity_acc", Cons_idx::gravity_acc}, {"R_a", Cons_idx::R_a},
+    {"R_v", Cons_idx::R_v}, {"a_v", Cons_idx::a_v},
+    {"b_v", Cons_idx::b_v}, {"a_prime", Cons_idx::a_prime},
+    {"b_prime", Cons_idx::b_prime}, {"c_prime", Cons_idx::c_prime},
+    {"K_T", Cons_idx::K_T}, {"L_wd", Cons_idx::L_wd},
+    {"L_ed", Cons_idx::L_ed}, {"D_v", Cons_idx::D_v},
+    {"ecoll_min", Cons_idx::ecoll_min}, {"ecoll_gg", Cons_idx::ecoll_gg},
+    {"ecoll_gg_wet", Cons_idx::ecoll_gg_wet}, {"kin_visc_air", Cons_idx::kin_visc_air},
+    {"C_mult", Cons_idx::C_mult}, {"T_mult_min", Cons_idx::T_mult_min},
+    {"T_mult_max", Cons_idx::T_mult_max}, {"T_mult_opt", Cons_idx::T_mult_opt},
+    {"const0", Cons_idx::const0}, {"const3", Cons_idx::const3},
+    {"const4", Cons_idx::const4}, {"const5", Cons_idx::const5},
+    {"D_rainfrz_ig", Cons_idx::D_rainfrz_ig}, {"dv0", Cons_idx::dv0},
+    {"p_sat_melt", Cons_idx::p_sat_melt}, {"cp", Cons_idx::cp},
+    {"k_b", Cons_idx::k_b}, {"a_HET", Cons_idx::a_HET},
+    {"b_HET", Cons_idx::b_HET}, {"N_sc", Cons_idx::N_sc},
+    {"n_f", Cons_idx::n_f}, {"N_avo", Cons_idx::N_avo},
+    {"na_dust", Cons_idx::na_dust}, {"na_soot", Cons_idx::na_soot},
+    {"na_orga", Cons_idx::na_orga}, {"ni_het_max", Cons_idx::ni_het_max},
+    {"ni_hom_max", Cons_idx::ni_hom_max}, {"a_dep", Cons_idx::a_dep},
+    {"b_dep", Cons_idx::b_dep}, {"c_dep", Cons_idx::c_dep},
+    {"d_dep", Cons_idx::d_dep}, {"nim_imm", Cons_idx::nim_imm},
+    {"nin_dep", Cons_idx::nin_dep}, {"alf_imm", Cons_idx::alf_imm},
+    {"bet_dep", Cons_idx::bet_dep}, {"bet_imm", Cons_idx::bet_imm},
+    {"r_const", Cons_idx::r_const}, {"r1_const", Cons_idx::r1_const},
+    {"cv", Cons_idx::cv}, {"p_sat_const_a", Cons_idx::p_sat_const_a},
+    {"p_sat_ice_const_a", Cons_idx::p_sat_ice_const_a}, {"p_sat_const_b", Cons_idx::p_sat_const_b},
+    {"p_sat_ice_const_b", Cons_idx::p_sat_ice_const_b}, {"p_sat_low_temp", Cons_idx::p_sat_low_temp},
+    {"T_sat_low_temp", Cons_idx::T_sat_low_temp}, {"alpha_depo", Cons_idx::alpha_depo},
+    {"r_0", Cons_idx::r_0}, {"k_1_conv", Cons_idx::k_1_conv},
+    {"k_2_conv", Cons_idx::k_2_conv}, {"k_1_accr", Cons_idx::k_1_accr},
+    {"k_r", Cons_idx::k_r},
+#if defined(RK4ICE) || defined(RK4NOICE)
+    {"a_ccn_1", Cons_idx::a_ccn_1}, {"a_ccn_2", Cons_idx::a_ccn_2},
+    {"a_ccn_3", Cons_idx::a_ccn_3}, {"a_ccn_4", Cons_idx::a_ccn_4},
+    {"b_ccn_1", Cons_idx::b_ccn_1}, {"b_ccn_2", Cons_idx::b_ccn_2},
+    {"b_ccn_3", Cons_idx::b_ccn_3}, {"b_ccn_4", Cons_idx::b_ccn_4},
+    {"c_ccn_1", Cons_idx::c_ccn_1}, {"c_ccn_2", Cons_idx::c_ccn_2},
+    {"c_ccn_3", Cons_idx::c_ccn_3}, {"c_ccn_4", Cons_idx::c_ccn_4},
+    {"d_ccn_1", Cons_idx::d_ccn_1}, {"d_ccn_2", Cons_idx::d_ccn_2},
+    {"d_ccn_3", Cons_idx::d_ccn_3}, {"d_ccn_4", Cons_idx::d_ccn_4}
+#endif
+};
+
+enum class Particle_cons_idx: uint32_t{
+    /**
+     * Geometry coefficients.
+     */
+    a_geo, /*!< Coefficient for diameter size calculation */
+    b_geo, /*!< Exponent for diameter size calculation */
+
+    /**
+     * Minimum size of particle for mean meass calculation.
+     */
+    min_x,
+    /**
+     * Minimum size of particle for CCN activation (cloud) and
+     * ice activation (ice).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_act,
+    /**
+     * Minimum size of particle for homogenous nucleation (ice).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_nuc_homo,
+    /**
+     * Minimum size of particle for heterogeneous nucleation (ice).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_nuc_hetero,
+    /**
+     * Minimum size of particle for melting (snow, graupel, ice, hail).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_melt,
+    /**
+     * Minimum size of particle for evaporation (rain, snow, graupel, ice).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_evap,
+    /**
+     * Minimum size of particle for freezing (rain, cloud).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_freezing,
+    /**
+     * Minimum size of particle for vapor deposition (ice, snow, graupel, hail).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_depo,
+    /**
+     * Minimum size of particle for ice-ice collision.
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_collision,
+    /**
+     * Minimum size of particle for different collision processes
+     * (snow, rain, ice, snow, graupel).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_collection,
+    /**
+     * Minimum size of particle for conversion processes (cloud, graupel, ice).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_conversion,
+    /**
+     * Minimum size of particle for sedimentation (rain, ice, snow, graupel, hail).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_sedimentation,
+    /**
+     * Minimum size of particle for riming (cloud, rain, ice, snow, hail, graupel).
+     * *Should* be the same as min_x but is used to distinguish the
+     * influence of those processes.
+     */
+    min_x_riming,
+
+    max_x, /*!< Maximum size of particle. */
+    sc_theta_q, /*!< Coefficient for ice collision ratio mass. */
+    sc_delta_q, /*!< Coefficient for ice collision ratio mass. */
+    sc_theta_n, /*!< Coefficient for collision particle number (ice, snow). */
+    sc_delta_n, /*!< Coefficient for collision particle number (ice, snow). */
+    /**
+     * Variance for the assumed Gaussian velocity distributions used in collection and riming processes.
+     */
+    s_vel,
+    a_vel,    /*!< Coefficient for particle velocity. */
+    b_vel,    /*!< Exponent for particle velocity. */
+    /**
+     * Coefficient used in density correction for the increased terminal
+     * fall velocity with decreasing air density.
+     * \f[ \rho_v = (\rho/\rho_0)^{-\rho_{\text{vel}}} \f]
+     */
+    rho_v,
+    c_z, /*!< Coefficient for 2nd mass moment. */
+    sc_coll_n,    /*!< Coefficient in graupel self collection and cloud riming. */
+    cmu0, /*!< Coefficient for calculating the shape parameter \f$\mu\f$. */
+    cmu1, /*!< Coefficient for calculating the shape parameter \f$\mu\f$. */
+    cmu2, /*!< Coefficient for calculating the shape parameter \f$\mu\f$. */
+    cmu3, /*!< Constant for calculating the shape parameter \f$\mu\f$. */
+    cmu4, /*!< Constant for calculating the shape parameter \f$\mu\f$. */
+    cmu5, /*!< Exponent for calculating the shape parameter \f$\mu\f$. */
+    alpha, /*!< Constant in rain sedimentation. */
+    beta, /*!< Coefficient for rain sedimentation. */
+    gamma, /*!< Exponent for rain sedimentation. */
+    /**
+     * Right edge of incomplete gamma function,
+     * which had been initialized with \f[\text{nm}_1\f].
+     */
+    g1,
+    /**
+     * Right edge of incomplete gamma function,
+     * which had been initialized with \f[\text{nm}_2\f].
+     */
+    g2,
+    /**
+     * Shape parameter of the generalized \f$\Gamma$\f-distribution.
+     */
+    mu,
+    /**
+     * Shape parameter of the generalized \f$\Gamma$\f-distribution.
+     * i.e. used in rain sedimentation as coefficient.
+     */
+    nu,
+    /**
+     * Used for initializing the incomplete
+     * gamma function lookup table 1.
+     * Number of bins.
+     */
+    nm1,
+    /**
+     * Used for initializing the incomplete
+     * gamma function lookup table 2.
+     * Number of bins.
+     */
+    nm2,
+    /**
+     * Used for initializing the incomplete
+     * gamma function lookup table 3.
+     * Number of bins.
+     */
+    nm3,
+
+    q_crit_c, /*!<  Riming parameter. */
+    d_crit_c, /*!<  Riming parameter. */
+    ecoll_c,  /*!<  Riming coefficient. */
+    /**
+     * Coefficient for capacity of particle.
+     */
+    cap,
+    a_ven,    /*!< Vapor deposition coefficient. */
+    b_ven,    /*!< Currently unused parameter. */
+
+    c_s,  /*!< Inverse of capacity. Coefficient in evaporation and vapor deposition. */
+    a_f, /*!< Constant for average ventilation. Used in melting and ice-vapor processes. */
+    b_f, /*!< Coefficient for average ventilation. */
+
+    alfa_n,       /*!<  Sedimentation velocity coefficient. */
+    alfa_q,       /*!<  Sedimentation velocity coefficient. */
+    lambda,       /*!<  Sedimentation velocity coefficient. */
+    vsedi_min,    /*!<  Minimum sedimentation velocity parameter. */
+    vsedi_max,    /*!<  Maximum sedimentation velocity parameter. */
+    n_items
+};
+
+template<
+    class float_t,
+    class enum_t>
+inline float_t get_at(std::vector<float_t> vec, enum_t idx)
+{
+    return vec[static_cast<int>(idx)];
+};
+
+/**
+ * Mapping of json configuration names to parameters in a particle_model_constants_t
+ */
+std::unordered_map<std::string, Particle_cons_idx> const table_particle_param = {
+    {"a_geo", Particle_cons_idx::a_geo},
+    {"b_geo", Particle_cons_idx::b_geo}, {"min_x", Particle_cons_idx::min_x},
+    {"min_x_act", Particle_cons_idx::min_x_act}, {"min_x_nuc_homo", Particle_cons_idx::min_x_nuc_homo},
+    {"min_x_nuc_hetero", Particle_cons_idx::min_x_nuc_hetero}, {"min_x_melt", Particle_cons_idx::min_x_melt},
+    {"min_x_evap", Particle_cons_idx::min_x_evap}, {"min_x_freezing", Particle_cons_idx::min_x_freezing},
+    {"min_x_depo", Particle_cons_idx::min_x_depo}, {"min_x_collision", Particle_cons_idx::min_x_collision},
+    {"min_x_collection", Particle_cons_idx::min_x_collection}, {"min_x_conversion", Particle_cons_idx::min_x_conversion},
+    {"min_x_sedimentation", Particle_cons_idx::min_x_sedimentation}, {"min_x_riming", Particle_cons_idx::min_x_riming},
+    {"max_x", Particle_cons_idx::max_x}, {"sc_theta_q", Particle_cons_idx::sc_theta_q},
+    {"sc_delta_q", Particle_cons_idx::sc_delta_q}, {"sc_theta_n", Particle_cons_idx::sc_theta_n},
+    {"sc_delta_n", Particle_cons_idx::sc_delta_n}, {"s_vel", Particle_cons_idx::s_vel},
+    {"a_vel", Particle_cons_idx::a_vel}, {"b_vel", Particle_cons_idx::b_vel},
+    {"rho_v", Particle_cons_idx::rho_v}, {"c_z", Particle_cons_idx::c_z},
+    {"sc_coll_n", Particle_cons_idx::sc_coll_n}, {"cmu0", Particle_cons_idx::cmu0},
+    {"cmu1", Particle_cons_idx::cmu1}, {"cmu2", Particle_cons_idx::cmu2},
+    {"cmu3", Particle_cons_idx::cmu3}, {"cmu4", Particle_cons_idx::cmu4},
+    {"cmu5", Particle_cons_idx::cmu5}, {"alpha", Particle_cons_idx::alpha},
+    {"beta", Particle_cons_idx::beta}, {"gamma", Particle_cons_idx::gamma},
+    {"nu", Particle_cons_idx::nu}, {"g1", Particle_cons_idx::g1},
+    {"g2", Particle_cons_idx::g2}, {"mu", Particle_cons_idx::mu},
+    {"nm1", Particle_cons_idx::nm1}, {"nm2", Particle_cons_idx::nm2},
+    {"nm3", Particle_cons_idx::nm3}, {"q_crit_c", Particle_cons_idx::q_crit_c},
+    {"d_crit_c", Particle_cons_idx::d_crit_c}, {"ecoll_c", Particle_cons_idx::ecoll_c},
+    {"cap", Particle_cons_idx::cap}, {"a_ven", Particle_cons_idx::a_ven},
+    {"b_ven", Particle_cons_idx::b_ven}, {"c_s", Particle_cons_idx::c_s},
+    {"a_f", Particle_cons_idx::a_f}, {"b_f", Particle_cons_idx::b_f},
+    {"alfa_n", Particle_cons_idx::alfa_n}, {"alfa_q", Particle_cons_idx::alfa_q},
+    {"lambda", Particle_cons_idx::lambda}, {"vsedi_min", Particle_cons_idx::vsedi_min},
+    {"vsedi_max", Particle_cons_idx::vsedi_max}
+};
 
 double sediment_q = 0;
 double sediment_n = 0;
@@ -238,77 +1175,84 @@ const double R_universal = 8.3144598;
  * Molar mass of water, unit: kg/mol
  * Source: http://www1.lsbu.ac.uk/water/water_properties.html
  */
-const double Mw = 0.018015265;
+const double M_w = 0.018015265;
 
 /**
  * Molar mass of dry air, unit: kg/mol
  * Source: Picard et al, 2008: Revised formula for the density of moist air
  */
-const double Ma = 0.02896546;
+const double M_a = 0.02896546;
 
 /**
  * Gas constant for water vapor, unit: J/(kg*K)
  */
-const double Rv = R_universal/Mw;
+const double R_v = R_universal/M_w; //  461.51 in ICON
 
 /**
  * Gas constant for dry air, unit: J/(kg*K)
-//  */
-const double Ra = R_universal/Ma;
+ */
+const double R_a = R_universal/M_a;
 
 /**
  * Quotient of the individual gas constants
  */
-const double Epsilon = Ra/Rv;
+const double Epsilon = R_a/R_v;
+
+/**
+ * Aerosol particle radius prior to freezing used in homogeneous nucleation.
+ */
+const double r_0 = 0.25e-6;
+
+/**
+ * Depostion coefficient for homogeneous ice nucleation.
+ * See Spichtinger & Gierens 2009.
+ */
+const double alpha_depo = 0.5;
 
 /**
  * Gravitational acceleration (m/s^2)
  */
-const double gravity_acc = 9.81;
+const double gravity_acc = 9.80665;
 
 /**
- * Treshold for ice selfcollection
+ * Treshold (ratio mass) for ice selfcollection
  */
 const double q_crit_i = 1.0e-6;
 /**
- * Treshold for ice selfcollection
+ * Treshold (diameter) for ice selfcollection
  */
 const double D_crit_i = 1.0e-4;
 
 /**
- * Threshold for ice conversion in selfcollection
+ * Threshold (diameter) for ice conversion in selfcollection
  */
 const double D_conv_i = 75.0e-6;
 
 /**
- * Threshold for ice rain riming and snow rain riming
+ * Threshold (ratio mass) for ice rain riming and snow rain riming
  */
 const double q_crit_r = 1.0e-5;
 /**
- * Threshold for ice rain riming and snow rain riming
+ * Threshold (diameter) for ice rain riming and snow rain riming
  */
 const double D_crit_r = 1.0e-4;
 
 /**
- * Threshold for rain freeze and cloud water
+ * Threshold (ratio mass) for rain freeze and cloud water
  */
 const double q_crit_fr = 1.0e-6;
-/**
- * Threshold for rain freeze and cloud water
- */
-const double q_crit_c = 1.0e-6;
 
 /**
- * Default threshold is 1e-4 g/m^3
+ * Default threshold (ratio mass) is 1e-4 g/m^3
  */
 const double q_crit = 1.0e-7;
 
 /**
- * Threshold for conversion snow to graupel, ice to graupel
+ * Threshold (diameter) for conversion snow to graupel, ice to graupel
  */
 const double D_conv_sg = 2.0e-4;
 /**
- * Threshold for conversion snow to graupel, ice to graupel
+ * Threshold (diameter) for conversion snow to graupel, ice to graupel
  */
 const double D_conv_ig = 2.0e-4;
 
@@ -318,14 +1262,14 @@ const double D_conv_ig = 2.0e-4;
 const double x_conv = 1.0e-10;
 
 /**
- * Threshold for cloud drop collection efficiency
- */
-const double D_crit_c = 1.0e-5;
-
-/**
  * Upper bound for diameter in collision efficiency
  */
 const double D_coll_c = 4.0e-5;
+
+/**
+ * Kernel for autoconversion
+ */
+const double kc_autocon = 9.44e9;
 
 /**
  * Height of the trajectory package [m].
@@ -377,17 +1321,13 @@ const double rho_vel_c = 1;//0.2;
  */
 const double rho_ice = 916.7;
 
-/**
- * Gas constant of water vapor from ICON mo_physical_constants
- */
-const double R_v = 461.51;
 
 /**
- * Various constants from ICON regarding evaporation from melting ice particles
+ * Constant used in rain evaporation after Seifert (2008)
  */
 const double a_v = 0.78;
 /**
- * Various constants from ICON regarding evaporation from melting ice particles
+ * Coefficient used in rain evaporation after Seifert (2008)
  */
 const double b_v = 0.308;
 
@@ -396,13 +1336,13 @@ const double b_v = 0.308;
  */
 const double N_Sc = 0.71;
 /**
- * Various constants from ICON regarding evaporation from melting ice particles
+ * Various coefficients from ICON regarding evaporation from melting ice particles
  */const double a_prime = 9.65;
 /**
- * Various constants from ICON regarding evaporation from melting ice particles
+ * Various coefficients from ICON regarding evaporation from melting ice particles
  */const double b_prime = 9.80;
 /**
- * Various constants from ICON regarding evaporation from melting ice particles
+ * Various coefficients from ICON regarding evaporation from melting ice particles
  */const double c_prime = 600;
 
 /**
@@ -439,7 +1379,7 @@ const double ecoll_gg = 0.10;
  */
 const double ecoll_gg_wet = 0.40;
 /**
- * Kinematic viscosity of dry air from mo_physical_constants.f90 in
+ * Kinematic viscosity of dry air in
  * \f$\text{m}^2/\text{s}\f$.
  */
 const double kin_visc_air = 1.5e-5;
@@ -464,26 +1404,6 @@ const double T_mult_max = 270.0;
  * Hallet-Mossop ice multiplication
  */
 const double T_mult_opt = 268.0;
-
-/**
- * Constant used in cloud riming.
- */
-const double const0 = 1.0/(D_coll_c - D_crit_c);
-/**
- * Hallet-Mossop ice multiplication.
- * Constant used in ice - x and snow - x riming.
- */
-const double const3 = 1.0/(T_mult_opt - T_mult_min);
-/**
- * Hallet-Mossop ice multiplication.
- * Constant used in ice - x and snow - x riming.
- */
-const double const4 = 1.0/(T_mult_opt - T_mult_max);
-/**
- * Constant for conversions ice -> graupel, snow -> graupel,
- * melting (used in riming).
- */
-const double const5 = alpha_spacefilling * rho_w/rho_ice;
 
 /**
  * Constant wether to use ice multiplication.
@@ -537,11 +1457,11 @@ const bool nuc_c_type = false;
 #endif
 
 /**
- * Parameters for rain freeze with data of Barklie and Gokhale (PK page 350).
+ * Exponent for rain freeze with data of Barklie and Gokhale (PK page 350).
  */
 const double a_HET = 0.65;
 /**
- * Parameters for rain freeze with data of Barklie and Gokhale (PK page 350)
+ * Coefficient for rain freeze with data of Barklie and Gokhale (PK page 350)
  */
 const double b_HET = 200.0;
 
@@ -559,10 +1479,6 @@ const double n_f = 0.333;
  */
 const double N_avo = 6.02214179e23;
 /**
- * Average gravity
- */
-const double grav = 9.80665;
-/**
  *  Molar weight of dry air in \f$\text{g}\cdot\text{mol}^{-1}\f$
  */
 const double amd = 28.97;
@@ -575,17 +1491,17 @@ const double amw = 18.0154;
  * Constants for Phillips et al. ice nucleation scheme
  * initial number density of dust in \f$\text{m}^{-3}\f$, Phillips08
  */
-const double na_dust = 162.0e3;
+const double na_dust_phillips = 162.0e3;
 /**
  * Constants for Phillips et al. ice nucleation scheme
  * initial number density of soot in \f$\text{m}^{-3}\f$ Phillips08
  */
-const double na_soot = 15.0e6;
+const double na_soot_phillips = 15.0e6;
 /**
  * Constants for Phillips et al. ice nucleation scheme
  * initial number density of organics in \f$\text{m}^{-3}\f$, Phillips08
  */
-const double na_orga = 177.0e6;
+const double na_orga_phillips = 177.0e6;
 /**
  * Constants for Phillips et al. ice nucleation scheme
  * max number of IN between \f$1-10\f$ per liter, i.e. 1d3-10d3
@@ -598,11 +1514,11 @@ const double ni_het_max = 500.0e3;
 const double ni_hom_max = 5000.0e3;
 
 /**
- * Parameters for deposition formula (2) of Hande et al.
+ * Cons_idxeters for deposition formula (2) of Hande et al.
  */
 const double a_dep = 0.27626;
 /**
- * Parameters for deposition formula (2) of Hande et al.
+ * Cons_idxeters for deposition formula (2) of Hande et al.
  */
 const double b_dep = 6.21;
 /**
@@ -610,7 +1526,7 @@ const double b_dep = 6.21;
  */
 const double c_dep = -1.3107;
 /**
- * Parameters for deposition formula (2) of Hande et al.
+ * Cons_idxeters for deposition formula (2) of Hande et al.
  */
 const double d_dep = 0.26789;
 
@@ -663,22 +1579,22 @@ const double bet_imm = 1.2293;           /*!< More parameters for Hande et al. n
 uint32_t auto_type = 3;
 
 /**
- * ccn_activation_hdcp2 after Hande et al (2015)
+ * ccn_activation_hdcp2 after Hande et al (2016)
  */
 const std::vector<double> a_ccn = {183230691.161, 0.10147358938,
                                 -0.2922395814, 229189886.226};
 /**
- * ccn_activation_hdcp2 after Hande et al (2015)
+ * ccn_activation_hdcp2 after Hande et al (2016)
  */
 const std::vector<double> b_ccn = {0.0001984051994, 4.473190485e-05,
                                 0.0001843225275, 0.0001986158191};
 /**
- * ccn_activation_hdcp2 after Hande et al (2015)
+ * ccn_activation_hdcp2 after Hande et al (2016)
  */
 const std::vector<double> c_ccn = {16.2420263911, 3.22011836758,
                                 13.8499423719, 16.2461600644};
 /**
- * ccn_activation_hdcp2 after Hande et al (2015)
+ * ccn_activation_hdcp2 after Hande et al (2016)
  */
 const std::vector<double> d_ccn = {287736034.13, 0.6258809883,
                                 0.8907491812, 360848977.55};
@@ -690,6 +1606,75 @@ const std::vector<double> d_ccn = {287736034.13, 0.6258809883,
  * >6: SB (2006) from Cosmo 5.2 (cloud_nucleation(..))
  */
 const int nuc_type = 5;
+
+/**
+ * Coefficient for accretion of qc to qr.
+ */
+const double k_1_accr = 5.0e-4;
+/**
+ * Coeficcient for accretion of qc to qr.
+ */
+const double k_r = 5.78;
+// const double k_r = 5.28;
+
+#ifdef SB_CONV
+/**
+ * Exponent for autoconversion of qc to qr.
+ */
+const double k_1_conv = 400;
+/**
+ * Exponent for autoconversion of qc to qr.
+ */
+const double k_2_conv = 0.7;
+#else
+/**
+ * Exponent for autoconversion of qc to qr.
+ */
+const double k_1_conv = 600;
+/**
+ * Exponent for autoconversion of qc to qr.
+ */
+const double k_2_conv = 0.68;
+#endif
+
+/**
+ * Initial number density of dust [1/m^3] for nuc_type == 6
+ */
+const double na_dust = 160e4;
+/**
+ * Initial number density of dust [1/m^3] for nuc_type == 7 or 5
+ */
+const double na_dust_2 = 160e4;
+/**
+ * Initial number density of dust [1/m^3] for nuc_type == 8
+ */
+const double na_dust_3 = 70e4;
+
+/**
+ * Initial number density of soot [1/m^3] for nuc_type == 6
+ */
+const double na_soot = 30e6;
+/**
+ * Initial number density of soot [1/m^3] for nuc_type == 7 or 5
+ */
+const double na_soot_2 = 25e6;
+/**
+ * Initial number density of soot [1/m^3] for nuc_type == 8
+ */
+const double na_soot_3 = 0;
+
+/**
+ * Initial number density of organics [1/m^3] for nuc_type == 6
+ */
+const double na_orga = 0;
+/**
+ * Initial number density of organics [1/m^3] for nuc_type == 7 or 5
+ */
+const double na_orga_2 = 30e6;
+/**
+ * Initial number density of organics [1/m^3] for nuc_type == 8
+ */
+const double na_orga_3 = 0;
 
 /** Use nucleation based either on Hande et al. (true)
  * or Phillips et al. (false). This *should* depend
@@ -718,19 +1703,15 @@ const uint32_t t_tstep = 2;
 const uint32_t s_sstep = 1;
 
 /**
- * Parameter for saturation adjustment
+ * Cons_idxeter for saturation adjustment
  */
 const double r_const = 287.04;
 
 /**
- * Parameter for saturation adjustment
+ * Cons_idxeter for saturation adjustment
  */
 const double r1_const = 461.5;
 
-/**
- * Parameter for saturation adjustment
- */
-// const double cp = 1005.7;
 
 /**
  * Specific heat capacity of water vapor at constant pressure in
@@ -744,34 +1725,36 @@ const double cv = 718.66;
 const bool always_sat_adj = true;
 
 /**
- * Parameter for saturation adjustment. Constant saturated water vapor pressure
+ * Cons_idxeter for saturation adjustment. Constant saturated water vapor pressure
  */
 const double p_sat_const_a = 17.2693882;
 
 /**
- * Parameter for saturation adjustment. Constant saturated ice pressure
+ * Cons_idxeter for saturation adjustment. Constant saturated ice pressure
  */
-// const double p_sat_ice_const_a = 21.8745584;
+const double p_sat_ice_const_a = 21.8745584;
 
 /**
- * Parameter for saturation adjustment. Constant saturated water vapor pressure
+ * Cons_idxeter for saturation adjustment. Constant saturated water vapor pressure
  */
 const double p_sat_const_b = 35.86;
 
 /**
- * Parameter for saturation adjustment. Constant saturated ice pressure
+ * Cons_idxeter for saturation adjustment. Constant saturated ice pressure
  */
-// const double p_sat_ice_const_b = 7.66;
+const double p_sat_ice_const_b = 7.66;
 
 /**
- * Parameter for saturation adjustment. Saturated water vapor pressure at T = 233K
+ * Cons_idxeter for saturation adjustment. Saturated water vapor pressure at T = 233K
  */
 const double p_sat_low_temp = 610.78;
 
 /**
- * Parameter for saturation adjustment.
+ * Cons_idxeter for saturation adjustment.
  */
-const double T_sat_low_temp = 273.16;
+const double T_sat_low_temp = 273.15;
+
+
 
 const std::vector<std::vector<double> > afrac_dust = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
@@ -1082,24 +2065,22 @@ const std::vector<std::vector<double> > afrac_soot = {
 {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 };
 
-/**
- * Structure to hold the new equidistant lookup table for
- * graupel wetgrowth diameter
- */
-table_t ltabdminwgg;
-gamma_table_t table_g1, table_g2, table_r1, table_r2, table_r3;
-
-const uint64_t n_lookup = 2000;
-const uint64_t n_lookup_highres = 10000;
-const uint64_t n_lookup_hr_dummy = 10;
+const uint32_t n_lookup = 2000;
+const uint32_t n_lookup_highres = 10000;
+const uint32_t n_lookup_hr_dummy = 10;
 
 /**
  * Used for writing outputs.
  */
-std::stringstream out_tmp;
-std::ofstream outfile;
-std::ofstream out_diff[num_comp];
-std::stringstream out_diff_tmp[num_comp];
+// std::stringstream out_tmp;
+// std::ofstream outfile;
+// std::ofstream out_diff[num_comp];
+// std::stringstream out_diff_tmp[num_comp];
+// uint64_t n_snapshots = 0;
+
+
+// std::vector<std::ofstream> out_diff(num_comp);
+// std::vector<std::stringstream> out_diff_tmp(num_comp);
 
 /** @} */ // end of group constants
 
