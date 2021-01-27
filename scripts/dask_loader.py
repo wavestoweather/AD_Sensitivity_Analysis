@@ -270,11 +270,34 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
     elif netcdf:
         if "*" in file_ending:
             files = sorted(glob(direc + "/" + file_ending))
-            datasets = [xr.open_dataset(f, decode_times=False) for f in files]
-            df = xr.concat(datasets, "trajectory")
+            df = None
+            for f in files:
+                ds = xr.open_dataset(f, decode_times=False)
+                if "Output Parameter" in ds:
+                    if df is not None:
+                        df = df.append(ds.to_dask_dataframe(
+                            dim_order=["Output Parameter", "ensemble", "trajectory", "time"]))
+                    else:
+                        df = ds.to_dask_dataframe(
+                            dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+                else:
+                    if df is not None:
+                        df = df.append(ds.to_dask_dataframe(
+                            dim_order=["ensemble", "trajectory", "time"]))
+                    else:
+                        df = ds.to_dask_dataframe(
+                            dim_order=["ensemble", "trajectory", "time"])
         else:
-            df = xr.open_dataset(direc + "/" + file_ending, decode_times=False)
-        df = df.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+            ds = xr.open_dataset(direc + "/" + file_ending, decode_times=False)
+            if "Output Parameter" in ds:
+                if "Output Parameter" not in ds.dims:
+                    ds = ds.expand_dims("Output Parameter")
+                    ds = ds.set_coords(["Output Parameter"])
+                df = ds.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+            else:
+                ds["Output Parameter"] = "placeholer"
+                ds = ds.expand_dims("Output Parameter")
+                df = ds.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
         # The performance of the following command is not the best.
 
         # df = xr.open_mfdataset(
@@ -289,7 +312,11 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
             try:
                 # Try reading netcdf files in bulk
                 # Works only if no multiindex is given
-                df = xr.open_mfdataset(direc + "/" + file_ending, parallel=True).to_dask_dataframe()
+                df = xr.open_mfdataset(
+                    direc + "/" + file_ending,
+                    parallel=True,
+                    decode_times=False).to_dask_dataframe(
+                        dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
             except:
                 # Last fallback which works for most netcdf files
                 df = None

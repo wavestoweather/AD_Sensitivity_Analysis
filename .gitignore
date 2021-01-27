@@ -1,4 +1,6 @@
 __pycache__/*
+execute_id*
+checkpoint_id*
 *.txt
 *.pyc
 *.log

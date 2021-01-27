@@ -1,11 +1,15 @@
 #ifndef PROGRAM_IO_H
 #define PROGRAM_IO_H
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <stdlib.h>
 #include <cmath>
 #include <string>
 #include <netcdf>
 #include <vector>
+#include <sys/stat.h>
 #include "constants.h"
 #include <iostream>
 #include <fstream>
@@ -15,11 +19,210 @@
 #include "general.h"
 using namespace netCDF;
 
+namespace pt = boost::property_tree;
 
 /** @defgroup io Input/Output Functions
  * Functions to load data and setup and initialize structs.
  * @{
  */
+
+
+/**
+ * Parse an ensemble configuration as an XML-file.
+ *
+ */
+int load_ens_config(
+    std::string filename,
+    model_constants_t &cc,
+    std::vector<segment_t> &segments,
+    input_parameters_t &input,
+    const reference_quantities_t &ref_quant)
+{
+    int err = 0;
+    pt::ptree pt;
+    boost::property_tree::read_json(filename, pt);
+
+    for(auto &it: pt.get_child("segments"))
+    {
+        segment_t segment;
+        SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
+        segments.push_back(segment);
+        if(segment.activated)
+            segment.perturb(cc, ref_quant, input);
+    }
+    return err;
+}
+
+
+/**
+ * Reads a checkpoint file including perturbed parameters if any, current
+ * time step, new id as string.
+ */
+template<class float_t>
+int load_checkpoint(
+    const std::string &filename,
+    model_constants_t &cc,
+    std::vector<float_t> &y,
+    std::vector<segment_t> &segments,
+    input_parameters_t &input,
+    const reference_quantities_t &ref_quant)
+{
+    int err = 0;
+    pt::ptree pt;
+    boost::property_tree::read_json(filename, pt);
+    // Parse the input parameters
+    SUCCESS_OR_DIE(input.from_pt(pt));
+    setup_model_constants(input, cc, ref_quant);
+    // Parse the model constants
+    SUCCESS_OR_DIE(cc.from_pt(pt));
+    // cc.id are the preceeding ids
+    input.set_outputfile_id(cc.id, cc.ensemble_id);
+
+    // Parse the segments
+    for(auto &it: pt.get_child("segments"))
+    {
+        segment_t segment;
+        SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
+
+        if(segment.activated)
+        {
+            segment.perturb(cc, ref_quant, input);
+        }
+
+        segments.push_back(segment);
+    }
+    for(auto &it: pt.get_child("Output Parameters"))
+    {
+        y[std::stoi(it.first)] = std::stod(it.second.data());
+    }
+
+    return err;
+}
+
+
+/**
+ * Check if a file exists.
+ */
+inline bool exists(const std::string& name) {
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+}
+
+/**
+ * Creates a job-script for MOGON II and puts it on queue.
+ * If this is not possible (i.e. running on a local machine),
+ * the next jobs are started on the local machine.
+ * Also creates an XML-file as checkpoint for initialization to read the
+ * current status of the simulation for the next job(s).
+ *
+ * @param filename Filename for the checkpoint file. On out: added _idx-y.json
+ */
+template<class float_t>
+void write_checkpoint(
+    std::string &filename,
+    model_constants_t &cc,
+    const std::vector<float_t> &y,
+    std::vector<segment_t> &segments,
+    const input_parameters_t &input,
+    const double &current_time)
+{
+    pt::ptree checkpoint;
+    // First we add the ensemble configuration
+    pt::ptree segment_tree;
+    for(auto &s: segments)
+        s.put(segment_tree);
+
+    checkpoint.add_child("segments", segment_tree);
+    // configuration from input_parameters_t
+    input.put(checkpoint, current_time);
+    // Model constants
+    cc.put(checkpoint);
+    // Current status of y
+    pt::ptree output_parameters;
+    for(uint32_t i=0; i<num_comp; i++)
+        output_parameters.put(std::to_string(i), y[i]);
+    checkpoint.add_child("Output Parameters", output_parameters);
+
+    uint64_t i = 0;
+    std::string actual_filename = filename + "/checkpoint_id" + cc.id + "_0000.json";
+    while(exists(actual_filename))
+    {
+        i++;
+        if(i < 10)
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_000" + std::to_string(i) + ".json";
+        else if(i < 100)
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_00" + std::to_string(i) + ".json";
+        else if(i < 1000)
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_0" + std::to_string(i) + ".json";
+        else
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_" + std::to_string(i) + ".json";
+    }
+    std::fstream outstream(actual_filename, std::ios::out);
+    filename = actual_filename;
+    pt::write_json(outstream, checkpoint);
+    outstream.close();
+    // deactivate all segments, so we know, another instance is going
+    // to process this
+    for(auto &s: segments)
+        s.deactivate(true);
+
+    cc.ensemble_id++;
+}
+
+
+/**
+ * Create a bash script that executes this very same program by loading
+ * a checkpoint file
+ * (gnuparallel) starting n processes
+ * (slurm) submitting it as a slurm job with n processes
+ */
+void create_run_script(
+    const std::string &foldername,
+    const std::string &checkpoint_file,
+    const model_constants_t &cc,
+    const uint32_t n_processes,
+    const std::string which="gnuparallel",
+    const bool start=false)
+{
+    if(which == "gnuparallel")
+    {
+        uint32_t j = n_processes - 1;
+        if(j>NPROCS)
+            j = NPROCS;
+        std::string script = "parallel -u -j " + std::to_string(j)
+            + " --no-notice --delay .2 ${AD_SIM_HOME}/build/apps/src/microphysics/./trajectories "
+            "-c " + checkpoint_file + " -g {1} ::: {0.."
+            + std::to_string(n_processes-2) + "}";
+
+        // Save as a script
+        std::string script_name = foldername + "/execute_id" + cc.id + "_0000.sh";
+        uint32_t i = 0;
+        while(exists(script_name))
+        {
+            i++;
+            if(i < 10)
+                script_name = foldername + "/execute_id" + cc.id + "_000" + std::to_string(i) + ".sh";
+            else if(i < 100)
+                script_name = foldername + "/execute_id" + cc.id + "_00" + std::to_string(i) + ".sh";
+            else if(i < 1000)
+                script_name = foldername + "/execute_id" + cc.id + "_0" + std::to_string(i) + ".sh";
+            else
+                script_name = foldername + "/execute_id" + cc.id + "_" + std::to_string(i) + ".sh";
+        }
+        std::ofstream out(script_name);
+        out << "#!/bin/bash\n" << script << ( (start) ? " &\n" : "\n" );
+        out.close();
+
+        if(start)
+            std::system(("./" + script_name).c_str());
+
+    } else if(which == "slurm")
+    {
+
+    }
+}
+
+
 
 /**
  * Based on
@@ -117,7 +320,7 @@ bool load_lookup_table(
         // Read the values, one value per line
         for(uint64_t n4=0; n4<table.n4; ++n4)
             for(uint64_t n3=0; n3<table.n3; ++n3)
-                for(uint64_t i=0; i<anzT_wg_loc; ++i)
+                for(int i=0; i<anzT_wg_loc; ++i)
                     for(uint64_t n1=0; n1<table.n1; ++n1)
                     {
                         std::getline(data, line);
@@ -151,7 +354,7 @@ bool load_lookup_table(
         for(uint64_t i=0; i<table.n2; ++i)
         {
             uint64_t iu = 0;
-            for(uint64_t j=0; j<anzT_wg_loc-1; ++j)
+            for(int j=0; j<anzT_wg_loc-1; ++j)
             {
                 if(table.x2[i] >= Tvec_wg_g_loc[j]
                     && table.x2[i] <= Tvec_wg_g_loc[j+1])
@@ -192,7 +395,7 @@ bool load_lookup_table(
         return true;
     } else
     {
-        std::cout << "Error loading " << filename << ". Does the file exist?\n";
+        std::cerr << "Error loading " << filename << ". Does the file exist?\n";
         return false;
     }
 }
@@ -244,7 +447,6 @@ void load_nc_parameters_var(
     nc.lon_var      = datafile.getVar("lon");
 #endif
     nc.z_var        = datafile.getVar("z");
-
 #if defined WCB || defined WCB2
     nc.p_var        = datafile.getVar("P");
     nc.t_var        = datafile.getVar("T");
@@ -321,16 +523,23 @@ void load_nc_parameters_var(
     nc.Ni_var       = datafile.getVar("NCICE");
     nc.Ns_var       = datafile.getVar("NCSNOW");
     nc.Ng_var       = datafile.getVar("NCGRAUPEL");
-    // Flag wether an effective ascent region is reached
-    nc.ascent_flag_var = datafile.getVar("WCB_flag");
-    // 2h ascent rate after Oertel et al. (2019)
-    nc.dp2h_var     = datafile.getVar("dp2h");
+
     nc.conv_400_var = datafile.getVar("conv_400");
     nc.conv_600_var = datafile.getVar("conv_600");
     nc.slan_400_var = datafile.getVar("slan_400");
     nc.slan_600_var = datafile.getVar("slan_600");
 #endif
+#if defined WCB2
+    // Flag wether an effective ascent region is reached
+    nc.ascent_flag_var = datafile.getVar("WCB_flag");
+    // 2h ascent rate after Oertel et al. (2019)
+    nc.dp2h_var     = datafile.getVar("dp2h");
+#endif
+#if defined MET3D && defined TURBULENCE
+    nc.qturb_var    = datafile.getVar("Q_TURBULENCE");
+#endif
 }
+
 
 /**
  * Load the parameters from the netCDF file where load_nc_parameters_var()
@@ -382,14 +591,19 @@ void load_nc_parameters(
     countp[1]--;
 #endif
 
-#if defined WCB || defined WCB2 || defined MET3D
+#if defined WCB || defined WCB2
     int map = 0;
     nc.ascent_flag_var.getVar(startp, countp, &map);
     nc.ascent_flag = (map > 0) ? true : false;
 #endif
-#if defined MET3D || defined WCB2
+#if defined WCB2
     nc.dp2h_var.getVar(startp, countp, &map);
     nc.dp2h = (map > 0) ? true : false;
+#endif
+#if defined MET3D
+    int map = 0;
+#endif
+#if defined MET3D || defined WCB2
     nc.conv_400_var.getVar(startp, countp, &map);
     nc.conv_400 = (map > 0) ? true : false;
     nc.conv_600_var.getVar(startp, countp, &map);
@@ -408,8 +622,6 @@ void load_nc_parameters(
     nc.qi_var.getVar(startp, countp, &nc.qi);
     nc.qs_var.getVar(startp, countp, &nc.qs);
     nc.qv_var.getVar(startp, countp, &nc.qv);
-
-    double psat_prime = saturation_pressure_water_icon(nc.t);
 
 #if !defined WCB2 && !defined MET3D
     // We are reading in hPa. Convert to Pa
@@ -462,6 +674,10 @@ void load_nc_parameters(
     nc.NGin     = abs(nc.NGin);
 #endif
 
+#if defined MET3D && defined TURBULENCE
+    nc.qturb_var.getVar(startp, countp, &nc.qturb);
+    nc.qturb /= ref_quant.qref;
+#endif
 #if !defined WCB
     nc.S = 1.0;
     nc.qg_var.getVar(startp, countp, &nc.qg);
@@ -493,15 +709,16 @@ void load_nc_parameters(
     nc.QGin     = abs(nc.QGin);
     nc.QGout    = abs(nc.QGout);
 #endif
-
 #ifdef MET3D
     nc.S_var.getVar(startp, countp, &nc.S);
     nc.S /= 100; // from percentage
     nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
     // there is only a single value for that since each type
     // is divided into different files in the input
-    if(nc.type[0] == "")
+    if(std::strcmp(nc.type[0], "") == 0)
+    {
         nc.type_var.getVar(nc.type);
+    }
     nc.w[0]     /= ref_quant.wref;
     nc.w[1]     /= ref_quant.wref;
 #elif !defined WCB && !defined WCB2
@@ -531,109 +748,10 @@ void load_nc_parameters(
     nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
     nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
 #endif
-
     nc.dlat = (nc.lat[1] - nc.lat[0]) / num_sub_steps;
     nc.dlon = (nc.lon[1] - nc.lon[0]) / num_sub_steps;
 }
 
-
-/**
- * Initialize the input parameters to default values.
- *
- * @param in Structure where to store the input parameters.
- */
-void init_input_parameters(input_parameters_t &in)
-{
-  // Numerics
-  in.t_end_prime = 100.0;	// Seconds
-  in.dt_prime = 0.01;		// Seconds
-  in.snapshot_index = 200;
-  in.dt_traject = 20;       // Seconds; fixed from paper
-  // Filename for output
-#if defined(RK4)
-   in.OUTPUT_FILENAME = "data/rain_OUTPUT.txt";
-#endif
-#if defined(RK4NOICE)
-    in.OUTPUT_FILENAME = "data/sb_OUTPUT.txt";
-#endif
-#if defined(RK4ICE)
-    in.OUTPUT_FILENAME = "data/sb_ice_OUTPUT.txt";
-#endif
-
-  // Filename for input
-  in.INPUT_FILENAME = "/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/foehn201305_case/foehn201305_warming.nc";
-
-  // Scaling factor
-  in.scaling_fact = 1.0;	// No scaling
-  in.start_over = true;
-  in.start_over_env = true;
-  in.fixed_iteration = false;
-  in.auto_type = 3;
-  in.traj = 0;
-  in.write_index = 100000;
-  in.progress_index = 1000;
-#ifdef MET3D
-  in.start_time = std::nan("");
-#endif
-}
-
-/**
- * String used to parse commandline input.
- */
-static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:?";
-
-
-/**
- * Initialize global args for parsing command line arguments.
- *
- * @param arg Struct that shall be initialized.
- */
-void init_global_args(global_args_t &arg)
-{
-
-  arg.final_time_flag = 0;
-  arg.final_time_string = nullptr;
-
-  arg.timestep_flag = 0;
-  arg.timestep_string = nullptr;
-
-  arg.snapshot_index_flag = 0;
-  arg.snapshot_index_string = nullptr;
-
-  arg.output_flag = 0;
-  arg.output_string = nullptr;
-
-  arg.scaling_fact_flag = 0;
-  arg.scaling_fact_string = nullptr;
-
-  arg.input_flag = 0;
-  arg.input_file = nullptr;
-
-  arg.start_over_flag = 0;
-  arg.start_over_string = nullptr;
-
-  arg.start_over_env_flag = 0;
-  arg.start_over_env_string = nullptr;
-
-  arg.fixed_iteration_flag = 0;
-  arg.fixed_iteration_string = nullptr;
-
-  arg.auto_type_flag = 0;
-  arg.auto_type_string = nullptr;
-
-  arg.traj_flag = 0;
-  arg.traj_string = nullptr;
-
-  arg.write_flag = 0;
-  arg.write_string = nullptr;
-
-  arg.progress_index_flag = 0;
-  arg.progress_index_string = nullptr;
-#ifdef MET3D
-  arg.delay_start_flag = 0;
-  arg.delay_start_string = nullptr;
-#endif
-}
 
 /**
  * Set the input parameters with the data from the global arguments.
@@ -705,7 +823,7 @@ void set_input_from_arguments(global_args_t &arg ,
 
   // Progressbar index
   if(1 == arg.progress_index_flag){
-      in.progress_index = std::stoi(arg.progress_index_string);
+      in.progress_index = std::stoull(arg.progress_index_string);
   }
 #ifdef MET3D
   // Simulation start time
@@ -713,231 +831,26 @@ void set_input_from_arguments(global_args_t &arg ,
       in.start_time = std::strtod(arg.delay_start_string, nullptr);
   }
 #endif
-}
 
+  // Ensemble configuration file
+  if(1 == arg.ens_config_flag){
+    in.ENS_CONFIG_FILENAME = arg.ens_config_string;
+  }
 
-/**
- * Write the file with reference values ending with
- * "__reference_values.txt" that can be read in Python with
- * Numpy. The order is:
- * Temperature, pressure, mixing ratio, particle number, ascent velocity,
- * time, height.
- *
- * @param out_filename String with filename.
- * @param ref_quant reference_quantities_t with all the reference values.
- * @return Errorcode (0=no errors; 1=simulation breaking error)
- */
-int write_reference_quantities(
-    std::string &out_filename,
-    reference_quantities_t &ref_quant)
-{
-    std::ofstream outfile_refs;
-    outfile_refs.open(out_filename + "_reference_values.txt");
-    outfile_refs.precision(10);
+  // Checkpoint file
+  if(1 == arg.checkpoint_flag){
+    in.CHECKPOINT_FILENAME = arg.checkpoint_string;
+  }
 
-    if( !outfile_refs.is_open() )
-    {
-        std::cout << "ERROR while opening the reference file. Aborting." << std::endl;
-        return 1;
-    }
+  // ID for this process
+  if(1 == arg.gnu_id_flag){
+    in.id = std::stoi(arg.gnu_id_string);
+  }
 
-    // Write the reference quantities
-    outfile_refs << ref_quant.Tref << " "
-	       << ref_quant.pref << " "
-	       << ref_quant.qref << " "
-	       << ref_quant.Nref << " "
-	       << ref_quant.wref << " "
-	       << ref_quant.tref << " "
-           << ref_quant.zref << "\n";
-
-    outfile_refs.close();
-    return 0;
-}
-
-#ifdef MET3D
-/**
- * Write all attributes to a separate file to use later again.
- *
- * @param in_filename Path to netcdf input file to read attributes from
- * @param out_filename String with filename
- * @return Errorcode (0=no errors; 1=simulation breaking error)
- */
-int write_attributes(
-    std::string &in_filename,
-    std::string &out_filename)
-{
-    std::ofstream outfile;
-    outfile.open(out_filename + "_attributes.txt");
-    outfile.precision(10);
-    if( !outfile.is_open() )
-    {
-        std::cout << "ERROR while opening the attribute file. Aborting." << std::endl;
-        return 1;
-    }
-    // Global attributes
-    outfile << "[Global attributes]\n";
-    netCDF::NcFile datafile(in_filename, netCDF::NcFile::read);
-    auto attributes = datafile.getAtts();
-    for(auto & name_attr: attributes)
-    {
-        auto attribute = name_attr.second;
-        netCDF::NcType type = attribute.getType();
-        if(type.getName() == "double")
-        {
-            std::vector<float> values(1);
-            attribute.getValues(values.data());
-            outfile << "name=" << attribute.getName() << "\n"
-                        << "type=" << type.getName() << "\n"
-                        << "values=" << values[0] << "\n";
-        } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
-        {
-            std::vector<int> values(1);
-            attribute.getValues(values.data());
-            outfile << "name=" << attribute.getName() << "\n"
-                        << "type=" << type.getName() << "\n"
-                        << "values=" << values[0] << "\n";
-        } else if(type.getName() == "char")
-        {
-            std::string values;
-            attribute.getValues(values);
-            outfile << "name=" << attribute.getName() << "\n"
-                    << "type=" << type.getName() << "\n"
-                    << "values=" << values << "\n";
-        }
-    }
-
-    // Column attributes
-    outfile << "[Non global attributes]\n";
-    auto vars = datafile.getVars();
-    for(auto & name_var: vars)
-    {
-        auto var = name_var.second;
-        auto name = name_var.first;
-        outfile << "column=" << name << "\n";
-        auto attributes = var.getAtts();
-        for(auto & name_attr: attributes)
-        {
-            auto attribute = name_attr.second;
-            netCDF::NcType type = attribute.getType();
-            if(type.getName() == "double" || type.getName() == "float")
-            {
-                std::vector<double> values(1);
-                attribute.getValues(values.data());
-                outfile << attribute.getName() << "=" << values[0] << "\n";
-            } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
-            {
-                std::vector<int> values(1);
-                attribute.getValues(values.data());
-                outfile << attribute.getName() << "=" << values[0] << "\n";
-            } else if(type.getName() == "char")
-            {
-                std::string values;
-                attribute.getValues(values);
-                outfile << attribute.getName() << "=" << values << "\n";
-            }
-        }
-    }
-    outfile.close();
-    return 0;
-}
-#endif
-
-/**
- * Write the header for simulation results files and for files with
- * derivatives which have "_diff_" in their name.
- *
- * @param out_filename String with filename.
- * @return Errorcode (0=no errors; 1=simulation breaking error)
- */
-int write_headers(
-    std::string &out_filename)
-{
-    std::string suffix = ".txt";
-    std::string full_filename;
-    full_filename = out_filename;
-    full_filename += suffix;
-
-    outfile.open(full_filename);
-    outfile.precision(10);
-
-    if( !outfile.is_open() )
-    {
-        std::cout << "ERROR while opening the outputfile. Aborting." << std::endl;
-        return 1;
-    }
-
-    // Append the initial values and write headers
-    out_tmp << std::setprecision(10) << "step,trajectory,lon,lat,"
-#if defined WCB
-        << "MAP,";
-#endif
-#if defined WCB2 || defined MET3D
-        << "WCB_flag,"
-        << "dp2h,"
-        << "conv_400,"
-        << "conv_600,"
-        << "slan_400,"
-        << "slan_600,";
-#endif
-#if defined MET3D
-    out_tmp
-        << "time,"
-        << "time_after_ascent,"
-        << "type,"
-        << "ensemble,";
-#endif
-    for(uint32_t i=0; i<output_par_idx.size(); ++i)
-        out_tmp << output_par_idx[i]  <<
-            ((i < output_par_idx.size()-1) ? "," : "\n");
-
-    std::string basename = "_diff_";
-    std::string fname;
-
-    for(int ii = 0; ii < num_comp; ii++)
-    {
-        fname = out_filename;
-        fname += basename;
-        fname += std::to_string(ii);
-        fname += suffix;
-
-        out_diff[ii].open(fname);
-        out_diff[ii].precision(10);
-        if( !out_diff[ii].is_open() )
-        {
-            std::cout << "ERROR while opening outputfile. Aborting." << std::endl;
-            return 1;
-        }
-        out_diff_tmp[ii]
-            << std::setprecision(10)
-            << "step,"
-            << "trajectory,"
-            << "Output Parameter,"
-            << "lon,"
-            << "lat,"
-#if defined WCB
-            << "MAP,";
-#endif
-#if defined WCB2 || defined MET3D
-            << "WCB_flag,"
-            << "dp2h,"
-            << "conv_400,"
-            << "conv_600,"
-            << "slan_400,"
-            << "slan_600,";
-#endif
-#if defined MET3D
-        out_diff_tmp[ii]
-            << "time,"
-            << "time_after_ascent,"
-            << "type,"
-            << "ensemble,";
-#endif
-        for(uint32_t i=0; i<output_grad_idx.size(); ++i)
-            out_diff_tmp[ii] << output_grad_idx[i]  <<
-                ((i < output_grad_idx.size()-1) ? "," : "\n");
-    } // End loop over all components
-
-    return 0;
+  // Folder name for new generated checkpoints
+  if(1 == arg.folder_name_flag){
+    in.FOLDER_NAME = arg.folder_name_string;
+  }
 }
 
 
@@ -967,49 +880,41 @@ int read_init_netcdf(
 #endif
     const char *input_file,
     const uint32_t traj,
-    model_constants_t &cc)
+    const bool checkpoint_flag,
+    model_constants_t &cc,
+    double current_time)
 {
     try
     {
-        int dimid, ncid;
-        size_t n_timesteps;
-        // Get the amount of trajectories
-        nc_open(input_file, NC_NOWRITE, &ncid);
+        netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
 #ifdef WCB
-        nc_inq_dimid(ncid, "ntra", &dimid);
+        lenp = datafile.getDim("ntra").getSize();
 #elif defined MET3D
-        nc_inq_dimid(ncid, "trajectory", &dimid);
+        lenp = datafile.getDim("trajectory").getSize();
 #else
-        nc_inq_dimid(ncid, "id", &dimid);
+        lenp = datafile.getDim("id").getSize();
 #endif
-        nc_inq_dimlen(ncid, dimid, &lenp);
-        std::cout << "Number of trajectories in netCDF file: " << lenp << "\n";
+#ifndef SILENT_MODE
+        std::cout << "Number of trajectories in netCDF file: " << lenp << "\n" << std::flush;
+#endif
         if(lenp <= traj)
         {
-            std::cout << "You asked for trajectory with index " << traj
+            std::cerr << "You asked for trajectory with index " << traj
                       << " which does not exist. ABORTING.\n";
-            return 1;
+            return NC_TRAJ_IDX_ERR;
         }
-        // Get the amount of timesteps
 #ifdef WCB
-        nc_inq_dimid(ncid, "ntim", &dimid);
+        uint32_t n_timesteps = datafile.getDim("ntim").getSize();
 #else
-        nc_inq_dimid(ncid, "time", &dimid);
+        uint32_t n_timesteps = datafile.getDim("time").getSize();
 #endif
-        nc_inq_dimlen(ncid, dimid, &n_timesteps);
-        uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1;
-
-        cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
 
         init_nc_parameters(nc_params, lenp, n_timesteps);
-        netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
         load_nc_parameters_var(nc_params, datafile);
-
 #ifdef MET3D
         // Get the time coordinates
         nc_params.time_abs_var.getVar(nc_params.time_abs.data());
 #endif
-
         std::vector<size_t> startp, countp;
         countp.push_back(1);
         countp.push_back(1);
@@ -1021,146 +926,157 @@ int read_init_netcdf(
         startp.push_back(0); // time
         startp.push_back(traj); // trajectory id
 #elif defined MET3D
-        uint64_t start_time_idx = 0;
+
         startp.push_back(0); // ensemble
         startp.push_back(traj); // trajectory
-        startp.push_back(start_time_idx); // time
-        if(!std::isnan(start_time))
+        startp.push_back(0); // time
+        uint64_t start_time_idx = 0;
+
+        if(!std::isnan(start_time) && !checkpoint_flag)
         {
             double rel_start_time;
             // Get relative start time of trajectory
             nc_params.time_rel_var.getVar(startp, countp, &rel_start_time);
             // Calculate the needed index
             start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
+            uint64_t n_timesteps_input = ceil((cc.t_end-start_time)/20.0)-1;
+            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+        } else if(checkpoint_flag && !std::isnan(current_time) && std::isnan(start_time))
+        {
+            start_time_idx = ceil(current_time/cc.dt_traject);
+            uint64_t n_timesteps_input = ceil((cc.t_end-current_time)/20.0)-1;
+            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+        } else if(checkpoint_flag && !std::isnan(current_time) && !std::isnan(start_time))
+        {
+            double rel_start_time;
+            // Get relative start time of trajectory
+            nc_params.time_rel_var.getVar(startp, countp, &rel_start_time);
+            // Calculate the needed index
+            start_time_idx = ceil(start_time-rel_start_time + current_time)/cc.dt_traject;
+            uint64_t n_timesteps_input = ceil((cc.t_end-current_time-start_time)/20.0)-1;
+            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+        } else
+        {
+            uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1 - start_time_idx;
+            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         }
-        // std::cout << "got start time idx " << start_time_idx << "\n";
+
         nc_params.time_idx = start_time_idx;
         startp[2] = start_time_idx;
 #else
         startp.push_back(traj); // trajectory id
         startp.push_back(1); // time (where time == 0 only has zeros)
 #endif
-
         load_nc_parameters(nc_params, startp, countp,
                            ref_quant, cc.num_sub_steps);
+        if(!checkpoint_flag)
+        {
+            y_init[p_idx] = nc_params.p;
+            y_init[T_idx] = nc_params.t;
 
-        y_init[p_idx] = nc_params.p;
-        y_init[T_idx] = nc_params.t;
-
-        y_init[S_idx] = nc_params.S;
+            y_init[S_idx] = nc_params.S;
 #ifdef SAT_CALC
-        y_init[S_idx] = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
-            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+            y_init[S_idx] = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
+                / saturation_pressure_water(nc_params.t*ref_quant.Tref);
 #endif
-        y_init[qc_idx] = nc_params.qc;
-        y_init[qr_idx] = nc_params.qr;
-        y_init[qv_idx] = nc_params.qv;
+            y_init[qc_idx] = nc_params.qc;
+            y_init[qr_idx] = nc_params.qr;
+            y_init[qv_idx] = nc_params.qv;
 #if defined(RK4ICE)
-        y_init[qi_idx] = nc_params.qi;
-        y_init[qs_idx] = nc_params.qs;
+            y_init[qi_idx] = nc_params.qi;
+            y_init[qs_idx] = nc_params.qs;
 #endif
 #ifdef WCB
-        y_init[w_idx] = 0;
-  #if defined(RK4ICE)
-        y_init[qg_idx] = 0;
-  #endif
+            y_init[w_idx] = 0;
+#if defined(RK4ICE)
+            y_init[qg_idx] = 0;
+#endif
 #else
-        y_init[w_idx] = nc_params.w[0];
-  #if defined(RK4ICE)
-        y_init[qg_idx] = nc_params.qg;
-  #endif
+            y_init[w_idx] = nc_params.w[0];
+#if defined(RK4ICE)
+            y_init[qg_idx] = nc_params.qg;
+#endif
 #endif
 #if defined(RK4ICE)
-        y_init[qh_idx] = 0.0; // hail that is not in the trajectory
-        y_init[qh_out_idx] = 0.0;
-        y_init[Nh_out_idx] = 0.0;
+            y_init[qh_idx] = 0.0; // hail that is not in the trajectory
+            y_init[qh_out_idx] = 0.0;
+            y_init[Nh_out_idx] = 0.0;
 #endif
 #if defined WCB2 || defined MET3D
-        y_init[Nr_idx] = nc_params.Nr;
-        y_init[Nc_idx] = nc_params.Nc;
-  #if defined(RK4ICE)
-        // We can read the sedimentation from the original file like this
-        // y_init[qr_out_idx] = nc_params.QRout;
-        // y_init[Nr_out_idx] = nc_params.NRout;
-        // y_init[qi_out_idx] = nc_params.QIout;
-        // y_init[qs_out_idx] = nc_params.QSout;
-        // y_init[qg_out_idx] = nc_params.QGout;
-        // y_init[Ni_out_idx] = nc_params.NIout;
-        // y_init[Ns_out_idx] = nc_params.NSout;
-        // y_init[Ng_out_idx] = nc_params.NGout;
-        // But we actually want to set them to zero and calculate them
-        y_init[qr_out_idx] = 0;
-        y_init[Nr_out_idx] = 0;
-        y_init[qi_out_idx] = 0;
-        y_init[qs_out_idx] = 0;
-        y_init[qg_out_idx] = 0;
-        y_init[qh_out_idx] = 0;
-        y_init[Nh_out_idx] = 0;
-        y_init[Ni_out_idx] = 0;
-        y_init[Ns_out_idx] = 0;
-        y_init[Ng_out_idx] = 0;
+            y_init[Nr_idx] = nc_params.Nr;
+            y_init[Nc_idx] = nc_params.Nc;
+#if defined(RK4ICE)
+            // We can read the sedimentation from the original file like this
+            // y_init[qr_out_idx] = nc_params.QRout;
+            // y_init[Nr_out_idx] = nc_params.NRout;
+            // y_init[qi_out_idx] = nc_params.QIout;
+            // y_init[qs_out_idx] = nc_params.QSout;
+            // y_init[qg_out_idx] = nc_params.QGout;
+            // y_init[Ni_out_idx] = nc_params.NIout;
+            // y_init[Ns_out_idx] = nc_params.NSout;
+            // y_init[Ng_out_idx] = nc_params.NGout;
+            // But we actually want to set them to zero and calculate them
+            y_init[qr_out_idx] = 0;
+            y_init[Nr_out_idx] = 0;
+            y_init[qi_out_idx] = 0;
+            y_init[qs_out_idx] = 0;
+            y_init[qg_out_idx] = 0;
+            y_init[qh_out_idx] = 0;
+            y_init[Nh_out_idx] = 0;
+            y_init[Ni_out_idx] = 0;
+            y_init[Ns_out_idx] = 0;
+            y_init[Ng_out_idx] = 0;
 
-        y_init[Ni_idx] = nc_params.Ni;
-        y_init[Ns_idx] = nc_params.Ns;
-        y_init[Ng_idx] = nc_params.Ng;
-  #endif
+            y_init[Ni_idx] = nc_params.Ni;
+            y_init[Ns_idx] = nc_params.Ns;
+            y_init[Ng_idx] = nc_params.Ng;
+#endif
 #else
-        y_init[qr_out_idx] = 0.0;
-        y_init[Nr_out_idx] = 0;
-        y_init[Nc_idx] = 0;
-        y_init[Nr_idx] = 0;
-  #if defined(RK4ICE)
-        // We initialize the sedimentation with 0 for the stepper
-        y_init[qi_out_idx] = 0.0;
-        y_init[qs_out_idx] = 0.0;
-        y_init[qg_out_idx] = 0.0;
-        y_init[qh_out_idx] = 0;
-        y_init[Nh_out_idx] = 0;
-        y_init[Ni_out_idx] = 0;
-        y_init[Ns_out_idx] = 0;
-        y_init[Ng_out_idx] = 0;
-        y_init[Ni_idx] = 0;
-        y_init[Ns_idx] = 0;
-        y_init[Ng_idx] = 0;
-  #endif
+            y_init[qr_out_idx] = 0.0;
+            y_init[Nr_out_idx] = 0;
+            y_init[Nc_idx] = 0;
+            y_init[Nr_idx] = 0;
+#if defined(RK4ICE)
+            // We initialize the sedimentation with 0 for the stepper
+            y_init[qi_out_idx] = 0.0;
+            y_init[qs_out_idx] = 0.0;
+            y_init[qg_out_idx] = 0.0;
+            y_init[qh_out_idx] = 0;
+            y_init[Nh_out_idx] = 0;
+            y_init[Ni_out_idx] = 0;
+            y_init[Ns_out_idx] = 0;
+            y_init[Ng_out_idx] = 0;
+            y_init[Ni_idx] = 0;
+            y_init[Ns_idx] = 0;
+            y_init[Ng_idx] = 0;
+#endif
 #endif
 #if defined(RK4ICE) || defined(RK4NOICE)
     #ifdef MET3D
-        y_init[z_idx] = nc_params.z;
+            y_init[z_idx] = nc_params.z;
     #else
-        y_init[z_idx] = nc_params.z[0];
+            y_init[z_idx] = nc_params.z[0];
     #endif
 #endif
 #if defined(RK4ICE) || defined(RK4NOICE) || defined(MET3D)
-        nc_params.dw = (nc_params.w[1] - nc_params.w[0]);
-        cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
-        y_init[n_inact_idx] = 0;
-        y_init[depo_idx] = 0;
-        y_init[sub_idx] = 0;
+            nc_params.dw = (nc_params.w[1] - nc_params.w[0]);
+            cc.constants[static_cast<int>(Cons_idx::dw)] = nc_params.dw / (cc.dt*cc.num_sub_steps);
+            y_init[n_inact_idx] = 0;
+            y_init[depo_idx] = 0;
+            y_init[sub_idx] = 0;
 #endif
 
-#ifdef TRACE_SAT
-        std::cout << "######INIT######\n"
-    //           << "y_init[T_idx] " << y_init[T_idx] << "\n"
-                  << "y_init[qv_idx] " << y_init[qv_idx]*ref_quant.qref << "\n";
-#endif
-    // DEBUG Set qv to qv_sat
-    // double psat_prime = saturation_pressure_water_icon(y_init[T_idx]*ref_quant.Tref);
-    // y_init[qv_idx] = psat_prime/(Rv*y_init[T_idx]*ref_quant.Tref) / ref_quant.qref;
-    // y_init[qv_idx] = Epsilon*( psat_prime/(y_init[p_idx]*ref_quant.pref - psat_prime) ) / ref_quant.qref;
 #ifdef SAT_CALC
-        y_init[S_idx]  = convert_qv_to_S(
-            y_init[p_idx]*ref_quant.pref,
-            y_init[T_idx]*ref_quant.Tref,
-            y_init[qv_idx]*ref_quant.qref);
-        // y_init[S_idx]  = y_init[qv_idx]*ref_quant.qref * Rv * y_init[T_idx]*ref_quant.Tref
-        //     / psat_prime;
+            y_init[S_idx]  = convert_qv_to_S(
+                y_init[p_idx]*ref_quant.pref,
+                y_init[T_idx]*ref_quant.Tref,
+                y_init[qv_idx]*ref_quant.qref);
 #endif
-
+        }
     } catch(netCDF::exceptions::NcException& e)
     {
         std::cout << e.what() << std::endl;
-        std::cout << "ABORTING." << std::endl;
+        std::cout << "In read_init_netcdf()\nABORTING." << std::endl;
         return 1;
     }
     return 0;
@@ -1169,22 +1085,17 @@ int read_init_netcdf(
 
 
 /**
- * Open NETCDF file for reading and store some information in ncid, startp,
- * countp.
+ * Resize startp and countp.
  *
- * @param ncid On out: contains id of netcdf file (needed for closing it)
  * @param startp On out: contains dimensions info for reading
  * @params countp On out: contains dimensions info for reading
  * @params input_file Char array of input file
  */
-void open_netcdf(
-    int &ncid,
+void resize_counter(
     std::vector<size_t> &startp,
     std::vector<size_t> &countp,
-    const char *input_file,
     const uint32_t traj)
 {
-    nc_open(input_file, NC_NOWRITE, &ncid);
 #if defined WCB || defined WCB2
     startp.push_back(1);          // time
     startp.push_back(traj); // trajectory
@@ -1225,7 +1136,9 @@ void read_netcdf_write_stream(
 #ifdef MET3D
     uint32_t &ensemble,
 #endif
-    const uint32_t t)
+    const uint32_t t,
+    const bool checkpoint_flag,
+    IO_handle_t &io_handler)
 {
 #if defined WCB || defined WCB2
     startp[0] = t;
@@ -1234,12 +1147,10 @@ void read_netcdf_write_stream(
 #else
     startp[1] = t+1;
 #endif
-
     netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
     load_nc_parameters_var(nc_params, datafile);
     load_nc_parameters(nc_params, startp, countp,
                         ref_quant, cc.num_sub_steps);
-
     netCDF::NcVar id_var;
 #ifdef MET3D
     id_var = datafile.getVar("trajectory");
@@ -1253,16 +1164,27 @@ void read_netcdf_write_stream(
     id_var.getVar(ids.data());
     ensemble = ids[input.ensemble];
 #endif
-    // Set values from a given trajectory
+    // Reset outflow
+    y_single_old[qi_out_idx] = 0;
+    y_single_old[qs_out_idx] = 0;
+    y_single_old[qr_out_idx] = 0;
+    y_single_old[qg_out_idx] = 0;
+    y_single_old[qh_out_idx] = 0;
+    y_single_old[Ni_out_idx] = 0;
+    y_single_old[Ns_out_idx] = 0;
+    y_single_old[Nr_out_idx] = 0;
+    y_single_old[Ng_out_idx] = 0;
+    y_single_old[Nh_out_idx] = 0;
 
-    if(t==0 || input.start_over_env)
+    // Set values from a given trajectory
+    if((t==0 && !checkpoint_flag) || input.start_over_env)
     {
         y_single_old[p_idx]  = nc_params.p;     // p
         y_single_old[T_idx]  = nc_params.t;     // T
 #if defined(RK4ICE) || defined(RK4NOICE)
         y_single_old[w_idx]  = nc_params.w[0]; // w
         nc_params.dw = (nc_params.w[1] - nc_params.w[0]);
-        cc.dw = nc_params.dw / (cc.dt*cc.num_sub_steps);
+        cc.constants[static_cast<int>(Cons_idx::dw)] = nc_params.dw / (cc.dt*cc.num_sub_steps);
 #endif
 #ifdef MET3D
         y_single_old[z_idx] = nc_params.z;
@@ -1300,14 +1222,17 @@ void read_netcdf_write_stream(
         inflow[qg_in_idx] = 0;
   #endif
 #endif
+#if defined MET3D && defined TURBULENCE
+        inflow[qv_in_idx] = nc_params.qturb;
+#endif
     }
 
-    if(t==0 || input.start_over)
+    if((t==0 && !checkpoint_flag) || input.start_over)
     {
         y_single_old[S_idx]  = nc_params.S;     // S
 #ifdef SAT_CALC
         y_single_old[S_idx]  = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
-            / saturation_pressure_water_icon(nc_params.t*ref_quant.Tref);
+            / saturation_pressure_water(nc_params.t*ref_quant.Tref);
 #endif
         y_single_old[qc_idx] = nc_params.qc;    // qc
         y_single_old[qr_idx] = nc_params.qr;    // qr
@@ -1353,22 +1278,22 @@ void read_netcdf_write_stream(
         y_single_old[Nc_idx] = nc_params.Nc;
         y_single_old[Nr_idx] = nc_params.Nr;
 #else
-        denom = (cc.cloud.max_x - cc.cloud.min_x) / 2.0 + cc.cloud.min_x;
+        denom = (get_at(cc.cloud.max_x - cc.cloud.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.cloud.constants, Particle_cons_idx::min_x);
         y_single_old[Nc_idx] = y_single_old[qc_idx] * ref_quant.qref / (denom); //*10e2);  // Nc
-        denom = (cc.rain.max_x - cc.rain.min_x) / 2 + cc.rain.min_x;
+        denom = (get_at(cc.rain.max_x - cc.rain.constants, Particle_cons_idx::min_x)) / 2 + get_at(cc.rain.constants, Particle_cons_idx::min_x);
         y_single_old[Nr_idx] = y_single_old[qr_idx] * ref_quant.qref / (denom); //*10e2);  // Nr
-        denom = cc.cloud.min_x / 2.0;
+        denom = get_at(cc.cloud.constants, Particle_cons_idx::min_x) / 2.0;
     #if defined(RK4ICE)
-        denom = (cc.ice.max_x - cc.ice.min_x) / 2.0 + cc.ice.min_x;
+        denom = (get_at(cc.ice.max_x - cc.ice.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.ice.constants, Particle_cons_idx::min_x);
         y_single_old[Ni_idx] = y_single_old[qi_idx] * ref_quant.qref / (denom); //*10e2); // Ni
-        denom = (cc.snow.max_x - cc.snow.min_x) / 2.0 + cc.snow.min_x;
+        denom = (get_at(cc.snow.max_x - cc.snow.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.snow.constants, Particle_cons_idx::min_x);
         y_single_old[Ns_idx] = y_single_old[qs_idx] * ref_quant.qref / (denom); //*10e2); // Ns
-        denom = (cc.graupel.max_x - cc.graupel.min_x) / 2.0 + cc.graupel.min_x;
+        denom = (get_at(cc.graupel.max_x - cc.graupel.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
         y_single_old[Ng_idx] = y_single_old[qg_idx] * ref_quant.qref / (denom); //*10e2); // Ng
     #endif
 #endif
         // Actually only needed for single moment schemes
-        cc.Nc_prime = y_single_old[Nc_idx];
+        cc.constants[static_cast<int>(Cons_idx::Nc_prime)] = y_single_old[Nc_idx];
 
 #if defined(FLUX) && !defined(WCB)
         inflow[qr_in_idx] = nc_params.QRin;
@@ -1400,86 +1325,23 @@ void read_netcdf_write_stream(
         inflow[Ng_in_idx] = 0;
   #endif
 #endif
-        // DEBUG Set qv to qv_sat
-        // y_single_old[qv_idx] = water_vapor_sat_ratio_2(y_single_old[T_idx].getValue()*ref_quant.Tref);
-        // double psat_prime = saturation_pressure_water_icon(y_single_old[T_idx].getValue()*ref_quant.Tref);
-        // y_single_old[qv_idx] = psat_prime/(Rv*y_single_old[T_idx]*ref_quant.Tref) / ref_quant.qref;
-        // y_single_old[qv_idx] = Epsilon*( psat_prime/(y_single_old[p_idx]*ref_quant.pref - psat_prime) ) / ref_quant.qref;
+
+#if defined MET3D && defined TURBULENCE
+        inflow[qv_in_idx] = nc_params.qturb;
+#endif
+
 #ifdef SAT_CALC
         y_single_old[S_idx]  = convert_qv_to_S(
             y_single_old[p_idx].getValue()*ref_quant.pref,
             y_single_old[T_idx].getValue()*ref_quant.Tref,
             y_single_old[qv_idx].getValue()*ref_quant.qref);
-        // y_single_old[qv_idx]*ref_quant.qref * Rv * y_single_old[T_idx]*ref_quant.Tref
-        //    / psat_prime;
 #endif
-
-#if defined WCB || defined WCB2
-        out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
-                << nc_params.lon[0] << "," << nc_params.lat[0] << ","
-                << nc_params.ascent_flag << ",";
-#elif defined MET3D
-        out_tmp << t*cc.num_sub_steps << "," << traj_id << ","
-                << nc_params.lon[0] << "," << nc_params.lat[0] << ","
-                << nc_params.ascent_flag << ",";
-#else
-        out_tmp << (t*cc.num_sub_steps)*cc.dt << "," << traj_id << ","
-                << nc_params.lon[0] << "," << nc_params.lat[0] << ",";
-#endif
-#if defined WCB2 || defined MET3D
-        out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
-                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                << nc_params.slan_600 << ",";
-#endif
-#ifdef MET3D
-        // time, time after ascent, type
-        out_tmp << nc_params.time_abs[t + nc_params.time_idx] << ","
-                << nc_params.time_rel << ","
-                << nc_params.type[0] << ","
-                << ensemble << ",";
-#endif
-        for(int ii = 0 ; ii < num_comp; ii++)
-            out_tmp << y_single_old[ii] <<
-                ((ii == num_comp-1) ? "\n" : ",");
-
-        for(int ii = 0 ; ii < num_comp ; ii++)
-        {
-#if defined WCB || defined WCB2
-            out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
-                            << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << nc_params.lon[0] << ","
-                            << nc_params.lat[0] << ","
-                            << nc_params.ascent_flag << ",";
-#elif defined MET3D
-            out_diff_tmp[ii] << t*cc.num_sub_steps << ","
-                            << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << nc_params.lon[0] << ","
-                            << nc_params.lat[0] << ","
-                            << nc_params.ascent_flag << ",";
-#else
-            out_diff_tmp[ii] << t*cc.num_sub_steps*cc.dt << ","
-                            << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << nc_params.lon[0] << ","
-                            << nc_params.lat[0] << ",";
-#endif
-#if defined WCB2 || defined MET3D
-            out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
-                                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                                << nc_params.slan_600 << ",";
-#endif
-#if defined MET3D
-        out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] << ","
-                         << nc_params.time_rel << ","
-                         << nc_params.type[0] << ","
-                         << ensemble << ",";
-#endif
-            for(int jj = 0 ; jj < num_par ; jj++)
-                out_diff_tmp[ii] << 0.0
-                    << ((jj==num_par-1) ? "\n" : ",");
-        }
+        datafile.close();
+        std::vector< std::array<double, num_par > >  y_diff(num_comp);
+        for(auto &y_d: y_diff)
+            y_d.fill(0);
+        io_handler.buffer(cc, nc_params, y_single_old, y_diff, 0, t,
+            (t*cc.num_sub_steps)*cc.dt, traj_id, ensemble, ref_quant);
     }
 }
 
@@ -1502,97 +1364,25 @@ void write_output(
 #ifdef MET3D
     const uint32_t ensemble,
 #endif
-    const bool last_step)
+    const bool last_step,
+    IO_handle_t &io_handler,
+    const reference_quantities_t &ref_quant)
 {
     if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {
-        // std::cout << "buffering\n";
-        // Write the results to the output file
-#if defined WCB || defined WCB2
-        out_tmp << time_new << "," << traj_id << ","
-                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                << (nc_params.lat[0] + sub*nc_params.dlat) << ","
-                << nc_params.ascent_flag << ",";
-#elif defined MET3D
-        out_tmp << sub + t*cc.num_sub_steps << "," << traj_id << ","
-                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                << (nc_params.lat[0] + sub*nc_params.dlat) << ","
-                << nc_params.ascent_flag << ",";
-#else
-        out_tmp << time_new << "," << traj_id << ","
-                << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
-#endif
-#if defined WCB2 || defined MET3D
-        out_tmp << nc_params.dp2h << "," << nc_params.conv_400 << ","
-                << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                << nc_params.slan_600 << ",";
-#endif
-#ifdef MET3D
-        out_tmp << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","
-                << nc_params.time_rel + sub*cc.dt << ","
-                << nc_params.type[0] << ","
-                << ensemble << ",";
-            double abs_time = sub *cc.dt + nc_params.time_abs[t + nc_params.time_idx];
-#endif
-        for(int ii = 0 ; ii < num_comp; ii++)
-            out_tmp << y_single_new[ii]
-                << ((ii == num_comp-1) ? "\n" : ",");
+        io_handler.buffer(cc, nc_params, y_single_new, y_diff, sub, t,
+            time_new, traj_id, ensemble, ref_quant);
 
-        // CODIPACK: BEGIN
-        for(int ii = 0 ; ii < num_comp ; ii++)
-        {
-#if defined WCB || defined WCB2
-            out_diff_tmp[ii] << time_new << "," << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                            << (nc_params.lat[0] + sub*nc_params.dlat) << ","
-                            << nc_params.ascent_flag << ",";
-#elif defined MET3D
-            out_diff_tmp[ii] << sub + t*cc.num_sub_steps << "," << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                            << (nc_params.lat[0] + sub*nc_params.dlat) << ","
-                            << nc_params.ascent_flag << ",";
-#else
-            out_diff_tmp[ii] << time_new << "," << traj_id << ","
-                            << output_par_idx[ii] << ","
-                            << (nc_params.lon[0] + sub*nc_params.dlon) << ","
-                            << (nc_params.lat[0] + sub*nc_params.dlat) << ",";
-#endif
-#if defined WCB2 || defined MET3D
-            out_diff_tmp[ii] << nc_params.dp2h << "," << nc_params.conv_400 << ","
-                            << nc_params.conv_600 << "," << nc_params.slan_400 << ","
-                            << nc_params.slan_600 << ",";
-#endif
-#if defined MET3D
-            out_diff_tmp[ii] << nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt << ","
-                         << nc_params.time_rel + sub*cc.dt << ","
-                         << nc_params.type[0] << ","
-                         << ensemble << ",";
-#endif
-            for(int jj = 0 ; jj < num_par ; jj++)
-                out_diff_tmp[ii] << y_diff[ii][jj]
-                    << ((jj==num_par-1) ? "\n" : ",");
-        }
-        // CODIPACK: END
     }
+
     if( (0 == (sub + t*cc.num_sub_steps) % write_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {
-        // std::cout << "Writing to file\n";
-        outfile << out_tmp.rdbuf();
-        for(int ii = 0 ; ii < num_comp ; ii++)
-        {
-            out_diff[ii] << out_diff_tmp[ii].rdbuf();
-            out_diff_tmp[ii].str( std::string() );
-            out_diff_tmp[ii].clear();
-        }
-        out_tmp.str( std::string() );
-        out_tmp.clear();
+        io_handler.flush_buffer();
     }
 }
+
 
 /**
  * Parse the arguments and store them in global_args.
@@ -1608,9 +1398,12 @@ int parse_arguments(
     char** argv,
     global_args_t &global_args)
 {
+    /**
+     * String used to parse commandline input.
+     */
+    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g:h:?";
     bool need_to_abort = false;
     int opt;
-    init_global_args(global_args);
 
     if(argc < 2)
     {
@@ -1710,6 +1503,30 @@ int parse_arguments(
                     break;
                 }
 #endif
+                case 'm':
+                {
+                    global_args.ens_config_flag = 1;
+                    global_args.ens_config_string = optarg;
+                    break;
+                }
+                case 'c':
+                {
+                    global_args.checkpoint_flag = 1;
+                    global_args.checkpoint_string = optarg;
+                    break;
+                }
+                case 'g':
+                {
+                    global_args.gnu_id_flag = 1;
+                    global_args.gnu_id_string = optarg;
+                    break;
+                }
+                case 'h':
+                {
+                    global_args.folder_name_flag = 1;
+                    global_args.folder_name_string = optarg;
+                    break;
+                }
                 case '?':
                 {
                     need_to_abort = true;
@@ -1730,10 +1547,9 @@ int parse_arguments(
     }
 
     if(need_to_abort){
-        std::cout << "ABORTING." << std::endl; // Report error
-        return 1;
+        return ARGUMENT_ERR;
     }
-    return 0;
+    return SUCCESS;
 }
 
 /** @} */ // end of group io

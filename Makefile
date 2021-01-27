@@ -1,12 +1,14 @@
 GCC=g++
 PCC=scorep-g++
-GCCFLAGS= --std=c++14 -pthread -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf #-DLIKWID_PERFMON #  -ffast-math
+#
+GCCFLAGS=--std=c++14 -pthread -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf -Wall #-DLIKWID_PERFMON #  -ffast-math
 GCCINCLUDES=-I.
 TIMESTEPPER=-DRK4ICE
 ATMOFLAGS=-DCONSTANT_DROP=FALSE
-SEASON=-DSPRING
+SEASON=-DAUTUMN
 FLUX=-DFLUX
-SOURCE=-DMET3D -DSB_CONV -DSB_SHAPE
+SOURCE=-DMET3D -DSB_CONV -DSB_SHAPE -DNPROCS=4
+# -DTRACE_QG
 
 BUILD=build
 OBJ_DIR=$(BUILD)/objects
@@ -19,6 +21,8 @@ SRC_SCRATCH=src/scratch/load_test.cpp
 
 SRC_SCAN=src/scratch/scan.cpp
 
+SRC_NETCDF=src/scratch/netcdf_test.cpp
+
 OBJECTS=$(SRC:%.cpp=$(OBJ_DIR)/%.o)
 TARGETS=$(SRC:%.cpp=$(APP_DIR)/%)
 
@@ -28,15 +32,20 @@ TARGETS_SCRATCH=$(SRC_SCRATCH:%.cpp=$(APP_DIR)/%)
 OBJECTS_SCAN=$(SRC_SCAN:%.cpp=$(OBJ_DIR)/%.o)
 TARGETS_SCAN=$(SRC_SCAN:%.cpp=$(APP_DIR)/%)
 
+OBJECTS_NETCDF=$(SRC_NETCDF:%.cpp=$(OBJ_DIR)/%.o)
+TARGETS_NETCDF=$(SRC_NETCDF:%.cpp=$(APP_DIR)/%)
+
 all: build $(TARGETS)
 
 scratch: build $(TARGETS_SCRATCH)
 
 scan: build $(TARGETS_SCAN)
 
+netcdf: build $(TARGETS_NETCDF)
+
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
-	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) $(TIMESTEPPER) $(SEASON) $(FLUX) $(SOURCE) -o $@ -c $<
+	$(GCC) $(GCCINCLUDES) $(SOURCE) $(GCCFLAGS) $(TIMESTEPPER) $(SEASON) $(FLUX) -o $@ -c $<
 
 $(TARGETS): $(OBJECTS)
 	@mkdir -p $(@D)
@@ -47,6 +56,10 @@ $(TARGETS_SCRATCH): $(OBJECTS_SCRATCH)
 	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) -o $@ $<
 
 $(TARGETS_SCAN): $(OBJECTS_SCAN)
+	@mkdir -p $(@D)
+	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) -o $@ $<
+
+$(TARGETS_NETCDF): $(OBJECTS_NETCDF)
 	@mkdir -p $(@D)
 	$(GCC) $(GCCINCLUDES) $(GCCFLAGS) -o $@ $<
 
@@ -66,6 +79,9 @@ debug_scratch: scratch
 
 release: GCCLFAGS += -O2 -march=native
 release: all
+
+debug_netcdf: GCCFLAGS += -g -Og
+debug_netcdf: netcdf
 
 clean:
 	-@trash-put $(OBJ_DIR)/*

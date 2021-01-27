@@ -10,10 +10,11 @@
 #include <tgmath.h>
 #include <vector>
 
-#include "include/microphysics/constants.h"
-#include "include/microphysics/general.h"
 #include "include/microphysics/physical_parameterizations.h"
 #include "include/microphysics/program_io.h"
+#include "include/microphysics/constants.h"
+#include "include/microphysics/general.h"
+#include "include/microphysics/gradient_handle.h"
 #include "include/microphysics/types.h"
 #include "include/microphysics/user_functions.h"
 
@@ -89,6 +90,10 @@ static struct option long_options[] =
     {"height_min", required_argument, NULL, 63},
     {"height_max", required_argument, NULL, 64},
 
+    {"S", required_argument, NULL, 65},
+    {"S_min", required_argument, NULL, 66},
+    {"S_max", required_argument, NULL, 67},
+
     {NULL, 0, NULL, 0}
 };
 
@@ -99,7 +104,7 @@ int main(int argc, char** argv)
 
     uint32_t n1 = 500;
     uint32_t n2 = 500;
-    uint32_t n3 = 1; // Default: No third iteration
+    uint32_t n3 = 0; // Default: No third iteration
     const double NOT_USED = -9999999;
     std::string func_name = "";
 
@@ -164,6 +169,9 @@ int main(int argc, char** argv)
     codi::RealReverse z_prime = NOT_USED;
     codi::RealReverse z_min = NOT_USED;
     codi::RealReverse z_max = NOT_USED;
+    codi::RealReverse S = NOT_USED;
+    codi::RealReverse S_min = NOT_USED;
+    codi::RealReverse S_max = NOT_USED;
 
     int ch;
     // loop over all of the options
@@ -366,6 +374,15 @@ int main(int argc, char** argv)
             case 64:
                 z_max = std::stod(optarg);
                 break;
+            case 65:
+                S = std::stod(optarg);
+                break;
+            case 66:
+                S_min = std::stod(optarg);
+                break;
+            case 67:
+                S_max = std::stod(optarg);
+                break;
             default:
                 std::cout << "No such option " << ch << " with " << optarg << "\n";
                 break;
@@ -373,12 +390,11 @@ int main(int argc, char** argv)
     }
 
     reference_quantities_t ref_quant;
-
+    model_constants_t cc;
     // Set standard values for input
     input_parameters_t input;
-    init_input_parameters(input);
     auto_type = input.auto_type;
-    load_lookup_table(ltabdminwgg);
+    load_lookup_table(cc.ltabdminwgg);
 
     ref_quant.Tref = 273.15;
 #ifdef WCB
@@ -401,7 +417,6 @@ int main(int argc, char** argv)
     codi::RealReverse qh = qh_prime/ref_quant.qref;
     codi::RealReverse qg = qg_prime/ref_quant.qref;
 
-    model_constants_t cc;
     setup_model_constants(input, cc, ref_quant);
 
     std::vector<codi::RealReverse> y(num_comp);
@@ -479,9 +494,11 @@ int main(int argc, char** argv)
                     for(auto& val: y)
                         val = 0;
                     codi::RealReverse Nc = qc_prime_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
 
                     std::cout << qc_prime_in.getValue() << ","
                               << Nc.getValue() << ","
@@ -602,17 +619,21 @@ int main(int argc, char** argv)
                     for(auto& val: y)
                         val = 0;
                     codi::RealReverse Nc = qc_prime_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Nr = qr_prime_in
-                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
                     codi::RealReverse p = p_prime_in / ref_quant.pref;
                     codi::RealReverse T = T_prime_in / ref_quant.Tref;
                     codi::RealReverse qv = qv_prime_in / ref_quant.qref;
                     codi::RealReverse qc = qc_prime_in / ref_quant.qref;
                     codi::RealReverse qr = qr_prime_in / ref_quant.qref;
-                    codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse p_sat = saturation_pressure_water(T_prime_in, cc);
 
                     std::cout << qc_prime_in.getValue() << ","
                               << Nc.getValue() << ","
@@ -713,13 +734,15 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Ni = qi_prime_in
-                        / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
+                        / ( (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.ice.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.ice.constants, Particle_cons_idx::min_x) );
 
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
 
-                    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
-                    codi::RealReverse ssi = qv_prime_in * Rv * T_prime_in / p_sat_ice;
+                    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in, cc);
+                    codi::RealReverse ssi = qv_prime_in * R_v * T_prime_in / p_sat_ice;
 
                     std::cout << qi_prime_in.getValue() << ","
                               << Ni.getValue() << ","
@@ -804,12 +827,14 @@ int main(int argc, char** argv)
                     for(auto& val: y)
                         val = 0;
                     codi::RealReverse Nc = qc_prime_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
 
-                    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
-                    codi::RealReverse ssi = qv_prime_in * Rv * T_prime_in / p_sat_ice;
+                    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in, cc);
+                    codi::RealReverse ssi = qv_prime_in * R_v * T_prime_in / p_sat_ice;
 
                     codi::RealReverse n_inact_tmp = n_inact_in;
 
@@ -893,12 +918,14 @@ int main(int argc, char** argv)
                     for(auto& val: y)
                         val = 0;
                     codi::RealReverse Nc = qc_prime_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
 
-                    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
-                    codi::RealReverse ssi = qv_prime_in * Rv * T_prime_in / p_sat_ice;
+                    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in, cc);
+                    codi::RealReverse ssi = qv_prime_in * R_v * T_prime_in / p_sat_ice;
                     bool use_prog_in = false;
 
                     std::cout << qc_prime_in.getValue() << ","
@@ -948,7 +975,9 @@ int main(int argc, char** argv)
                     val = 0;
 
                 codi::RealReverse Nc = qc_prime_in
-                    / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                    / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                        - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                        + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
 
                 std::cout << qc_prime_in.getValue() << ","
                           << Nc.getValue() << ","
@@ -1028,14 +1057,16 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Ni = qi_prime_in
-                        / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
+                        / ( (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.ice.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.ice.constants, Particle_cons_idx::min_x) );
 
                     codi::RealReverse T_c = T_prime_in - T_freeze;
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                            / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                            / saturation_pressure_water(T_prime_in, cc);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
-                        T_prime_in, S)/rho_0);
-                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
+                        T_prime_in, S, cc)/rho_0);
+                    cc.ice.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
 
                     std::cout << qi_prime_in.getValue() << ","
                             << Ni.getValue() << ","
@@ -1116,13 +1147,15 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Ns = qs_prime_in
-                        / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
+                        / ( (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.snow.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.snow.constants, Particle_cons_idx::min_x) );
 
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                            / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                            / saturation_pressure_water(T_prime_in, cc);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
-                        T_prime_in, S)/rho_0);
-                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+                        T_prime_in, S, cc)/rho_0);
+                    cc.snow.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
 
                     std::cout << qs_prime_in.getValue() << ","
                             << Ns.getValue() << ","
@@ -1199,13 +1232,15 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Ng = qg_prime_in
-                        / ( (cc.graupel.max_x - cc.graupel.min_x)/2 + cc.graupel.min_x );
+                        / ( (get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.graupel.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.graupel.constants, Particle_cons_idx::min_x) );
 
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                            / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                            / saturation_pressure_water(T_prime_in, cc);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
-                        T_prime_in, S)/rho_0);
-                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
+                        T_prime_in, S, cc)/rho_0);
+                    cc.graupel.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
 
                     std::cout << qg_prime_in.getValue() << ","
                             << Ng.getValue() << ","
@@ -1287,13 +1322,15 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Nh = qh_prime_in
-                        / ( (cc.hail.max_x - cc.hail.min_x)/2 + cc.hail.min_x );
+                        / ( (get_at(cc.hail.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.hail.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.hail.constants, Particle_cons_idx::min_x) );
 
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                            / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                            / saturation_pressure_water(T_prime_in, cc);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
-                        T_prime_in, S)/rho_0);
-                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
+                        T_prime_in, S, cc)/rho_0);
+                    cc.graupel.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
 
                     std::cout << qh_prime_in.getValue() << ","
                             << Nh.getValue() << ","
@@ -1339,7 +1376,9 @@ int main(int argc, char** argv)
                     val = 0;
 
                 codi::RealReverse Nc = qc_prime_in
-                    / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                    / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                        - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                        + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
                 std::cout << qc_prime_in.getValue() << ","
                           << Nc.getValue() << ","
                           << qr_prime_in.getValue() << ",";
@@ -1426,11 +1465,13 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Nc = qc_prime_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                                / saturation_pressure_water_icon(T_prime_in);
-                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
-                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                                / saturation_pressure_water(T_prime_in, cc);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S, cc)/rho_0);
+                    cc.cloud.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel_c * rho_inter);
 
                     std::cout << qc_prime_in.getValue() << ","
                             << Nc.getValue() << ","
@@ -1509,12 +1550,14 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Nr = qr_prime_in
-                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                                / saturation_pressure_water_icon(T_prime_in);
+                        / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                                / saturation_pressure_water(T_prime_in, cc);
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
-                        T_prime_in, S)/rho_0);
-                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
+                        T_prime_in, S, cc)/rho_0);
+                    cc.rain.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
 
                     std::cout << qr_prime_in.getValue() << ","
                               << Nr.getValue() << ","
@@ -1590,14 +1633,16 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Nr = qr_prime_in
-                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                                / saturation_pressure_water_icon(T_prime_in);
+                        / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                                / saturation_pressure_water(T_prime_in, cc);
                     codi::RealReverse s_sw = S - 1.0;
                     codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in,
-                        T_prime_in, S)/rho_0);
-                    codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime_in);
-                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
+                        T_prime_in, S, cc)/rho_0);
+                    codi::RealReverse p_sat = saturation_pressure_water(T_prime_in, cc);
+                    cc.rain.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
 
                     std::cout << qr_prime_in.getValue() << ","
                               << Nr.getValue() << ","
@@ -1750,18 +1795,28 @@ int main(int argc, char** argv)
                     for(auto& val: y)
                         val = 0;
 
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                                / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                                / saturation_pressure_water(T_prime_in, cc);
                     codi::RealReverse Nr = qr_prime_in
-                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                        / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ns = qs_prime_in
-                        / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
+                        / ( (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.snow.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.snow.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ni = qi_prime_in
-                        / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
+                        / ( (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.ice.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.ice.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Nh = qh_prime_in
-                        / ( (cc.hail.max_x - cc.hail.min_x)/2 + cc.hail.min_x );
+                        / ( (get_at(cc.hail.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.hail.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.hail.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ng = qg_prime_in
-                        / ( (cc.graupel.max_x - cc.graupel.min_x)/2 + cc.graupel.min_x );
+                        / ( (get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.graupel.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.graupel.constants, Particle_cons_idx::min_x) );
 
                     std::cout << T_prime_in.getValue() << ","
                               << S.getValue() << ","
@@ -1819,7 +1874,9 @@ int main(int argc, char** argv)
             q2_min = qg_min;
             q2_max = qg_max;
             q2_prime_in = qg_prime;
-            avg_size = (cc.graupel.max_x - cc.graupel.min_x) / 2 + cc.graupel.min_x;
+            avg_size = (get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+                - get_at(cc.graupel.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
             q2_idx = qg_idx;
             N2_idx = Ng_idx;
             coeffs = &cc.coeffs_gcr;
@@ -1831,7 +1888,9 @@ int main(int argc, char** argv)
             q2_min = qs_min;
             q2_max = qs_max;
             q2_prime_in = qs_prime;
-            avg_size = (cc.snow.max_x - cc.snow.min_x) / 2 + cc.snow.min_x;
+            avg_size = (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                - get_at(cc.snow.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.snow.constants, Particle_cons_idx::min_x);
             q2_idx = qs_idx;
             N2_idx = Ns_idx;
             pc = &cc.snow;
@@ -1842,7 +1901,9 @@ int main(int argc, char** argv)
             q2_min = qi_min;
             q2_max = qi_max;
             q2_prime_in = qi_prime;
-            avg_size = (cc.ice.max_x - cc.ice.min_x) / 2 + cc.ice.min_x;
+            avg_size = (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                - get_at(cc.ice.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.ice.constants, Particle_cons_idx::min_x);
             q2_idx = qi_idx;
             N2_idx = Ni_idx;
             pc = &cc.ice;
@@ -1907,18 +1968,18 @@ int main(int argc, char** argv)
 
                     codi::RealReverse N2 = q2_prime_in / avg_size;
                     // Update vertical velocity parameters
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
                     codi::RealReverse s_sw = S - 1.0;
-                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
-                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
-                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
-                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
-                    cc.hail.rho_v = exp(-rho_vel * rho_inter);
-                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
-                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
-                    codi::RealReverse e_d = qv_prime_in * Rv * T_prime_in;
-                    codi::RealReverse p_sat = saturation_pressure_water_icon(T_prime_in);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S, cc)/rho_0);
+                    cc.cloud.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel_c * rho_inter);
+                    cc.rain.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.graupel.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.hail.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.ice.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.snow.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    codi::RealReverse e_d = qv_prime_in * R_v * T_prime_in;
+                    codi::RealReverse p_sat = saturation_pressure_water(T_prime_in, cc);
 
                     std::cout << T_prime_in.getValue() << ","
                               << S.getValue() << ","
@@ -1929,7 +1990,7 @@ int main(int argc, char** argv)
                               << cc.dt_prime << ",";
 
                     evaporation(qv_prime_in, e_d, p_sat, s_sw, T_prime_in,
-                        q2_prime_in, N2, y[q2_idx], *pc, y, cc.dt_prime);
+                        q2_prime_in, N2, y[q2_idx], *pc, y, cc);
 
                     std::cout << y[qv_idx].getValue() << ","
                               << y[q2_idx].getValue() << ","
@@ -2044,17 +2105,26 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Ns = qs_prime_in
-                        / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
+                        / ( (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.snow.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.snow.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ni = qi_prime_in
-                        / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
+                        / ( (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.ice.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.ice.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Nh = qh_prime_in
-                        / ( (cc.hail.max_x - cc.hail.min_x)/2 + cc.hail.min_x );
+                        / ( (get_at(cc.hail.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.hail.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.hail.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ng = qg_prime_in
-                        / ( (cc.graupel.max_x - cc.graupel.min_x)/2 + cc.graupel.min_x );
+                        / ( (get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.graupel.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.graupel.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse D_vtp = diffusivity(T_prime_in, p_prime_in);
 
-                    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in);
-                    codi::RealReverse e_d = qv_prime_in * Rv * T_prime_in;
+                    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime_in, cc);
+                    codi::RealReverse e_d = compute_pv(T_prime_in,
+                        convert_qv_to_S(p_prime_in, T_prime_in, qv_prime_in, cc), cc);
                     codi::RealReverse s_si = e_d / p_sat_ice - 1.0;
 
                     codi::RealReverse dep_rate_snow, dep_rate_ice;
@@ -2077,7 +2147,7 @@ int main(int argc, char** argv)
                     vapor_dep_relaxation(qv_prime_in,
                         qi_prime_in, Ni, qs_prime_in, Ns,
                         qg_prime_in, Ng, qh_prime_in, Nh,
-                        s_si, p_sat_ice, T_prime_in, EPSILON,
+                        s_si, p_sat_ice, e_d, p_prime_in, T_prime_in, EPSILON,
                         dep_rate_ice, dep_rate_snow,
                         D_vtp, y, cc);
 
@@ -2116,7 +2186,9 @@ int main(int argc, char** argv)
             q1_min = qi_min;
             q1_max = qi_max;
             q1_prime_in = qi_prime;
-            avg_size1 = (cc.ice.max_x - cc.ice.min_x) / 2 + cc.ice.min_x;
+            avg_size1 = (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                - get_at(cc.ice.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.ice.constants, Particle_cons_idx::min_x);
             q1_idx = qi_idx;
             N1_idx = Ni_idx;
             pc1 = &cc.ice;
@@ -2127,7 +2199,9 @@ int main(int argc, char** argv)
                 q2_min = qh_min;
                 q2_max = qh_max;
                 q2_prime_in = qh_prime;
-                avg_size2 = (cc.hail.max_x - cc.hail.min_x) / 2 + cc.hail.min_x;
+                avg_size2 = (get_at(cc.hail.constants, Particle_cons_idx::max_x)
+                    - get_at(cc.hail.constants, Particle_cons_idx::min_x)) / 2
+                    + get_at(cc.hail.constants, Particle_cons_idx::min_x);
                 q2_idx = qh_idx;
                 N2_idx = Nh_idx;
                 pc2 = &cc.hail;
@@ -2139,7 +2213,9 @@ int main(int argc, char** argv)
                 q2_min = qs_min;
                 q2_max = qs_max;
                 q2_prime_in = qs_prime;
-                avg_size2 = (cc.snow.max_x - cc.snow.min_x) / 2 + cc.snow.min_x;
+                avg_size2 = (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                    - get_at(cc.snow.constants, Particle_cons_idx::min_x)) / 2
+                    + get_at(cc.snow.constants, Particle_cons_idx::min_x);
                 q2_idx = qs_idx;
                 N2_idx = Ns_idx;
                 pc2 = &cc.snow;
@@ -2151,7 +2227,9 @@ int main(int argc, char** argv)
                 q2_min = qg_min;
                 q2_max = qg_max;
                 q2_prime_in = qg_prime;
-                avg_size2 = (cc.graupel.max_x - cc.graupel.min_x) / 2 + cc.graupel.min_x;
+                avg_size2 = (get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+                    - get_at(cc.graupel.constants, Particle_cons_idx::min_x)) / 2
+                    + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
                 q2_idx = qg_idx;
                 N2_idx = Ng_idx;
                 pc2 = &cc.graupel;
@@ -2163,7 +2241,9 @@ int main(int argc, char** argv)
             q1_min = qs_min;
             q1_max = qs_max;
             q1_prime_in = qs_prime;
-            avg_size1 = (cc.snow.max_x - cc.snow.min_x) / 2 + cc.snow.min_x;
+            avg_size1 = (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                - get_at(cc.snow.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.snow.constants, Particle_cons_idx::min_x);
             q1_idx = qs_idx;
             N1_idx = Ns_idx;
             pc1 = &cc.snow;
@@ -2174,7 +2254,9 @@ int main(int argc, char** argv)
                 q2_min = qh_min;
                 q2_max = qh_max;
                 q2_prime_in = qh_prime;
-                avg_size2 = (cc.hail.max_x - cc.hail.min_x) / 2 + cc.hail.min_x;
+                avg_size2 = (get_at(cc.hail.constants, Particle_cons_idx::max_x)
+                    - get_at(cc.hail.constants, Particle_cons_idx::min_x)) / 2
+                    + get_at(cc.hail.constants, Particle_cons_idx::min_x);
                 q2_idx = qh_idx;
                 N2_idx = Nh_idx;
                 pc2 = &cc.hail;
@@ -2186,7 +2268,9 @@ int main(int argc, char** argv)
                 q2_min = qg_min;
                 q2_max = qg_max;
                 q2_prime_in = qg_prime;
-                avg_size2 = (cc.graupel.max_x - cc.graupel.min_x) / 2 + cc.graupel.min_x;
+                avg_size2 = (get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+                    - get_at(cc.graupel.constants, Particle_cons_idx::min_x)) / 2
+                    + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
                 q2_idx = qg_idx;
                 N2_idx = Ng_idx;
                 pc2 = &cc.graupel;
@@ -2269,15 +2353,15 @@ int main(int argc, char** argv)
                     codi::RealReverse N1 = q1_prime_in / avg_size1;
                     codi::RealReverse N2 = q2_prime_in / avg_size2;
                     // Update vertical velocity parameters
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
-                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
-                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
-                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
-                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
-                    cc.hail.rho_v = exp(-rho_vel * rho_inter);
-                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
-                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S, cc)/rho_0);
+                    cc.cloud.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel_c * rho_inter);
+                    cc.rain.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.graupel.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.hail.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.ice.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.snow.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
                     std::cout << p_prime_in.getValue() << ","
                               << T_prime_in.getValue() << ","
                               << S.getValue() << ","
@@ -2388,21 +2472,27 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Ns = qs_prime_in
-                        / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
+                        / ( (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.snow.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.snow.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ni = qi_prime_in
-                        / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
+                        / ( (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.ice.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.ice.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ng = qg_prime_in
-                        / ( (cc.graupel.max_x - cc.graupel.min_x)/2 + cc.graupel.min_x );
+                        / ( (get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.graupel.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.graupel.constants, Particle_cons_idx::min_x) );
 
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
-                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
-                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
-                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
-                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
-                    cc.hail.rho_v = exp(-rho_vel * rho_inter);
-                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
-                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S, cc)/rho_0);
+                    cc.cloud.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel_c * rho_inter);
+                    cc.rain.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.graupel.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.hail.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.ice.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.snow.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
 
                     std::cout << qv_prime_in.getValue() << ","
                               << qi_prime_in.getValue() << ","
@@ -2531,9 +2621,13 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Nh = qh_prime_in
-                        / ( (cc.hail.max_x - cc.hail.min_x)/2 + cc.hail.min_x );
+                        / ( (get_at(cc.hail.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.hail.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.hail.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ng = qg_prime_in
-                        / ( (cc.graupel.max_x - cc.graupel.min_x)/2 + cc.graupel.min_x );
+                        / ( (get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.graupel.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.graupel.constants, Particle_cons_idx::min_x) );
 
                     std::cout << qc_prime_in.getValue() << ","
                               << qr_prime_in.getValue() << ","
@@ -2647,21 +2741,27 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Ns = qs_prime_in
-                        / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
+                        / ( (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.snow.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.snow.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ni = qi_prime_in
-                        / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
+                        / ( (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.ice.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.ice.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Nh = qh_prime_in
-                        / ( (cc.hail.max_x - cc.hail.min_x)/2 + cc.hail.min_x );
+                        / ( (get_at(cc.hail.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.hail.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.hail.constants, Particle_cons_idx::min_x) );
 
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
-                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
-                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
-                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
-                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
-                    cc.hail.rho_v = exp(-rho_vel * rho_inter);
-                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
-                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S, cc)/rho_0);
+                    cc.cloud.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel_c * rho_inter);
+                    cc.rain.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.graupel.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.hail.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.ice.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.snow.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
 
                     std::cout << qv_prime_in.getValue() << ","
                               << qi_prime_in.getValue() << ","
@@ -2707,7 +2807,9 @@ int main(int argc, char** argv)
             q2_min = qs_min;
             q2_max = qs_max;
             q2_prime_in = qs_prime;
-            avg_size = (cc.snow.max_x - cc.snow.min_x) / 2 + cc.snow.min_x;
+            avg_size = (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                - get_at(cc.snow.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.snow.constants, Particle_cons_idx::min_x);
             q2_idx = qs_idx;
             N2_idx = Ns_idx;
             coeffs = &cc.coeffs_scr;
@@ -2719,7 +2821,9 @@ int main(int argc, char** argv)
             q2_min = qi_min;
             q2_max = qi_max;
             q2_prime_in = qi_prime;
-            avg_size = (cc.ice.max_x - cc.ice.min_x) / 2 + cc.ice.min_x;
+            avg_size = (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                - get_at(cc.ice.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.ice.constants, Particle_cons_idx::min_x);
             q2_idx = qi_idx;
             N2_idx = Ni_idx;
             coeffs = &cc.coeffs_icr;
@@ -2796,18 +2900,20 @@ int main(int argc, char** argv)
                     for(auto& val: y)
                         val = 0;
                     codi::RealReverse Nc = qc_prime_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse N2 = q2_prime_in / avg_size;
                     // Update vertical velocity parameters
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
-                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
-                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
-                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
-                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
-                    cc.hail.rho_v = exp(-rho_vel * rho_inter);
-                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
-                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S, cc)/rho_0);
+                    cc.cloud.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel_c * rho_inter);
+                    cc.rain.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.graupel.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.hail.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.ice.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.snow.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
                     std::cout << qc_prime_in.getValue() << ","
                               << Nc.getValue() << ","
                               << T_prime_in.getValue() << ","
@@ -2847,7 +2953,9 @@ int main(int argc, char** argv)
             q2_min = qs_min;
             q2_max = qs_max;
             q2_prime_in = qs_prime;
-            avg_size = (cc.snow.max_x - cc.snow.min_x) / 2 + cc.snow.min_x;
+            avg_size = (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                - get_at(cc.snow.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.snow.constants, Particle_cons_idx::min_x);
             q2_idx = qs_idx;
             N2_idx = Ns_idx;
             coeffs = &cc.coeffs_scr;
@@ -2859,7 +2967,9 @@ int main(int argc, char** argv)
             q2_min = qi_min;
             q2_max = qi_max;
             q2_prime_in = qi_prime;
-            avg_size = (cc.ice.max_x - cc.ice.min_x) / 2 + cc.ice.min_x;
+            avg_size = (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                - get_at(cc.ice.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.ice.constants, Particle_cons_idx::min_x);
             q2_idx = qi_idx;
             N2_idx = Ni_idx;
             coeffs = &cc.coeffs_icr;
@@ -2936,18 +3046,20 @@ int main(int argc, char** argv)
                     for(auto& val: y)
                         val = 0;
                     codi::RealReverse Nr = qr_prime_in
-                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                        / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse N2 = q2_prime_in / avg_size;
                     // Update vertical velocity parameters
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
-                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
-                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
-                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
-                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
-                    cc.hail.rho_v = exp(-rho_vel * rho_inter);
-                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
-                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S, cc)/rho_0);
+                    cc.cloud.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel_c * rho_inter);
+                    cc.rain.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.graupel.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.hail.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.ice.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.snow.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
                     std::cout << qr_prime_in.getValue() << ","
                               << Nr.getValue() << ","
                               << T_prime_in.getValue() << ","
@@ -3088,16 +3200,26 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Nc = qc_prime_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Nr = qr_prime_in
-                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                        / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ni = qi_prime_in
-                        / ( (cc.ice.max_x - cc.ice.min_x)/2 + cc.ice.min_x );
+                        / ( (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.ice.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.ice.constants, Particle_cons_idx::min_x) );
 
                     codi::RealReverse rime_rate_nc = rime_rate_qc_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse rime_rate_nr = rime_rate_qr_in
-                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                        / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
 
                     std::cout << qc_prime_in.getValue() << ","
                               << Nc.getValue() << ","
@@ -3252,16 +3374,26 @@ int main(int argc, char** argv)
                         val = 0;
 
                     codi::RealReverse Nc = qc_prime_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Nr = qr_prime_in
-                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                        / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse Ns = qs_prime_in
-                        / ( (cc.snow.max_x - cc.snow.min_x)/2 + cc.snow.min_x );
+                        / ( (get_at(cc.snow.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.snow.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.snow.constants, Particle_cons_idx::min_x) );
 
                     codi::RealReverse rime_rate_nc = rime_rate_qc_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse rime_rate_nr = rime_rate_qr_in
-                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                        / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
 
                     std::cout << qc_prime_in.getValue() << ","
                               << Nc.getValue() << ","
@@ -3318,7 +3450,9 @@ int main(int argc, char** argv)
             q2_min = qg_min;
             q2_max = qg_max;
             q2_prime_in = qg_prime;
-            avg_size = (cc.graupel.max_x - cc.graupel.min_x) / 2 + cc.graupel.min_x;
+            avg_size = (get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+                - get_at(cc.graupel.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
             q2_idx = qg_idx;
             N2_idx = Ng_idx;
             coeffs = &cc.coeffs_gcr;
@@ -3330,7 +3464,9 @@ int main(int argc, char** argv)
             q2_min = qh_min;
             q2_max = qh_max;
             q2_prime_in = qh_prime;
-            avg_size = (cc.hail.max_x - cc.hail.min_x) / 2 + cc.hail.min_x;
+            avg_size = (get_at(cc.hail.constants, Particle_cons_idx::max_x)
+                - get_at(cc.hail.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.hail.constants, Particle_cons_idx::min_x);
             q2_idx = qh_idx;
             N2_idx = Nh_idx;
             coeffs = &cc.coeffs_hcr;
@@ -3407,18 +3543,20 @@ int main(int argc, char** argv)
                     for(auto& val: y)
                         val = 0;
                     codi::RealReverse Nc = qc_prime_in
-                        / ( (cc.cloud.max_x - cc.cloud.min_x)/2 + cc.cloud.min_x );
+                        / ( (get_at(cc.cloud.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.cloud.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.cloud.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse N2 = q2_prime_in / avg_size;
                     // Update vertical velocity parameters
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
-                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
-                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
-                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
-                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
-                    cc.hail.rho_v = exp(-rho_vel * rho_inter);
-                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
-                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S, cc)/rho_0);
+                    cc.cloud.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel_c * rho_inter);
+                    cc.rain.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.graupel.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.hail.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.ice.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.snow.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
                     std::cout << qc_prime_in.getValue() << ","
                               << Nc.getValue() << ","
                               << T_prime_in.getValue() << ","
@@ -3464,7 +3602,9 @@ int main(int argc, char** argv)
             q2_min = qg_min;
             q2_max = qg_max;
             q2_prime_in = qg_prime;
-            avg_size = (cc.graupel.max_x - cc.graupel.min_x) / 2 + cc.graupel.min_x;
+            avg_size = (get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+                - get_at(cc.graupel.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
             q2_idx = qg_idx;
             N2_idx = Ng_idx;
             coeffs = &cc.coeffs_grr;
@@ -3476,7 +3616,9 @@ int main(int argc, char** argv)
             q2_min = qh_min;
             q2_max = qh_max;
             q2_prime_in = qh_prime;
-            avg_size = (cc.hail.max_x - cc.hail.min_x) / 2 + cc.hail.min_x;
+            avg_size = (get_at(cc.hail.constants, Particle_cons_idx::max_x)
+                - get_at(cc.hail.constants, Particle_cons_idx::min_x)) / 2
+                + get_at(cc.hail.constants, Particle_cons_idx::min_x);
             q2_idx = qh_idx;
             N2_idx = Nh_idx;
             coeffs = &cc.coeffs_hrr;
@@ -3554,18 +3696,20 @@ int main(int argc, char** argv)
                     for(auto& val: y)
                         val = 0;
                     codi::RealReverse Nr = qr_prime_in
-                        / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                        / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                            - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                            + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
                     codi::RealReverse N2 = q2_prime_in / avg_size;
                     // Update vertical velocity parameters
-                    codi::RealReverse S = qv_prime_in * Rv * T_prime_in
-                        / saturation_pressure_water_icon(T_prime_in);
-                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S)/rho_0);
-                    cc.cloud.rho_v = exp(-rho_vel_c * rho_inter);
-                    cc.rain.rho_v = exp(-rho_vel * rho_inter);
-                    cc.graupel.rho_v = exp(-rho_vel * rho_inter);
-                    cc.hail.rho_v = exp(-rho_vel * rho_inter);
-                    cc.ice.rho_v = exp(-rho_vel * rho_inter);
-                    cc.snow.rho_v = exp(-rho_vel * rho_inter);
+                    codi::RealReverse S = qv_prime_in * R_v * T_prime_in
+                        / saturation_pressure_water(T_prime_in, cc);
+                    codi::RealReverse rho_inter = log(compute_rhoh(p_prime_in, T_prime_in, S, cc)/rho_0);
+                    cc.cloud.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel_c * rho_inter);
+                    cc.rain.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.graupel.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.hail.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.ice.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
+                    cc.snow.constants[static_cast<uint32_t>(Particle_cons_idx::rho_v)] = exp(-rho_vel * rho_inter);
                     std::cout << qr_prime_in.getValue() << ","
                               << Nr.getValue() << ","
                               << T_prime_in.getValue() << ","
@@ -3614,7 +3758,9 @@ int main(int argc, char** argv)
                     val = 0;
 
                 codi::RealReverse Nr = qr_prime_in
-                    / ( (cc.rain.max_x - cc.rain.min_x)/2 + cc.rain.min_x );
+                    / ( (get_at(cc.rain.constants, Particle_cons_idx::max_x)
+                        - get_at(cc.rain.constants, Particle_cons_idx::min_x))/2
+                        + get_at(cc.rain.constants, Particle_cons_idx::min_x) );
                 std::cout << qr_prime_in.getValue() << "," << Nr.getValue() << ","
                           << T_prime_in.getValue() << "," << cc.dt_prime << ",";
                 rain_freeze(qr_prime_in, Nr, T_prime_in, cc.dt_prime, y, cc);
@@ -3649,7 +3795,9 @@ int main(int argc, char** argv)
                     qi_prime_in = j * (qi_max-qi_min) / n2 + qi_min;
 
                 codi::RealReverse Ni = qi_prime_in
-                    / ( (cc.ice.max_x - cc.ice.min_x_melt)/2 + cc.ice.min_x_melt );
+                    / ( (get_at(cc.ice.constants, Particle_cons_idx::max_x)
+                        - get_at(cc.ice.constants, Particle_cons_idx::min_x_melt))/2
+                        + get_at(cc.ice.constants, Particle_cons_idx::min_x_melt) );
                 std::cout << qi_prime_in.getValue() << "," << Ni.getValue() << ","
                           << T_prime_in.getValue() << "," << cc.dt_prime << ",";
                 ice_melting(qi_prime_in, Ni, T_prime_in,
@@ -3659,6 +3807,60 @@ int main(int argc, char** argv)
                           << y[qc_idx].getValue() << "," << y[Nc_idx].getValue() << ","
                           << y[lat_cool_idx].getValue() << ","
                           << y[lat_heat_idx].getValue() << "\n";
+            }
+        }
+    } else if(func_name.compare("pressure_parametrization") == 0)
+    {
+        codi::RealReverse S_in = S;
+        codi::RealReverse T_prime_in = T_prime;
+        codi::RealReverse p_prime_in = p_prime;
+        uint32_t used_parameter = 0;
+        uint32_t used_parameter2 = 0;
+
+        std::cout << "S,T,p,p_sat,qv_convert,qv_old,pv_cosmo,pv,pv_old,p_sat_ice,p_sat_ice_old\n";
+        for(uint32_t i=0; i<=n1; ++i)
+        {
+            if(temp_min != NOT_USED && temp_max != NOT_USED)
+                T_prime_in = i * (temp_max-temp_min) / n1 + temp_min;
+            else if(S_min != NOT_USED && S_max != NOT_USED)
+            {
+                S_in = i * (S_max-S_min) / n1 + S_min;
+                used_parameter = 1;
+            }
+
+            for(uint32_t j=0; j<=n2; ++j)
+            {
+                if(used_parameter < 1 && S_min != NOT_USED && S_max != NOT_USED)
+                    S_in = j * (S_max-S_min) / n2 + S_min;
+
+                auto qv_prime = convert_S_to_qv(
+                    p_prime_in,
+                    T_prime_in,
+                    S_in,
+                    cc);
+                auto qv_old = Epsilon*( S_in*saturation_pressure_water(T_prime_in, cc)
+                    / (p_prime_in-S_in*saturation_pressure_water(T_prime_in, cc)) );
+                auto p_sat = saturation_pressure_water(T_prime_in, cc);
+                auto p_sat_vanil = saturation_pressure_water(T_prime_in, cc);
+                auto p_sat_ice = saturation_pressure_ice(T_prime_in, cc);
+                auto p_sat_ice_vanil = saturation_pressure_ice(T_prime_in, cc);
+
+                auto pv_cosmo = qv_prime * R_v * T_prime_in;
+                auto pv = compute_pv(T_prime_in, S_in, cc);
+                auto pv_old = S_in*saturation_pressure_water(T_prime_in, cc);
+
+                std::cout << S_in.getValue() << ","
+                            << T_prime_in.getValue() << ","
+                            << p_prime_in.getValue() << ","
+                            << p_sat.getValue() << ","
+                            << qv_prime.getValue() << ","
+                            << qv_old.getValue() << ","
+                            << pv_cosmo.getValue() << ","
+                            << pv.getValue() << ","
+                            << pv_old.getValue() << ","
+                            << p_sat_ice.getValue() << ","
+                            << p_sat_ice_vanil.getValue()
+                            << "\n";
             }
         }
     } else
