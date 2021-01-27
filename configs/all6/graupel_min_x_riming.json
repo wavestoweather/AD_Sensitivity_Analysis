@@ -1,0 +1,18 @@
+{
+    "segments": [
+        {
+            "when_method": "repeated_time",
+            "duration": 1800,
+            "when_value": 1800,
+            "amount": 65,
+            "params": [
+                {
+                    "name": "min_x_riming",
+                    "sigma_perc": 10,
+                    "type": "graupel",
+                    "rand_func": "uniform"
+                }
+            ]
+        }
+    ]
+}
