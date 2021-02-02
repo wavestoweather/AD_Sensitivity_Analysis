@@ -2,7 +2,7 @@
 #SBATCH --job-name=arr_many_merge
 #SBATCH --output=logs/arr_many_merge_%A_%a.out
 #SBATCH --error=logs/arr_many_merge_%A_%a.err
-#SBATCH --time=18:00:00 # 2
+#SBATCH --time=3:00:00 # 2
 #SBATCH -p parallel
 #SBATCH --ntasks=10
 #SBATCH -A m2_zdvresearch
@@ -40,7 +40,7 @@ then
 fi
 
 parallel -j $N_PROCESSES --no-notice 'python ../scripts/merge.py {}/ {}.nc_wcb' ::: ${this_list[@]}
-wait 
+ 
 for f in ${this_list[@]}
 do
     find ${f}/ -type f -name "*.nc_wcb" -exec rm {} \;

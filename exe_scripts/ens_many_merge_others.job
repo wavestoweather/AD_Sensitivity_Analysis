@@ -2,13 +2,13 @@
 #SBATCH --job-name=ens_traj
 #SBATCH --output=logs/ens_traj_%A_%a.out
 #SBATCH --error=logs/ens_traj_%A_%a.err
-#SBATCH --time=6:00:00 # Should be enough time for about 30 parameters
+#SBATCH --time=24:00:00 # Should be enough time for about 30 parameters
 #SBATCH -p parallel
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=32
 #SBATCH -A m2_zdvresearch
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=10000
+#SBATCH --mem=60000
 #SBATCH -C skylake
 
 # send with sbatch --array=0-44 /lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana/conv_600_0_traj_t000000_p001.nc_wcb 0
@@ -37,10 +37,8 @@ SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/all/"
 copy_out(){
     SUFF=${1##*/}
     SUFF=${SUFF%.*}
-    find ${SAVE_OUTPUTPATH}${SUFF}/ -type f -name "*.nc_wcb" -exec rm {} \;
-    echo "Copy from ${OUTPUT_PATH}${SUFF}/ to ${SAVE_OUTPUTPATH}${SUFF}"
-    find ${OUTPUT_PATH}${SUFF}/ -type f -name "*.nc_wcb" -exec cp {} ${SAVE_OUTPUTPATH}${SUFF}/ \;
-    echo "Copy completed"
+    echo "Copy from ${OUTPUT_PATH}${SUFF}.nc_wcb to ${SAVE_OUTPUTPATH}${SUFF}.nc_wcb"
+    cp ${OUTPUT_PATH}${SUFF}.nc_wcb ${SAVE_OUTPUTPATH}${SUFF}.nc_wcb
     find ${OUTPUT_PATH}${SUFF}/ -type f -name "*.nc_wcb" -exec rm {} \;
 }
 
@@ -101,11 +99,6 @@ do
     if [ ! -d ${OUTPUT_PATH}${SUFF} ]
     then
         mkdir -p ${OUTPUT_PATH}${SUFF}
-    fi
-
-    if [ ! -d ${SAVE_OUTPUTPATH}${SUFF} ]
-    then
-        mkdir -p ${SAVE_OUTPUTPATH}${SUFF}
     fi
 
     # Environmental conditions
@@ -169,5 +162,9 @@ do
         done
         unset arr_files
     done
+    # Merge the output
+    python ${AD_SIM_HOME}/scripts/merge.py ${OUTPUT_PATH}${SUFF}/ ${OUTPUT_PATH}${SUFF}.nc_wcb
+
+    # Copy it
     copy_out $ENSEMBLE_CONFIG
 done

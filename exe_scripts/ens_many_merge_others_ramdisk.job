@@ -2,14 +2,15 @@
 #SBATCH --job-name=ens_traj
 #SBATCH --output=logs/ens_traj_%A_%a.out
 #SBATCH --error=logs/ens_traj_%A_%a.err
-#SBATCH --time=6:00:00 # Should be enough time for about 30 parameters
+#SBATCH --time=24:00:00 # Should be enough time for about 30 parameters
 #SBATCH -p parallel
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=32
 #SBATCH -A m2_zdvresearch
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=10000
+#SBATCH --mem=60000
 #SBATCH -C skylake
+#SBATCH --ramdisk=100G
 
 # send with sbatch --array=0-44 /lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana/conv_600_0_traj_t000000_p001.nc_wcb 0
 module purge
@@ -21,7 +22,7 @@ module load devel/Boost/1.68.0-foss-2018a
 # Store working directory to be safe
 cd ..
 SAVEDPWD=$(pwd)
-export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}
+export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}/ramdisk
 N_CONFIGS=10
 ID_NUMBER=$SLURM_ARRAY_TASK_ID
 # ie "/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana/conv_600_0_traj_t000000_p001.nc_wcb"
@@ -35,13 +36,10 @@ OUTPUT_PATH="${AD_SIM_HOME}/output/"
 SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/all/"
 
 copy_out(){
-    SUFF=${1##*/}
-    SUFF=${SUFF%.*}
-    find ${SAVE_OUTPUTPATH}${SUFF}/ -type f -name "*.nc_wcb" -exec rm {} \;
-    echo "Copy from ${OUTPUT_PATH}${SUFF}/ to ${SAVE_OUTPUTPATH}${SUFF}"
-    find ${OUTPUT_PATH}${SUFF}/ -type f -name "*.nc_wcb" -exec cp {} ${SAVE_OUTPUTPATH}${SUFF}/ \;
-    echo "Copy completed"
-    find ${OUTPUT_PATH}${SUFF}/ -type f -name "*.nc_wcb" -exec rm {} \;
+    echo "Copy from ${OUTPUT_PATH} to ${SAVE_OUTPUTPATH}"
+    find ${OUTPUT_PATH} -type f -name "*.nc_wcb" -exec cp {} ${SAVE_OUTPUTPATH} \;
+    wait
+    exit 0
 }
 
 # Copy executable, input file, configuration file
@@ -101,11 +99,6 @@ do
     if [ ! -d ${OUTPUT_PATH}${SUFF} ]
     then
         mkdir -p ${OUTPUT_PATH}${SUFF}
-    fi
-
-    if [ ! -d ${SAVE_OUTPUTPATH}${SUFF} ]
-    then
-        mkdir -p ${SAVE_OUTPUTPATH}${SUFF}
     fi
 
     # Environmental conditions
@@ -169,5 +162,13 @@ do
         done
         unset arr_files
     done
-    copy_out $ENSEMBLE_CONFIG
+
 done
+
+this_list=( $(ls -d ${OUTPUT_PATH}*/ | sed 's/\/$//') )
+echo "merging from ${this_list[0]}"
+# N_CONFIGS *should* be smaller than the number of tasks
+parallel -j $N_CONFIGS --no-notice 'python ../scripts/merge.py {}/ {}.nc_wcb' ::: ${this_list[@]}
+
+# Copy it
+copy_out $this_list
