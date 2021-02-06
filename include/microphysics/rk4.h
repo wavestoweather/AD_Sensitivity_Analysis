@@ -2,12 +2,15 @@
 #define RK4_H
 
 #include "codi.hpp"
-
-#include "constants.h"
-#include "user_functions.h"
-#include <vector>
 #include <math.h>
-#include "types.h"
+#include <vector>
+
+#include "include/microphysics/constants.h"
+#include "include/types/model_constants_t.h"
+#include "include/types/nc_parameters_t.h"
+#include "include/types/reference_quantities_t.h"
+
+#include "user_functions.h"
 
 /** @defgroup rk Runge-Kutta 4 Method
  * This file provides the function for a single step with the
@@ -387,7 +390,12 @@ void RK4_step_2_sb_ice(
     codi::RealReverse T_prime = ynew[T_idx]*ref.Tref;
     codi::RealReverse p_prime = ynew[p_idx]*ref.pref;
     codi::RealReverse qv_prime = ynew[qv_idx]*ref.qref;
-    ynew[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime, cc);
+    ynew[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime,
+                get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                get_at(cc.constants, Cons_idx::p_sat_const_a),
+                get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                get_at(cc.constants, Cons_idx::p_sat_const_b),
+                 get_at(cc.constants, Cons_idx::Epsilon));
 }
 
 /** @} */ // end of group rk

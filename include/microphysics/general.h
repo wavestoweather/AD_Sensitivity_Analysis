@@ -1,10 +1,16 @@
 #ifndef GENERAL_H
 #define GENERAL_H
 
-#include <stdio.h>
 #include "codi.hpp"
-#include "constants.h"
+#include <stdio.h>
+#include <vector>
 
+#include "include/microphysics/constants.h"
+#include "include/types/particle_model_constants_t.h"
+#include "include/types/reference_quantities_t.h"
+#include "include/types/model_constants_t.h"
+#include "include/types/segment_t.h"
+#include "include/types/input_parameters_t.h"
 
 /** @defgroup general General Purpose Functions
  * This file contains several general purpose functions.
@@ -287,11 +293,6 @@ void print_input_parameters(input_parameters_t &in)
         :   "" )
         << "Folder name for newly generated checkpoints: " << in.FOLDER_NAME << "\n"
         << std::endl << std::flush;
-        // if(in.ENS_CONFIG_FILENAME != "")
-        //     std::cout << "Ensemble configuration file: " << in.ENS_CONFIG_FILENAME << "\n";
-        // if(in.CHECKPOINT_FILENAME != "")
-        //     std::cout << "Checkpoint file: " << in.CHECKPOINT_FILENAME << "\n";
-        // std::cout << std::endl << std::flush;
 }
 
 /**

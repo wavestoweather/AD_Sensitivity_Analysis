@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifdef MPI
+#include <mpi.h>
+#endif
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -10,11 +13,20 @@
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_sf_legendre.h>
 
+#include "include/microphysics/constants.h"
+#include "include/types/global_args_t.h"
+#include "include/types/input_parameters_t.h"
+#include "include/types/output_handle_t.h"
+#include "include/types/model_constants_t.h"
+#include "include/types/nc_parameters_t.h"
+#include "include/types/reference_quantities_t.h"
+#include "include/types/segment_t.h"
+
 #include "include/microphysics/physical_parameterizations.h"
 #include "include/microphysics/program_io.h"
-#include "include/microphysics/constants.h"
+
 #include "include/microphysics/general.h"
-#include "include/microphysics/gradient_handle.h"
+// #include "include/microphysics/gradient_handle.h"
 
 #include <netcdf>
 
@@ -60,9 +72,21 @@
  */
 int main(int argc, char** argv)
 {
+    int rank;
+    int n_processes;
+#ifdef MPI
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &n_processes);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#else
+    rank = 0;
+    n_processes = 1;
+#endif
+    // Rank 0 parses input and loads initial environment data and configuration
     input_parameters_t input;
     global_args_t global_args;
-    SUCCESS_OR_DIE(parse_arguments(argc, argv, global_args));
+
+    SUCCESS_OR_DIE(parse_arguments(argc, argv, global_args, rank, n_processes));
 
     std::vector<segment_t> segments;
     // ==================================================
@@ -80,13 +104,17 @@ int main(int argc, char** argv)
     ref_quant.tref = 1.0;
     ref_quant.zref = 1.0;
     ref_quant.Nref = 1.0; 	// DUMMY
-    print_reference_quantities(ref_quant);
+    if(rank == 0)
+    {
+        print_reference_quantities(ref_quant);
+    }
 
     model_constants_t cc;
     // Collect the initial values in a separated vector
     // See constants.h for storage order
     std::vector<double> y_init(num_comp);
-    set_input_from_arguments(global_args, input);
+    if(rank == 0)
+        set_input_from_arguments(global_args, input);
 
     if(global_args.checkpoint_flag)
     {
@@ -95,7 +123,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        setup_model_constants(input, cc, ref_quant);
+        cc.setup_model_constants(input, ref_quant);
         if(global_args.ens_config_flag)
         {
             load_ens_config(global_args.ens_config_string, cc, segments, input, ref_quant);
@@ -105,6 +133,7 @@ int main(int argc, char** argv)
         }
         input.set_outputfile_id(cc.id, cc.ensemble_id);
     }
+
     auto_type = input.auto_type;
     load_lookup_table(cc.ltabdminwgg);
     int traj_id = -1;
@@ -127,7 +156,7 @@ int main(int argc, char** argv)
         cc, input.current_time));
 
 #if defined(RK4_ONE_MOMENT)
-    setCoefficients(y_init[0] , y_init[1], cc);
+    cc.setCoefficients(y_init[0] , y_init[1]);
 #endif
 
     // Print the constants
@@ -150,7 +179,7 @@ int main(int argc, char** argv)
         y_single_old[ii] = y_init[ii];
 
     // Currently we only load one trajectory per instance
-    IO_handle_t io_handler("netcdf", input.OUTPUT_FILENAME, 1, 1, cc,
+    output_handle_t io_handler("netcdf", input.OUTPUT_FILENAME, 1, 1, cc,
         ref_quant, input.INPUT_FILENAME, input.write_index, input.snapshot_index);
 #ifdef TRACE_QC
     print_particle_params(cc.cloud, "cloud");
@@ -222,7 +251,7 @@ int main(int argc, char** argv)
                 // the input files
                 // *Should* only be necessary when parameters from the
                 // trajectory are used as start point
-                setCoefficients(y_single_old, cc, ref_quant);
+                cc.setCoefficients(y_single_old, ref_quant);
 #endif
 #if defined(TRACE_SAT)
             if(trace)
@@ -296,7 +325,15 @@ int main(int argc, char** argv)
                     codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
                     codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
                     codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
-                    y_single_old[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime, cc);
+                    y_single_old[S_idx] = convert_qv_to_S(
+                        p_prime,
+                        T_prime,
+                        qv_prime,
+                        get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                        get_at(cc.constants, Cons_idx::p_sat_const_a),
+                        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                        get_at(cc.constants, Cons_idx::p_sat_const_b),
+                        get_at(cc.constants, Cons_idx::Epsilon));
                 }
 
 #if defined(RK4) || defined(RK4_ONE_MOMENT) || defined(OTHER)
@@ -316,7 +353,12 @@ int main(int argc, char** argv)
                     codi::RealReverse p_prime = y_single_new[p_idx]*ref_quant.pref;
                     codi::RealReverse qv_prime = y_single_new[qv_idx]*ref_quant.qref;
                     codi::RealReverse qc_prime = y_single_new[qc_idx]*ref_quant.qref;
-                    codi::RealReverse p_sat = saturation_pressure_water(T_prime, cc);
+                    codi::RealReverse p_sat = saturation_pressure_water(
+                        T_prime,
+                        get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                        get_at(cc.constants, Cons_idx::p_sat_const_a),
+                        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                        get_at(cc.constants, Cons_idx::p_sat_const_b));
                     std::vector<codi::RealReverse> res(7);
 #ifdef TRACE_ENV
                     if(trace)
@@ -325,7 +367,12 @@ int main(int argc, char** argv)
                             << convert_qv_to_S(
                                 p_prime,
                                 T_prime,
-                                qv_prime, cc) << "\n";
+                                qv_prime,
+                                get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                                get_at(cc.constants, Cons_idx::p_sat_const_a),
+                                get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                                get_at(cc.constants, Cons_idx::p_sat_const_b),
+                                get_at(cc.constants, Cons_idx::Epsilon)) << "\n";
 #endif
                     for(auto& r: res) r = 0;
                     saturation_adjust(
@@ -346,7 +393,11 @@ int main(int argc, char** argv)
                         p_prime,
                         T_prime,
                         qv_prime,
-                        cc);
+                        get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                        get_at(cc.constants, Cons_idx::p_sat_const_a),
+                        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                        get_at(cc.constants, Cons_idx::p_sat_const_b),
+                        get_at(cc.constants, Cons_idx::Epsilon));
 #ifdef TRACE_ENV
                     if(trace)
                         std::cout << "sat ad S " << y_single_new[S_idx]
@@ -354,7 +405,7 @@ int main(int argc, char** argv)
 #endif
                 }
 #endif
-                get_gradients(y_single_new, y_diff, cc, tape);
+                cc.get_gradients(y_single_new, y_diff, tape);
 
                 // Time update
                 time_new = (sub + t*cc.num_sub_steps)*cc.dt;
@@ -500,6 +551,15 @@ int main(int argc, char** argv)
         std::cout << "ABORTING." << std::endl;
         return 1;
     }
+    // Better:
+    // something like
+    // if(scheduler.check_queue()){
+    //     run_simulation();
+    // }
+    // else end this
+#ifdef MPI
+    MPI_Finalize();
+#endif
 #ifdef SILENT_MODE
     exit(0);
 #else

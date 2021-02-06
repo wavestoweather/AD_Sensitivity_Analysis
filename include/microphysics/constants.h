@@ -1,9 +1,10 @@
 #ifndef CONSTANTS_PHYSICS_H
 #define CONSTANTS_PHYSICS_H
 
-#include "codi.hpp"
 #include <cmath>
+#include "codi.hpp"
 #include <random>
+#include <unordered_map>
 
 /** @defgroup constants Constants
  * Various constants for accessing data in the right order and model constants
@@ -78,21 +79,18 @@
 // Random generators
 ////////////////////////////////////////////////////////////////////////////////
 
-std::random_device rand_device{};
-std::mt19937 rand_generator{rand_device()};
+extern std::random_device rand_device;
+extern std::mt19937 rand_generator;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////////////////////
-
+extern bool trace;
 #if defined(TRACE_TIME)
 // Relative to ascent time
-double trace_time = 0;
+extern double trace_time;
 const double trace_start = -1000;
 const double trace_end = 3500;
-bool trace = false;
-#else
-bool trace = true;
 #endif
 
 #if defined(RK4_ONE_MOMENT)
@@ -1160,10 +1158,10 @@ std::unordered_map<std::string, Particle_cons_idx> const table_particle_param = 
     {"vsedi_max", Particle_cons_idx::vsedi_max}
 };
 
-double sediment_q = 0;
-double sediment_n = 0;
-double sediment_q_total = 0;
-double sediment_n_total = 0;
+extern double sediment_q;
+extern double sediment_n;
+extern double sediment_q_total;
+extern double sediment_n_total;
 
 /**
  * Universal gas constant, unit: J/(mol*K)
@@ -1576,7 +1574,7 @@ const double bet_imm = 1.2293;           /*!< More parameters for Hande et al. n
  * Different autoconversion types. Use 1 for KB and Beheng (1994), 3 for
  * Seifert & Beheng. 2 is currently not supported.
  */
-uint32_t auto_type = 3;
+extern uint32_t auto_type;
 
 /**
  * ccn_activation_hdcp2 after Hande et al (2016)

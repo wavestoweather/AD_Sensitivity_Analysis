@@ -15,7 +15,17 @@
 #include <fstream>
 #include <iterator>
 #include "codi.hpp"
-#include "types.h"
+
+#include "include/misc/error.h"
+#include "include/types/global_args_t.h"
+#include "include/types/input_parameters_t.h"
+#include "include/types/output_handle_t.h"
+#include "include/types/model_constants_t.h"
+#include "include/types/nc_parameters_t.h"
+#include "include/types/reference_quantities_t.h"
+#include "include/types/segment_t.h"
+#include "include/types/table_t.h"
+
 #include "general.h"
 using namespace netCDF;
 
@@ -72,7 +82,7 @@ int load_checkpoint(
     boost::property_tree::read_json(filename, pt);
     // Parse the input parameters
     SUCCESS_OR_DIE(input.from_pt(pt));
-    setup_model_constants(input, cc, ref_quant);
+    cc.setup_model_constants(input, ref_quant);
     // Parse the model constants
     SUCCESS_OR_DIE(cc.from_pt(pt));
     // cc.id are the preceeding ids
@@ -437,7 +447,7 @@ void init_nc_parameters(
  */
 void load_nc_parameters_var(
     nc_parameters_t &nc,
-    netCDF::NcFile &datafile)
+    NcFile &datafile)
 {
 #ifdef WCB2
     nc.lat_var      = datafile.getVar("latitude");
@@ -1070,7 +1080,12 @@ int read_init_netcdf(
             y_init[S_idx]  = convert_qv_to_S(
                 y_init[p_idx]*ref_quant.pref,
                 y_init[T_idx]*ref_quant.Tref,
-                y_init[qv_idx]*ref_quant.qref);
+                y_init[qv_idx]*ref_quant.qref,
+                get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                get_at(cc.constants, Cons_idx::p_sat_const_a),
+                get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                get_at(cc.constants, Cons_idx::p_sat_const_b),
+                 get_at(cc.constants, Cons_idx::Epsilon));
 #endif
         }
     } catch(netCDF::exceptions::NcException& e)
@@ -1138,7 +1153,7 @@ void read_netcdf_write_stream(
 #endif
     const uint32_t t,
     const bool checkpoint_flag,
-    IO_handle_t &io_handler)
+    output_handle_t &io_handler)
 {
 #if defined WCB || defined WCB2
     startp[0] = t;
@@ -1334,7 +1349,12 @@ void read_netcdf_write_stream(
         y_single_old[S_idx]  = convert_qv_to_S(
             y_single_old[p_idx].getValue()*ref_quant.pref,
             y_single_old[T_idx].getValue()*ref_quant.Tref,
-            y_single_old[qv_idx].getValue()*ref_quant.qref);
+            y_single_old[qv_idx].getValue()*ref_quant.qref,
+            get_at(cc.constants, Cons_idx::p_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_a),
+            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_b),
+            get_at(cc.constants, Cons_idx::Epsilon));
 #endif
         datafile.close();
         std::vector< std::array<double, num_par > >  y_diff(num_comp);
@@ -1365,7 +1385,7 @@ void write_output(
     const uint32_t ensemble,
 #endif
     const bool last_step,
-    IO_handle_t &io_handler,
+    output_handle_t &io_handler,
     const reference_quantities_t &ref_quant)
 {
     if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
@@ -1396,7 +1416,9 @@ void write_output(
 int parse_arguments(
     int argc,
     char** argv,
-    global_args_t &global_args)
+    global_args_t &global_args,
+    int &rank,
+    int &n_processes)
 {
     /**
      * String used to parse commandline input.
