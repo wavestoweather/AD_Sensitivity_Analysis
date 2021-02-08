@@ -272,7 +272,7 @@ void saturation_adjust(
     const float_t &qv_prime,
     const float_t &qc_prime,
     std::vector<float_t> &res,
-    model_constants_t &cc
+    const model_constants_t &cc
 )
 {
     float_t qv = qv_prime;

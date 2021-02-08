@@ -568,7 +568,7 @@ void load_nc_parameters(
     nc_parameters_t &nc,
     std::vector<size_t> &startp,
     std::vector<size_t> &countp,
-    reference_quantities_t &ref_quant,
+    const reference_quantities_t &ref_quant,
     uint64_t num_sub_steps)
 {
     // startp[0] <- ensemble (if available)
@@ -1143,7 +1143,7 @@ void read_netcdf_write_stream(
     nc_parameters_t &nc_params,
     model_constants_t &cc,
     input_parameters_t &input,
-    reference_quantities_t &ref_quant,
+    const reference_quantities_t &ref_quant,
     std::vector<codi::RealReverse> &y_single_old,
     std::vector<codi::RealReverse> &inflow,
     std::vector<int> &ids,
@@ -1414,11 +1414,11 @@ void write_output(
  * @return Error code.
  */
 int parse_arguments(
-    int argc,
-    char** argv,
+    const int argc,
+    char* const * argv,
     global_args_t &global_args,
-    int &rank,
-    int &n_processes)
+    const int &rank,
+    const int &n_processes)
 {
     /**
      * String used to parse commandline input.

@@ -1,4 +1,3 @@
-# add_subdirectory(types)
 set(TYPES_SRCS
     microphysics/constants.cpp
     types/table_t.cpp
@@ -37,12 +36,15 @@ if( TARGET )
 else()
     message("~~~ No target using -DTARGET specified. Using default 'simulation'")
     message("~~~ Possible targets: simulation load_test netcdf_test scan")
-    message("\n\nLinking with ${TYPES_SRCS}\n\n")
     add_executable(trajectories ${TYPES_SRCS} microphysics/trajectories.cpp )
     set_property(TARGET trajectories PROPERTY CXX_STANDARD 14)
     set_property(TARGET trajectories PROPERTY CXX_STANDARD_REQUIRED ON)
 
-    # target_link_libraries(trajectories types)
+    if(MPI_CXX_LIBRARIES)
+        target_link_libraries(trajectories ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_CXX_LIBRARIES})
+    else()
+        target_link_libraries(trajectories ${GSL_LIBRARIES} ${NETCDF_LIBRARIES})
+    endif()
 endif()
 
 

@@ -69,13 +69,16 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         # deprecation_warning(20160905 "Unsupported gcc version.")
     endif()
 else()
-    message(WARNING "~~~ You are not using GNU gcc. This has not been tested")
+    message(WARNING "~~~ You are not using a GNU compiler. This has not been tested")
 endif()
 
 message(STATUS "Setting flags")
 
-# Set flags
 set(CXX_WARNING_FLAGS "-Wall")
+
+if( NOT RELOPTLEVEL )
+    set(RELOPTLEVEL 2)
+endif()
 
 # Check for build types such as -DCMAKE_BUILD_TYPE=debug
 if ((NOT CMAKE_BUILD_TYPE) OR (CMAKE_BUILD_TYPE MATCHES "^None"))
@@ -95,10 +98,9 @@ else()
 endif()
 
 # Set flags used in all build types
-set(CMAKE_CXX_FLAGS "-pipe ${CXX_STANDARD} ${CXX_WARNING_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SIM} -DNPROCS=${NPROCS} -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf")
+# set(CMAKE_CXX_FLAGS "-pipe ${CXX_STANDARD} ${CXX_WARNING_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SIM} -DNPROCS=${NPROCS} -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf")
+set(CMAKE_CXX_FLAGS "-pipe ${CXX_STANDARD} ${CXX_WARNING_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SIM} -DNPROCS=${NPROCS} -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize")
 string(REGEX REPLACE "[ ]+" " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" CACHE STRING
-    "Flags used by the compiler during all build types")
 
 # Add release flags
 set(CMAKE_CXX_FLAGS_RELEASE "-O${RELOPTLEVEL} -march=native")
@@ -116,21 +118,36 @@ include_directories (${AD_SIM_HOME})
 
 message("~~~ MPI")
 find_package(MPI)
+if( MPI_CXX_FOUND )
+    message("~~~ Found MPI. Ensemble simulations are now going to use MPI.")
+    message("~~~ No checkpoints will be generated during simulation.")
+    message("~~~ Future versions may allow to generate checkpoints nonetheless")
+    include_directories(${MPI_CXX_INCLUDE_PATH})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MPI")
+else()
+    message("~~~ Using GNU parallel as fallback for ensemble simulations.")
+endif()
+
+message("~~~ BOOST")
+find_package(Boost 1.62 REQUIRED)
 
 message("~~~ NetCDF")
 set(NETCDF_CXX "Yes")
 find_package(NetCDF)
-if( NetCDF_found )
+if( NetCDF_FOUND )
     include_directories (${NETCDF_INCLUDE_DIR})
 else()
     if( NETCDF_INCLUDE_DIR )
         message(STATUS "Defaulting to NetCDF Include directory = ${NETCDF_INCLUDE_DIR}")
+        include_directories (${NETCDF_INCLUDE_DIR})
+        set(NETCDF_LIBRARIES "netcdf -lnetcdf_c++4")
     else()
         message(FATAL_ERROR
 "
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CMake was not able to find your NetCDF installation (maybe it wasn't build using CMake).
-Please define NETCDF_INCLUDE_DIR pointing to your installation.
+Please define NETCDF_INCLUDE_DIR pointing to your installation. Make sure
+that -lnetcdf and -lnetcdf_c++4 can be used by your compiler.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ")
     endif()
@@ -139,7 +156,7 @@ endif()
 message("~~~ CoDiPack")
 find_package(CoDiPack)
 if( CODIPACK_FOUND )
-    include_directories (${CODIPACK_INCLUDE_DIRS})
+    include_directories (${CODIPACK_INCLUDE_DIR})
 else()
     message(FATAL_ERROR
 "
@@ -151,23 +168,13 @@ Please define CODIPACK_INCLUDEDIR pointing to 'codi.hpp'.
 endif()
 
 message("~~~ GSL")
-find_package(GSL)
+find_package(GSL REQUIRED)
 include_directories (${GSL_INCLUDE_DIR})
 
-# include the source directory for headers
 include_directories(${AD_SIM_HOME})
 
-# link_directories(${AD_SIM_HOME})
-# include_directories(${AD_SIM_HOME}/include)
-# include_directories(${AD_SIM_HOME}/include/types)
-# include_directories(${AD_SIM_HOME}/include/microphysics)
-
 message(STATUS "Adding executable and linking")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" CACHE STRING
+    "Flags used by the compiler during all build types")
 
 add_subdirectory(src)
-
-
-
-
-
-# include_directories("${PROJECT_SOURCE_DIR}")
