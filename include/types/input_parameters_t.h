@@ -5,6 +5,7 @@
 #include <string>
 
 #include "include/misc/error.h"
+#include "include/types/global_args_t.h"
 
 namespace pt = boost::property_tree;
 
@@ -69,4 +70,16 @@ struct input_parameters_t{
      * Set values from property tree used in reading checkpoint files.
      */
     int from_pt(pt::ptree &ptree);
+    /**
+     * Set the input parameters with the data from the global arguments.
+     *
+     * @param arg Stuct with command line arguments.
+     * @param in Struct where the input parameters will be stored.
+     */
+    void set_input_from_arguments(global_args_t &arg);
+
+    /**
+     * Print all given input parameters.
+     */
+    void print_parameters();
 };

@@ -24,7 +24,8 @@ enum
     SEGMENTS_CHECKPOINT_ERR = 12,
     DISTRIBUTION_CONFIG_ERR = 13,
     ARGUMENT_ERR = 14,
-    NC_ERR = 15
+    NC_ERR = 15,
+    CHECKPOINT_LOAD_ERR = 16
 };
 
 // Credits to http://www.gpi-site.com/ for this function and the name

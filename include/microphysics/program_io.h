@@ -9,13 +9,14 @@
 #include <string>
 #include <netcdf>
 #include <vector>
-#include <sys/stat.h>
+
 #include "constants.h"
 #include <iostream>
 #include <fstream>
 #include <iterator>
 #include "codi.hpp"
 
+#include "include/misc/general.h"
 #include "include/misc/error.h"
 #include "include/types/global_args_t.h"
 #include "include/types/input_parameters_t.h"
@@ -26,7 +27,7 @@
 #include "include/types/segment_t.h"
 #include "include/types/table_t.h"
 
-#include "general.h"
+#include "include/misc/general.h"
 using namespace netCDF;
 
 namespace pt = boost::property_tree;
@@ -68,55 +69,49 @@ int load_ens_config(
  * Reads a checkpoint file including perturbed parameters if any, current
  * time step, new id as string.
  */
-template<class float_t>
-int load_checkpoint(
-    const std::string &filename,
-    model_constants_t &cc,
-    std::vector<float_t> &y,
-    std::vector<segment_t> &segments,
-    input_parameters_t &input,
-    const reference_quantities_t &ref_quant)
-{
-    int err = 0;
-    pt::ptree pt;
-    boost::property_tree::read_json(filename, pt);
-    // Parse the input parameters
-    SUCCESS_OR_DIE(input.from_pt(pt));
-    cc.setup_model_constants(input, ref_quant);
-    // Parse the model constants
-    SUCCESS_OR_DIE(cc.from_pt(pt));
-    // cc.id are the preceeding ids
-    input.set_outputfile_id(cc.id, cc.ensemble_id);
+// template<class float_t>
+// int load_checkpoint(
+    // const std::string &filename,
+    // model_constants_t &cc,
+    // std::vector<float_t> &y,
+    // std::vector<segment_t> &segments,
+    // input_parameters_t &input,
+    // const reference_quantities_t &ref_quant)
+// {
+//     int err = 0;
+//     pt::ptree pt;
+//     boost::property_tree::read_json(filename, pt);
+//     // Parse the input parameters
+//     SUCCESS_OR_DIE(input.from_pt(pt));
+//     cc.setup_model_constants(input, ref_quant);
+//     // Parse the model constants
+//     SUCCESS_OR_DIE(cc.from_pt(pt));
+//     // cc.id are the preceeding ids
+//     input.set_outputfile_id(cc.id, cc.ensemble_id);
 
-    // Parse the segments
-    for(auto &it: pt.get_child("segments"))
-    {
-        segment_t segment;
-        SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
+//     // Parse the segments
+//     for(auto &it: pt.get_child("segments"))
+//     {
+//         segment_t segment;
+//         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
 
-        if(segment.activated)
-        {
-            segment.perturb(cc, ref_quant, input);
-        }
+//         if(segment.activated)
+//         {
+//             segment.perturb(cc, ref_quant, input);
+//         }
 
-        segments.push_back(segment);
-    }
-    for(auto &it: pt.get_child("Output Parameters"))
-    {
-        y[std::stoi(it.first)] = std::stod(it.second.data());
-    }
+//         segments.push_back(segment);
+//     }
+//     for(auto &it: pt.get_child("Output Parameters"))
+//     {
+//         y[std::stoi(it.first)] = std::stod(it.second.data());
+//     }
 
-    return err;
-}
+//     return err;
+// }
 
 
-/**
- * Check if a file exists.
- */
-inline bool exists(const std::string& name) {
-  struct stat buffer;
-  return (stat (name.c_str(), &buffer) == 0);
-}
+
 
 /**
  * Creates a job-script for MOGON II and puts it on queue.
@@ -127,57 +122,57 @@ inline bool exists(const std::string& name) {
  *
  * @param filename Filename for the checkpoint file. On out: added _idx-y.json
  */
-template<class float_t>
-void write_checkpoint(
-    std::string &filename,
-    model_constants_t &cc,
-    const std::vector<float_t> &y,
-    std::vector<segment_t> &segments,
-    const input_parameters_t &input,
-    const double &current_time)
-{
-    pt::ptree checkpoint;
-    // First we add the ensemble configuration
-    pt::ptree segment_tree;
-    for(auto &s: segments)
-        s.put(segment_tree);
+// template<class float_t>
+// void write_checkpoint(
+//     std::string &filename,
+//     model_constants_t &cc,
+//     const std::vector<float_t> &y,
+//     std::vector<segment_t> &segments,
+//     const input_parameters_t &input,
+//     const double &current_time)
+// {
+//     pt::ptree checkpoint;
+//     // First we add the ensemble configuration
+//     pt::ptree segment_tree;
+//     for(auto &s: segments)
+//         s.put(segment_tree);
 
-    checkpoint.add_child("segments", segment_tree);
-    // configuration from input_parameters_t
-    input.put(checkpoint, current_time);
-    // Model constants
-    cc.put(checkpoint);
-    // Current status of y
-    pt::ptree output_parameters;
-    for(uint32_t i=0; i<num_comp; i++)
-        output_parameters.put(std::to_string(i), y[i]);
-    checkpoint.add_child("Output Parameters", output_parameters);
+//     checkpoint.add_child("segments", segment_tree);
+//     // configuration from input_parameters_t
+//     input.put(checkpoint, current_time);
+//     // Model constants
+//     cc.put(checkpoint);
+//     // Current status of y
+//     pt::ptree output_parameters;
+//     for(uint32_t i=0; i<num_comp; i++)
+//         output_parameters.put(std::to_string(i), y[i]);
+//     checkpoint.add_child("Output Parameters", output_parameters);
 
-    uint64_t i = 0;
-    std::string actual_filename = filename + "/checkpoint_id" + cc.id + "_0000.json";
-    while(exists(actual_filename))
-    {
-        i++;
-        if(i < 10)
-            actual_filename = filename + "/checkpoint_id" + cc.id + "_000" + std::to_string(i) + ".json";
-        else if(i < 100)
-            actual_filename = filename + "/checkpoint_id" + cc.id + "_00" + std::to_string(i) + ".json";
-        else if(i < 1000)
-            actual_filename = filename + "/checkpoint_id" + cc.id + "_0" + std::to_string(i) + ".json";
-        else
-            actual_filename = filename + "/checkpoint_id" + cc.id + "_" + std::to_string(i) + ".json";
-    }
-    std::fstream outstream(actual_filename, std::ios::out);
-    filename = actual_filename;
-    pt::write_json(outstream, checkpoint);
-    outstream.close();
-    // deactivate all segments, so we know, another instance is going
-    // to process this
-    for(auto &s: segments)
-        s.deactivate(true);
+//     uint64_t i = 0;
+//     std::string actual_filename = filename + "/checkpoint_id" + cc.id + "_0000.json";
+//     while(exists(actual_filename))
+//     {
+//         i++;
+//         if(i < 10)
+//             actual_filename = filename + "/checkpoint_id" + cc.id + "_000" + std::to_string(i) + ".json";
+//         else if(i < 100)
+//             actual_filename = filename + "/checkpoint_id" + cc.id + "_00" + std::to_string(i) + ".json";
+//         else if(i < 1000)
+//             actual_filename = filename + "/checkpoint_id" + cc.id + "_0" + std::to_string(i) + ".json";
+//         else
+//             actual_filename = filename + "/checkpoint_id" + cc.id + "_" + std::to_string(i) + ".json";
+//     }
+//     std::fstream outstream(actual_filename, std::ios::out);
+//     filename = actual_filename;
+//     pt::write_json(outstream, checkpoint);
+//     outstream.close();
+//     // deactivate all segments, so we know, another instance is going
+//     // to process this
+//     for(auto &s: segments)
+//         s.deactivate(true);
 
-    cc.ensemble_id++;
-}
+//     cc.ensemble_id++;
+// }
 
 
 /**
@@ -418,24 +413,24 @@ bool load_lookup_table(
  * @param n The number of trajectories in the netCDF file.
  * @param n_timesteps The maximum number of timesteps in the netCDF file.
  */
-void init_nc_parameters(
-    nc_parameters_t &nc,
-    uint32_t n=32,
-    uint32_t n_timesteps=7922)
-{
-    nc.n_trajectories = n;
-    nc.n_timesteps = n_timesteps;
-#if defined MET3D
-    nc.w.resize(2);
-    nc.time_abs.resize(n_timesteps);
-    nc.type[0] = (char*) "";
-#else
-    nc.w.resize(2);
-    nc.z.resize(4);
-#endif
-    nc.lat.resize(2);
-    nc.lon.resize(2);
-}
+// void init_nc_parameters(
+//     nc_parameters_t &nc,
+//     uint32_t n=32,
+//     uint32_t n_timesteps=7922)
+// {
+//     nc.n_trajectories = n;
+//     nc.n_timesteps = n_timesteps;
+// #if defined MET3D
+//     nc.w.resize(2);
+//     nc.time_abs.resize(n_timesteps);
+//     nc.type[0] = (char*) "";
+// #else
+//     nc.w.resize(2);
+//     nc.z.resize(4);
+// #endif
+//     nc.lat.resize(2);
+//     nc.lon.resize(2);
+// }
 
 
 /**
@@ -445,110 +440,110 @@ void init_nc_parameters(
  * @param nc Struct where to load the variables.
  * @param datafile The netCDF file.
  */
-void load_nc_parameters_var(
-    nc_parameters_t &nc,
-    NcFile &datafile)
-{
-#ifdef WCB2
-    nc.lat_var      = datafile.getVar("latitude");
-    nc.lon_var      = datafile.getVar("longitude");
-#else
-    nc.lat_var      = datafile.getVar("lat");
-    nc.lon_var      = datafile.getVar("lon");
-#endif
-    nc.z_var        = datafile.getVar("z");
-#if defined WCB || defined WCB2
-    nc.p_var        = datafile.getVar("P");
-    nc.t_var        = datafile.getVar("T");
-    nc.qc_var       = datafile.getVar("QC");
-    nc.qv_var       = datafile.getVar("QV");
-    nc.qr_var       = datafile.getVar("QR");
-    nc.qi_var       = datafile.getVar("QI");
-    nc.qs_var       = datafile.getVar("QS");
-    nc.time_rel_var = datafile.getVar("time");
-#elif defined MET3D
-    nc.p_var        = datafile.getVar("pressure");
-    nc.t_var        = datafile.getVar("T");
-    nc.qc_var       = datafile.getVar("QC");
-    nc.qv_var       = datafile.getVar("QV");
-    nc.qr_var       = datafile.getVar("QR");
-    nc.qi_var       = datafile.getVar("QI");
-    nc.qs_var       = datafile.getVar("QS");
-    nc.time_rel_var = datafile.getVar("time_after_ascent");
-    nc.time_abs_var = datafile.getVar("time");
-    nc.w_var        = datafile.getVar("w");
-    nc.S_var        = datafile.getVar("S");
-    nc.type_var     = datafile.getVar("type");
-#else
-    nc.p_var        = datafile.getVar("p");
-    nc.t_var        = datafile.getVar("t");
-    nc.w_var        = datafile.getVar("w");
-    nc.time_rel_var = datafile.getVar("time_rel");
-    nc.qc_var       = datafile.getVar("qc");
-    nc.qr_var       = datafile.getVar("qr");
-    nc.qi_var       = datafile.getVar("qi");
-    nc.qs_var       = datafile.getVar("qs");
-    nc.qg_var       = datafile.getVar("qg");
-    nc.qv_var       = datafile.getVar("qv");
-    nc.QIin_var     = datafile.getVar("QIin");
-    nc.QSin_var     = datafile.getVar("QSin");
-    nc.QRin_var     = datafile.getVar("QRin");
-    nc.QGin_var     = datafile.getVar("QGin");
-    nc.QIout_var    = datafile.getVar("QIout");
-    nc.QSout_var    = datafile.getVar("QSout");
-    nc.QRout_var    = datafile.getVar("QRout");
-    nc.QGout_var    = datafile.getVar("QGout");
-#endif
-#ifdef WCB
-    // specific humidity
-    nc.S_var        = datafile.getVar("RELHUM");
-    // Flag wether an effective ascent region is reached
-    nc.ascent_flag_var = datafile.getVar("MAP");
-    // Potential vorticity (German: Wirbelstaerke)
-    // nc.pot_vortic   = datafile.getVar("POT_VORTIC")
-#endif
+// void load_nc_parameters_var(
+//     nc_parameters_t &nc,
+//     NcFile &datafile)
+// {
+// #ifdef WCB2
+//     nc.lat_var      = datafile.getVar("latitude");
+//     nc.lon_var      = datafile.getVar("longitude");
+// #else
+//     nc.lat_var      = datafile.getVar("lat");
+//     nc.lon_var      = datafile.getVar("lon");
+// #endif
+//     nc.z_var        = datafile.getVar("z");
+// #if defined WCB || defined WCB2
+//     nc.p_var        = datafile.getVar("P");
+//     nc.t_var        = datafile.getVar("T");
+//     nc.qc_var       = datafile.getVar("QC");
+//     nc.qv_var       = datafile.getVar("QV");
+//     nc.qr_var       = datafile.getVar("QR");
+//     nc.qi_var       = datafile.getVar("QI");
+//     nc.qs_var       = datafile.getVar("QS");
+//     nc.time_rel_var = datafile.getVar("time");
+// #elif defined MET3D
+//     nc.p_var        = datafile.getVar("pressure");
+//     nc.t_var        = datafile.getVar("T");
+//     nc.qc_var       = datafile.getVar("QC");
+//     nc.qv_var       = datafile.getVar("QV");
+//     nc.qr_var       = datafile.getVar("QR");
+//     nc.qi_var       = datafile.getVar("QI");
+//     nc.qs_var       = datafile.getVar("QS");
+//     nc.time_rel_var = datafile.getVar("time_after_ascent");
+//     nc.time_abs_var = datafile.getVar("time");
+//     nc.w_var        = datafile.getVar("w");
+//     nc.S_var        = datafile.getVar("S");
+//     nc.type_var     = datafile.getVar("type");
+// #else
+//     nc.p_var        = datafile.getVar("p");
+//     nc.t_var        = datafile.getVar("t");
+//     nc.w_var        = datafile.getVar("w");
+//     nc.time_rel_var = datafile.getVar("time_rel");
+//     nc.qc_var       = datafile.getVar("qc");
+//     nc.qr_var       = datafile.getVar("qr");
+//     nc.qi_var       = datafile.getVar("qi");
+//     nc.qs_var       = datafile.getVar("qs");
+//     nc.qg_var       = datafile.getVar("qg");
+//     nc.qv_var       = datafile.getVar("qv");
+//     nc.QIin_var     = datafile.getVar("QIin");
+//     nc.QSin_var     = datafile.getVar("QSin");
+//     nc.QRin_var     = datafile.getVar("QRin");
+//     nc.QGin_var     = datafile.getVar("QGin");
+//     nc.QIout_var    = datafile.getVar("QIout");
+//     nc.QSout_var    = datafile.getVar("QSout");
+//     nc.QRout_var    = datafile.getVar("QRout");
+//     nc.QGout_var    = datafile.getVar("QGout");
+// #endif
+// #ifdef WCB
+//     // specific humidity
+//     nc.S_var        = datafile.getVar("RELHUM");
+//     // Flag wether an effective ascent region is reached
+//     nc.ascent_flag_var = datafile.getVar("MAP");
+//     // Potential vorticity (German: Wirbelstaerke)
+//     // nc.pot_vortic   = datafile.getVar("POT_VORTIC")
+// #endif
 
-#if defined WCB2 || defined MET3D
-    nc.qg_var       = datafile.getVar("QG");
-    nc.QIin_var     = datafile.getVar("QI_IN");
-    nc.QSin_var     = datafile.getVar("QS_IN");
-    nc.QRin_var     = datafile.getVar("QR_IN");
-    nc.QGin_var     = datafile.getVar("QG_IN");
-    nc.QIout_var    = datafile.getVar("QI_OUT");
-    nc.QSout_var    = datafile.getVar("QS_OUT");
-    nc.QRout_var    = datafile.getVar("QR_OUT");
-    nc.QGout_var    = datafile.getVar("QG_OUT");
+// #if defined WCB2 || defined MET3D
+//     nc.qg_var       = datafile.getVar("QG");
+//     nc.QIin_var     = datafile.getVar("QI_IN");
+//     nc.QSin_var     = datafile.getVar("QS_IN");
+//     nc.QRin_var     = datafile.getVar("QR_IN");
+//     nc.QGin_var     = datafile.getVar("QG_IN");
+//     nc.QIout_var    = datafile.getVar("QI_OUT");
+//     nc.QSout_var    = datafile.getVar("QS_OUT");
+//     nc.QRout_var    = datafile.getVar("QR_OUT");
+//     nc.QGout_var    = datafile.getVar("QG_OUT");
 
-    nc.NIin_var     = datafile.getVar("NI_IN");
-    nc.NSin_var     = datafile.getVar("NS_IN");
-    nc.NRin_var     = datafile.getVar("NR_IN");
-    nc.NGin_var     = datafile.getVar("NG_IN");
-    nc.NIout_var    = datafile.getVar("NI_OUT");
-    nc.NSout_var    = datafile.getVar("NS_OUT");
-    nc.NRout_var    = datafile.getVar("NR_OUT");
-    nc.NGout_var    = datafile.getVar("NG_OUT");
+//     nc.NIin_var     = datafile.getVar("NI_IN");
+//     nc.NSin_var     = datafile.getVar("NS_IN");
+//     nc.NRin_var     = datafile.getVar("NR_IN");
+//     nc.NGin_var     = datafile.getVar("NG_IN");
+//     nc.NIout_var    = datafile.getVar("NI_OUT");
+//     nc.NSout_var    = datafile.getVar("NS_OUT");
+//     nc.NRout_var    = datafile.getVar("NR_OUT");
+//     nc.NGout_var    = datafile.getVar("NG_OUT");
 
-    nc.Nc_var       = datafile.getVar("NCCLOUD");
-    nc.Nr_var       = datafile.getVar("NCRAIN");
-    nc.Ni_var       = datafile.getVar("NCICE");
-    nc.Ns_var       = datafile.getVar("NCSNOW");
-    nc.Ng_var       = datafile.getVar("NCGRAUPEL");
+//     nc.Nc_var       = datafile.getVar("NCCLOUD");
+//     nc.Nr_var       = datafile.getVar("NCRAIN");
+//     nc.Ni_var       = datafile.getVar("NCICE");
+//     nc.Ns_var       = datafile.getVar("NCSNOW");
+//     nc.Ng_var       = datafile.getVar("NCGRAUPEL");
 
-    nc.conv_400_var = datafile.getVar("conv_400");
-    nc.conv_600_var = datafile.getVar("conv_600");
-    nc.slan_400_var = datafile.getVar("slan_400");
-    nc.slan_600_var = datafile.getVar("slan_600");
-#endif
-#if defined WCB2
-    // Flag wether an effective ascent region is reached
-    nc.ascent_flag_var = datafile.getVar("WCB_flag");
-    // 2h ascent rate after Oertel et al. (2019)
-    nc.dp2h_var     = datafile.getVar("dp2h");
-#endif
-#if defined MET3D && defined TURBULENCE
-    nc.qturb_var    = datafile.getVar("Q_TURBULENCE");
-#endif
-}
+//     nc.conv_400_var = datafile.getVar("conv_400");
+//     nc.conv_600_var = datafile.getVar("conv_600");
+//     nc.slan_400_var = datafile.getVar("slan_400");
+//     nc.slan_600_var = datafile.getVar("slan_600");
+// #endif
+// #if defined WCB2
+//     // Flag wether an effective ascent region is reached
+//     nc.ascent_flag_var = datafile.getVar("WCB_flag");
+//     // 2h ascent rate after Oertel et al. (2019)
+//     nc.dp2h_var     = datafile.getVar("dp2h");
+// #endif
+// #if defined MET3D && defined TURBULENCE
+//     nc.qturb_var    = datafile.getVar("Q_TURBULENCE");
+// #endif
+// }
 
 
 /**
@@ -564,304 +559,304 @@ void load_nc_parameters_var(
  *               trajectory id. Usually we set the values to 1.
  * @param ref_quant Reference quantities to transform between units.
  */
-void load_nc_parameters(
-    nc_parameters_t &nc,
-    std::vector<size_t> &startp,
-    std::vector<size_t> &countp,
-    const reference_quantities_t &ref_quant,
-    uint64_t num_sub_steps)
-{
-    // startp[0] <- ensemble (if available)
-    // startp[1] <- trajectory id
-    // startp[2] <- timestep
+// void load_nc_parameters(
+//     nc_parameters_t &nc,
+//     std::vector<size_t> &startp,
+//     std::vector<size_t> &countp,
+//     const reference_quantities_t &ref_quant,
+//     uint64_t num_sub_steps)
+// {
+//     // startp[0] <- ensemble (if available)
+//     // startp[1] <- trajectory id
+//     // startp[2] <- timestep
 
 
-#if defined WCB || defined WCB2
-    countp[0]++;
-    countp[0]++;
-    nc.z_var.getVar(startp, countp, nc.z.data());
-    nc.lat_var.getVar(startp, countp, nc.lat.data());
-    nc.lon_var.getVar(startp, countp, nc.lon.data());
-    countp[0]--;
-    countp[0]--;
-#elif defined MET3D
-    nc.z_var.getVar(startp, countp, &nc.z);
-    countp[2]++;
-    nc.lat_var.getVar(startp, countp, nc.lat.data());
-    nc.lon_var.getVar(startp, countp, nc.lon.data());
-    nc.w_var.getVar(startp, countp, nc.w.data());
-    countp[2]--;
-#else
-    countp[1]++;
-    countp[1]++;
-    nc.z_var.getVar(startp, countp, nc.z.data());
-    nc.lat_var.getVar(startp, countp, nc.lat.data());
-    nc.lon_var.getVar(startp, countp, nc.lon.data());
-    countp[1]--;
-    countp[1]--;
-#endif
+// #if defined WCB || defined WCB2
+//     countp[0]++;
+//     countp[0]++;
+//     nc.z_var.getVar(startp, countp, nc.z.data());
+//     nc.lat_var.getVar(startp, countp, nc.lat.data());
+//     nc.lon_var.getVar(startp, countp, nc.lon.data());
+//     countp[0]--;
+//     countp[0]--;
+// #elif defined MET3D
+//     nc.z_var.getVar(startp, countp, &nc.z);
+//     countp[2]++;
+//     nc.lat_var.getVar(startp, countp, nc.lat.data());
+//     nc.lon_var.getVar(startp, countp, nc.lon.data());
+//     nc.w_var.getVar(startp, countp, nc.w.data());
+//     countp[2]--;
+// #else
+//     countp[1]++;
+//     countp[1]++;
+//     nc.z_var.getVar(startp, countp, nc.z.data());
+//     nc.lat_var.getVar(startp, countp, nc.lat.data());
+//     nc.lon_var.getVar(startp, countp, nc.lon.data());
+//     countp[1]--;
+//     countp[1]--;
+// #endif
 
-#if defined WCB || defined WCB2
-    int map = 0;
-    nc.ascent_flag_var.getVar(startp, countp, &map);
-    nc.ascent_flag = (map > 0) ? true : false;
-#endif
-#if defined WCB2
-    nc.dp2h_var.getVar(startp, countp, &map);
-    nc.dp2h = (map > 0) ? true : false;
-#endif
-#if defined MET3D
-    int map = 0;
-#endif
-#if defined MET3D || defined WCB2
-    nc.conv_400_var.getVar(startp, countp, &map);
-    nc.conv_400 = (map > 0) ? true : false;
-    nc.conv_600_var.getVar(startp, countp, &map);
-    nc.conv_600 = (map > 0) ? true : false;
-    nc.slan_400_var.getVar(startp, countp, &map);
-    nc.slan_400 = (map > 0) ? true : false;
-    nc.slan_600_var.getVar(startp, countp, &map);
-    nc.slan_600 = (map > 0) ? true : false;
-#endif
+// #if defined WCB || defined WCB2
+//     int map = 0;
+//     nc.ascent_flag_var.getVar(startp, countp, &map);
+//     nc.ascent_flag = (map > 0) ? true : false;
+// #endif
+// #if defined WCB2
+//     nc.dp2h_var.getVar(startp, countp, &map);
+//     nc.dp2h = (map > 0) ? true : false;
+// #endif
+// #if defined MET3D
+//     int map = 0;
+// #endif
+// #if defined MET3D || defined WCB2
+//     nc.conv_400_var.getVar(startp, countp, &map);
+//     nc.conv_400 = (map > 0) ? true : false;
+//     nc.conv_600_var.getVar(startp, countp, &map);
+//     nc.conv_600 = (map > 0) ? true : false;
+//     nc.slan_400_var.getVar(startp, countp, &map);
+//     nc.slan_400 = (map > 0) ? true : false;
+//     nc.slan_600_var.getVar(startp, countp, &map);
+//     nc.slan_600 = (map > 0) ? true : false;
+// #endif
 
-    nc.t_var.getVar(startp, countp, &nc.t);
-    nc.p_var.getVar(startp, countp, &nc.p);
-    nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
-    nc.qc_var.getVar(startp, countp, &nc.qc);
-    nc.qr_var.getVar(startp, countp, &nc.qr);
-    nc.qi_var.getVar(startp, countp, &nc.qi);
-    nc.qs_var.getVar(startp, countp, &nc.qs);
-    nc.qv_var.getVar(startp, countp, &nc.qv);
+//     nc.t_var.getVar(startp, countp, &nc.t);
+//     nc.p_var.getVar(startp, countp, &nc.p);
+//     nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
+//     nc.qc_var.getVar(startp, countp, &nc.qc);
+//     nc.qr_var.getVar(startp, countp, &nc.qr);
+//     nc.qi_var.getVar(startp, countp, &nc.qi);
+//     nc.qs_var.getVar(startp, countp, &nc.qs);
+//     nc.qv_var.getVar(startp, countp, &nc.qv);
 
-#if !defined WCB2 && !defined MET3D
-    // We are reading in hPa. Convert to Pa
-    nc.p        *= 100;
-#endif
-    nc.p        /= ref_quant.pref;
-    nc.t        /= ref_quant.Tref;
-    nc.qc       /= ref_quant.qref;
-    nc.qr       /= ref_quant.qref;
-    nc.qv       /= ref_quant.qref;
-    nc.qi       /= ref_quant.qref;
-    nc.qs       /= ref_quant.qref;
+// #if !defined WCB2 && !defined MET3D
+//     // We are reading in hPa. Convert to Pa
+//     nc.p        *= 100;
+// #endif
+//     nc.p        /= ref_quant.pref;
+//     nc.t        /= ref_quant.Tref;
+//     nc.qc       /= ref_quant.qref;
+//     nc.qr       /= ref_quant.qref;
+//     nc.qv       /= ref_quant.qref;
+//     nc.qi       /= ref_quant.qref;
+//     nc.qs       /= ref_quant.qref;
 
-#if defined WCB2 || defined MET3D
-    nc.NRin_var.getVar(startp, countp, &nc.NRin);
-    nc.NIin_var.getVar(startp, countp, &nc.NIin);
-    nc.NSin_var.getVar(startp, countp, &nc.NSin);
-    nc.NGin_var.getVar(startp, countp, &nc.NGin);
+// #if defined WCB2 || defined MET3D
+//     nc.NRin_var.getVar(startp, countp, &nc.NRin);
+//     nc.NIin_var.getVar(startp, countp, &nc.NIin);
+//     nc.NSin_var.getVar(startp, countp, &nc.NSin);
+//     nc.NGin_var.getVar(startp, countp, &nc.NGin);
 
-    nc.NRout_var.getVar(startp, countp, &nc.NRout);
-    nc.NIout_var.getVar(startp, countp, &nc.NIout);
-    nc.NSout_var.getVar(startp, countp, &nc.NSout);
-    nc.NGout_var.getVar(startp, countp, &nc.NGout);
+//     nc.NRout_var.getVar(startp, countp, &nc.NRout);
+//     nc.NIout_var.getVar(startp, countp, &nc.NIout);
+//     nc.NSout_var.getVar(startp, countp, &nc.NSout);
+//     nc.NGout_var.getVar(startp, countp, &nc.NGout);
 
-    nc.Nc_var.getVar(startp, countp, &nc.Nc);
-    nc.Nr_var.getVar(startp, countp, &nc.Nr);
-    nc.Ni_var.getVar(startp, countp, &nc.Ni);
-    nc.Ns_var.getVar(startp, countp, &nc.Ns);
-    nc.Ng_var.getVar(startp, countp, &nc.Ng);
+//     nc.Nc_var.getVar(startp, countp, &nc.Nc);
+//     nc.Nr_var.getVar(startp, countp, &nc.Nr);
+//     nc.Ni_var.getVar(startp, countp, &nc.Ni);
+//     nc.Ns_var.getVar(startp, countp, &nc.Ns);
+//     nc.Ng_var.getVar(startp, countp, &nc.Ng);
 
-    nc.NRin     /= ref_quant.Nref;
-    nc.NIin     /= ref_quant.Nref;
-    nc.NSin     /= ref_quant.Nref;
-    nc.NGin     /= ref_quant.Nref;
+//     nc.NRin     /= ref_quant.Nref;
+//     nc.NIin     /= ref_quant.Nref;
+//     nc.NSin     /= ref_quant.Nref;
+//     nc.NGin     /= ref_quant.Nref;
 
-    nc.NRout    /= ref_quant.Nref;
-    nc.NIout    /= ref_quant.Nref;
-    nc.NSout    /= ref_quant.Nref;
-    nc.NGout    /= ref_quant.Nref;
+//     nc.NRout    /= ref_quant.Nref;
+//     nc.NIout    /= ref_quant.Nref;
+//     nc.NSout    /= ref_quant.Nref;
+//     nc.NGout    /= ref_quant.Nref;
 
-    nc.Nc       /= ref_quant.Nref;
-    nc.Nr       /= ref_quant.Nref;
-    nc.Ni       /= ref_quant.Nref;
-    nc.Ns       /= ref_quant.Nref;
-    nc.Ng       /= ref_quant.Nref;
+//     nc.Nc       /= ref_quant.Nref;
+//     nc.Nr       /= ref_quant.Nref;
+//     nc.Ni       /= ref_quant.Nref;
+//     nc.Ns       /= ref_quant.Nref;
+//     nc.Ng       /= ref_quant.Nref;
 
-    nc.NRin     = abs(nc.NRin);
-    nc.NIin     = abs(nc.NIin);
-    nc.NSin     = abs(nc.NSin);
-    nc.NGin     = abs(nc.NGin);
-#endif
+//     nc.NRin     = abs(nc.NRin);
+//     nc.NIin     = abs(nc.NIin);
+//     nc.NSin     = abs(nc.NSin);
+//     nc.NGin     = abs(nc.NGin);
+// #endif
 
-#if defined MET3D && defined TURBULENCE
-    nc.qturb_var.getVar(startp, countp, &nc.qturb);
-    nc.qturb /= ref_quant.qref;
-#endif
-#if !defined WCB
-    nc.S = 1.0;
-    nc.qg_var.getVar(startp, countp, &nc.qg);
-    nc.QIin_var.getVar(startp, countp, &nc.QIin);
-    nc.QSin_var.getVar(startp, countp, &nc.QSin);
-    nc.QRin_var.getVar(startp, countp, &nc.QRin);
-    nc.QGin_var.getVar(startp, countp, &nc.QGin);
-    nc.QIout_var.getVar(startp, countp, &nc.QIout);
-    nc.QSout_var.getVar(startp, countp, &nc.QSout);
-    nc.QRout_var.getVar(startp, countp, &nc.QRout);
-    nc.QGout_var.getVar(startp, countp, &nc.QGout);
+// #if defined MET3D && defined TURBULENCE
+//     nc.qturb_var.getVar(startp, countp, &nc.qturb);
+//     nc.qturb /= ref_quant.qref;
+// #endif
+// #if !defined WCB
+//     nc.S = 1.0;
+//     nc.qg_var.getVar(startp, countp, &nc.qg);
+//     nc.QIin_var.getVar(startp, countp, &nc.QIin);
+//     nc.QSin_var.getVar(startp, countp, &nc.QSin);
+//     nc.QRin_var.getVar(startp, countp, &nc.QRin);
+//     nc.QGin_var.getVar(startp, countp, &nc.QGin);
+//     nc.QIout_var.getVar(startp, countp, &nc.QIout);
+//     nc.QSout_var.getVar(startp, countp, &nc.QSout);
+//     nc.QRout_var.getVar(startp, countp, &nc.QRout);
+//     nc.QGout_var.getVar(startp, countp, &nc.QGout);
 
-    nc.qg       /= ref_quant.qref;
-    nc.QRin     /= ref_quant.qref;
-    nc.QRout    /= ref_quant.qref;
-    nc.QIin     /= ref_quant.qref;
-    nc.QIout    /= ref_quant.qref;
-    nc.QSin     /= ref_quant.qref;
-    nc.QSout    /= ref_quant.qref;
-    nc.QGin     /= ref_quant.qref;
-    nc.QGout    /= ref_quant.qref;
+//     nc.qg       /= ref_quant.qref;
+//     nc.QRin     /= ref_quant.qref;
+//     nc.QRout    /= ref_quant.qref;
+//     nc.QIin     /= ref_quant.qref;
+//     nc.QIout    /= ref_quant.qref;
+//     nc.QSin     /= ref_quant.qref;
+//     nc.QSout    /= ref_quant.qref;
+//     nc.QGin     /= ref_quant.qref;
+//     nc.QGout    /= ref_quant.qref;
 
-    nc.QRin     = abs(nc.QRin);
-    nc.QRout    = abs(nc.QRout);
-    nc.QIin     = abs(nc.QIin);
-    nc.QIout    = abs(nc.QIout);
-    nc.QSin     = abs(nc.QSin);
-    nc.QSout    = abs(nc.QSout);
-    nc.QGin     = abs(nc.QGin);
-    nc.QGout    = abs(nc.QGout);
-#endif
-#ifdef MET3D
-    nc.S_var.getVar(startp, countp, &nc.S);
-    nc.S /= 100; // from percentage
-    nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
-    // there is only a single value for that since each type
-    // is divided into different files in the input
-    if(std::strcmp(nc.type[0], "") == 0)
-    {
-        nc.type_var.getVar(nc.type);
-    }
-    nc.w[0]     /= ref_quant.wref;
-    nc.w[1]     /= ref_quant.wref;
-#elif !defined WCB && !defined WCB2
-    nc.w_var.getVar(startp, countp, nc.w.data());
-    countp[1]++;
-    nc.w_var.getVar(startp, countp, nc.w.data());
-    countp[1]--;
+//     nc.QRin     = abs(nc.QRin);
+//     nc.QRout    = abs(nc.QRout);
+//     nc.QIin     = abs(nc.QIin);
+//     nc.QIout    = abs(nc.QIout);
+//     nc.QSin     = abs(nc.QSin);
+//     nc.QSout    = abs(nc.QSout);
+//     nc.QGin     = abs(nc.QGin);
+//     nc.QGout    = abs(nc.QGout);
+// #endif
+// #ifdef MET3D
+//     nc.S_var.getVar(startp, countp, &nc.S);
+//     nc.S /= 100; // from percentage
+//     nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
+//     // there is only a single value for that since each type
+//     // is divided into different files in the input
+//     if(std::strcmp(nc.type[0], "") == 0)
+//     {
+//         nc.type_var.getVar(nc.type);
+//     }
+//     nc.w[0]     /= ref_quant.wref;
+//     nc.w[1]     /= ref_quant.wref;
+// #elif !defined WCB && !defined WCB2
+//     nc.w_var.getVar(startp, countp, nc.w.data());
+//     countp[1]++;
+//     nc.w_var.getVar(startp, countp, nc.w.data());
+//     countp[1]--;
 
-    nc.w[0]     /= ref_quant.wref;
-    nc.w[1]     /= ref_quant.wref;
-#elif defined WCB
-    nc.qc /= 1.0e6;
-    nc.qr /= 1.0e6;
-    nc.qv /= 1.0e6;
-    nc.qi /= 1.0e6;
-    nc.qs /= 1.0e6;
-    // Calculate w by getting the z-coordinates
-    // and divide it by the amount of substeps
-    nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
-    nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
-    nc.S_var.getVar(startp, countp, &nc.S);
-    nc.S /= 100; // from percentage
-#else
-    // WCB 2
-    // Calculate w by getting the z-coordinates
-    // and divide it by the amount of substeps
-    nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
-    nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
-#endif
-    nc.dlat = (nc.lat[1] - nc.lat[0]) / num_sub_steps;
-    nc.dlon = (nc.lon[1] - nc.lon[0]) / num_sub_steps;
-}
+//     nc.w[0]     /= ref_quant.wref;
+//     nc.w[1]     /= ref_quant.wref;
+// #elif defined WCB
+//     nc.qc /= 1.0e6;
+//     nc.qr /= 1.0e6;
+//     nc.qv /= 1.0e6;
+//     nc.qi /= 1.0e6;
+//     nc.qs /= 1.0e6;
+//     // Calculate w by getting the z-coordinates
+//     // and divide it by the amount of substeps
+//     nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
+//     nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
+//     nc.S_var.getVar(startp, countp, &nc.S);
+//     nc.S /= 100; // from percentage
+// #else
+//     // WCB 2
+//     // Calculate w by getting the z-coordinates
+//     // and divide it by the amount of substeps
+//     nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
+//     nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
+// #endif
+//     nc.dlat = (nc.lat[1] - nc.lat[0]) / num_sub_steps;
+//     nc.dlon = (nc.lon[1] - nc.lon[0]) / num_sub_steps;
+// }
 
 
 /**
  * Set the input parameters with the data from the global arguments.
  *
- * @param arg Stuct with command line arguments.
- * @param in Struct where the input parameters will be stored.
- */
-void set_input_from_arguments(global_args_t &arg ,
-			      input_parameters_t &in )
-{
-  // Final time
-  if(1 == arg.final_time_flag){
-    in.t_end_prime = std::strtod(arg.final_time_string, nullptr);
-  }
+//  * @param arg Stuct with command line arguments.
+//  * @param in Struct where the input parameters will be stored.
+//  */
+// void set_input_from_arguments(global_args_t &arg ,
+// 			      input_parameters_t &in )
+// {
+//   // Final time
+//   if(1 == arg.final_time_flag){
+//     in.t_end_prime = std::strtod(arg.final_time_string, nullptr);
+//   }
 
-  // Timestep
-  if(1 == arg.timestep_flag){
-    in.dt_prime = std::strtod(arg.timestep_string, nullptr);
-  }
+//   // Timestep
+//   if(1 == arg.timestep_flag){
+//     in.dt_prime = std::strtod(arg.timestep_string, nullptr);
+//   }
 
-  // Snapshot index
-  if(1 == arg.snapshot_index_flag){
-    in.snapshot_index = std::stoi(arg.snapshot_index_string);
-  }
+//   // Snapshot index
+//   if(1 == arg.snapshot_index_flag){
+//     in.snapshot_index = std::stoi(arg.snapshot_index_string);
+//   }
 
-  // Output
-  if(1 == arg.output_flag){
-    in.OUTPUT_FILENAME = arg.output_string;
-  }
+//   // Output
+//   if(1 == arg.output_flag){
+//     in.OUTPUT_FILENAME = arg.output_string;
+//   }
 
-  // Input
-  if(1 == arg.input_flag){
-    in.INPUT_FILENAME = arg.input_file;
-  }
+//   // Input
+//   if(1 == arg.input_flag){
+//     in.INPUT_FILENAME = arg.input_file;
+//   }
 
-  // Scaling factor
-  if(1 == arg.scaling_fact_flag){
-    in.scaling_fact = std::strtod(arg.scaling_fact_string, nullptr);
-  }
+//   // Scaling factor
+//   if(1 == arg.scaling_fact_flag){
+//     in.scaling_fact = std::strtod(arg.scaling_fact_string, nullptr);
+//   }
 
-  // Starting over mixing ratios and particle numbers
-  if(1 == arg.start_over_flag){
-    in.start_over = (strcmp(arg.start_over_string, "0"));
-  }
+//   // Starting over mixing ratios and particle numbers
+//   if(1 == arg.start_over_flag){
+//     in.start_over = (strcmp(arg.start_over_string, "0"));
+//   }
 
-  // Starting over environment variables (p, T, w)
-  if(1 == arg.start_over_env_flag){
-    in.start_over_env = (strcmp(arg.start_over_env_string, "0"));
-  }
+//   // Starting over environment variables (p, T, w)
+//   if(1 == arg.start_over_env_flag){
+//     in.start_over_env = (strcmp(arg.start_over_env_string, "0"));
+//   }
 
-  if(1 == arg.fixed_iteration_flag){
-      in.fixed_iteration = (strcmp(arg.fixed_iteration_string, "0"));
-  }
+//   if(1 == arg.fixed_iteration_flag){
+//       in.fixed_iteration = (strcmp(arg.fixed_iteration_string, "0"));
+//   }
 
-  // Auto type
-  if(1 == arg.auto_type_flag){
-    in.auto_type = std::stoi(arg.auto_type_string);
-  }
+//   // Auto type
+//   if(1 == arg.auto_type_flag){
+//     in.auto_type = std::stoi(arg.auto_type_string);
+//   }
 
-  // Trajectory
-  if(1 == arg.traj_flag){
-    in.traj = std::stoi(arg.traj_string);
-  }
+//   // Trajectory
+//   if(1 == arg.traj_flag){
+//     in.traj = std::stoi(arg.traj_string);
+//   }
 
-  // Write index
-  if(1 == arg.write_flag){
-      in.write_index = std::stoi(arg.write_string);
-  }
+//   // Write index
+//   if(1 == arg.write_flag){
+//       in.write_index = std::stoi(arg.write_string);
+//   }
 
-  // Progressbar index
-  if(1 == arg.progress_index_flag){
-      in.progress_index = std::stoull(arg.progress_index_string);
-  }
-#ifdef MET3D
-  // Simulation start time
-  if(1 == arg.delay_start_flag){
-      in.start_time = std::strtod(arg.delay_start_string, nullptr);
-  }
-#endif
+//   // Progressbar index
+//   if(1 == arg.progress_index_flag){
+//       in.progress_index = std::stoull(arg.progress_index_string);
+//   }
+// #ifdef MET3D
+//   // Simulation start time
+//   if(1 == arg.delay_start_flag){
+//       in.start_time = std::strtod(arg.delay_start_string, nullptr);
+//   }
+// #endif
 
-  // Ensemble configuration file
-  if(1 == arg.ens_config_flag){
-    in.ENS_CONFIG_FILENAME = arg.ens_config_string;
-  }
+//   // Ensemble configuration file
+//   if(1 == arg.ens_config_flag){
+//     in.ENS_CONFIG_FILENAME = arg.ens_config_string;
+//   }
 
-  // Checkpoint file
-  if(1 == arg.checkpoint_flag){
-    in.CHECKPOINT_FILENAME = arg.checkpoint_string;
-  }
+//   // Checkpoint file
+//   if(1 == arg.checkpoint_flag){
+//     in.CHECKPOINT_FILENAME = arg.checkpoint_string;
+//   }
 
-  // ID for this process
-  if(1 == arg.gnu_id_flag){
-    in.id = std::stoi(arg.gnu_id_string);
-  }
+//   // ID for this process
+//   if(1 == arg.gnu_id_flag){
+//     in.id = std::stoi(arg.gnu_id_string);
+//   }
 
-  // Folder name for new generated checkpoints
-  if(1 == arg.folder_name_flag){
-    in.FOLDER_NAME = arg.folder_name_string;
-  }
-}
+//   // Folder name for new generated checkpoints
+//   if(1 == arg.folder_name_flag){
+//     in.FOLDER_NAME = arg.folder_name_string;
+//   }
+// }
 
 
 /**
@@ -919,8 +914,8 @@ int read_init_netcdf(
         uint32_t n_timesteps = datafile.getDim("time").getSize();
 #endif
 
-        init_nc_parameters(nc_params, lenp, n_timesteps);
-        load_nc_parameters_var(nc_params, datafile);
+        nc_params.init_params(lenp, n_timesteps);
+        nc_params.load_vars(datafile);
 #ifdef MET3D
         // Get the time coordinates
         nc_params.time_abs_var.getVar(nc_params.time_abs.data());
@@ -977,7 +972,7 @@ int read_init_netcdf(
         startp.push_back(traj); // trajectory id
         startp.push_back(1); // time (where time == 0 only has zeros)
 #endif
-        load_nc_parameters(nc_params, startp, countp,
+        nc_params.load_params(startp, countp,
                            ref_quant, cc.num_sub_steps);
         if(!checkpoint_flag)
         {
@@ -1163,8 +1158,8 @@ void read_netcdf_write_stream(
     startp[1] = t+1;
 #endif
     netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
-    load_nc_parameters_var(nc_params, datafile);
-    load_nc_parameters(nc_params, startp, countp,
+    nc_params.load_vars(datafile);
+    nc_params.load_params(startp, countp,
                         ref_quant, cc.num_sub_steps);
     netCDF::NcVar id_var;
 #ifdef MET3D
@@ -1370,209 +1365,209 @@ void read_netcdf_write_stream(
  * Store simulation results and gradients to string stream and dump it
  * if timestep is reached to do so.
  */
-void write_output(
-    const model_constants_t &cc,
-    const nc_parameters_t &nc_params,
-    const std::vector<codi::RealReverse> &y_single_new,
-    const std::vector< std::array<double, num_par > >  &y_diff,
-    const uint32_t sub,
-    const uint32_t t,
-    const double time_new,
-    const uint32_t traj_id,
-    const uint32_t write_index,
-    const uint32_t snapshot_index,
-#ifdef MET3D
-    const uint32_t ensemble,
-#endif
-    const bool last_step,
-    output_handle_t &io_handler,
-    const reference_quantities_t &ref_quant)
-{
-    if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
-        || ( t == cc.num_steps-1 && last_step ) )
-    {
-        io_handler.buffer(cc, nc_params, y_single_new, y_diff, sub, t,
-            time_new, traj_id, ensemble, ref_quant);
+// void write_output(
+//     const model_constants_t &cc,
+//     const nc_parameters_t &nc_params,
+//     const std::vector<codi::RealReverse> &y_single_new,
+//     const std::vector< std::array<double, num_par > >  &y_diff,
+//     const uint32_t sub,
+//     const uint32_t t,
+//     const double time_new,
+//     const uint32_t traj_id,
+//     const uint32_t write_index,
+//     const uint32_t snapshot_index,
+// #ifdef MET3D
+//     const uint32_t ensemble,
+// #endif
+//     const bool last_step,
+//     output_handle_t &io_handler,
+//     const reference_quantities_t &ref_quant)
+// {
+//     if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
+//         || ( t == cc.num_steps-1 && last_step ) )
+//     {
+//         io_handler.buffer(cc, nc_params, y_single_new, y_diff, sub, t,
+//             time_new, traj_id, ensemble, ref_quant);
 
-    }
+//     }
 
-    if( (0 == (sub + t*cc.num_sub_steps) % write_index)
-        || ( t == cc.num_steps-1 && last_step ) )
-    {
-        io_handler.flush_buffer();
-    }
-}
+//     if( (0 == (sub + t*cc.num_sub_steps) % write_index)
+//         || ( t == cc.num_steps-1 && last_step ) )
+//     {
+//         io_handler.flush_buffer();
+//     }
+// }
 
 
-/**
- * Parse the arguments and store them in global_args.
- *
- * @param argc Number of arguments
- * @param argv Pointer to arguments
- * @param global_args Structure to store global args.
- *
- * @return Error code.
- */
-int parse_arguments(
-    const int argc,
-    char* const * argv,
-    global_args_t &global_args,
-    const int &rank,
-    const int &n_processes)
-{
-    /**
-     * String used to parse commandline input.
-     */
-    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g:h:?";
-    bool need_to_abort = false;
-    int opt;
+// /**
+//  * Parse the arguments and store them in global_args.
+//  *
+//  * @param argc Number of arguments
+//  * @param argv Pointer to arguments
+//  * @param global_args Structure to store global args.
+//  *
+//  * @return Error code.
+//  */
+// int parse_arguments(
+//     const int argc,
+//     char* const * argv,
+//     global_args_t &global_args,
+//     const int &rank,
+//     const int &n_processes)
+// {
+//     /**
+//      * String used to parse commandline input.
+//      */
+//     static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g:h:?";
+//     bool need_to_abort = false;
+//     int opt;
 
-    if(argc < 2)
-    {
-        need_to_abort = true;
-        display_usage();
-    }else
-    {
-        opt = getopt(argc, argv, optString);
+//     if(argc < 2)
+//     {
+//         need_to_abort = true;
+//         display_usage();
+//     }else
+//     {
+//         opt = getopt(argc, argv, optString);
 
-        while(-1 != opt)
-        {
-            switch(opt)
-            {
-                case 'f':
-                {
-                    global_args.final_time_flag = 1;
-                    global_args.final_time_string = optarg;
-                    break;
-                }
-                case 'd':
-                {
-                    global_args.timestep_flag = 1;
-                    global_args.timestep_string = optarg;
-                    break;
-                }
-                case 'i':
-                {
-                    global_args.snapshot_index_flag = 1;
-                    global_args.snapshot_index_string = optarg;
-                    break;
-                }
-                case 'b':
-                {
-                    global_args.scaling_fact_flag = 1;
-                    global_args.scaling_fact_string = optarg;
-                    break;
-                }
-                case 'o':
-                {
-                    global_args.output_flag = 1;
-                    global_args.output_string = optarg;
-                    break;
-                }
-                case 'l':
-                {
-                    global_args.input_flag = 1;
-                    global_args.input_file = optarg;
-                    break;
-                }
-                case 's':
-                {
-                    global_args.start_over_flag = 1;
-                    global_args.start_over_string = optarg;
-                    break;
-                }
-                case 'e':
-                {
-                    global_args.start_over_env_flag = 1;
-                    global_args.start_over_env_string = optarg;
-                    break;
-                }
-                case 't':
-                {
-                    global_args.fixed_iteration_flag = 1;
-                    global_args.fixed_iteration_string = optarg;
-                    break;
-                }
-                case 'a':
-                {
-                    global_args.auto_type_flag = 1;
-                    global_args.auto_type_string = optarg;
-                    break;
-                }
-                case 'r':
-                {
-                    global_args.traj_flag = 1;
-                    global_args.traj_string = optarg;
-                    break;
-                }
-                case 'w':
-                {
-                    global_args.write_flag = 1;
-                    global_args.write_string = optarg;
-                    break;
-                }
-                case 'p':
-                {
-                    global_args.progress_index_flag = 1;
-                    global_args.progress_index_string = optarg;
-                    break;
-                }
-#ifdef MET3D
-                case 'n':
-                {
-                    global_args.delay_start_flag = 1;
-                    global_args.delay_start_string = optarg;
-                    break;
-                }
-#endif
-                case 'm':
-                {
-                    global_args.ens_config_flag = 1;
-                    global_args.ens_config_string = optarg;
-                    break;
-                }
-                case 'c':
-                {
-                    global_args.checkpoint_flag = 1;
-                    global_args.checkpoint_string = optarg;
-                    break;
-                }
-                case 'g':
-                {
-                    global_args.gnu_id_flag = 1;
-                    global_args.gnu_id_string = optarg;
-                    break;
-                }
-                case 'h':
-                {
-                    global_args.folder_name_flag = 1;
-                    global_args.folder_name_string = optarg;
-                    break;
-                }
-                case '?':
-                {
-                    need_to_abort = true;
-                    display_usage();
-                    break;
-                }
-                default:
-                {
-                    need_to_abort = true;
-                    display_error_on_command_line();
-                    display_usage();
-                    break;
-                }
-            }
+//         while(-1 != opt)
+//         {
+//             switch(opt)
+//             {
+//                 case 'f':
+//                 {
+//                     global_args.final_time_flag = 1;
+//                     global_args.final_time_string = optarg;
+//                     break;
+//                 }
+//                 case 'd':
+//                 {
+//                     global_args.timestep_flag = 1;
+//                     global_args.timestep_string = optarg;
+//                     break;
+//                 }
+//                 case 'i':
+//                 {
+//                     global_args.snapshot_index_flag = 1;
+//                     global_args.snapshot_index_string = optarg;
+//                     break;
+//                 }
+//                 case 'b':
+//                 {
+//                     global_args.scaling_fact_flag = 1;
+//                     global_args.scaling_fact_string = optarg;
+//                     break;
+//                 }
+//                 case 'o':
+//                 {
+//                     global_args.output_flag = 1;
+//                     global_args.output_string = optarg;
+//                     break;
+//                 }
+//                 case 'l':
+//                 {
+//                     global_args.input_flag = 1;
+//                     global_args.input_file = optarg;
+//                     break;
+//                 }
+//                 case 's':
+//                 {
+//                     global_args.start_over_flag = 1;
+//                     global_args.start_over_string = optarg;
+//                     break;
+//                 }
+//                 case 'e':
+//                 {
+//                     global_args.start_over_env_flag = 1;
+//                     global_args.start_over_env_string = optarg;
+//                     break;
+//                 }
+//                 case 't':
+//                 {
+//                     global_args.fixed_iteration_flag = 1;
+//                     global_args.fixed_iteration_string = optarg;
+//                     break;
+//                 }
+//                 case 'a':
+//                 {
+//                     global_args.auto_type_flag = 1;
+//                     global_args.auto_type_string = optarg;
+//                     break;
+//                 }
+//                 case 'r':
+//                 {
+//                     global_args.traj_flag = 1;
+//                     global_args.traj_string = optarg;
+//                     break;
+//                 }
+//                 case 'w':
+//                 {
+//                     global_args.write_flag = 1;
+//                     global_args.write_string = optarg;
+//                     break;
+//                 }
+//                 case 'p':
+//                 {
+//                     global_args.progress_index_flag = 1;
+//                     global_args.progress_index_string = optarg;
+//                     break;
+//                 }
+// #ifdef MET3D
+//                 case 'n':
+//                 {
+//                     global_args.delay_start_flag = 1;
+//                     global_args.delay_start_string = optarg;
+//                     break;
+//                 }
+// #endif
+//                 case 'm':
+//                 {
+//                     global_args.ens_config_flag = 1;
+//                     global_args.ens_config_string = optarg;
+//                     break;
+//                 }
+//                 case 'c':
+//                 {
+//                     global_args.checkpoint_flag = 1;
+//                     global_args.checkpoint_string = optarg;
+//                     break;
+//                 }
+//                 case 'g':
+//                 {
+//                     global_args.gnu_id_flag = 1;
+//                     global_args.gnu_id_string = optarg;
+//                     break;
+//                 }
+//                 case 'h':
+//                 {
+//                     global_args.folder_name_flag = 1;
+//                     global_args.folder_name_string = optarg;
+//                     break;
+//                 }
+//                 case '?':
+//                 {
+//                     need_to_abort = true;
+//                     display_usage();
+//                     break;
+//                 }
+//                 default:
+//                 {
+//                     need_to_abort = true;
+//                     display_error_on_command_line();
+//                     display_usage();
+//                     break;
+//                 }
+//             }
 
-            opt = getopt(argc, argv, optString);
-        }
-    }
+//             opt = getopt(argc, argv, optString);
+//         }
+//     }
 
-    if(need_to_abort){
-        return ARGUMENT_ERR;
-    }
-    return SUCCESS;
-}
+//     if(need_to_abort){
+//         return ARGUMENT_ERR;
+//     }
+//     return SUCCESS;
+// }
 
 /** @} */ // end of group io
 

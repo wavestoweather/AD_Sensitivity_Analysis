@@ -14,6 +14,7 @@
 #include <gsl/gsl_sf_legendre.h>
 
 #include "include/microphysics/constants.h"
+#include "include/types/checkpoint_t.h"
 #include "include/types/global_args_t.h"
 #include "include/types/input_parameters_t.h"
 #include "include/types/output_handle_t.h"
@@ -21,11 +22,12 @@
 #include "include/types/nc_parameters_t.h"
 #include "include/types/reference_quantities_t.h"
 #include "include/types/segment_t.h"
+#include "include/types/task_scheduler_t.h"
 
 #include "include/microphysics/physical_parameterizations.h"
 #include "include/microphysics/program_io.h"
 
-#include "include/microphysics/general.h"
+#include "include/misc/general.h"
 
 #include <netcdf>
 
@@ -55,7 +57,7 @@ void parse_args_and_checkpoints(
     model_constants_t &cc,
     std::vector<double> &y_init)
 {
-    SUCCESS_OR_DIE(parse_arguments(argc, argv, global_args, rank, n_processes));
+    SUCCESS_OR_DIE(global_args.parse_arguments(argc, argv, rank, n_processes));
 
     ref_quant.Tref = 273.15;
 #ifdef WCB
@@ -72,13 +74,15 @@ void parse_args_and_checkpoints(
     {
         print_reference_quantities(ref_quant);
     }
-    set_input_from_arguments(global_args, input);
+    input.set_input_from_arguments(global_args);
 
     if(rank == 0)
     {
         if(global_args.checkpoint_flag)
         {
-            load_checkpoint(global_args.checkpoint_string, cc, y_init, segments, input, ref_quant);
+            checkpoint_t checkpoint;
+            checkpoint.load_checkpoint(global_args.checkpoint_string, cc,
+                y_init, segments, input, ref_quant);
             print_segments(segments);
         }
         else
@@ -178,7 +182,8 @@ void parameter_check(
     const std::vector< std::array<double, num_par > > &y_diff,
     const std::vector<codi::RealReverse> &y_single_old,
     input_parameters_t &input,
-    const reference_quantities_t &ref_quant)
+    const reference_quantities_t &ref_quant,
+    task_scheduler_t &scheduler)
 {
     for(auto &s: segments)
     {
@@ -193,13 +198,16 @@ void parameter_check(
             } else // Create a checkpoint for new members
             {
                 std::string checkpoint_filename = input.FOLDER_NAME;
-                write_checkpoint(
-                    checkpoint_filename,
+                checkpoint_t checkpoint(
                     cc,
                     y_single_old,
                     segments,
                     input,
                     time_old);
+#ifdef MPI
+                scheduler.push_back(checkpoint);
+#else
+                checkpoint.write_checkpoint(checkpoint_filename, cc, segments);
                 create_run_script(
                     input.FOLDER_NAME,
                     checkpoint_filename,
@@ -207,6 +215,7 @@ void parameter_check(
                     s.n_members,
                     "gnuparallel",
                     false);
+#endif
             }
         }
     }
@@ -289,7 +298,8 @@ void run_substeps(
     const int &traj_id,
     const uint32_t &ensemble,
     std::vector<segment_t> &segments,
-    ProgressBar &pbar)
+    ProgressBar &pbar,
+    task_scheduler_t &scheduler)
 {
     double time_old, time_new;
     for(uint32_t sub=sub_start; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
@@ -361,13 +371,13 @@ void run_substeps(
         time_new = (sub + t*cc.num_sub_steps)*cc.dt;
 
         // Output *if needed* (checks within function)
-        write_output(cc, nc_params, y_single_new, y_diff, sub, t,
+        out_handler.process_step(cc, nc_params, y_single_new, y_diff, sub, t,
             time_new, traj_id, input.write_index,
             input.snapshot_index,
 #ifdef MET3D
             ensemble,
 #endif
-            last_step, out_handler, ref_quant);
+            last_step, ref_quant);
 
         // Interchange old and new for next step
         time_old = time_new;
@@ -375,7 +385,7 @@ void run_substeps(
 
         // Check if parameter shall be perturbed
         parameter_check(segments, cc, time_old, y_diff,
-            y_single_old, input, ref_quant);
+            y_single_old, input, ref_quant, scheduler);
 
         // While debugging, the bar is not useful.
 #if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR) && !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
@@ -402,7 +412,8 @@ int run_simulation(
     nc_parameters_t &nc_params,
     output_handle_t &out_handler,
     std::vector<segment_t> &segments,
-    const size_t &lenp)
+    const size_t &lenp,
+    task_scheduler_t &scheduler)
 {
     int traj_id = -1;
 #ifdef MET3D
@@ -436,7 +447,7 @@ int run_simulation(
             // Iterate over each substep
             run_substeps(input, ref_quant, t, cc, y_single_old,
                 inflow, tape, y_single_new, nc_params, y_diff, out_handler,
-                sub_start, traj_id, ensemble, segments, pbar);
+                sub_start, traj_id, ensemble, segments, pbar, scheduler);
 
 #ifdef TRACE_QG
             if(trace)
@@ -505,6 +516,7 @@ int main(int argc, char** argv)
     std::vector<segment_t> segments;
     reference_quantities_t ref_quant;
     model_constants_t cc;
+    task_scheduler_t scheduler(rank, n_processes);
     // Collect the initial values in a separated vector
     // See constants.h for storage order
     std::vector<double> y_init(num_comp);
@@ -527,7 +539,7 @@ int main(int argc, char** argv)
     if(rank == 0)
     {
         print_constants(cc);
-        print_input_parameters(input);
+        input.print_parameters();
     }
     // Hold the derivatives of all components
     std::vector< std::array<double, num_par > >  y_diff(num_comp);
@@ -574,7 +586,7 @@ int main(int argc, char** argv)
 
     SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
         global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
-        out_handler, segments, lenp));
+        out_handler, segments, lenp, scheduler));
 
     // Better:
     // something like

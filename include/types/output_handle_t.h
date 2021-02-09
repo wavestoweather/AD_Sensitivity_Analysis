@@ -74,4 +74,35 @@ struct output_handle_t{
      * Write the buffered data to disk.
      */
     void flush_buffer();
+
+    /**
+     * Buffer the current data  (model state and gradients) and
+     * flush it to disk if necessary (depending on the time step.).
+     */
+    void process_step(
+        const model_constants_t &cc,
+        const nc_parameters_t &nc_params,
+        const std::vector<codi::RealReverse> &y_single_new,
+        const std::vector< std::array<double, num_par > >  &y_diff,
+        const uint32_t sub,
+        const uint32_t t,
+        const double time_new,
+        const uint32_t traj_id,
+        const uint32_t write_index,
+        const uint32_t snapshot_index,
+#ifdef MET3D
+        const uint32_t ensemble,
+#endif
+        const bool last_step,
+        const reference_quantities_t &ref_quant);
+
+    /**
+     * Receive the buffer from a different MPI process.
+     */
+    void receive_buffer();
+
+    /**
+     * Send the buffer to a different MPI process.
+     */
+    void send_buffer();
 };

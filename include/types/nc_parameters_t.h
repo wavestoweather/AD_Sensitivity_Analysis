@@ -1,8 +1,12 @@
 #pragma once
 
+#include <cmath>
 #include "ncType.h"
 #include <netcdf>
+#include <cstring>
 #include <vector>
+
+#include "include/types/reference_quantities_t.h"
 
 using namespace netCDF;
 
@@ -44,4 +48,40 @@ struct nc_parameters_t{
 #endif
             conv_400_var, conv_600_var, slan_400_var, slan_600_var;
 
+    /**
+     * Load variables from the netCDF file such that data can be loaded using
+     * load_params()
+     *
+     * @param nc Struct where to load the variables.
+     * @param datafile The netCDF file.
+     */
+    void load_vars(NcFile &datafile);
+    /**
+     * Load the parameters from the netCDF file where load_vars()
+     * must have been called beforehand.
+     *
+     * @param nc s Struct where to store the values.
+     * @param startp Must have two values with index from where to load values.
+     *               Depending on the NetCDF file, startp[0] may refer to the
+     *               trajectory id.
+     * @param countp Must have two values for how many values to load.
+     *               Depending on the NetCDF file, countp[0] may refer to the
+     *               trajectory id. Usually we set the values to 1.
+     * @param ref_quant Reference quantities to transform between units.
+     */
+    void load_params(std::vector<size_t> &startp,
+        std::vector<size_t> &countp,
+        const reference_quantities_t &ref_quant,
+        uint64_t num_sub_steps);
+
+    /**
+     * Initialize the nc parameters to default values. and allocate memory.
+     *
+     * @param nc The struct where the parameters are initialized.
+     * @param n The number of trajectories in the netCDF file.
+     * @param n_timesteps The maximum number of timesteps in the netCDF file.
+     */
+    void init_params(
+        uint32_t n=32,
+        uint32_t n_timesteps=7922);
 };

@@ -212,3 +212,135 @@ int input_parameters_t::from_pt(
     }
     return err;
 }
+
+void input_parameters_t::set_input_from_arguments(
+    global_args_t &arg)
+{
+    // Final time
+    if(1 == arg.final_time_flag){
+        this->t_end_prime = std::strtod(arg.final_time_string, nullptr);
+    }
+
+    // Timestep
+    if(1 == arg.timestep_flag){
+        this->dt_prime = std::strtod(arg.timestep_string, nullptr);
+    }
+
+    // Snapshot index
+    if(1 == arg.snapshot_index_flag){
+        this->snapshot_index = std::stoi(arg.snapshot_index_string);
+    }
+
+    // Output
+    if(1 == arg.output_flag){
+        this->OUTPUT_FILENAME = arg.output_string;
+    }
+
+    // Input
+    if(1 == arg.input_flag){
+        this->INPUT_FILENAME = arg.input_file;
+    }
+
+    // Scaling factor
+    if(1 == arg.scaling_fact_flag){
+        this->scaling_fact = std::strtod(arg.scaling_fact_string, nullptr);
+    }
+
+    // Starting over mixing ratios and particle numbers
+    if(1 == arg.start_over_flag){
+        this->start_over = (strcmp(arg.start_over_string, "0"));
+    }
+
+    // Starting over environment variables (p, T, w)
+    if(1 == arg.start_over_env_flag){
+        this->start_over_env = (strcmp(arg.start_over_env_string, "0"));
+    }
+
+    if(1 == arg.fixed_iteration_flag){
+        this->fixed_iteration = (strcmp(arg.fixed_iteration_string, "0"));
+    }
+
+    // Auto type
+    if(1 == arg.auto_type_flag){
+        this->auto_type = std::stoi(arg.auto_type_string);
+    }
+
+    // Trajectory
+    if(1 == arg.traj_flag){
+        this->traj = std::stoi(arg.traj_string);
+    }
+
+    // Write index
+    if(1 == arg.write_flag){
+        this->write_index = std::stoi(arg.write_string);
+    }
+
+    // Progressbar index
+    if(1 == arg.progress_index_flag){
+        this->progress_index = std::stoull(arg.progress_index_string);
+    }
+#ifdef MET3D
+    // Simulation start time
+    if(1 == arg.delay_start_flag){
+        this->start_time = std::strtod(arg.delay_start_string, nullptr);
+    }
+#endif
+
+    // Ensemble configuration file
+    if(1 == arg.ens_config_flag){
+        this->ENS_CONFIG_FILENAME = arg.ens_config_string;
+    }
+
+    // Checkpoint file
+    if(1 == arg.checkpoint_flag){
+        this->CHECKPOINT_FILENAME = arg.checkpoint_string;
+    }
+
+    // ID for this process
+    if(1 == arg.gnu_id_flag){
+        this->id = std::stoi(arg.gnu_id_string);
+    }
+
+    // Folder name for new generated checkpoints
+    if(1 == arg.folder_name_flag){
+        this->FOLDER_NAME = arg.folder_name_string;
+    }
+}
+
+void input_parameters_t::print_parameters()
+{
+#ifdef SILENT_MODE
+    return;
+#endif
+    std::cout << "\n"
+        << "Technical input parameters:\n"
+        << "---------------------------\n"
+        << "Time to integrate: " << this->t_end_prime << " Seconds\n"
+        << "Timestep: " << this->dt_prime << " Seconds\n"
+#ifdef MET3D
+        << "Start time (relative to ascend): " << this->start_time << " Seconds" << "\n"
+#endif
+        << ( (this->CHECKPOINT_FILENAME != "")
+        ?   "Start time from checkpoint (relative to ascend): " + std::to_string(this->current_time + this->start_time) + "\n"
+        :   "" )
+        << "Snapshot index: " << this->snapshot_index << "\n"
+        << "Write index: " << this->write_index << "\n"
+        << "Progressbar index: " << this->progress_index << "\n"
+        << "Name of output file: " << this->OUTPUT_FILENAME << "\n"
+        << "Scaling factor: " << this->scaling_fact << "\n"
+        << "Name of input file: " << this->INPUT_FILENAME << "\n"
+        << "Start over mixing ratios and particle numbers at each timestep of a trajectory?: " << this->start_over << "\n"
+        << "Start over pressure, temperature and ascent at each timestep of a trajectory?: " << this->start_over_env << "\n"
+        << "Fix temperature and pressure at each substep?: " << this->fixed_iteration << "\n"
+        << "Auto type for rain evaporation (1, 2, 3): " << this->auto_type << "\n"
+        << "Trajectory used: " << this->traj << "\n"
+        << "Instance id: " << this->id << "\n"
+        << ( (this->ENS_CONFIG_FILENAME != "")
+        ?   "Ensemble configuration file: " + this->ENS_CONFIG_FILENAME + "\n"
+        :   "" )
+        << ( (this->CHECKPOINT_FILENAME != "")
+        ?   "Checkpoint file: " + this->CHECKPOINT_FILENAME + "\n"
+        :   "" )
+        << "Folder name for newly generated checkpoints: " << this->FOLDER_NAME << "\n"
+        << std::endl << std::flush;
+}

@@ -1,5 +1,11 @@
 #pragma once
 
+#include <stdlib.h>
+#include <iostream>
+// #include <sys/stat.h>
+#include <getopt.h>
+#include "include/misc/error.h"
+
 /**
  * Helper structure to handle command line arguments.
  */
@@ -62,4 +68,26 @@ struct global_args_t{
 
     global_args_t();
 
+    /**
+     * Parse the arguments and store them in global_args.
+     *
+     * @param argc Number of arguments
+     * @param argv Pointer to arguments
+     *
+     * @return Error code.
+     */
+    int parse_arguments(
+        const int argc,
+        char* const * argv,
+        const int &rank,
+        const int &n_processes);
+    /**
+     * Display a help message on how to use this program.
+     */
+    void display_usage();
+
+    /**
+     * Display an error message when command line arguments are faulty.
+     */
+    void display_error_on_command_line();
 };

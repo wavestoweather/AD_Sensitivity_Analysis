@@ -859,3 +859,35 @@ void output_handle_t::flush_buffer()
     flushed_snapshots += n_snapshots;
     n_snapshots = 0;
 }
+
+void output_handle_t::process_step(
+    const model_constants_t &cc,
+    const nc_parameters_t &nc_params,
+    const std::vector<codi::RealReverse> &y_single_new,
+    const std::vector< std::array<double, num_par > >  &y_diff,
+    const uint32_t sub,
+    const uint32_t t,
+    const double time_new,
+    const uint32_t traj_id,
+    const uint32_t write_index,
+    const uint32_t snapshot_index,
+#ifdef MET3D
+    const uint32_t ensemble,
+#endif
+    const bool last_step,
+    const reference_quantities_t &ref_quant)
+{
+    if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
+        || ( t == cc.num_steps-1 && last_step ) )
+    {
+        this->buffer(cc, nc_params, y_single_new, y_diff, sub, t,
+            time_new, traj_id, ensemble, ref_quant);
+
+    }
+
+    if( (0 == (sub + t*cc.num_sub_steps) % write_index)
+        || ( t == cc.num_steps-1 && last_step ) )
+    {
+        this->flush_buffer();
+    }
+}
