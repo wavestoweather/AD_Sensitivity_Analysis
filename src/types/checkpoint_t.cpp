@@ -140,14 +140,62 @@ void checkpoint_t::write_checkpoint(
     cc.ensemble_id++;
 }
 
-void checkpoint_t::send_checkpoint()
+void checkpoint_t::send_checkpoint(
+    const int send_id)
 {
-
+    MPI_Request request;
+    std::stringstream ss;
+    pt::json_parser::write_json(ss, checkpoint);
+    std::string s = ss.str();
+    SUCCESS_OR_DIE(
+        MPI_Isend(
+            s.c_str(),
+            s.size(),
+            MPI_CHAR,
+            send_id,
+            1,
+            MPI_COMM_WORLD,
+            &request)
+    );
 }
 
 void checkpoint_t::receive_checkpoint()
 {
+    MPI_Status status;
+    int count;
+    SUCCESS_OR_DIE(
+        MPI_PROBE(
+            MPI_ANY_SOURCE,
+            1,
+            MPI_COMM_WORLD,
+            status)
+    );
 
+    SUCCESS_OR_DIE(
+        MPI_Get_count(
+            &status,
+            MPI_CHAR,
+            &count)
+    );
+
+    char *buff = new char[count];
+    SUCCESS_OR_DIE(
+        MPI_Recv(
+            buff,
+            count,
+            MPI_CHAR,
+            MPI_ANY_SOURCE,
+            1,
+            MPI_COMM_WORLD,
+            MPI_STATUS_IGNORE)
+    );
+    // std::string s(buff, count);
+    // delete [] buff;
+
+    boost::iostreams::stream<boost::iostreams::array_source> stream(
+        buff, count);
+    pt::read_json(stream, checkpoint);
+    delete [] buff;
 }
 
 // pt::ptree checkpoint_t::get_checkpoint()

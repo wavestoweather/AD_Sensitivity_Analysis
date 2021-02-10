@@ -20,6 +20,7 @@
 #include "include/types/output_handle_t.h"
 #include "include/types/model_constants_t.h"
 #include "include/types/nc_parameters_t.h"
+#include "include/types/output_buffer.h"
 #include "include/types/reference_quantities_t.h"
 #include "include/types/segment_t.h"
 #include "include/types/task_scheduler_t.h"
@@ -45,6 +46,80 @@
 
 #include "include/misc/pbar.h"
 
+void setup_simulation(
+    const int &argc,
+    char* const * argv,
+    const int &rank,
+    const int &n_processes,
+    input_parameters_t &input,
+    global_args_t &global_args,
+    reference_quantities_t &ref_quant,
+    std::vector<segment_t> &segments,
+    model_constants_t &cc,
+    std::vector<double> &y_init,
+    checkpoint_t &checkpoint,
+    output_handle_t &out_handler,
+    bool &already_loaded)
+{
+    parse_args_and_checkpoints(argc, argv, rank, n_processes, input, global_args,
+        ref_quant, segments, cc, y_init, checkpoint, already_loaded);
+
+    SUCCESS_OR_DIE(read_init_netcdf(y_init, nc_params, lenp, ref_quant,
+#ifdef MET3D
+        input.start_time,
+#endif
+        input.INPUT_FILENAME.c_str(), input.traj, global_args.checkpoint_flag,
+        cc, input.current_time)
+    );
+
+#if defined(RK4_ONE_MOMENT)
+    cc.setCoefficients(y_init[0] , y_init[1]);
+#endif
+    if(rank == 0 && !already_loaded)
+    {
+        print_constants(cc);
+        input.print_parameters();
+    }
+
+    // Set "old" values as temporary holder of values.
+    for(int ii = 0 ; ii < num_comp ; ii++)
+        y_single_old[ii] = y_init[ii];
+
+
+    // Currently we only load one trajectory per instance
+    out_handler.setup("netcdf", input.OUTPUT_FILENAME, 1, 1, cc,
+        ref_quant, input.INPUT_FILENAME, input.write_index,
+        input.snapshot_index, rank, n_processes);
+
+    if(rank == 0 && !already_loaded)
+    {
+#ifdef TRACE_QC
+        print_particle_params(cc.cloud, "cloud");
+#endif
+#ifdef TRACE_QR
+        print_particle_params(cc.rain, "rain");
+#endif
+
+#ifdef TRACE_QI
+        print_particle_params(cc.ice, "ice");
+#endif
+
+#ifdef TRACE_QS
+        print_particle_params(cc.snow, "snow");
+#endif
+
+#ifdef TRACE_QG
+        print_particle_params(cc.graupel, "graupel");
+#endif
+
+#ifdef TRACE_QH
+        print_particle_params(cc.hail, "hail");
+#endif
+    }
+
+    already_loaded = true;
+}
+
 void parse_args_and_checkpoints(
     const int &argc,
     char* const * argv,
@@ -55,52 +130,63 @@ void parse_args_and_checkpoints(
     reference_quantities_t &ref_quant,
     std::vector<segment_t> &segments,
     model_constants_t &cc,
-    std::vector<double> &y_init)
+    std::vector<double> &y_init,
+    checkpoint_t &checkpoint,
+    const bool &already_loaded)
 {
-    SUCCESS_OR_DIE(global_args.parse_arguments(argc, argv, rank, n_processes));
+    if(!already_loaded)
+    {
+        SUCCESS_OR_DIE(global_args.parse_arguments(argc, argv, rank, n_processes));
 
-    ref_quant.Tref = 273.15;
+        ref_quant.Tref = 273.15;
 #ifdef WCB
-    ref_quant.qref = 1.0e-6;
+        ref_quant.qref = 1.0e-6;
 #else
-    ref_quant.qref = 1.0e-4;
+        ref_quant.qref = 1.0e-4;
 #endif
-    ref_quant.pref = 1.0e5;
-    ref_quant.wref = 1.; // 10.0
-    ref_quant.tref = 1.0;
-    ref_quant.zref = 1.0;
-    ref_quant.Nref = 1.0; 	// DUMMY
-    if(rank == 0)
-    {
-        print_reference_quantities(ref_quant);
-    }
-    input.set_input_from_arguments(global_args);
-
-    if(rank == 0)
-    {
-        if(global_args.checkpoint_flag)
+        ref_quant.pref = 1.0e5;
+        ref_quant.wref = 1.; // 10.0
+        ref_quant.tref = 1.0;
+        ref_quant.zref = 1.0;
+        ref_quant.Nref = 1.0; 	// DUMMY
+        if(rank == 0)
         {
-            checkpoint_t checkpoint;
-            checkpoint.load_checkpoint(global_args.checkpoint_string, cc,
-                y_init, segments, input, ref_quant);
-            print_segments(segments);
+            print_reference_quantities(ref_quant);
         }
-        else
+        input.set_input_from_arguments(global_args);
+
+        if(rank == 0)
         {
-            cc.setup_model_constants(input, ref_quant);
-            if(global_args.ens_config_flag)
+            if(global_args.checkpoint_flag)
             {
-                load_ens_config(global_args.ens_config_string, cc, segments, input, ref_quant);
-                for(auto &s: segments)
-                    SUCCESS_OR_DIE(s.check());
+                checkpoint.load_checkpoint(global_args.checkpoint_string, cc,
+                    y_init, segments, input, ref_quant);
                 print_segments(segments);
             }
-            input.set_outputfile_id(cc.id, cc.ensemble_id);
+            else
+            {
+                cc.setup_model_constants(input, ref_quant);
+                if(global_args.ens_config_flag)
+                {
+                    load_ens_config(global_args.ens_config_string, cc, segments, input, ref_quant);
+                    for(auto &s: segments)
+                        SUCCESS_OR_DIE(s.check());
+                    print_segments(segments);
+                }
+                input.set_outputfile_id(cc.id, cc.ensemble_id);
+            }
+        } else
+        {
+            checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
         }
     }
-
+    if(already_loaded && rank != 0)
+        checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
     auto_type = input.auto_type;
-    load_lookup_table(cc.ltabdminwgg);
+    if(!already_loaded)
+    {
+        load_lookup_table(cc.ltabdminwgg);
+    }
 }
 
 void substep_trace(
@@ -510,6 +596,7 @@ int main(int argc, char** argv)
     rank = 0;
     n_processes = 1;
 #endif
+    create_MPI_type();
 
     input_parameters_t input;
     global_args_t global_args;
@@ -520,27 +607,10 @@ int main(int argc, char** argv)
     // Collect the initial values in a separated vector
     // See constants.h for storage order
     std::vector<double> y_init(num_comp);
-
-    parse_args_and_checkpoints(argc, argv, rank, n_processes, input, global_args,
-        ref_quant, segments, cc, y_init);
-
+    checkpoint_t checkpoint;
+    bool already_loaded = false;
     nc_parameters_t nc_params;
     size_t lenp;
-    SUCCESS_OR_DIE(read_init_netcdf(y_init, nc_params, lenp, ref_quant,
-#ifdef MET3D
-        input.start_time,
-#endif
-        input.INPUT_FILENAME.c_str(), input.traj, global_args.checkpoint_flag,
-        cc, input.current_time));
-
-#if defined(RK4_ONE_MOMENT)
-    cc.setCoefficients(y_init[0] , y_init[1]);
-#endif
-    if(rank == 0)
-    {
-        print_constants(cc);
-        input.print_parameters();
-    }
     // Hold the derivatives of all components
     std::vector< std::array<double, num_par > >  y_diff(num_comp);
 
@@ -549,51 +619,27 @@ int main(int argc, char** argv)
     std::vector<codi::RealReverse> y_single_old(num_comp);
     std::vector<codi::RealReverse> y_single_new(num_comp);
     std::vector<codi::RealReverse> inflow(num_inflows);
+    output_handle_t out_handler;
 
-    // Set "old" values as temporary holder of values.
-    for(int ii = 0 ; ii < num_comp ; ii++)
-        y_single_old[ii] = y_init[ii];
-
-    // Currently we only load one trajectory per instance
-    output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, 1, 1, cc,
-        ref_quant, input.INPUT_FILENAME, input.write_index, input.snapshot_index);
     if(rank == 0)
     {
-#ifdef TRACE_QC
-        print_particle_params(cc.cloud, "cloud");
-#endif
-#ifdef TRACE_QR
-        print_particle_params(cc.rain, "rain");
-#endif
-
-#ifdef TRACE_QI
-        print_particle_params(cc.ice, "ice");
-#endif
-
-#ifdef TRACE_QS
-        print_particle_params(cc.snow, "snow");
-#endif
-
-#ifdef TRACE_QG
-        print_particle_params(cc.graupel, "graupel");
-#endif
-
-#ifdef TRACE_QH
-        print_particle_params(cc.hail, "hail");
-#endif
+        setup_simulation(already_loaded);
+        SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
+            global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
+            out_handler, segments, lenp, scheduler));
     }
 
-
-    SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
-        global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
-        out_handler, segments, lenp, scheduler));
-
-    // Better:
-    // something like
-    // if(scheduler.check_queue()){
-    //     run_simulation();
-    // }
-    // else end this
+    checkpoint_t checkpoint;
+    if(scheduler.receive_task(checkpoint))
+    {
+        // parse checkpoint
+        checkpoint.load_checkpoint(cc, y, segments, input, ref_quant);
+        setup_simulation(already_loaded);
+        // run simulation
+        SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
+            global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
+            out_handler, segments, lenp, scheduler));
+    }
 #ifdef USE_MPI
     MPI_Finalize();
 #endif

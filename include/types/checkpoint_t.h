@@ -81,7 +81,7 @@ struct checkpoint_t
         model_constants_t &cc,
         std::vector<segment_t> &segments);
 
-    void send_checkpoint();
+    void send_checkpoint(const int send_id);
     void receive_checkpoint();
 
     // /**

@@ -13,6 +13,7 @@
 #include "include/misc/error.h"
 #include "include/types/model_constants_t.h"
 #include "include/types/nc_parameters_t.h"
+#include "include/types/output_buffer_t.h"
 #include "include/types/reference_quantities_t.h"
 
 using namespace netCDF;
@@ -23,7 +24,7 @@ struct output_handle_t{
     std::ofstream outfile;
     std::ofstream out_diff[num_comp];
     std::stringstream out_diff_tmp[num_comp];
-    uint64_t n_snapshots; // number of buffered snapshots
+    // uint64_t n_snapshots; // number of buffered snapshots
     uint64_t flushed_snapshots;
 
     std::string filetype;
@@ -32,10 +33,10 @@ struct output_handle_t{
     // fast index: record
     // each array = one column
     // slow index: num_comp
-    std::array<std::vector<double>, num_comp+num_par+4 > output_buffer;
-    std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
-    std::array<std::vector<std::string>, 1 > output_buffer_str;
-    std::array<std::vector<uint64_t>, 1 > output_buffer_int;
+    // std::array<std::vector<double>, num_comp+num_par+4 > output_buffer;
+    // std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
+    // std::array<std::vector<std::string>, 1 > output_buffer_str;
+    // std::array<std::vector<uint64_t>, 1 > output_buffer_int;
     NcFile datafile;
     std::vector<NcDim> dim_vector;
     std::vector<NcVar> var_vector;
@@ -44,7 +45,23 @@ struct output_handle_t{
     uint64_t total_snapshots;
     std::string filename;
 
+    std::vector<output_max_buffer_t> buffer;
+    // output_buffer_t buffer;
+
+    output_handle_t();
+
     output_handle_t(
+        const std::string filetype,
+        const std::string filename,
+        const uint64_t n_trajs,
+        const uint64_t n_ens,
+        const model_constants_t &cc,
+        const reference_quantities_t &ref_quant,
+        const std::string in_filename,
+        const uint32_t write_index,
+        const uint32_t snapshot_index);
+
+    void setup(
         const std::string filetype,
         const std::string filename,
         const uint64_t n_trajs,
