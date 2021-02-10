@@ -153,39 +153,41 @@ void checkpoint_t::send_checkpoint(
             s.size(),
             MPI_CHAR,
             send_id,
-            1,
+            CHECKPOINT_MESSAGE,
             MPI_COMM_WORLD,
             &request)
     );
 }
 
-void checkpoint_t::receive_checkpoint()
+bool checkpoint_t::receive_checkpoint()
 {
     MPI_Status status;
     int count;
+    int got_something;
     SUCCESS_OR_DIE(
-        MPI_PROBE(
+        MPI_Iprobe(
             MPI_ANY_SOURCE,
-            1,
+            CHECKPOINT_MESSAGE,
             MPI_COMM_WORLD,
-            status)
+            &got_something,
+            &status)
     );
-
+    if(!got_something) return got_something;
     SUCCESS_OR_DIE(
         MPI_Get_count(
             &status,
             MPI_CHAR,
             &count)
     );
-
+    // get source tag
     char *buff = new char[count];
     SUCCESS_OR_DIE(
         MPI_Recv(
             buff,
             count,
             MPI_CHAR,
-            MPI_ANY_SOURCE,
-            1,
+            status.MPI_SOURCE,
+            CHECKPOINT_MESSAGE,
             MPI_COMM_WORLD,
             MPI_STATUS_IGNORE)
     );
@@ -196,6 +198,7 @@ void checkpoint_t::receive_checkpoint()
         buff, count);
     pt::read_json(stream, checkpoint);
     delete [] buff;
+    return got_something;
 }
 
 // pt::ptree checkpoint_t::get_checkpoint()

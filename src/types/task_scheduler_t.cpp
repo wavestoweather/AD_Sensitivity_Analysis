@@ -16,11 +16,25 @@ task_scheduler_t::task_scheduler_t(
 
     work_available.resize(n_processes);
     std::fill(work_available.begin(), work_available.end(), 0);
-    MPI_Win_create(free_worker.data(), n_processes*sizeof(std::int8_t), MPI_INT8_T,
-        MPI_INFO_NULL, MPI_COMM_WORLD, &free_window);
-    MPI_Win_create(work_available.data(), n_processes*sizeof(std::int8_t), MPI_INT8_T,
-        MPI_INFO_NULL, MPI_COMM_WORLD, &work_window);
-    all_finished = 0;
+    SUCCESS_OR_DIE(
+        MPI_Win_create(
+            free_worker.data(),
+            n_processes*sizeof(std::int8_t),
+            sizeof(std::int8_t),
+            MPI_INFO_NULL,
+            MPI_COMM_WORLD,
+            &free_window)
+    );
+    SUCCESS_OR_DIE(
+        MPI_Win_create(
+            work_available.data(),
+            n_processes*sizeof(std::int8_t),
+            sizeof(std::int8_t),
+            MPI_INFO_NULL,
+            MPI_COMM_WORLD,
+            &work_window)
+    );
+
     my_rank = rank;
 }
 
@@ -32,11 +46,12 @@ void task_scheduler_t::send_task()
         auto it = std::find(free_worker.begin(), free_worker.end(), 1);
         if(it != free_worker.end())
         { // Send task from own queue to someone
-            checkpoint_t checkpoint = checkpoint_queue.pop();
-            checkpoint.send_checkpoint(*t);
+            checkpoint_t checkpoint = checkpoint_queue.front();
+            checkpoint_queue.pop();
+            checkpoint.send_checkpoint(*it);
             if(my_rank == 0)
             {
-                free_worker[*t] = 0;
+                free_worker[*it] = 0;
                 work_available[0]--;
             }
         }
@@ -50,16 +65,13 @@ void task_scheduler_t::send_task(
     auto it = std::find(free_worker.begin(), free_worker.end(), 1);
     if(it != free_worker.end())
     {
-        checkpoint.send_checkpoint(*t);
-        if(my_rank == 0)
-        {
-            free_worker[*t] = 0;
-        }
+        checkpoint.send_checkpoint(*it);
+        free_worker[*it] = 0;
     } else
     {
-        checkpoint_queue.push_back(checkpoint);
+        checkpoint_queue.push(checkpoint);
         work_available[my_rank]++;
-        if(rank != 0)
+        if(my_rank != 0)
         {
             signal_work_avail();
         }
@@ -92,6 +104,7 @@ void task_scheduler_t::signal_send_task()
                                 work_idx, // target
                                 worker, // displacement in target
                                 1, // target count
+                                MPI_INT8_T, // target datatype
                                 free_window)
                         );
 
@@ -115,18 +128,16 @@ bool task_scheduler_t::receive_task(
     while(!checkpoint.receive_checkpoint())
     {
         // if not, signal free to the master and continue busy waiting
-        if(!signal_sent && rank != 0)
+        if(!signal_sent && my_rank != 0)
         {
             signal_free();
             signal_sent = true;
         }
 
         // if all are free, return
-        if(rank == 0)
+        if(my_rank == 0)
         {
             auto it = std::find(free_worker.begin(), free_worker.end(), 1);
-            auto it2 = std::find(work_available.begin(), work_available.end(), );
-
             bool no_more_work = true;
             for(const auto &work: work_available)
             {
@@ -142,16 +153,17 @@ bool task_scheduler_t::receive_task(
                 free_worker[0] = 2;
                 // We send it to every worker, however broadcast a single
                 // value everytime we are here is not a good idea.
-                for(int i=0; i<free_worker.size(); ++i)
+                for(uint32_t i=0; i<free_worker.size(); ++i)
                 {
                     SUCCESS_OR_DIE(
                     MPI_Put(
-                        free_worker, // source
+                        free_worker.data(), // source
                         1, // count
                         MPI_INT8_T, // datatype
                         i, // target
                         0, // displacement in target
                         1, // target count
+                        MPI_INT8_T, // target datatype
                         free_window)
                     );
                 }
@@ -177,6 +189,7 @@ void task_scheduler_t::signal_free()
             0, // target
             my_rank, // displacement in target
             1, // target count
+            MPI_INT8_T, // target datatype
             free_window)
     );
     // MPI_Request request;
@@ -203,6 +216,7 @@ void task_scheduler_t::signal_work_avail()
             0, // target
             my_rank, // displacement in target
             1, // target count
+            MPI_INT8_T, // target datatype
             work_window)
     );
 }

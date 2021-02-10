@@ -77,6 +77,10 @@
 
 #define CHECKPOINT_MESSAGE 1
 #define SIMULATION_MESSAGE 2
+#define SIMULATION_MESSAGE_FLAGS 3
+#define SIMULATION_MESSAGE_STR 4
+#define SIMULATION_MESSAGE_INT 5
+#define SIMULATION_MESSAGE_NSNAPS 6
 ////////////////////////////////////////////////////////////////////////////////
 // Random generators
 ////////////////////////////////////////////////////////////////////////////////

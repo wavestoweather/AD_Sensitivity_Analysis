@@ -1,9 +1,11 @@
 #pragma once
 
+#include <boost/iostreams/stream.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <cmath>
+#include <mpi.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -81,8 +83,15 @@ struct checkpoint_t
         model_constants_t &cc,
         std::vector<segment_t> &segments);
 
+    /**
+     * Send a checkpoint to the specified process.
+     */
     void send_checkpoint(const int send_id);
-    void receive_checkpoint();
+    /**
+     *
+     * @return true if checkpoint is received, false otherwise.
+     */
+    bool receive_checkpoint();
 
     // /**
     //  * Getter for the underlying property tree

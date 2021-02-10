@@ -14,12 +14,10 @@ output_handle_t::output_handle_t(
     const reference_quantities_t &ref_quant,
     const std::string in_filename,
     const uint32_t write_index,
-    const uint32_t snapshot_index,
-    const int &rank,
-    const int &n_processes)
+    const uint32_t snapshot_index)
 {
     this->setup(filetype, filename, n_trajs, n_ens, cc, ref_quant,
-        in_filename, write_index, snapshot_index, rank, n_processes);
+        in_filename, write_index, snapshot_index);
 }
 
 void output_handle_t::setup(
@@ -31,9 +29,7 @@ void output_handle_t::setup(
     const reference_quantities_t &ref_quant,
     const std::string in_filename,
     const uint32_t write_index,
-    const uint32_t snapshot_index,
-    const int &rank,
-    const int &n_processes)
+    const uint32_t snapshot_index)
 {
     this->n_trajs = n_trajs;
     this->n_ens = n_ens;
@@ -45,49 +41,28 @@ void output_handle_t::setup(
         const bool enableShuffleFilter = true; // increases compression with little cost
         const bool enableDeflateFilter = true; // enable compression
         flushed_snapshots = 0;
-
+        n_snapshots = 0;
         // Allocate memory for the buffer
         // maximum number of snapshots we are going to get
-        // total_snapshots = std::ceil( ((float)write_index)/snapshot_index ) + 1;
-        // we let rank 0 hold more snapshots until it needs to be flushed.
-        // This works okayish for less than 100 processes
-        // More would need a lot of RAM even with low write_index.
-        if(rank == 0 && n_processes <= 100)
-        {
-            buffer.resize(n_processes);
-            for(auto &b: buffer)
-                b.n_snapshots = 0;
-        } else if(rank == 0)
-        [
-            buffer.resize(100);
-            for(auto &b: buffer)
-                b.n_snapshots = 0;
-        ]
-        if(rank != 0)
-        {
-            buffer.resize(1);
-            buffer[0].n_snapshots = 0;
-        }
+        total_snapshots = std::ceil( ((float)write_index)/snapshot_index ) + 1;
+        const uint64_t vec_size = n_trajs * n_ens * total_snapshots; // n_snapshots * num_comp;
+        const uint64_t vec_size_grad = num_comp * n_trajs * n_ens * total_snapshots;
+        for(uint32_t i=0; i<num_comp; i++)
+            output_buffer[i].resize(vec_size);
+        for(uint32_t i=num_comp; i<num_comp+num_par; i++)
+            output_buffer[i].resize(vec_size_grad);
 
-        // const uint64_t vec_size = n_trajs * n_ens * total_snapshots; // buffer.n_snapshots * num_comp;
-        // const uint64_t vec_size_grad = num_comp * n_trajs * n_ens * total_snapshots;
-        // for(uint32_t i=0; i<num_comp; i++)
-        //     buffer.output_buffer[i].resize(vec_size);
-        // for(uint32_t i=num_comp; i<num_comp+num_par; i++)
-        //     buffer.output_buffer[i].resize(vec_size_grad);
+        output_buffer[num_comp+num_par].resize(vec_size);          // time after ascent
+        output_buffer[num_comp+num_par+1].resize(total_snapshots); // just time index
+        output_buffer[num_comp+num_par+2].resize(vec_size);        // lat
+        output_buffer[num_comp+num_par+3].resize(vec_size);        // lon
 
-        // buffer.output_buffer[num_comp+num_par].resize(vec_size);          // time after ascent
-        // buffer.output_buffer[num_comp+num_par+1].resize(total_snapshots); // just time index
-        // buffer.output_buffer[num_comp+num_par+2].resize(vec_size);        // lat
-        // buffer.output_buffer[num_comp+num_par+3].resize(vec_size);        // lon
-
-        // for(uint32_t i=0; i<buffer.output_buffer_flags.size(); i++)
-        //     buffer.output_buffer_flags[i].resize(vec_size);
-        // for(uint32_t i=0; i<buffer.output_buffer_str.size(); i++)
-        //     buffer.output_buffer_str[i].resize(vec_size);
-        // for(uint32_t i=0; i<buffer.output_buffer_int.size(); i++)
-        //     buffer.output_buffer_int[i].resize(vec_size);
-        // if(rank != 0) return;
+        for(uint32_t i=0; i<output_buffer_flags.size(); i++)
+            output_buffer_flags[i].resize(vec_size);
+        for(uint32_t i=0; i<output_buffer_str.size(); i++)
+            output_buffer_str[i].resize(vec_size);
+        for(uint32_t i=0; i<output_buffer_int.size(); i++)
+            output_buffer_int[i].resize(vec_size);
         try
         {
             datafile.open(filename + ".nc_wcb", NcFile::newFile);
@@ -628,8 +603,6 @@ void output_handle_t::setup(
     }
 }
 
-
-
 void output_handle_t::buffer(const model_constants_t &cc,
     const nc_parameters_t &nc_params,
     const std::vector<codi::RealReverse> &y_single_new,
@@ -651,19 +624,19 @@ void output_handle_t::buffer(const model_constants_t &cc,
             switch(i)
             {
                 case p_idx:
-                    buffer.output_buffer[i][buffer.n_snapshots*offset] =
+                    output_buffer[i][n_snapshots*offset] =
                         y_single_new[i].getValue() * ref_quant.pref;
                     break;
                 case T_idx:
-                    buffer.output_buffer[i][buffer.n_snapshots*offset] =
+                    output_buffer[i][n_snapshots*offset] =
                         y_single_new[i].getValue() * ref_quant.Tref;
                     break;
                 case w_idx:
-                    buffer.output_buffer[i][buffer.n_snapshots*offset] =
+                    output_buffer[i][n_snapshots*offset] =
                         y_single_new[i].getValue() * ref_quant.wref;
                     break;
                 case z_idx:
-                    buffer.output_buffer[i][buffer.n_snapshots*offset] =
+                    output_buffer[i][n_snapshots*offset] =
                         y_single_new[i].getValue() * ref_quant.zref;
                     break;
                 case qc_idx:
@@ -678,7 +651,7 @@ void output_handle_t::buffer(const model_constants_t &cc,
                 case qr_out_idx:
                 case qg_out_idx:
                 case qh_out_idx:
-                    buffer.output_buffer[i][buffer.n_snapshots*offset] =
+                    output_buffer[i][n_snapshots*offset] =
                         y_single_new[i].getValue() * ref_quant.qref;
                     break;
                 case Nc_idx:
@@ -692,11 +665,11 @@ void output_handle_t::buffer(const model_constants_t &cc,
                 case Nr_out_idx:
                 case Ng_out_idx:
                 case Nh_out_idx:
-                    buffer.output_buffer[i][buffer.n_snapshots*offset] =
+                    output_buffer[i][n_snapshots*offset] =
                         y_single_new[i].getValue() * ref_quant.Nref;
                     break;
                 default:
-                    buffer.output_buffer[i][buffer.n_snapshots*offset] =
+                    output_buffer[i][n_snapshots*offset] =
                         y_single_new[i].getValue();
                     break;
             }
@@ -705,35 +678,35 @@ void output_handle_t::buffer(const model_constants_t &cc,
         // gradients
         for(uint64_t i=0; i<num_comp; i++) // gradient sensitive to output parameter i
             for(uint64_t j=0; j<num_par; j++) // gradient of input parameter j
-                buffer.output_buffer[num_comp+j][i + buffer.n_snapshots*offset*num_comp] = y_diff[i][j];
+                output_buffer[num_comp+j][i + n_snapshots*offset*num_comp] = y_diff[i][j];
 
         // time after ascent
-        buffer.output_buffer[num_comp+num_par][buffer.n_snapshots*offset] =
+        output_buffer[num_comp+num_par][n_snapshots*offset] =
             nc_params.time_rel + sub*cc.dt;
 
         // time index
-        buffer.output_buffer[num_comp+num_par+1][buffer.n_snapshots] =
+        output_buffer[num_comp+num_par+1][n_snapshots] =
             nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt;
 
         // lat
-        buffer.output_buffer[num_comp+num_par+2][buffer.n_snapshots*offset] =
+        output_buffer[num_comp+num_par+2][n_snapshots*offset] =
             (nc_params.lat[0] + sub*nc_params.dlat);
 
         // lon
-        buffer.output_buffer[num_comp+num_par+3][buffer.n_snapshots*offset] =
+        output_buffer[num_comp+num_par+3][n_snapshots*offset] =
             (nc_params.lon[0] + sub*nc_params.dlon);
 
         // flags
-        buffer.output_buffer_flags[0][buffer.n_snapshots*offset] = nc_params.conv_400;
-        buffer.output_buffer_flags[1][buffer.n_snapshots*offset] = nc_params.conv_600;
-        buffer.output_buffer_flags[2][buffer.n_snapshots*offset] = nc_params.slan_400;
-        buffer.output_buffer_flags[3][buffer.n_snapshots*offset] = nc_params.slan_600;
+        output_buffer_flags[0][n_snapshots*offset] = nc_params.conv_400;
+        output_buffer_flags[1][n_snapshots*offset] = nc_params.conv_600;
+        output_buffer_flags[2][n_snapshots*offset] = nc_params.slan_400;
+        output_buffer_flags[3][n_snapshots*offset] = nc_params.slan_600;
 
         // type
-        buffer.output_buffer_str[0][buffer.n_snapshots*offset] = nc_params.type[0];
+        output_buffer_str[0][n_snapshots*offset] = nc_params.type[0];
 
         // simulation step
-        buffer.output_buffer_int[0][buffer.n_snapshots*offset] = sub + t*cc.num_sub_steps;
+        output_buffer_int[0][n_snapshots*offset] = sub + t*cc.num_sub_steps;
     } else
     {
 #if defined WCB || defined WCB2
@@ -812,7 +785,7 @@ void output_handle_t::buffer(const model_constants_t &cc,
                     << ((jj==num_par-1) ? "\n" : ",");
         }
     }
-    buffer.n_snapshots++;
+    n_snapshots++;
 }
 
 void output_handle_t::flush_buffer()
@@ -821,10 +794,10 @@ void output_handle_t::flush_buffer()
     {
         std::vector<uint64_t> startp, countp;
         startp.push_back(flushed_snapshots);
-        countp.push_back(buffer.n_snapshots); // number of snapshots so far
+        countp.push_back(n_snapshots); // number of snapshots so far
         // time index
         var_vector[num_comp+num_par+1].putVar(startp, countp,
-            buffer.output_buffer[num_comp+num_par+1].data());
+            output_buffer[num_comp+num_par+1].data());
 
         startp.push_back(0);
         startp.push_back(0);
@@ -833,20 +806,20 @@ void output_handle_t::flush_buffer()
 
         for(uint64_t i=0; i<num_comp; i++)
             var_vector[i].putVar(startp, countp,
-                buffer.output_buffer[i].data());
+                output_buffer[i].data());
 
         uint64_t offset = num_comp+num_par;
         // time after ascent
         var_vector[offset].putVar(startp, countp,
-            buffer.output_buffer[num_comp+num_par].data());
+            output_buffer[num_comp+num_par].data());
 
         offset += 2;
         // flags
-        for(uint64_t i=0; i<buffer.output_buffer_flags.size(); i++)
+        for(uint64_t i=0; i<output_buffer_flags.size(); i++)
             var_vector[offset+i].putVar(startp, countp,
-            buffer.output_buffer_flags[i].data());
+            output_buffer_flags[i].data());
 
-        offset += buffer.output_buffer_flags.size();
+        offset += output_buffer_flags.size();
         // type
         std::vector<uint64_t> startp_str, countp_str;
         for(auto &p: startp)
@@ -855,33 +828,33 @@ void output_handle_t::flush_buffer()
             countp_str.push_back(p);
         countp_str[0] = 1;
 
-        for(uint64_t i=0; i<buffer.output_buffer_str.size(); i++)
+        for(uint64_t i=0; i<output_buffer_str.size(); i++)
         {
             // write one string at a time.
-            for(const auto &t: buffer.output_buffer_str[i])
+            for(const auto &t: output_buffer_str[i])
             {
                 var_vector[offset+i].putVar(
                     startp_str, countp_str, &t);
                 startp_str[0]++;
-                if(startp_str[0]-startp[0] == buffer.n_snapshots)
+                if(startp_str[0]-startp[0] == n_snapshots)
                     break;
             }
         }
 
-        offset += buffer.output_buffer_str.size();
+        offset += output_buffer_str.size();
         // lat
         var_vector[offset].putVar(startp, countp,
-            buffer.output_buffer[num_comp+num_par+2].data());
+            output_buffer[num_comp+num_par+2].data());
 
         offset += 1;
         // lon
         var_vector[offset].putVar(startp, countp,
-            buffer.output_buffer[num_comp+num_par+3].data());
+            output_buffer[num_comp+num_par+3].data());
 
         offset += 1;
         // step
         var_vector[offset].putVar(startp, countp,
-            buffer.output_buffer_int[0].data());
+            output_buffer_int[0].data());
 
         offset = num_comp;
         // gradients
@@ -890,7 +863,7 @@ void output_handle_t::flush_buffer()
 
         for(uint64_t j=0; j<num_par; j++)
             var_vector[offset+j].putVar(startp, countp,
-                buffer.output_buffer[num_comp+j].data());
+                output_buffer[num_comp+j].data());
     } else
     {
         outfile << out_tmp.rdbuf();
@@ -903,8 +876,8 @@ void output_handle_t::flush_buffer()
         out_tmp.str( std::string() );
         out_tmp.clear();
     }
-    flushed_snapshots += buffer.n_snapshots;
-    buffer.n_snapshots = 0;
+    flushed_snapshots += n_snapshots;
+    n_snapshots = 0;
 }
 
 void output_handle_t::process_step(
@@ -929,7 +902,6 @@ void output_handle_t::process_step(
     {
         this->buffer(cc, nc_params, y_single_new, y_diff, sub, t,
             time_new, traj_id, ensemble, ref_quant);
-
     }
 
     if( (0 == (sub + t*cc.num_sub_steps) % write_index)
@@ -937,77 +909,4 @@ void output_handle_t::process_step(
     {
         this->flush_buffer();
     }
-}
-
-void output_handle_t::receive_buffer()
-{
-
-}
-
-void output_handle_t::send_buffer()
-{
-    // TODO: Create a struct to send all at once
-
-
-    SUCCESS_OR_DIE(
-        MPI_Isend(
-            &buffer.n_snapshots,
-            1,
-            MPI_UINT64_T,
-            0,
-            SIMULATION_MESSAGE_NSNAPS,
-            MPI_COMM_WORLD
-        )
-    );
-    // send buffer.output_buffer double
-    for(uint64_t i=0; i<buffer.output_buffer.size(); i++)
-        SUCCESS_OR_DIE(
-            MPI_Isend(
-                buffer.output_buffer[i].data(), // send buffer
-                buffer.n_snapshots,             // count
-                MPI_DOUBLE,              // datatype
-                0,                       // destination rank
-                SIMULATION_MESSAGE,      // message tag
-                MPI_COMM_WORLD
-            )
-        );
-    // buffer.output_buffer_flags uchar
-    for(uint64_t i=0; i<buffer.output_buffer_flags.size(); i++)
-        SUCCESS_OR_DIE(
-            MPI_Isend(
-                buffer.output_buffer_flags[i].data(), // send buffer
-                buffer.n_snapshots,             // count
-                MPI_CHAR,                // datatype
-                0,                       // destination rank
-                SIMULATION_MESSAGE_FLAGS,      // message tag
-                MPI_COMM_WORLD
-            )
-        );
-    // TODO:
-    for(uint64_t i=0; i<buffer.output_buffer_str.size(); i++)
-        for(uint64_t j=0; j<buffer.output_buffer_str[i].size(); j++)
-            SUCCESS_OR_DIE(
-                MPI_Isend(
-                    buffer.output_buffer_str[i][j].c_str(), // send buffer
-                    buffer.n_snapshots,             // count
-                    MPI_CHAR,                // datatype
-                    0,                       // destination rank
-                    SIMULATION_MESSAGE_STR,      // message tag
-                    MPI_COMM_WORLD
-                )
-            );
-    for(uint64_t i=0; i<buffer.output_buffer_int.size(); i++)
-        SUCCESS_OR_DIE(
-            MPI_Isend(
-                buffer.output_buffer_int[i].data(), // send buffer
-                buffer.n_snapshots,             // count
-                MPI_UINT64_T,            // datatype
-                0,                       // destination rank
-                SIMULATION_MESSAGE_INT,      // message tag
-                MPI_COMM_WORLD
-            )
-        );
-
-    flushed_snapshots += buffer.n_snapshots;
-    buffer.n_snapshots = 0;
 }
