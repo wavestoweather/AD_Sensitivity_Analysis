@@ -31,6 +31,25 @@ struct model_constants_t{
      *  Running id for the ensembles starting from this instance.
      */
     uint64_t ensemble_id;
+
+    /**
+     * Running id for the trajectory in this ensemble.
+     */
+    uint64_t traj_id;
+    /**
+     * Total number of trajectories in this ensemble.
+     * Needed to write proper output files.
+     */
+    uint64_t n_trajs;
+
+    /**
+     * Description of the ensemble i.e.
+     * "root - 0,0 perturb ccn_a1 - 1,3 perturb cloud_max_x"
+     * where the first number is the ensemble id, the second number is
+     * the trajectory it originates from
+     */
+    std::string ens_desc;
+
     //
     // Physical constants warm cloud
     //

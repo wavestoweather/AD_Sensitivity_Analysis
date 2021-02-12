@@ -140,7 +140,7 @@ private:
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &win);
         // Weird numbers could mean, this is running using a windows
         // terminal, ie. via ssh.
-        if(win.ws_col > 5000) return 150;
+        if(win.ws_col > 5000 || win.ws_col < 150) return 150;
         return win.ws_col;
     }
 };

@@ -29,16 +29,29 @@ struct checkpoint_t
     checkpoint_t();
 
     template<class float_t>
-    checkpoint_t(model_constants_t &cc,
+    checkpoint_t(
+        const model_constants_t &cc,
         const std::vector<float_t> &y,
-        std::vector<segment_t> &segments,
+        const std::vector<segment_t> &segments,
         const input_parameters_t &input,
         const double &current_time);
 
     template<class float_t>
-    void create_checkpoint(model_constants_t &cc,
+    checkpoint_t(
+        model_constants_t &cc,
         const std::vector<float_t> &y,
-        std::vector<segment_t> &segments,
+        const std::vector<segment_t> &segments,
+        const input_parameters_t &input,
+        const double &current_time,
+        const uint32_t &id,
+        const uint64_t &ens_id,
+        const uint64_t &n_trajs);
+
+    template<class float_t>
+    void create_checkpoint(
+        const model_constants_t &cc,
+        const std::vector<float_t> &y,
+        const std::vector<segment_t> &segments,
         const input_parameters_t &input,
         const double &current_time);
 
@@ -48,7 +61,8 @@ struct checkpoint_t
      * ref_quant, model_constants_t etc.
      */
     template<class float_t>
-    int load_checkpoint(const std::string &filename,
+    int load_checkpoint(
+        const std::string &filename,
         model_constants_t &cc,
         std::vector<float_t> &y,
         std::vector<segment_t> &segments,
@@ -59,7 +73,8 @@ struct checkpoint_t
      * file.
      */
     template<class float_t>
-    int load_checkpoint(model_constants_t &cc,
+    int load_checkpoint(
+        model_constants_t &cc,
         std::vector<float_t> &y,
         std::vector<segment_t> &segments,
         input_parameters_t &input,
@@ -69,7 +84,8 @@ struct checkpoint_t
      * Store all data in a property tree and write it as a json file to disk.
      */
     template<class float_t>
-    void write_checkpoint(std::string &filename,
+    void write_checkpoint(
+        std::string &filename,
         model_constants_t &cc,
         const std::vector<float_t> &y,
         std::vector<segment_t> &segments,
@@ -79,7 +95,8 @@ struct checkpoint_t
      * Write checkpoint to disk as a json file. A property tree must have been
      * created before or nothing will be written.
      */
-    void write_checkpoint(std::string &filename,
+    void write_checkpoint(
+        std::string &filename,
         model_constants_t &cc,
         std::vector<segment_t> &segments);
 

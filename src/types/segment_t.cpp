@@ -2,18 +2,18 @@
 
 segment_t::segment_t()
 {
-     value           = std::nan("");
-        old_value       = std::nan("");
-        n_members       = 1;
-        value_name      = -1;
-        value_name_sig  = -1;
-        out_param       = -1;
-        n_segments      = 1;
-        err             = 0;
-        old_sign        = 0;
-        duration        = 0;
-        activated       = false;
-        method          = value_method;
+    value           = std::nan("");
+    old_value       = std::nan("");
+    n_members       = 1;
+    value_name      = -1;
+    value_name_sig  = -1;
+    out_param       = -1;
+    n_segments      = 1;
+    err             = 0;
+    old_sign        = 0;
+    duration        = 0;
+    activated       = false;
+    method          = value_method;
 }
 
 void segment_t::add_param(
@@ -194,8 +194,6 @@ bool segment_t::perturb_check(
         {
             // the first num_comp many values refer to output parameters
             idx = value_name - num_comp;
-            // std::cout << "idx " << idx << ", grad " << gradients[out_param][idx] << "\n"
-            //           << "old_sign " << old_sign << ", out_param " << out_param << "\n";
             if(old_sign == 0)
             {
                 // set sign; no perturbing needed.
@@ -283,7 +281,8 @@ void segment_t::deactivate(
 void segment_t::perturb(
     model_constants_t &cc,
     const reference_quantities_t &ref_quant,
-    input_parameters_t &input)
+    input_parameters_t &input,
+    std::string &descr)
 {
     // Sanity check if had been done already
     if(n_segments == 0)
@@ -301,7 +300,10 @@ void segment_t::perturb(
     }
     // Perturb every param
     for(auto &p: params)
+    {
         p.perturb(cc);
+        descr += p.get_name() + " ";
+    }
     // When perturbing is done, deativate
     deactivate();
 }

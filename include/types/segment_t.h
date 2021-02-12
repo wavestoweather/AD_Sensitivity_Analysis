@@ -459,7 +459,8 @@ struct segment_t
 
     void perturb(model_constants_t &cc,
         const reference_quantities_t &ref_quant,
-        input_parameters_t &input);
+        input_parameters_t &input,
+        std::string &descr);
 
     void put(pt::ptree &ptree) const;
 

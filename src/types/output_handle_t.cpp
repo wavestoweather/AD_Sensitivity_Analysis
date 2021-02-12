@@ -8,31 +8,28 @@ output_handle_t::output_handle_t()
 output_handle_t::output_handle_t(
     const std::string filetype,
     const std::string filename,
-    const uint64_t n_trajs,
-    const uint64_t n_ens,
     const model_constants_t &cc,
     const reference_quantities_t &ref_quant,
     const std::string in_filename,
     const uint32_t write_index,
     const uint32_t snapshot_index)
 {
-    this->setup(filetype, filename, n_trajs, n_ens, cc, ref_quant,
+    this->setup(filetype, filename, cc, ref_quant,
         in_filename, write_index, snapshot_index);
 }
 
 void output_handle_t::setup(
     const std::string filetype,
     const std::string filename,
-    const uint64_t n_trajs,
-    const uint64_t n_ens,
     const model_constants_t &cc,
     const reference_quantities_t &ref_quant,
     const std::string in_filename,
     const uint32_t write_index,
     const uint32_t snapshot_index)
 {
-    this->n_trajs = n_trajs;
-    this->n_ens = n_ens;
+    this->n_trajs_file = cc.n_trajs;
+    this->traj = cc.traj_id;
+
     this->filetype = filetype;
     this->filename = filename;
     if(filetype == "netcdf")
@@ -45,8 +42,8 @@ void output_handle_t::setup(
         // Allocate memory for the buffer
         // maximum number of snapshots we are going to get
         total_snapshots = std::ceil( ((float)write_index)/snapshot_index ) + 1;
-        const uint64_t vec_size = n_trajs * n_ens * total_snapshots; // n_snapshots * num_comp;
-        const uint64_t vec_size_grad = num_comp * n_trajs * n_ens * total_snapshots;
+        const uint64_t vec_size = total_snapshots; // n_snapshots * num_comp;
+        const uint64_t vec_size_grad = num_comp * total_snapshots;
         for(uint32_t i=0; i<num_comp; i++)
             output_buffer[i].resize(vec_size);
         for(uint32_t i=num_comp; i<num_comp+num_par; i++)
@@ -63,28 +60,68 @@ void output_handle_t::setup(
             output_buffer_str[i].resize(vec_size);
         for(uint32_t i=0; i<output_buffer_int.size(); i++)
             output_buffer_int[i].resize(vec_size);
+
+        auto fill_vectors = [&]()
+        {
+            // File exists. No need to set it up. Load the columns
+            bool got_it = false;
+            do{
+                try
+                {
+                    datafile.open(filename + ".nc_wcb", NcFile::read);
+                    got_it = true;
+                } catch(const std::exception& e2)
+                {
+                    got_it = false;
+                }
+            } while(!got_it);
+
+            // std::cout << "opened\n";
+            for(auto &out_par: output_par_idx)
+            {
+                var_vector.push_back(datafile.getVar(out_par));
+            }
+
+            for(auto &out_grad: output_grad_idx)
+            {
+                var_vector.push_back(datafile.getVar(out_grad));
+            }
+            var_vector.push_back(datafile.getVar("time_after_ascent"));
+            var_vector.push_back(datafile.getVar("time"));
+            var_vector.push_back(datafile.getVar("conv_400"));
+            var_vector.push_back(datafile.getVar("conv_600"));
+            var_vector.push_back(datafile.getVar("slan_400"));
+            var_vector.push_back(datafile.getVar("slan_600"));
+            var_vector.push_back(datafile.getVar("type"));
+            var_vector.push_back(datafile.getVar("lat"));
+            var_vector.push_back(datafile.getVar("lon"));
+            var_vector.push_back(datafile.getVar("step"));
+            datafile.close();
+        };
+        if(traj > 0)
+        {
+            fill_vectors();
+            return;
+        }
         try
         {
             datafile.open(filename + ".nc_wcb", NcFile::newFile);
         }
         catch(const std::exception& e)
         {
-            std::cerr << "Error creating output file:\n"
-                        << filename << ".nc_wcb Does the file already exist?"
-                        << "\nAborting";
-            std::cerr << e.what() << '\n';
-            exit(NC_ERR);
+            // Apparently the file exists already
+            fill_vectors();
+            return;
         }
-
-            // Add dimensions
+        // Add dimensions
         NcDim param_dim = datafile.addDim("Output Parameter", num_comp);
-        NcDim ens_dim = datafile.addDim("ensemble", n_ens);
-        NcDim traj_dim = datafile.addDim("trajectory", n_trajs);
+        NcDim ens_dim = datafile.addDim("ensemble", 1);
+        NcDim traj_dim = datafile.addDim("trajectory", n_trajs_file);
         NcDim time_dim = datafile.addDim("time"); // unlimited dimension
 
         NcVar param_var = datafile.addVar("Output Parameter", ncString, param_dim);
         NcVar ens_var = datafile.addVar("ensemble", ncInt64, ens_dim);
-        NcVar traj_var = datafile.addVar("trajectory", ncString, traj_dim);
+        NcVar traj_var = datafile.addVar("trajectory", ncInt64, traj_dim);
 
         ens_var.setCompression(
             enableShuffleFilter, enableDeflateFilter, deflateLevel);
@@ -93,34 +130,38 @@ void output_handle_t::setup(
         param_var.setCompression(
             enableShuffleFilter, enableDeflateFilter, deflateLevel);
 
-        // Add dim data
-        // the ensemble number is taken from the filename after idxx_y
-        // where y is the ensemble number
-        auto sub_str_it = filename.find("_wcb");
-        uint32_t ens = std::stoi(filename.substr(sub_str_it-4, sub_str_it-1));
-        ens_var.putVar(&ens);
-        traj_var.putVar(&cc.id);
-
         std::vector<uint64_t> startp, countp;
         startp.push_back(0);
-        countp.push_back(1);
+        countp.push_back(n_trajs_file);
+        std::vector<uint64_t> traj_ids(n_trajs_file);
+        for(uint64_t i=0; i<n_trajs_file; i++)
+        {
+            traj_ids[i] = i;
+        }
+        ens_var.putVar(&cc.ensemble_id);
+        traj_var.putVar(startp, countp, traj_ids.data());
+
+
+        startp[0] = 0;
+        countp[0] = 1;
         for(const auto &p: output_par_idx)
         {
             param_var.putVar(startp, countp, &p);
             startp[0]++;
         }
-
-        dim_vector.push_back(time_dim);
-        dim_vector.push_back(traj_dim);
+        std::vector<NcDim> dim_vector;
         dim_vector.push_back(ens_dim);
+        dim_vector.push_back(traj_dim);
+        dim_vector.push_back(time_dim);
 
         for(auto &out_par: output_par_idx)
             var_vector.emplace_back(datafile.addVar(out_par, ncDouble, dim_vector));
         std::vector<NcDim> dim_vector_grad;
-        dim_vector_grad.push_back(time_dim);
-        dim_vector_grad.push_back(traj_dim);
-        dim_vector_grad.push_back(ens_dim);
+
         dim_vector_grad.push_back(param_dim);
+        dim_vector_grad.push_back(ens_dim);
+        dim_vector_grad.push_back(traj_dim);
+        dim_vector_grad.push_back(time_dim);
         for(auto &out_grad: output_grad_idx)
             var_vector.emplace_back(datafile.addVar(out_grad, ncDouble, dim_vector_grad));
 
@@ -165,10 +206,17 @@ void output_handle_t::setup(
                 datafile.putAtt(attribute.getName(), values);
             }
         }
+        // add another global attribute describing where this ensemble
+        // originates from
+        std::string att_name = "Ensemble History";
+        std::string att_val = cc.ens_desc;
+        datafile.putAtt(
+            att_name,
+            att_val);
         // column attributes
         // Output Parameter is new. Hence we add it like that:
-        std::string att_name = "long_name";
-        std::string att_val = "gradients are calculated w.r.t. this output parameter";
+        att_name = "long_name";
+        att_val = "gradients are calculated w.r.t. this output parameter";
         param_var.putAtt(
             att_name,
             att_val);
@@ -403,9 +451,8 @@ void output_handle_t::setup(
             att_val = output_grad_descr[j];
             var_vector[num_comp+j].putAtt(att_name, att_val);
         }
-
-
         in_datafile.close();
+        datafile.close();
     } else
     {
         // write attributes
@@ -616,7 +663,7 @@ void output_handle_t::buffer(const model_constants_t &cc,
 {
     if(filetype == "netcdf")
     {
-        const uint64_t offset = n_trajs*n_ens;
+        const uint64_t offset = 1;
 
         // output parameters
         for(uint64_t i=0; i<num_comp; i++)
@@ -792,6 +839,18 @@ void output_handle_t::flush_buffer()
 {
     if(filetype == "netcdf")
     {
+        bool got_it = false;
+        do{
+            try
+            {
+                datafile.open(filename + ".nc_wcb", NcFile::write);
+                got_it = true;
+            } catch(const std::exception& e2)
+            {
+                got_it = false;
+            }
+        } while(!got_it);
+
         std::vector<uint64_t> startp, countp;
         startp.push_back(flushed_snapshots);
         countp.push_back(n_snapshots); // number of snapshots so far
@@ -799,10 +858,10 @@ void output_handle_t::flush_buffer()
         var_vector[num_comp+num_par+1].putVar(startp, countp,
             output_buffer[num_comp+num_par+1].data());
 
-        startp.push_back(0);
-        startp.push_back(0);
-        countp.push_back(n_ens);
-        countp.push_back(n_trajs);
+        startp.insert(startp.begin(), traj);
+        startp.insert(startp.begin(), 0);
+        countp.insert(countp.begin(), 1);
+        countp.insert(countp.begin(), 1);
 
         for(uint64_t i=0; i<num_comp; i++)
             var_vector[i].putVar(startp, countp,
@@ -826,7 +885,7 @@ void output_handle_t::flush_buffer()
             startp_str.push_back(p);
         for(auto &p: countp)
             countp_str.push_back(p);
-        countp_str[0] = 1;
+        countp_str[countp_str.size()-1] = 1;
 
         for(uint64_t i=0; i<output_buffer_str.size(); i++)
         {
@@ -835,8 +894,8 @@ void output_handle_t::flush_buffer()
             {
                 var_vector[offset+i].putVar(
                     startp_str, countp_str, &t);
-                startp_str[0]++;
-                if(startp_str[0]-startp[0] == n_snapshots)
+                startp_str[startp_str.size()-1]++;
+                if(startp_str[startp_str.size()-1]-startp[startp_str.size()-1] == n_snapshots)
                     break;
             }
         }
@@ -858,12 +917,13 @@ void output_handle_t::flush_buffer()
 
         offset = num_comp;
         // gradients
-        startp.push_back(0);
-        countp.push_back(num_comp);
+        startp.insert(startp.begin(), 0);
+        countp.insert(countp.begin(), num_comp);
 
         for(uint64_t j=0; j<num_par; j++)
             var_vector[offset+j].putVar(startp, countp,
                 output_buffer[num_comp+j].data());
+        datafile.close();
     } else
     {
         outfile << out_tmp.rdbuf();

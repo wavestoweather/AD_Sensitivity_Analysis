@@ -297,3 +297,14 @@ void param_t::perturb(
         cc.perturbed_idx.push_back(name);
     }
 }
+
+std::string param_t::get_name() const
+{
+    if(particle_param)
+    {
+        return ( outparam_name + "_" + param_name );
+    } else
+    {
+        return param_name;
+    }
+}

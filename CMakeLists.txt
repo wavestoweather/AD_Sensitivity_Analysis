@@ -43,9 +43,6 @@ boost_report_value(ARCH)
 set(BUILDNAME "${OSTYPE}-${OSVERSION}/${ARCH}/${COMPILER_ID_TAG}" CACHE INTERNAL "buildname")
 boost_report_value(BUILDNAME)
 
-set(TOOLSET "${COMPILER_ID_TAG}/${ARCH}/${CMAKE_BUILD_TYPE}" CACHE INTERNAL "toolset")
-boost_report_value(TOOLSET)
-
 execute_process(COMMAND hostname
     COMMAND tr -d \\n
     OUTPUT_VARIABLE HOSTNAME)
@@ -80,7 +77,7 @@ if( NOT RELOPTLEVEL )
     set(RELOPTLEVEL 2)
 endif()
 
-# Check for build types such as -DCMAKE_BUILD_TYPE=debug
+# Check for build types such as -DBUILD_TYPE=debug
 if ((NOT CMAKE_BUILD_TYPE) OR (CMAKE_BUILD_TYPE MATCHES "^None"))
     set(CMAKE_BUILD_TYPE "release")
 endif()

@@ -15,8 +15,8 @@ using namespace netCDF;
  */
 struct nc_parameters_t{
 
-    uint64_t n_trajectories = 30; /*!< Number of trajectories in the netCDF file. */
-    uint64_t n_timesteps = 7922; /*!< Number of timesteps in the netCDF file. */
+    uint32_t n_trajectories = 30; /*!< Number of trajectories in the netCDF file. */
+    uint32_t n_timesteps = 7922; /*!< Number of timesteps in the netCDF file. */
 #ifdef MET3D
     double z;
     std::vector<double> time_abs;
@@ -83,5 +83,5 @@ struct nc_parameters_t{
      */
     void init_params(
         uint32_t n=32,
-        uint32_t n_timesteps=7922);
+        uint32_t n_time=7922);
 };

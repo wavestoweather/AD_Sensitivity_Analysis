@@ -63,4 +63,6 @@ struct param_t{
     int from_pt(pt::ptree &ptree, model_constants_t &cc);
 
     void perturb(model_constants_t &cc) const;
+
+    std::string get_name() const;
 };

@@ -37,8 +37,21 @@ struct task_scheduler_t{
      */
     std::vector<std::int8_t> work_available;
 
+    /**
+     * If 1 at idx then send work to process idx.
+     */
+    // std::vector<std::int8_t> send_list;
+
+    /**
+     * Store the maximum ensemble id that had been created.
+     * rank 0: Always has the maximum number at hand.
+     * rank > 0: not necessarily up to date.
+     */
+    uint64_t max_ensemble_id;
+
     MPI_Win free_window;
     MPI_Win work_window;
+    MPI_Win ens_window;
     int my_rank;
 
 
@@ -46,16 +59,21 @@ struct task_scheduler_t{
     task_scheduler_t(const int &rank, const int &n_processes);
 
     /**
-     * Check if someone is available to send a task to and send it.
+     * Check if someone is available to send a task from queue to and send it.
+     * @param checkpoint on out: checkpoint if receiver and sender are
+     * the same
+     * @param send_to_self If true: allow to store checkpoint in
+     * checkpoint for further use.
+     * @return True if own queue is where it shall be sent to.
      */
-    void send_task();
+    bool send_task(checkpoint_t &checkpoint, const bool send_to_self=true);
 
     /**
-     * Checks if any worker is free and send it one task.
+     * Checks if any worker is free and send it a new task.
      * If all workers are busy, add the task to its queue for
      * later sends.
      */
-    void send_task(checkpoint_t &checkpoint);
+    void send_new_task(checkpoint_t &checkpoint);
 
     /**
      * Busy waiting until a new task is available and returns true.

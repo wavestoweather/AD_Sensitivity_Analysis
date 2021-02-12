@@ -81,7 +81,6 @@ void parse_args_and_checkpoints(
             print_reference_quantities(ref_quant);
         }
         input.set_input_from_arguments(global_args);
-
         if(rank == 0)
         {
             if(global_args.checkpoint_flag)
@@ -100,7 +99,6 @@ void parse_args_and_checkpoints(
                         SUCCESS_OR_DIE(s.check());
                     print_segments(segments);
                 }
-                input.set_outputfile_id(cc.id, cc.ensemble_id);
             }
         } else
         {
@@ -136,7 +134,6 @@ void setup_simulation(
 {
     parse_args_and_checkpoints(argc, argv, rank, n_processes, input, global_args,
         ref_quant, segments, cc, y_init, checkpoint, already_loaded);
-
     SUCCESS_OR_DIE(read_init_netcdf(y_init, nc_params, lenp, ref_quant,
 #ifdef MET3D
         input.start_time,
@@ -145,7 +142,6 @@ void setup_simulation(
         (global_args.checkpoint_flag || already_loaded),
         cc, input.current_time)
     );
-
 #if defined(RK4_ONE_MOMENT)
     cc.setCoefficients(y_init[0] , y_init[1]);
 #endif
@@ -158,10 +154,8 @@ void setup_simulation(
     // Set "old" values as temporary holder of values.
     for(int ii = 0 ; ii < num_comp ; ii++)
         y_single_old[ii] = y_init[ii];
-
-
     // Currently we only load one trajectory per instance
-    out_handler.setup("netcdf", input.OUTPUT_FILENAME, 1, 1, cc,
+    out_handler.setup("netcdf", input.OUTPUT_FILENAME, cc,
         ref_quant, input.INPUT_FILENAME, input.write_index,
         input.snapshot_index);
 
@@ -190,7 +184,6 @@ void setup_simulation(
         print_particle_params(cc.hail, "hail");
 #endif
     }
-
     already_loaded = true;
 }
 
@@ -285,19 +278,64 @@ void parameter_check(
             // Perturb this instance
             if(s.n_members == 1)
             {
-                s.perturb(cc, ref_quant, input);
+                std::string descr;
+                s.perturb(cc, ref_quant, input, descr);
             } else // Create a checkpoint for new members
             {
-                std::string checkpoint_filename = input.FOLDER_NAME;
+#ifdef USE_MPI
+                uint64_t ens_id;
+                if(scheduler.my_rank != 0)
+                {
+                    MPI_Win_lock(MPI_LOCK_SHARED, scheduler.my_rank, 0, scheduler.ens_window);
+                    uint64_t result = scheduler.max_ensemble_id;
+                    MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
+                    do
+                    {
+                        ens_id = result + 1;
+                        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, scheduler.my_rank, 0, scheduler.ens_window);
+                        scheduler.max_ensemble_id = result;
+                        MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
+                        SUCCESS_OR_DIE(
+                        MPI_Compare_and_swap(
+                            &ens_id, // origin
+                            &scheduler.max_ensemble_id, // compare
+                            &result, // result
+                            MPI_UINT64_T, // datatype
+                            0, // target rank
+                            0, // target displ
+                            scheduler.ens_window)
+                        );
+                    } while(result != scheduler.max_ensemble_id);
+                } else
+                {
+                    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, scheduler.my_rank, 0, scheduler.ens_window);
+                    ens_id = scheduler.max_ensemble_id + 1;
+                    scheduler.max_ensemble_id = ens_id;
+                    MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
+                }
+
+                for(uint32_t i=0; i<s.n_members; ++i)
+                {
+                    const uint64_t total_members = s.n_members;
+                    checkpoint_t checkpoint(
+                        cc,
+                        y_single_old,
+                        segments,
+                        input,
+                        time_old,
+                        i,
+                        ens_id,
+                        total_members);
+                    scheduler.send_new_task(checkpoint);
+                }
+#else
                 checkpoint_t checkpoint(
                     cc,
                     y_single_old,
                     segments,
                     input,
                     time_old);
-#ifdef MPI
-                scheduler.send_task(checkpoint);
-#else
+                std::string checkpoint_filename = input.FOLDER_NAME;
                 checkpoint.write_checkpoint(checkpoint_filename, cc, segments);
                 create_run_script(
                     input.FOLDER_NAME,
@@ -390,7 +428,8 @@ void run_substeps(
     const uint32_t &ensemble,
     std::vector<segment_t> &segments,
     ProgressBar &pbar,
-    task_scheduler_t &scheduler)
+    task_scheduler_t &scheduler,
+    const uint64_t &progress_index)
 {
     double time_old, time_new;
     for(uint32_t sub=sub_start; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
@@ -460,8 +499,6 @@ void run_substeps(
 
         // Time update
         time_new = (sub + t*cc.num_sub_steps)*cc.dt;
-
-        // Output *if needed* (checks within function)
         out_handler.process_step(cc, nc_params, y_single_new, y_diff, sub, t,
             time_new, traj_id, input.write_index,
             input.snapshot_index,
@@ -469,7 +506,6 @@ void run_substeps(
             ensemble,
 #endif
             last_step, ref_quant);
-
         // Interchange old and new for next step
         time_old = time_new;
         y_single_old.swap(y_single_new);
@@ -480,14 +516,13 @@ void run_substeps(
 
         // While debugging, the bar is not useful.
 #if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR) && !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
-        if(input.progress_index > 0)
+        if(progress_index > 0)
             pbar.progress(sub + t*cc.num_sub_steps);
 #endif
         // In case that the sub timestep%timestep is not 0
         if( last_step )
             break;
     } // End substep
-    scheduler.send_task();
 }
 
 int run_simulation(
@@ -511,8 +546,10 @@ int run_simulation(
 #ifdef MET3D
     uint32_t ensemble;
 #endif
-
-    ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps, input.progress_index, "simulation step", std::cout);
+    // force any process that is not root to disable pbar
+    const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
+    ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps,
+        progress_index, "simulation step", std::cout);
     // Loop for timestepping: BEGIN
     try
     {
@@ -535,12 +572,11 @@ int run_simulation(
                 ensemble,
 #endif
                 t, global_args.checkpoint_flag, out_handler);
-
             // Iterate over each substep
             run_substeps(input, ref_quant, t, cc, y_single_old,
                 inflow, tape, y_single_new, nc_params, y_diff, out_handler,
-                sub_start, traj_id, ensemble, segments, pbar, scheduler);
-
+                sub_start, traj_id, ensemble, segments, pbar, scheduler,
+                progress_index);
 #ifdef TRACE_QG
             if(trace)
                 std::cout << "\nSediment total q: " << sediment_q_total
@@ -549,15 +585,17 @@ int run_simulation(
             sediment_q_total = 0;
 #endif
             sub_start = 1;
+            checkpoint_t throw_away;
+            scheduler.send_task(throw_away, false);
         }
-        if(input.progress_index > 0)
+        if(progress_index > 0)
             pbar.finish();
     } catch(netCDF::exceptions::NcException& e)
     {
-        if(input.progress_index > 0)
+        if(progress_index > 0)
             pbar.finish();
         std::cout << e.what() << std::endl;
-        std::cout << "ABORTING." << std::endl;
+        std::cout << "rank " << rank << ": ABORTING. (sorry)" << std::endl;
         return 1;
     }
     return 0;
@@ -637,7 +675,7 @@ int main(int argc, char** argv)
             out_handler, segments, lenp, scheduler));
     }
 
-    if(scheduler.receive_task(checkpoint))
+    while(scheduler.receive_task(checkpoint))
     {
         // parse checkpoint
         checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
@@ -649,13 +687,15 @@ int main(int argc, char** argv)
             global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
             out_handler, segments, lenp, scheduler));
     }
+
 #ifdef USE_MPI
     MPI_Finalize();
 #endif
 #ifdef SILENT_MODE
     exit(0);
 #else
-    std::cout << "-------------------FINISHED-------------------\n\n\n";
+    if(rank == 0)
+        std::cout << "-------------------FINISHED-------------------\n\n\n";
     exit(0);
 #endif
 }

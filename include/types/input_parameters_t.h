@@ -59,8 +59,7 @@ struct input_parameters_t{
      *                 and z being the current id.
      */
     void set_outputfile_id(
-        const std::string &all_ids,
-        uint64_t ensemble_id);
+        const uint64_t ensemble_id);
 
     void put(pt::ptree &ptree, const double &time) const;
 

@@ -125,10 +125,14 @@ void nc_parameters_t::load_params(
     countp[0]--;
 #elif defined MET3D
     this->z_var.getVar(startp, countp, &(this->z));
+    // std::cout << "after z\n";
     countp[2]++;
     this->lat_var.getVar(startp, countp, this->lat.data());
+    // std::cout << "after lat\n";
     this->lon_var.getVar(startp, countp, this->lon.data());
+    // std::cout << "after lon\n";
     this->w_var.getVar(startp, countp, this->w.data());
+    // std::cout << "after w\n";
     countp[2]--;
 #else
     countp[1]++;
@@ -162,7 +166,7 @@ void nc_parameters_t::load_params(
     this->slan_600_var.getVar(startp, countp, &map);
     this->slan_600 = (map > 0) ? true : false;
 #endif
-
+    // std::cout << "after flags\n";
     this->t_var.getVar(startp, countp, &(this->t));
     this->p_var.getVar(startp, countp, &(this->p));
     this->time_rel_var.getVar(startp, countp, &(this->time_rel));
@@ -171,7 +175,7 @@ void nc_parameters_t::load_params(
     this->qi_var.getVar(startp, countp, &(this->qi));
     this->qs_var.getVar(startp, countp, &(this->qs));
     this->qv_var.getVar(startp, countp, &(this->qv));
-
+    // std::cout << "after env\n";
 #if !defined WCB2 && !defined MET3D
     // We are reading in hPa. Convert to Pa
     this->p        *= 100;
@@ -262,12 +266,14 @@ void nc_parameters_t::load_params(
     this->S_var.getVar(startp, countp, &(this->S));
     this->S /= 100; // from percentage
     this->time_rel_var.getVar(startp, countp, &(this->time_rel));
+    // std::cout << "after time_rel\n";
     // there is only a single value for that since each type
     // is divided into different files in the input
     if(std::strcmp(this->type[0], "") == 0)
     {
         this->type_var.getVar(this->type);
     }
+    // std::cout << "after type\n";
     this->w[0]     /= ref_quant.wref;
     this->w[1]     /= ref_quant.wref;
 #elif !defined WCB && !defined WCB2
@@ -303,13 +309,13 @@ void nc_parameters_t::load_params(
 
 void nc_parameters_t::init_params(
     uint32_t n,
-    uint32_t n_timestep)
+    uint32_t n_time)
 {
     this->n_trajectories = n;
-    this->n_timesteps = n_timesteps;
+    this->n_timesteps = n_time;
 #if defined MET3D
     this->w.resize(2);
-    this->time_abs.resize(n_timesteps);
+    this->time_abs.resize(n_time);
     this->type[0] = (char*) "";
 #else
     this->w.resize(2);

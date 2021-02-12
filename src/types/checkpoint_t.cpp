@@ -7,21 +7,47 @@ checkpoint_t::checkpoint_t()
 
 template<class float_t>
 checkpoint_t::checkpoint_t(
-    model_constants_t &cc,
+    const model_constants_t &cc,
     const std::vector<float_t> &y,
-    std::vector<segment_t> &segments,
+    const std::vector<segment_t> &segments,
     const input_parameters_t &input,
     const double &current_time)
 {
     this->create_checkpoint(cc, y, segments, input, current_time);
 }
 
+template<class float_t>
+checkpoint_t::checkpoint_t(
+    model_constants_t &cc,
+    const std::vector<float_t> &y,
+    const std::vector<segment_t> &segments,
+    const input_parameters_t &input,
+    const double &current_time,
+    const uint32_t &id,
+    const uint64_t &ens_id,
+    const uint64_t &n_trajs)
+{
+    auto old_id = cc.ensemble_id;
+    cc.ensemble_id = ens_id;
+    auto old_tid = cc.traj_id;
+    cc.traj_id = id;
+    auto old_n = cc.n_trajs;
+    cc.n_trajs = n_trajs;
+    auto old_desc = cc.ens_desc;
+    cc.ens_desc += "- " + std::to_string(old_id) + ","
+        + std::to_string(old_tid) + " ";
+    this->create_checkpoint(cc, y, segments, input, current_time);
+    cc.ensemble_id = old_id;
+    cc.traj_id = old_tid;
+    cc.n_trajs = old_n;
+    cc.ens_desc = old_desc;
+}
 
 template<class float_t>
 void checkpoint_t::create_checkpoint(
-    model_constants_t &cc,
+    const model_constants_t &cc,
     const std::vector<float_t> &y,
-    std::vector<segment_t> &segments,
+    const std::vector<segment_t> &segments,
     const input_parameters_t &input,
     const double &current_time)
 {
@@ -56,10 +82,9 @@ int checkpoint_t::load_checkpoint(
     cc.setup_model_constants(input, ref_quant);
     // Parse the model constants
     SUCCESS_OR_DIE(cc.from_pt(checkpoint));
-    // cc.id are the preceeding ids
-    input.set_outputfile_id(cc.id, cc.ensemble_id);
-
-    // Parse the segments
+    // Parse the segments and store which parameters had been perturbed
+    // in ens_descr
+    std::string ens_desc;
     for(auto &it: checkpoint.get_child("segments"))
     {
         segment_t segment;
@@ -67,11 +92,12 @@ int checkpoint_t::load_checkpoint(
 
         if(segment.activated)
         {
-            segment.perturb(cc, ref_quant, input);
+            segment.perturb(cc, ref_quant, input, ens_desc);
         }
-
         segments.push_back(segment);
     }
+    cc.ens_desc += ens_desc;
+    input.set_outputfile_id(cc.ensemble_id);
     for(auto &it: checkpoint.get_child("Output Parameters"))
     {
         y[std::stoi(it.first)] = std::stod(it.second.data());
@@ -214,14 +240,24 @@ bool checkpoint_t::checkpoint_available() const
 template checkpoint_t::checkpoint_t<codi::RealReverse>(
     model_constants_t&,
     const std::vector<codi::RealReverse>&,
-    std::vector<segment_t>&,
+    const std::vector<segment_t>&,
+    const input_parameters_t&,
+    const double&,
+    const uint32_t&,
+    const uint64_t&,
+    const uint64_t&);
+
+template checkpoint_t::checkpoint_t<codi::RealReverse>(
+    const model_constants_t&,
+    const std::vector<codi::RealReverse>&,
+    const std::vector<segment_t>&,
     const input_parameters_t&,
     const double&);
 
 template void checkpoint_t::create_checkpoint<codi::RealReverse>(
-    model_constants_t&,
+    const model_constants_t&,
     const std::vector<codi::RealReverse>&,
-    std::vector<segment_t>&,
+    const std::vector<segment_t>&,
     const input_parameters_t&,
     const double&);
 

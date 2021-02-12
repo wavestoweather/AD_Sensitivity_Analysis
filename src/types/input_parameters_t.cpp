@@ -41,27 +41,18 @@ input_parameters_t::input_parameters_t()
 }
 
 void input_parameters_t::set_outputfile_id(
-    const std::string &all_ids,
-    uint64_t ensemble_id)
+    const uint64_t ensemble_id)
 {
-    std::string preceeding_ids = "";
-    if(all_ids != "0")
-    {
-        auto found = all_ids.find_last_of("-");
-        preceeding_ids = all_ids.substr(0, found);
-    }
-
-    std::string ens_string = "_ensID_";
+    std::string ens_string;
     if(ensemble_id == 0)
         ens_string += "000";
     else
         for(int64_t i=ensemble_id; i<1000; i*=10)
             ens_string += "0";
+    std::string id_str = "ensid" + ens_string + std::to_string(ensemble_id) + "_";
 
-    // master branch
-    if(preceeding_ids == "")
+    if(ensemble_id == 0)
     {
-        std::string id_str = "id" + std::to_string(id) + ens_string + std::to_string(ensemble_id) + "_";
         auto pos = OUTPUT_FILENAME.rfind("/");
         if(pos == std::string::npos)
         {
@@ -70,20 +61,17 @@ void input_parameters_t::set_outputfile_id(
         {
             OUTPUT_FILENAME.insert(pos+1, id_str);
         }
-
-    } else // subsequent ensemble members
+    } else
     {
-        std::string id_str = "id" + all_ids + ens_string + std::to_string(ensemble_id) + "_";
-        std::string to_replace = "id" + preceeding_ids + "_";
+        std::string to_replace = "ensid";
         auto pos = OUTPUT_FILENAME.rfind(to_replace);
-
         if(pos != std::string::npos)
         {
             // This *should* always be the correct branch
-            OUTPUT_FILENAME.replace(pos, to_replace.length()+11, id_str);
+            OUTPUT_FILENAME.replace(pos, to_replace.length()+10, id_str);
         } else
         {
-            // If for any weird reason, "id" is not part of OUTPUT_FILENAME:
+            // If for any weird reason, "ensid" is not part of OUTPUT_FILENAME:
             // Add to beginning of the filename. Check for any path characters
             auto pos_folder = OUTPUT_FILENAME.rfind("/");
             if(pos == std::string::npos)

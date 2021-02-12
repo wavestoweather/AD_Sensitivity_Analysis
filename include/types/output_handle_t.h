@@ -37,10 +37,12 @@ struct output_handle_t{
     std::array<std::vector<std::string>, 1 > output_buffer_str;
     std::array<std::vector<uint64_t>, 1 > output_buffer_int;
     NcFile datafile;
-    std::vector<NcDim> dim_vector;
+    // std::vector<NcDim> dim_vector;
     std::vector<NcVar> var_vector;
     uint64_t n_ens;
     uint64_t n_trajs;
+    uint64_t n_trajs_file;
+    uint64_t traj;
     uint64_t total_snapshots;
     std::string filename;
 
@@ -49,8 +51,6 @@ struct output_handle_t{
     output_handle_t(
         const std::string filetype,
         const std::string filename,
-        const uint64_t n_trajs,
-        const uint64_t n_ens,
         const model_constants_t &cc,
         const reference_quantities_t &ref_quant,
         const std::string in_filename,
@@ -60,8 +60,6 @@ struct output_handle_t{
     void setup(
         const std::string filetype,
         const std::string filename,
-        const uint64_t n_trajs,
-        const uint64_t n_ens,
         const model_constants_t &cc,
         const reference_quantities_t &ref_quant,
         const std::string in_filename,

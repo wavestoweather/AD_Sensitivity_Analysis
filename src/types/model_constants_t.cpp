@@ -4,6 +4,9 @@ model_constants_t::model_constants_t()
 {
     id = "0";
     ensemble_id = 0;
+    traj_id = 0;
+    n_trajs = 1;
+    ens_desc = "root ";
     constants.resize(static_cast<int>(Cons_idx::n_items));
     std::fill(constants.begin(), constants.end(), 0);
 }
@@ -65,6 +68,10 @@ void model_constants_t::put(
 {
     pt::ptree model_cons;
     model_cons.put("id", id);
+    model_cons.put("ensemble_id", ensemble_id);
+    model_cons.put("traj_id", traj_id);
+    model_cons.put("n_trajs", n_trajs);
+    model_cons.put("ens_desc", ens_desc);
 
     // technical parameters
     model_cons.put("t_end_prime", t_end_prime);
@@ -113,6 +120,18 @@ int model_constants_t::from_pt(
         if(first == "id")
         {
             id = it.second.get_value<std::string>() + "-" + id;
+        } else if(first == "ensemble_id")
+        {
+            ensemble_id = it.second.get_value<std::uint64_t>();
+        } else if(first == "traj_id")
+        {
+            traj_id = it.second.get_value<std::uint64_t>();
+        } else if(first == "n_trajs")
+        {
+            n_trajs = it.second.get_value<std::uint64_t>();
+        } else if(first == "ens_desc")
+        {
+            ens_desc = it.second.get_value<std::string>();
         } else if(first == "t_end_prime")
         {
             t_end_prime = it.second.get_value<double>();

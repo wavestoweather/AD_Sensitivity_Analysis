@@ -52,128 +52,19 @@ int load_ens_config(
     int err = 0;
     pt::ptree pt;
     boost::property_tree::read_json(filename, pt);
-
+    std::string ens_desc;
     for(auto &it: pt.get_child("segments"))
     {
         segment_t segment;
         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
         segments.push_back(segment);
         if(segment.activated)
-            segment.perturb(cc, ref_quant, input);
+            segment.perturb(cc, ref_quant, input, ens_desc);
     }
+    cc.ens_desc += ens_desc;
+    input.set_outputfile_id(cc.ensemble_id);
     return err;
 }
-
-
-/**
- * Reads a checkpoint file including perturbed parameters if any, current
- * time step, new id as string.
- */
-// template<class float_t>
-// int load_checkpoint(
-    // const std::string &filename,
-    // model_constants_t &cc,
-    // std::vector<float_t> &y,
-    // std::vector<segment_t> &segments,
-    // input_parameters_t &input,
-    // const reference_quantities_t &ref_quant)
-// {
-//     int err = 0;
-//     pt::ptree pt;
-//     boost::property_tree::read_json(filename, pt);
-//     // Parse the input parameters
-//     SUCCESS_OR_DIE(input.from_pt(pt));
-//     cc.setup_model_constants(input, ref_quant);
-//     // Parse the model constants
-//     SUCCESS_OR_DIE(cc.from_pt(pt));
-//     // cc.id are the preceeding ids
-//     input.set_outputfile_id(cc.id, cc.ensemble_id);
-
-//     // Parse the segments
-//     for(auto &it: pt.get_child("segments"))
-//     {
-//         segment_t segment;
-//         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
-
-//         if(segment.activated)
-//         {
-//             segment.perturb(cc, ref_quant, input);
-//         }
-
-//         segments.push_back(segment);
-//     }
-//     for(auto &it: pt.get_child("Output Parameters"))
-//     {
-//         y[std::stoi(it.first)] = std::stod(it.second.data());
-//     }
-
-//     return err;
-// }
-
-
-
-
-/**
- * Creates a job-script for MOGON II and puts it on queue.
- * If this is not possible (i.e. running on a local machine),
- * the next jobs are started on the local machine.
- * Also creates an XML-file as checkpoint for initialization to read the
- * current status of the simulation for the next job(s).
- *
- * @param filename Filename for the checkpoint file. On out: added _idx-y.json
- */
-// template<class float_t>
-// void write_checkpoint(
-//     std::string &filename,
-//     model_constants_t &cc,
-//     const std::vector<float_t> &y,
-//     std::vector<segment_t> &segments,
-//     const input_parameters_t &input,
-//     const double &current_time)
-// {
-//     pt::ptree checkpoint;
-//     // First we add the ensemble configuration
-//     pt::ptree segment_tree;
-//     for(auto &s: segments)
-//         s.put(segment_tree);
-
-//     checkpoint.add_child("segments", segment_tree);
-//     // configuration from input_parameters_t
-//     input.put(checkpoint, current_time);
-//     // Model constants
-//     cc.put(checkpoint);
-//     // Current status of y
-//     pt::ptree output_parameters;
-//     for(uint32_t i=0; i<num_comp; i++)
-//         output_parameters.put(std::to_string(i), y[i]);
-//     checkpoint.add_child("Output Parameters", output_parameters);
-
-//     uint64_t i = 0;
-//     std::string actual_filename = filename + "/checkpoint_id" + cc.id + "_0000.json";
-//     while(exists(actual_filename))
-//     {
-//         i++;
-//         if(i < 10)
-//             actual_filename = filename + "/checkpoint_id" + cc.id + "_000" + std::to_string(i) + ".json";
-//         else if(i < 100)
-//             actual_filename = filename + "/checkpoint_id" + cc.id + "_00" + std::to_string(i) + ".json";
-//         else if(i < 1000)
-//             actual_filename = filename + "/checkpoint_id" + cc.id + "_0" + std::to_string(i) + ".json";
-//         else
-//             actual_filename = filename + "/checkpoint_id" + cc.id + "_" + std::to_string(i) + ".json";
-//     }
-//     std::fstream outstream(actual_filename, std::ios::out);
-//     filename = actual_filename;
-//     pt::write_json(outstream, checkpoint);
-//     outstream.close();
-//     // deactivate all segments, so we know, another instance is going
-//     // to process this
-//     for(auto &s: segments)
-//         s.deactivate(true);
-
-//     cc.ensemble_id++;
-// }
-
 
 /**
  * Create a bash script that executes this very same program by loading
@@ -407,459 +298,6 @@ bool load_lookup_table(
 
 
 /**
- * Initialize the nc parameters to default values. and allocate memory.
- *
- * @param nc The struct where the parameters are initialized.
- * @param n The number of trajectories in the netCDF file.
- * @param n_timesteps The maximum number of timesteps in the netCDF file.
- */
-// void init_nc_parameters(
-//     nc_parameters_t &nc,
-//     uint32_t n=32,
-//     uint32_t n_timesteps=7922)
-// {
-//     nc.n_trajectories = n;
-//     nc.n_timesteps = n_timesteps;
-// #if defined MET3D
-//     nc.w.resize(2);
-//     nc.time_abs.resize(n_timesteps);
-//     nc.type[0] = (char*) "";
-// #else
-//     nc.w.resize(2);
-//     nc.z.resize(4);
-// #endif
-//     nc.lat.resize(2);
-//     nc.lon.resize(2);
-// }
-
-
-/**
- * Load variables from the netCDF file such that data can be loaded using
- * load_nc_parameters()
- *
- * @param nc Struct where to load the variables.
- * @param datafile The netCDF file.
- */
-// void load_nc_parameters_var(
-//     nc_parameters_t &nc,
-//     NcFile &datafile)
-// {
-// #ifdef WCB2
-//     nc.lat_var      = datafile.getVar("latitude");
-//     nc.lon_var      = datafile.getVar("longitude");
-// #else
-//     nc.lat_var      = datafile.getVar("lat");
-//     nc.lon_var      = datafile.getVar("lon");
-// #endif
-//     nc.z_var        = datafile.getVar("z");
-// #if defined WCB || defined WCB2
-//     nc.p_var        = datafile.getVar("P");
-//     nc.t_var        = datafile.getVar("T");
-//     nc.qc_var       = datafile.getVar("QC");
-//     nc.qv_var       = datafile.getVar("QV");
-//     nc.qr_var       = datafile.getVar("QR");
-//     nc.qi_var       = datafile.getVar("QI");
-//     nc.qs_var       = datafile.getVar("QS");
-//     nc.time_rel_var = datafile.getVar("time");
-// #elif defined MET3D
-//     nc.p_var        = datafile.getVar("pressure");
-//     nc.t_var        = datafile.getVar("T");
-//     nc.qc_var       = datafile.getVar("QC");
-//     nc.qv_var       = datafile.getVar("QV");
-//     nc.qr_var       = datafile.getVar("QR");
-//     nc.qi_var       = datafile.getVar("QI");
-//     nc.qs_var       = datafile.getVar("QS");
-//     nc.time_rel_var = datafile.getVar("time_after_ascent");
-//     nc.time_abs_var = datafile.getVar("time");
-//     nc.w_var        = datafile.getVar("w");
-//     nc.S_var        = datafile.getVar("S");
-//     nc.type_var     = datafile.getVar("type");
-// #else
-//     nc.p_var        = datafile.getVar("p");
-//     nc.t_var        = datafile.getVar("t");
-//     nc.w_var        = datafile.getVar("w");
-//     nc.time_rel_var = datafile.getVar("time_rel");
-//     nc.qc_var       = datafile.getVar("qc");
-//     nc.qr_var       = datafile.getVar("qr");
-//     nc.qi_var       = datafile.getVar("qi");
-//     nc.qs_var       = datafile.getVar("qs");
-//     nc.qg_var       = datafile.getVar("qg");
-//     nc.qv_var       = datafile.getVar("qv");
-//     nc.QIin_var     = datafile.getVar("QIin");
-//     nc.QSin_var     = datafile.getVar("QSin");
-//     nc.QRin_var     = datafile.getVar("QRin");
-//     nc.QGin_var     = datafile.getVar("QGin");
-//     nc.QIout_var    = datafile.getVar("QIout");
-//     nc.QSout_var    = datafile.getVar("QSout");
-//     nc.QRout_var    = datafile.getVar("QRout");
-//     nc.QGout_var    = datafile.getVar("QGout");
-// #endif
-// #ifdef WCB
-//     // specific humidity
-//     nc.S_var        = datafile.getVar("RELHUM");
-//     // Flag wether an effective ascent region is reached
-//     nc.ascent_flag_var = datafile.getVar("MAP");
-//     // Potential vorticity (German: Wirbelstaerke)
-//     // nc.pot_vortic   = datafile.getVar("POT_VORTIC")
-// #endif
-
-// #if defined WCB2 || defined MET3D
-//     nc.qg_var       = datafile.getVar("QG");
-//     nc.QIin_var     = datafile.getVar("QI_IN");
-//     nc.QSin_var     = datafile.getVar("QS_IN");
-//     nc.QRin_var     = datafile.getVar("QR_IN");
-//     nc.QGin_var     = datafile.getVar("QG_IN");
-//     nc.QIout_var    = datafile.getVar("QI_OUT");
-//     nc.QSout_var    = datafile.getVar("QS_OUT");
-//     nc.QRout_var    = datafile.getVar("QR_OUT");
-//     nc.QGout_var    = datafile.getVar("QG_OUT");
-
-//     nc.NIin_var     = datafile.getVar("NI_IN");
-//     nc.NSin_var     = datafile.getVar("NS_IN");
-//     nc.NRin_var     = datafile.getVar("NR_IN");
-//     nc.NGin_var     = datafile.getVar("NG_IN");
-//     nc.NIout_var    = datafile.getVar("NI_OUT");
-//     nc.NSout_var    = datafile.getVar("NS_OUT");
-//     nc.NRout_var    = datafile.getVar("NR_OUT");
-//     nc.NGout_var    = datafile.getVar("NG_OUT");
-
-//     nc.Nc_var       = datafile.getVar("NCCLOUD");
-//     nc.Nr_var       = datafile.getVar("NCRAIN");
-//     nc.Ni_var       = datafile.getVar("NCICE");
-//     nc.Ns_var       = datafile.getVar("NCSNOW");
-//     nc.Ng_var       = datafile.getVar("NCGRAUPEL");
-
-//     nc.conv_400_var = datafile.getVar("conv_400");
-//     nc.conv_600_var = datafile.getVar("conv_600");
-//     nc.slan_400_var = datafile.getVar("slan_400");
-//     nc.slan_600_var = datafile.getVar("slan_600");
-// #endif
-// #if defined WCB2
-//     // Flag wether an effective ascent region is reached
-//     nc.ascent_flag_var = datafile.getVar("WCB_flag");
-//     // 2h ascent rate after Oertel et al. (2019)
-//     nc.dp2h_var     = datafile.getVar("dp2h");
-// #endif
-// #if defined MET3D && defined TURBULENCE
-//     nc.qturb_var    = datafile.getVar("Q_TURBULENCE");
-// #endif
-// }
-
-
-/**
- * Load the parameters from the netCDF file where load_nc_parameters_var()
- * must have been called beforehand.
- *
- * @param nc s Struct where to store the values.
- * @param startp Must have two values with index from where to load values.
- *               Depending on the NetCDF file, startp[0] may refer to the
- *               trajectory id.
- * @param countp Must have two values for how many values to load.
- *               Depending on the NetCDF file, countp[0] may refer to the
- *               trajectory id. Usually we set the values to 1.
- * @param ref_quant Reference quantities to transform between units.
- */
-// void load_nc_parameters(
-//     nc_parameters_t &nc,
-//     std::vector<size_t> &startp,
-//     std::vector<size_t> &countp,
-//     const reference_quantities_t &ref_quant,
-//     uint64_t num_sub_steps)
-// {
-//     // startp[0] <- ensemble (if available)
-//     // startp[1] <- trajectory id
-//     // startp[2] <- timestep
-
-
-// #if defined WCB || defined WCB2
-//     countp[0]++;
-//     countp[0]++;
-//     nc.z_var.getVar(startp, countp, nc.z.data());
-//     nc.lat_var.getVar(startp, countp, nc.lat.data());
-//     nc.lon_var.getVar(startp, countp, nc.lon.data());
-//     countp[0]--;
-//     countp[0]--;
-// #elif defined MET3D
-//     nc.z_var.getVar(startp, countp, &nc.z);
-//     countp[2]++;
-//     nc.lat_var.getVar(startp, countp, nc.lat.data());
-//     nc.lon_var.getVar(startp, countp, nc.lon.data());
-//     nc.w_var.getVar(startp, countp, nc.w.data());
-//     countp[2]--;
-// #else
-//     countp[1]++;
-//     countp[1]++;
-//     nc.z_var.getVar(startp, countp, nc.z.data());
-//     nc.lat_var.getVar(startp, countp, nc.lat.data());
-//     nc.lon_var.getVar(startp, countp, nc.lon.data());
-//     countp[1]--;
-//     countp[1]--;
-// #endif
-
-// #if defined WCB || defined WCB2
-//     int map = 0;
-//     nc.ascent_flag_var.getVar(startp, countp, &map);
-//     nc.ascent_flag = (map > 0) ? true : false;
-// #endif
-// #if defined WCB2
-//     nc.dp2h_var.getVar(startp, countp, &map);
-//     nc.dp2h = (map > 0) ? true : false;
-// #endif
-// #if defined MET3D
-//     int map = 0;
-// #endif
-// #if defined MET3D || defined WCB2
-//     nc.conv_400_var.getVar(startp, countp, &map);
-//     nc.conv_400 = (map > 0) ? true : false;
-//     nc.conv_600_var.getVar(startp, countp, &map);
-//     nc.conv_600 = (map > 0) ? true : false;
-//     nc.slan_400_var.getVar(startp, countp, &map);
-//     nc.slan_400 = (map > 0) ? true : false;
-//     nc.slan_600_var.getVar(startp, countp, &map);
-//     nc.slan_600 = (map > 0) ? true : false;
-// #endif
-
-//     nc.t_var.getVar(startp, countp, &nc.t);
-//     nc.p_var.getVar(startp, countp, &nc.p);
-//     nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
-//     nc.qc_var.getVar(startp, countp, &nc.qc);
-//     nc.qr_var.getVar(startp, countp, &nc.qr);
-//     nc.qi_var.getVar(startp, countp, &nc.qi);
-//     nc.qs_var.getVar(startp, countp, &nc.qs);
-//     nc.qv_var.getVar(startp, countp, &nc.qv);
-
-// #if !defined WCB2 && !defined MET3D
-//     // We are reading in hPa. Convert to Pa
-//     nc.p        *= 100;
-// #endif
-//     nc.p        /= ref_quant.pref;
-//     nc.t        /= ref_quant.Tref;
-//     nc.qc       /= ref_quant.qref;
-//     nc.qr       /= ref_quant.qref;
-//     nc.qv       /= ref_quant.qref;
-//     nc.qi       /= ref_quant.qref;
-//     nc.qs       /= ref_quant.qref;
-
-// #if defined WCB2 || defined MET3D
-//     nc.NRin_var.getVar(startp, countp, &nc.NRin);
-//     nc.NIin_var.getVar(startp, countp, &nc.NIin);
-//     nc.NSin_var.getVar(startp, countp, &nc.NSin);
-//     nc.NGin_var.getVar(startp, countp, &nc.NGin);
-
-//     nc.NRout_var.getVar(startp, countp, &nc.NRout);
-//     nc.NIout_var.getVar(startp, countp, &nc.NIout);
-//     nc.NSout_var.getVar(startp, countp, &nc.NSout);
-//     nc.NGout_var.getVar(startp, countp, &nc.NGout);
-
-//     nc.Nc_var.getVar(startp, countp, &nc.Nc);
-//     nc.Nr_var.getVar(startp, countp, &nc.Nr);
-//     nc.Ni_var.getVar(startp, countp, &nc.Ni);
-//     nc.Ns_var.getVar(startp, countp, &nc.Ns);
-//     nc.Ng_var.getVar(startp, countp, &nc.Ng);
-
-//     nc.NRin     /= ref_quant.Nref;
-//     nc.NIin     /= ref_quant.Nref;
-//     nc.NSin     /= ref_quant.Nref;
-//     nc.NGin     /= ref_quant.Nref;
-
-//     nc.NRout    /= ref_quant.Nref;
-//     nc.NIout    /= ref_quant.Nref;
-//     nc.NSout    /= ref_quant.Nref;
-//     nc.NGout    /= ref_quant.Nref;
-
-//     nc.Nc       /= ref_quant.Nref;
-//     nc.Nr       /= ref_quant.Nref;
-//     nc.Ni       /= ref_quant.Nref;
-//     nc.Ns       /= ref_quant.Nref;
-//     nc.Ng       /= ref_quant.Nref;
-
-//     nc.NRin     = abs(nc.NRin);
-//     nc.NIin     = abs(nc.NIin);
-//     nc.NSin     = abs(nc.NSin);
-//     nc.NGin     = abs(nc.NGin);
-// #endif
-
-// #if defined MET3D && defined TURBULENCE
-//     nc.qturb_var.getVar(startp, countp, &nc.qturb);
-//     nc.qturb /= ref_quant.qref;
-// #endif
-// #if !defined WCB
-//     nc.S = 1.0;
-//     nc.qg_var.getVar(startp, countp, &nc.qg);
-//     nc.QIin_var.getVar(startp, countp, &nc.QIin);
-//     nc.QSin_var.getVar(startp, countp, &nc.QSin);
-//     nc.QRin_var.getVar(startp, countp, &nc.QRin);
-//     nc.QGin_var.getVar(startp, countp, &nc.QGin);
-//     nc.QIout_var.getVar(startp, countp, &nc.QIout);
-//     nc.QSout_var.getVar(startp, countp, &nc.QSout);
-//     nc.QRout_var.getVar(startp, countp, &nc.QRout);
-//     nc.QGout_var.getVar(startp, countp, &nc.QGout);
-
-//     nc.qg       /= ref_quant.qref;
-//     nc.QRin     /= ref_quant.qref;
-//     nc.QRout    /= ref_quant.qref;
-//     nc.QIin     /= ref_quant.qref;
-//     nc.QIout    /= ref_quant.qref;
-//     nc.QSin     /= ref_quant.qref;
-//     nc.QSout    /= ref_quant.qref;
-//     nc.QGin     /= ref_quant.qref;
-//     nc.QGout    /= ref_quant.qref;
-
-//     nc.QRin     = abs(nc.QRin);
-//     nc.QRout    = abs(nc.QRout);
-//     nc.QIin     = abs(nc.QIin);
-//     nc.QIout    = abs(nc.QIout);
-//     nc.QSin     = abs(nc.QSin);
-//     nc.QSout    = abs(nc.QSout);
-//     nc.QGin     = abs(nc.QGin);
-//     nc.QGout    = abs(nc.QGout);
-// #endif
-// #ifdef MET3D
-//     nc.S_var.getVar(startp, countp, &nc.S);
-//     nc.S /= 100; // from percentage
-//     nc.time_rel_var.getVar(startp, countp, &nc.time_rel);
-//     // there is only a single value for that since each type
-//     // is divided into different files in the input
-//     if(std::strcmp(nc.type[0], "") == 0)
-//     {
-//         nc.type_var.getVar(nc.type);
-//     }
-//     nc.w[0]     /= ref_quant.wref;
-//     nc.w[1]     /= ref_quant.wref;
-// #elif !defined WCB && !defined WCB2
-//     nc.w_var.getVar(startp, countp, nc.w.data());
-//     countp[1]++;
-//     nc.w_var.getVar(startp, countp, nc.w.data());
-//     countp[1]--;
-
-//     nc.w[0]     /= ref_quant.wref;
-//     nc.w[1]     /= ref_quant.wref;
-// #elif defined WCB
-//     nc.qc /= 1.0e6;
-//     nc.qr /= 1.0e6;
-//     nc.qv /= 1.0e6;
-//     nc.qi /= 1.0e6;
-//     nc.qs /= 1.0e6;
-//     // Calculate w by getting the z-coordinates
-//     // and divide it by the amount of substeps
-//     nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
-//     nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
-//     nc.S_var.getVar(startp, countp, &nc.S);
-//     nc.S /= 100; // from percentage
-// #else
-//     // WCB 2
-//     // Calculate w by getting the z-coordinates
-//     // and divide it by the amount of substeps
-//     nc.w[0] = (nc.z[1] - nc.z[0]) / 20.0;
-//     nc.w[1] = (nc.z[2] - nc.z[1]) / 20.0;
-// #endif
-//     nc.dlat = (nc.lat[1] - nc.lat[0]) / num_sub_steps;
-//     nc.dlon = (nc.lon[1] - nc.lon[0]) / num_sub_steps;
-// }
-
-
-/**
- * Set the input parameters with the data from the global arguments.
- *
-//  * @param arg Stuct with command line arguments.
-//  * @param in Struct where the input parameters will be stored.
-//  */
-// void set_input_from_arguments(global_args_t &arg ,
-// 			      input_parameters_t &in )
-// {
-//   // Final time
-//   if(1 == arg.final_time_flag){
-//     in.t_end_prime = std::strtod(arg.final_time_string, nullptr);
-//   }
-
-//   // Timestep
-//   if(1 == arg.timestep_flag){
-//     in.dt_prime = std::strtod(arg.timestep_string, nullptr);
-//   }
-
-//   // Snapshot index
-//   if(1 == arg.snapshot_index_flag){
-//     in.snapshot_index = std::stoi(arg.snapshot_index_string);
-//   }
-
-//   // Output
-//   if(1 == arg.output_flag){
-//     in.OUTPUT_FILENAME = arg.output_string;
-//   }
-
-//   // Input
-//   if(1 == arg.input_flag){
-//     in.INPUT_FILENAME = arg.input_file;
-//   }
-
-//   // Scaling factor
-//   if(1 == arg.scaling_fact_flag){
-//     in.scaling_fact = std::strtod(arg.scaling_fact_string, nullptr);
-//   }
-
-//   // Starting over mixing ratios and particle numbers
-//   if(1 == arg.start_over_flag){
-//     in.start_over = (strcmp(arg.start_over_string, "0"));
-//   }
-
-//   // Starting over environment variables (p, T, w)
-//   if(1 == arg.start_over_env_flag){
-//     in.start_over_env = (strcmp(arg.start_over_env_string, "0"));
-//   }
-
-//   if(1 == arg.fixed_iteration_flag){
-//       in.fixed_iteration = (strcmp(arg.fixed_iteration_string, "0"));
-//   }
-
-//   // Auto type
-//   if(1 == arg.auto_type_flag){
-//     in.auto_type = std::stoi(arg.auto_type_string);
-//   }
-
-//   // Trajectory
-//   if(1 == arg.traj_flag){
-//     in.traj = std::stoi(arg.traj_string);
-//   }
-
-//   // Write index
-//   if(1 == arg.write_flag){
-//       in.write_index = std::stoi(arg.write_string);
-//   }
-
-//   // Progressbar index
-//   if(1 == arg.progress_index_flag){
-//       in.progress_index = std::stoull(arg.progress_index_string);
-//   }
-// #ifdef MET3D
-//   // Simulation start time
-//   if(1 == arg.delay_start_flag){
-//       in.start_time = std::strtod(arg.delay_start_string, nullptr);
-//   }
-// #endif
-
-//   // Ensemble configuration file
-//   if(1 == arg.ens_config_flag){
-//     in.ENS_CONFIG_FILENAME = arg.ens_config_string;
-//   }
-
-//   // Checkpoint file
-//   if(1 == arg.checkpoint_flag){
-//     in.CHECKPOINT_FILENAME = arg.checkpoint_string;
-//   }
-
-//   // ID for this process
-//   if(1 == arg.gnu_id_flag){
-//     in.id = std::stoi(arg.gnu_id_string);
-//   }
-
-//   // Folder name for new generated checkpoints
-//   if(1 == arg.folder_name_flag){
-//     in.FOLDER_NAME = arg.folder_name_string;
-//   }
-// }
-
-
-/**
  * Read initial values from the netcdf file and stores them to y_init.
  * Also stores the amount of trajectories in the input file to lenp and
  * several quantities to cc such as the number of steps to simulate and
@@ -899,11 +337,9 @@ int read_init_netcdf(
 #else
         lenp = datafile.getDim("id").getSize();
 #endif
-#ifndef SILENT_MODE
-        std::cout << "Number of trajectories in netCDF file: " << lenp << "\n" << std::flush;
-#endif
         if(lenp <= traj)
         {
+            std::cerr << "Number of trajectories in netCDF file: " << lenp << "\n";
             std::cerr << "You asked for trajectory with index " << traj
                       << " which does not exist. ABORTING.\n";
             return NC_TRAJ_IDX_ERR;
@@ -913,7 +349,10 @@ int read_init_netcdf(
 #else
         uint32_t n_timesteps = datafile.getDim("time").getSize();
 #endif
-
+        // std::cout << "##############################\n"
+        //           << "lenp " << lenp << ", n_timesteps " << n_timesteps << "\n"
+        //           << "traj " << traj << "\n"
+        //           << "##############################\n";
         nc_params.init_params(lenp, n_timesteps);
         nc_params.load_vars(datafile);
 #ifdef MET3D
@@ -931,12 +370,10 @@ int read_init_netcdf(
         startp.push_back(0); // time
         startp.push_back(traj); // trajectory id
 #elif defined MET3D
-
         startp.push_back(0); // ensemble
         startp.push_back(traj); // trajectory
         startp.push_back(0); // time
         uint64_t start_time_idx = 0;
-
         if(!std::isnan(start_time) && !checkpoint_flag)
         {
             double rel_start_time;
@@ -965,7 +402,9 @@ int read_init_netcdf(
             uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1 - start_time_idx;
             cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         }
-
+        // std::cout << "start_time_idx " << start_time_idx
+        //           << ", current_time: " << current_time << ", start_time "
+        //           << start_time << "\n";
         nc_params.time_idx = start_time_idx;
         startp[2] = start_time_idx;
 #else
@@ -1080,7 +519,7 @@ int read_init_netcdf(
                 get_at(cc.constants, Cons_idx::p_sat_const_a),
                 get_at(cc.constants, Cons_idx::T_sat_low_temp),
                 get_at(cc.constants, Cons_idx::p_sat_const_b),
-                 get_at(cc.constants, Cons_idx::Epsilon));
+                get_at(cc.constants, Cons_idx::Epsilon));
 #endif
         }
     } catch(netCDF::exceptions::NcException& e)
@@ -1091,7 +530,6 @@ int read_init_netcdf(
     }
     return 0;
 }
-
 
 
 /**
@@ -1157,10 +595,13 @@ void read_netcdf_write_stream(
 #else
     startp[1] = t+1;
 #endif
+    // std::cout << "startp: " << startp[0] << ", " << startp[1] << ", " << startp[2] << "\n";
     netCDF::NcFile datafile(input_file, netCDF::NcFile::read);
     nc_params.load_vars(datafile);
+    // std::cout << "after load vars\n";
     nc_params.load_params(startp, countp,
                         ref_quant, cc.num_sub_steps);
+    // std::cout << "after load_params. checkpoint_flag: " << checkpoint_flag << "\n";
     netCDF::NcVar id_var;
 #ifdef MET3D
     id_var = datafile.getVar("trajectory");
@@ -1174,6 +615,7 @@ void read_netcdf_write_stream(
     id_var.getVar(ids.data());
     ensemble = ids[input.ensemble];
 #endif
+    // std::cout << "after get_ids\n";
     // Reset outflow
     y_single_old[qi_out_idx] = 0;
     y_single_old[qs_out_idx] = 0;
@@ -1189,6 +631,7 @@ void read_netcdf_write_stream(
     // Set values from a given trajectory
     if((t==0 && !checkpoint_flag) || input.start_over_env)
     {
+        // std::cout << "Attempt to read env\n";
         y_single_old[p_idx]  = nc_params.p;     // p
         y_single_old[T_idx]  = nc_params.t;     // T
 #if defined(RK4ICE) || defined(RK4NOICE)
@@ -1235,10 +678,12 @@ void read_netcdf_write_stream(
 #if defined MET3D && defined TURBULENCE
         inflow[qv_in_idx] = nc_params.qturb;
 #endif
+    // std::cout << "read env done\n";
     }
 
     if((t==0 && !checkpoint_flag) || input.start_over)
     {
+        // std::cout << "attempt to read variables\n";
         y_single_old[S_idx]  = nc_params.S;     // S
 #ifdef SAT_CALC
         y_single_old[S_idx]  = nc_params.qv*ref_quant.qref * Rv * nc_params.t*ref_quant.Tref
@@ -1352,12 +797,14 @@ void read_netcdf_write_stream(
             get_at(cc.constants, Cons_idx::Epsilon));
 #endif
         datafile.close();
+        // std::cout << "Got variables\n";
         std::vector< std::array<double, num_par > >  y_diff(num_comp);
         for(auto &y_d: y_diff)
             y_d.fill(0);
         io_handler.buffer(cc, nc_params, y_single_old, y_diff, 0, t,
             (t*cc.num_sub_steps)*cc.dt, traj_id, ensemble, ref_quant);
     }
+    // std::cout << "read_stuff done\n";
 }
 
 
