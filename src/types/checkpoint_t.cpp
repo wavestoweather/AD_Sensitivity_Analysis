@@ -85,6 +85,7 @@ int checkpoint_t::load_checkpoint(
     // Parse the segments and store which parameters had been perturbed
     // in ens_descr
     std::string ens_desc;
+    segments.clear();
     for(auto &it: checkpoint.get_child("segments"))
     {
         segment_t segment;

@@ -63,6 +63,7 @@ void output_handle_t::setup(
 
         auto fill_vectors = [&]()
         {
+            var_vector.clear();
             // File exists. No need to set it up. Load the columns
             bool got_it = false;
             do{

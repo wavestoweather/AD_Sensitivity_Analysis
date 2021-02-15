@@ -105,7 +105,7 @@ void parse_args_and_checkpoints(
             checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
         }
     }
-    if(already_loaded && rank != 0)
+    if(already_loaded)
         checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
     auto_type = input.auto_type;
     if(!already_loaded)
@@ -678,7 +678,7 @@ int main(int argc, char** argv)
     while(scheduler.receive_task(checkpoint))
     {
         // parse checkpoint
-        checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
+        // checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
         setup_simulation(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
             checkpoint, out_handler, nc_params, lenp, already_loaded);
