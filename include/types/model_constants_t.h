@@ -267,6 +267,12 @@ struct model_constants_t{
         const input_parameters_t &input,
         const reference_quantities_t &ref_quant);
 
+    /**
+     * Print all parameters that are being tracked with algorithmic
+     * differentiation.
+     */
+    void print();
+
   private:
 
 };

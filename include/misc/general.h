@@ -41,30 +41,12 @@ void v1pav2(double y[],
 	    const double a);
 
 /**
- * Print parameters for given particle.
- *
- * @param pc Particle constants
- * @param title Name of particle
- */
-void print_particle_params(
-    particle_model_constants_t &pc,
-    std::string title);
-
-/**
  * Print reference quantities temperature, pressure,
  * mixing-ratio, vertical velocity, time.
  *
  * @param ref Struct with reference quantities.
  */
 void print_reference_quantities(reference_quantities_t &ref);
-
-/**
- * Print constants given a model constants structure, namely integration
- * time, number of steps, scaling factors.
-//  *
- * @param cc A structure with model constants.
- */
-void print_constants(model_constants_t &cc);
 
 /**
  * Print segments for ensembles.

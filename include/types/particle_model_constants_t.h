@@ -49,4 +49,11 @@ struct particle_model_constants_t{
      * @returns Errorcode
      */
     int from_pt(pt::ptree &ptree);
+
+    /**
+     * Print the constants used for this particle.
+     *
+     * @param title Name of particle
+     */
+    void print(const std::string &title);
 };

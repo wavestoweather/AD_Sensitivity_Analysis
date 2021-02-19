@@ -57,3 +57,18 @@ int particle_model_constants_t::from_pt(
     }
     return err;
 }
+
+void particle_model_constants_t::print(
+    const std::string &title)
+{
+#ifdef SILENT_MODE
+    return;
+#endif
+
+    std::cout << title << "\n";
+    for(auto const &t: table_particle_param)
+    {
+        std::cout << t.first << " = " << get_at(this->constants, t.second) << "\n";
+    }
+    std::cout << std::endl << std::flush;
+}

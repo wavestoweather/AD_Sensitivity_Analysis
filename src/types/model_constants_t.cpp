@@ -850,3 +850,30 @@ void model_constants_t::setup_model_constants(
         + coll_theta_22(this->ice, this->ice, 1);
 #endif
 }
+
+void model_constants_t::print()
+{
+#ifdef SILENT_MODE
+    return;
+#endif
+  std::cout << "\nModel constants:\n"
+        << "----------------\n"
+        << "Final integration time = " << this->t_end_prime << " seconds\n"
+        << "Nondimensional final integration time = " << this->t_end << "\n"
+        << "Timestep = " << this->dt_prime << " seconds\n"
+        << "Nondimensional timestep = " << this->dt << "\n"
+        << "Number of iterations = " << this->num_steps << "\n"
+        << "Number of substeps = " << this->num_sub_steps << "\n"
+        << "a1_scale = " << this->a1_scale << "\n"
+        << "a2_scale = " << this->a2_scale << "\n"
+        << "e1_scale = " << this->e1_scale << "\n"
+        << "e2_scale = " << this->e2_scale << "\n"
+        << "d_scale = " << this->d_scale << "\n"
+        << "Scaling factor = " << this->scaling_fact << "\n";
+
+    for(auto const &t: table_param)
+    {
+        std::cout << t.first << " = " << get_at(this->constants, t.second) << "\n";
+    }
+    std::cout << std::endl << std::flush;
+}

@@ -147,7 +147,7 @@ void setup_simulation(
 #endif
     if(rank == 0 && !already_loaded)
     {
-        print_constants(cc);
+        cc.print();
         input.print_parameters();
     }
 
@@ -162,26 +162,27 @@ void setup_simulation(
     if(rank == 0 && !already_loaded)
     {
 #ifdef TRACE_QC
-        print_particle_params(cc.cloud, "cloud");
+        cc.cloud.print("cloud");
 #endif
+
 #ifdef TRACE_QR
-        print_particle_params(cc.rain, "rain");
+        cc.rain.print("rain");
 #endif
 
 #ifdef TRACE_QI
-        print_particle_params(cc.ice, "ice");
+        cc.ice.print("ice");
 #endif
 
 #ifdef TRACE_QS
-        print_particle_params(cc.snow, "snow");
+        cc.snow.print("snow");
 #endif
 
 #ifdef TRACE_QG
-        print_particle_params(cc.graupel, "graupel");
+        cc.graupel.print("graupel");
 #endif
 
 #ifdef TRACE_QH
-        print_particle_params(cc.hail, "hail");
+        cc.hail.print("hail");
 #endif
     }
     already_loaded = true;
@@ -189,6 +190,7 @@ void setup_simulation(
 
 void substep_trace(
     const uint32_t &sub,
+    const uint32_t &t,
     const model_constants_t &cc,
     const input_parameters_t &input,
     const reference_quantities_t &ref_quant,
@@ -434,7 +436,7 @@ void run_substeps(
     double time_old, time_new;
     for(uint32_t sub=sub_start; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
     {
-        substep_trace(sub, cc, input, ref_quant, y_single_old, inflow);
+        substep_trace(sub, t, cc, input, ref_quant, y_single_old, inflow);
 
         bool last_step = ( ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + !input.start_over))
             || (sub == cc.num_sub_steps-input.start_over) );
