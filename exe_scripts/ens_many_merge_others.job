@@ -1,0 +1,170 @@
+#!/bin/bash
+#SBATCH --job-name=ens_traj
+#SBATCH --output=logs/ens_traj_%A_%a.out
+#SBATCH --error=logs/ens_traj_%A_%a.err
+#SBATCH --time=24:00:00 # Should be enough time for about 30 parameters
+#SBATCH -p parallel
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=32
+#SBATCH -A m2_zdvresearch
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=60000
+#SBATCH -C skylake
+
+# send with sbatch --array=0-44 /lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana/conv_600_0_traj_t000000_p001.nc_wcb 0
+module purge
+module load tools/parallel/20181122
+module load numlib/GSL/2.5-GCCcore-6.4.0
+module load data/netCDF-C++4/4.3.0-foss-2018a
+module load devel/Boost/1.68.0-foss-2018a
+
+# Store working directory to be safe
+cd ..
+SAVEDPWD=$(pwd)
+export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}
+N_CONFIGS=10
+ID_NUMBER=$SLURM_ARRAY_TASK_ID
+# ie "/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana/conv_600_0_traj_t000000_p001.nc_wcb"
+SAVE_INPUTFILENAME=$1
+TRAJ=$2
+INPUT_FILENAME="${AD_SIM_HOME}/data/${SAVE_INPUTFILENAME##*/}"
+FOLDER_NAME=${SAVE_INPUTFILENAME##*/}
+FOLDER_NAME=${FOLDER_NAME%.*}
+SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/perturbed_ensembles/${FOLDER_NAME}/traj${TRAJ}/"
+OUTPUT_PATH="${AD_SIM_HOME}/output/"
+SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/all/"
+
+copy_out(){
+    SUFF=${1##*/}
+    SUFF=${SUFF%.*}
+    echo "Copy from ${OUTPUT_PATH}${SUFF}.nc_wcb to ${SAVE_OUTPUTPATH}${SUFF}.nc_wcb"
+    cp ${OUTPUT_PATH}${SUFF}.nc_wcb ${SAVE_OUTPUTPATH}${SUFF}.nc_wcb
+    find ${OUTPUT_PATH}${SUFF}/ -type f -name "*.nc_wcb" -exec rm {} \;
+}
+
+# Copy executable, input file, configuration file
+# Create directories for temporary files, output data
+if [ ! -d "${AD_SIM_HOME}/build/apps/src/microphysics/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/build/apps/src/microphysics/"
+fi
+cp ${SAVEDPWD}/build/apps/src/microphysics/trajectories ${AD_SIM_HOME}/build/apps/src/microphysics/
+
+if [ ! -d "${AD_SIM_HOME}/data/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/data/"
+fi
+cp ${SAVE_INPUTFILENAME} ${AD_SIM_HOME}/data/
+
+if [ ! -d "${AD_SIM_HOME}/tmp/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/tmp/"
+fi
+
+if [ ! -d "${AD_SIM_HOME}/configs/all" ]
+then
+    mkdir -p "${AD_SIM_HOME}/configs/all"
+fi
+
+f_list=( $(ls -d ${SAVE_ENSEMBLECONFIG}* | sed 's/\/$//') )
+length=${#f_list[*]}
+
+let IDX_START=$ID_NUMBER*$N_CONFIGS
+
+if (( $IDX_START + $N_CONFIGS > $length - 1 ))
+then
+    let N_CONFIGS=$length-$IDX_START
+fi
+
+config_list=${f_list[@]:$IDX_START:$N_CONFIGS}
+for CONFIG in ${config_list[@]}
+do
+    cp ${CONFIG} ${AD_SIM_HOME}/configs/all/
+done
+
+cp ${SAVEDPWD}/dmin_wetgrowth_lookup.dat ${AD_SIM_HOME}/
+cd ${AD_SIM_HOME}
+
+for ENSEMBLE_CONFIG in ${AD_SIM_HOME}/configs/all/*
+do
+    SUFF=${ENSEMBLE_CONFIG##*/}
+    SUFF=${SUFF%.*}
+    echo "Running for ${SUFF}"
+    NEW_CHECKPOINTS=${AD_SIM_HOME}/tmp/${SUFF}
+    if [ ! -d "$NEW_CHECKPOINTS" ]
+    then
+        mkdir -p "$NEW_CHECKPOINTS"
+    fi
+
+    if [ ! -d ${OUTPUT_PATH}${SUFF} ]
+    then
+        mkdir -p ${OUTPUT_PATH}${SUFF}
+    fi
+
+    # Environmental conditions
+    SCALING_FACTOR="1.0"
+    AUTO_TYPE="3"
+    TIMESTEP="20"
+
+    # Output variables
+    PROGRESSBAR="0"
+    START_TIME="-2800"
+    WRITE_INDEX="1000"
+    SNAPSHOT_INDEX="1"
+    TARGET_TIME_AFTER_START="26000"
+
+    # Operational variables
+    START_OVER="0"
+    START_OVER_ENVIRONMENT="1"
+    FIXED_ITERATION="0"
+
+    ${AD_SIM_HOME}/build/apps/src/microphysics/./trajectories -w ${WRITE_INDEX} -a ${AUTO_TYPE} \
+    -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME_AFTER_START} -d ${TIMESTEP} \
+    -i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} \
+    -o ${OUTPUT_PATH}${SUFF}"/wcb${TARGET_TIME_AFTER_START}_traj${TRAJ}_MAP_t000000_p001" \
+    -e ${START_OVER_ENVIRONMENT} \
+    -p ${PROGRESSBAR} \
+    -n ${START_TIME} \
+    -l ${INPUT_FILENAME} -r ${TRAJ} -g 0 \
+    -m ${ENSEMBLE_CONFIG} \
+    -h ${NEW_CHECKPOINTS}
+
+    declare -a arr_files
+    declare -a old_files
+
+    array_not_contains () {
+        local array="$1[@]"
+        local seeking=$2
+        local in=0
+        for element in "${!array}"; do
+            if [[ $element == "$seeking" ]]; then
+                in=1
+                break
+            fi
+        done
+        return $in
+    }
+
+    while true
+    do
+        for entry in "${NEW_CHECKPOINTS}/execute_id*"
+        do
+            array_not_contains old_files ${entry} && arr_files=("${arr_files[@]}" "$entry")
+        done
+        if [ ${#arr_files[@]} == 0 ]
+        then
+            break
+        fi
+        for entry in ${arr_files[@]}
+        do
+            /bin/bash ${entry}
+            old_files=("${old_files[@]}" "$entry")
+        done
+        unset arr_files
+    done
+    # Merge the output
+    python ${AD_SIM_HOME}/scripts/merge.py ${OUTPUT_PATH}${SUFF}/ ${OUTPUT_PATH}${SUFF}.nc_wcb
+
+    # Copy it
+    copy_out $ENSEMBLE_CONFIG
+done
