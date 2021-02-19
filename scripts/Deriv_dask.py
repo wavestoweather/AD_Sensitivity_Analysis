@@ -97,8 +97,12 @@ class Deriv_dask:
         file_ending : String
             File ending to use when loading netcdf files.
         """
-        self.data = dask_loader.load_mult_derivates_direc_dic(
-            direc, parquet, netcdf, columns, file_ending)
+        if direc == "" and file_ending == "":
+            # For creating a dummy/empty object
+            self.data = None
+        else:
+            self.data = dask_loader.load_mult_derivates_direc_dic(
+                direc, parquet, netcdf, columns, file_ending)
 
         self.cluster_names = {}
         # self.font_dic = {
@@ -286,7 +290,7 @@ class Deriv_dask:
             df = df.loc[df[mapped]]
 
         all_params = list(set(
-                ["trajectory", "type"]
+                ["trajectory", "type", "time"]
                 + in_params + [x_axis] + out_params))
         if "instance_id" in df:
             all_params.append("instance_id")
@@ -305,11 +309,21 @@ class Deriv_dask:
         t = timer()
 
     def _recalc_ratios(self, ratio_df, ratio_type, ratio_window, in_params,
-        verbose=False):
+        x_axis="pressure", verbose=False):
+        """
+        Calculate the ratio of the sensitivity and return a dataframe
+        with the new sensitivities.
 
+        """
+
+        # latexify.in_params_numeric_value_dic
         if "weighted" in ratio_type and "per_out_param" in ratio_type:
-                out_par = np.unique(ratio_df["Output Parameter"])[0]
-                ratio_df.loc[:, in_params] = ratio_df[in_params].div(ratio_df[out_par], axis=0)
+            out_par = np.unique(ratio_df["Output Parameter"])[0]
+            ratio_df.loc[:, in_params] = ratio_df[in_params].div(ratio_df[out_par], axis=0)
+        if "adjusted" in ratio_type:
+            for in_p in in_params:
+                ratio_df[in_p] = ratio_df[in_p].mul(
+                    latexify.in_params_numeric_value_dic[in_p] * 0.1)
         if ratio_window is not None:
             col = list(ratio_window.keys())[0]
             edges = np.sort(ratio_window[col])
@@ -2081,11 +2095,22 @@ class Deriv_dask:
             except:
                 pass
 
+
+
     def get_mse(self, out_params, others_df=None, others_path=None,
-        in_params=None, ratio_type="vanilla", ratio_window=None):
+        in_params=None, ratio_type="vanilla", ratio_window=None,
+        kind="mse", sens_kind="max"):
         """
         Create a pandas.Dataframe with columns
         MSE, Sensitivity, Output Parameter
+
+        Parameters
+        ----------
+        kind : string
+            mse: Calculate mean squared error
+            maxse: Calculate maximum squared error
+            nozeromse: Calculate mean squared error ignoring time steps
+                where all simulations have zero values.
 
         Returns
         -------
@@ -2100,17 +2125,36 @@ class Deriv_dask:
             print("Cached data is None. Make sure to cache your data using")
             print("self.cache_data()\nABORTING")
             return
-
+        # print(mean)
+        min_x = np.min(mean["time"])
+        max_x = np.max(mean["time"])
+        # print(f"\nTotally min {min_x}, {max_x}")
+        # min_x = mean.idxmin(axis="time")
+        # max_x = mean.idxmax(axis="time")
+        # min_x = np.min(mean["time_after_ascent"])
+        # max_x = np.max(mean["time_after_ascent"])
         if others_df is None and others_path is None:
             print("Either provide a loaded dataframe others_df or a path to the other files")
             return
         if others_df is None and in_params is None:
             print("You need to provide in_params in addition to to others_df")
             return
+        if kind == "mse":
+            error_key = "MSE"
+        elif kind == "maxse":
+            error_key = "Max Error"
+        elif kind == "nozeromse":
+            error_key = "MSE (no zero)"
+        elif kind == "sum":
+            error_key = "Cumulative Squared Error"
+        elif kind == "me":
+            error_key = "Mean Error"
+        elif kind == "mae":
+            error_key = "Mean Absolute Error"
 
         if others_path is not None:
             files = sorted(glob(others_path + "*.nc_wcb"))
-            df_dic = {"MSE": np.asarray([]),
+            df_dic = {error_key: np.asarray([]),
                 "Sensitivity": np.asarray([]),
                 "Output Parameter": np.asarray([]),
                 "Perturbed Parameter": np.asarray([]),
@@ -2124,6 +2168,7 @@ class Deriv_dask:
                 mean_dic[out_param] = np.reshape(np.asarray(
                     mean.loc[mean["Output Parameter"] == out_param][out_param]),
                     (len(mean.loc[mean["Output Parameter"] == out_param][out_param].index), 1, 1))
+                # print(mean["time"])
                 if isinstance(ratio_type, list):
                     sens_dic[out_param] = {}
                     for rt in ratio_type:
@@ -2138,16 +2183,54 @@ class Deriv_dask:
                 perturbed_param = "d" + f.split("/")[-1][0:-7]
                 if perturbed_param not in in_params:
                     continue
-                ds = xr.open_dataset(f, decode_times=False)[out_params].compute()
-
+                ds = xr.open_dataset(f, decode_times=False)[out_params]#
+                # print(f"\n{i}: {np.min(ds.time)}, {np.max(ds.time)}")
+                ds = ds.sel(time=np.arange(min_x, max_x+20, 20)).compute()# + ["time_after_ascent"]]#.compute()#.reset_index()
+                # print(ds["time"])
+                # ds = ds[(ds["time_after_ascent"] >= min_x) & (ds["time_after_ascent"] <= max_x)]
+                # ds = ds.loc[min_x:max_x, :, :]
+                # ds = ds[ds.time_after_asceent >= min_x]
+                # ds = ds[ds.time_after_ascent <= max_x]
+                # ds = ds.compute()
                 for out_param in out_params:
                     def add_to_df(sens_df, rt):
-                        mean_squared_error = [
-                            np.mean( (ds[out_param] - mean_dic[out_param])**2 ) ]
-                        df_dic["MSE"] = np.append(df_dic["MSE"], mean_squared_error)
-                        sens_idx = np.argmax(np.abs(sens_df[perturbed_param]))
-                        df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
-                            [ sens_df[perturbed_param].iloc[sens_idx] ])
+                        # print(ds[out_param])
+                        # print(mean_dic[out_param])
+                        # print("####################")
+                        if kind == "mse":
+                            mean_squared_error = [
+                                np.mean( (ds[out_param] - mean_dic[out_param])**2 ) ]
+                        if kind == "mae":
+                            mean_squared_error = [
+                                np.mean( np.abs(ds[out_param] - mean_dic[out_param]) ) ]
+                        if kind == "me":
+                            mean_squared_error = [
+                                np.mean( (ds[out_param] - mean_dic[out_param]) ) ]
+                        elif kind == "maxse":
+                            mean_squared_error = [
+                                np.max( (ds[out_param] - mean_dic[out_param])**2 ) ]
+                        elif kind == "nozeromse":
+                            mean_squared_error = (ds[out_param] - mean_dic[out_param])**2
+                            shape = np.shape(mean_squared_error)
+                            mean_squared_error = mean_squared_error.values.flatten()
+                            mean_squared_error[mean_squared_error == 0] = np.nan
+                            mean_squared_error = np.reshape(mean_squared_error, shape)
+                            mean_squared_error = [ np.nanmean( mean_squared_error ) ]
+                        elif kind == "sum":
+                            mean_squared_error = [
+                                np.sum( (ds[out_param] - mean_dic[out_param])**2 ) ]
+                        df_dic[error_key] = np.append(df_dic[error_key], mean_squared_error)
+                        if sens_kind == "max":
+                            sens_idx = np.argmax(np.abs(sens_df[perturbed_param]))
+                            df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
+                                [ sens_df[perturbed_param].iloc[sens_idx] ])
+                        elif sens_kind == "mean":
+                            df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
+                                [np.mean(sens_df[perturbed_param])])
+                        elif sens_kind == "squared_mean":
+                            df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
+                                [np.mean(sens_df[perturbed_param] * sens_df[perturbed_param])])
+
                         df_dic["Output Parameter"] = np.append(df_dic["Output Parameter"],
                             [out_param])
                         df_dic["Perturbed Parameter"] = np.append(df_dic["Perturbed Parameter"],
@@ -2164,7 +2247,7 @@ class Deriv_dask:
                 in_params = np.unique(others_df["Perturbed Parameter"])
 
             # Calculate MSE
-            df_dic = {"MSE": np.asarray([]),
+            df_dic = {error_key: np.asarray([]),
                 "Sensitivity": np.asarray([]),
                 "Output Parameter": np.asarray([]),
                 "Perturbed Parameter": np.asarray([]),
@@ -2175,14 +2258,25 @@ class Deriv_dask:
                 mean_values = np.reshape(np.asarray(tmp_df[out_param]), (1, 1, len(tmp_df[out_param].index)))
 
                 def add_to_df(sens_df, rt):
-                    # unfortunately numpy uses a lot of memory. This works only for small datasets
-                    # mean_squared_error = ( (others_df[out_param]-mean_values)**2).mean( axis=(1, 2, 3) ).values
-                    mean_squared_error = [
-                        np.mean((others_df.sel({"Perturbed Parameter": mp})[out_param] - mean_values)**2)
+                    if kind == "mse":
+                        mean_squared_error = [
+                            np.mean((others_df.sel({"Perturbed Parameter": mp})[out_param] - mean_values)**2)
+                                for mp in in_params]
+                    elif kind == "maxse":
+                        # unfortunately numpy uses a lot of memory. This works only for small datasets
+                        # mean_squared_error = ( (others_df[out_param]-mean_values)**2).mean( axis=(1, 2, 3) ).values
+                        mean_squared_error = [
+                            np.max((others_df.sel({"Perturbed Parameter": mp})[out_param] - mean_values)**2)
+                                for mp in in_params]
+                    elif kind == "nozeromse":
+                        mean_squared_error = [
+                            (others_df.sel({"Perturbed Parameter": mp})[out_param] - mean_values)**2
                             for mp in in_params]
-                            # others_df.loc[others_df["Perturbed Parameter"] == mp][out_param].dropna() - mean_values)**2)
-                        # for mp in in_params]
-                    df_dic["MSE"] = np.append(df_dic["MSE"], mean_squared_error)
+                        mean_squared_error[mean_squared_error == 0] = np.nan
+                        mean_squared_error = [
+                            np.mean( mean_squared_error[j]  )
+                                for j in range(len(in_params))]
+                    df_dic[error_key] = np.append(df_dic[error_key], mean_squared_error)
                     sens_idx = [ np.argmax(np.abs(sens_df[mp])) for mp in in_params ]
                     df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
                         [ sens_df[mp].iloc[sens_idx[i]] for i, mp in enumerate(in_params) ])
@@ -2202,6 +2296,96 @@ class Deriv_dask:
                         ratio_type, ratio_window, in_params), ratio_type)
         return pandas.DataFrame.from_dict(df_dic)
 
+    def get_variance_per_timestep(self, out_params, others_path,
+        in_params=None, ratio_type="vanilla", ratio_window=None,
+        kind="mse"):
+        """
+        Create a pandas.DataFrame that stores the errors/variances around
+        the original simulation.
+
+        """
+        import pandas
+        pandas.options.mode.chained_assignment = None  # default='warn'
+
+        mean = self.cache
+        if mean is None:
+            print("Cached data is None. Make sure to cache your data using")
+            print("self.cache_data()\nABORTING")
+            return
+
+        if kind == "mse": # variance
+            error_key = "MSE"
+        elif kind == "maxse":
+            error_key = "Max Error"
+        elif kind == "mae": # standard deviation
+            error_key = "Mean Absolute Error"
+
+        files = sorted(glob(others_path + "*.nc_wcb"))
+        df_dic = {error_key: np.asarray([]),
+            "Sensitivity": np.asarray([])
+        }
+        coords = {
+            "time_after_ascent": np.asarray([]),
+            "Output Parameter": np.asarray([]),
+            "Perturbed Parameter": np.asarray([]),
+            "Ratio Type": np.asarray([])
+        }
+
+        # Pre calculate the sensitivities
+        sens_dic = {}
+        mean_dic = {}
+        for i in pb(range(len(out_params))):
+            out_param = out_params[i]
+            mean_dic[out_param] = np.reshape(np.asarray(
+                mean.loc[mean["Output Parameter"] == out_param][out_param]),
+                (len(mean.loc[mean["Output Parameter"] == out_param][out_param].index), 1, 1))
+            if isinstance(ratio_type, list):
+                sens_dic[out_param] = {}
+                for rt in ratio_type:
+                    sens_dic[out_param][rt] = self._recalc_ratios(mean.loc[mean["Output Parameter"] == out_param],
+                        rt, ratio_window, in_params)
+            else:
+                sens_dic[out_param] = self._recalc_ratios(mean.loc[mean["Output Parameter"] == out_param],
+                    ratio_type, ratio_window, in_params)
+
+        for i in pb(range(len(files))):
+            f = files[i]
+            perturbed_param = "d" + f.split("/")[-1][0:-7]
+            if perturbed_param not in in_params:
+                continue
+            ds = xr.open_dataset(f, decode_times=False)[out_params].compute()
+
+            for out_param in out_params:
+                def add_to_df(sens_df, rt):
+                    print("Need to check shape")
+                    print(np.shape(mean_dic[out_param]))
+                    # error_key dims:   Ratio Type, Output Parameter, Perturbed Parameter, time_after_ascent
+                    # Sensitivity dims: Ratio Type, Output Parameter, Perturbed Parameter
+                    if kind == "mse":
+                        error = [
+                            np.mean( (ds[out_param] - mean_dic[out_param])**2, axis=0 ) ]
+                    if kind == "mae":
+                        error = [
+                            np.mean( np.abs(ds[out_param] - mean_dic[out_param]), axis=0 ) ]
+                    elif kind == "maxse":
+                        error = [
+                            np.max( (ds[out_param] - mean_dic[out_param])**2, axis=0 ) ]
+
+                    df_dic[error_key] = np.append(df_dic[error_key], error)
+                    sens_idx = np.argmax(np.abs(sens_df[perturbed_param]))
+                    df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
+                        [ sens_df[perturbed_param].iloc[sens_idx] ])
+                    df_dic["Output Parameter"] = np.append(df_dic["Output Parameter"],
+                        [out_param])
+                    df_dic["Perturbed Parameter"] = np.append(df_dic["Perturbed Parameter"],
+                        [perturbed_param])
+                    df_dic["Ratio Type"] = np.append(df_dic["Ratio Type"],
+                        [rt])
+                if isinstance(ratio_type, list):
+                    for rt in ratio_type:
+                        add_to_df(sens_dic[out_param][rt], rt)
+                else:
+                    add_to_df(sens_dic[out_param], ratio_type)
 
 
     def plot_mse(self, out_params, others_df=None, mse_df_=None,
@@ -2212,7 +2396,7 @@ class Deriv_dask:
         ratio_type="vanilla", ratio_window=None,
         s=None, formatter_limits=None, log_x=False, log_y=False, confidence=None,
         hist=False, kind="grid_plot", abs_x=False, abs_y=False,
-        split_ellipse=False, **kwargs):
+        split_ellipse=False, error_key="MSE", **kwargs):
         """
         Plot mean squared error over maximal sensitivity calculated
         via the given ratio type (i.e. sensitivity per timestep) and given
@@ -2326,11 +2510,11 @@ class Deriv_dask:
         if formatter_limits is not None:
             matplotlib.rcParams['axes.formatter.limits'] = formatter_limits
 
-        df = self.cache
-        if df is None:
-            print("Cached data is None. Make sure to cache your data using")
-            print("self.cache_data()\nABORTING")
-            return
+        # df = self.cache
+        # if df is None:
+        #     print("Cached data is None. Make sure to cache your data using")
+        #     print("self.cache_data()\nABORTING")
+        #     return
         hv.extension(self.backend)
 
         aspect = width/height
@@ -2354,18 +2538,18 @@ class Deriv_dask:
             if log_x:
                 mse_df["Sensitivity"] = np.log(mse_df["Sensitivity"])
         if abs_y:
-            mse_df["MSE"] = np.abs(mse_df["MSE"])
+            mse_df[error_key] = np.abs(mse_df[error_key])
             if log_y:
-                mse_df["MSE"] = np.log(mse_df["MSE"])
+                mse_df[error_key] = np.log(mse_df[error_key])
 
         if not abs_x and log_x:
-            sign = np.sign(mse_df["Sensitivity"]) * (-1)
+            sign = np.sign(mse_df["Sensitivity"]) # * (-1)
             mse_df["Sensitivity"] = np.log(np.abs(mse_df["Sensitivity"]))
             mse_df["Sensitivity"] = mse_df["Sensitivity"] - np.min(mse_df["Sensitivity"])
             mse_df["Sensitivity"] *= sign
         if not abs_y and log_y:
-            sign = np.sign(mse_df["MSE"])
-            mse_df["MSE"] = sign * np.log(np.abs(mse_df["MSE"]))
+            sign = np.sign(mse_df[error_key])
+            mse_df[error_key] = sign * np.log(np.abs(mse_df[error_key]))
 
         xlabel = "Sensitivity Ratio"
         ylabel = ""
@@ -2384,9 +2568,9 @@ class Deriv_dask:
                         cmap_values.append( matplotlib.colors.to_hex(self.cmap_particles[out_param]))
                     mse_plot = mse_df.hvplot.scatter(
                             x="Sensitivity",
-                            y="MSE",
+                            y=error_key,
                             by="Output Parameter",
-                            title=ylabel + "MSE over " + xlabel + " to Model Parameters",
+                            title=ylabel + error_key + "over " + xlabel + " to Model Parameters",
                             color=cmap_values,
                             datashade=datashade,
                             alpha=alpha,
@@ -2452,14 +2636,17 @@ class Deriv_dask:
 
             if abs_x and not log_x:
                 min_x = -0.05
-            elif not log_x:
+            elif not log_x and not abs_x:
                 min_x = -1.05
-            else:
+            elif log_x and abs_x:
                 min_x = np.min(mse_df["Sensitivity"]) - 0.1
+            else:
+                min_x = np.min(mse_df["Sensitivity"])
+                min_x -= min_x*0.1*np.sign(min_x)
             if not log_x:
                 max_x = 1.05
             else:
-                max_x = np.max(mse_df["Sensitivity"]) + 0.1
+                max_x = np.max(mse_df["Sensitivity"]) + np.max(mse_df["Sensitivity"])*0.1
 
             cmap = plt.get_cmap("tab10")
             colors = {}
@@ -2483,6 +2670,7 @@ class Deriv_dask:
                     by="Ratio Type",
                     alpha=0.5,
                     legend=True,
+                    title=ylabel + error_key + " over " + xlabel + " to Model Parameters",
                     grid=False)
 
                 max_y = 0
@@ -2531,7 +2719,7 @@ class Deriv_dask:
 
                 all_plots = (neg_plot * text_neg + pos_plot * text_pos).opts(
                     tight=False,
-                    title=ylabel + "MSE over " + xlabel + " to Model Parameters",
+                    title=ylabel + error_key + " over " + xlabel + " to Model Parameters",
                     sublabel_format="",
                     hspace=0.05,
                     shared_axes=False,
@@ -2545,15 +2733,15 @@ class Deriv_dask:
                     alpha=alpha,
                     legend=True,
                     grid=True,
-                    title=ylabel + "MSE over " + xlabel + " to Model Parameters",
+                    title=ylabel + error_key + " over " + xlabel + " to Model Parameters",
                     color=cmap_values).opts(
                         aspect=aspect,
                         fontscale=fontscale).options(xlabel="")#, xaxis="bare")
 
             for out_param in out_params:
                 tmp_df = mse_df.loc[mse_df["Output Parameter"] == out_param]
-                min_y = tmp_df["MSE"].min()
-                max_y = tmp_df["MSE"].max()
+                min_y = tmp_df[error_key].min()
+                max_y = tmp_df[error_key].max()
                 delta_y = (max_y-min_y)/20
                 min_y -= delta_y
                 max_y += delta_y
@@ -2566,7 +2754,7 @@ class Deriv_dask:
                     # Make two scatter plots with correct ticks
                     pos_plot = tmp_df.loc[tmp_df["Sensitivity"] >= 0].hvplot.scatter(
                             x="Sensitivity",
-                            y="MSE",
+                            y=error_key,
                             by="Ratio Type",
                             datashade=False,
                             alpha=alpha,
@@ -2587,7 +2775,7 @@ class Deriv_dask:
 
                     neg_plot = tmp_df.loc[tmp_df["Sensitivity"] < 0].hvplot.scatter(
                             x="Sensitivity",
-                            y="MSE",
+                            y=error_key,
                             by="Ratio Type",
                             datashade=False,
                             alpha=alpha,
@@ -2608,7 +2796,7 @@ class Deriv_dask:
                             aspect=aspect/2,
                             xticks=pos_x_ticks,
                             fontscale=fontscale).options(
-                                ylabel=ylabel + out_param + " MSE",
+                                ylabel=ylabel + out_param + " " + error_key,
                                 xlabel="",
                                 yaxis=False)
 
@@ -2618,7 +2806,7 @@ class Deriv_dask:
                             aspect=aspect/2,
                             xticks=neg_x_ticks,
                             fontscale=fontscale).options(
-                                ylabel=ylabel + out_param + " MSE",
+                                ylabel=ylabel + out_param + " " + error_key,
                                 xlabel="")
 
                     # Make three histograms
@@ -2636,25 +2824,25 @@ class Deriv_dask:
                             legend=False,
                             color=cmap_values)
                         ydist = tmp_df.hvplot.hist(
-                            y="MSE",
+                            y=error_key,
                             by="Ratio Type",
                             alpha=alpha,
                             legend=False,
                             color=cmap_values)
 
-                    # Make two ellipses
+                    # Make four ellipses
                     if confidence is not None:
                         ells_pos = correl_conf_ell(
                             df=tmp_df.loc[tmp_df["Sensitivity"] >= 0],
                             x="Sensitivity",
-                            y="MSE",
+                            y=error_key,
                             by="Ratio Type",
                             confidence=confidence,
                             color=colors)
                         ells_neg = correl_conf_ell(
                             df=tmp_df.loc[tmp_df["Sensitivity"] <= 0],
                             x="Sensitivity",
-                            y="MSE",
+                            y=error_key,
                             by="Ratio Type",
                             confidence=confidence,
                             color=colors)
@@ -2686,7 +2874,7 @@ class Deriv_dask:
                 else:
                     mse_plot = tmp_df.hvplot.scatter(
                             x="Sensitivity",
-                            y="MSE",
+                            y=error_key,
                             by="Ratio Type",
                             datashade=False,
                             alpha=alpha,
@@ -2700,7 +2888,7 @@ class Deriv_dask:
                         ).opts(
                             aspect=aspect,
                             fontscale=fontscale).options(
-                                ylabel=ylabel + out_param + " MSE", xlabel="")
+                                ylabel=ylabel + out_param + " " + error_key, xlabel="")
                     # Adding histograms around those
                     if hist:
                         xdist = tmp_df.hvplot.hist(
@@ -2710,7 +2898,7 @@ class Deriv_dask:
                             legend=False,
                             color=cmap_values)
                         ydist = tmp_df.hvplot.hist(
-                            y="MSE",
+                            y=error_key,
                             by="Ratio Type",
                             alpha=alpha,
                             legend=False,
@@ -2726,14 +2914,14 @@ class Deriv_dask:
                             ells_pos = correl_conf_ell(
                                 df=tmp_df.loc[tmp_df["Sensitivity"] >= 0],
                                 x="Sensitivity",
-                                y="MSE",
+                                y=error_key,
                                 by="Ratio Type",
                                 confidence=confidence,
                                 color=colors)
                             ells_neg = correl_conf_ell(
                                 df=tmp_df.loc[tmp_df["Sensitivity"] <= 0],
                                 x="Sensitivity",
-                                y="MSE",
+                                y=error_key,
                                 by="Ratio Type",
                                 confidence=confidence,
                                 color=colors)
@@ -2747,7 +2935,7 @@ class Deriv_dask:
                             ells = correl_conf_ell(
                                 df=tmp_df,
                                 x="Sensitivity",
-                                y="MSE",
+                                y=error_key,
                                 by="Ratio Type",
                                 confidence=confidence,
                                 color=colors)
@@ -2765,7 +2953,7 @@ class Deriv_dask:
                     sublabel_format="",
                     hspace=hspace,
                     shared_axes=False,
-                    fontscale=fontscale).cols(2)
+                    fontscale=fontscale).cols(2).opts(opts.Layout(**layout_kwargs))
             else:
                 mse_plot = all_plots.cols(1).opts(
                     sublabel_format="", tight=True).opts(opts.Layout(**layout_kwargs))
@@ -2775,7 +2963,7 @@ class Deriv_dask:
             fig='png', dpi=300)
         i = 0
         if prefix is None:
-            prefix = "mse"
+            prefix = error_key
 
         if self.backend == "bokeh":
             hvplot.show(mse_plot)
