@@ -314,6 +314,42 @@ class Deriv_dask:
         Calculate the ratio of the sensitivity and return a dataframe
         with the new sensitivities.
 
+        Parameters
+        ----------
+        ratio_df : Datframe
+            Basically the cache of self or a subset of its cache
+        ratio_type : String
+            "vanilla": Use the derivative ratio in the file.
+            "adjusted": Can be added to any to any type below where the sensitivity
+            is adjusted to the parameter value such that perturbing this value by a
+            certain percentage gives an approximation of the resulting error/difference
+            for any given hydrometeor.
+            "per_timestep": Use the highest derivative per timestep as denominator.
+            "window": Use the highest derivative in the given window by min_x and max_x.
+            "per_xaxis": Use the highest derivative per x_axis value. If x_axis is "timestep"
+            it is the same as "per_timestep".
+            "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
+            derivative but per output parameter. (that *should* be the vanilla version)
+            "x_weighted": Append this to any ratio type to use the inverse of the
+            output parameter value as weight. Only works with "x_per_out_param".
+        ratio_window : dic of list
+            Overides ratio_type and switches to a derivative ratio calculation
+            per output param if "ratio_type" has "per_out_param" in it.
+            Calculate the derivative ratio in windows
+            where the key is a column name and the list consists of values
+            at which a new window starts, i.e. {"T": [235, 273]} results
+            in three windows with T < 235K, 235 <= T < 273K and 237K <= T.
+        in_params : list of string
+            List of model parameters to consider for the plot.
+        x_axis : string
+            Use this column of the dataframe for ratio_type "per_xaxis".
+        verbose : bool
+            If true, print timing info.
+
+        Returns
+        -------
+        Dataframe
+            Same as ratio_df but with recalculated sensitivities.
         """
 
         # latexify.in_params_numeric_value_dic
@@ -2095,8 +2131,6 @@ class Deriv_dask:
             except:
                 pass
 
-
-
     def get_mse(self, out_params, others_df=None, others_path=None,
         in_params=None, ratio_type="vanilla", ratio_window=None,
         kind="mse", sens_kind="max"):
@@ -2125,14 +2159,8 @@ class Deriv_dask:
             print("Cached data is None. Make sure to cache your data using")
             print("self.cache_data()\nABORTING")
             return
-        # print(mean)
         min_x = np.min(mean["time"])
         max_x = np.max(mean["time"])
-        # print(f"\nTotally min {min_x}, {max_x}")
-        # min_x = mean.idxmin(axis="time")
-        # max_x = mean.idxmax(axis="time")
-        # min_x = np.min(mean["time_after_ascent"])
-        # max_x = np.max(mean["time_after_ascent"])
         if others_df is None and others_path is None:
             print("Either provide a loaded dataframe others_df or a path to the other files")
             return
@@ -2185,18 +2213,9 @@ class Deriv_dask:
                     continue
                 ds = xr.open_dataset(f, decode_times=False)[out_params]#
                 # print(f"\n{i}: {np.min(ds.time)}, {np.max(ds.time)}")
-                ds = ds.sel(time=np.arange(min_x, max_x+20, 20)).compute()# + ["time_after_ascent"]]#.compute()#.reset_index()
-                # print(ds["time"])
-                # ds = ds[(ds["time_after_ascent"] >= min_x) & (ds["time_after_ascent"] <= max_x)]
-                # ds = ds.loc[min_x:max_x, :, :]
-                # ds = ds[ds.time_after_asceent >= min_x]
-                # ds = ds[ds.time_after_ascent <= max_x]
-                # ds = ds.compute()
+                ds = ds.sel(time=np.arange(min_x, max_x+20, 20)).compute()
                 for out_param in out_params:
                     def add_to_df(sens_df, rt):
-                        # print(ds[out_param])
-                        # print(mean_dic[out_param])
-                        # print("####################")
                         if kind == "mse":
                             mean_squared_error = [
                                 np.mean( (ds[out_param] - mean_dic[out_param])**2 ) ]
@@ -2396,7 +2415,9 @@ class Deriv_dask:
         ratio_type="vanilla", ratio_window=None,
         s=None, formatter_limits=None, log_x=False, log_y=False, confidence=None,
         hist=False, kind="grid_plot", abs_x=False, abs_y=False,
-        split_ellipse=False, error_key="MSE", **kwargs):
+        split_ellipse=False, error_key="MSE", xlabel="Sensitivity Ratio",
+        log_func=np.log, plot_singles=False,
+        **kwargs):
         """
         Plot mean squared error over maximal sensitivity calculated
         via the given ratio type (i.e. sensitivity per timestep) and given
@@ -2442,8 +2463,11 @@ class Deriv_dask:
             If decimals is negative, it specifies the number of
             positions to the left of the decimal point.
         ratio_type : String
-            "vanilla": Use the derivative ratio in the file that *should* use the
-            highest derivative over all times for each output parameter as denominator.
+            "vanilla": Use the derivative ratio in the file.
+            "adjusted": Can be added to any to any type below where the sensitivity
+            is adjusted to the parameter value such that perturbing this value by a
+            certain percentage gives an approximation of the resulting error/difference
+            for any given hydrometeor.
             "per_timestep": Use the highest derivative per timestep as denominator.
             "window": Use the highest derivative in the given window by min_x and max_x.
             "per_xaxis": Use the highest derivative per x_axis value. If x_axis is "timestep"
@@ -2485,6 +2509,13 @@ class Deriv_dask:
         split_ellipse : bool
             Create two confidence ellipses, on for sensitivity >= 0
             and another for sensitvity <= 0.
+        xlabel : string
+            Alternative label for x-axis.
+        log_func: callable
+            Function for logarithm (i.e. np.log10 or np.log (default))
+        plot_singles : bool
+            Plot every plot as an individual plot in addition to the grid of
+            plots.
         kwargs : Dict of args
             Arguments are passed to ellipse, i.e. {"color": "red"}
         """
@@ -2504,17 +2535,11 @@ class Deriv_dask:
         from holoviews import opts
         import holoviews as hv
 
-
         dsshade.dynamic = False
         fontscale = width/2200
         if formatter_limits is not None:
             matplotlib.rcParams['axes.formatter.limits'] = formatter_limits
 
-        # df = self.cache
-        # if df is None:
-        #     print("Cached data is None. Make sure to cache your data using")
-        #     print("self.cache_data()\nABORTING")
-        #     return
         hv.extension(self.backend)
 
         aspect = width/height
@@ -2536,28 +2561,28 @@ class Deriv_dask:
         if abs_x:
             mse_df["Sensitivity"] = np.abs(mse_df["Sensitivity"])
             if log_x:
-                mse_df["Sensitivity"] = np.log(mse_df["Sensitivity"])
+                mse_df["Sensitivity"] = log_func(mse_df["Sensitivity"])
         if abs_y:
             mse_df[error_key] = np.abs(mse_df[error_key])
             if log_y:
-                mse_df[error_key] = np.log(mse_df[error_key])
+                mse_df[error_key] = log_func(mse_df[error_key])
 
         if not abs_x and log_x:
-            sign = np.sign(mse_df["Sensitivity"]) # * (-1)
-            mse_df["Sensitivity"] = np.log(np.abs(mse_df["Sensitivity"]))
+            sign = np.sign(mse_df["Sensitivity"])
+            mse_df["Sensitivity"] = log_func(np.abs(mse_df["Sensitivity"]))
             mse_df["Sensitivity"] = mse_df["Sensitivity"] - np.min(mse_df["Sensitivity"])
             mse_df["Sensitivity"] *= sign
         if not abs_y and log_y:
             sign = np.sign(mse_df[error_key])
-            mse_df[error_key] = sign * np.log(np.abs(mse_df[error_key]))
+            mse_df[error_key] = sign * log_func(np.abs(mse_df[error_key]))
 
-        xlabel = "Sensitivity Ratio"
         ylabel = ""
         if log_x:
             xlabel = xlabel
         if log_y:
             ylabel = "Log "
         hspace = 0.05
+        title = ylabel + error_key + "over " + xlabel
 
         # Plot all into one plot
         if kind == "single_plot":
@@ -2570,15 +2595,13 @@ class Deriv_dask:
                             x="Sensitivity",
                             y=error_key,
                             by="Output Parameter",
-                            title=ylabel + error_key + "over " + xlabel + " to Model Parameters",
+                            title=title,
                             color=cmap_values,
                             datashade=datashade,
                             alpha=alpha,
                             legend=True,
                             yticks=yticks,
                             xticks=xticks,
-                            # log_x=log_x,
-                            # log_y=log_y
                         ).opts(
                             aspect=aspect,
                             fontscale=fontscale).options(
@@ -2615,6 +2638,18 @@ class Deriv_dask:
                     else:
                         scale = (minor_scale, major_scale)
                     scale = (major_scale, minor_scale)
+                    # Major axis if needed
+                    # Seems a bit off at least on log log plots
+                    # slope = eigenv[1][0]/eigenv[0][0]
+                    # intercept = mean_y - slope*mean_x
+                    # max_x = np.max(x)
+                    # curve = hv.Curve(
+                    #     [(i, intercept + slope*i) for i in np.arange(mean_x, max_x, (max_x-mean_x)/10)]
+                    # ).opts(color="green", alpha=0.5)
+                    # return (hv.Ellipse(mean_x, mean_y, scale, orientation=-rot).opts(**kwargs)
+                    #     * curve
+                    #      * hv.Text(
+                    #         x.iloc[1], (intercept + slope*x.iloc[1])*1.1, f"Slope: {slope:.2f}" ) )
                     return (hv.Ellipse(mean_x, mean_y, scale, orientation=-rot).opts(**kwargs) )
                 if by is None:
                     x = df[x]
@@ -2634,19 +2669,13 @@ class Deriv_dask:
                             ells = ells * create_ellipse(df_tmp[x], df_tmp[y], **new_kwargs)
                     return ells
 
-            if abs_x and not log_x:
-                min_x = -0.05
-            elif not log_x and not abs_x:
-                min_x = -1.05
-            elif log_x and abs_x:
-                min_x = np.min(mse_df["Sensitivity"]) - 0.1
+            if log_x:
+                min_x = np.min(mse_df["Sensitivity"]) - np.abs(np.min(mse_df["Sensitivity"]))/7
+                max_x = np.max(mse_df["Sensitivity"]) + np.abs(np.max(mse_df["Sensitivity"]))/7
             else:
-                min_x = np.min(mse_df["Sensitivity"])
-                min_x -= min_x*0.1*np.sign(min_x)
-            if not log_x:
-                max_x = 1.05
-            else:
-                max_x = np.max(mse_df["Sensitivity"]) + np.max(mse_df["Sensitivity"])*0.1
+                delta_x = np.max(mse_df["Sensitivity"]) - np.min(mse_df["Sensitivity"])
+                min_x = np.min(mse_df["Sensitivity"]) - delta_x/10
+                max_x = np.max(mse_df["Sensitivity"]) + delta_x/10
 
             cmap = plt.get_cmap("tab10")
             colors = {}
@@ -2670,7 +2699,7 @@ class Deriv_dask:
                     by="Ratio Type",
                     alpha=0.5,
                     legend=True,
-                    title=ylabel + error_key + " over " + xlabel + " to Model Parameters",
+                    title=title,
                     grid=False)
 
                 max_y = 0
@@ -2719,13 +2748,11 @@ class Deriv_dask:
 
                 all_plots = (neg_plot * text_neg + pos_plot * text_pos).opts(
                     tight=False,
-                    title=ylabel + error_key + " over " + xlabel + " to Model Parameters",
+                    title=title,
                     sublabel_format="",
                     hspace=0.05,
                     shared_axes=False,
                     fontscale=fontscale)
-
-                # all_plots = hv.GridSpace(all_plots)
             else:
                 all_plots = mse_df.hvplot.hist(
                     y="Sensitivity",
@@ -2733,10 +2760,10 @@ class Deriv_dask:
                     alpha=alpha,
                     legend=True,
                     grid=True,
-                    title=ylabel + error_key + " over " + xlabel + " to Model Parameters",
+                    title=title,
                     color=cmap_values).opts(
                         aspect=aspect,
-                        fontscale=fontscale).options(xlabel="")#, xaxis="bare")
+                        fontscale=fontscale).options(xlabel="")
 
             for out_param in out_params:
                 tmp_df = mse_df.loc[mse_df["Output Parameter"] == out_param]
@@ -2906,8 +2933,6 @@ class Deriv_dask:
 
                     if out_param == out_params[-1]:
                         mse_plot = mse_plot.options(xlabel=xlabel)
-                    else:
-                        mse_plot = mse_plot.opts(xaxis="bare")
 
                     if confidence is not None:
                         if split_ellipse:
@@ -2979,6 +3004,49 @@ class Deriv_dask:
 
             renderer.save(mse_plot, save)
             display_file = save
+
+            if plot_singles:
+                for j, pl in enumerate(mse_plot):
+                    i = 0
+                    save = (plot_path + prefix + "_" + "{:03d}".format(i))
+                    while os.path.isfile(save + filetype):
+                        i = i+1
+                        save = (plot_path + prefix + "_" + "{:03d}".format(i))
+                    if j > 0:
+                        if isinstance(pl, hv.core.overlay.Overlay):
+                            pl = pl.opts(
+                                opts.Scatter(
+                                    s=scatter_size,
+                                    alpha=alpha,
+                                    show_grid=True,
+                                    show_legend=True),
+                                opts.Layout(**layout_kwargs)).opts(
+                                    aspect=aspect,
+                                    fontscale=fontscale,
+                                    xlabel=xlabel,
+                                    xaxis="bottom",
+                                    title=title
+                            )
+                        else:
+                            # hv.core.layout.AdjointLayout
+                            pl.__setitem__('main', pl.main().opts(
+                                opts.Scatter(
+                                    s=scatter_size,
+                                    alpha=alpha,
+                                    show_grid=True,
+                                    show_legend=True),
+                                opts.Layout(**layout_kwargs)).opts(
+                                    aspect=aspect,
+                                    fontscale=fontscale,
+                                    xlabel=xlabel,
+                                    xaxis="bottom",
+                                    title=title
+                            ))
+                    else:
+                        pl = pl.opts(show_legend=False)
+                    print(f"Plot to {save}")
+                    renderer.save(pl, save)
+
             try:
                 from IPython.display import Image, display
                 display(Image(display_file + filetype, width=width))

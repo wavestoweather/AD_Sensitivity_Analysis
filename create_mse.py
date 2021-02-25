@@ -40,7 +40,7 @@ store_path = "pics/"
 confidence = 0.90
 hist = True
 kind = "grid_plot"
-ratio_type = ["per_timestep", "window"]
+ratio_type = ["adjusted", "adjusted_per_timestep", "adjusted_window"]
 
 base_path = "/data/project/wcb/netcdf/perturbed_ensembles/conv_600_0_traj_t000000_p001/"
 base_path = sys.argv[2]
@@ -76,7 +76,8 @@ def load_mse(i):
             others_path=others_path,
             in_params=in_params,
             ratio_type=ratio_type,
-            kind=error_kind)
+            kind=error_kind,
+            sens_kind="squared_mean")
         return df
     except:
         return None
