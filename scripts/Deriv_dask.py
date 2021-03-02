@@ -2582,7 +2582,7 @@ class Deriv_dask:
         if log_y:
             ylabel = "Log "
         hspace = 0.05
-        title = ylabel + error_key + "over " + xlabel
+        title = ylabel + error_key + " over " + xlabel
 
         # Plot all into one plot
         if kind == "single_plot":
@@ -2606,7 +2606,7 @@ class Deriv_dask:
                             aspect=aspect,
                             fontscale=fontscale).options(
                                 xlabel=xlabel,
-                                ylabel=ylabel
+                                ylabel=ylabel + error_key
                             )
         # Gridded plot with every output parameter on y
         # and sensitivity calculations on x
@@ -2823,7 +2823,7 @@ class Deriv_dask:
                             aspect=aspect/2,
                             xticks=pos_x_ticks,
                             fontscale=fontscale).options(
-                                ylabel=ylabel + out_param + " " + error_key,
+                                ylabel=ylabel + error_key + " " + out_param,
                                 xlabel="",
                                 yaxis=False)
 
@@ -2833,7 +2833,7 @@ class Deriv_dask:
                             aspect=aspect/2,
                             xticks=neg_x_ticks,
                             fontscale=fontscale).options(
-                                ylabel=ylabel + out_param + " " + error_key,
+                                ylabel=ylabel + error_key + " " + out_param,
                                 xlabel="")
 
                     # Make three histograms
@@ -2915,7 +2915,7 @@ class Deriv_dask:
                         ).opts(
                             aspect=aspect,
                             fontscale=fontscale).options(
-                                ylabel=ylabel + out_param + " " + error_key, xlabel="")
+                                ylabel=ylabel + error_key + " " + out_param, xlabel="")
                     # Adding histograms around those
                     if hist:
                         xdist = tmp_df.hvplot.hist(
@@ -3028,6 +3028,7 @@ class Deriv_dask:
                                     title=title
                             )
                         else:
+                            title = "Validation Sensitivity " +  out_params[j-1]
                             # hv.core.layout.AdjointLayout
                             pl.__setitem__('main', pl.main().opts(
                                 opts.Scatter(
