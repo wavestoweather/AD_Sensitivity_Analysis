@@ -1653,10 +1653,9 @@ void rain_evaporation_sb(
 
         // Equation A5 with A9
         float_t delta_qv = g_d * Nr * (mue+1.0) / lambda * f_v * s_sw; // (mue+1.0) / lambda *
-        float_t delta_nv = gamma_eva * delta_qv/x_r;
 
         delta_qv = max(-delta_qv, 0.0);
-        delta_nv = max(-delta_nv, 0.0);
+        float_t delta_nv = max(gamma_eva * delta_qv/x_r, 0.0);
         delta_qv = min(delta_qv, qv_prime/cc.dt_prime);
         delta_nv = min(delta_nv, Nr/cc.dt_prime);
 
