@@ -184,7 +184,9 @@ mappings = {"lat_heat": "Latent Heating",
             "dp_sat_low_temp":      r"$\partial p_{\mathrm{sat}, \mathrm{low}, T}$",
             "dT_sat_low_temp":      r"$\partial T_{\mathrm{sat}, \mathrm{low}, T}$",
             "ddv0":                 r"$D_{0, \mathrm{vapor}}$",
-            "instance_id":          "Instance ID"}
+            "instance_id":          "Instance ID",
+            "dT_mult_min":          r"$\partial T_{\mathrm{mult}, \mathrm{min}}$",
+            "dT_mult_max":          r"$\partial T_{\mathrm{mult}, \mathrm{max}}$",}
 
 
 # A dictionary of all the derivatives where the key refers to the
