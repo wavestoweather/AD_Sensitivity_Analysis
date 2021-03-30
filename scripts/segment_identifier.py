@@ -1307,10 +1307,20 @@ if __name__ == "__main__":
         used for training. Otherwise the complete dataset is used for training.
         Overrides 'save_memory'.
         ''')
-    parser.add_argument('--store_appended_data', default=None,
+    parser.add_argument('--store_many_appended_data', default=None,
         help='''
         Store the appended input data to this path as NetCDF file for each appended
         version. Used mainly for debugging.
+        ''')
+    parser.add_argument('--store_appended_data', default=None,
+        help='''
+        Store the final appended data to this path and name. Must end with
+        '.nc'.
+        ''')
+    parser.add_argument('--only_append', action='store_true',
+        help='''
+        Only appending of data. Use 'store_appended_data' to define
+        a path and name.
         ''')
     parser.add_argument('--only_training', action='store_true',
         help='''
@@ -1336,18 +1346,47 @@ if __name__ == "__main__":
     else:
         store_name = args.store_name
 
+    if ".nc" not in args.store_appended_data:
+        print(f"You must add '.nc' to {args.store_appended_data}.")
+        print(f"Result will be saved as {args.store_appended_data}.nc")
+        store_appended_data = args.store_appended_data + ".nc"
+    else:
+        store_appended_data = args.store_appended_data
+
     out_params = ["QV", "QC", "QR", "QG", "QH", "QI", "QS"]
-    reduced_df = d_unnamed(pd.read_csv("../stats_full/conv_adjusted_mse_errorMean_sensMean.csv"))
-    reduced_df = reduced_df.loc[reduced_df["Ratio Type"] == "adjusted"]
-    reduced_df = reduced_df.loc[reduced_df["Sensitivity"] != 0]
-    top20_sens_dic = {}
-    all_params_list = []
-    for out_p in out_params:
-        df = reduced_df.loc[reduced_df["Output Parameter"] == out_p]
-        top20_sens_dic[out_p] = list(np.unique( df.nlargest(20, "Sensitivity")["Perturbed Parameter"] ))
-        all_params_list.extend(top20_sens_dic[out_p])
-    del(reduced_df)
-    all_params_list = list(set(all_params_list))
+    # the following lines can give you the most important parameters
+    # reduced_df = d_unnamed(pd.read_csv("../stats_full/conv_adjusted_mse_errorMean_sensMean.csv"))
+    # reduced_df = reduced_df.loc[reduced_df["Ratio Type"] == "adjusted"]
+    # reduced_df = reduced_df.loc[reduced_df["Sensitivity"] != 0]
+    # top20_sens_dic = {}
+    # all_params_list = []
+    # for out_p in out_params:
+    #     df = reduced_df.loc[reduced_df["Output Parameter"] == out_p]
+    #     top20_sens_dic[out_p] = list(np.unique( df.nlargest(20, "Sensitivity")["Perturbed Parameter"] ))
+    #     all_params_list.extend(top20_sens_dic[out_p])
+    # del(reduced_df)
+    # all_params_list = list(set(all_params_list))
+    all_params_list = [
+        'dc_ccn_4', 'dice_b_geo', 'da_prime',
+        'dT_mult_max', 'dsnow_b_f', 'dsnow_c_s',
+        'dsnow_b_vel', 'dsnow_a_f', 'dgraupel_vsedi_min',
+        'dT_mult_min', 'dgraupel_ecoll_c', 'db_prime',
+        'dice_c_s', 'db_v', 'dp_sat_melt',
+        'drain_b_geo', 'dhail_b_vel', 'dsnow_b_geo',
+        'dD_rainfrz_gh', 'db_HET', 'dgraupel_b_f',
+        'dgraupel_b_vel', 'drain_beta', 'dice_b_f',
+        'drain_mu', 'dice_b_vel', 'db_ccn_4',
+        'dcloud_b_vel', 'dsnow_a_geo', 'dp_sat_ice_const_b',
+        'da_HET', 'drain_c_z', 'drain_b_vel',
+        'drain_a_geo', 'dhail_b_geo', 'dgraupel_c_s',
+        'dgraupel_b_geo', 'dice_a_geo', 'drain_gamma',
+        'dinv_z', 'drain_a_vel', 'dhail_a_vel',
+        'dcloud_b_geo', 'drain_alpha', 'drain_cmu2',
+        'drho_vel', 'dhail_a_geo', 'dgraupel_a_geo',
+        'dsnow_a_vel', 'drain_cmu4', 'dkin_visc_air',
+        'dk_r', 'drain_cmu3', 'dice_a_f',
+        'drain_nu', 'dgraupel_max_x', 'drain_g2',
+        'dice_a_vel', 'dgraupel_a_vel']
 
     traj_offset = 0
 
@@ -1382,11 +1421,11 @@ if __name__ == "__main__":
                 data = tmp
             else:
                 data = xr.concat([data, tmp], dim="trajectory", join="outer")
-            if args.store_appended_data is not None:
+            if args.store_many_appended_data is not None:
                 comp = dict(zlib=True, complevel=9)
                 encoding = {var: comp for var in data.data_vars}
                 data.to_netcdf(
-                    path=f"{args.store_appended_data}data_{traj_offset}.nc",
+                    path=f"{args.store_many_appended_data}data_{traj_offset}.nc",
                     encoding=encoding,
                     compute=True,
                     engine="netcdf4",
@@ -1395,6 +1434,19 @@ if __name__ == "__main__":
             traj_offset += n_trajs
     if args.verbosity > 0:
         print(data)
+    if args.store_appended_data is not None:
+        comp = dict(zlib=True, complevel=9)
+        encoding = {var: comp for var in data.data_vars}
+        data.to_netcdf(
+            path=f"{args.store_appended_data}",
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w")
+    if args.only_append:
+        exit()
+
     n_trajs = args.n_trajs
 
     max_features_list = ["auto", "log2", "sqrt", None]
