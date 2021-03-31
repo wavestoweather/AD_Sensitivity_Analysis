@@ -1570,14 +1570,22 @@ if __name__ == "__main__":
         print(confus_matrix)
     comp = dict(zlib=True, complevel=9)
     encoding = {var: comp for var in confus_matrix.data_vars}
-    confus_matrix.to_netcdf(
-        path=args.store_name,
-        encoding=encoding,
-        compute=True,
-        engine="netcdf4",
-        format="NETCDF4",
-        mode="w")
-
+    try:
+        confus_matrix.to_netcdf(
+            path=args.store_name,
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w")
+    except:
+        print("Unable to write file. Trying without encoding")
+        confus_matrix.to_netcdf(
+            path=args.store_name,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w")
     # old version that does all at once without saving models
     # ds_forest = create_dataset_forest(
     #     data=data,

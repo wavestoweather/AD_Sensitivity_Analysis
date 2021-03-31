@@ -2563,6 +2563,8 @@ class Deriv_dask:
         else:
             scatter_size = s
 
+        hist_wh = int(height/10)
+
         if self.backend == "matplotlib":
             scatter_kwargs = {"s": scatter_size}
         else:
@@ -2637,6 +2639,20 @@ class Deriv_dask:
                                 ylabel=ylabel + error_key
                             )
 
+        all_opts = dict(
+            title=title,
+            hspace=0.05,
+            shared_axes=False,
+            fontscale=fontscale)
+        all_opts_notitle = dict(
+            hspace=0.05,
+            shared_axes=False,
+            fontscale=fontscale)
+        if self.backend == "matplotlib":
+            all_opts["tight"] = False
+            all_opts["sublabel_format"] = ""
+            all_opts_notitle["tight"] = False
+            all_opts_notitle["sublabel_format"] = ""
         # Gridded plot with every output parameter on y
         # and sensitivity calculations on x
         # and different ratio types as "by"
@@ -2771,15 +2787,15 @@ class Deriv_dask:
                     (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, False, max_x_tick))
                     for i in range(this_x_ticks)]
                 y_lim = (0, max_y)
-
+                opts_dic = {"fontscale": fontscale}
+                if self.backend == "matplotlib":
+                    opts_dic["aspect"] = aspect/2
                 pos_plot = pos_plot.opts(
-                        aspect=aspect/2,
-                        fontscale=fontscale).options(xlabel="", yaxis=False).opts(
+                        **opts_dic).options(xlabel="", yaxis=False).opts(
                         xticks=pos_x_ticks,
                         ylim=y_lim)
                 neg_plot = neg_plot.opts(
-                        aspect=aspect/2,
-                        fontscale=fontscale).options(xlabel="").opts(
+                        **opts_dic).options(xlabel="").opts(
                         xticks=neg_x_ticks,
                         ylim=y_lim)
 
@@ -2787,13 +2803,11 @@ class Deriv_dask:
                 text_neg = hv.Text(0, 0, '          /')
 
                 all_plots = (neg_plot * text_neg + pos_plot * text_pos).opts(
-                    tight=False,
-                    title=title,
-                    sublabel_format="",
-                    hspace=0.05,
-                    shared_axes=False,
-                    fontscale=fontscale)
+                    **all_opts)
             else:
+                opts_dic = {"fontscale": fontscale}
+                if self.backend == "matplotlib":
+                    opts_dic["aspect"] = aspect
                 all_plots = mse_df.hvplot.hist(
                     y="Sensitivity",
                     by=by_col,
@@ -2801,11 +2815,17 @@ class Deriv_dask:
                     legend=True,
                     grid=True,
                     title=title,
-                    c=list(colors.values())).opts(
-                        aspect=aspect,
-                        fontscale=fontscale).options(xlabel="")
+                    color=cmap_values).opts(
+                        **opts_dic).options(xlabel="")
 
+            opts_dic = {"fontscale": fontscale}
+            if self.backend == "matplotlib":
+                opts_dic["aspect"] = aspect/2
+            opts_dic2 = {"fontscale": fontscale}
+            if self.backend == "matplotlib":
+                opts_dic2["aspect"] = aspect
             for out_param in out_params:
+
                 tmp_df = mse_df.loc[mse_df["Output Parameter"] == out_param]
                 min_y = tmp_df[error_key].min()
                 max_y = tmp_df[error_key].max()
@@ -2862,9 +2882,8 @@ class Deriv_dask:
                     pos_plot = pos_plot.opts(
                             opts.Scatter(**scatter_kwargs)# s=scatter_size
                         ).opts(
-                            aspect=aspect/2,
                             xticks=pos_x_ticks,
-                            fontscale=fontscale).options(
+                            **opts_dic).options(
                                 ylabel=ylabel + error_key + " " + out_param,
                                 xlabel="",
                                 yaxis=False)
@@ -2872,9 +2891,8 @@ class Deriv_dask:
                     neg_plot = neg_plot.opts(
                             opts.Scatter(**scatter_kwargs)# s=scatter_size
                         ).opts(
-                            aspect=aspect/2,
                             xticks=neg_x_ticks,
-                            fontscale=fontscale).options(
+                            **opts_dic).options(
                                 ylabel=ylabel + error_key + " " + out_param,
                                 xlabel="")
 
@@ -2927,11 +2945,27 @@ class Deriv_dask:
 
                     # put it all together
                     if hist:
-                        all_neg_plot = (neg_plot * text_neg << hv.Empty()
-                                    << xdist_neg.opts(xaxis="bare", xlim=(min_x, 2)))
-                        all_pos_plot = (pos_plot * text_pos
-                                    << ydist.opts(yaxis="bare", xlim=(min_y, max_y))
-                                    << xdist_pos.opts(xaxis="bare", xlim=(-2, max_x)))
+                        if self.backend == "bokeh":
+                            all_neg_plot = (neg_plot * text_neg << hv.Empty()
+                                        << xdist_neg.opts(
+                                            xaxis="bare",
+                                            xlim=(min_x, 2),
+                                            width=hist_wh))
+                            all_pos_plot = (pos_plot * text_pos
+                                        << ydist.opts(
+                                            yaxis="bare",
+                                            xlim=(min_y, max_y),
+                                            height=hist_wh)
+                                        << xdist_pos.opts(
+                                            xaxis="bare",
+                                            xlim=(-2, max_x),
+                                            width=hist_wh))
+                        else:
+                            all_neg_plot = (neg_plot * text_neg << hv.Empty()
+                                        << xdist_neg.opts(xaxis="bare", xlim=(min_x, 2)))
+                            all_pos_plot = (pos_plot * text_pos
+                                        << ydist.opts(yaxis="bare", xlim=(min_y, max_y))
+                                        << xdist_pos.opts(xaxis="bare", xlim=(-2, max_x)))
                         mse_plot = (all_neg_plot + all_pos_plot)
                     else:
                         mse_plot = (neg_plot * text_neg + pos_plot * text_pos)
@@ -2941,6 +2975,7 @@ class Deriv_dask:
                     else:
                         all_plots += mse_plot
                 else:
+
                     mse_plot = tmp_df.hvplot.scatter(
                             x="Sensitivity",
                             y=error_key,
@@ -2955,8 +2990,7 @@ class Deriv_dask:
                         ).opts(
                             opts.Scatter(**scatter_kwargs)# s=scatter_size
                         ).opts(
-                            aspect=aspect,
-                            fontscale=fontscale).options(
+                            **opts_dic2).options(
                                 ylabel=ylabel + error_key + " " + out_param, xlabel="")
 
                     # Adding histograms around those
@@ -3010,22 +3044,31 @@ class Deriv_dask:
 
                             mse_plot = (mse_plot * ells)
                     if hist:
-                        mse_plot = (mse_plot
-                                    << ydist.opts(yaxis="bare", xlim=(min_y, max_y))
-                                    << xdist.opts(xaxis="bare", xlim=(min_x, max_x)))
+                        if self.backend == "bokeh":
+                            mse_plot = (mse_plot
+                                        << ydist.opts(
+                                            yaxis="bare",
+                                            xlim=(min_y, max_y),
+                                            width=hist_wh)
+                                        << xdist.opts(
+                                            xaxis="bare",
+                                            xlim=(min_x, max_x),
+                                            height=hist_wh))
+                        else:
+                            mse_plot = (mse_plot
+                                        << ydist.opts(yaxis="bare", xlim=(min_y, max_y))
+                                        << xdist.opts(xaxis="bare", xlim=(min_x, max_x)))
 
                     all_plots += mse_plot
             if log_x and not abs_x:
                 mse_plot = all_plots.opts(
-                    tight=False,
-                    sublabel_format="",
-                    hspace=hspace,
-                    shared_axes=False,
-                    fontscale=fontscale).cols(2).opts(opts.Layout(**layout_kwargs))
+                    **all_opts_notitle).cols(2).opts(opts.Layout(**layout_kwargs))
             else:
-                mse_plot = all_plots.cols(1).opts(
-                    sublabel_format="", tight=True).opts(opts.Layout(**layout_kwargs))
-
+                if self.backend == "matplotlib":
+                    mse_plot = all_plots.cols(1).opts(
+                        sublabel_format="", tight=True).opts(opts.Layout(**layout_kwargs))
+                else:
+                    mse_plot = all_plots.cols(1).opts(opts.Layout(**layout_kwargs))
         # Save image to disk
         # The renderer should be able to switch between
         # matplotlib and bokeh but the colors can be wrong with
