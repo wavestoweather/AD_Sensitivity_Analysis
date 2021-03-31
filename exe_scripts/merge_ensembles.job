@@ -6,7 +6,7 @@
 #SBATCH -p parallel
 #SBATCH --ntasks=1
 #SBATCH -A m2_zdvresearch
-#SBATCH --mem=62GB # Default value
+#SBATCH --mem=62GB 
 #SBATCH -C skylake
 
 module purge
@@ -53,7 +53,7 @@ fi
 # copy scripts
 cp scripts/*.py ${SCRIPTS_PATH}
 # copy models
-cp data/model/subset_tran_strat_* ${MODEL_PATH}
+# cp data/model/subset_tran_strat_* ${MODEL_PATH}
 
 SUFF=${DATA_PATH##*/}
 OUTPUT_FILE=${OUTPUT_PATH}prediction_thresh20_${SUFF}.nc

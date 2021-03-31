@@ -1392,10 +1392,16 @@ if __name__ == "__main__":
 
     if ".nc" in args.data_path:
         # ie data2_327.nc
+        if args.verbosity > 1:
+            print(f"Loading {args.data_path}")
         data = xr.open_dataset(args.data_path, decode_times=False)
     else:
+        if args.verbosity > 1:
+            print(f"Checking {args.data_path}")
         data = None
         paths = list(os.listdir(args.data_path))
+        if args.verbosity > 1:
+            print(f"Loading from {paths}")
         for p in range(len(paths)):
             if "quan" in paths[p] or "median" in paths[p] or "perturb" in paths[p]:
                 continue
