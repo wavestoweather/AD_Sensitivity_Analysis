@@ -1339,19 +1339,21 @@ if __name__ == "__main__":
         ''')
 
     args = parser.parse_args()
-    if ".nc" not in args.store_name:
-        print(f"You must add '.nc' to {args.store_name}.")
-        print(f"Result will be saved as {args.store_name}.nc")
-        store_name = args.store_name + ".nc"
-    else:
-        store_name = args.store_name
+    if args.store_name is not None:
+        if ".nc" not in args.store_name:
+            print(f"You must add '.nc' to {args.store_name}.")
+            print(f"Result will be saved as {args.store_name}.nc")
+            store_name = args.store_name + ".nc"
+        else:
+            store_name = args.store_name
 
-    if ".nc" not in args.store_appended_data:
-        print(f"You must add '.nc' to {args.store_appended_data}.")
-        print(f"Result will be saved as {args.store_appended_data}.nc")
-        store_appended_data = args.store_appended_data + ".nc"
-    else:
-        store_appended_data = args.store_appended_data
+    if args.store_appended_data is not None:
+        if ".nc" not in args.store_appended_data:
+            print(f"You must add '.nc' to {args.store_appended_data}.")
+            print(f"Result will be saved as {args.store_appended_data}.nc")
+            store_appended_data = args.store_appended_data + ".nc"
+        else:
+            store_appended_data = args.store_appended_data
 
     out_params = ["QV", "QC", "QR", "QG", "QH", "QI", "QS"]
     # the following lines can give you the most important parameters
