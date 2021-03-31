@@ -56,6 +56,7 @@ cp scripts/*.py ${SCRIPTS_PATH}
 cp data/models/subset_tran_strat_* ${MODEL_PATH}
 
 SUFF=${DATA_PATH##*/}
+SUFF=${SUFF%.*}
 OUTPUT_FILE=${OUTPUT_PATH}matrix_thresh20_${SUFF}.nc
 
 cd ${AD_SIM_HOME}
