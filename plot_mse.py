@@ -5,7 +5,7 @@ import pandas as pd
 from progressbar import progressbar as pb
 import xarray as xr
 from scripts.Deriv_dask import Deriv_dask
-from scripts.latexify import in_params_dic, physical_params
+from scripts.latexify import in_params_dic, physical_params, in_params_grouping, in_params_descr_dic
 
 n_conv_400_0 = 27
 n_conv_600_0 = 11
@@ -63,7 +63,7 @@ def reduce_df(df, error_key, sens_kind="max", error_kind="max"):
 
     return pd.merge(sens_df, err_df, how="left", left_index=True, right_index=True).reset_index()
 
-def load_and_plot(kind, sens_kind, error_kind):
+def load_and_plot(kind, sens_kind, error_kind, plot_types, out_params, ratio_type):
 
     if kind == "mse":
         error_key = "MSE"
@@ -77,14 +77,33 @@ def load_and_plot(kind, sens_kind, error_kind):
         error_key = "Mean Error"
     elif kind == "mae":
         error_key = "Mean Absolute Error"
-    all_df = load_and_append(["stats/" + kind + "_conv_400_0.csv", "stats/" + kind + "_conv_600_0.csv",
-                            "stats/" + kind + "_conv_600_2.csv", "stats/" + kind + "_conv_600_3.csv"])
+    all_df = load_and_append(["stats_full/" + kind + "_adjusted_conv_400_0.csv", "stats_full/" + kind + "_adjusted_conv_600_0.csv",
+                              "stats_full/" + kind + "_adjusted_conv_600_2.csv", "stats_full/" + kind + "_adjusted_conv_600_3.csv"])
+
+    in_params = np.unique(all_df["Perturbed Parameter"])
+    # clean up the data. Some parameters might have slipped through that
+    # are not used or not tracked with AD.
+    del_list = []
+    for in_p in in_params:
+        if ("Not used" == in_params_descr_dic[in_p]
+            or "Is not tracked with AD" in in_params_descr_dic[in_p]):
+            del_list.append(in_p)
+    all_df = all_df[ ~all_df["Perturbed Parameter"].isin(del_list) ]
 
     reduced_df = reduce_df(all_df, error_key,
         sens_kind=sens_kind, error_kind=error_kind)
 
-    out_params = ["QV"]
-    in_params = np.unique(all_df["Perturbed Parameter"])
+    # out_params = ["QV"]
+    if plot_types:
+        # We need to add a column 'Group' to plot it correctly
+        tmp_dic = {}
+        for in_p in in_params:
+            for g in in_params_grouping:
+                if in_p in in_params_grouping[g]:
+                    tmp_dic[in_p] = g
+                    break
+
+        reduced_df["Group"] = reduced_df.apply(lambda row: tmp_dic[row["Perturbed Parameter"]], axis=1)
 
     datashade = False
     alpha = 0.5
@@ -103,7 +122,10 @@ def load_and_plot(kind, sens_kind, error_kind):
         backend="matplotlib",
         file_ending="")
 
+
     tmp_df = reduced_df.loc[reduced_df["Sensitivity"] != 0]
+    if ratio_type is not None:
+        tmp_df = reduced_df.loc[reduced_df["Ratio Type"] == ratio_type]
 
     mean_traj.plot_mse(
         out_params=out_params,
@@ -168,10 +190,82 @@ def load_and_plot(kind, sens_kind, error_kind):
         error_key=error_key,
         prefix=kind + "_s_" + sens_kind + "_e_" + error_kind + "_lx")
 
-if __name__ == "__main__":
-    import sys
+    mean_traj.plot_mse(
+        out_params=out_params,
+        mse_df_=tmp_df,
+        in_params=in_params,
+        datashade=datashade,
+        alpha=alpha,
+        formatter_limits=f_limits,
+        s=s,
+        hist=False,
+        confidence=confidence,
+        abs_x=True,
+        log_x=True,
+        log_y=True,
+        kind=plot_kind,
+        error_key=error_key,
+        prefix=kind + "_s_" + sens_kind + "_e_" + error_kind + "_lxlyabs")
 
-    if sys.argv[1] == "all":
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='''
+        Plot MSE over time in different versions.
+        ''')
+    parser.add_argument('--all', action='store_true',
+        help='''
+        Plot all kinds of error calculations and error predictions and the
+        operation used to get a synopsis. This can take a long time!
+        ''')
+    parser.add_argument('--kind', default='mse',
+        help='''
+        Define the operation that had been used to calculate the error of
+        the ensembles. Possible options:
+        mse: Mean squared error
+        maxse: Maximum error
+        nozeromse: Mean squared error ignoring time steps with zero error
+        sum: Cumulative squared error
+        me: Mean error
+        mae: Mean absolute error
+        ''')
+    parser.add_argument('--sens_kind', default='mean',
+        help='''
+        Operation to summarize all sensitivities (aka predicted errors) across
+        multiple ensembles. Possible options:
+        sum: Sum of all errors
+        max: Maximum error across all ensembles
+        mean: Mean error
+        ''')
+    parser.add_argument('--error_kind', default='mean',
+        help='''
+        Operation to summarize all deviations of ensembles from an
+        unperturbed trajectory across multiple ensembles. Possible options:
+        sum: Sum of all deviations
+        max: Maximum deviation across all ensembles
+        mean: Mean deviation
+        ''')
+    parser.add_argument('--plot_types', action='store_true',
+        help='''
+        If true: Plot input parameter types in different colors.
+        Types means here wether a parameter is physical or rather artificial.
+        ''')
+    parser.add_argument('--out_parameter', type=str, nargs='+', required=True,
+        help='''
+        Output parameter to plot for. Multiple options are possible.
+        Possible options are
+        QV, QC, QR, QG, QH, QS, QI.
+        ''')
+    parser.add_argument('--ratio_type', default=None,
+        help='''
+        Plot only the given ratio type. If none is given, plot all ratio types.
+        We recommend 'adjusted'.
+        ''')
+
+    args = parser.parse_args()
+
+    if args.all:
         from itertools import product
         from timeit import default_timer as timer
 
@@ -185,11 +279,12 @@ if __name__ == "__main__":
         t_start = timer()
         for k, s, e in product(kind, sens_kind, error_kind):
             t = timer()
-            load_and_plot(k, s, e)
+            load_and_plot(k, s, e, args.plot_types, args.out_parameter, args.ratio_type)
             t2 = timer()
             ti = t2-t
             i += 1
             t_all = (t2-t_start)/i*n
             print(f"\n{i:3d}/{n} in {ti:3.3f}s, estimated end total {t_all:3.3f}s, total {t2-t_start:3.3f}s\n")
     else:
-        load_and_plot(sys.argv[1], sys.argv[2], sys.argv[3])
+        load_and_plot(args.kind, args.sens_kind, args.error_kind,
+            args.plot_types, args.out_parameter, args.ratio_type)

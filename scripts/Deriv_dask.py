@@ -159,6 +159,13 @@ class Deriv_dask:
                 "latent_heat": matplotlib.colors.to_hex([255/255, 51/255, 0/255]),
                 "latent_cool": matplotlib.colors.to_hex([255/255, 153/255, 0/255]),
             }
+            self.cmap_types = {
+                "artificial": matplotlib.colors.to_hex(colors(1)[0:-1]),
+                "artificial (threshold)": matplotlib.colors.to_hex(colors(5)[0:-1]),
+                "physical": matplotlib.colors.to_hex(colors(9)[0:-1]),
+                "physical (high variability)": matplotlib.colors.to_hex(colors(13)[0:-1]),
+                "1-moment": matplotlib.colors.to_hex(colors(17)[0:-1])
+            }
         else:
             colors = Category20c[20]
             self.cmap = {"Slantwise 600hPa 25. Quantile":  colors[0],
@@ -178,7 +185,13 @@ class Deriv_dask:
                 "Convective 400hPa 75. Quantile": colors[14],
                 "Convective 400hPa": colors[15]}
             self.colors = colors
-
+            self.cmap_types = {
+                "artificial": colors[1],
+                "artificial (threshold)": colors[5],
+                "physical": colors[9],
+                "physical (high variability)": colors[13],
+                "1-moment": colors[17]
+            }
 
     def to_parquet(self, f_name, compression="snappy"):
         """
@@ -2416,7 +2429,7 @@ class Deriv_dask:
         s=None, formatter_limits=None, log_x=False, log_y=False, confidence=None,
         hist=False, kind="grid_plot", abs_x=False, abs_y=False,
         split_ellipse=False, error_key="MSE", xlabel="Sensitivity Ratio",
-        log_func=np.log, plot_singles=False,
+        log_func=np.log, plot_singles=False, plot_types=True,
         **kwargs):
         """
         Plot mean squared error over maximal sensitivity calculated
@@ -2484,7 +2497,9 @@ class Deriv_dask:
             at which a new window starts, i.e. {"T": [235, 273]} results
             in three windows with T < 235K, 235 <= T < 273K and 237K <= T.
         s : int
-            Can be used to adjust the size of the scatter dots.
+            Can be used to adjust the size of the scatter dots. As a rule of
+            thumb: 13 is good for matplotlib backend but too large for
+            bokeh.
         formatter_limits : tuple of ints
             Lower and upper limits for formatting x- and y-axis.
         log_x : bool
@@ -2548,6 +2563,11 @@ class Deriv_dask:
         else:
             scatter_size = s
 
+        if self.backend == "matplotlib":
+            scatter_kwargs = {"s": scatter_size}
+        else:
+            scatter_kwargs = {"size": scatter_size}
+
         fig_inches = width/300
         if width < height:
             fig_inches = height/300
@@ -2588,13 +2608,21 @@ class Deriv_dask:
         if kind == "single_plot":
             if not datashade:
                 if self.backend == "matplotlib":
-                    cmap_values = []
-                    for out_param in out_params:
-                        cmap_values.append( matplotlib.colors.to_hex(self.cmap_particles[out_param]))
+                    if not plot_types:
+                        cmap_values = []
+                        for out_param in out_params:
+                            cmap_values.append( matplotlib.colors.to_hex(self.cmap_particles[out_param]))
+                            by_col = "Output Parameter"
+                    else:
+                        cmap_values = []
+                        for group in np.unique(mse_df["Group"]):
+                            cmap_values.append( matplotlib.colors.to_hex(self.cmap_types[group]))
+                        by_col = "Group"
+
                     mse_plot = mse_df.hvplot.scatter(
                             x="Sensitivity",
                             y=error_key,
-                            by="Output Parameter",
+                            by=by_col,
                             title=title,
                             color=cmap_values,
                             datashade=datashade,
@@ -2608,6 +2636,7 @@ class Deriv_dask:
                                 xlabel=xlabel,
                                 ylabel=ylabel + error_key
                             )
+
         # Gridded plot with every output parameter on y
         # and sensitivity calculations on x
         # and different ratio types as "by"
@@ -2677,12 +2706,21 @@ class Deriv_dask:
                 min_x = np.min(mse_df["Sensitivity"]) - delta_x/10
                 max_x = np.max(mse_df["Sensitivity"]) + delta_x/10
 
-            cmap = plt.get_cmap("tab10")
-            colors = {}
-            cmap_values = []
-            for i, rt in enumerate(np.unique(mse_df["Ratio Type"])):
-                colors[rt] =  matplotlib.colors.to_hex(cmap(i)[0:-1])
-                cmap_values.append(colors[rt])
+            if not plot_types:
+                cmap = plt.get_cmap("tab10")
+                colors = {}
+                cmap_values = []
+                for i, rt in enumerate(np.unique(mse_df["Ratio Type"])):
+                    colors[rt] =  matplotlib.colors.to_hex(cmap(i)[0:-1])
+                    cmap_values.append(colors[rt])
+                by_col = "Ratio Type"
+            else:
+                cmap_values = []
+                colors = {}
+                for group in np.unique(mse_df["Group"]):
+                    colors[group] = self.cmap_types[group]
+                    cmap_values.append(self.cmap_types[group])
+                by_col = "Group"
 
             def format_tick(v, pos, max_tick):
                 if pos:
@@ -2696,11 +2734,12 @@ class Deriv_dask:
             if log_x and not abs_x:
                 pos_plot = mse_df.loc[mse_df["Sensitivity"] >= 0].hvplot.hist(
                     y="Sensitivity",
-                    by="Ratio Type",
+                    by=by_col,
                     alpha=0.5,
                     legend=True,
                     title=title,
-                    grid=False)
+                    grid=False,
+                    color=cmap_values)
 
                 max_y = 0
                 for key in pos_plot:
@@ -2715,10 +2754,11 @@ class Deriv_dask:
 
                 neg_plot = mse_df.loc[mse_df["Sensitivity"] < 0].hvplot.hist(
                     y="Sensitivity",
-                    by="Ratio Type",
+                    by=by_col,
                     alpha=0.5,
                     legend=False,
-                    grid=False)
+                    grid=False,
+                    color=cmap_values)
 
                 for key in neg_plot:
                     if np.max(key["Sensitivity_count"]) > max_y:
@@ -2756,12 +2796,12 @@ class Deriv_dask:
             else:
                 all_plots = mse_df.hvplot.hist(
                     y="Sensitivity",
-                    by="Ratio Type",
+                    by=by_col,
                     alpha=alpha,
                     legend=True,
                     grid=True,
                     title=title,
-                    color=cmap_values).opts(
+                    c=list(colors.values())).opts(
                         aspect=aspect,
                         fontscale=fontscale).options(xlabel="")
 
@@ -2782,7 +2822,7 @@ class Deriv_dask:
                     pos_plot = tmp_df.loc[tmp_df["Sensitivity"] >= 0].hvplot.scatter(
                             x="Sensitivity",
                             y=error_key,
-                            by="Ratio Type",
+                            by=by_col,
                             datashade=False,
                             alpha=alpha,
                             legend=False,
@@ -2790,7 +2830,8 @@ class Deriv_dask:
                             xlim=(-2, max_x),
                             ylim=(min_y, max_y),
                             color=cmap_values
-                        )
+                            )
+
                     # Get cosest value to zero for proper ticks
                     max_x_tick = np.max(tmp_df["Sensitivity"])
                     if -1*np.min(tmp_df["Sensitivity"]) > max_x_tick:
@@ -2803,7 +2844,7 @@ class Deriv_dask:
                     neg_plot = tmp_df.loc[tmp_df["Sensitivity"] < 0].hvplot.scatter(
                             x="Sensitivity",
                             y=error_key,
-                            by="Ratio Type",
+                            by=by_col,
                             datashade=False,
                             alpha=alpha,
                             legend=False,
@@ -2812,13 +2853,14 @@ class Deriv_dask:
                             ylim=(min_y, max_y),
                             color=cmap_values
                         )
+
                     neg_x_ticks = [
                         (np.min(tmp_df["Sensitivity"]) + i*delta_tick,
                             format_tick(np.min(tmp_df["Sensitivity"]) + i*delta_tick, False, -max_x_tick))
                         for i in range(this_x_ticks)]
 
                     pos_plot = pos_plot.opts(
-                            opts.Scatter(s=scatter_size)
+                            opts.Scatter(**scatter_kwargs)# s=scatter_size
                         ).opts(
                             aspect=aspect/2,
                             xticks=pos_x_ticks,
@@ -2828,7 +2870,7 @@ class Deriv_dask:
                                 yaxis=False)
 
                     neg_plot = neg_plot.opts(
-                            opts.Scatter(s=scatter_size)
+                            opts.Scatter(**scatter_kwargs)# s=scatter_size
                         ).opts(
                             aspect=aspect/2,
                             xticks=neg_x_ticks,
@@ -2840,19 +2882,19 @@ class Deriv_dask:
                     if hist:
                         xdist_pos = tmp_df.loc[tmp_df["Sensitivity"] >= 0].hvplot.hist(
                             y="Sensitivity",
-                            by="Ratio Type",
+                            by=by_col,
                             alpha=alpha,
                             legend=False,
                             color=cmap_values)
                         xdist_neg = tmp_df.loc[tmp_df["Sensitivity"] < 0].hvplot.hist(
                             y="Sensitivity",
-                            by="Ratio Type",
+                            by=by_col,
                             alpha=alpha,
                             legend=False,
                             color=cmap_values)
                         ydist = tmp_df.hvplot.hist(
                             y=error_key,
-                            by="Ratio Type",
+                            by=by_col,
                             alpha=alpha,
                             legend=False,
                             color=cmap_values)
@@ -2863,14 +2905,14 @@ class Deriv_dask:
                             df=tmp_df.loc[tmp_df["Sensitivity"] >= 0],
                             x="Sensitivity",
                             y=error_key,
-                            by="Ratio Type",
+                            by=by_col,
                             confidence=confidence,
                             color=colors)
                         ells_neg = correl_conf_ell(
                             df=tmp_df.loc[tmp_df["Sensitivity"] <= 0],
                             x="Sensitivity",
                             y=error_key,
-                            by="Ratio Type",
+                            by=by_col,
                             confidence=confidence,
                             color=colors)
                         if ells_neg is not None:
@@ -2902,7 +2944,7 @@ class Deriv_dask:
                     mse_plot = tmp_df.hvplot.scatter(
                             x="Sensitivity",
                             y=error_key,
-                            by="Ratio Type",
+                            by=by_col,
                             datashade=False,
                             alpha=alpha,
                             legend=False,
@@ -2911,22 +2953,23 @@ class Deriv_dask:
                             ylim=(min_y, max_y),
                             color=cmap_values
                         ).opts(
-                            opts.Scatter(s=scatter_size)
+                            opts.Scatter(**scatter_kwargs)# s=scatter_size
                         ).opts(
                             aspect=aspect,
                             fontscale=fontscale).options(
                                 ylabel=ylabel + error_key + " " + out_param, xlabel="")
+
                     # Adding histograms around those
                     if hist:
                         xdist = tmp_df.hvplot.hist(
                             y="Sensitivity",
-                            by="Ratio Type",
+                            by=by_col,
                             alpha=alpha,
                             legend=False,
                             color=cmap_values)
                         ydist = tmp_df.hvplot.hist(
                             y=error_key,
-                            by="Ratio Type",
+                            by=by_col,
                             alpha=alpha,
                             legend=False,
                             color=cmap_values)
@@ -2940,14 +2983,14 @@ class Deriv_dask:
                                 df=tmp_df.loc[tmp_df["Sensitivity"] >= 0],
                                 x="Sensitivity",
                                 y=error_key,
-                                by="Ratio Type",
+                                by=by_col,
                                 confidence=confidence,
                                 color=colors)
                             ells_neg = correl_conf_ell(
                                 df=tmp_df.loc[tmp_df["Sensitivity"] <= 0],
                                 x="Sensitivity",
                                 y=error_key,
-                                by="Ratio Type",
+                                by=by_col,
                                 confidence=confidence,
                                 color=colors)
                             if ells_pos is not None and ells_neg is not None:
@@ -2961,7 +3004,7 @@ class Deriv_dask:
                                 df=tmp_df,
                                 x="Sensitivity",
                                 y=error_key,
-                                by="Ratio Type",
+                                by=by_col,
                                 confidence=confidence,
                                 color=colors)
 
@@ -2984,17 +3027,28 @@ class Deriv_dask:
                     sublabel_format="", tight=True).opts(opts.Layout(**layout_kwargs))
 
         # Save image to disk
+        # The renderer should be able to switch between
+        # matplotlib and bokeh but the colors can be wrong with
+        # matplotlib
         renderer = hv.Store.renderers[self.backend].instance(
             fig='png', dpi=300)
         i = 0
         if prefix is None:
             prefix = error_key
 
+        filetype = ".png"
+
         if self.backend == "bokeh":
-            hvplot.show(mse_plot)
             self.plots.append(mse_plot)
+            save = (plot_path + prefix + "_" + "{:03d}".format(i))
+            while os.path.isfile(save + filetype):
+                i = i+1
+                save = (plot_path + prefix + "_" + "{:03d}".format(i))
+
+            renderer.save(mse_plot, save)
+            hvplot.show(mse_plot)
         else:
-            filetype = ".png"
+
             self.plots.append(mse_plot)
 
             save = (plot_path + prefix + "_" + "{:03d}".format(i))
@@ -3016,10 +3070,11 @@ class Deriv_dask:
                         if isinstance(pl, hv.core.overlay.Overlay):
                             pl = pl.opts(
                                 opts.Scatter(
-                                    s=scatter_size,
+                                    # s=scatter_size,
                                     alpha=alpha,
                                     show_grid=True,
-                                    show_legend=True),
+                                    show_legend=True,
+                                    **scatter_kwargs),# s=scatter_size),
                                 opts.Layout(**layout_kwargs)).opts(
                                     aspect=aspect,
                                     fontscale=fontscale,
@@ -3032,10 +3087,11 @@ class Deriv_dask:
                             # hv.core.layout.AdjointLayout
                             pl.__setitem__('main', pl.main().opts(
                                 opts.Scatter(
-                                    s=scatter_size,
+                                    # s=scatter_size,
                                     alpha=alpha,
                                     show_grid=True,
-                                    show_legend=True),
+                                    show_legend=True,
+                                    **scatter_kwargs),
                                 opts.Layout(**layout_kwargs)).opts(
                                     aspect=aspect,
                                     fontscale=fontscale,
