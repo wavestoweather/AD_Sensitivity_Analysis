@@ -43,11 +43,14 @@ def filter_zeros(df_dict, EPSILON=1e-31):
                 to_drop.append(column)
         if len(to_drop) > 0:
             df_dict[key] = df_dict[key].drop(columns=to_drop)
-            print("Dropped {} columns for {}. Shape: {}".format(
-                len(to_drop), key, np.shape(df_dict[key])))
-            if (df_dict[key].empty or
-                (len(df_dict[key].columns) == 1
-                 and df_dict[key].columns[0] == "timestep")):
+            print(
+                "Dropped {} columns for {}. Shape: {}".format(
+                    len(to_drop), key, np.shape(df_dict[key])
+                )
+            )
+            if df_dict[key].empty or (
+                len(df_dict[key].columns) == 1 and df_dict[key].columns[0] == "timestep"
+            ):
                 key_drop.append(key)
 
     for key in key_drop:
@@ -86,11 +89,14 @@ def filter_high(df_dict, high=1e1):
                 to_drop.append(column)
         if len(to_drop) > 0:
             df_dict[key] = df_dict[key].drop(columns=to_drop)
-            print("Dropped {} columns for {} (too high values). Shape: {}".format(
-                len(to_drop), key, np.shape(df_dict[key])))
-            if (df_dict[key].empty or
-                (len(df_dict[key].columns) == 1
-                 and df_dict[key].columns[0] == "timestep")):
+            print(
+                "Dropped {} columns for {} (too high values). Shape: {}".format(
+                    len(to_drop), key, np.shape(df_dict[key])
+                )
+            )
+            if df_dict[key].empty or (
+                len(df_dict[key].columns) == 1 and df_dict[key].columns[0] == "timestep"
+            ):
 
                 print("Dropping {} entirely (too high values).".format(key))
                 key_drop.append(key)
@@ -117,8 +123,14 @@ def transform_df(df):
         Transformed Dataframe.
     """
     if "MAP" in df:
-        dicti = {"param": [], "timestep": [], "deriv": [], "MAP": [],
-                 "LONGITUDE": [], "LATITUDE": []}
+        dicti = {
+            "param": [],
+            "timestep": [],
+            "deriv": [],
+            "MAP": [],
+            "LONGITUDE": [],
+            "LATITUDE": [],
+        }
     else:
         dicti = {"param": [], "timestep": [], "deriv": []}
 
@@ -161,9 +173,15 @@ def transform_df2(df, net_df, n_traj=903, traj_timestep=20):
         Transformed Dataframe.
     """
     n_rows = len(net_df.index)
-    new_dic = {"deriv": [], "in_param": [], "out_param": [],
-               "timestep": [], "trajectory": [],
-               "LONGITUDE": [], "LATITUDE": []}
+    new_dic = {
+        "deriv": [],
+        "in_param": [],
+        "out_param": [],
+        "timestep": [],
+        "trajectory": [],
+        "LONGITUDE": [],
+        "LATITUDE": [],
+    }
     for traj in df.trajectory.unique():
         df_traj = df.loc[df["trajectory"] == traj]
         net_df_traj = net_df.iloc[np.arange(traj, n_rows, n_traj)]
@@ -172,14 +190,14 @@ def transform_df2(df, net_df, n_traj=903, traj_timestep=20):
             for in_param in df_out.in_param.unique():
                 df_in = df_out.loc[df_out["in_param"] == in_param]
                 max_time = df_in["timestep"].max()
-                for t in np.arange(traj_timestep, max_time+1, traj_timestep):
+                for t in np.arange(traj_timestep, max_time + 1, traj_timestep):
                     net_df_time = net_df_traj.loc[net_df_traj["time"] == t]
                     if net_df_time.empty:
                         continue
                     new_dic["in_param"].append(in_param)
                     new_dic["out_param"].append(out_param)
                     new_dic["timestep"].append(t)
-                    summed = df_in["deriv"].sum()/traj_timestep
+                    summed = df_in["deriv"].sum() / traj_timestep
                     new_dic["deriv"].append(summed)
                     new_dic["LATITUDE"].append(net_df_time["lat"][0])
                     new_dic["LONGITUDE"].append(net_df_time["lon"][0])
@@ -187,8 +205,9 @@ def transform_df2(df, net_df, n_traj=903, traj_timestep=20):
     return pd.DataFrame.from_dict(new_dic)
 
 
-def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
-    columns=None, file_ending="*.nc_wcb"):
+def load_mult_derivates_direc_dic(
+    direc="", parquet=True, netcdf=False, columns=None, file_ending="*.nc_wcb"
+):
     """
     Create a dictionary with out parameters as keys and dictionaries with columns:
     trajectory, timestep, MAP, LATITUDE, LONGITUDE
@@ -225,29 +244,51 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
                 ds = xr.open_dataset(f, decode_times=False)
                 if "Output Parameter" in ds:
                     if df is not None:
-                        df = df.append(ds.to_dask_dataframe(
-                            dim_order=["Output Parameter", "ensemble", "trajectory", "time"]))
+                        df = df.append(
+                            ds.to_dask_dataframe(
+                                dim_order=[
+                                    "Output Parameter",
+                                    "ensemble",
+                                    "trajectory",
+                                    "time",
+                                ]
+                            )
+                        )
                     else:
                         df = ds.to_dask_dataframe(
-                            dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+                            dim_order=[
+                                "Output Parameter",
+                                "ensemble",
+                                "trajectory",
+                                "time",
+                            ]
+                        )
                 else:
                     if df is not None:
-                        df = df.append(ds.to_dask_dataframe(
-                            dim_order=["ensemble", "trajectory", "time"]))
+                        df = df.append(
+                            ds.to_dask_dataframe(
+                                dim_order=["ensemble", "trajectory", "time"]
+                            )
+                        )
                     else:
                         df = ds.to_dask_dataframe(
-                            dim_order=["ensemble", "trajectory", "time"])
+                            dim_order=["ensemble", "trajectory", "time"]
+                        )
         else:
             ds = xr.open_dataset(direc + "/" + file_ending, decode_times=False)
             if "Output Parameter" in ds:
                 if "Output Parameter" not in ds.dims:
                     ds = ds.expand_dims("Output Parameter")
                     ds = ds.set_coords(["Output Parameter"])
-                df = ds.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+                df = ds.to_dask_dataframe(
+                    dim_order=["Output Parameter", "ensemble", "trajectory", "time"]
+                )
             else:
                 ds["Output Parameter"] = "placeholer"
                 ds = ds.expand_dims("Output Parameter")
-                df = ds.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+                df = ds.to_dask_dataframe(
+                    dim_order=["Output Parameter", "ensemble", "trajectory", "time"]
+                )
         # The performance of the following command is not the best.
         # df = xr.open_mfdataset(
         #     direc + "/" + file_ending,
@@ -259,10 +300,10 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
             # Try reading netcdf files in bulk
             # Works only if no multiindex is given
             df = xr.open_mfdataset(
-                direc + "/" + file_ending,
-                parallel=True,
-                decode_times=False).to_dask_dataframe(
-                    dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
+                direc + "/" + file_ending, parallel=True, decode_times=False
+            ).to_dask_dataframe(
+                dim_order=["Output Parameter", "ensemble", "trajectory", "time"]
+            )
         except:
             # Last fallback which works for most netcdf files
             df = None
@@ -274,7 +315,7 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
                 if df is None:
                     df = xr.open_dataset(f).to_dataframe()
                 else:
-                    df = df.append(xr.open_dataset(f).to_dataframe())#[columns])
+                    df = df.append(xr.open_dataset(f).to_dataframe())  # [columns])
             # Make id and time columns instead of MultiIndex
             df.reset_index(inplace=True)
     return df
@@ -311,5 +352,5 @@ def ratio_deriv(df, out_param):
         return None
 
     denominator = np.abs(df["deriv"]).max()
-    df_out["ratio_deriv"] = df_out["deriv"]/denominator
+    df_out["ratio_deriv"] = df_out["deriv"] / denominator
     return df_out

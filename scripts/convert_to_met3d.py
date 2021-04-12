@@ -8,15 +8,21 @@ from timeit import default_timer as timer
 import progressbar as pb
 
 # Some default values
-met_dims = ["ensemble", "trajectory", "time", "start_lon",
-            "start_lat", "start_isobaric"]
+met_dims = [
+    "ensemble",
+    "trajectory",
+    "time",
+    "start_lon",
+    "start_lat",
+    "start_isobaric",
+]
 
 # 400 hPa and 600 hPa ascent
 window_conv_400 = 1 * 3 * 60
 window_conv_600 = 3 * 3 * 60
 window_slan_400 = 35 * 6 * 3
 window_slan_400_min = 15 * 6 * 3
-window_slan_600 = 22  * 3 * 60
+window_slan_600 = 22 * 3 * 60
 window_slan_600_min = 65 * 6 * 3
 
 
@@ -81,13 +87,13 @@ def differ(x, axis, hPa, debug=False):
         print(np.shape(x))
     window_size = len(x[0][0][0])
     ascent = np.argmax(x, axis=axis) < np.argmin(x, axis=3)
-    amount = np.max(x, axis=axis) - np.min(x, axis=axis) >= hPa*100
+    amount = np.max(x, axis=axis) - np.min(x, axis=axis) >= hPa * 100
     # ascent = np.nanargmax(x, axis=axis) < np.nanargmin(x, axis=3)
     # amount = np.nanmax(x, axis=axis) - np.nanmin(x, axis=axis) >= hPa*100
     both = np.logical_and(ascent, amount)
 
     # Calculate the differences within every window
-    differences = np.diff(x, axis=3) # Ignore nan
+    differences = np.diff(x, axis=3)  # Ignore nan
     if debug:
         print("diffs")
         print(np.shape(differences))
@@ -117,21 +123,23 @@ def differ(x, axis, hPa, debug=False):
                 end = 0
                 curr_sum = 0
                 min_len = np.inf
-                    # 17926
-                while(end < len(window)):
+                # 17926
+                while end < len(window):
                     # Find a window where the ascend is done by pushing the end further
                     # Reset the start if the end is suddenly a strong descend
-                    while( (curr_sum > -hPa*100 and end < len(window)) or (np.isnan(curr_sum)) ):
-                        if (curr_sum >= 0 and window[end] < 0 or np.isnan(curr_sum) ):
-                            start = end;
-                            curr_sum = 0;
+                    while (curr_sum > -hPa * 100 and end < len(window)) or (
+                        np.isnan(curr_sum)
+                    ):
+                        if curr_sum >= 0 and window[end] < 0 or np.isnan(curr_sum):
+                            start = end
+                            curr_sum = 0
 
                         curr_sum += window[end]
                         end += 1
                     # Check, if a smaller window exists where the ascend is done by pushing the start
-                    while(curr_sum <= -hPa*100 and start < len(window)):
-                        if(end-start < min_len):
-                            min_len = end-start
+                    while curr_sum <= -hPa * 100 and start < len(window):
+                        if end - start < min_len:
+                            min_len = end - start
                         curr_sum -= window[start]
                         start += 1
                 min_lengths[ens][traj][timestep] = min_len
@@ -144,7 +152,7 @@ def differ(x, axis, hPa, debug=False):
         min_len_traj = np.nanmin(min_lengths[ens], axis=1)
         min_len_traj_all.append(min_len_traj)
         min_len_traj[min_len_traj == np.inf] = -1
-        return_bools_tmp = np.full(np.shape(both[ens]), 0)#, dtype=bool)
+        return_bools_tmp = np.full(np.shape(both[ens]), 0)  # , dtype=bool)
         return_bools_tmp = np.transpose(return_bools_tmp)
         min_lengths_trans = min_lengths[ens].transpose()
         if debug:
@@ -155,7 +163,7 @@ def differ(x, axis, hPa, debug=False):
             print("return_bools_tmp")
             print(np.shape(return_bools_tmp))
         for timestep in range(len(return_bools_tmp)):
-            return_bools_tmp[timestep] = (min_lengths_trans[timestep] == min_len_traj)
+            return_bools_tmp[timestep] = min_lengths_trans[timestep] == min_len_traj
         return_bools.append(np.transpose(return_bools_tmp))
 
     # Shift everything such that the beginning starts at the actual start and ends accordingly
@@ -174,8 +182,8 @@ def differ(x, axis, hPa, debug=False):
                     if length[i] > min_len_traj[traj]:
                         set_end = set_start + length[i] + 1
 
-                    return_bools[ens][traj][start[i]:length[i]+start[i]] = False
-                    return_bools[ens][traj][set_start:int(set_end)] = True
+                    return_bools[ens][traj][start[i] : length[i] + start[i]] = False
+                    return_bools[ens][traj][set_start : int(set_end)] = True
 
     return return_bools
 
@@ -205,7 +213,7 @@ def differ_slan(x, axis, hPa, min_window):
     """
     window_size = len(x[0][0][0])
     ascent = np.argmax(x, axis=axis) < np.argmin(x, axis=3)
-    amount = np.max(x, axis=axis) - np.min(x, axis=axis) >= hPa*100
+    amount = np.max(x, axis=axis) - np.min(x, axis=axis) >= hPa * 100
     both = np.logical_and(ascent, amount)
 
     # Calculate the differences within every window
@@ -229,16 +237,18 @@ def differ_slan(x, axis, hPa, min_window):
                 end = 0
                 curr_sum = 0
                 min_len = np.inf
-                while(end < len(window)):
-                    while( (curr_sum > -hPa*100 and end < len(window)) or (np.isnan(curr_sum)) ):
-                        if (curr_sum >= 0 and window[end] < 0 or np.isnan(curr_sum) ):
+                while end < len(window):
+                    while (curr_sum > -hPa * 100 and end < len(window)) or (
+                        np.isnan(curr_sum)
+                    ):
+                        if curr_sum >= 0 and window[end] < 0 or np.isnan(curr_sum):
                             start = end
                             curr_sum = 0
                         curr_sum += window[end]
                         end += 1
-                    while(curr_sum <= -hPa*100 and start < len(window)):
-                        if(end-start < min_len and end-start >= min_window):
-                            min_len = end-start
+                    while curr_sum <= -hPa * 100 and start < len(window):
+                        if end - start < min_len and end - start >= min_window:
+                            min_len = end - start
                         curr_sum -= window[start]
                         start += 1
                 min_lengths[ens][traj][timestep] = min_len
@@ -250,11 +260,11 @@ def differ_slan(x, axis, hPa, min_window):
         min_len_traj = np.nanmin(min_lengths[ens], axis=1)
         min_len_traj_all.append(min_len_traj)
         min_len_traj[min_len_traj == np.inf] = -1
-        return_bools_tmp = np.full(np.shape(both[ens]), 0)#, dtype=bool)
+        return_bools_tmp = np.full(np.shape(both[ens]), 0)  # , dtype=bool)
         return_bools_tmp = np.transpose(return_bools_tmp)
         min_lengths_trans = min_lengths[ens].transpose()
         for timestep in range(len(return_bools_tmp)):
-            return_bools_tmp[timestep] = (min_lengths_trans[timestep] == min_len_traj)
+            return_bools_tmp[timestep] = min_lengths_trans[timestep] == min_len_traj
         return_bools.append(np.transpose(return_bools_tmp))
 
     # Shift everything such that the beginning starts at the actual start and ends accordingly
@@ -271,13 +281,13 @@ def differ_slan(x, axis, hPa, min_window):
                     if length[i] > min_len_traj[traj]:
                         set_end = set_start + length[i] + 1
 
-                    return_bools[ens][traj][start[i]:length[i]+start[i]] = False
-                    return_bools[ens][traj][set_start:int(set_end)] = True
+                    return_bools[ens][traj][start[i] : length[i] + start[i]] = False
+                    return_bools[ens][traj][set_start : int(set_end)] = True
     return return_bools
 
 
 def add_norm_time(df, norm_col, group, columns=None, flag=None):
-    '''
+    """
     Return a view that consists only of entries that are flagged.
     Those are normed along norm_col such that every entry for every
     trajectory starts at norm_col==0. columns is a list of
@@ -302,7 +312,7 @@ def add_norm_time(df, norm_col, group, columns=None, flag=None):
     Returns
     -------
     pandas.Dataframe with added "time_after_ascent".
-    '''
+    """
     if columns is None:
         df_flagged = df.copy()
     else:
@@ -312,6 +322,7 @@ def add_norm_time(df, norm_col, group, columns=None, flag=None):
         mini = x.loc[x[flag] == True][col].min()
         x[col] = x[col] - mini
         return x
+
     normed = df_flagged.groupby([group]).apply(reducer, norm_col)
     df["time_after_ascent"] = normed[norm_col]
     return df
@@ -329,11 +340,14 @@ def add_sat(ds):
     -------
     Dataframe or dataset with "S" added.
     """
+
     def p_sat(T):
-        return 610.78 * np.exp(17.2693882 * (T-273.16)/(T-35.86))
+        return 610.78 * np.exp(17.2693882 * (T - 273.16) / (T - 35.86))
+
     def convert_qv_to_S(p, T, qv):
-        eps = (8.3144598/0.02896546)/(8.3144598/0.018015265)
-        return (p*qv)/((eps+qv)*p_sat(T))*100
+        eps = (8.3144598 / 0.02896546) / (8.3144598 / 0.018015265)
+        return (p * qv) / ((eps + qv) * p_sat(T)) * 100
+
     ds["S"] = convert_qv_to_S(ds["pressure"], ds["T"], ds["QV"])
     return ds
 
@@ -352,7 +366,7 @@ def add_ascend_velocity(ds):
     -------
     Dataframe or dataset with "w" added.
     """
-    ds["w"] = ds["z"].diff(dim="time", label="lower")/20
+    ds["w"] = ds["z"].diff(dim="time", label="lower") / 20
     return ds
 
 
@@ -404,12 +418,16 @@ def convert_wcb2(f, store_path, fl, ensemble):
     """
     ds = xr.open_dataset(f).to_dataframe().reset_index()
 
-    ds.rename(columns={
-        "id": "trajectory",
-        "longitude": "lon",
-        "latitude": "lat",
-        "P": "pressure"}, inplace=True)
-    ds["ensemble"] = ensemble # Number of ensembles
+    ds.rename(
+        columns={
+            "id": "trajectory",
+            "longitude": "lon",
+            "latitude": "lat",
+            "P": "pressure",
+        },
+        inplace=True,
+    )
+    ds["ensemble"] = ensemble  # Number of ensembles
     ds_2 = xr.open_dataset(f[:-4])
 
     duration = ds_2.attrs["duration_in_sec"]
@@ -429,48 +447,70 @@ def convert_wcb2(f, store_path, fl, ensemble):
     ds = ds[ds.z != -999]
     ds = ds.dropna(how="all")
 
-    ds = xr.Dataset.from_dataframe(ds.set_index(["ensemble", "trajectory", "time"])) # ,
+    ds = xr.Dataset.from_dataframe(
+        ds.set_index(["ensemble", "trajectory", "time"])
+    )  # ,
     # Set flag
     for flag in ["conv_600", "conv_400", "slan_400", "slan_600"]:
-            ds[flag] = False
+        ds[flag] = False
 
     for col in ds:
         ds[col] = ds[col].astype("float64", casting="safe", copy=False)
 
     if fl == "conv_600":
         t_c = timer()
-        conv_600 = ds["pressure"].rolling(dim={"time": window_conv_600}, min_periods=1).reduce(
-            differ, **{"hPa": 600}).fillna(False).astype(dtype=bool)
+        conv_600 = (
+            ds["pressure"]
+            .rolling(dim={"time": window_conv_600}, min_periods=1)
+            .reduce(differ, **{"hPa": 600})
+            .fillna(False)
+            .astype(dtype=bool)
+        )
         ds = ds.assign(conv_600=conv_600)
         t_c2 = timer()
-        print("Got conv_600 in {} s".format(t_c2-t_c), flush=True)
+        print("Got conv_600 in {} s".format(t_c2 - t_c), flush=True)
     elif fl == "conv_400":
         t_c = timer()
-        conv_400 = ds["pressure"].rolling(dim={"time": window_conv_400}, min_periods=1).reduce(
-            differ, **{"hPa": 400, "debug": False}).fillna(False).astype(dtype=bool)
+        conv_400 = (
+            ds["pressure"]
+            .rolling(dim={"time": window_conv_400}, min_periods=1)
+            .reduce(differ, **{"hPa": 400, "debug": False})
+            .fillna(False)
+            .astype(dtype=bool)
+        )
         ds = ds.assign(conv_400=conv_400)
         t_c2 = timer()
-        print("Got conv_400 in {} s".format(t_c2-t_c), flush=True)
+        print("Got conv_400 in {} s".format(t_c2 - t_c), flush=True)
     elif fl == "slan_600":
         t_c = timer()
-        slan_600 = ds["pressure"].rolling(dim={"time": window_slan_600}, min_periods=1).reduce(
-            differ_slan, **{"hPa": 600, "min_window": window_slan_600_min}).fillna(False).astype(dtype=bool)
+        slan_600 = (
+            ds["pressure"]
+            .rolling(dim={"time": window_slan_600}, min_periods=1)
+            .reduce(differ_slan, **{"hPa": 600, "min_window": window_slan_600_min})
+            .fillna(False)
+            .astype(dtype=bool)
+        )
         ds = ds.assign(slan_600=slan_600)
         t_c2 = timer()
-        print("Got slan_600 in {} s".format(t_c2-t_c), flush=True)
+        print("Got slan_600 in {} s".format(t_c2 - t_c), flush=True)
     elif fl == "slan_400":
         t_c = timer()
-        slan_400 = ds["pressure"].rolling(dim={"time": window_slan_400}, min_periods=1).reduce(
-            differ_slan, **{"hPa": 400, "min_window": window_slan_400_min}).fillna(False).astype(dtype=bool)
+        slan_400 = (
+            ds["pressure"]
+            .rolling(dim={"time": window_slan_400}, min_periods=1)
+            .reduce(differ_slan, **{"hPa": 400, "min_window": window_slan_400_min})
+            .fillna(False)
+            .astype(dtype=bool)
+        )
         ds = ds.assign(slan_400=slan_400)
         t_c2 = timer()
-        print("Got slan_400 in {} s".format(t_c2-t_c), flush=True)
+        print("Got slan_400 in {} s".format(t_c2 - t_c), flush=True)
 
     # If there is none, return
     if not ds[fl].any():
         print(f"Got no {fl}")
         return
-    ds  = ds.to_dataframe().reset_index()
+    ds = ds.to_dataframe().reset_index()
     ids = ds.loc[ds[fl]]["trajectory"].unique()
     ds = ds.loc[ds["trajectory"].isin(ids)]
 
@@ -481,10 +521,24 @@ def convert_wcb2(f, store_path, fl, ensemble):
     ds = add_sat(ds)
 
     for col in ds:
-        if col in ["QR_IN", "QS_IN", "QI_IN", "QG_IN",
-                   "QR_OUT", "QS_OUT", "QI_OUT", "QG_OUT",
-                   "NR_IN", "NS_IN", "NI_IN", "NG_IN",
-                   "NR_OUT", "NS_OUT", "NI_OUT", "NG_OUT"]:
+        if col in [
+            "QR_IN",
+            "QS_IN",
+            "QI_IN",
+            "QG_IN",
+            "QR_OUT",
+            "QS_OUT",
+            "QI_OUT",
+            "QG_OUT",
+            "NR_IN",
+            "NS_IN",
+            "NI_IN",
+            "NG_IN",
+            "NR_OUT",
+            "NS_OUT",
+            "NI_OUT",
+            "NG_OUT",
+        ]:
             ds[col] = np.fabs(ds[col])
 
     # Calculate turbulence flux
@@ -508,8 +562,15 @@ def convert_wcb2(f, store_path, fl, ensemble):
     for col in ds:
         if col == "type":
             continue
-        if col in ["conv_400", "conv_600", "slan_400",
-                   "slan_600", "type", "WCB_flag", "dp2h"]:
+        if col in [
+            "conv_400",
+            "conv_600",
+            "slan_400",
+            "slan_600",
+            "type",
+            "WCB_flag",
+            "dp2h",
+        ]:
             ds[col] = ds[col].fillna(False)
             ds[col] = ds[col].astype("bool", casting="unsafe", copy=False)
             continue
@@ -519,227 +580,272 @@ def convert_wcb2(f, store_path, fl, ensemble):
         "pollon": pollon,
         "pollat": pollat,
         "output_timestep_in_sec": output_timestep_in_sec,
-        "cloud_type": 2723}
+        "cloud_type": 2723,
+    }
 
     ds["time"].attrs = {
         "standard_name": "time",
-        "long_name":     "time",
-        "units":  "seconds since " + ref_time,
+        "long_name": "time",
+        "units": "seconds since " + ref_time,
         "trajectory_starttime": ref_time,
-        "forecast_inittime": ref_time}
+        "forecast_inittime": ref_time,
+    }
     ds["time_after_ascent"].attrs = {
         "standard_name": "time_after_ascent",
         "long_name": "time after rapid ascent started",
-        "units": "seconds since start of convective/slantwise ascent"}
+        "units": "seconds since start of convective/slantwise ascent",
+    }
     ds["lon"].attrs = {
         "standard_name": "longitude",
         "long_name": "rotated longitude",
-        "units": "degrees"}
+        "units": "degrees",
+    }
     ds["lat"].attrs = {
         "standard_name": "latitude",
         "long_name": "rotated latitude",
-        "units": "degrees"}
+        "units": "degrees",
+    }
     ds["pressure"].attrs = {
         "standard_name": "air_pressure",
         "long_name": "pressure",
         "units": "Pa",
         "positive": "down",
-        "axis": "Z"}
+        "axis": "Z",
+    }
     ds["z"].attrs = {
         "standard_name": "height",
         "long_name": "height above mean sea level",
         "auxiliary_data": "yes",
-        "units": "m AMSL"}
+        "units": "m AMSL",
+    }
     ds["T"].attrs = {
         "standard_name": "air_temperature",
         "long_name": "temperature",
         "auxiliary_data": "yes",
-        "units": "K"}
+        "units": "K",
+    }
     ds["S"].attrs = {
         "standard_name": "saturation",
         "long_name": "saturation",
         "auxiliary_data": "yes",
-        "units": "percentage"}
+        "units": "percentage",
+    }
     ds["conv_400"].attrs = {
         "standard_name": "convective_400hPa_ascent",
         "long_name": "convective 400hPa ascent",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
     ds["conv_600"].attrs = {
         "standard_name": "convective_600hPa_ascent",
         "long_name": "convective 600hPa ascent",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
     ds["slan_400"].attrs = {
         "standard_name": "slantwise_400hPa_ascent",
         "long_name": "slantwise 400hPa ascent",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
     ds["slan_600"].attrs = {
         "standard_name": "slantwise_600hPa_ascent",
         "long_name": "slantwise 600hPa ascent",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
     ds["WCB_flag"].attrs = {
         "standard_name": "wcb_ascent",
         "long_name": "WCB ascent",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
     ds["dp2h"].attrs = {
         "standard_name": "2h_ascent_rate",
         "long_name": "2h ascent rate",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
     ds["w"].attrs = {
         "standard_name": "ascend_velocity",
         "long_name": "ascend velocity",
         "auxiliary_data": "yes",
-        "units": "m s^-1"}
+        "units": "m s^-1",
+    }
 
     ds["QV"].attrs = {
         "standard_name": "specific_humidity",
         "long_name": "specific humidity",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
     ds["QC"].attrs = {
         "standard_name": "mass_fraction_of_cloud_liquid_water_in_air",
         "long_name": "specific cloud liquid water content",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
     ds["QR"].attrs = {
         "standard_name": "mass_fraction_of_rain_in_air",
         "long_name": "specific rain content",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
     ds["QS"].attrs = {
         "standard_name": "mass_fraction_of_snow_in_air",
         "long_name": "specific snow content",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
     ds["QI"].attrs = {
         "standard_name": "mass_fraction_of_cloud_ice_in_air",
         "long_name": "specific cloud ice content",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
     ds["QG"].attrs = {
         "standard_name": "mass_fraction_of_graupel_in_air",
         "long_name": "specific graupel content",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
 
     ds["QR_IN"].attrs = {
         "standard_name": "sedi_influx_of_rain",
         "long_name": "sedimentation (from above) of rain droplet mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QS_IN"].attrs = {
         "standard_name": "sedi_influx_of_snow",
         "long_name": "sedimentation (from above) of snow crystal mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QI_IN"].attrs = {
         "standard_name": "sedi_influx_of_cloud_ice",
         "long_name": "sedimentation (from above) of ice crystal mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QG_IN"].attrs = {
         "standard_name": "sedi_influx_of_graupel",
         "long_name": "sedimentation (from above) of graupel mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
 
     ds["QR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain",
         "long_name": "sedimentation of rain droplet mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow",
         "long_name": "sedimentation of snow crystal mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QI_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_cloud_ice",
         "long_name": "sedimentation of ice crystal mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel",
         "long_name": "sedimentation of graupel mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
 
     ds["NCCLOUD"].attrs = {
         "standard_name": "specif_number_of_cloud_droplets_in_air",
         "long_name": "specific cloud droplet number",
         "auxiliary_data": "yes",
-        "units": "kg^-1"}
+        "units": "kg^-1",
+    }
     ds["NCRAIN"].attrs = {
         "standard_name": "specif_number_of_rain_drops_in_air",
         "long_name": "specific rain drop number",
         "auxiliary_data": "yes",
-        "units": "kg^-1"}
+        "units": "kg^-1",
+    }
     ds["NCSNOW"].attrs = {
         "standard_name": "specif_number_of_snow_flakes_in_air",
         "long_name": "specific snow flake number",
         "auxiliary_data": "yes",
-        "units": "kg^-1"}
+        "units": "kg^-1",
+    }
     ds["NCICE"].attrs = {
         "standard_name": "specif_number_of_cloud_ice_in_air",
         "long_name": "specific cloud ice number",
         "auxiliary_data": "yes",
-        "units": "kg^-1"}
+        "units": "kg^-1",
+    }
     ds["NCGRAUPEL"].attrs = {
         "standard_name": "specif_number_of_graupel_in_air",
         "long_name": "specific graupel number",
         "auxiliary_data": "yes",
-        "units": "kg^-1"}
+        "units": "kg^-1",
+    }
 
     ds["NR_IN"].attrs = {
         "standard_name": "sedi_influx_of_rain_number",
         "long_name": "sedimentation (from above) of specific rain drop number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NS_IN"].attrs = {
         "standard_name": "sedi_influx_of_snow_number",
         "long_name": "sedimentation (from above) of specific snow flake number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NI_IN"].attrs = {
         "standard_name": "sedi_influx_of_ics_number",
         "long_name": "sedimentation (from above) of specific cloud ice number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NG_IN"].attrs = {
         "standard_name": "sedi_influx_of_graupel_number",
         "long_name": "sedimentation (from above) of specific graupel number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
 
     ds["NR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain_number",
         "long_name": "sedimentation of rain droplet number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow_number",
         "long_name": "sedimentation of snow crystal number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NI_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_ice_number",
         "long_name": "sedimentation of ice crystal number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel_number",
         "long_name": "sedimentation of graupel number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
 
     ds["Q_TURBULENCE"].attrs = {
         "standard_name": "turbulence_flux",
         "long_name": "flux from turbulence",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["type"].attrs = {
         "standard_name": "trajectory_type",
         "long_name": "trajectory type",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
 
     comp = dict(zlib=True, complevel=9)
     encoding = {var: comp for var in ds.data_vars}
@@ -749,7 +855,8 @@ def convert_wcb2(f, store_path, fl, ensemble):
         compute=True,
         engine="netcdf4",
         format="NETCDF4",
-        mode="w")
+        mode="w",
+    )
 
 
 if __name__ == "__main__":
@@ -757,7 +864,7 @@ if __name__ == "__main__":
     import sys
 
     parser = argparse.ArgumentParser(
-        description='''
+        description="""
         Load a NetCDF-file stored in wcb2-style one after another, find those,
         which are convective or slantwise given by flags,
         mark the start of the ascend, make sedimentation and
@@ -766,25 +873,33 @@ if __name__ == "__main__":
         add ascend velocity, mixing ratio changes from turbulences and saturation.
         Stores the converted NetCDF-file to "store_path" with zlib compression
         of level 9.
-        ''')
-    parser.add_argument('--path', default='/data/project/wcb/netcdf/vladiana',
+        """
+    )
+    parser.add_argument(
+        "--path",
+        default="/data/project/wcb/netcdf/vladiana",
         # Slurm path "/lustre/project/m2_jgu-tapt/cosmo_output/vladiana/traj"
-        help='''
+        help="""
         Path where one or more NetCDF-files in wcb2 style are stored.
-        ''')
-    parser.add_argument('--store_path',
-        default='/data/project/wcb/netcdf/vladiana_met/',
+        """,
+    )
+    parser.add_argument(
+        "--store_path",
+        default="/data/project/wcb/netcdf/vladiana_met/",
         # Slurm path "/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana"
-        help='''
+        help="""
         Path where the converted files shall be stores
-        ''')
-    parser.add_argument('--flags',
+        """,
+    )
+    parser.add_argument(
+        "--flags",
         default=["conv_400", "conv_600", "slan_400", "slan_600"],
         type=str,
-        nargs='+',
-        help='''
+        nargs="+",
+        help="""
         Flags for the type of trajectories to look for.
-        ''')
+        """,
+    )
     args = parser.parse_args()
 
     file_list = []
@@ -796,8 +911,13 @@ if __name__ == "__main__":
         print(f"#################### {flag} ######################")
         for i in pb.progressbar(range(len(file_list)), redirect_stdout=True):
             convert_wcb2(
-                f = file_list[i],
-                store_path=args.store_path + flag + "_" + str(i) + "_" + file_list[i].split("/")[-1],
+                f=file_list[i],
+                store_path=args.store_path
+                + flag
+                + "_"
+                + str(i)
+                + "_"
+                + file_list[i].split("/")[-1],
                 fl=flag,
-                ensemble=i)
-
+                ensemble=i,
+            )
