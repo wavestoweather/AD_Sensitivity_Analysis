@@ -10,7 +10,7 @@ import warnings
 import xarray as xr
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from skmultilearn.model_selection import iterative_train_test_split
 from itertools import product
 try:
     from latexify import in_params_numeric_value_dic, parse_word
@@ -18,9 +18,35 @@ except:
     from scripts.latexify import in_params_numeric_value_dic, parse_word
 
 def d_unnamed(df):
+    """
+    Remove unnamed column from dataframe.
+
+    Parameters
+    ----------
+    df : pandas.Dataframe
+        A dataframe with one or more unnamed columns
+
+    Returns
+    -------
+    Dataframe without unnamed columns.
+    """
     return df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
 def rolling_window(a, window):
+    """
+    Create a rolling window for a given array of arbitrary dimensions.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        Numpy array to create rolling window for.
+    window : int
+        Size of the window.
+
+    Returns
+    -------
+    View of np.ndarray with rolling window.
+    """
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
@@ -74,7 +100,8 @@ def load_unperturbed(path, out_params):
     ds = load_sensitivity(path, out_params)
     return ds[out_params + ["time_after_ascent"]]
 
-def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosity=0):
+def load_dataset(path, out_params, in_params, traj_list,
+    traj_offset=0, verbosity=0):
     """
     Load all trajectory data and store the MSE for each ensemble
     and parameter as a result.
@@ -92,6 +119,10 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
         List of input parameters to get MSE for.
     traj_list: List of int
         List of trajectory numbers to load.
+    traj_offset : int
+        Offset for the new index of the trajectories.
+    verbosity : int
+        Set verbosity level.
 
     Returns
     -------
@@ -172,11 +203,10 @@ def find_segments(df, error_threshold=0):
     Parameters
     ----------
     df : DataFrame
-        Dataframe with MSE created by load_dataset() for every model state parameter and all trajectories.
+        Dataframe with MSE created by load_dataset() for every model state
+        parameter and all trajectories.
     error_threshold : float
-        Percentage of maximum error that is allowed to consider a segment interesting,
-        i.e. 0.1 means a bump needs to have an error at one point of at least a tenth than the largest
-        error to be an interesting segment.
+        Threshold for errors to identify true segment starts.
 
     Returns
     -------
@@ -221,8 +251,13 @@ def predict_segments(df, threshold=0, threshold_jump=None,
         Threshold a gradient needs to accelerate (basically third order derivative).
         If DataArray, then dimensions need to have at least one dimension with df
         in common for defining thresholds along those dimensions.
-    window_threshold_time: int
-        Optional number of time steps at which any of the criteria must be fullfilled within window_size. Defaults to 1.
+    repeats: int
+        Optional number of time steps at which any of the criteria must be
+        fullfilled within window_size. Defaults to 1.
+
+    Returns
+    -------
+    Dataframe with predicted segment starts.
     """
     if (threshold is None and threshold_jump is None
         and threshold_acc is None):
@@ -307,6 +342,29 @@ def predict_segments(df, threshold=0, threshold_jump=None,
 
 def combine_predictions(df, def_ver=True, jum_ver=False,
                         acc_ver=False, how=False):
+    """
+    Combine different predictions for a segment start.
+
+    Parameters
+    ----------
+    df : Dataframe
+        Dataframe with prediction columns such as
+        "detected_segment_thresh", "detected_segment_jump"
+        or "detected_segment_acc".
+    def_ver : bool
+        Use detection by reaching default threshold aka first derivative.
+    jum_ver : bool
+        Use detection by raching "jump" threshold aka second derivative.
+    acc_ver : bool
+        Use detection by reaching "acceleration" threshold aka third
+        derivative
+    how : bool
+        If true, combine predictions using "and", otherwise "or".
+
+    Returns
+    -------
+    Dataarray with combined predictions.
+    """
     if how:
         final_pred = None
         if def_ver:
@@ -343,6 +401,27 @@ def combine_predictions(df, def_ver=True, jum_ver=False,
     return final_pred
 
 def plot_histogram(df, column, bins=50, by=None, hist_log=True, drop_zero=True):
+    """
+    Plot a histogram over column for a dataframe with usually but not limited
+    to either "segment_start" or "Predicted Segment Start".
+
+    Parameters
+    ----------
+    df : Dataframe
+        A dataframe with the column specified by column.
+    bins : int
+        Number of bins.
+    by : string
+        Column name to group by in different colors.
+    hist_log : bool
+        If true, use logarithmic x-axis.
+    drop_zero : bool
+        If true, drop rows where the value in column is zero.
+
+    Returns
+    -------
+    Holoviews histogram plot
+    """
     if column == "segment_start":
         hist_df = df.where(df[column], drop=True)
         title = f"Distribution of {np.sum(hist_df[column]).values} True Segment Starts over Predicted Squared Errors"
@@ -386,6 +465,51 @@ def plot_histogram(df, column, bins=50, by=None, hist_log=True, drop_zero=True):
 def fill_stats(def_val, jum_val, acc_val, index,
                df_input, how, step_tol, stats,
                def_ver, jum_ver, acc_ver):
+    """
+    Fill the row index in a (confusion + more info) matrix.
+    The values are in the following order:
+    True Positive: Number of true positive segment start predictions
+    False Negative: Number of false negative predictions
+    False Positive: Number of false positive predictions
+    True Negative: Number of true negative predictions
+    Early Positive: Number of true positive predictions that are earlier
+        but within the time window or at exact the right time step
+    Late Positive: Number of true positive predictions that are later
+        but within the time window
+    Positive Actual: Actual number of segment starts
+    Positive Actual (Windows): Number of windows in which a segment starts
+    Precision: (True Positive Predictions / Positive Predictions)
+    Recall: (True Positive Predictions / Positive Actual)
+    F1 Score: Balanced F-Score: (2 * (Precision*Recall) / (Precision+Recall))
+    False Positive Rate: (False Positive / Negative Predictions)
+
+    Parameters
+    ----------
+    def_val : float
+        Threshold value to predict the start of a segment.
+    jum_val : float
+        Threshold value for second derivative to predict the start of a segment.
+    acc_val : float
+        Threshold value for third derivative to predict the start of a segment.
+    index : int
+        Row number to fill in stats.
+    df_input : Dataframe
+        Dataframe used to predict segments in and with a column
+        "segment_start" for actual segment starts.
+    how : bool
+        If true, combine predictions using "and", otherwise "or".
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    stats : np.ndarray or list
+        Matrix to fill a row in
+    def_ver : bool
+        Use detection by reaching default threshold aka first derivative.
+    jum_ver : bool
+        Use detection by raching "jump" threshold aka second derivative.
+    acc_ver : bool
+        Use detection by reaching "acceleration" threshold aka third
+        derivative
+    """
     df = predict_segments(df_input, def_val, jum_val, acc_val)
 
     final_pred = combine_predictions(df, def_ver, jum_ver,
@@ -478,7 +602,58 @@ def fill_stats(def_val, jum_val, acc_val, index,
 def get_stats(df_input, def_ver, jum_ver, acc_ver, how,
               def_thresh=None, jum_thresh=None, acc_thresh=None,
               n=100, step_tol=0):
+    """
+    Get statistics in a (confusion + more info) matrix. Each column consists of
+    values in the following order:
+    True Positive: Number of true positive segment start predictions
+    False Negative: Number of false negative predictions
+    False Positive: Number of false positive predictions
+    True Negative: Number of true negative predictions
+    Early Positive: Number of true positive predictions that are earlier
+        but within the time window or at exact the right time step
+    Late Positive: Number of true positive predictions that are later
+        but within the time window
+    Positive Actual: Actual number of segment starts
+    Positive Actual (Windows): Number of windows in which a segment starts
+    Precision: (True Positive Predictions / Positive Predictions)
+    Recall: (True Positive Predictions / Positive Actual)
+    F1 Score: Balanced F-Score: (2 * (Precision*Recall) / (Precision+Recall))
+    False Positive Rate: (False Positive / Negative Predictions)
 
+    Each row is used for a different combination of thresholds for predicting
+    segment starts. If *all* combinations are needed,
+    use get_stats_combinations(..).
+
+    Parameters
+    ----------
+    df_input : Dataframe
+        Dataframe used to predict segments in and with a column
+        "segment_start" for actual segment starts and "time_after_ascent".
+    def_ver : bool
+        Use detection by reaching default threshold aka first derivative.
+    jum_ver : bool
+        Use detection by raching "jump" threshold aka second derivative.
+    acc_ver : bool
+        Use detection by reaching "acceleration" threshold aka third
+        derivative
+    how : bool
+        If true, combine predictions using "and", otherwise "or".
+    def_thresh : float or int
+        Maximum threshold value to predict the start of a segment.
+    jum_thresh : float or int
+        Maximum threshold value for second derivative to predict the start of a segment.
+    acc_thresh : float or int
+        Maximum threshold value for third derivative to predict the start of a segment.
+    n : int
+        Number of rows in the return matrix aka the number of different
+        thresholds used in predicting segments.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+
+    Returns
+    -------
+    2D np.array with rows for each threshold and columns as described above.
+    """
     stats = np.zeros((n, 12))
     max_time = np.shape(df_input["time_after_ascent"])[-1]
 
@@ -524,6 +699,45 @@ def get_stats(df_input, def_ver, jum_ver, acc_ver, how,
 def confusion_matrix(df, def_ver, jum_ver, acc_ver, how,
                      def_thresh=None, jum_thresh=None,
                      acc_thresh=None, n=100, step_tol=0, confus=None):
+    """
+    Plot a confusion matrix with F1 score and step tolerance in the title.
+    The best result for true positive predictions is used for plotting.
+
+    Parameters
+    ----------
+    df : Dataframe
+        Dataframe used to predict segments in and with a column
+        "segment_start" for actual segment starts and "time_after_ascent".
+    def_ver : bool
+        Use detection by reaching default threshold aka first derivative.
+    jum_ver : bool
+        Use detection by raching "jump" threshold aka second derivative.
+    acc_ver : bool
+        Use detection by reaching "acceleration" threshold aka third
+        derivative
+    how : bool
+        If true, combine predictions using "and", otherwise "or".
+    def_thresh : float or int
+        Maximum threshold value to predict the start of a segment.
+    jum_thresh : float or int
+        Maximum threshold value for second derivative to predict the start of
+        a segment.
+    acc_thresh : float or int
+        Maximum threshold value for third derivative to predict the start of
+        a segment.
+    n : int
+        Number of rows in the return matrix aka the number of different
+        thresholds used in predicting segments.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    confus : 2D np.array
+        Confusion matrix from get_stats(..). If None is given, calculate
+        the confusion matrix defined using the other parameters.
+
+    Returns
+    -------
+    Holoviews heatmap plot, confusion matrix (np.ndarray)
+    """
     if confus is None:
         confus = get_stats(df, def_ver, jum_ver, acc_ver, how,
                            def_thresh, jum_thresh, acc_thresh, n, step_tol)
@@ -556,6 +770,17 @@ def AUC(con_mat, extra_title=None):
     Plot false positive over true positive.
     As a rule of thumb, if the curve is very steep
     very early on, the data is rather easy to classify.
+
+    Parameters
+    ----------
+    con_mat : 2D np.array
+        Confusion matrix created by get_stats(..).
+    extra_title : string
+        Add this to the title.
+
+    Returns
+    -------
+    holoviews.Curve with AUC
     """
     title = "Area Under The Curve"
     if extra_title is not None:
@@ -568,6 +793,17 @@ def AUC(con_mat, extra_title=None):
 def PRC(con_mat, extra_title=None):
     """
     Plot the Precision-Recall Curve (re over pr)
+
+    Parameters
+    ----------
+    con_mat : 2D np.array
+        Confusion matrix created by get_stats(..).
+    extra_title : string
+        Add this to the title.
+
+    Returns
+    -------
+    holoviews.Curve with PRC
     """
     title = "Precision-Recall Curve"
     if extra_title is not None:
@@ -584,6 +820,17 @@ def ROC(con_mat, extra_title=None):
     true positive rate (=recall) against false positive rate with
     tpr = tp/p
     fpr = tn/n
+
+    Parameters
+    ----------
+    con_mat : 2D np.array
+        Confusion matrix created by get_stats(..).
+    extra_title : string
+        Add this to the title.
+
+    Returns
+    -------
+    holoviews.Curve with ROC
     """
     title = "Receiver Operating Characteristics"
     if extra_title is not None:
@@ -598,7 +845,58 @@ def ROC(con_mat, extra_title=None):
 
 def get_stats_combinations(df_input, def_ver, jum_ver, acc_ver, how,
               n=100, step_tol=0, limits=[(-80, 0), (-80, 0), (-80, 0)]):
+    """
+    Get statistics in a (confusion + more info) matrix. Each column consists of
+    values in the following order:
+    True Positive: Number of true positive segment start predictions
+    False Negative: Number of false negative predictions
+    False Positive: Number of false positive predictions
+    True Negative: Number of true negative predictions
+    Early Positive: Number of true positive predictions that are earlier
+        but within the time window or at exact the right time step
+    Late Positive: Number of true positive predictions that are later
+        but within the time window
+    Positive Actual: Actual number of segment starts
+    Positive Actual (Windows): Number of windows in which a segment starts
+    Precision: (True Positive Predictions / Positive Predictions)
+    Recall: (True Positive Predictions / Positive Actual)
+    F1 Score: Balanced F-Score: (2 * (Precision*Recall) / (Precision+Recall))
+    False Positive Rate: (False Positive / Negative Predictions)
 
+    Each row is used for *all* combinations of thresholds for predicting
+    segment starts. The rows are ordered by default threshold, jump threshold,
+    acceleration threshold (fastest index). There are n*n*n many rows
+    if all threshold types are used, n*n many rows if two types are used and
+    n if only one is used.
+
+    Parameters
+    ----------
+    df_input : Dataframe
+        Dataframe used to predict segments in and with a column
+        "segment_start" for actual segment starts and "time_after_ascent".
+    def_ver : bool
+        Use detection by reaching default threshold aka first derivative.
+    jum_ver : bool
+        Use detection by raching "jump" threshold aka second derivative.
+    acc_ver : bool
+        Use detection by reaching "acceleration" threshold aka third
+        derivative
+    how : bool
+        If true, combine predictions using "and", otherwise "or".
+    n : int
+        Number of rows in the return matrix aka the number of different
+        thresholds used in predicting segments.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    limits : List of tuples
+        Upper and lower limits for each threshold type. Threshold using
+        def_ver is at index 0, jum_ver at index 1 and acc_ver at index 2.
+
+    Returns
+    -------
+    2D np.array with rows for each threshold combination
+    and columns as described above.
+    """
     total_n = 1
     delta_def = None
     if def_ver:
@@ -666,6 +964,37 @@ def create_chached_matrix_dic(segment_data, segment_threshold=10**(-10.3),
         min_jum_thresh=-80, max_jum_thresh=0,
         min_acc_thresh=-80, max_acc_thres=0,
         step_tol=2):
+    """
+
+    Parameters
+    ----------
+    segment_data : Dataframe
+        Dataframe with MSE created by load_dataset() for every model state
+        parameter and all trajectories.
+    segment_threshold : float
+        Threshold for errors to identify true segment starts.
+    steps : int
+        Number of steps from minimum to maximum thresholds to calculate
+        entries in the confusion matrix for.
+    min_def_thresh : float
+        Minimum threshold value to predict the start of a segment.
+    max_def_thresh : float
+        Maximum threshold value to predict the start of a segment.
+    min_jum_thresh : float
+        Minimum threshold value for second derivative to predict the start of a segment.
+    max_jum_thresh : float
+        Maximum threshold value for second derivative to predict the start of a segment.
+    min_acc_thresh : float
+        Minimum threshold value for third derivative to predict the start of a segment.
+    max_acc_thres : float
+        Maximum threshold value for third derivative to predict the start of a segment.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+
+    Returns
+    -------
+    Dictionary with confusion matrices for every output parameter.
+    """
     cached_data = find_segments(segment_data, segment_threshold)
     delta_def = (max_def_thresh-min_def_thresh)/(steps-1)
     delta_jum = (max_jum_thresh-min_jum_thresh)/(steps-1)
@@ -683,6 +1012,23 @@ def create_chached_matrix_dic(segment_data, segment_threshold=10**(-10.3),
     return cached_matrix_dic
 
 def confusion_matrix_faster(index, confus):
+    """
+    Plot a confusion matrix with F1 score and step tolerance in the title.
+    The best result for true positive predictions is used for plotting.
+    This is supposedly faster than confusion_matrix(..) where
+    the confusion matrix is already calculated.
+
+    Parameters
+    ----------
+    index : int
+        Row index of the confusion matrix to plot.
+    confus : 2D np.array
+        Confusion matrix created by get_stats(..).
+
+    Returns
+    -------
+    Holoviews heatmap, np.array with row given by index.
+    """
     pos = [(0,1),(1,1),(0,0),(1,0), (0,-1), (1,-1), (0,-2), (1,-2)]
     labels = ['True Positive', 'False Negative',
               'False Positive', 'True Negative',
@@ -715,6 +1061,45 @@ def create_df_confusion(df, segment_threshold=10**(-10.3),
         min_jum_thresh=-80, max_jum_thresh=0,
         min_acc_thresh=-80, max_acc_thres=0,
         step_tol=2, how=False):
+    """
+    Create an xr.Dataset using get_stats_combinations(..) for
+    different output parameters, input parameters and thresholds.
+
+    Parameters
+    ----------
+    df : Dataframe
+        Dataframe used to predict segments in and with a column
+        "segment_start" for actual segment starts and "time_after_ascent".
+    segment_threshold : float
+        Threshold for errors to identify true segment starts.
+    steps : int
+        Number of steps from minimum to maximum thresholds to calculate
+        entries in the confusion matrix for.
+    min_def_thresh : float
+        Minimum threshold value to predict the start of a segment.
+    max_def_thresh : float
+        Maximum threshold value to predict the start of a segment.
+    min_jum_thresh : float
+        Minimum threshold value for second derivative to predict the start of a segment.
+    max_jum_thresh : float
+        Maximum threshold value for second derivative to predict the start of a segment.
+    min_acc_thresh : float
+        Minimum threshold value for third derivative to predict the start of a segment.
+    max_acc_thres : float
+        Maximum threshold value for third derivative to predict the start of a segment.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    how : bool
+        If true, combine predictions using "and", otherwise "or".
+
+    Returns
+    -------
+    xr.Dataset for statistics of predictions.
+    Coordinates are "Output Parameter", "Input Parameter", "Default Threshold",
+    "Jump Threshold" ("Acceleration Threshold" is not supported).
+    Columns are "TP over P", "FP over P", "FN over P_windows", "TP", "P", "FP",
+    "FN", "P_windows".
+    """
     cached_data = find_segments(df, segment_threshold)
     delta_def = (max_def_thresh-min_def_thresh)/(steps-1)
     delta_jum = (max_jum_thresh-min_jum_thresh)/(steps-1)
@@ -767,6 +1152,27 @@ def create_df_confusion(df, segment_threshold=10**(-10.3),
     return xr.Dataset(data_vars=data_dic, coords=coords_dic)
 
 def create_bar_plot(df, use_percentage, width=1000, height=600, extra_title=""):
+    """
+    Create a bar plot for different columns of the confusion matrix.
+
+    Parameters
+    ----------
+    df : xarray.Dataset
+        Confusion matrix created by create_df_confusion(..).
+    use_percentage : bool
+        If true, plot percentages for the bar plot. Otherwise plot
+        absolute values.
+    width : int
+        Width in pixels of the plot.
+    height : int
+        Height in pixels of the plot.
+    extra_title : string
+        Addition to the title.
+
+    Returns
+    -------
+    Holoviews barplot.
+    """
     if use_percentage:
         if "P_windows" in df:
             by = ["TP over P", "FP over P", "FN over P_windows"]
@@ -777,7 +1183,7 @@ def create_bar_plot(df, use_percentage, width=1000, height=600, extra_title=""):
                              cmap={"TP over P": "seagreen",
                                    "FP over P": "crimson",
                                    "FN over P_windows": "royalblue"}).opts(
-            title="Prediction Count (Percentage)" + extra_title)
+            title="Prediction Count (%)" + extra_title)
     else:
         if "P_windows" in df:
             by = ["TP", "P", "FP", "FN", "P_windows"]
@@ -792,29 +1198,71 @@ def create_bar_plot(df, use_percentage, width=1000, height=600, extra_title=""):
                                    "P": "orange"}).opts(
             title="Prediction Count" + extra_title)
 
-def create_many_bar_plots(df):
+def create_many_bar_plots(df, cols=2, width=500, height=400):
+    """
+    Plot multiple bar plots (for each input parameter one).
+
+    Parameters
+    ----------
+    df : Dataframe
+        Dataframe used to predict segments in and with a column
+        "segment_start" for actual segment starts and "time_after_ascent".
+    cols : int
+        Number of plots per row.
+    width : int
+        Width in pixels of the plot.
+    height : int
+        Height in pixels of the plot.
+
+    Returns
+    -------
+    Multiple Holoviews barplots.
+    """
     plots = None
     for in_p in np.unique(df["Input Parameter"]):
         if plots is not None:
             plots = plots + create_bar_plot(
                 df.sel({"Input Parameter": in_p}),
                 False,
-                width=500,
-                height=400,
+                width=width,
+                height=height,
                 extra_title=" for " + in_p)
         else:
             plots = create_bar_plot(
                 df.sel({"Input Parameter": in_p}),
                 False,
-                width=500,
-                height=400,
+                width=width,
+                height=height,
                 extra_title=" for " + in_p)
-        plots = plots + create_bar_plot(df.sel({"Input Parameter": in_p}), True, width=500, height=400)
-    return plots.opts(shared_axes=False).cols(2)
+        plots = plots + create_bar_plot(df.sel({"Input Parameter": in_p}),
+            True, width=width, height=height)
+    return plots.opts(shared_axes=False).cols(cols)
 
-def create_input_labels(ds, step_tol, distinct_outparams):
-    # X of shape (n_samples, features)
-    # y of shape (n_samples)
+def create_input_labels(ds, step_tol, distinct_outparams, verbosity=0):
+    """
+    Create windows and labels for creating training and testing sets.
+
+    Parameters
+    ----------
+    ds : Dataset
+        Dataset created by find_segments(..) where segments are identified and
+        predicted errors are stored.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    distinct_outparams : bool
+        If true, try to predict perturbing an input parameter for a segment
+        start for each output parameter independently. This may not be useful,
+        since one input parameter can have a high impact on multiple output
+        parameters.
+    verbosity : int
+        Set verbosity level.
+
+    Returns
+    -------
+    X as np.array of shape (n_samples, features),
+    labels as np.array of shape (n_samples, n_classes),
+    feature_names, class_names
+    """
     # what I want:
     # (n_timewindows, window_size*output_param*input_param), where the latter consists of [grad_q1_d1_t-2, t-1, ..., t+2, d2_t-2, ...]
     # Reshape input data
@@ -860,16 +1308,73 @@ def create_input_labels(ds, step_tol, distinct_outparams):
         y_final = np.reshape(y_final, (-1, n_input_params, (2*step_tol+1)*n_out_params))
 
     y_final = np.sum(y_final, axis=2) > 0
-#     print(f"In create_input_labels: {np.shape(y_final)}")
     # Binary classification still needs two dimension
     # where it is either it or not
     if np.shape(y_final)[-1] == 1:
         y_final = np.hstack(y_final, (not y_final))
+        # print(f"Shape of y: {np.shape(y_final)}")
+
+    if verbosity > 5:
+        sumsies = np.sum(y_final, axis=0)
+        print(f"Number of true per class (59 classes; shape: {np.shape(sumsies)}): {sumsies}")
+        for c, s in zip(class_names, sumsies):
+            print(f"{c}: {s}")
     return X_final, y_final, feature_names, class_names
 
 def create_forest(ds, step_tol, test_size=None,
     distinct_outparams=False, n_estimators=100, max_features="auto",
     save_memory=False, no_split=False, verbosity=False):
+    """
+    Create a random forest and fit it. Returns training and testing set and
+    feature names and class names.
+
+    Parameters
+    ----------
+    ds : Dataset or list of label and data.
+        Dataset created by find_segments(..) where segments are identified and
+        predicted errors are stored.
+        If list, then a list of precalculated labels and their data.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    test_size : float
+        Percentage of number of windows to use for testing.
+    distinct_outparams : bool
+        If true, try to predict perturbing an input parameter for a segment
+        start for each output parameter independently. This may not be useful,
+        since one input parameter can have a high impact on multiple output
+        parameters.
+    n_estimators : int
+        Number of trees.
+    max_features : string or float or int
+        From sklearn.ensemble.RandomForestClassifier:
+        The number of features to consider when looking for the best split:
+
+        If int, then consider max_features features at each split.
+        If float, then max_features is a fraction and
+            round(max_features * n_features) features are considered at each split.
+        If “auto”, then max_features=sqrt(n_features).
+        If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
+        If “log2”, then max_features=log2(n_features).
+        If None, then max_features=n_features.
+
+        Note: the search for a split does not stop until at least one valid
+        partition of the node samples is found, even if it requires to
+        effectively inspect more than max_features features.
+    save_memory : bool
+        If true and not "no_split", use the first "test_size" many rows for
+        training. This means, that the data is not stratified! Do not use this
+        unless the classes to predict is roughly uniformly distributed.
+    no_split : bool
+        If true, do not split data into training and test set and use everything
+        for training.
+    verbosity : bool
+        If true, set verbosity of the random forest to 2.
+
+    Returns
+    -------
+    model, train set, test set, train labels, test labels, feature names,
+    class names
+    """
     # Distinct outparams *should* lead to worse
     # predictions since the forest cannot differentiate
     # if the current window shows gradients for QV or QC
@@ -878,7 +1383,6 @@ def create_forest(ds, step_tol, test_size=None,
     verbose = 0
     if verbosity:
         verbose = 2
-    X_final, y_final, feature_names, class_names = create_input_labels(ds, step_tol, distinct_outparams)
     model = RandomForestClassifier(
         n_estimators=n_estimators,
         max_features=max_features,
@@ -886,10 +1390,19 @@ def create_forest(ds, step_tol, test_size=None,
         verbose=verbose,
         max_depth=36,
         max_leaf_nodes=1000)
+
+    if isinstance(ds, list):
+        y_final, X_final  = ds
+        model.fit(X_final, y_final)
+        return model, X_final, None, y_final, None, None, None
+    else:
+        X_final, y_final, feature_names, class_names = create_input_labels(
+            ds, step_tol, distinct_outparams)
+
     if no_split:
         model.fit(X_final, y_final)
         return model, X_final, None, y_final, None, feature_names, class_names
-#     print(np.shape(y_final))
+
     if save_memory:
         model.fit(X_final[:int(np.shape(X_final)[0] * (1-test_size))],
                  y_final[:int(np.shape(X_final)[0] * (1-test_size))])
@@ -900,38 +1413,36 @@ def create_forest(ds, step_tol, test_size=None,
             y_final[int(np.shape(X_final)[0] * (1-test_size))::],
             feature_names,
             class_names)
-        # test_idx = np.random.choice(
-        #     np.shape(X_final)[0],
-        #     int(np.shape(X_final)[0] * test_size),
-        #     replace=False)
-        # train_idx = [i for i in range(np.shape(X_final)[0]) if i not in test_idx]
-        # train = X_final[train_idx]
-        # train_labels = y_final[train_idx]
-        # test = X_final[test_idx]
-        # test_labels = y_final[test_idx]
     else:
-        try:
-            train, test, train_labels, test_labels = train_test_split(
-                X_final,
-                y_final,
-                test_size=test_size,
-                stratify=y_final)
-        except:
-            print("Using train_test_split failed! Attempt WITHOUT stratifying!")
-            train, test, train_labels, test_labels = train_test_split(
-                X_final,
-                y_final,
-                test_size=test_size)
+        train, train_labels, test, test_labels = iterative_train_test_split(
+            X_final,
+            y_final,
+            test_size=test_size)
 
     model.fit(train, train_labels)
     return model, train, test, train_labels, test_labels, feature_names, class_names
 
 def get_tree_matrix(trained_model, X, y, only_idx=None):
-#     print(f"X shape: {np.shape(X)}")
-#     print(f"y shape: {np.shape(y)}")
-    pred = trained_model.predict(X)
+    """
+    Create a confusion matrix with a single row.
 
-#     prob = np.asarray(model.predict_proba(X))#[:, :, 1]
+    Parameters
+    ----------
+    trained_model : model
+        A trained model with a method predict(..).
+    X : Array or list
+        Array of shape (n_samples, n_features) for prediction.
+    y : Array or list
+        Array of shape (n_samples, n_classes) with labels associated with X.
+    only_idx : int
+        Get values in confusion matrix only for the input parameter at the
+        given index in n_features.
+
+    Returns
+    -------
+    list of list with values as in the confusion matrix.
+    """
+    pred = trained_model.predict(X)
 
     # create the confusion matrix
     # The confusion matrix has the dimensions
@@ -960,13 +1471,24 @@ def get_tree_matrix(trained_model, X, y, only_idx=None):
     confusion_matrix = [tp, fn, fp, tn, 0, 0, p_act_win, p_act_win, pr, re, f1, fpr, p_pred]
     return confusion_matrix
 
-def plot_tree_matrix(model, train, test, train_labels, test_labels, feature_names, class_names):
+def plot_tree_matrix(model, train, test, train_labels, test_labels,
+    feature_names, class_names):
+    """
+    TODO: Plot the single row confusion matrix. Currently this method only
+    returns a single row confusion matrix.
+    """
     confusion_matrix = get_tree_matrix(model, test, test_labels)
 
     # TODO Plot results?
     return confusion_matrix
 
-def show_tree_stats(model, train, test, train_labels, test_labels, feature_names, class_names):
+def show_tree_stats(model, train, test, train_labels, test_labels,
+    feature_names, class_names):
+    """
+    TODO: Plot the single row confusion matrix. Currently this method
+    only returns a single row confusion matrix and prints some info about
+    the model used.
+    """
     n_nodes = []
     max_depth = []
     for i in model.estimators_:
@@ -986,20 +1508,97 @@ def train_many_models(data, max_features_list, min_threshold, max_threshold,
                         distinct_outparams=False,
                         n_estimators=100, save_memory=False, no_split=True,
                         verbosity=0):
+    """
+    Train different models for different max feature splits and thresholds
+    for true segment starts.
+
+    Parameters
+    ----------
+    data : list or np.ndarray of paths or dataset
+        Dataset to find the segments for. If list or np.ndarray is given,
+        load a pickled numpy array as testset from disk. Must have "test"
+        in its name.
+    max_features_list : list of string or int or float
+        A list of possible number of features for the best split
+        to train a model for.
+        From sklearn.ensemble.RandomForestClassifier:
+        The number of features to consider when looking for the best split:
+
+        If int, then consider max_features features at each split.
+        If float, then max_features is a fraction and
+            round(max_features * n_features) features are considered at each split.
+        If “auto”, then max_features=sqrt(n_features).
+        If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
+        If “log2”, then max_features=log2(n_features).
+        If None, then max_features=n_features.
+
+        Note: the search for a split does not stop until at least one valid
+        partition of the node samples is found, even if it requires to
+        effectively inspect more than max_features features.
+    min_threshold : float
+        Minimum threshold for errors to identify true segment starts.
+    max_threshold : float
+        Maximum threshold for errors to identify true segment starts.
+    threshold_step : float
+        Step size between minimum and maximum threshold.
+    precalc : bool
+        If true, calculate segment starts for different thresholds
+        before everything else, otherwise calculate those a new
+        for every feature.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    distinct_outparams : bool
+        If true, try to predict perturbing an input parameter for a segment
+        start for each output parameter independently. This may not be useful,
+        since one input parameter can have a high impact on multiple output
+        parameters.
+    n_estimators : int
+        Number of trees.
+    save_memory : bool
+        If true and not "no_split", use the first "test_size" many rows for
+        training. This means, that the data is not stratified! Do not use this
+        unless the classes to predict is roughly uniformly distributed.
+    no_split : bool
+        If true, do not split data into training and test set and use everything
+        for training.
+    verbosity : int
+        Set verbosity level.
+
+    Returns
+    -------
+    List of list of trained models, where the first dimension corresponds
+    to the max feature split used and the second dimension corresponds
+    to the different segment thresholds.
+    Also returns np.array of segment thresholds.
+    """
     seg_thresholds = np.arange(min_threshold, max_threshold, threshold_step)
-    in_params = list(np.unique(data["Input Parameter"]))
 
     # Pre calculate the segment positions?
-    ds_cache = {}
-    if precalc:
-        for seg_thresh in seg_thresholds:
-            ds_cache[seg_thresh] = find_segments(data, 10.0**seg_thresh)
+    if not isinstance(data, list) and not isinstance(data, np.ndarray):
+        load_data = False
+        ds_cache = {}
+        if precalc:
+            for seg_thresh in seg_thresholds:
+                ds_cache[seg_thresh] = find_segments(data, 10.0**seg_thresh)
+    else:
+        load_data = True
+
     models = []
 
     for feat_idx, max_features in enumerate(max_features_list):
         models_inner = []
         for seg_idx, seg_thresh in enumerate(seg_thresholds):
-            if precalc:
+            if load_data:
+                ds = []
+                for path in data:
+                    if "test" in path:
+                        continue
+                    if str(seg_thresh) in path or f"{seg_thresh:.1e}" in path:
+                        ds.append( np.load(path, allow_pickle=True, fix_imports=False) )
+                    if len(ds) == 2:
+                        ds[0] = ds[0].astype(int, copy=False)
+                        break
+            elif precalc:
                 ds = ds_cache[seg_thresh]
             else:
                 ds = find_segments(data, 10.0**seg_thresh)
@@ -1020,9 +1619,72 @@ def train_many_models(data, max_features_list, min_threshold, max_threshold,
     return models, seg_thresholds
 
 def create_dataset_pretrained(data, models, seg_thresholds, max_features_list,
-    step_tol, distinct_outparams, precalc=True, verbosity=0):
+    step_tol, distinct_outparams, precalc=True, verbosity=0, in_params=None,
+    predict_train=False):
+    """
+    Create a dataset with dimensions "Max Features", "Output Parameter",
+    "Input Parameter", "Segment Threshold" and columns "TP over P",
+    "FP over P", "FN over P_windows", "TP", "P", "FP", "FN", "P_window" by
+    predicting segment starts using given trained models.
 
-    in_params = list(np.unique(data["Input Parameter"]))
+    Parameters
+    ----------
+    data : list or np.ndarray of paths or dataset
+        Dataset to find the segments for. If list or np.ndarray is given,
+        load a pickled numpy array as testset from disk. Must have "test"
+        in its name.
+    models : List of list of trained models
+        These are models trained by train_many_models(..)
+    seg_thresholds : list or np.array of float
+        Array of segment thresholds for true segment starts.
+    max_features_list : list of string or int or float
+        A list of possible number of features for the best split
+        to train a model for.
+        From sklearn.ensemble.RandomForestClassifier:
+        The number of features to consider when looking for the best split:
+
+        If int, then consider max_features features at each split.
+        If float, then max_features is a fraction and
+            round(max_features * n_features) features are considered at each split.
+        If “auto”, then max_features=sqrt(n_features).
+        If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
+        If “log2”, then max_features=log2(n_features).
+        If None, then max_features=n_features.
+
+        Note: the search for a split does not stop until at least one valid
+        partition of the node samples is found, even if it requires to
+        effectively inspect more than max_features features.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    distinct_outparams : bool
+        If true, try to predict perturbing an input parameter for a segment
+        start for each output parameter independently. This may not be useful,
+        since one input parameter can have a high impact on multiple output
+        parameters.
+    precalc : bool
+        If true, calculate segment starts for different thresholds
+        before everything else, otherwise calculate those a new
+        for every feature.
+    verbosity : int
+        Set verbosity level.
+    in_params : list
+        List of input parameters to create a separate prediction for.
+    predict_train : bool
+        Only useful if "data" is a list or array of paths to load data from.
+        If true, use train data for the confusion matrix, otherwise use
+        test data.
+
+    Returns
+    -------
+    xarray.Dataset of confusion matrix as described above.
+    """
+
+    if isinstance(data, list) or isinstance(data, np.ndarray):
+        precalc = False
+        load_data = True
+    else:
+        load_data = False
+        in_params = list(np.unique(data["Input Parameter"]))
     dims_forest = (len(max_features_list), 1, 1+len(in_params), len(seg_thresholds))
     coords_forest_dic = {"Max Features": max_features_list,
                          "Output Parameter": ["All Output Parameters"],
@@ -1050,7 +1712,28 @@ def create_dataset_pretrained(data, models, seg_thresholds, max_features_list,
             # ds_cache[seg_thresh] = find_segments(data, 10.0**seg_thresh)
 
     for seg_idx, seg_thresh in enumerate(seg_thresholds):
-        if precalc:
+        if load_data:
+            test = None
+            test_labels = None
+            for path in data:
+                if not "test" in path and not predict_train:
+                    continue
+                if "test" in path and predict_train:
+                    continue
+                if not (str(seg_thresh) in path or f"{seg_thresh:.1e}" in path):
+                    continue
+                if "labels" in path:
+                    test_labels = np.load(path, allow_pickle=True, fix_imports=False)
+                    # print(path)
+                    # print(test_labels)
+                    test_labels = test_labels.astype(int, copy=False)
+                else:
+                    test = np.load(path, allow_pickle=True, fix_imports=False)
+                    # print(path)
+                    # print(test)
+                if test is not None and test_labels is not None:
+                    break
+        elif precalc:
             test, test_labels = test_cache[seg_thresh]
             # ds = ds_cache[seg_thresh]
         else:
@@ -1078,7 +1761,7 @@ def create_dataset_pretrained(data, models, seg_thresholds, max_features_list,
             fn_forest[feat_idx, 0, 0, seg_idx]   = matrix[1]
             p_w_forest[feat_idx, 0, 0, seg_idx]  = matrix[7]
             if verbosity > 4:
-                print(f"TP: {matrix[0]}; FP: {matrix[2]}; FN: {matrix[1]}; P_w: {matrix[7]}; P: {matrix[6]}")
+                print(f"\nTP: {matrix[0]}; FP: {matrix[2]}; FN: {matrix[1]}; P_w: {matrix[7]}; P: {matrix[6]}")
 
             for in_idx, in_p in enumerate(in_params):
                 matrix = get_tree_matrix(model, test, test_labels, only_idx=in_idx)
@@ -1121,6 +1804,70 @@ def create_dataset_forest(data, max_features_list, min_threshold, max_threshold,
                           test_size=0.25, distinct_outparams=False,
                           n_estimators=100, save_memory=False, no_split=False,
                           verbosity=0):
+    """
+    Create a dataset with dimensions "Max Features", "Output Parameter",
+    "Input Parameter", "Segment Threshold" and columns "TP over P",
+    "FP over P", "FN over P_windows", "TP", "P", "FP", "FN", "P_window" by
+    predicting segment starts. Models are being trained used create_forest(..)
+    in this method as well.
+
+    Parameters
+    ----------
+    data : dataset
+        Dataframe with MSE created by load_dataset() for every model state
+        parameter and all trajectories to find segments for.
+    max_features_list : list of string or int or float
+        A list of possible number of features for the best split
+        to train a model for.
+        From sklearn.ensemble.RandomForestClassifier:
+        The number of features to consider when looking for the best split:
+
+        If int, then consider max_features features at each split.
+        If float, then max_features is a fraction and
+            round(max_features * n_features) features are considered at each split.
+        If “auto”, then max_features=sqrt(n_features).
+        If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
+        If “log2”, then max_features=log2(n_features).
+        If None, then max_features=n_features.
+
+        Note: the search for a split does not stop until at least one valid
+        partition of the node samples is found, even if it requires to
+        effectively inspect more than max_features features.
+    min_threshold : float
+        Minimum threshold for errors to identify true segment starts.
+    max_threshold : float
+        Maximum threshold for errors to identify true segment starts.
+    threshold_step : float
+        Step size between minimum and maximum threshold.
+    precalc : bool
+        If true, calculate segment starts for different thresholds
+        before everything else, otherwise calculate those a new
+        for every feature.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    test_size : float
+        Percentage of number of windows to use for testing.
+    distinct_outparams : bool
+        If true, try to predict perturbing an input parameter for a segment
+        start for each output parameter independently. This may not be useful,
+        since one input parameter can have a high impact on multiple output
+        parameters.
+    n_estimators : int
+        Number of trees.
+    save_memory : bool
+        If true and not "no_split", use the first "test_size" many rows for
+        training. This means, that the data is not stratified! Do not use this
+        unless the classes to predict is roughly uniformly distributed.
+    no_split : bool
+        If true, do not split data into training and test set and use everything
+        for training.
+    verbosity : int
+        Set verbosity level.
+
+    Returns
+    -------
+    xarray.Dataset of confusion matrix as described above.
+    """
     # We create a dataset of different thresholds (good for ROC and so on)
     # Fraction for testing and numbers of estimators don't really matter, I guess
     # Test and trainingssets go into different dataset since we cannot differentiate
@@ -1166,7 +1913,7 @@ def create_dataset_forest(data, max_features_list, min_threshold, max_threshold,
                 max_features=max_features,
                 save_memory=save_memory, # Old version set to False
                 no_split=no_split,
-                verbose=verbosity > 3)
+                verbosity=verbosity > 3)
             if verbosity > 2:
                 print("Trained model")
             test_matrix = get_tree_matrix(model, test, test_labels)
@@ -1217,6 +1964,168 @@ def create_dataset_forest(data, max_features_list, min_threshold, max_threshold,
                 "FN": (dim_names, fn_forest),
                 "P_windows": (dim_names, p_w_forest)}, coords=coords_forest_dic)
 
+def get_stratified_sets(ds, step_tol, distinct_outparams=False,
+    train_size=0.75, verbosity=0):
+    """
+    Create a stratified train set from the given dataset.
+    The idea here: Call this function multiple times for subsets
+    of the df and concatenate the results. This way, we can create
+    a bigger training set without blowing up the needed RAM.
+
+    Parameters
+    ----------
+    ds : Dataset
+        Dataset created by find_segments(..) where segments are identified and
+        predicted errors are stored.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    distinct_outparams : bool
+        If true, try to predict perturbing an input parameter for a segment
+        start for each output parameter independently. This may not be useful,
+        since one input parameter can have a high impact on multiple output
+        parameters.
+    train_size : float
+        Size in percentage for the training set.
+    verbosity : int
+        Set verbosity level.
+
+    Returns
+    -------
+    Four np.arrays with train set, train labels, test set and test labels.
+    """
+
+    X_final, y_final, _, _ = create_input_labels(
+        ds, step_tol, distinct_outparams, verbosity)
+
+    train, train_labels, test, test_labels = iterative_train_test_split(
+        X_final,
+        y_final,
+        test_size=1-train_size)
+    return train, train_labels, test, test_labels
+
+def create_big_stratified_set(data_path, step_tol,
+    all_params_list, n_trajs_iter, out_params, threshold,
+    distinct_outparams=False,
+    train_size=0.75, verbosity=0):
+    """
+    Load part of one file or multiple files iteratively and create
+    stratified subsets for training and concatenate them. Store the result
+    on disk for training models on this.
+
+    Parameters
+    ----------
+    data_path : path
+        If string ends with ".nc", load a single file.
+        Otherwise load and append multiple files to test and training sets.
+        Only processes "n_trajs_iter" many trajectories per step.
+    step_tol : int
+        Number of steps to tolerate for a prediction to be true.
+    all_params_list : list of str
+        List of all input params to get predicted errors for.
+    n_trajs_iter : int
+        Number of trajectories to process per iteration. Using 20
+        trajectories may consume around 24 GB of RAM.
+    out_params : list of string
+        List of output parameters.
+    threshold : float
+        Exponent with base 10 for theshold of true segment start.
+    distinct_outparams : bool
+        If true, try to predict perturbing an input parameter for a segment
+        start for each output parameter independently. This may not be useful,
+        since one input parameter can have a high impact on multiple output
+        parameters.
+    train_size : float
+        Size in percentage for the training set.
+    verbosity : int
+        Set verbosity level.
+
+    Returns
+    -------
+    Four np.arrays with train set, train labels, test set and test labels.
+    """
+    all_train = None
+    all_labels = None
+    all_test = None
+    all_test_labels = None
+
+    def append_data(ds):
+        nonlocal all_train
+        nonlocal all_labels
+        nonlocal all_test
+        nonlocal all_test_labels
+
+        total_trajs = len(ds.trajectory)
+        if total_trajs < n_trajs_iter:
+            traj_step = total_trajs
+        else:
+            traj_step = n_trajs_iter
+        n_steps = int((total_trajs+traj_step-1)/traj_step)
+        for i in range(n_steps):
+            if verbosity > 1:
+                print(f"{i}: {i*traj_step} - {(i+1)*traj_step}, {total_trajs}")
+
+            if (i+1)*traj_step >= total_trajs:
+                ds_tmp = find_segments(
+                    ds.sel({"trajectory": ds.trajectory[i*traj_step:total_trajs-1]}),
+                    10.0**threshold)
+            else:
+                ds_tmp = find_segments(
+                    ds.sel({"trajectory": ds.trajectory[i*traj_step:(i+1)*traj_step]}),
+                    10.0**threshold)
+
+            train, train_labels, test, test_labels = get_stratified_sets(
+                ds=ds_tmp,
+                step_tol=step_tol,
+                distinct_outparams=distinct_outparams,
+                train_size=train_size,
+                verbosity=verbosity)
+            if all_train is not None:
+                all_train = np.append(all_train, train, axis=0)
+                all_labels = np.append(all_labels, train_labels, axis=0)
+                all_test = np.append(all_test, test, axis=0)
+                all_test_labels = np.append(all_test_labels, test_labels, axis=0)
+            else:
+                all_train = train
+                all_labels = train_labels
+                all_test = test
+                all_test_labels = test_labels
+
+    if ".nc" in data_path:
+        # ie data2_327.nc
+        if verbosity > 1:
+            print(f"Loading {data_path}")
+        data = xr.open_dataset(data_path, decode_times=False)
+        append_data(data)
+
+    else:
+        if verbosity > 1:
+            print(f"Checking {data_path}")
+        paths = list(os.listdir(data_path))
+        if verbosity > 1:
+            print(f"Loading from {paths}")
+        traj_offset = 0
+        for p in range(len(paths)):
+            if "quan" in paths[p] or "median" in paths[p] or "perturb" in paths[p]:
+                continue
+            path = data_path + paths[p] + "/"
+            n_trajs = len(list(os.listdir(path)))
+            if verbosity > 1:
+                print(f"Loading from {path} with {n_trajs} trajectories")
+            try:
+                data = load_dataset(
+                    path=path,
+                    out_params=out_params,
+                    in_params=all_params_list,
+                    traj_list=np.arange(n_trajs),
+                    traj_offset=traj_offset,
+                    verbosity=verbosity)
+            except:
+                print(f"Loading      {path} failed.")
+                continue
+            append_data(data) # TODO: Why did I have that here? find_segments(data, 10.0**threshold))
+            traj_offset += n_trajs
+    return all_train, all_labels, all_test, all_test_labels
+
 
 if __name__ == "__main__":
     import argparse
@@ -1258,6 +2167,8 @@ if __name__ == "__main__":
         help='''
         Path to folders with ensemble datasets or to single NetCDF file
         with all data concatenated along 'trajectory' axis.
+        If a path to numpy arrays is given, it is assumed to be a training
+        set for training only.
         ''')
     parser.add_argument('--min_threshold', type=float, default=-40,
         help='''
@@ -1276,8 +2187,8 @@ if __name__ == "__main__":
         ''')
     parser.add_argument('--step_tol', type=int, default=8,
         help='''
-        Number of time steps used as sliding window size for predicting
-        segment starts.
+        Tolerance for predicting a segment start in time steps. The
+        size of the resulting sliding window is step_tol*2+1.
         ''')
     parser.add_argument('--n_estimators', type=int, default=100,
         help='''
@@ -1315,7 +2226,7 @@ if __name__ == "__main__":
     parser.add_argument('--store_appended_data', default=None,
         help='''
         Store the final appended data to this path and name. Must end with
-        '.nc'.
+        '.nc' for datasets. For training sets, '.nc' will be stripped away.
         ''')
     parser.add_argument('--only_append', action='store_true',
         help='''
@@ -1327,6 +2238,36 @@ if __name__ == "__main__":
         Only model training. Use 'store_models' to define a path to save the
         models.
         ''')
+    parser.add_argument('--create_trainset', action="store_true",
+        help='''
+        Create a trainingset with labels and store it at 'store_appended_data'
+        for training later.
+        ''')
+    parser.add_argument('--predict_trainset', action="store_true",
+        help='''
+        Predict the training set created by 'create_trainset'.
+        ''')
+    parser.add_argument('--feature_split',
+        default=["log2", "sqrt", 1.0],
+        nargs='+',
+        help='''
+        A list of possible number of features for the best split
+        to train a model for.
+        From sklearn.ensemble.RandomForestClassifier:
+        The number of features to consider when looking for the best split:
+
+        If int, then consider max_features features at each split.
+        If float, then max_features is a fraction and
+            round(max_features * n_features) features are considered at each split.
+        If “auto”, then max_features=sqrt(n_features).
+        If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
+        If “log2”, then max_features=log2(n_features).
+        If None, then max_features=n_features.
+
+        Note: the search for a split does not stop until at least one valid
+        partition of the node samples is found, even if it requires to
+        effectively inspect more than max_features features.
+        ''')
     parser.add_argument('--verbosity', type=int, default=0,
         help='''
         Set verbosity level.
@@ -1336,6 +2277,7 @@ if __name__ == "__main__":
         3: Print building/training statements
         4: Set verbosity of random forest to 2
         5: Get predicted results for each entry
+        6: Get count for segment starts for every input parameter
         ''')
 
     args = parser.parse_args()
@@ -1346,14 +2288,6 @@ if __name__ == "__main__":
             store_name = args.store_name + ".nc"
         else:
             store_name = args.store_name
-
-    if args.store_appended_data is not None:
-        if ".nc" not in args.store_appended_data:
-            print(f"You must add '.nc' to {args.store_appended_data}.")
-            print(f"Result will be saved as {args.store_appended_data}.nc")
-            store_appended_data = args.store_appended_data + ".nc"
-        else:
-            store_appended_data = args.store_appended_data
 
     out_params = ["QV", "QC", "QR", "QG", "QH", "QI", "QS"]
     # the following lines can give you the most important parameters
@@ -1392,6 +2326,50 @@ if __name__ == "__main__":
 
     traj_offset = 0
 
+    if args.create_trainset:
+        store_appended_data = "./"
+        if args.store_appended_data is not None:
+            if ".nc" in args.store_appended_data:
+                store_appended_data = args.store_appended_data[:-3]
+            else:
+                store_appended_data = args.store_appended_data
+
+        seg_thresholds = np.arange(
+            args.min_threshold, args.max_threshold, args.threshold_step)
+        for threshold in seg_thresholds:
+            train, labels, test, test_labels = create_big_stratified_set(
+                data_path=args.data_path,
+                step_tol=args.step_tol,
+                all_params_list=all_params_list,
+                n_trajs_iter=args.n_trajs,
+                out_params=out_params,
+                threshold=threshold,
+                distinct_outparams=False,
+                verbosity=args.verbosity)
+
+            np.save(
+                file=f"{store_appended_data}_thresh{threshold:.1e}_train",
+                arr=train,
+                allow_pickle=True,
+                fix_imports=False) # I refuse to support Python2 in this year and age
+            np.save(
+                file=f"{store_appended_data}_thresh{threshold:.1e}_labels",
+                arr=labels,
+                allow_pickle=True,
+                fix_imports=False)
+            np.save(
+                file=f"{store_appended_data}_thresh{threshold:.1e}_test",
+                arr=test,
+                allow_pickle=True,
+                fix_imports=False)
+            np.save(
+                file=f"{store_appended_data}_thresh{threshold:.1e}_test_labels",
+                arr=test_labels,
+                allow_pickle=True,
+                fix_imports=False)
+        exit()
+
+
     if ".nc" in args.data_path:
         # ie data2_327.nc
         if args.verbosity > 1:
@@ -1400,53 +2378,71 @@ if __name__ == "__main__":
     else:
         if args.verbosity > 1:
             print(f"Checking {args.data_path}")
-        data = None
-        paths = list(os.listdir(args.data_path))
-        if args.verbosity > 1:
-            print(f"Loading from {paths}")
-        for p in range(len(paths)):
-            if "quan" in paths[p] or "median" in paths[p] or "perturb" in paths[p]:
-                continue
-            path = args.data_path + paths[p] + "/"
-            n_trajs = len(list(os.listdir(path)))
-            if args.verbosity > 1:
-                print(f"Loading from {path} with {n_trajs} trajectories")
-            try:
-                tmp = load_dataset(
-                    path=path,
-                    out_params=out_params,
-                    in_params=all_params_list,
-                    traj_list=np.arange(n_trajs),
-                    traj_offset=traj_offset,
-                    verbosity=args.verbosity)
-            except:
-                print(f"Loading      {path} failed.")
-                tmp = None
-            if tmp is None:
-                continue
 
-            if data is None:
-                data = tmp
-            else:
-                data = xr.concat([data, tmp], dim="trajectory", join="outer")
-            if args.store_many_appended_data is not None:
-                comp = dict(zlib=True, complevel=9)
-                encoding = {var: comp for var in data.data_vars}
-                data.to_netcdf(
-                    path=f"{args.store_many_appended_data}data_{traj_offset}.nc",
-                    encoding=encoding,
-                    compute=True,
-                    engine="netcdf4",
-                    format="NETCDF4",
-                    mode="w")
-            traj_offset += n_trajs
+        paths = list(os.listdir(args.data_path))
+        if ".nc" in paths[0]:
+            data = None
+            if args.verbosity > 1:
+                print(f"Loading from {paths}")
+            for p in range(len(paths)):
+                if "quan" in paths[p] or "median" in paths[p] or "perturb" in paths[p]:
+                    continue
+                path = args.data_path + paths[p] + "/"
+                n_trajs = len(list(os.listdir(path)))
+                if args.verbosity > 1:
+                    print(f"Loading from {path} with {n_trajs} trajectories")
+                try:
+                    tmp = load_dataset(
+                        path=path,
+                        out_params=out_params,
+                        in_params=all_params_list,
+                        traj_list=np.arange(n_trajs),
+                        traj_offset=traj_offset,
+                        verbosity=args.verbosity)
+                except:
+                    print(f"Loading      {path} failed.")
+                    tmp = None
+                if tmp is None:
+                    continue
+
+                if data is None:
+                    data = tmp
+                else:
+                    data = xr.concat([data, tmp], dim="trajectory", join="outer")
+                if args.store_many_appended_data is not None:
+                    comp = dict(zlib=True, complevel=9)
+                    encoding = {var: comp for var in data.data_vars}
+                    data.to_netcdf(
+                        path=f"{args.store_many_appended_data}data_{traj_offset}.nc",
+                        encoding=encoding,
+                        compute=True,
+                        engine="netcdf4",
+                        format="NETCDF4",
+                        mode="w")
+                traj_offset += n_trajs
+        else: # numpy arrays with training data
+            # create a dictionary for every threshold that holds a list
+            # of X and y
+            for i in range(len(paths)):
+                paths[i] = args.data_path + paths[i]
+            data = np.sort(paths)
+
     if args.verbosity > 0:
         print(data)
+
+    if args.store_appended_data is not None:
+        if ".nc" not in args.store_appended_data:
+            print(f"You must add '.nc' to {args.store_appended_data}.")
+            print(f"Result will be saved as {args.store_appended_data}.nc")
+            store_appended_data = args.store_appended_data + ".nc"
+        else:
+            store_appended_data = args.store_appended_data
+
     if args.store_appended_data is not None:
         comp = dict(zlib=True, complevel=9)
         encoding = {var: comp for var in data.data_vars}
         data.to_netcdf(
-            path=f"{args.store_appended_data}",
+            path=f"{store_appended_data}",
             encoding=encoding,
             compute=True,
             engine="netcdf4",
@@ -1457,7 +2453,7 @@ if __name__ == "__main__":
 
     n_trajs = args.n_trajs
 
-    max_features_list = ["auto", "log2", "sqrt", None]
+    max_features_list = args.feature_split #[1.0]#["log2", "sqrt"]#, 0.25] # 0.25, 0.75
     distinct_outparams = False
     step_tol = args.step_tol
 
@@ -1530,37 +2526,52 @@ if __name__ == "__main__":
         traj_idx = n_trajs
 
     # create confusion matrices (without the training set if possible)
-    max_traj_idx = len(data["trajectory"])
-    confus_matrix = None
-    if args.verbosity > 2:
-        t_start = timer()
-
-    while traj_idx < max_traj_idx:
-        traj_idx_end = traj_idx + n_trajs
-        if traj_idx_end > max_traj_idx:
-            traj_idx_end = max_traj_idx
+    if not isinstance(data, list) and not isinstance(data, np.ndarray):
+        max_traj_idx = len(data["trajectory"])
+        confus_matrix = None
         if args.verbosity > 2:
-            print(f"Predicting trajectories {traj_idx} to {traj_idx_end} of {max_traj_idx}")
-            t1 = timer()
-        confus_tmp = create_dataset_pretrained(
-            data=data.sel({"trajectory": data["trajectory"][traj_idx:traj_idx_end]}),
-            models=models,
-            seg_thresholds=seg_thresholds,
-            max_features_list=max_features_list,
-            step_tol=step_tol,
-            distinct_outparams=distinct_outparams,
-            precalc=True,
-            verbosity=args.verbosity)
+            t_start = timer()
 
-        if confus_matrix is None:
-            confus_matrix = confus_tmp
-        else:
-            confus_matrix += confus_tmp
+        while traj_idx < max_traj_idx:
+            traj_idx_end = traj_idx + n_trajs
+            if traj_idx_end > max_traj_idx:
+                traj_idx_end = max_traj_idx
+            if args.verbosity > 2:
+                print(f"Predicting trajectories {traj_idx} to {traj_idx_end} of {max_traj_idx}")
+                t1 = timer()
+            confus_tmp = create_dataset_pretrained(
+                data=data.sel({"trajectory": data["trajectory"][traj_idx:traj_idx_end]}),
+                models=models,
+                seg_thresholds=seg_thresholds,
+                max_features_list=max_features_list,
+                step_tol=step_tol,
+                distinct_outparams=distinct_outparams,
+                precalc=True,
+                verbosity=args.verbosity)
+
+            if confus_matrix is None:
+                confus_matrix = confus_tmp
+            else:
+                confus_matrix += confus_tmp
+            if args.verbosity > 2:
+                t2 = timer()
+                t_est = (t2-t1) * (max_traj_idx/n_trajs - traj_idx_end/n_trajs)
+                print(f"Done in {t2-t1} s (total {t2-t_start} s; est end in {t_est} s)")
+            traj_idx = traj_idx_end
+    else:
         if args.verbosity > 2:
-            t2 = timer()
-            t_est = (t2-t1) * (max_traj_idx/n_trajs - traj_idx_end/n_trajs)
-            print(f"Done in {t2-t1} s (total {t2-t_start} s; est end in {t_est} s)")
-        traj_idx = traj_idx_end
+            print("Predicting starts")
+        # TODO: all_params_list might have wrong order
+        confus_matrix = create_dataset_pretrained(
+                data=data,
+                models=models,
+                seg_thresholds=seg_thresholds,
+                max_features_list=max_features_list,
+                step_tol=step_tol,
+                distinct_outparams=distinct_outparams,
+                verbosity=args.verbosity,
+                in_params=all_params_list,
+                predict_train=args.predict_trainset)
 
     confus_matrix["TP over P"] = confus_matrix["TP"]/confus_matrix["P"]
     confus_matrix["FP over P"] = confus_matrix["FP"]/confus_matrix["P"]

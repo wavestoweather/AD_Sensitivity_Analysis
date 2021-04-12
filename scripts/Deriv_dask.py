@@ -40,9 +40,6 @@ from glob import glob
 from scipy.stats import chi2
 
 
-# pandas.options.mode.chained_assignment = 'raise'
-
-
 class Deriv_dask:
     """
     Class that holds a dictionary of output parameters with its derivatives
@@ -59,10 +56,22 @@ class Deriv_dask:
         that hold a clustering assignment.
     threads : int
             Number of threads to use.
+    font_dic : Dic
+        Dictionary of labels and fontsize for plotting.
+    backend : string
+        Either "matplotlib" or "bokeh" for plotting.
+    widget :
+    colors : Colormap
+        Colormap used for types of trajectories.
     cmap : Dic
         Dic of typenames of trajectories and colors.
     cache : pandas.Dataframe
         A dataframe after compute() was used that can be used as cache.
+    cmap_particles : Dict of colors
+        Mapping of output parameters (mixing ratios, saturation,
+        particle numbers, latent heating and cooling) to colors.
+    plots : list of plots
+        Store plots in the list for further manipulation.
     """
     data = {}
     cluster_names = {}
@@ -74,6 +83,7 @@ class Deriv_dask:
     cmap = None
     cache = None
     cmap_particles = None
+    plots = None
 
     def __init__(self, direc, parquet=True, netcdf=False, columns=None,
         backend="matplotlib", file_ending="*.nc_wcb"):
@@ -85,15 +95,13 @@ class Deriv_dask:
         direc : string
             A path to a directory wit a list of files to read.
         parquet : boolean
-            If true: Load a series of preprocessed parquet files,
-            else load *.txt files.
+            If true: Load a series of preprocessed parquet files.
         netcdf : boolean
-            If true: Load a series of preprocessed netcdf files else
-            load *.txt files.
+            If true: Load a series of preprocessed netcdf files.
         columns : list of strings
             Specify the columns to load.
         backend : String
-            Either matplotlib or bokeh
+            Either matplotlib or bokeh for plotting.
         file_ending : String
             File ending to use when loading netcdf files.
         """
@@ -353,7 +361,7 @@ class Deriv_dask:
             at which a new window starts, i.e. {"T": [235, 273]} results
             in three windows with T < 235K, 235 <= T < 273K and 237K <= T.
         in_params : list of string
-            List of model parameters to consider for the plot.
+            List of model parameters to consider.
         x_axis : string
             Use this column of the dataframe for ratio_type "per_xaxis".
         verbose : bool
@@ -365,7 +373,6 @@ class Deriv_dask:
             Same as ratio_df but with recalculated sensitivities.
         """
 
-        # latexify.in_params_numeric_value_dic
         if "weighted" in ratio_type and "per_out_param" in ratio_type:
             out_par = np.unique(ratio_df["Output Parameter"])[0]
             ratio_df.loc[:, in_params] = ratio_df[in_params].div(ratio_df[out_par], axis=0)
@@ -666,6 +673,8 @@ class Deriv_dask:
             Overrides "compute".
         errorband : Bool
             Plot an errorband (spread) using the standard deviation and min/max values.
+            This method is not properly tested!
+            TODO: Debugging.
         plot_path : string
             Path to the folder to save the image.
         prefix : string
@@ -2145,19 +2154,59 @@ class Deriv_dask:
                 pass
 
     def get_mse(self, out_params, others_df=None, others_path=None,
-        in_params=None, ratio_type="vanilla", ratio_window=None,
-        kind="mse", sens_kind="max"):
+        in_params=None, ratio_type="adjusted", ratio_window=None,
+        kind="mse", sens_kind="mean"):
         """
         Create a pandas.Dataframe with columns
         MSE, Sensitivity, Output Parameter
 
         Parameters
         ----------
+        out_params : list of string
+            List of model output parameters to get the sensitivities for.
+        others_df : Dataframe
+            Dataframe with perturbed ensembles.
+        others_path : path
+            Path to dataframes with perturbed ensembles.
+        in_params : list of string
+            List of model parameters to consider.
+        ratio_type : string
+            "vanilla": Use the derivative ratio in the file.
+            "adjusted": Can be added to any to any type below where the sensitivity
+            is adjusted to the parameter value such that perturbing this value by a
+            certain percentage gives an approximation of the resulting error/difference
+            for any given hydrometeor.
+            "per_timestep": Use the highest derivative per timestep as denominator.
+            "window": Use the highest derivative in the given window by min_x and max_x.
+            "per_xaxis": Use the highest derivative per x_axis value. If x_axis is "timestep"
+            it is the same as "per_timestep".
+            "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
+            derivative but per output parameter. (that *should* be the vanilla version)
+            "x_weighted": Append this to any ratio type to use the inverse of the
+            output parameter value as weight. Only works with "x_per_out_param".
+        ratio_window : dic of list
+            Overides ratio_type and switches to a derivative ratio calculation
+            per output param if "ratio_type" has "per_out_param" in it.
+            Calculate the derivative ratio in windows
+            where the key is a column name and the list consists of values
+            at which a new window starts, i.e. {"T": [235, 273]} results
+            in three windows with T < 235K, 235 <= T < 273K and 237K <= T.
         kind : string
+            How to reduce the error from ensembles.
             mse: Calculate mean squared error
             maxse: Calculate maximum squared error
             nozeromse: Calculate mean squared error ignoring time steps
                 where all simulations have zero values.
+            sum : Cumulative squared error
+            me : Mean error
+            mae : Mean absolute error
+        sens_kind : string
+            How to reduce the predicted error from sensitivities.
+            Be aware, that sensitivities can be calculated as squared
+            predicted error already.
+            max : Max error
+            mean : Mean error
+            squared_mean : Squared mean error
 
         Returns
         -------
@@ -2328,109 +2377,16 @@ class Deriv_dask:
                         ratio_type, ratio_window, in_params), ratio_type)
         return pandas.DataFrame.from_dict(df_dic)
 
-    def get_variance_per_timestep(self, out_params, others_path,
-        in_params=None, ratio_type="vanilla", ratio_window=None,
-        kind="mse"):
-        """
-        Create a pandas.DataFrame that stores the errors/variances around
-        the original simulation.
-
-        """
-        import pandas
-        pandas.options.mode.chained_assignment = None  # default='warn'
-
-        mean = self.cache
-        if mean is None:
-            print("Cached data is None. Make sure to cache your data using")
-            print("self.cache_data()\nABORTING")
-            return
-
-        if kind == "mse": # variance
-            error_key = "MSE"
-        elif kind == "maxse":
-            error_key = "Max Error"
-        elif kind == "mae": # standard deviation
-            error_key = "Mean Absolute Error"
-
-        files = sorted(glob(others_path + "*.nc_wcb"))
-        df_dic = {error_key: np.asarray([]),
-            "Sensitivity": np.asarray([])
-        }
-        coords = {
-            "time_after_ascent": np.asarray([]),
-            "Output Parameter": np.asarray([]),
-            "Perturbed Parameter": np.asarray([]),
-            "Ratio Type": np.asarray([])
-        }
-
-        # Pre calculate the sensitivities
-        sens_dic = {}
-        mean_dic = {}
-        for i in pb(range(len(out_params))):
-            out_param = out_params[i]
-            mean_dic[out_param] = np.reshape(np.asarray(
-                mean.loc[mean["Output Parameter"] == out_param][out_param]),
-                (len(mean.loc[mean["Output Parameter"] == out_param][out_param].index), 1, 1))
-            if isinstance(ratio_type, list):
-                sens_dic[out_param] = {}
-                for rt in ratio_type:
-                    sens_dic[out_param][rt] = self._recalc_ratios(mean.loc[mean["Output Parameter"] == out_param],
-                        rt, ratio_window, in_params)
-            else:
-                sens_dic[out_param] = self._recalc_ratios(mean.loc[mean["Output Parameter"] == out_param],
-                    ratio_type, ratio_window, in_params)
-
-        for i in pb(range(len(files))):
-            f = files[i]
-            perturbed_param = "d" + f.split("/")[-1][0:-7]
-            if perturbed_param not in in_params:
-                continue
-            ds = xr.open_dataset(f, decode_times=False)[out_params].compute()
-
-            for out_param in out_params:
-                def add_to_df(sens_df, rt):
-                    print("Need to check shape")
-                    print(np.shape(mean_dic[out_param]))
-                    # error_key dims:   Ratio Type, Output Parameter, Perturbed Parameter, time_after_ascent
-                    # Sensitivity dims: Ratio Type, Output Parameter, Perturbed Parameter
-                    if kind == "mse":
-                        error = [
-                            np.mean( (ds[out_param] - mean_dic[out_param])**2, axis=0 ) ]
-                    if kind == "mae":
-                        error = [
-                            np.mean( np.abs(ds[out_param] - mean_dic[out_param]), axis=0 ) ]
-                    elif kind == "maxse":
-                        error = [
-                            np.max( (ds[out_param] - mean_dic[out_param])**2, axis=0 ) ]
-
-                    df_dic[error_key] = np.append(df_dic[error_key], error)
-                    sens_idx = np.argmax(np.abs(sens_df[perturbed_param]))
-                    df_dic["Sensitivity"] = np.append(df_dic["Sensitivity"],
-                        [ sens_df[perturbed_param].iloc[sens_idx] ])
-                    df_dic["Output Parameter"] = np.append(df_dic["Output Parameter"],
-                        [out_param])
-                    df_dic["Perturbed Parameter"] = np.append(df_dic["Perturbed Parameter"],
-                        [perturbed_param])
-                    df_dic["Ratio Type"] = np.append(df_dic["Ratio Type"],
-                        [rt])
-                if isinstance(ratio_type, list):
-                    for rt in ratio_type:
-                        add_to_df(sens_dic[out_param][rt], rt)
-                else:
-                    add_to_df(sens_dic[out_param], ratio_type)
-
-
     def plot_mse(self, out_params, others_df=None, mse_df_=None,
-        in_params=None,
-        width=1959, height=1224,
+        in_params=None, width=1959, height=1224,
         datashade=False, prefix=None, alpha=1,
         plot_path="pics/", yticks=10, xticks=10, decimals=3,
         ratio_type="vanilla", ratio_window=None,
         s=None, formatter_limits=None, log_x=False, log_y=False, confidence=None,
         hist=False, kind="grid_plot", abs_x=False, abs_y=False,
         split_ellipse=False, error_key="MSE", xlabel="Sensitivity Ratio",
-        log_func=np.log, plot_singles=False, plot_types=True,
-        **kwargs):
+        log_func=np.log, plot_singles=False, plot_types=True, title=None,
+        linewidth=None, **kwargs):
         """
         Plot mean squared error over maximal sensitivity calculated
         via the given ratio type (i.e. sensitivity per timestep) and given
@@ -2517,6 +2473,8 @@ class Deriv_dask:
                 different scalings.
             "grid_plot": Multiple plots that can have histograms and
                 confidence ellipses as well.
+            "paper": Create a plot for the paper which sets figure
+                size and removes the first histogram.
         abs_x : bool
             Use absolute value of sensitivities.
         abs_y : bool
@@ -2524,6 +2482,8 @@ class Deriv_dask:
         split_ellipse : bool
             Create two confidence ellipses, on for sensitivity >= 0
             and another for sensitvity <= 0.
+        error_key : string
+            Name of column with predicted errors.
         xlabel : string
             Alternative label for x-axis.
         log_func: callable
@@ -2531,6 +2491,14 @@ class Deriv_dask:
         plot_singles : bool
             Plot every plot as an individual plot in addition to the grid of
             plots.
+        plot_types : bool
+            Wether to plot the color of the dots grouped by the type of
+            input parameter.
+        title : string
+            Title used for the plot. If None is given, a standard
+            title based on different labels is used.
+        linewidth : int
+            Width of ellipse.
         kwargs : Dict of args
             Arguments are passed to ellipse, i.e. {"color": "red"}
         """
@@ -2551,7 +2519,10 @@ class Deriv_dask:
         import holoviews as hv
 
         dsshade.dynamic = False
-        fontscale = width/2200
+        if kind == "paper":
+            fontscale = width/300 # 500
+        else:
+            fontscale = width/2200
         if formatter_limits is not None:
             matplotlib.rcParams['axes.formatter.limits'] = formatter_limits
 
@@ -2563,7 +2534,7 @@ class Deriv_dask:
         else:
             scatter_size = s
 
-        hist_wh = int(height/10)
+        hist_wh = int(height/3)
 
         if self.backend == "matplotlib":
             scatter_kwargs = {"s": scatter_size}
@@ -2604,7 +2575,8 @@ class Deriv_dask:
         if log_y:
             ylabel = "Log "
         hspace = 0.05
-        title = ylabel + error_key + " over " + xlabel
+        if title is None:
+            title = ylabel + error_key + " over " + xlabel
 
         # Plot all into one plot
         if kind == "single_plot":
@@ -2656,13 +2628,18 @@ class Deriv_dask:
         # Gridded plot with every output parameter on y
         # and sensitivity calculations on x
         # and different ratio types as "by"
-        if kind == "grid_plot":
+        if kind == "grid_plot" or kind == "paper":
             # Only tested with matplotlib
             def correl_conf_ell(df, x, y, by=None, confidence=0.95, color=None,
                 **kwargs):
                 new_kwargs = kwargs
                 if color is not None:
                     new_kwargs["color"] = color
+                    if linewidth is not None:
+                        if self.backend == "matplotlib":
+                            new_kwargs["linewidth"] = linewidth
+                        else:
+                            new_kwargs["line_width"] = linewidth
                 chisq = chi2.ppf(confidence, 2)
                 def create_ellipse(x, y, **kwargs):
                     cov = np.cov(x, y)
@@ -2715,8 +2692,13 @@ class Deriv_dask:
                     return ells
 
             if log_x:
-                min_x = np.min(mse_df["Sensitivity"]) - np.abs(np.min(mse_df["Sensitivity"]))/7
-                max_x = np.max(mse_df["Sensitivity"]) + np.abs(np.max(mse_df["Sensitivity"]))/7
+                if kind == "paper":
+                    tmp_df = mse_df.loc[mse_df["Output Parameter"] == out_params[0]]
+                    min_x = np.min(tmp_df["Sensitivity"]) - np.abs(np.min(tmp_df["Sensitivity"]))/10
+                    max_x = 2
+                else:
+                    min_x = np.min(mse_df["Sensitivity"]) - np.abs(np.min(mse_df["Sensitivity"]))/7
+                    max_x = np.max(mse_df["Sensitivity"]) + np.abs(np.max(mse_df["Sensitivity"]))/7
             else:
                 delta_x = np.max(mse_df["Sensitivity"]) - np.min(mse_df["Sensitivity"])
                 min_x = np.min(mse_df["Sensitivity"]) - delta_x/10
@@ -2747,76 +2729,81 @@ class Deriv_dask:
                     return f"-1e{upper:2.1f}"
 
             this_x_ticks = int(np.floor(xticks/2))
-            if log_x and not abs_x:
-                pos_plot = mse_df.loc[mse_df["Sensitivity"] >= 0].hvplot.hist(
-                    y="Sensitivity",
-                    by=by_col,
-                    alpha=0.5,
-                    legend=True,
-                    title=title,
-                    grid=False,
-                    color=cmap_values)
-
-                max_y = 0
-                for key in pos_plot:
-                    max_x_tick = np.max(key["Sensitivity"])
-                    min_x_tick = 0
-                    delta_tick = max_x_tick/(this_x_ticks-1)
-                    max_y = np.max(key["Sensitivity_count"])
-
-                pos_x_ticks = [
-                    (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, True, max_x_tick))
-                    for i in range(this_x_ticks)]
-
-                neg_plot = mse_df.loc[mse_df["Sensitivity"] < 0].hvplot.hist(
-                    y="Sensitivity",
-                    by=by_col,
-                    alpha=0.5,
-                    legend=False,
-                    grid=False,
-                    color=cmap_values)
-
-                for key in neg_plot:
-                    if np.max(key["Sensitivity_count"]) > max_y:
-                        max_y = np.max(key["Sensitivity_count"])
-                    max_x_tick = np.min(key["Sensitivity"])
-                    min_x_tick = 0
-                    delta_tick = max_x_tick/(this_x_ticks-1)
-
-                neg_x_ticks = [
-                    (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, False, max_x_tick))
-                    for i in range(this_x_ticks)]
-                y_lim = (0, max_y)
-                opts_dic = {"fontscale": fontscale}
-                if self.backend == "matplotlib":
-                    opts_dic["aspect"] = aspect/2
-                pos_plot = pos_plot.opts(
-                        **opts_dic).options(xlabel="", yaxis=False).opts(
-                        xticks=pos_x_ticks,
-                        ylim=y_lim)
-                neg_plot = neg_plot.opts(
-                        **opts_dic).options(xlabel="").opts(
-                        xticks=neg_x_ticks,
-                        ylim=y_lim)
-
-                text_pos = hv.Text(0, 0, '/          ')
-                text_neg = hv.Text(0, 0, '          /')
-
-                all_plots = (neg_plot * text_neg + pos_plot * text_pos).opts(
-                    **all_opts)
+            all_plots = None
+            legend = False
+            if kind == "paper":
+                legend = "top_left" # bottom
             else:
-                opts_dic = {"fontscale": fontscale}
-                if self.backend == "matplotlib":
-                    opts_dic["aspect"] = aspect
-                all_plots = mse_df.hvplot.hist(
-                    y="Sensitivity",
-                    by=by_col,
-                    alpha=alpha,
-                    legend=True,
-                    grid=True,
-                    title=title,
-                    color=cmap_values).opts(
-                        **opts_dic).options(xlabel="")
+                if log_x and not abs_x:
+                    pos_plot = mse_df.loc[mse_df["Sensitivity"] >= 0].hvplot.hist(
+                        y="Sensitivity",
+                        by=by_col,
+                        alpha=0.5,
+                        legend=True,
+                        title=title,
+                        grid=False,
+                        color=cmap_values)
+
+                    max_y = 0
+                    for key in pos_plot:
+                        max_x_tick = np.max(key["Sensitivity"])
+                        min_x_tick = 0
+                        delta_tick = max_x_tick/(this_x_ticks-1)
+                        max_y = np.max(key["Sensitivity_count"])
+
+                    pos_x_ticks = [
+                        (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, True, max_x_tick))
+                        for i in range(this_x_ticks)]
+
+                    neg_plot = mse_df.loc[mse_df["Sensitivity"] < 0].hvplot.hist(
+                        y="Sensitivity",
+                        by=by_col,
+                        alpha=0.5,
+                        legend=False,
+                        grid=False,
+                        color=cmap_values)
+
+                    for key in neg_plot:
+                        if np.max(key["Sensitivity_count"]) > max_y:
+                            max_y = np.max(key["Sensitivity_count"])
+                        max_x_tick = np.min(key["Sensitivity"])
+                        min_x_tick = 0
+                        delta_tick = max_x_tick/(this_x_ticks-1)
+
+                    neg_x_ticks = [
+                        (min_x_tick + i*delta_tick, format_tick(min_x_tick + i*delta_tick, False, max_x_tick))
+                        for i in range(this_x_ticks)]
+                    y_lim = (0, max_y)
+                    opts_dic = {"fontscale": fontscale}
+                    if self.backend == "matplotlib":
+                        opts_dic["aspect"] = aspect/2
+                    pos_plot = pos_plot.opts(
+                            **opts_dic).options(xlabel="", yaxis=False).opts(
+                            xticks=pos_x_ticks,
+                            ylim=y_lim)
+                    neg_plot = neg_plot.opts(
+                            **opts_dic).options(xlabel="").opts(
+                            xticks=neg_x_ticks,
+                            ylim=y_lim)
+
+                    text_pos = hv.Text(0, 0, '/          ')
+                    text_neg = hv.Text(0, 0, '          /')
+
+                    all_plots = (neg_plot * text_neg + pos_plot * text_pos).opts(
+                        **all_opts)
+                else:
+                    opts_dic = {"fontscale": fontscale}
+                    if self.backend == "matplotlib":
+                        opts_dic["aspect"] = aspect
+                    all_plots = mse_df.hvplot.hist(
+                        y="Sensitivity",
+                        by=by_col,
+                        alpha=alpha,
+                        legend=True,
+                        grid=True,
+                        title=title,
+                        color=cmap_values).opts(
+                            **opts_dic).options(xlabel="")
 
             opts_dic = {"fontscale": fontscale}
             if self.backend == "matplotlib":
@@ -2824,8 +2811,10 @@ class Deriv_dask:
             opts_dic2 = {"fontscale": fontscale}
             if self.backend == "matplotlib":
                 opts_dic2["aspect"] = aspect
-            for out_param in out_params:
 
+            for out_param in out_params:
+                if kind != "paper":
+                    title = None
                 tmp_df = mse_df.loc[mse_df["Output Parameter"] == out_param]
                 min_y = tmp_df[error_key].min()
                 max_y = tmp_df[error_key].max()
@@ -2841,11 +2830,12 @@ class Deriv_dask:
                     # Make two scatter plots with correct ticks
                     pos_plot = tmp_df.loc[tmp_df["Sensitivity"] >= 0].hvplot.scatter(
                             x="Sensitivity",
+                            title=title,
                             y=error_key,
                             by=by_col,
                             datashade=False,
                             alpha=alpha,
-                            legend=False,
+                            legend=legend,
                             grid=False,
                             xlim=(-2, max_x),
                             ylim=(min_y, max_y),
@@ -2903,19 +2893,19 @@ class Deriv_dask:
                             by=by_col,
                             alpha=alpha,
                             legend=False,
-                            color=cmap_values)
+                            color=cmap_values).opts(fontscale=fontscale)
                         xdist_neg = tmp_df.loc[tmp_df["Sensitivity"] < 0].hvplot.hist(
                             y="Sensitivity",
                             by=by_col,
                             alpha=alpha,
                             legend=False,
-                            color=cmap_values)
+                            color=cmap_values).opts(fontscale=fontscale)
                         ydist = tmp_df.hvplot.hist(
                             y=error_key,
                             by=by_col,
                             alpha=alpha,
                             legend=False,
-                            color=cmap_values)
+                            color=cmap_values).opts(fontscale=fontscale)
 
                     # Make four ellipses
                     if confidence is not None:
@@ -2975,23 +2965,53 @@ class Deriv_dask:
                     else:
                         all_plots += mse_plot
                 else:
-
-                    mse_plot = tmp_df.hvplot.scatter(
-                            x="Sensitivity",
-                            y=error_key,
-                            by=by_col,
-                            datashade=False,
-                            alpha=alpha,
-                            legend=False,
-                            grid=True,
-                            xlim=(min_x, max_x),
-                            ylim=(min_y, max_y),
-                            color=cmap_values
-                        ).opts(
-                            opts.Scatter(**scatter_kwargs)# s=scatter_size
-                        ).opts(
-                            **opts_dic2).options(
-                                ylabel=ylabel + error_key + " " + out_param, xlabel="")
+                    # experimental
+                    # Assume 10^-80 (or here -80) for kind==paper is
+                    # negative infinity
+                    if kind == "paper" and np.min(tmp_df["Sensitivity"]) == -80:
+                        mse_plot = tmp_df.hvplot.scatter(
+                                x="Sensitivity",
+                                y=error_key,
+                                by=by_col,
+                                datashade=False,
+                                alpha=alpha,
+                                legend=legend,
+                                title=title,
+                                grid=True,
+                                xlim=(min_x, max_x),
+                                ylim=(min_y, max_y),
+                                color=cmap_values
+                            ).opts(
+                                opts.Scatter(**scatter_kwargs)# s=scatter_size
+                            ).opts(
+                                **opts_dic2).options(
+                                    ylabel=ylabel + error_key + " " + out_param,
+                                    xlabel="",
+                                    xticks=[(-80, "-Infinity"), (-70, -70),
+                                            (-60, -60), (-50, -50), (-40, -40),
+                                            (-30, -30), (-20, -20), (-10, -10),
+                                            (0, 0)])
+                        # Save space by removing legend title
+                        mse_plot.get_dimension(by_col).label=''
+                    else:
+                        mse_plot = tmp_df.hvplot.scatter(
+                                x="Sensitivity",
+                                y=error_key,
+                                by=by_col,
+                                datashade=False,
+                                alpha=alpha,
+                                legend=legend,
+                                title=title,
+                                grid=True,
+                                xlim=(min_x, max_x),
+                                ylim=(min_y, max_y),
+                                color=cmap_values
+                            ).opts(
+                                opts.Scatter(**scatter_kwargs)# s=scatter_size
+                            ).opts(
+                                **opts_dic2).options(
+                                    ylabel=ylabel + error_key + " " + out_param,
+                                    xlabel="")
 
                     # Adding histograms around those
                     if hist:
@@ -3000,13 +3020,13 @@ class Deriv_dask:
                             by=by_col,
                             alpha=alpha,
                             legend=False,
-                            color=cmap_values)
+                            color=cmap_values).opts(fontscale=fontscale)
                         ydist = tmp_df.hvplot.hist(
                             y=error_key,
                             by=by_col,
                             alpha=alpha,
                             legend=False,
-                            color=cmap_values)
+                            color=cmap_values).opts(fontscale=fontscale)
 
                     if out_param == out_params[-1]:
                         mse_plot = mse_plot.options(xlabel=xlabel)
@@ -3033,6 +3053,17 @@ class Deriv_dask:
                                 mse_plot = (mse_plot * ells_neg)
                             elif ells_neg is None:
                                 mse_plot = (mse_plot * ells_pos)
+                        elif kind == "paper":
+                            # Assuming -80 are the infinity placements
+                            tmp_df_ell = tmp_df.loc[tmp_df["Sensitivity"] > -80]
+                            ells = correl_conf_ell(
+                                df=tmp_df_ell,
+                                x="Sensitivity",
+                                y=error_key,
+                                by=by_col,
+                                confidence=confidence,
+                                color=colors)
+                            mse_plot = (mse_plot * ells)
                         else:
                             ells = correl_conf_ell(
                                 df=tmp_df,
@@ -3041,53 +3072,86 @@ class Deriv_dask:
                                 by=by_col,
                                 confidence=confidence,
                                 color=colors)
-
                             mse_plot = (mse_plot * ells)
                     if hist:
                         if self.backend == "bokeh":
-                            mse_plot = (mse_plot
+                            mse_plot = (mse_plot.opts(
+                                            width=width,
+                                            height=height).options(
+                                            # Legend scatter size is very small by default
+                                            **{"glyph_height": scatter_size*5,
+                                            "glyph_width": scatter_size*5}
+                                            )
                                         << ydist.opts(
                                             yaxis="bare",
+                                            xaxis="bare",
                                             xlim=(min_y, max_y),
-                                            width=hist_wh)
+                                            width=hist_wh,
+                                            height=height)
                                         << xdist.opts(
                                             xaxis="bare",
+                                            yaxis="bare",
                                             xlim=(min_x, max_x),
-                                            height=hist_wh))
+                                            height=hist_wh,
+                                            width=width))
                         else:
-                            mse_plot = (mse_plot
-                                        << ydist.opts(yaxis="bare", xlim=(min_y, max_y))
-                                        << xdist.opts(xaxis="bare", xlim=(min_x, max_x)))
+                            mse_plot = (mse_plot.options(
+                                            # Legend scatter size is very small by default
+                                            **{"glyph_height": scatter_size*5,
+                                            "glyph_width": scatter_size*5}
+                                            )
+                                        << ydist.opts(
+                                            yaxis="bare",
+                                            xaxis="bare",
+                                            xlim=(min_y, max_y))
+                                        << xdist.opts(
+                                            xaxis="bare",
+                                            yaxis="bare",
+                                            xlim=(min_x, max_x)))
 
-                    all_plots += mse_plot
+                    if all_plots is None:
+                        all_plots = mse_plot
+                    else:
+                        all_plots += mse_plot
             if log_x and not abs_x:
-                mse_plot = all_plots.opts(
-                    **all_opts_notitle).cols(2).opts(opts.Layout(**layout_kwargs))
-            else:
-                if self.backend == "matplotlib":
-                    mse_plot = all_plots.cols(1).opts(
-                        sublabel_format="", tight=True).opts(opts.Layout(**layout_kwargs))
+                if kind == "paper":
+                    mse_plot = all_plots.opts(
+                        **all_opts_notitle).opts(opts.Layout(**layout_kwargs))
                 else:
-                    mse_plot = all_plots.cols(1).opts(opts.Layout(**layout_kwargs))
+                    mse_plot = all_plots.opts(
+                        **all_opts_notitle).cols(2).opts(opts.Layout(**layout_kwargs))
+            else:
+                if kind == "paper":
+                    if self.backend == "matplotlib":
+                        mse_plot = all_plots.opts(
+                            sublabel_format="", tight=True).opts(opts.Layout(**layout_kwargs))
+                    else:
+                        mse_plot = all_plots.opts(opts.Layout(**layout_kwargs))
+                else:
+                    if self.backend == "matplotlib":
+                        mse_plot = all_plots.cols(1).opts(
+                            sublabel_format="", tight=True).opts(opts.Layout(**layout_kwargs))
+                    else:
+                        mse_plot = all_plots.cols(1).opts(opts.Layout(**layout_kwargs))
         # Save image to disk
         # The renderer should be able to switch between
         # matplotlib and bokeh but the colors can be wrong with
         # matplotlib
         renderer = hv.Store.renderers[self.backend].instance(
             fig='png', dpi=300)
+        filetype = ".png"
+
         i = 0
         if prefix is None:
             prefix = error_key
 
-        filetype = ".png"
-
         if self.backend == "bokeh":
+            # from bokeh.io import export_svgs
             self.plots.append(mse_plot)
             save = (plot_path + prefix + "_" + "{:03d}".format(i))
             while os.path.isfile(save + filetype):
                 i = i+1
                 save = (plot_path + prefix + "_" + "{:03d}".format(i))
-
             renderer.save(mse_plot, save)
             hvplot.show(mse_plot)
         else:

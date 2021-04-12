@@ -1,3 +1,5 @@
+### Here we store various methods to create strings to use with latex
+
 import matplotlib as mpl
 import numpy as np
 
@@ -1907,6 +1909,18 @@ def set_size(beamer=True, scale=None):
         })
 
 def get_value(param):
+    """
+    Given an input parameter, get the value used in the model.
+
+    Parameters
+    ----------
+    param : string
+        Key from in_params_value_dic (a model input parameter)
+
+    Returns
+    -------
+    Formatted string with value of the model input parameter.
+    """
     if param in in_params_value_dic:
         if isinstance(in_params_value_dic[param], str):
             return in_params_value_dic[param]

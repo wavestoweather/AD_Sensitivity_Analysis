@@ -1,4 +1,3 @@
-# from iris.analysis.cartography import rotate_pole
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
@@ -11,55 +10,6 @@ import xarray as xr
 from multiprocessing import Pool
 from itertools import repeat
 from glob import glob
-
-params_dict = {"p": "_diff_0.txt", "T": "_diff_1.txt",
-               "w": "_diff_2.txt", "S": "_diff_3.txt", "qc": "_diff_4.txt",
-               "qr": "_diff_5.txt", "qv": "_diff_6.txt", "Nc": "_diff_7.txt",
-               "Nr": "_diff_8.txt", "Nv": "_diff_9.txt",
-               "qi": "_diff_10.txt", "Ni": "_diff_11.txt",
-               "vi": "_diff_12.txt", "qs": "_diff_13.txt",
-               "Ns": "_diff_14.txt", "qg": "_diff_15.txt",
-               "Ng": "_diff_16.txt", "qh": "_diff_17.txt",
-               "Nh": "_diff_18.txt", "qiout": "_diff_19.txt",
-               "qsout": "_diff_20.txt", "qrout": "_diff_21.txt",
-               "qgout": "_diff_22.txt",
-               "qhout": "_diff_23.txt", "latent_heat": "_diff_24.txt",
-               "latent_cool": "_diff_25.txt"}
-params_dict2 = {"_diff_0.txt": "p",
-               "_diff_1.txt": "T",
-               "_diff_2.txt": "w",
-               "_diff_3.txt": "S",
-               "_diff_4.txt": "qc",
-               "_diff_5.txt": "qr",
-               "_diff_6.txt": "qv",
-               "_diff_7.txt": "Nc",
-               "_diff_8.txt": "Nr",
-               "_diff_9.txt": "Nv",
-               "_diff_10.txt": "qi",
-               "_diff_11.txt": "Ni",
-               "_diff_12.txt": "vi",
-               "_diff_13.txt": "qs",
-               "_diff_14.txt": "Ns",
-               "_diff_15.txt": "qg",
-               "_diff_16.txt": "Ng",
-               "_diff_17.txt": "qh",
-               "_diff_18.txt": "Nh",
-               "_diff_19.txt": "qiout",
-               "_diff_20.txt": "qsout",
-               "_diff_21.txt": "qrout",
-               "_diff_22.txt": "qgout",
-               "_diff_23.txt": "qhout",
-               "_diff_24.txt": "latent_heat",
-               "_diff_25.txt": "latent_cool",
-               "_diff_26.txt": "Niout",
-               "_diff_27.txt": "Nsout",
-               "_diff_28.txt": "Nrout",
-               "_diff_29.txt": "Ngout",
-               "_diff_30.txt": "Nhout",
-               "_diff_31.txt": "z",
-               "_diff_32.txt": "n_inact",
-               "_diff_33.txt": "depo",
-               "_diff_34.txt": "sub"}
 
 
 def filter_zeros(df_dict, EPSILON=1e-31):
@@ -252,7 +202,7 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
     direc : string
         A path to a directory with files to read.
     parquet : boolean
-        If true: Load a series of preprocessed parquet files, else try loading *.txt files.
+        If true: Load a series of preprocessed parquet files.
         If this fails, netcdf-files are loaded.
     columns : list of strings
         Specify the columns to load.
@@ -299,7 +249,6 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
                 ds = ds.expand_dims("Output Parameter")
                 df = ds.to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
         # The performance of the following command is not the best.
-
         # df = xr.open_mfdataset(
         #     direc + "/" + file_ending,
         #     parallel=True,
@@ -307,80 +256,28 @@ def load_mult_derivates_direc_dic(direc="", parquet=True, netcdf=False,
         #     decode_times=False).to_dask_dataframe(dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
     else:
         try:
-            df = pd.read_csv(direc + "/*diff*", assume_missing=True) # , blocksize="8GB"
+            # Try reading netcdf files in bulk
+            # Works only if no multiindex is given
+            df = xr.open_mfdataset(
+                direc + "/" + file_ending,
+                parallel=True,
+                decode_times=False).to_dask_dataframe(
+                    dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
         except:
-            try:
-                # Try reading netcdf files in bulk
-                # Works only if no multiindex is given
-                df = xr.open_mfdataset(
-                    direc + "/" + file_ending,
-                    parallel=True,
-                    decode_times=False).to_dask_dataframe(
-                        dim_order=["Output Parameter", "ensemble", "trajectory", "time"])
-            except:
-                # Last fallback which works for most netcdf files
-                df = None
-                file_list = []
-                for f in os.listdir(direc):
-                    file_list.append(os.path.join(direc, f))
-                file_list = np.sort(np.asarray(file_list))
-                for f in file_list:
-                    if df is None:
-                        df = xr.open_dataset(f).to_dataframe()
-                    else:
-                        df = df.append(xr.open_dataset(f).to_dataframe())#[columns])
-                # Make id and time columns instead of MultiIndex
-                df.reset_index(inplace=True)
+            # Last fallback which works for most netcdf files
+            df = None
+            file_list = []
+            for f in os.listdir(direc):
+                file_list.append(os.path.join(direc, f))
+            file_list = np.sort(np.asarray(file_list))
+            for f in file_list:
+                if df is None:
+                    df = xr.open_dataset(f).to_dataframe()
+                else:
+                    df = df.append(xr.open_dataset(f).to_dataframe())#[columns])
+            # Make id and time columns instead of MultiIndex
+            df.reset_index(inplace=True)
     return df
-
-
-def rotate_df(df, pollon, pollat, lon="LONGITUDE", lat="LATITUDE"):
-    """
-    Rotate the longitude and latitude with the given pole coordinates.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Dataframe with longitude and latitude
-    pollon : float
-        Longitude of pole.
-    pollat : float
-        Latitude of pole.
-    lon : String
-        "LONGITUDE" for derivative dataframe, "lon" for netCDF dataframe.
-    lat : String
-        "LATITUDE" for derivative dataframe, "lat" for netCDF dataframe.
-    """
-    # lat_v, lon_v = rotate_pole(
-    #                        np.asarray(df[lon].tolist()),
-    #                        np.asarray(df[lat].tolist()),
-    #                        pole_lon=pollon,
-    #                        pole_lat=pollat)
-    # df[lon] = lon_v
-    # df[lat] = lat_v
-    print("Not implemented")
-
-
-def norm_deriv(df):
-    """
-    Given a dataframe with columns:
-    trajectory, timestep, out_param, in_param, deriv, ratio_deriv, MAP
-    where out_param is a string such as 'p', 'T', 'w' etc
-    in_param is a string such as "da_1", "da_2", "dsnow_alfa_q", ...
-    deriv is the float derivative of the given in_param.
-
-    Normalize the ratio of the derivatives for every timestep and add that
-    as another column "norm_deriv". The column "MAP" is used to normalize only
-        within an area (consecutive timesteps with equal flag).
-
-    Parameters
-    ----------
-    df : pandas.Dataframe
-        Dataframe with columns trajectory, timestep, out_param, in_param,
-        deriv, ratio_deriv and MAP. On out: Holds another
-        column "norm_deriv"
-    """
-    print("TODO")
 
 
 def ratio_deriv(df, out_param):
@@ -416,48 +313,3 @@ def ratio_deriv(df, out_param):
     denominator = np.abs(df["deriv"]).max()
     df_out["ratio_deriv"] = df_out["deriv"]/denominator
     return df_out
-
-
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) < 4:
-        print("Please give a path with prefix of data and a suffix and an identifier for the csv.")
-        print("Falling back to default.")
-        prefix = "/data/project/wcb/sb_ice_wcb272280_traj"
-        suffix = "start_over_20160922_00"
-        ident  = "filt_zero_30"
-    else:
-        prefix = sys.argv[1]
-        suffix = sys.argv[2]
-        ident  = sys.argv[3]
-
-    try:
-        refs = np.loadtxt('reference_values.txt')
-        Tref = refs[0]
-        pref = refs[1]
-        qref = refs[2]
-        Nref = refs[3]
-        wref = refs[4]
-        tref = refs[5]
-    except:
-        print("No file with reference values found. Using default values.")
-        Tref = 273.15
-        pref = 100000
-        qref = 1e-06
-        Nref = 1
-        wref = 1
-        tref = 1
-        zref = 1
-
-    filt = True
-    lo = 1
-    hi = 3
-    EPSILON = 1e-30
-    high = None
-    res = load_mult_derivates_big(prefix, suffix,
-                                  filt=filt, lo=lo, hi=hi,
-                                  EPSILON=EPSILON, high=high)
-    print("Trying to store\n")
-    saveword = "sb_ice_wcb272280" + "_" + ident + "_" + suffix + ".csv"
-    res.to_csv(saveword)
-

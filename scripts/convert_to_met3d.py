@@ -6,17 +6,10 @@ import xarray as xr
 import numpy as np
 from timeit import default_timer as timer
 import progressbar as pb
-# import sys
 
-# np.set_printoptions(threshold=sys.maxsize)
-
+# Some default values
 met_dims = ["ensemble", "trajectory", "time", "start_lon",
             "start_lat", "start_isobaric"]
-
-path = "/data/project/wcb/netcdf/vladiana"
-# path = "/lustre/project/m2_jgu-tapt/cosmo_output/vladiana/traj"
-store_path = "/data/project/wcb/netcdf/vladiana_met/"
-# /lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana
 
 # 400 hPa and 600 hPa ascent
 window_conv_400 = 1 * 3 * 60
@@ -26,8 +19,19 @@ window_slan_400_min = 15 * 6 * 3
 window_slan_600 = 22  * 3 * 60
 window_slan_600_min = 65 * 6 * 3
 
+
 def find_runs(x):
-    """Find runs of consecutive items in an array."""
+    """
+    Find runs of consecutive items in an array.
+
+    Parameters
+    ----------
+    x : np.array
+
+    Returns
+    -------
+    Three arrays of values, start index and length of repeats.
+    """
 
     n = x.shape[0]
 
@@ -50,7 +54,28 @@ def find_runs(x):
 
         return run_values, run_starts.astype(np.int64), run_lengths.astype(np.int64)
 
+
 def differ(x, axis, hPa, debug=False):
+    """
+    Function used for rolling of datasets or arrays.
+    Find the time step where a convective ascend starts of a given
+    pressure difference.
+
+    Parameters
+    ----------
+    x : ($D) arrays
+        Array where the last dimension is the window size
+    axis : int
+        Time step axis
+    hPa : float or int
+        Threshold at which the ascend is met. Usually either 400 or 600 hPa
+    debug : bool
+        Print debug statements if true
+
+    Returns
+    -------
+    Array of bools where start of ascend is marked with true.
+    """
     if debug:
         print("x")
         print(np.shape(x))
@@ -154,7 +179,30 @@ def differ(x, axis, hPa, debug=False):
 
     return return_bools
 
+
 def differ_slan(x, axis, hPa, min_window):
+    """
+    Function used for rolling of datasets or arrays.
+    Find the time step where a slantwise ascend starts of a given
+    pressure difference.
+
+    Parameters
+    ----------
+    x : ($D) arrays
+        Array where the last dimension is the window size
+    axis : int
+        Time step axis
+    hPa : float or int
+        Threshold at which the ascend is met. Usually either 400 or 600 hPa
+    min_window : int
+        Minimum amount of time steps (i.e. of size 20 s) for the ascend. If
+        the ascend is faster than the minimum amount, it is a *convective*
+        ascend identified by differ(..).
+
+    Returns
+    -------
+    Array of bools where start of ascend is marked with true.
+    """
     window_size = len(x[0][0][0])
     ascent = np.argmax(x, axis=axis) < np.argmin(x, axis=3)
     amount = np.max(x, axis=axis) - np.min(x, axis=axis) >= hPa*100
@@ -164,7 +212,6 @@ def differ_slan(x, axis, hPa, min_window):
     differences = np.diff(x, axis=3)
     # Get minimum length of window with value >= hPa
     min_lengths = np.full(np.shape(both), np.inf)
-
 
     for ens in range(len(differences)):
         if not both[ens].any():
@@ -228,6 +275,7 @@ def differ_slan(x, axis, hPa, min_window):
                     return_bools[ens][traj][set_start:int(set_end)] = True
     return return_bools
 
+
 def add_norm_time(df, norm_col, group, columns=None, flag=None):
     '''
     Return a view that consists only of entries that are flagged.
@@ -235,21 +283,52 @@ def add_norm_time(df, norm_col, group, columns=None, flag=None):
     trajectory starts at norm_col==0. columns is a list of
     columns that the returned view shall have.
     if columns is None, take all columns. If flag is None, take all trajectories.
+
+    Parameters
+    ----------
+    df : pandas.Dataframe
+        Dataframe with columns norm_col, group and flag at minimum.
+    norm_col : string
+        Column where the minimum value where flag is true is substracted from.
+        Usually it is "time"
+    group : string
+        Column for grouping operation, i.e. "trajectory".
+    columns : list of string
+        List of columns that the returned view shall have. If None is given,
+        return all columns.
+    flag : string
+        Column with bools, i.e. start of an ascend.
+
+    Returns
+    -------
+    pandas.Dataframe with added "time_after_ascent".
     '''
     if columns is None:
         df_flagged = df.copy()
     else:
         df_flagged = df[columns + [flag] + [norm_col] + [group]]
+
     def reducer(x, col):
         mini = x.loc[x[flag] == True][col].min()
         x[col] = x[col] - mini
         return x
     normed = df_flagged.groupby([group]).apply(reducer, norm_col)
-    df["time_after_ascent"] = normed["time"]
+    df["time_after_ascent"] = normed[norm_col]
     return df
 
 
 def add_sat(ds):
+    """
+    Add saturation as a column.
+
+    Parameters
+    ----------
+    ds : pandas.Dataframe or any dataset
+
+    Returns
+    -------
+    Dataframe or dataset with "S" added.
+    """
     def p_sat(T):
         return 610.78 * np.exp(17.2693882 * (T-273.16)/(T-35.86))
     def convert_qv_to_S(p, T, qv):
@@ -258,11 +337,40 @@ def add_sat(ds):
     ds["S"] = convert_qv_to_S(ds["pressure"], ds["T"], ds["QV"])
     return ds
 
+
 def add_ascend_velocity(ds):
+    """
+    Add ascend velocity in [m/s] in column "w" by calculating the difference
+    of the height "z" in consecutive time steps assuming a time step size of
+    20 s.
+
+    Parameters
+    ----------
+    ds : pandas.Dataframe or any dataset
+
+    Returns
+    -------
+    Dataframe or dataset with "w" added.
+    """
     ds["w"] = ds["z"].diff(dim="time", label="lower")/20
     return ds
 
+
 def add_turb_flux(ds):
+    """
+    Add a column "Q_TURBULENCE" where we account any difference from
+    mixing ratios in consecutive time steps that cannot be explained
+    by inflow from above the trajectory and sedimentation to turbulences
+    (aka in- and outflow from the side).
+
+    Parameters
+    ----------
+    ds : pandas.Dataframe or any dataset
+
+    Returns
+    -------
+    Dataframe or dataset with "Q_TURBULENCE" added.
+    """
     q_total = ds["QV"] + ds["QC"] + ds["QR"] + ds["QS"] + ds["QI"] + ds["QG"]
     q_in_total = ds["QR_IN"] + ds["QS_IN"] + ds["QI_IN"] + ds["QG_IN"]
     q_out_total = ds["QR_OUT"] + ds["QS_OUT"] + ds["QI_OUT"] + ds["QG_OUT"]
@@ -270,7 +378,30 @@ def add_turb_flux(ds):
     ds["Q_TURBULENCE"] = ds["Q_TURBULENCE"] - q_in_total + q_out_total
     return ds
 
+
 def convert_wcb2(f, store_path, fl, ensemble):
+    """
+    Load a NetCDF-file stored in wcb2-style, find those, which satisfy
+    the criterium given by "fl" (e.g. "conv_600" for convective ascends
+    with 600 hPa), mark the start of the ascend, make sedimentation and
+    inflow from above positive values (for consistency), add attributes
+    to the columns for Met3D support, add a column for the type of trajectory,
+    add ascend velocity, mixing ratio changes from turbulences and saturation.
+    Stores the converted NetCDF-file to "store_path" with zlib compression
+    of level 9.
+
+    Parameters
+    ----------
+    f : path
+        Path to NetCDF-file with trajectories stored in wcb2 style.
+    store_path : path
+        Path to store converted NetCDF-file.
+    fl : string
+        Flag for the type of trajectory to store. Options are
+        "conv_400", "conv_600", "slan_400", "slan_600".
+    ensemble : int
+        ID of ensemble from file.
+    """
     ds = xr.open_dataset(f).to_dataframe().reset_index()
 
     ds.rename(columns={
@@ -620,29 +751,53 @@ def convert_wcb2(f, store_path, fl, ensemble):
         format="NETCDF4",
         mode="w")
 
+
 if __name__ == "__main__":
+    import argparse
     import sys
-    if len(sys.argv) > 1:
-        path = sys.argv[1]
-    if len(sys.argv) > 2:
-        store_path = sys.argv[2]
-        if store_path[-1] != "/":
-            store_path += "/"
-    if len(sys.argv) > 3:
-        flags = [sys.argv[3]]
-    else:
-        flags = ["conv_400", "conv_600", "slan_400", "slan_600"]
+
+    parser = argparse.ArgumentParser(
+        description='''
+        Load a NetCDF-file stored in wcb2-style one after another, find those,
+        which are convective or slantwise given by flags,
+        mark the start of the ascend, make sedimentation and
+        inflow from above positive values (for consistency), add attributes
+        to the columns for Met3D support, add a column for the type of trajectory,
+        add ascend velocity, mixing ratio changes from turbulences and saturation.
+        Stores the converted NetCDF-file to "store_path" with zlib compression
+        of level 9.
+        ''')
+    parser.add_argument('--path', default='/data/project/wcb/netcdf/vladiana',
+        # Slurm path "/lustre/project/m2_jgu-tapt/cosmo_output/vladiana/traj"
+        help='''
+        Path where one or more NetCDF-files in wcb2 style are stored.
+        ''')
+    parser.add_argument('--store_path',
+        default='/data/project/wcb/netcdf/vladiana_met/',
+        # Slurm path "/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana"
+        help='''
+        Path where the converted files shall be stores
+        ''')
+    parser.add_argument('--flags',
+        default=["conv_400", "conv_600", "slan_400", "slan_600"],
+        type=str,
+        nargs='+',
+        help='''
+        Flags for the type of trajectories to look for.
+        ''')
+    args = parser.parse_args()
+
     file_list = []
-    for f in os.listdir(path):
+    for f in os.listdir(args.path):
         if ".nc_wcb" in f:
-            file_list.append(os.path.join(path, f))
+            file_list.append(os.path.join(args.path, f))
     file_list = np.sort(file_list)
-    for flag in flags:
+    for flag in args.flags:
         print(f"#################### {flag} ######################")
         for i in pb.progressbar(range(len(file_list)), redirect_stdout=True):
             convert_wcb2(
                 f = file_list[i],
-                store_path=store_path + flag + "_" + str(i) + "_" + file_list[i].split("/")[-1],
+                store_path=args.store_path + flag + "_" + str(i) + "_" + file_list[i].split("/")[-1],
                 fl=flag,
                 ensemble=i)
 
