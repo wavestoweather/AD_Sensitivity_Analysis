@@ -14,6 +14,7 @@ try:
         in_params_descr_dic,
     )
     from segment_identifier import d_unnamed
+    from create_mse import load_and_append
 except:
     from scripts.Deriv_dask import Deriv_dask
     from scripts.latexify import (
@@ -23,40 +24,7 @@ except:
         in_params_descr_dic,
     )
     from scripts.segment_identifier import d_unnamed
-
-
-def load_and_append(name_list, filetype):
-    """
-    Load and append multiple files that are temporary results created
-    by create_mse.py.
-
-    Parameters
-    ----------
-    name_list : list of string
-        List of paths for files to load and append together.
-    filetype : string
-        Define which type to load. Options are "csv" and "netcdf".
-
-    Returns
-    -------
-    pandas.Dataframe with all data appended together.
-    """
-    all_df = None
-    for name in name_list:
-        try:
-            if all_df is None:
-                if filetype == "csv":
-                    all_df = d_unnamed(pd.read_csv(name))
-                else:
-                    all_df = xr.open_dataset(name).to_dataframe()
-            else:
-                if filetype == "csv":
-                    all_df = all_df.append(d_unnamed(pd.read_csv(name)))
-                else:
-                    all_df = all_df.append(xr.open_dataset(name).to_dataframe())
-        except:
-            pass
-    return all_df
+    from scripts.create_mse import load_and_append
 
 
 def reduce_df(df, error_key, sens_kind="mean", error_kind="mean"):

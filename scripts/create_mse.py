@@ -6,8 +6,48 @@ from progressbar import progressbar as pb
 import sys
 import xarray as xr
 
-from Deriv_dask import Deriv_dask
-from latexify import in_params_dic, physical_params
+try:
+    from Deriv_dask import Deriv_dask
+    from latexify import in_params_dic, physical_params
+    from segment_identifier import d_unnamed
+except:
+    from scripts.Deriv_dask import Deriv_dask
+    from scripts.latexify import in_params_dic, physical_params
+    from scripts.segment_identifier import d_unnamed
+
+
+def load_and_append(name_list, filetype="csv"):
+    """
+    Load and append multiple files that are temporary results created
+    by create_mse.py.
+
+    Parameters
+    ----------
+    name_list : list of string
+        List of paths for files to load and append together.
+    filetype : string
+        Define which type to load. Options are "csv" and "netcdf".
+
+    Returns
+    -------
+    pandas.Dataframe with all data appended together.
+    """
+    all_df = None
+    for name in name_list:
+        try:
+            if all_df is None:
+                if filetype == "csv":
+                    all_df = d_unnamed(pd.read_csv(name))
+                else:
+                    all_df = xr.open_dataset(name).to_dataframe()
+            else:
+                if filetype == "csv":
+                    all_df = all_df.append(d_unnamed(pd.read_csv(name)))
+                else:
+                    all_df = all_df.append(xr.open_dataset(name).to_dataframe())
+        except:
+            pass
+    return all_df
 
 
 def get_errors_by_file(
@@ -388,31 +428,56 @@ if __name__ == "__main__":
         output parameter value as weight. Only works with "x_per_out_param".
         """,
     )
+    parser.add_argument(
+        "--no_reduction",
+        action="store_true",
+        help="""
+        Only save intermediate results and exit without further reduction.
+        """,
+    )
+    parser.add_argument(
+        "--load_intermediate_files",
+        type=str,
+        nargs="+",
+        default=[],
+        help="""
+        In case intermediate files have been created before, you can define
+        each separately and load these instead of calculating the errors again.
+        """,
+    )
     args = parser.parse_args()
 
-    if args.save_intermediate:
+    if args.save_intermediate or args.no_reduction:
+        save_intermediate = True
         try:
-            os.mkdir(args.store_path + "/tmp/")
+            os.mkdir(args.store_path + "tmp/")
         except:
             pass
+    else:
+        save_intermediate = False
 
-    mse_df = get_errors_by_file(
-        base_path=args.path,
-        n_trajs=args.n_trajs,
-        error_kind=args.error_kind,
-        df_name=args.filename,
-        store_path=args.store_path + "/tmp/",
-        filetype=args.filetype,
-        n_cpus=args.n_cpus,
-        ratio_type=args.ratio_type,
-        sens_kind=args.sens_kind,
-        save_intermediate=args.save_intermediate,
-    )
-    reduce_errors(
-        mse_df=mse_df,
-        error_kind=args.error_kind,
-        df_name=args.filename,
-        reduce_func=args.reduce_func,
-        store_path=args.store_path,
-        filetype=args.filetype,
-    )
+    if len(args.load_intermediate_files) > 0:
+        mse_df = load_and_append(args.load_intermediate_files, args.filetype)
+    else:
+        mse_df = get_errors_by_file(
+            base_path=args.path,
+            n_trajs=args.n_trajs,
+            error_kind=args.error_kind,
+            df_name=args.filename,
+            store_path=args.store_path + "tmp/",
+            filetype=args.filetype,
+            n_cpus=args.n_cpus,
+            ratio_type=args.ratio_type,
+            sens_kind=args.sens_kind,
+            save_intermediate=save_intermediate,
+        )
+
+    if not args.no_reduction:
+        reduce_errors(
+            mse_df=mse_df,
+            error_kind=args.error_kind,
+            df_name=args.filename,
+            reduce_func=args.reduce_func,
+            store_path=args.store_path,
+            filetype=args.filetype,
+        )
