@@ -1683,6 +1683,8 @@ def create_forest(
     save_memory=False,
     no_split=False,
     verbosity=False,
+    max_depth=36,
+    max_leaf_nodes=1000,
 ):
     """
     Create a random forest and fit it. Returns training and testing set and
@@ -1729,6 +1731,16 @@ def create_forest(
         for training.
     verbosity : bool
         If true, set verbosity of the random forest to 2.
+    max_depth : int
+        From sklearn.ensemble.RandomForestClassifier:
+        The maximum depth of the tree. If None, then nodes are expanded until
+        all leaves are pure or until all leaves contain less than
+        min_samples_split (here: 2) samples.
+    max_leaf_nodes : int
+        From sklearn.ensemble.RandomForestClassifier:
+        Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
+        defined as relative reduction in impurity. If None then unlimited
+        number of leaf nodes.
 
     Returns
     -------
@@ -1748,8 +1760,8 @@ def create_forest(
         max_features=max_features,
         n_jobs=-1,
         verbose=verbose,
-        max_depth=36,
-        max_leaf_nodes=1000,
+        max_depth=max_depth,
+        max_leaf_nodes=max_leaf_nodes,
     )
 
     if isinstance(ds, list):
@@ -1900,6 +1912,8 @@ def train_many_models(
     save_memory=False,
     no_split=True,
     verbosity=0,
+    max_depth=36,
+    max_leaf_nodes=1000,
 ):
     """
     Train different models for different max feature splits and thresholds
@@ -1956,6 +1970,16 @@ def train_many_models(
         for training.
     verbosity : int
         Set verbosity level.
+    max_depth : int
+        From sklearn.ensemble.RandomForestClassifier:
+        The maximum depth of the tree. If None, then nodes are expanded until
+        all leaves are pure or until all leaves contain less than
+        min_samples_split (here: 2) samples.
+    max_leaf_nodes : int
+        From sklearn.ensemble.RandomForestClassifier:
+        Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
+        defined as relative reduction in impurity. If None then unlimited
+        number of leaf nodes.
 
     Returns
     -------
@@ -2007,6 +2031,8 @@ def train_many_models(
                 save_memory=save_memory,
                 no_split=no_split,
                 verbosity=verbosity > 3,
+                max_depth=max_depth,
+                max_leaf_nodes=max_leaf_nodes,
             )
             models_inner.append(model)
         models.append(models_inner)
@@ -2090,10 +2116,14 @@ def create_dataset_pretrained(
         load_data = False
         in_params = list(np.unique(data["Input Parameter"]))
     dims_forest = (len(max_features_list), 1, 1 + len(in_params), len(seg_thresholds))
+    if predict_train:
+        input_param_coords = ["All Input Parameters Train Set"] + in_params
+    else:
+        input_param_coords = ["All Input Parameters Test Set"] + in_params
     coords_forest_dic = {
         "Max Features": max_features_list,
         "Output Parameter": ["All Output Parameters"],
-        "Input Parameter": ["All Input Parameters Test Set"] + in_params,
+        "Input Parameter": input_param_coords,
         "Segment Threshold": seg_thresholds,
     }
 
@@ -2107,7 +2137,6 @@ def create_dataset_pretrained(
     p_w_forest = np.zeros(dims_forest, dtype=int)
 
     # Pre calculate the segment positions?
-    # ds_cache = {}
     test_cache = {}
     if precalc:
         for seg_thresh in seg_thresholds:
@@ -2116,7 +2145,6 @@ def create_dataset_pretrained(
                 ds, step_tol, distinct_outparams
             )
             test_cache[seg_thresh] = (test, test_labels)
-            # ds_cache[seg_thresh] = find_segments(data, 10.0**seg_thresh)
 
     for seg_idx, seg_thresh in enumerate(seg_thresholds):
         if load_data:
@@ -2131,18 +2159,13 @@ def create_dataset_pretrained(
                     continue
                 if "labels" in path:
                     test_labels = np.load(path, allow_pickle=True, fix_imports=False)
-                    # print(path)
-                    # print(test_labels)
                     test_labels = test_labels.astype(int, copy=False)
                 else:
                     test = np.load(path, allow_pickle=True, fix_imports=False)
-                    # print(path)
-                    # print(test)
                 if test is not None and test_labels is not None:
                     break
         elif precalc:
             test, test_labels = test_cache[seg_thresh]
-            # ds = ds_cache[seg_thresh]
         else:
             ds = find_segments(data, 10.0 ** seg_thresh)
             test, test_labels, _, _ = create_input_labels(
@@ -2237,6 +2260,8 @@ def create_dataset_forest(
     save_memory=False,
     no_split=False,
     verbosity=0,
+    max_depth=36,
+    max_leaf_nodes=1000,
 ):
     """
     Create a dataset with dimensions "Max Features", "Output Parameter",
@@ -2297,6 +2322,16 @@ def create_dataset_forest(
         for training.
     verbosity : int
         Set verbosity level.
+    max_depth : int
+        From sklearn.ensemble.RandomForestClassifier:
+        The maximum depth of the tree. If None, then nodes are expanded until
+        all leaves are pure or until all leaves contain less than
+        min_samples_split (here: 2) samples.
+    max_leaf_nodes : int
+        From sklearn.ensemble.RandomForestClassifier:
+        Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
+        defined as relative reduction in impurity. If None then unlimited
+        number of leaf nodes.
 
     Returns
     -------
@@ -2819,6 +2854,28 @@ if __name__ == "__main__":
         6: Get count for segment starts for every input parameter
         """,
     )
+    parser.add_argument(
+        "--max_depth",
+        type=int,
+        default=36,
+        help="""
+        From sklearn.ensemble.RandomForestClassifier:
+        The maximum depth of the tree. If None, then nodes are expanded until
+        all leaves are pure or until all leaves contain less than
+        min_samples_split (here: 2) samples.
+        """,
+    )
+    parser.add_argument(
+        "--max_leaf_nodes",
+        type=int,
+        default=1000,
+        help="""
+        From sklearn.ensemble.RandomForestClassifier:
+        Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
+        defined as relative reduction in impurity. If None then unlimited
+        number of leaf nodes.
+        """,
+    )
 
     args = parser.parse_args()
     if args.store_name is not None:
@@ -3081,6 +3138,8 @@ if __name__ == "__main__":
                 no_split=args.no_split,
                 save_memory=args.save_memory,
                 verbosity=args.verbosity,
+                max_depth=args.max_depth,
+                max_leaf_nodes=args.max_leaf_nodes,
             )
         else:
             models, seg_thresholds = train_many_models(
@@ -3096,6 +3155,8 @@ if __name__ == "__main__":
                 no_split=args.no_split,
                 save_memory=args.save_memory,
                 verbosity=args.verbosity,
+                max_depth=args.max_depth,
+                max_leaf_nodes=args.max_leaf_nodes,
             )
         if args.store_models is not None:
             for feat_idx, max_features in enumerate(max_features_list):

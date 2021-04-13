@@ -1,8 +1,4 @@
 try:
-    import scripts.loader as loader
-except:
-    import loader
-try:
     import latexify
 except:
     import scripts.latexify as latexify

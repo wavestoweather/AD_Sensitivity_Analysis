@@ -1,6 +1,7 @@
 __pycache__/*
 execute_id*
 checkpoint_id*
+*.joblid
 *.txt
 *.pyc
 *.log
