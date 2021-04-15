@@ -1800,9 +1800,15 @@ def create_forest(
     return model, train, test, train_labels, test_labels, feature_names, class_names
 
 
-def get_tree_matrix(trained_model, X, y, only_idx=None):
+def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=8):
     """
-    Create a confusion matrix with a single row.
+    Create a confusion matrix with a single row given a random forest.
+    Late and early positive is every segment start, that got detected within
+    the given tolerance incl. exact true predictions.
+    Here "True Positive" means windows with the right time step within a
+    tolerance for a prediction. The sum of early positive and late positive may
+    be greater than true positive if for an early prediction there exists a
+    late prediction.
 
     Parameters
     ----------
@@ -1826,22 +1832,104 @@ def get_tree_matrix(trained_model, X, y, only_idx=None):
     # The confusion matrix has the dimensions
     # tp, fn, fp, tn, ep, lp, p_act, p_act_win, pr, re, f1, fpr
     # Using the test set
+    n_steps, n_features = np.shape(y)
+
     if only_idx is None:
         p_act_win = np.sum(y)
         n = np.sum((y == 0))  # np.product(np.shape(test_labels))
-        tp = np.sum((pred == True) & (y == 1))
+        # tp = np.sum((pred == True) & (y == 1))
         fp = np.sum((pred == True) & (y == 0))
         p_pred = np.sum(pred)
+
+        # This is a version where we get how many of the predictions are early or late
+        # p_pred_idx = np.argwhere(pred)
+        #     ep = np.sum( [ np.any( y[p_pred[0]-min(step_tol, p_pred[0]):p_pred[0]+1,p_pred[1] ] ) for p_pred in p_pred_idx])
+        #     lp = np.sum( [ np.any( y[p_pred[0]+1:max(p_pred[0]+step_tol, n_features),p_pred[1] ] ) for p_pred in p_pred_idx])
+        # This is a version where we get how many segment starts we predict within a tolerance
+        y_idx = np.argwhere(y)
+        ep = np.sum(
+            [
+                np.any(
+                    pred[
+                        y_i[0] - min(step_tol, y_i[0]) : min(y_i[0] + 1, n_steps),
+                        y_i[1],
+                    ]
+                )
+                for y_i in y_idx
+            ]
+        )
+        lp = np.sum(
+            [
+                np.any(
+                    pred[
+                        min(y_i[0] + 1, n_steps) : min(y_i[0] + step_tol, n_steps),
+                        y_i[1],
+                    ]
+                )
+                for y_i in y_idx
+            ]
+        )
+        tp = np.sum(
+            [
+                np.any(
+                    pred[
+                        y_i[0]
+                        - min(step_tol, y_i[0]) : min(y_i[0] + step_tol, n_steps),
+                        y_i[1],
+                    ]
+                )
+                for y_i in y_idx
+            ]
+        )
+
         pr = tp / p_pred
         re = tp / p_act_win
     else:
         p_act_win = np.sum(y[:, only_idx])
         n = np.sum((y[:, only_idx] == 0))  # np.product(np.shape(test_labels))
-        tp = np.sum((pred[:, only_idx] == True) & (y[:, only_idx] == 1))
+        # tp = np.sum((pred[:, only_idx] == True) & (y[:, only_idx] == 1))
         fp = np.sum((pred[:, only_idx] == True) & (y[:, only_idx] == 0))
         p_pred = np.sum(pred[:, only_idx])
+
+        y_idx = np.argwhere(y[:, only_idx])
+        ep = np.sum(
+            [
+                np.any(
+                    pred[
+                        y_i[0] - min(step_tol, y_i[0]) : min(y_i[0] + 1, n_steps),
+                        only_idx,
+                    ]
+                )
+                for y_i in y_idx
+            ]
+        )
+        lp = np.sum(
+            [
+                np.any(
+                    pred[
+                        min(y_i[0] + 1, n_steps) : min(y_i[0] + step_tol, n_steps),
+                        only_idx,
+                    ]
+                )
+                for y_i in y_idx
+            ]
+        )
+        tp = np.sum(
+            [
+                np.any(
+                    pred[
+                        y_i[0]
+                        - min(step_tol, y_i[0]) : min(y_i[0] + step_tol, n_steps),
+                        only_idx,
+                    ]
+                )
+                for y_i in y_idx
+            ]
+        )
+
         pr = tp / p_pred
         re = tp / p_act_win
+
     fn = p_act_win - tp
     tn = n - fp
     f1 = 2 * (pr * re) / (pr + re)
@@ -1851,8 +1939,8 @@ def get_tree_matrix(trained_model, X, y, only_idx=None):
         fn,
         fp,
         tn,
-        0,
-        0,
+        ep,  # early positive - got a segment although early (or exact)
+        lp,  # late positive - positive within a tolerance after the fact
         p_act_win,
         p_act_win,
         pr,
@@ -1865,20 +1953,34 @@ def get_tree_matrix(trained_model, X, y, only_idx=None):
 
 
 def plot_tree_matrix(
-    model, train, test, train_labels, test_labels, feature_names, class_names
+    model,
+    train,
+    test,
+    train_labels,
+    test_labels,
+    feature_names,
+    class_names,
+    step_tol=8,
 ):
     """
     TODO: Plot the single row confusion matrix. Currently this method only
     returns a single row confusion matrix.
     """
-    confusion_matrix = get_tree_matrix(model, test, test_labels)
+    confusion_matrix = get_tree_matrix(model, test, test_labels, step_tol=step_tol)
 
     # TODO Plot results?
     return confusion_matrix
 
 
 def show_tree_stats(
-    model, train, test, train_labels, test_labels, feature_names, class_names
+    model,
+    train,
+    test,
+    train_labels,
+    test_labels,
+    feature_names,
+    class_names,
+    step_tol=8,
 ):
     """
     TODO: Plot the single row confusion matrix. Currently this method
@@ -1893,7 +1995,7 @@ def show_tree_stats(
     print(f"Mean number of nodes: {np.mean(n_nodes):1.2e}")
     print(f"Mean max depth: {np.mean(max_depth):1.2e}")
 
-    confusion_matrix = get_tree_matrix(model, test, test_labels)
+    confusion_matrix = get_tree_matrix(model, test, test_labels, step_tol=step_tol)
 
     # TODO Plot results?
     return confusion_matrix
@@ -2180,7 +2282,7 @@ def create_dataset_pretrained(
                 )
                 t1 = timer()
             model = models[feat_idx][seg_idx]
-            matrix = get_tree_matrix(model, test, test_labels)
+            matrix = get_tree_matrix(model, test, test_labels, step_tol=step_tol)
             # For paranoia reasons
             np.nan_to_num(matrix, copy=False)
 
@@ -2200,7 +2302,9 @@ def create_dataset_pretrained(
                 )
 
             for in_idx, in_p in enumerate(in_params):
-                matrix = get_tree_matrix(model, test, test_labels, only_idx=in_idx)
+                matrix = get_tree_matrix(
+                    model, test, test_labels, only_idx=in_idx, step_tol=step_tol
+                )
                 np.nan_to_num(matrix, copy=False)
 
                 tpp_forest[feat_idx, 0, 1 + in_idx, seg_idx] = matrix[9]
@@ -2392,7 +2496,7 @@ def create_dataset_forest(
             )
             if verbosity > 2:
                 print("Trained model")
-            test_matrix = get_tree_matrix(model, test, test_labels)
+            test_matrix = get_tree_matrix(model, test, test_labels, step_tol=step_tol)
             train_matrix = get_tree_matrix(model, train, train_labels)
             if verbosity > 2:
                 print("Got confuse matrix")
@@ -2415,7 +2519,9 @@ def create_dataset_forest(
             p_w_forest[feat_idx, 0, 1, seg_idx] = test_matrix[7]
 
             for in_idx, in_p in enumerate(in_params):
-                matrix = get_tree_matrix(model, test, test_labels, only_idx=in_idx)
+                matrix = get_tree_matrix(
+                    model, test, test_labels, only_idx=in_idx, step_tol=step_tol
+                )
 
                 tpp_forest[feat_idx, 0, 2 + in_idx, seg_idx] = matrix[9]
                 fpp_forest[feat_idx, 0, 2 + in_idx, seg_idx] = matrix[2] / matrix[6]
@@ -2974,6 +3080,7 @@ if __name__ == "__main__":
         seg_thresholds = np.arange(
             args.min_threshold, args.max_threshold, args.threshold_step
         )
+
         for threshold in seg_thresholds:
             train, labels, test, test_labels = create_big_stratified_set(
                 data_path=args.data_path,
