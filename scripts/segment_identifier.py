@@ -9,7 +9,8 @@ from timeit import default_timer as timer
 import warnings
 import xarray as xr
 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.multiclass import OneVsRestClassifier
 from skmultilearn.model_selection import iterative_train_test_split
 from itertools import product
 
@@ -1584,9 +1585,18 @@ def create_input_labels(ds, step_tol, distinct_outparams, verbosity=0):
     n_timesteps = len(ds["time_after_ascent"])
     n_out_params = len(ds["Output Parameter"])
     n_trajs = len(ds["trajectory"])
-    n_windows = n_timesteps - (2 * step_tol + 1)
+    n_windows = n_timesteps - step_tol
     X = ds["Predicted Squared Error"].values
+    X = np.moveaxis(X, [0], [1])
+    # pad left zero values
+    X_shape = np.shape(X)[0:3] + (step_tol,)
+    X = np.insert(X, [0], np.zeros(X_shape), axis=3)
     y = ds["segment_start"].values
+    y = np.moveaxis(y, [0], [1])
+    # pad right zero values
+    y_shape = np.shape(y)[0:3] + (step_tol,)
+    y = np.insert(y, [-1], np.zeros(y_shape), axis=3)
+
     if distinct_outparams:
         feature_names = product(
             np.unique(ds["Output Parameter"].values),
@@ -1610,7 +1620,7 @@ def create_input_labels(ds, step_tol, distinct_outparams, verbosity=0):
             [
                 *(
                     np.vstack(
-                        y[out_p, :, traj, j : (step_tol * 2 + 1) + j]
+                        y[:, out_p, traj, j : (step_tol * 2 + 1) + j]
                         for j in range(n_windows)
                     ).reshape((n_windows, -1))
                     for traj in range(n_trajs)
@@ -1685,6 +1695,8 @@ def create_forest(
     verbosity=False,
     max_depth=36,
     max_leaf_nodes=1000,
+    classifier="random_forest",
+    learning_rate=1.0,
 ):
     """
     Create a random forest and fit it. Returns training and testing set and
@@ -1741,6 +1753,15 @@ def create_forest(
         Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
         defined as relative reduction in impurity. If None then unlimited
         number of leaf nodes.
+    classifier : string
+        Choose a classifier for prediction. Options are "random_forest"
+        and "adaboost". The latter ignores "max_leaf_nodes" and "max_depth" and
+        rather uses "learning_rate".
+    learning_rate : float
+        From sklean.ensemble.AdaBoostClassifier:
+        Learning rate shrinks the contribution of each classifier by
+        "learning_rate". There is a trade-off between "learning_rate" and
+        "n_estimators".
 
     Returns
     -------
@@ -1755,14 +1776,28 @@ def create_forest(
     verbose = 0
     if verbosity:
         verbose = 2
-    model = RandomForestClassifier(
-        n_estimators=n_estimators,
-        max_features=max_features,
-        n_jobs=-1,
-        verbose=verbose,
-        max_depth=max_depth,
-        max_leaf_nodes=max_leaf_nodes,
-    )
+
+    if classifier == "random_forest":
+        model = OneVsRestClassifier(
+            RandomForestClassifier(
+                n_estimators=n_estimators,
+                max_features=max_features,
+                n_jobs=-1,
+                verbose=verbose,
+                max_depth=max_depth,
+                max_leaf_nodes=max_leaf_nodes,
+            ),
+            n_jobs=1,
+        )
+    else:
+        model = OneVsRestClassifier(
+            AdaBoostClassifier(
+                n_estimators=n_estimators,
+                random_state=42,
+                learning_rate=learning_rate,
+            ),
+            n_jobs=1,  # Using more jobs here requires a lot of memory
+        )
 
     if isinstance(ds, list):
         y_final, X_final = ds
@@ -1800,15 +1835,20 @@ def create_forest(
     return model, train, test, train_labels, test_labels, feature_names, class_names
 
 
-def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=8):
+def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=None):
     """
     Create a confusion matrix with a single row given a random forest.
     Late and early positive is every segment start, that got detected within
     the given tolerance incl. exact true predictions.
-    Here "True Positive" means windows with the right time step within a
-    tolerance for a prediction. The sum of early positive and late positive may
-    be greater than true positive if for an early prediction there exists a
-    late prediction.
+    If "step_tol" is given, then "True Positive" means, for any segment
+    start there is at least one window (early or late but within tolerance)
+    which detected that. "step_tol" can be any value, since the value
+    itself is given by the window size.
+    If "step_tol" is not given, then "True Positive" is counted for each
+    window individually. A segment start "exists" as many times as the
+    window size such that "True Positive" can be higher than actual segment
+    starts exist.
+    "Early Positive" and "Late Positive" are set to zero.
 
     Parameters
     ----------
@@ -1821,7 +1861,9 @@ def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=8):
     only_idx : int
         Get values in confusion matrix only for the input parameter at the
         given index in n_features.
-
+    step_tol : int or None
+        If int is given: Number of steps to tolerate for a prediction
+        to be true. Otherwise only look for exact matches.
     Returns
     -------
     list of list with values as in the confusion matrix.
@@ -1836,103 +1878,151 @@ def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=8):
 
     if only_idx is None:
         p_act_win = np.sum(y)
-        n = np.sum((y == 0))  # np.product(np.shape(test_labels))
-        # tp = np.sum((pred == True) & (y == 1))
-        fp = np.sum((pred == True) & (y == 0))
+        n = np.sum((y == 0))
         p_pred = np.sum(pred)
+        if step_tol is None:
+            tp = np.sum((pred == True) & (y == 1))
+            ep = tp
+            lp = 0
+            fn = p_act_win - tp
+            fp = np.sum((pred == True) & (y == 0))
+        else:
+            y_idx = np.argwhere(y)
+            y_idx = sorted(y_idx, key=lambda x: x[1])
+            tp = 0
+            fn = 0
+            # print(f"Old tp: {np.sum((pred == True) & (y == 1))}")
+            # print(f"Old p_pred: {np.sum(pred)}")
+            # print(f"Old p: {np.sum(y)}")
+            # print(np.shape(y_idx))
+            # print(np.shape( np.argwhere(pred) ))
+            # print(f"pred: {sorted(np.argwhere(pred), key=lambda x: x[1])}")
+            # print(f"y_idx: {y_idx}")
+            # print(f"pred: {pred[y_idx[0][0]]}, {pred[y_idx[1][0]]}, {pred[y_idx[2][0]]}")
+            got_last = False
+            not_fp = 0
+            # Go through all segment starts
+            for i, y_i in enumerate(y_idx):
+                if i > 0:
+                    if y_i[1] == y_idx[i - 1][1]:
+                        # same input parameter
+                        if got_last and y_i[0] - y_idx[i - 1][0] == 1:
+                            # same segment start, just another index
+                            # in the other window
+                            if pred[y_i[0], y_i[1]]:
+                                not_fp += 1
+                            continue
+                        elif not got_last and y_i[0] - y_idx[i - 1][0] > 1:
+                            # new segment start and the last was not detected
+                            fn += 1
+                            if pred[y_i[0], y_i[1]]:
+                                tp += 1
+                                got_last = True
+                        elif pred[y_i[0], y_i[1]]:
+                            tp += 1
+                            got_last = True
+                        elif y_i[0] - y_idx[i - 1][0] > 1:
+                            got_last = False
 
-        # This is a version where we get how many of the predictions are early or late
-        # p_pred_idx = np.argwhere(pred)
-        #     ep = np.sum( [ np.any( y[p_pred[0]-min(step_tol, p_pred[0]):p_pred[0]+1,p_pred[1] ] ) for p_pred in p_pred_idx])
-        #     lp = np.sum( [ np.any( y[p_pred[0]+1:max(p_pred[0]+step_tol, n_features),p_pred[1] ] ) for p_pred in p_pred_idx])
-        # This is a version where we get how many segment starts we predict within a tolerance
-        y_idx = np.argwhere(y)
-        ep = np.sum(
-            [
-                np.any(
-                    pred[
-                        y_i[0] - min(step_tol, y_i[0]) : min(y_i[0] + 1, n_steps),
-                        y_i[1],
-                    ]
-                )
-                for y_i in y_idx
-            ]
-        )
-        lp = np.sum(
-            [
-                np.any(
-                    pred[
-                        min(y_i[0] + 1, n_steps) : min(y_i[0] + step_tol, n_steps),
-                        y_i[1],
-                    ]
-                )
-                for y_i in y_idx
-            ]
-        )
-        tp = np.sum(
-            [
-                np.any(
-                    pred[
-                        y_i[0]
-                        - min(step_tol, y_i[0]) : min(y_i[0] + step_tol, n_steps),
-                        y_i[1],
-                    ]
-                )
-                for y_i in y_idx
-            ]
-        )
+                    else:
+                        # New input parameter
+                        if not got_last:
+                            fn += 1
+                        got_last = False
+                        if pred[y_i[0], y_i[1]]:
+                            tp += 1
+                            got_last = True
 
-        pr = tp / p_pred
-        re = tp / p_act_win
+                else:
+                    if pred[y_i[0], y_i[1]]:
+                        tp += 1
+                        got_last = True
+            if not got_last:
+                fn += 1
+            fp = np.sum(pred) - not_fp - tp
+            ep = 0
+            lp = 0
     else:
         p_act_win = np.sum(y[:, only_idx])
-        n = np.sum((y[:, only_idx] == 0))  # np.product(np.shape(test_labels))
-        # tp = np.sum((pred[:, only_idx] == True) & (y[:, only_idx] == 1))
-        fp = np.sum((pred[:, only_idx] == True) & (y[:, only_idx] == 0))
+        n = np.sum((y[:, only_idx] == 0))
+
         p_pred = np.sum(pred[:, only_idx])
+        if step_tol == None:
+            fp = np.sum((pred[:, only_idx] == True) & (y[:, only_idx] == 0))
+            tp = np.sum((pred[:, only_idx] == True) & (y[:, only_idx] == 1))
+            ep = tp
+            lp = 0
+            fn = p_act_win - tp
+        else:
+            y_idx = np.argwhere(y[:, only_idx])
 
-        y_idx = np.argwhere(y[:, only_idx])
-        ep = np.sum(
-            [
-                np.any(
-                    pred[
-                        y_i[0] - min(step_tol, y_i[0]) : min(y_i[0] + 1, n_steps),
-                        only_idx,
-                    ]
-                )
-                for y_i in y_idx
-            ]
-        )
-        lp = np.sum(
-            [
-                np.any(
-                    pred[
-                        min(y_i[0] + 1, n_steps) : min(y_i[0] + step_tol, n_steps),
-                        only_idx,
-                    ]
-                )
-                for y_i in y_idx
-            ]
-        )
-        tp = np.sum(
-            [
-                np.any(
-                    pred[
-                        y_i[0]
-                        - min(step_tol, y_i[0]) : min(y_i[0] + step_tol, n_steps),
-                        only_idx,
-                    ]
-                )
-                for y_i in y_idx
-            ]
-        )
+            ep = 0
+            lp = 0
+            tp = 0
+            fn = 0
+            got_last = False
+            not_fp = 0
+            # Go through all segment starts
+            for i, y_i in enumerate(y_idx):
+                if i > 0:
+                    if got_last and y_i[0] - y_idx[i - 1][0] == 1:
+                        # same segment start, just another index
+                        # in the other window
+                        if pred[y_i[0], only_idx]:
+                            not_fp += 1
+                        continue
+                    elif not got_last and y_i[0] - y_idx[i - 1][0] > 1:
+                        # new segment start and the last was not detected
+                        fn += 1
+                        if pred[y_i[0], only_idx]:
+                            tp += 1
+                            got_last = True
+                    elif pred[y_i[0], only_idx]:
+                        tp += 1
+                        got_last = True
+                    elif y_i[0] - y_idx[i - 1][0] > 1:
+                        got_last = False
 
-        pr = tp / p_pred
-        re = tp / p_act_win
+                else:
+                    if pred[y_i[0], only_idx]:
+                        tp += 1
+                        got_last = True
+            if not got_last:
+                fn += 1
+            fp = np.sum(pred[:, only_idx]) - not_fp - tp
 
-    fn = p_act_win - tp
+    if step_tol is None:
+        if p_pred == 0:
+            if tp == 0:
+                pr = 1
+            else:
+                pr = 0
+        else:
+            pr = tp / p_pred
+    else:
+        if tp + fp == 0:
+            pr = 0
+        else:
+            pr = tp / (fp + tp)
+    if step_tol is None:
+        if p_act_win == 0:
+            if tp == 0:
+                re = 1
+            else:
+                re = 0
+        else:
+            re = tp / p_act_win
+    else:
+        if tp + fn == 0:
+            re = 0
+        else:
+            re = tp / (tp + fn)
+
     tn = n - fp
-    f1 = 2 * (pr * re) / (pr + re)
+    if pr + re == 0:
+        f1 = 0
+    else:
+        f1 = 2 * (pr * re) / (pr + re)
     fpr = fp / n
     confusion_matrix = [
         tp,
@@ -1941,7 +2031,7 @@ def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=8):
         tn,
         ep,  # early positive - got a segment although early (or exact)
         lp,  # late positive - positive within a tolerance after the fact
-        p_act_win,
+        tp + fn,
         p_act_win,
         pr,
         re,
@@ -1966,7 +2056,7 @@ def plot_tree_matrix(
     TODO: Plot the single row confusion matrix. Currently this method only
     returns a single row confusion matrix.
     """
-    confusion_matrix = get_tree_matrix(model, test, test_labels, step_tol=step_tol)
+    confusion_matrix = get_tree_matrix(model, test, test_labels, step_tol=None)
 
     # TODO Plot results?
     return confusion_matrix
@@ -1995,7 +2085,7 @@ def show_tree_stats(
     print(f"Mean number of nodes: {np.mean(n_nodes):1.2e}")
     print(f"Mean max depth: {np.mean(max_depth):1.2e}")
 
-    confusion_matrix = get_tree_matrix(model, test, test_labels, step_tol=step_tol)
+    confusion_matrix = get_tree_matrix(model, test, test_labels, step_tol=None)
 
     # TODO Plot results?
     return confusion_matrix
@@ -2016,6 +2106,8 @@ def train_many_models(
     verbosity=0,
     max_depth=36,
     max_leaf_nodes=1000,
+    classifier="random_forest",
+    learning_rate=1.0,
 ):
     """
     Train different models for different max feature splits and thresholds
@@ -2082,6 +2174,15 @@ def train_many_models(
         Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
         defined as relative reduction in impurity. If None then unlimited
         number of leaf nodes.
+    classifier : string
+        Choose a classifier for prediction. Options are "random_forest"
+        and "adaboost". The latter ignores "max_leaf_nodes" and "max_depth" and
+        rather uses "learning_rate".
+    learning_rate : float
+        From sklean.ensemble.AdaBoostClassifier:
+        Learning rate shrinks the contribution of each classifier by
+        "learning_rate". There is a trade-off between "learning_rate" and
+        "n_estimators".
 
     Returns
     -------
@@ -2135,6 +2236,8 @@ def train_many_models(
                 verbosity=verbosity > 3,
                 max_depth=max_depth,
                 max_leaf_nodes=max_leaf_nodes,
+                classifier=classifier,
+                learning_rate=learning_rate,
             )
             models_inner.append(model)
         models.append(models_inner)
@@ -2210,13 +2313,16 @@ def create_dataset_pretrained(
     -------
     xarray.Dataset of confusion matrix as described above.
     """
-
+    pass_step_tol = None
     if isinstance(data, list) or isinstance(data, np.ndarray):
         precalc = False
         load_data = True
     else:
         load_data = False
         in_params = list(np.unique(data["Input Parameter"]))
+        if len(data["trajectory"]) == 1:
+            pass_step_tol = step_tol
+
     dims_forest = (len(max_features_list), 1, 1 + len(in_params), len(seg_thresholds))
     if predict_train:
         input_param_coords = ["All Input Parameters Train Set"] + in_params
@@ -2277,12 +2383,11 @@ def create_dataset_pretrained(
 
             if verbosity > 2:
                 print(
-                    f"Running for {feat_idx}, {seg_idx} ({max_features}, {seg_thresh})",
-                    end="",
+                    f"Running for {feat_idx}, {seg_idx} ({max_features}, {seg_thresh})"
                 )
                 t1 = timer()
             model = models[feat_idx][seg_idx]
-            matrix = get_tree_matrix(model, test, test_labels, step_tol=step_tol)
+            matrix = get_tree_matrix(model, test, test_labels, step_tol=pass_step_tol)
             # For paranoia reasons
             np.nan_to_num(matrix, copy=False)
 
@@ -2303,7 +2408,7 @@ def create_dataset_pretrained(
 
             for in_idx, in_p in enumerate(in_params):
                 matrix = get_tree_matrix(
-                    model, test, test_labels, only_idx=in_idx, step_tol=step_tol
+                    model, test, test_labels, only_idx=in_idx, step_tol=pass_step_tol
                 )
                 np.nan_to_num(matrix, copy=False)
 
@@ -2319,12 +2424,12 @@ def create_dataset_pretrained(
                 fp_forest[feat_idx, 0, 1 + in_idx, seg_idx] = matrix[2]
                 fn_forest[feat_idx, 0, 1 + in_idx, seg_idx] = matrix[1]
                 p_w_forest[feat_idx, 0, 1 + in_idx, seg_idx] = matrix[7]
-            if verbosity > 2:
                 if verbosity > 4:
                     print(f"{in_idx} ({in_p})")
                     print(
                         f"TP: {matrix[0]}; FP: {matrix[2]}; FN: {matrix[1]}; P_w: {matrix[7]}; P: {matrix[6]}"
                     )
+            if verbosity > 2:
                 t2 = timer()
                 print(f" ... done in {t2-t1} s")
 
@@ -2366,6 +2471,8 @@ def create_dataset_forest(
     verbosity=0,
     max_depth=36,
     max_leaf_nodes=1000,
+    classifier="random_forest",
+    learning_rate=1.0,
 ):
     """
     Create a dataset with dimensions "Max Features", "Output Parameter",
@@ -2436,6 +2543,15 @@ def create_dataset_forest(
         Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
         defined as relative reduction in impurity. If None then unlimited
         number of leaf nodes.
+    classifier : string
+        Choose a classifier for prediction. Options are "random_forest"
+        and "adaboost". The latter ignores "max_leaf_nodes" and "max_depth" and
+        rather uses "learning_rate".
+    learning_rate : float
+        From sklean.ensemble.AdaBoostClassifier:
+        Learning rate shrinks the contribution of each classifier by
+        "learning_rate". There is a trade-off between "learning_rate" and
+        "n_estimators".
 
     Returns
     -------
@@ -2493,11 +2609,15 @@ def create_dataset_forest(
                 save_memory=save_memory,  # Old version set to False
                 no_split=no_split,
                 verbosity=verbosity > 3,
+                max_depth=max_depth,
+                max_leaf_nodes=max_leaf_nodes,
+                classifier=classifier,
+                learning_rate=learning_rate,
             )
             if verbosity > 2:
                 print("Trained model")
-            test_matrix = get_tree_matrix(model, test, test_labels, step_tol=step_tol)
-            train_matrix = get_tree_matrix(model, train, train_labels)
+            test_matrix = get_tree_matrix(model, test, test_labels, step_tol=None)
+            train_matrix = get_tree_matrix(model, train, train_labels, step_tol=None)
             if verbosity > 2:
                 print("Got confuse matrix")
             tpp_forest[feat_idx, 0, 0, seg_idx] = train_matrix[9]
@@ -2520,7 +2640,7 @@ def create_dataset_forest(
 
             for in_idx, in_p in enumerate(in_params):
                 matrix = get_tree_matrix(
-                    model, test, test_labels, only_idx=in_idx, step_tol=step_tol
+                    model, test, test_labels, only_idx=in_idx, step_tol=None
                 )
 
                 tpp_forest[feat_idx, 0, 2 + in_idx, seg_idx] = matrix[9]
@@ -2982,8 +3102,42 @@ if __name__ == "__main__":
         number of leaf nodes.
         """,
     )
+    parser.add_argument(
+        "--load_on_the_fly",
+        action="store_true",
+        help="""
+        Load data and find the segments on the fly for predicting a dataset,
+        or load precalculated training or test set.
+        """,
+    )
+    parser.add_argument(
+        "--classifier",
+        type=str,
+        default="random_forest",
+        help="""
+        Choose a classifier for prediction. Options are "random_forest"
+        and "adaboost". The latter ignores "max_leaf_nodes" and "max_depth" and
+        rather uses "learning_rate".
+        """,
+    )
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=1.0,
+        help="""
+        From sklean.ensemble.AdaBoostClassifier:
+        Learning rate shrinks the contribution of each classifier by
+        "learning_rate". There is a trade-off between "learning_rate" and
+        "n_estimators".
+        """,
+    )
 
     args = parser.parse_args()
+    if args.classifier != "random_forest" and args.classifier != "adaboost":
+        print(
+            f"Classifier ({args.classifier}): Classifier must be 'random_forest' or 'adaboost'."
+        )
+
     if args.store_name is not None:
         if ".nc" not in args.store_name:
             print(f"You must add '.nc' to {args.store_name}.")
@@ -3129,7 +3283,7 @@ if __name__ == "__main__":
             print(f"Checking {args.data_path}")
 
         paths = list(os.listdir(args.data_path))
-        if ".nc" in paths[0]:
+        if not args.load_on_the_fly:
             data = None
             if args.verbosity > 1:
                 print(f"Loading from {paths}")
@@ -3179,6 +3333,7 @@ if __name__ == "__main__":
             data = np.sort(paths)
 
     if args.verbosity > 0:
+        print("The loaded dataset")
         print(data)
 
     if args.store_appended_data is not None:
@@ -3205,9 +3360,11 @@ if __name__ == "__main__":
 
     n_trajs = args.n_trajs
 
-    max_features_list = (
-        args.feature_split
-    )  # [1.0]#["log2", "sqrt"]#, 0.25] # 0.25, 0.75
+    if args.classifier == "adaboost":
+        max_features_list = ["adaboost"]
+    else:
+        max_features_list = args.feature_split
+
     distinct_outparams = False
     step_tol = args.step_tol
 
@@ -3231,6 +3388,13 @@ if __name__ == "__main__":
                 models_inner.append(model)
             models.append(models_inner)
     else:
+        for i in range(len(max_features_list)):
+            if args.classifier != "adaboost":
+                try:
+                    f = float(max_features_list[i])
+                    max_features_list[i] = f
+                except:
+                    pass
         if args.train_subset:
             models, seg_thresholds = train_many_models(
                 data=data.sel({"trajectory": data["trajectory"][0:n_trajs]}),
@@ -3247,6 +3411,8 @@ if __name__ == "__main__":
                 verbosity=args.verbosity,
                 max_depth=args.max_depth,
                 max_leaf_nodes=args.max_leaf_nodes,
+                classifier=args.classifier,
+                learning_rate=args.learning_rate,
             )
         else:
             models, seg_thresholds = train_many_models(
@@ -3264,6 +3430,8 @@ if __name__ == "__main__":
                 verbosity=args.verbosity,
                 max_depth=args.max_depth,
                 max_leaf_nodes=args.max_leaf_nodes,
+                classifier=args.classifier,
+                learning_rate=args.learning_rate,
             )
         if args.store_models is not None:
             for feat_idx, max_features in enumerate(max_features_list):
@@ -3331,6 +3499,7 @@ if __name__ == "__main__":
                 print(f"Done in {t2-t1} s (total {t2-t_start} s; est end in {t_est} s)")
             traj_idx = traj_idx_end
     else:
+        # This path can make use of args.load_on_the_fly
         if args.verbosity > 2:
             print("Predicting starts")
         # TODO: all_params_list might have wrong order
@@ -3374,25 +3543,3 @@ if __name__ == "__main__":
             format="NETCDF4",
             mode="w",
         )
-    # old version that does all at once without saving models
-    # ds_forest = create_dataset_forest(
-    #     data=data,
-    #     max_features_list=["auto", "log2", "sqrt", None],
-    #     min_threshold=-40,
-    #     max_threshold=0,
-    #     threshold_step=2,
-    #     precalc=True,
-    #     step_tol=8,
-    #     test_size=0.25,
-    #     distinct_outparams=False,
-    #     n_estimators=100)
-    # print("create_dataset_forest done")
-    # comp = dict(zlib=True, complevel=9)
-    # encoding = {var: comp for var in ds_forest.data_vars}
-    # ds_forest.to_netcdf(
-    #     path="cached_ds_forest_win8_many.nc",
-    #     encoding=encoding,
-    #     compute=True,
-    #     engine="netcdf4",
-    #     format="NETCDF4",
-    #     mode="w")
