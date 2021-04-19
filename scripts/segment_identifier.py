@@ -225,6 +225,107 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
     )
 
 
+def parse_load(
+    data_path,
+    out_params,
+    all_params_list,
+    store_many_appended_data=None,
+    load_on_the_fly=False,
+    verbosity=0,
+):
+    """
+    Parse the args.data_path and corresponding arguments.
+
+    Parameters
+    ----------
+    data_path : string
+        Path to folders with ensemble datasets or to single NetCDF file
+        with all data concatenated along 'trajectory' axis.
+        If a path to numpy arrays is given, it is assumed to be a training
+        or test set.
+    out_params : list of string
+        List of output parameters.
+    all_params_list : list of string
+        List of all input params to get predicted errors for.
+    store_many_appended_data : string
+        Store the appended input data to this path as NetCDF file for each appended
+        version. Used mainly for debugging.
+    load_on_the_fly : boolean
+        Load data and find the segments on the fly for predicting a dataset,
+        or load precalculated training or test set.
+    verbosity : int
+        Set verbosity level.
+        0: No output except for exceptions
+        1: Print datasets
+        2: Print loading statements
+
+    Returns
+    -------
+    Either array of datapaths for loading on the fly or xarray.Dataset with
+    already loaded data.
+    """
+    traj_offset = 0
+    if ".nc" in data_path:
+        # ie data2_327.nc
+        if verbosity > 1:
+            print(f"Loading {data_path}")
+        data = xr.open_dataset(data_path, decode_times=False)
+    else:
+        if verbosity > 1:
+            print(f"Checking {data_path}")
+
+        paths = list(os.listdir(data_path))
+        if not load_on_the_fly:
+            data = None
+            if verbosity > 1:
+                print(f"Loading from {paths}")
+            for p in range(len(paths)):
+                if "quan" in paths[p] or "median" in paths[p] or "perturb" in paths[p]:
+                    continue
+                path = data_path + paths[p] + "/"
+                n_trajs = len(list(os.listdir(path)))
+                if verbosity > 1:
+                    print(f"Loading from {path} with {n_trajs} trajectories")
+                try:
+                    tmp = load_dataset(
+                        path=path,
+                        out_params=out_params,
+                        in_params=all_params_list,
+                        traj_list=np.arange(n_trajs),
+                        traj_offset=traj_offset,
+                        verbosity=verbosity,
+                    )
+                except:
+                    print(f"Loading      {path} failed.")
+                    tmp = None
+                if tmp is None:
+                    continue
+
+                if data is None:
+                    data = tmp
+                else:
+                    data = xr.concat([data, tmp], dim="trajectory", join="outer")
+                if store_many_appended_data is not None:
+                    comp = dict(zlib=True, complevel=9)
+                    encoding = {var: comp for var in data.data_vars}
+                    data.to_netcdf(
+                        path=f"{store_many_appended_data}data_{traj_offset}.nc",
+                        encoding=encoding,
+                        compute=True,
+                        engine="netcdf4",
+                        format="NETCDF4",
+                        mode="w",
+                    )
+                traj_offset += n_trajs
+        else:  # numpy arrays with training data
+            # create a dictionary for every threshold that holds a list
+            # of X and y
+            for i in range(len(paths)):
+                paths[i] = data_path + paths[i]
+            data = np.sort(paths)
+    return data
+
+
 def find_segments(df, error_threshold=0):
     """
     Iterate over time steps to mark the start of a segment with large errors, where large
@@ -1574,6 +1675,11 @@ def create_input_labels(ds, step_tol, distinct_outparams, verbosity=0):
     # and optional
     # gradients for every output parameter
     # [dqv/dx_1|_1, dqv/dx_1|_2, dqv/dx_1|_3.
+    #  dqc/dx_1|_1, dqc/dx_1|_2, dqc/dx_1|_3
+    #  dqv/dx_2|_1, dqv/dx_2|_2, dqv/dx_2|_3.
+    #  dqc/dx_2|_1, dqc/dx_2|_2, dqc/dx_2|_3]
+    # old:
+    # [dqv/dx_1|_1, dqv/dx_1|_2, dqv/dx_1|_3.
     #  dqv/dx_2|_1, dqv/dx_2|_2, dqv/dx_2|_3
     #  dqc/dx_1|_1, dqc/dx_1|_2, dqc/dx_1|_3.
     #  dqc/dx_2|_1, dqc/dx_2|_2, dqc/dx_2|_3]
@@ -1585,6 +1691,7 @@ def create_input_labels(ds, step_tol, distinct_outparams, verbosity=0):
     n_timesteps = len(ds["time_after_ascent"])
     n_out_params = len(ds["Output Parameter"])
     n_trajs = len(ds["trajectory"])
+    # (due to padding)
     n_windows = n_timesteps - step_tol
     X = ds["Predicted Squared Error"].values
     X = np.moveaxis(X, [0], [1])
@@ -1599,15 +1706,15 @@ def create_input_labels(ds, step_tol, distinct_outparams, verbosity=0):
 
     if distinct_outparams:
         feature_names = product(
-            np.unique(ds["Output Parameter"].values),
             np.unique(ds["Input Parameter"].values),
+            np.unique(ds["Output Parameter"].values),
         )
         class_names = np.unique(ds["Input Parameter"].values)
         X_final = np.concatenate(
             [
                 *(
                     np.vstack(
-                        X[out_p, :, traj, j : (step_tol * 2 + 1) + j]
+                        X[:, out_p, traj, j : (step_tol * 2 + 1) + j]
                         for j in range(n_windows)
                     ).reshape((n_windows, -1))
                     for traj in range(n_trajs)
@@ -1665,7 +1772,7 @@ def create_input_labels(ds, step_tol, distinct_outparams, verbosity=0):
         y_final = np.reshape(
             y_final, (-1, n_input_params, (2 * step_tol + 1) * n_out_params)
         )
-
+    print(f"y before sum: {np.shape(y_final)}")
     y_final = np.sum(y_final, axis=2) > 0
     # Binary classification still needs two dimension
     # where it is either it or not
@@ -1801,7 +1908,7 @@ def create_forest(
 
     if isinstance(ds, list):
         y_final, X_final = ds
-        model.fit(X_final, y_final)
+        model = model.fit(X_final, y_final)
         return model, X_final, None, y_final, None, None, None
     else:
         X_final, y_final, feature_names, class_names = create_input_labels(
@@ -1809,11 +1916,11 @@ def create_forest(
         )
 
     if no_split:
-        model.fit(X_final, y_final)
+        model = model.fit(X_final, y_final)
         return model, X_final, None, y_final, None, feature_names, class_names
 
     if save_memory:
-        model.fit(
+        model = model.fit(
             X_final[: int(np.shape(X_final)[0] * (1 - test_size))],
             y_final[: int(np.shape(X_final)[0] * (1 - test_size))],
         )
@@ -1831,7 +1938,7 @@ def create_forest(
             X_final, y_final, test_size=test_size
         )
 
-    model.fit(train, train_labels)
+    model = model.fit(train, train_labels)
     return model, train, test, train_labels, test_labels, feature_names, class_names
 
 
@@ -1874,7 +1981,7 @@ def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=None):
     # The confusion matrix has the dimensions
     # tp, fn, fp, tn, ep, lp, p_act, p_act_win, pr, re, f1, fpr
     # Using the test set
-    n_steps, n_features = np.shape(y)
+    # n_steps, n_features = np.shape(y)
 
     if only_idx is None:
         p_act_win = np.sum(y)
@@ -2911,7 +3018,7 @@ if __name__ == "__main__":
         Path to folders with ensemble datasets or to single NetCDF file
         with all data concatenated along 'trajectory' axis.
         If a path to numpy arrays is given, it is assumed to be a training
-        set for training only.
+        or test set.
         """,
     )
     parser.add_argument(
@@ -3221,8 +3328,6 @@ if __name__ == "__main__":
         "dgraupel_a_vel",
     ]
 
-    traj_offset = 0
-
     if args.create_trainset:
         store_appended_data = "./"
         if args.store_appended_data is not None:
@@ -3273,64 +3378,14 @@ if __name__ == "__main__":
             )
         exit()
 
-    if ".nc" in args.data_path:
-        # ie data2_327.nc
-        if args.verbosity > 1:
-            print(f"Loading {args.data_path}")
-        data = xr.open_dataset(args.data_path, decode_times=False)
-    else:
-        if args.verbosity > 1:
-            print(f"Checking {args.data_path}")
-
-        paths = list(os.listdir(args.data_path))
-        if not args.load_on_the_fly:
-            data = None
-            if args.verbosity > 1:
-                print(f"Loading from {paths}")
-            for p in range(len(paths)):
-                if "quan" in paths[p] or "median" in paths[p] or "perturb" in paths[p]:
-                    continue
-                path = args.data_path + paths[p] + "/"
-                n_trajs = len(list(os.listdir(path)))
-                if args.verbosity > 1:
-                    print(f"Loading from {path} with {n_trajs} trajectories")
-                try:
-                    tmp = load_dataset(
-                        path=path,
-                        out_params=out_params,
-                        in_params=all_params_list,
-                        traj_list=np.arange(n_trajs),
-                        traj_offset=traj_offset,
-                        verbosity=args.verbosity,
-                    )
-                except:
-                    print(f"Loading      {path} failed.")
-                    tmp = None
-                if tmp is None:
-                    continue
-
-                if data is None:
-                    data = tmp
-                else:
-                    data = xr.concat([data, tmp], dim="trajectory", join="outer")
-                if args.store_many_appended_data is not None:
-                    comp = dict(zlib=True, complevel=9)
-                    encoding = {var: comp for var in data.data_vars}
-                    data.to_netcdf(
-                        path=f"{args.store_many_appended_data}data_{traj_offset}.nc",
-                        encoding=encoding,
-                        compute=True,
-                        engine="netcdf4",
-                        format="NETCDF4",
-                        mode="w",
-                    )
-                traj_offset += n_trajs
-        else:  # numpy arrays with training data
-            # create a dictionary for every threshold that holds a list
-            # of X and y
-            for i in range(len(paths)):
-                paths[i] = args.data_path + paths[i]
-            data = np.sort(paths)
+    data = parse_load(
+        data_path=args.data_path,
+        out_params=out_params,
+        all_params_list=all_params_list,
+        store_many_appended_data=args.store_many_appended_data,
+        load_on_the_fly=args.load_on_the_fly,
+        verbosity=args.verbosity,
+    )
 
     if args.verbosity > 0:
         print("The loaded dataset")
@@ -3361,7 +3416,7 @@ if __name__ == "__main__":
     n_trajs = args.n_trajs
 
     if args.classifier == "adaboost":
-        max_features_list = ["adaboost"]
+        max_features_list = [""]
     else:
         max_features_list = args.feature_split
 
@@ -3382,9 +3437,10 @@ if __name__ == "__main__":
                 forest_verbosity = 2
             for seg_idx, seg_thresh in enumerate(seg_thresholds):
                 model = load(
-                    f"{args.model_path}rand_forest_{max_features}_{seg_thresh:.1e}.joblid"
+                    f"{args.model_path}_{args.classifier}_{max_features}_{seg_thresh:.1e}.joblid"
                 )
-                model = model.set_params(**{"verbose": forest_verbosity})
+                if args.classifier == "random_forest":
+                    model = model.set_params(**{"estimator__verbose": forest_verbosity})
                 models_inner.append(model)
             models.append(models_inner)
     else:
@@ -3440,7 +3496,7 @@ if __name__ == "__main__":
                         max_features = "None"
                     dump(
                         models[feat_idx][seg_idx],
-                        f"{args.store_models}rand_forest_{max_features}_{seg_thresh:.1e}.joblid",
+                        f"{args.store_models}_{args.classifier}_{max_features}_{seg_thresh:.1e}.joblid",
                     )
     if args.only_training:
         exit()
