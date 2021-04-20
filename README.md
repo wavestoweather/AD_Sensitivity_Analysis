@@ -113,12 +113,13 @@ In order to run multiple ensembles, use `./execute_ensembles.sh`.
 
 Using Jupyter Notebooks
 -----------------------
+- **Plot_MSE.ipynb:** Get the most important parameters for each output parameter, calculate and plot correlation and
+predicted errors over time.
+- **Plot_Segment_identifier.ipynb:** An interactive notebook that shows different ways to identify segments, comparisons to sensitivities and plots confusion matrix for different input parameters and detection methods.
 - **Plot_physics.ipynb:** Plot single microphysical processes with a given range
-of input parameters. Helpful if you want to see "what happens" and for debugging.
+of input parameters. Helpful if you want to see "what happens" in each processes and for debugging.
 - **Plot_sensitivities.ipynb:** Use this as a starting point to plot results
 from a simulation and to plot the sensitivities.
-- **Plot_simulation.ipynb:** Plot the data from netcdf files to get an idea, what's inside.
-Or you just use [Panoply](https://www.giss.nasa.gov/tools/panoply/) if you want something more elaborate. We also approve [Met.3D](https://met3d.wavestoweather.de/met-3d.html) for visualization and work towards as much compatibility as possible.
 
 
 Adding New Physics
