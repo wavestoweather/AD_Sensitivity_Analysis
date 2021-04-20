@@ -102,6 +102,7 @@ class Deriv_dask:
             A path to a directory wit a list of files to read.
         parquet : boolean
             If true: Load a series of preprocessed parquet files.
+            This is no longer supported and will be deleted from future versions.
         netcdf : boolean
             If true: Load a series of preprocessed netcdf files.
         columns : list of strings
@@ -111,6 +112,8 @@ class Deriv_dask:
         file_ending : String
             File ending to use when loading netcdf files.
         """
+        if parquet == True:
+            print("Parquet is deprecated. Please use NetCDF.")
         if direc == "" and file_ending == "":
             # For creating a dummy/empty object
             self.data = None
@@ -243,6 +246,7 @@ class Deriv_dask:
     def to_parquet(self, f_name, compression="snappy"):
         """
         Store the data as parquet files.
+        This is deprecated and will be deleted in future version.
 
         Parameters
         ----------
