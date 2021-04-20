@@ -1,0 +1,358 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Struct IO_handle_t &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Struct model_constants_t" href="structmodel__constants__t.html" />
+    <link rel="prev" title="Struct input_parameters_t" href="structinput__parameters__t.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/latexify.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">latexify</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/merge.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="library_root.html">C++ API</a> &raquo;</li>
+        
+      <li>Struct IO_handle_t</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/structIO__handle__t.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="struct-io-handle-t">
+<span id="exhale-struct-structio-handle-t"></span><h1>Struct IO_handle_t<a class="headerlink" href="#struct-io-handle-t" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a></p></li>
+</ul>
+<div class="section" id="struct-documentation">
+<h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="cpp struct">
+<dt id="_CPPv411IO_handle_t">
+<span id="_CPPv311IO_handle_t"></span><span id="_CPPv211IO_handle_t"></span><span id="IO_handle_t"></span><span class="target" id="structIO__handle__t"></span><em class="property">struct </em><code class="sig-name descname">IO_handle_t</code><a class="headerlink" href="#_CPPv411IO_handle_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N11IO_handle_t11IO_handle_tEKNSt6stringEKNSt6stringEK8uint64_tK8uint64_tRK17model_constants_tRK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_t">
+<span id="_CPPv3N11IO_handle_t11IO_handle_tEKNSt6stringEKNSt6stringEK8uint64_tK8uint64_tRK17model_constants_tRK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_t"></span><span id="_CPPv2N11IO_handle_t11IO_handle_tEKNSt6stringEKNSt6stringEK8uint64_tK8uint64_tRK17model_constants_tRK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_t"></span><span id="IO_handle_t::IO_handle_t__ssC.ssC.uint64_tC.uint64_tC.model_constants_tCR.reference_quantities_tCR.ssC.uint32_tC.uint32_tC"></span><span class="target" id="structIO__handle__t_1af637521e69b3a5c380b6fffb299da3f2"></span><code class="sig-name descname">IO_handle_t</code><span class="sig-paren">(</span><em class="property">const</em> std::string <em>filetype</em>, <em class="property">const</em> std::string <em>filename</em>, <em class="property">const</em> uint64_t <em>n_trajs</em>, <em class="property">const</em> uint64_t <em>n_ens</em>, <em class="property">const</em> <a class="reference internal" href="structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em>, <em class="property">const</em> <a class="reference internal" href="structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t">reference_quantities_t</a> &amp;<em>ref_quant</em>, <em class="property">const</em> std::string <em>in_filename</em>, <em class="property">const</em> uint32_t <em>write_index</em>, <em class="property">const</em> uint32_t <em>snapshot_index</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11IO_handle_t11IO_handle_tEKNSt6stringEKNSt6stringEK8uint64_tK8uint64_tRK17model_constants_tRK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N11IO_handle_t6bufferERK17model_constants_tRK15nc_parameters_tRKNSt6vectorIN4codi11RealReverseEEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tKdK8uint32_tK8uint32_tRK22reference_quantities_t">
+<span id="_CPPv3N11IO_handle_t6bufferERK17model_constants_tRK15nc_parameters_tRKNSt6vectorIN4codi11RealReverseEEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tKdK8uint32_tK8uint32_tRK22reference_quantities_t"></span><span id="_CPPv2N11IO_handle_t6bufferERK17model_constants_tRK15nc_parameters_tRKNSt6vectorIN4codi11RealReverseEEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tKdK8uint32_tK8uint32_tRK22reference_quantities_t"></span><span id="IO_handle_t::buffer__model_constants_tCR.nc_parameters_tCR.std::vector:codi::RealReverse:CR.std::vector:std::array:double.num_par::CR.uint32_tC.uint32_tC.doubleC.uint32_tC.uint32_tC.reference_quantities_tCR"></span><span class="target" id="structIO__handle__t_1ad318cd1c64dccef4285ed5a8d25e0122"></span>void <code class="sig-name descname">buffer</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em>, <em class="property">const</em> <a class="reference internal" href="structnc__parameters__t.html#_CPPv415nc_parameters_t" title="nc_parameters_t">nc_parameters_t</a> &amp;<em>nc_params</em>, <em class="property">const</em> std::vector&lt;codi::RealReverse&gt; &amp;<em>y_single_new</em>, <em class="property">const</em> std::vector&lt;std::array&lt;double, num_par&gt;&gt; &amp;<em>y_diff</em>, <em class="property">const</em> uint32_t <em>sub</em>, <em class="property">const</em> uint32_t <em>t</em>, <em class="property">const</em> double <em>time_new</em>, <em class="property">const</em> uint32_t <em>traj_id</em>, <em class="property">const</em> uint32_t <em>ensemble</em>, <em class="property">const</em> <a class="reference internal" href="structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t">reference_quantities_t</a> &amp;<em>ref_quant</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11IO_handle_t6bufferERK17model_constants_tRK15nc_parameters_tRKNSt6vectorIN4codi11RealReverseEEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tKdK8uint32_tK8uint32_tRK22reference_quantities_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Writes data either to a stringstream for txt files or to different vectors for netCDF files. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N11IO_handle_t12flush_bufferEv">
+<span id="_CPPv3N11IO_handle_t12flush_bufferEv"></span><span id="_CPPv2N11IO_handle_t12flush_bufferEv"></span><span id="IO_handle_t::flush_buffer"></span><span class="target" id="structIO__handle__t_1a05db605baf9b38e9a18721d9559a5276"></span>void <code class="sig-name descname">flush_buffer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11IO_handle_t12flush_bufferEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Write the buffered data to disk. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t7out_tmpE">
+<span id="_CPPv3N11IO_handle_t7out_tmpE"></span><span id="_CPPv2N11IO_handle_t7out_tmpE"></span><span id="IO_handle_t::out_tmp__std::stringstream"></span><span class="target" id="structIO__handle__t_1ac0434d2b013dc1ed5ccc0a5fc19b4e9e"></span>std::stringstream <code class="sig-name descname">out_tmp</code><a class="headerlink" href="#_CPPv4N11IO_handle_t7out_tmpE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t7outfileE">
+<span id="_CPPv3N11IO_handle_t7outfileE"></span><span id="_CPPv2N11IO_handle_t7outfileE"></span><span id="IO_handle_t::outfile__std::ofstream"></span><span class="target" id="structIO__handle__t_1a4c3e07e27a621664c244d302fccdc08f"></span>std::ofstream <code class="sig-name descname">outfile</code><a class="headerlink" href="#_CPPv4N11IO_handle_t7outfileE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t8out_diffE">
+<span id="_CPPv3N11IO_handle_t8out_diffE"></span><span id="_CPPv2N11IO_handle_t8out_diffE"></span><span id="IO_handle_t::out_diff__std::ofstreamA"></span><span class="target" id="structIO__handle__t_1acaf30486c9761d45a28c6506987b6b2a"></span>std::ofstream <code class="sig-name descname">out_diff</code>[<code class="sig-name descname">num_comp</code>]<a class="headerlink" href="#_CPPv4N11IO_handle_t8out_diffE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t12out_diff_tmpE">
+<span id="_CPPv3N11IO_handle_t12out_diff_tmpE"></span><span id="_CPPv2N11IO_handle_t12out_diff_tmpE"></span><span id="IO_handle_t::out_diff_tmp__std::stringstreamA"></span><span class="target" id="structIO__handle__t_1acecbd0a17aa724742f88ceb70985db75"></span>std::stringstream <code class="sig-name descname">out_diff_tmp</code>[<code class="sig-name descname">num_comp</code>]<a class="headerlink" href="#_CPPv4N11IO_handle_t12out_diff_tmpE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t11n_snapshotsE">
+<span id="_CPPv3N11IO_handle_t11n_snapshotsE"></span><span id="_CPPv2N11IO_handle_t11n_snapshotsE"></span><span id="IO_handle_t::n_snapshots__uint64_t"></span><span class="target" id="structIO__handle__t_1a1916561ba422c7f8a3ef91ad412bd521"></span>uint64_t <code class="sig-name descname">n_snapshots</code><a class="headerlink" href="#_CPPv4N11IO_handle_t11n_snapshotsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t17flushed_snapshotsE">
+<span id="_CPPv3N11IO_handle_t17flushed_snapshotsE"></span><span id="_CPPv2N11IO_handle_t17flushed_snapshotsE"></span><span id="IO_handle_t::flushed_snapshots__uint64_t"></span><span class="target" id="structIO__handle__t_1a7727e093507b4be2db118005a0709fe6"></span>uint64_t <code class="sig-name descname">flushed_snapshots</code><a class="headerlink" href="#_CPPv4N11IO_handle_t17flushed_snapshotsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t8filetypeE">
+<span id="_CPPv3N11IO_handle_t8filetypeE"></span><span id="_CPPv2N11IO_handle_t8filetypeE"></span><span id="IO_handle_t::filetype__ss"></span><span class="target" id="structIO__handle__t_1aeed716eb870188f859fd41d86d1a4c72"></span>std::string <code class="sig-name descname">filetype</code><a class="headerlink" href="#_CPPv4N11IO_handle_t8filetypeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t13output_bufferE">
+<span id="_CPPv3N11IO_handle_t13output_bufferE"></span><span id="_CPPv2N11IO_handle_t13output_bufferE"></span><span id="IO_handle_t::output_buffer__std::array:std::vector:double:.num_comp-+-num_par-+-4:"></span><span class="target" id="structIO__handle__t_1a52ac38299a10101140211d2cba2063af"></span>std::array&lt;std::vector&lt;double&gt;, num_comp + num_par + 4&gt; <code class="sig-name descname">output_buffer</code><a class="headerlink" href="#_CPPv4N11IO_handle_t13output_bufferE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t19output_buffer_flagsE">
+<span id="_CPPv3N11IO_handle_t19output_buffer_flagsE"></span><span id="_CPPv2N11IO_handle_t19output_buffer_flagsE"></span><span id="IO_handle_t::output_buffer_flags__std::array:std::vector:unsigned-c:.4:"></span><span class="target" id="structIO__handle__t_1ad9409514ea6bec0d42c904daf3bb2a53"></span>std::array&lt;std::vector&lt;unsigned char&gt;, 4&gt; <code class="sig-name descname">output_buffer_flags</code><a class="headerlink" href="#_CPPv4N11IO_handle_t19output_buffer_flagsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t17output_buffer_strE">
+<span id="_CPPv3N11IO_handle_t17output_buffer_strE"></span><span id="_CPPv2N11IO_handle_t17output_buffer_strE"></span><span id="IO_handle_t::output_buffer_str__std::array:std::vector:ss:.1:"></span><span class="target" id="structIO__handle__t_1ae47a7516f65ae78fb6b44be3d1a3c6cd"></span>std::array&lt;std::vector&lt;std::string&gt;, 1&gt; <code class="sig-name descname">output_buffer_str</code><a class="headerlink" href="#_CPPv4N11IO_handle_t17output_buffer_strE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t17output_buffer_intE">
+<span id="_CPPv3N11IO_handle_t17output_buffer_intE"></span><span id="_CPPv2N11IO_handle_t17output_buffer_intE"></span><span id="IO_handle_t::output_buffer_int__std::array:std::vector:uint64_t:.1:"></span><span class="target" id="structIO__handle__t_1a2e8d559cdccbda4f11be32bc5ba3c579"></span>std::array&lt;std::vector&lt;uint64_t&gt;, 1&gt; <code class="sig-name descname">output_buffer_int</code><a class="headerlink" href="#_CPPv4N11IO_handle_t17output_buffer_intE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t8datafileE">
+<span id="_CPPv3N11IO_handle_t8datafileE"></span><span id="_CPPv2N11IO_handle_t8datafileE"></span><span id="IO_handle_t::datafile__NcFile"></span><span class="target" id="structIO__handle__t_1a4538e41c68cdbdbcd0d1d8a778224132"></span>NcFile <code class="sig-name descname">datafile</code><a class="headerlink" href="#_CPPv4N11IO_handle_t8datafileE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t10dim_vectorE">
+<span id="_CPPv3N11IO_handle_t10dim_vectorE"></span><span id="_CPPv2N11IO_handle_t10dim_vectorE"></span><span id="IO_handle_t::dim_vector__std::vector:NcDim:"></span><span class="target" id="structIO__handle__t_1ad29c3f0b6267f6397a99a2be033e72e2"></span>std::vector&lt;NcDim&gt; <code class="sig-name descname">dim_vector</code><a class="headerlink" href="#_CPPv4N11IO_handle_t10dim_vectorE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t10var_vectorE">
+<span id="_CPPv3N11IO_handle_t10var_vectorE"></span><span id="_CPPv2N11IO_handle_t10var_vectorE"></span><span id="IO_handle_t::var_vector__std::vector:NcVar:"></span><span class="target" id="structIO__handle__t_1ac04c1ed3465664de0437dcfde55a1e6c"></span>std::vector&lt;NcVar&gt; <code class="sig-name descname">var_vector</code><a class="headerlink" href="#_CPPv4N11IO_handle_t10var_vectorE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t5n_ensE">
+<span id="_CPPv3N11IO_handle_t5n_ensE"></span><span id="_CPPv2N11IO_handle_t5n_ensE"></span><span id="IO_handle_t::n_ens__uint64_t"></span><span class="target" id="structIO__handle__t_1accb180097191bb627b4a2f89a0c05162"></span>uint64_t <code class="sig-name descname">n_ens</code><a class="headerlink" href="#_CPPv4N11IO_handle_t5n_ensE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t7n_trajsE">
+<span id="_CPPv3N11IO_handle_t7n_trajsE"></span><span id="_CPPv2N11IO_handle_t7n_trajsE"></span><span id="IO_handle_t::n_trajs__uint64_t"></span><span class="target" id="structIO__handle__t_1aa3578cd5e42c8e0593f061611e2972f7"></span>uint64_t <code class="sig-name descname">n_trajs</code><a class="headerlink" href="#_CPPv4N11IO_handle_t7n_trajsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t15total_snapshotsE">
+<span id="_CPPv3N11IO_handle_t15total_snapshotsE"></span><span id="_CPPv2N11IO_handle_t15total_snapshotsE"></span><span id="IO_handle_t::total_snapshots__uint64_t"></span><span class="target" id="structIO__handle__t_1a08d8dc4f7631c257bbc73adbc7a7e793"></span>uint64_t <code class="sig-name descname">total_snapshots</code><a class="headerlink" href="#_CPPv4N11IO_handle_t15total_snapshotsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N11IO_handle_t8filenameE">
+<span id="_CPPv3N11IO_handle_t8filenameE"></span><span id="_CPPv2N11IO_handle_t8filenameE"></span><span id="IO_handle_t::filename__ss"></span><span class="target" id="structIO__handle__t_1a0334792e4eef0fd69a19bab7863cc5aa"></span>std::string <code class="sig-name descname">filename</code><a class="headerlink" href="#_CPPv4N11IO_handle_t8filenameE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="structmodel__constants__t.html" class="btn btn-neutral float-right" title="Struct model_constants_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="structinput__parameters__t.html" class="btn btn-neutral float-left" title="Struct input_parameters_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

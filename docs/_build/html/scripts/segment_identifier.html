@@ -1,0 +1,1287 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>segment_identifier &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="segment_statistics" href="segment_statistics.html" />
+    <link rel="prev" title="plot_mse" href="plot_mse.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="executing.html">Executing Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/scripts/segment_identifier.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="segment-identifier">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code><a class="headerlink" href="#segment-identifier" title="Permalink to this headline">¶</a></h1>
+<p>Used to train models based on ensemble simulations and predict segment starts.
+You can run <cite>python segment_identifier.py –help</cite> to get an overview of the
+usage of this script.</p>
+<span class="target" id="module-scripts.segment_identifier"></span><dl class="py function">
+<dt id="scripts.segment_identifier.AUC">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">AUC</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">con_mat</span></em>, <em class="sig-param"><span class="n">extra_title</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.AUC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot false positive over true positive.
+As a rule of thumb, if the curve is very steep
+very early on, the data is rather easy to classify.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>con_mat</strong> (<em>2D np.array</em>) – Confusion matrix created by get_stats(..).</p></li>
+<li><p><strong>extra_title</strong> (<em>string</em>) – Add this to the title.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>holoviews.Curve with AUC</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.PRC">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">PRC</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">con_mat</span></em>, <em class="sig-param"><span class="n">extra_title</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.PRC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the Precision-Recall Curve (re over pr)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>con_mat</strong> (<em>2D np.array</em>) – Confusion matrix created by get_stats(..).</p></li>
+<li><p><strong>extra_title</strong> (<em>string</em>) – Add this to the title.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>holoviews.Curve with PRC</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.ROC">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">ROC</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">con_mat</span></em>, <em class="sig-param"><span class="n">extra_title</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.ROC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot receiver operating characteristic curve, that is
+true positive rate (=recall) against false positive rate with
+tpr = tp/p
+fpr = tn/n</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>con_mat</strong> (<em>2D np.array</em>) – Confusion matrix created by get_stats(..).</p></li>
+<li><p><strong>extra_title</strong> (<em>string</em>) – Add this to the title.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>holoviews.Curve with ROC</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.combine_predictions">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">combine_predictions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">def_ver</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">jum_ver</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">acc_ver</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">how</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.combine_predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combine different predictions for a segment start.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>Dataframe</em>) – Dataframe with prediction columns such as
+“detected_segment_thresh”, “detected_segment_jump”
+or “detected_segment_acc”.</p></li>
+<li><p><strong>def_ver</strong> (<em>bool</em>) – Use detection by reaching default threshold aka first derivative.</p></li>
+<li><p><strong>jum_ver</strong> (<em>bool</em>) – Use detection by raching “jump” threshold aka second derivative.</p></li>
+<li><p><strong>acc_ver</strong> (<em>bool</em>) – Use detection by reaching “acceleration” threshold aka third
+derivative</p></li>
+<li><p><strong>how</strong> (<em>bool</em>) – If true, combine predictions using “and”, otherwise “or”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dataarray with combined predictions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.confusion_matrix">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">confusion_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">def_ver</span></em>, <em class="sig-param"><span class="n">jum_ver</span></em>, <em class="sig-param"><span class="n">acc_ver</span></em>, <em class="sig-param"><span class="n">how</span></em>, <em class="sig-param"><span class="n">def_thresh</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">jum_thresh</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">acc_thresh</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">confus</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.confusion_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a confusion matrix with F1 score and step tolerance in the title.
+The best result for true positive predictions is used for plotting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>Dataframe</em>) – Dataframe used to predict segments in and with a column
+“segment_start” for actual segment starts and “time_after_ascent”.</p></li>
+<li><p><strong>def_ver</strong> (<em>bool</em>) – Use detection by reaching default threshold aka first derivative.</p></li>
+<li><p><strong>jum_ver</strong> (<em>bool</em>) – Use detection by raching “jump” threshold aka second derivative.</p></li>
+<li><p><strong>acc_ver</strong> (<em>bool</em>) – Use detection by reaching “acceleration” threshold aka third
+derivative</p></li>
+<li><p><strong>how</strong> (<em>bool</em>) – If true, combine predictions using “and”, otherwise “or”.</p></li>
+<li><p><strong>def_thresh</strong> (<em>float</em><em> or </em><em>int</em>) – Maximum threshold value to predict the start of a segment.</p></li>
+<li><p><strong>jum_thresh</strong> (<em>float</em><em> or </em><em>int</em>) – Maximum threshold value for second derivative to predict the start of
+a segment.</p></li>
+<li><p><strong>acc_thresh</strong> (<em>float</em><em> or </em><em>int</em>) – Maximum threshold value for third derivative to predict the start of
+a segment.</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – Number of rows in the return matrix aka the number of different
+thresholds used in predicting segments.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>confus</strong> (<em>2D np.array</em>) – Confusion matrix from get_stats(..). If None is given, calculate
+the confusion matrix defined using the other parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Holoviews heatmap plot, confusion matrix (np.ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.confusion_matrix_faster">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">confusion_matrix_faster</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">index</span></em>, <em class="sig-param"><span class="n">confus</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.confusion_matrix_faster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a confusion matrix with F1 score and step tolerance in the title.
+The best result for true positive predictions is used for plotting.
+This is supposedly faster than confusion_matrix(..) where
+the confusion matrix is already calculated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>index</strong> (<em>int</em>) – Row index of the confusion matrix to plot.</p></li>
+<li><p><strong>confus</strong> (<em>2D np.array</em>) – Confusion matrix created by get_stats(..).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Holoviews heatmap, np.array with row given by index.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.create_bar_plot">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">create_bar_plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">use_percentage</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">height</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">extra_title</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.create_bar_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a bar plot for different columns of the confusion matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>xarray.Dataset</em>) – Confusion matrix created by create_df_confusion(..).</p></li>
+<li><p><strong>use_percentage</strong> (<em>bool</em>) – If true, plot percentages for the bar plot. Otherwise plot
+absolute values.</p></li>
+<li><p><strong>width</strong> (<em>int</em>) – Width in pixels of the plot.</p></li>
+<li><p><strong>height</strong> (<em>int</em>) – Height in pixels of the plot.</p></li>
+<li><p><strong>extra_title</strong> (<em>string</em>) – Addition to the title.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Holoviews barplot.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.create_big_stratified_set">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">create_big_stratified_set</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_path</span></em>, <em class="sig-param"><span class="n">step_tol</span></em>, <em class="sig-param"><span class="n">all_params_list</span></em>, <em class="sig-param"><span class="n">n_trajs_iter</span></em>, <em class="sig-param"><span class="n">out_params</span></em>, <em class="sig-param"><span class="n">threshold</span></em>, <em class="sig-param"><span class="n">distinct_outparams</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">train_size</span><span class="o">=</span><span class="default_value">0.75</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.create_big_stratified_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load part of one file or multiple files iteratively and create
+stratified subsets for training and concatenate them. Store the result
+on disk for training models on this.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_path</strong> (<em>path</em>) – If string ends with “.nc”, load a single file.
+Otherwise load and append multiple files to test and training sets.
+Only processes “n_trajs_iter” many trajectories per step.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>all_params_list</strong> (<em>list of str</em>) – List of all input params to get predicted errors for.</p></li>
+<li><p><strong>n_trajs_iter</strong> (<em>int</em>) – Number of trajectories to process per iteration. Using 20
+trajectories may consume around 24 GB of RAM.</p></li>
+<li><p><strong>out_params</strong> (<em>list of string</em>) – List of output parameters.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Exponent with base 10 for theshold of true segment start.</p></li>
+<li><p><strong>distinct_outparams</strong> (<em>bool</em>) – If true, try to predict perturbing an input parameter for a segment
+start for each output parameter independently. This may not be useful,
+since one input parameter can have a high impact on multiple output
+parameters.</p></li>
+<li><p><strong>train_size</strong> (<em>float</em>) – Size in percentage for the training set.</p></li>
+<li><p><strong>verbosity</strong> (<em>int</em>) – Set verbosity level.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Four np.arrays with train set, train labels, test set and test labels.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.create_chached_matrix_dic">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">create_chached_matrix_dic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">segment_data</span></em>, <em class="sig-param"><span class="n">segment_threshold</span><span class="o">=</span><span class="default_value">5.011872336272715e-11</span></em>, <em class="sig-param"><span class="n">steps</span><span class="o">=</span><span class="default_value">21</span></em>, <em class="sig-param"><span class="n">min_def_thresh</span><span class="o">=</span><span class="default_value">- 80</span></em>, <em class="sig-param"><span class="n">max_def_thresh</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">min_jum_thresh</span><span class="o">=</span><span class="default_value">- 80</span></em>, <em class="sig-param"><span class="n">max_jum_thresh</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">min_acc_thresh</span><span class="o">=</span><span class="default_value">- 80</span></em>, <em class="sig-param"><span class="n">max_acc_thres</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.create_chached_matrix_dic" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segment_data</strong> (<em>Dataframe</em>) – Dataframe with MSE created by load_dataset() for every model state
+parameter and all trajectories.</p></li>
+<li><p><strong>segment_threshold</strong> (<em>float</em>) – Threshold for errors to identify true segment starts.</p></li>
+<li><p><strong>steps</strong> (<em>int</em>) – Number of steps from minimum to maximum thresholds to calculate
+entries in the confusion matrix for.</p></li>
+<li><p><strong>min_def_thresh</strong> (<em>float</em>) – Minimum threshold value to predict the start of a segment.</p></li>
+<li><p><strong>max_def_thresh</strong> (<em>float</em>) – Maximum threshold value to predict the start of a segment.</p></li>
+<li><p><strong>min_jum_thresh</strong> (<em>float</em>) – Minimum threshold value for second derivative to predict the start of a segment.</p></li>
+<li><p><strong>max_jum_thresh</strong> (<em>float</em>) – Maximum threshold value for second derivative to predict the start of a segment.</p></li>
+<li><p><strong>min_acc_thresh</strong> (<em>float</em>) – Minimum threshold value for third derivative to predict the start of a segment.</p></li>
+<li><p><strong>max_acc_thres</strong> (<em>float</em>) – Maximum threshold value for third derivative to predict the start of a segment.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dictionary with confusion matrices for every output parameter.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.create_dataset_forest">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">create_dataset_forest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">max_features_list</span></em>, <em class="sig-param"><span class="n">min_threshold</span></em>, <em class="sig-param"><span class="n">max_threshold</span></em>, <em class="sig-param"><span class="n">threshold_step</span></em>, <em class="sig-param"><span class="n">precalc</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">test_size</span><span class="o">=</span><span class="default_value">0.25</span></em>, <em class="sig-param"><span class="n">distinct_outparams</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">n_estimators</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">save_memory</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_split</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">max_depth</span><span class="o">=</span><span class="default_value">36</span></em>, <em class="sig-param"><span class="n">max_leaf_nodes</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">classifier</span><span class="o">=</span><span class="default_value">'random_forest'</span></em>, <em class="sig-param"><span class="n">learning_rate</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.create_dataset_forest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dataset with dimensions “Max Features”, “Output Parameter”,
+“Input Parameter”, “Segment Threshold” and columns “TP over P”,
+“FP over P”, “FN over P_windows”, “TP”, “P”, “FP”, “FN”, “P_window” by
+predicting segment starts. Models are being trained used create_forest(..)
+in this method as well.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>dataset</em>) – Dataframe with MSE created by load_dataset() for every model state
+parameter and all trajectories to find segments for.</p></li>
+<li><p><strong>max_features_list</strong> (<em>list of string</em><em> or </em><em>int</em><em> or </em><em>float</em>) – <p>A list of possible number of features for the best split
+to train a model for.
+From sklearn.ensemble.RandomForestClassifier:
+The number of features to consider when looking for the best split:</p>
+<p>If int, then consider max_features features at each split.
+If float, then max_features is a fraction and</p>
+<blockquote>
+<div><p>round(max_features * n_features) features are considered at each split.</p>
+</div></blockquote>
+<p>If “auto”, then max_features=sqrt(n_features).
+If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
+If “log2”, then max_features=log2(n_features).
+If None, then max_features=n_features.</p>
+<p>Note: the search for a split does not stop until at least one valid
+partition of the node samples is found, even if it requires to
+effectively inspect more than max_features features.</p>
+</p></li>
+<li><p><strong>min_threshold</strong> (<em>float</em>) – Minimum threshold for errors to identify true segment starts.</p></li>
+<li><p><strong>max_threshold</strong> (<em>float</em>) – Maximum threshold for errors to identify true segment starts.</p></li>
+<li><p><strong>threshold_step</strong> (<em>float</em>) – Step size between minimum and maximum threshold.</p></li>
+<li><p><strong>precalc</strong> (<em>bool</em>) – If true, calculate segment starts for different thresholds
+before everything else, otherwise calculate those a new
+for every feature.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>test_size</strong> (<em>float</em>) – Percentage of number of windows to use for testing.</p></li>
+<li><p><strong>distinct_outparams</strong> (<em>bool</em>) – If true, try to predict perturbing an input parameter for a segment
+start for each output parameter independently. This may not be useful,
+since one input parameter can have a high impact on multiple output
+parameters.</p></li>
+<li><p><strong>n_estimators</strong> (<em>int</em>) – Number of trees.</p></li>
+<li><p><strong>save_memory</strong> (<em>bool</em>) – If true and not “no_split”, use the first “test_size” many rows for
+training. This means, that the data is not stratified! Do not use this
+unless the classes to predict is roughly uniformly distributed.</p></li>
+<li><p><strong>no_split</strong> (<em>bool</em>) – If true, do not split data into training and test set and use everything
+for training.</p></li>
+<li><p><strong>verbosity</strong> (<em>int</em>) – Set verbosity level.</p></li>
+<li><p><strong>max_depth</strong> (<em>int</em>) – From sklearn.ensemble.RandomForestClassifier:
+The maximum depth of the tree. If None, then nodes are expanded until
+all leaves are pure or until all leaves contain less than
+min_samples_split (here: 2) samples.</p></li>
+<li><p><strong>max_leaf_nodes</strong> (<em>int</em>) – From sklearn.ensemble.RandomForestClassifier:
+Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
+defined as relative reduction in impurity. If None then unlimited
+number of leaf nodes.</p></li>
+<li><p><strong>classifier</strong> (<em>string</em>) – Choose a classifier for prediction. Options are “random_forest”
+and “adaboost”. The latter ignores “max_leaf_nodes” and “max_depth” and
+rather uses “learning_rate”.</p></li>
+<li><p><strong>learning_rate</strong> (<em>float</em>) – From sklean.ensemble.AdaBoostClassifier:
+Learning rate shrinks the contribution of each classifier by
+“learning_rate”. There is a trade-off between “learning_rate” and
+“n_estimators”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xarray.Dataset of confusion matrix as described above.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.create_dataset_pretrained">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">create_dataset_pretrained</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">models</span></em>, <em class="sig-param"><span class="n">seg_thresholds</span></em>, <em class="sig-param"><span class="n">max_features_list</span></em>, <em class="sig-param"><span class="n">step_tol</span></em>, <em class="sig-param"><span class="n">distinct_outparams</span></em>, <em class="sig-param"><span class="n">precalc</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">in_params</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">predict_train</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.create_dataset_pretrained" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dataset with dimensions “Max Features”, “Output Parameter”,
+“Input Parameter”, “Segment Threshold” and columns “TP over P”,
+“FP over P”, “FN over P_windows”, “TP”, “P”, “FP”, “FN”, “P_window” by
+predicting segment starts using given trained models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>list</em><em> or </em><em>np.ndarray of paths</em><em> or </em><em>dataset</em>) – Dataset to find the segments for. If list or np.ndarray is given,
+load a pickled numpy array as testset from disk. Must have “test”
+in its name.</p></li>
+<li><p><strong>models</strong> (<em>List of list of trained models</em>) – These are models trained by train_many_models(..)</p></li>
+<li><p><strong>seg_thresholds</strong> (<em>list</em><em> or </em><em>np.array of float</em>) – Array of segment thresholds for true segment starts.</p></li>
+<li><p><strong>max_features_list</strong> (<em>list of string</em><em> or </em><em>int</em><em> or </em><em>float</em>) – <p>A list of possible number of features for the best split
+to train a model for.
+From sklearn.ensemble.RandomForestClassifier:
+The number of features to consider when looking for the best split:</p>
+<p>If int, then consider max_features features at each split.
+If float, then max_features is a fraction and</p>
+<blockquote>
+<div><p>round(max_features * n_features) features are considered at each split.</p>
+</div></blockquote>
+<p>If “auto”, then max_features=sqrt(n_features).
+If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
+If “log2”, then max_features=log2(n_features).
+If None, then max_features=n_features.</p>
+<p>Note: the search for a split does not stop until at least one valid
+partition of the node samples is found, even if it requires to
+effectively inspect more than max_features features.</p>
+</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>distinct_outparams</strong> (<em>bool</em>) – If true, try to predict perturbing an input parameter for a segment
+start for each output parameter independently. This may not be useful,
+since one input parameter can have a high impact on multiple output
+parameters.</p></li>
+<li><p><strong>precalc</strong> (<em>bool</em>) – If true, calculate segment starts for different thresholds
+before everything else, otherwise calculate those a new
+for every feature.</p></li>
+<li><p><strong>verbosity</strong> (<em>int</em>) – Set verbosity level.</p></li>
+<li><p><strong>in_params</strong> (<em>list</em>) – List of input parameters to create a separate prediction for.</p></li>
+<li><p><strong>predict_train</strong> (<em>bool</em>) – Only useful if “data” is a list or array of paths to load data from.
+If true, use train data for the confusion matrix, otherwise use
+test data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xarray.Dataset of confusion matrix as described above.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.create_df_confusion">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">create_df_confusion</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">segment_threshold</span><span class="o">=</span><span class="default_value">5.011872336272715e-11</span></em>, <em class="sig-param"><span class="n">steps</span><span class="o">=</span><span class="default_value">21</span></em>, <em class="sig-param"><span class="n">min_def_thresh</span><span class="o">=</span><span class="default_value">- 80</span></em>, <em class="sig-param"><span class="n">max_def_thresh</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">min_jum_thresh</span><span class="o">=</span><span class="default_value">- 80</span></em>, <em class="sig-param"><span class="n">max_jum_thresh</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">min_acc_thresh</span><span class="o">=</span><span class="default_value">- 80</span></em>, <em class="sig-param"><span class="n">max_acc_thres</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">how</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.create_df_confusion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an xr.Dataset using get_stats_combinations(..) for
+different output parameters, input parameters and thresholds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>Dataframe</em>) – Dataframe used to predict segments in and with a column
+“segment_start” for actual segment starts and “time_after_ascent”.</p></li>
+<li><p><strong>segment_threshold</strong> (<em>float</em>) – Threshold for errors to identify true segment starts.</p></li>
+<li><p><strong>steps</strong> (<em>int</em>) – Number of steps from minimum to maximum thresholds to calculate
+entries in the confusion matrix for.</p></li>
+<li><p><strong>min_def_thresh</strong> (<em>float</em>) – Minimum threshold value to predict the start of a segment.</p></li>
+<li><p><strong>max_def_thresh</strong> (<em>float</em>) – Maximum threshold value to predict the start of a segment.</p></li>
+<li><p><strong>min_jum_thresh</strong> (<em>float</em>) – Minimum threshold value for second derivative to predict the start of a segment.</p></li>
+<li><p><strong>max_jum_thresh</strong> (<em>float</em>) – Maximum threshold value for second derivative to predict the start of a segment.</p></li>
+<li><p><strong>min_acc_thresh</strong> (<em>float</em>) – Minimum threshold value for third derivative to predict the start of a segment.</p></li>
+<li><p><strong>max_acc_thres</strong> (<em>float</em>) – Maximum threshold value for third derivative to predict the start of a segment.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>how</strong> (<em>bool</em>) – If true, combine predictions using “and”, otherwise “or”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>xr.Dataset for statistics of predictions.</em></p></li>
+<li><p><em>Coordinates are “Output Parameter”, “Input Parameter”, “Default Threshold”,</em></p></li>
+<li><p><em>”Jump Threshold” (“Acceleration Threshold” is not supported).</em></p></li>
+<li><p><em>Columns are “TP over P”, “FP over P”, “FN over P_windows”, “TP”, “P”, “FP”,</em></p></li>
+<li><p><em>”FN”, “P_windows”.</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.create_forest">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">create_forest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ds</span></em>, <em class="sig-param"><span class="n">step_tol</span></em>, <em class="sig-param"><span class="n">test_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">distinct_outparams</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">n_estimators</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">max_features</span><span class="o">=</span><span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">save_memory</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_split</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">max_depth</span><span class="o">=</span><span class="default_value">36</span></em>, <em class="sig-param"><span class="n">max_leaf_nodes</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">classifier</span><span class="o">=</span><span class="default_value">'random_forest'</span></em>, <em class="sig-param"><span class="n">learning_rate</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.create_forest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a random forest and fit it. Returns training and testing set and
+feature names and class names.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>Dataset</em><em> or </em><em>list of label and data.</em>) – Dataset created by find_segments(..) where segments are identified and
+predicted errors are stored.
+If list, then a list of precalculated labels and their data.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>test_size</strong> (<em>float</em>) – Percentage of number of windows to use for testing.</p></li>
+<li><p><strong>distinct_outparams</strong> (<em>bool</em>) – If true, try to predict perturbing an input parameter for a segment
+start for each output parameter independently. This may not be useful,
+since one input parameter can have a high impact on multiple output
+parameters.</p></li>
+<li><p><strong>n_estimators</strong> (<em>int</em>) – Number of trees.</p></li>
+<li><p><strong>max_features</strong> (<em>string</em><em> or </em><em>float</em><em> or </em><em>int</em>) – <p>From sklearn.ensemble.RandomForestClassifier:
+The number of features to consider when looking for the best split:</p>
+<p>If int, then consider max_features features at each split.
+If float, then max_features is a fraction and</p>
+<blockquote>
+<div><p>round(max_features * n_features) features are considered at each split.</p>
+</div></blockquote>
+<p>If “auto”, then max_features=sqrt(n_features).
+If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
+If “log2”, then max_features=log2(n_features).
+If None, then max_features=n_features.</p>
+<p>Note: the search for a split does not stop until at least one valid
+partition of the node samples is found, even if it requires to
+effectively inspect more than max_features features.</p>
+</p></li>
+<li><p><strong>save_memory</strong> (<em>bool</em>) – If true and not “no_split”, use the first “test_size” many rows for
+training. This means, that the data is not stratified! Do not use this
+unless the classes to predict is roughly uniformly distributed.</p></li>
+<li><p><strong>no_split</strong> (<em>bool</em>) – If true, do not split data into training and test set and use everything
+for training.</p></li>
+<li><p><strong>verbosity</strong> (<em>bool</em>) – If true, set verbosity of the random forest to 2.</p></li>
+<li><p><strong>max_depth</strong> (<em>int</em>) – From sklearn.ensemble.RandomForestClassifier:
+The maximum depth of the tree. If None, then nodes are expanded until
+all leaves are pure or until all leaves contain less than
+min_samples_split (here: 2) samples.</p></li>
+<li><p><strong>max_leaf_nodes</strong> (<em>int</em>) – From sklearn.ensemble.RandomForestClassifier:
+Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
+defined as relative reduction in impurity. If None then unlimited
+number of leaf nodes.</p></li>
+<li><p><strong>classifier</strong> (<em>string</em>) – Choose a classifier for prediction. Options are “random_forest”
+and “adaboost”. The latter ignores “max_leaf_nodes” and “max_depth” and
+rather uses “learning_rate”.</p></li>
+<li><p><strong>learning_rate</strong> (<em>float</em>) – From sklean.ensemble.AdaBoostClassifier:
+Learning rate shrinks the contribution of each classifier by
+“learning_rate”. There is a trade-off between “learning_rate” and
+“n_estimators”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>model, train set, test set, train labels, test labels, feature names,</em></p></li>
+<li><p><em>class names</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.create_input_labels">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">create_input_labels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ds</span></em>, <em class="sig-param"><span class="n">step_tol</span></em>, <em class="sig-param"><span class="n">distinct_outparams</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.create_input_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create windows and labels for creating training and testing sets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>Dataset</em>) – Dataset created by find_segments(..) where segments are identified and
+predicted errors are stored.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>distinct_outparams</strong> (<em>bool</em>) – If true, try to predict perturbing an input parameter for a segment
+start for each output parameter independently. This may not be useful,
+since one input parameter can have a high impact on multiple output
+parameters.</p></li>
+<li><p><strong>verbosity</strong> (<em>int</em>) – Set verbosity level.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>X as np.array of shape (n_samples, features),</em></p></li>
+<li><p><em>labels as np.array of shape (n_samples, n_classes),</em></p></li>
+<li><p><em>feature_names, class_names</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.create_many_bar_plots">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">create_many_bar_plots</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">cols</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">500</span></em>, <em class="sig-param"><span class="n">height</span><span class="o">=</span><span class="default_value">400</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.create_many_bar_plots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot multiple bar plots (for each input parameter one).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>Dataframe</em>) – Dataframe used to predict segments in and with a column
+“segment_start” for actual segment starts and “time_after_ascent”.</p></li>
+<li><p><strong>cols</strong> (<em>int</em>) – Number of plots per row.</p></li>
+<li><p><strong>width</strong> (<em>int</em>) – Width in pixels of the plot.</p></li>
+<li><p><strong>height</strong> (<em>int</em>) – Height in pixels of the plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Multiple Holoviews barplots.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.d_unnamed">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">d_unnamed</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.d_unnamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove unnamed column from dataframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pandas.Dataframe</em>) – A dataframe with one or more unnamed columns</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dataframe without unnamed columns.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.fill_stats">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">fill_stats</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">def_val</span></em>, <em class="sig-param"><span class="n">jum_val</span></em>, <em class="sig-param"><span class="n">acc_val</span></em>, <em class="sig-param"><span class="n">index</span></em>, <em class="sig-param"><span class="n">df_input</span></em>, <em class="sig-param"><span class="n">how</span></em>, <em class="sig-param"><span class="n">step_tol</span></em>, <em class="sig-param"><span class="n">stats</span></em>, <em class="sig-param"><span class="n">def_ver</span></em>, <em class="sig-param"><span class="n">jum_ver</span></em>, <em class="sig-param"><span class="n">acc_ver</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.fill_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill the row index in a (confusion + more info) matrix.
+The values are in the following order:
+True Positive: Number of true positive segment start predictions
+False Negative: Number of false negative predictions
+False Positive: Number of false positive predictions
+True Negative: Number of true negative predictions
+Early Positive: Number of true positive predictions that are earlier</p>
+<blockquote>
+<div><p>but within the time window or at exact the right time step</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Late Positive: Number of true positive predictions that are later</dt><dd><p>but within the time window</p>
+</dd>
+</dl>
+<p>Positive Actual: Actual number of segment starts
+Positive Actual (Windows): Number of windows in which a segment starts
+Precision: (True Positive Predictions / Positive Predictions)
+Recall: (True Positive Predictions / Positive Actual)
+F1 Score: Balanced F-Score: (2 * (Precision*Recall) / (Precision+Recall))
+False Positive Rate: (False Positive / Negative Predictions)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>def_val</strong> (<em>float</em>) – Threshold value to predict the start of a segment.</p></li>
+<li><p><strong>jum_val</strong> (<em>float</em>) – Threshold value for second derivative to predict the start of a segment.</p></li>
+<li><p><strong>acc_val</strong> (<em>float</em>) – Threshold value for third derivative to predict the start of a segment.</p></li>
+<li><p><strong>index</strong> (<em>int</em>) – Row number to fill in stats.</p></li>
+<li><p><strong>df_input</strong> (<em>Dataframe</em>) – Dataframe used to predict segments in and with a column
+“segment_start” for actual segment starts.</p></li>
+<li><p><strong>how</strong> (<em>bool</em>) – If true, combine predictions using “and”, otherwise “or”.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>stats</strong> (<em>np.ndarray</em><em> or </em><em>list</em>) – Matrix to fill a row in</p></li>
+<li><p><strong>def_ver</strong> (<em>bool</em>) – Use detection by reaching default threshold aka first derivative.</p></li>
+<li><p><strong>jum_ver</strong> (<em>bool</em>) – Use detection by raching “jump” threshold aka second derivative.</p></li>
+<li><p><strong>acc_ver</strong> (<em>bool</em>) – Use detection by reaching “acceleration” threshold aka third
+derivative</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.find_segments">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">find_segments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">error_threshold</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.find_segments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over time steps to mark the start of a segment with large errors, where large
+is defined via error_threshold. The dataframe needs to have a column (or index)
+“Output Parameter” and should be ordered by time or time_after_ascent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em>) – Dataframe with MSE created by load_dataset() for every model state
+parameter and all trajectories.</p></li>
+<li><p><strong>error_threshold</strong> (<em>float</em>) – Threshold for errors to identify true segment starts.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dataframe with additional column “segment_start” (1 for start, else 0)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.get_stats">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">get_stats</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df_input</span></em>, <em class="sig-param"><span class="n">def_ver</span></em>, <em class="sig-param"><span class="n">jum_ver</span></em>, <em class="sig-param"><span class="n">acc_ver</span></em>, <em class="sig-param"><span class="n">how</span></em>, <em class="sig-param"><span class="n">def_thresh</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">jum_thresh</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">acc_thresh</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.get_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get statistics in a (confusion + more info) matrix. Each column consists of
+values in the following order:
+True Positive: Number of true positive segment start predictions
+False Negative: Number of false negative predictions
+False Positive: Number of false positive predictions
+True Negative: Number of true negative predictions
+Early Positive: Number of true positive predictions that are earlier</p>
+<blockquote>
+<div><p>but within the time window or at exact the right time step</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Late Positive: Number of true positive predictions that are later</dt><dd><p>but within the time window</p>
+</dd>
+</dl>
+<p>Positive Actual: Actual number of segment starts
+Positive Actual (Windows): Number of windows in which a segment starts
+Precision: (True Positive Predictions / Positive Predictions)
+Recall: (True Positive Predictions / Positive Actual)
+F1 Score: Balanced F-Score: (2 * (Precision*Recall) / (Precision+Recall))
+False Positive Rate: (False Positive / Negative Predictions)</p>
+<p>Each row is used for a different combination of thresholds for predicting
+segment starts. If <em>all</em> combinations are needed,
+use get_stats_combinations(..).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df_input</strong> (<em>Dataframe</em>) – Dataframe used to predict segments in and with a column
+“segment_start” for actual segment starts and “time_after_ascent”.</p></li>
+<li><p><strong>def_ver</strong> (<em>bool</em>) – Use detection by reaching default threshold aka first derivative.</p></li>
+<li><p><strong>jum_ver</strong> (<em>bool</em>) – Use detection by raching “jump” threshold aka second derivative.</p></li>
+<li><p><strong>acc_ver</strong> (<em>bool</em>) – Use detection by reaching “acceleration” threshold aka third
+derivative</p></li>
+<li><p><strong>how</strong> (<em>bool</em>) – If true, combine predictions using “and”, otherwise “or”.</p></li>
+<li><p><strong>def_thresh</strong> (<em>float</em><em> or </em><em>int</em>) – Maximum threshold value to predict the start of a segment.</p></li>
+<li><p><strong>jum_thresh</strong> (<em>float</em><em> or </em><em>int</em>) – Maximum threshold value for second derivative to predict the start of a segment.</p></li>
+<li><p><strong>acc_thresh</strong> (<em>float</em><em> or </em><em>int</em>) – Maximum threshold value for third derivative to predict the start of a segment.</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – Number of rows in the return matrix aka the number of different
+thresholds used in predicting segments.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>2D np.array with rows for each threshold and columns as described above.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.get_stats_combinations">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">get_stats_combinations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df_input</span></em>, <em class="sig-param"><span class="n">def_ver</span></em>, <em class="sig-param"><span class="n">jum_ver</span></em>, <em class="sig-param"><span class="n">acc_ver</span></em>, <em class="sig-param"><span class="n">how</span></em>, <em class="sig-param"><span class="n">n</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">limits</span><span class="o">=</span><span class="default_value">[- 80, 0, - 80, 0, - 80, 0]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.get_stats_combinations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get statistics in a (confusion + more info) matrix. Each column consists of
+values in the following order:
+True Positive: Number of true positive segment start predictions
+False Negative: Number of false negative predictions
+False Positive: Number of false positive predictions
+True Negative: Number of true negative predictions
+Early Positive: Number of true positive predictions that are earlier</p>
+<blockquote>
+<div><p>but within the time window or at exact the right time step</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Late Positive: Number of true positive predictions that are later</dt><dd><p>but within the time window</p>
+</dd>
+</dl>
+<p>Positive Actual: Actual number of segment starts
+Positive Actual (Windows): Number of windows in which a segment starts
+Precision: (True Positive Predictions / Positive Predictions)
+Recall: (True Positive Predictions / Positive Actual)
+F1 Score: Balanced F-Score: (2 * (Precision*Recall) / (Precision+Recall))
+False Positive Rate: (False Positive / Negative Predictions)</p>
+<p>Each row is used for <em>all</em> combinations of thresholds for predicting
+segment starts. The rows are ordered by default threshold, jump threshold,
+acceleration threshold (fastest index). There are n*n*n many rows
+if all threshold types are used, n*n many rows if two types are used and
+n if only one is used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df_input</strong> (<em>Dataframe</em>) – Dataframe used to predict segments in and with a column
+“segment_start” for actual segment starts and “time_after_ascent”.</p></li>
+<li><p><strong>def_ver</strong> (<em>bool</em>) – Use detection by reaching default threshold aka first derivative.</p></li>
+<li><p><strong>jum_ver</strong> (<em>bool</em>) – Use detection by raching “jump” threshold aka second derivative.</p></li>
+<li><p><strong>acc_ver</strong> (<em>bool</em>) – Use detection by reaching “acceleration” threshold aka third
+derivative</p></li>
+<li><p><strong>how</strong> (<em>bool</em>) – If true, combine predictions using “and”, otherwise “or”.</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – Number of rows in the return matrix aka the number of different
+thresholds used in predicting segments.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>limits</strong> (<em>List of tuples</em>) – Upper and lower limits for each threshold type. Threshold using
+def_ver is at index 0, jum_ver at index 1 and acc_ver at index 2.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>2D np.array with rows for each threshold combination</em></p></li>
+<li><p><em>and columns as described above.</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.get_stratified_sets">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">get_stratified_sets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ds</span></em>, <em class="sig-param"><span class="n">step_tol</span></em>, <em class="sig-param"><span class="n">distinct_outparams</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">train_size</span><span class="o">=</span><span class="default_value">0.75</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.get_stratified_sets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a stratified train set from the given dataset.
+The idea here: Call this function multiple times for subsets
+of the df and concatenate the results. This way, we can create
+a bigger training set without blowing up the needed RAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>Dataset</em>) – Dataset created by find_segments(..) where segments are identified and
+predicted errors are stored.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>distinct_outparams</strong> (<em>bool</em>) – If true, try to predict perturbing an input parameter for a segment
+start for each output parameter independently. This may not be useful,
+since one input parameter can have a high impact on multiple output
+parameters.</p></li>
+<li><p><strong>train_size</strong> (<em>float</em>) – Size in percentage for the training set.</p></li>
+<li><p><strong>verbosity</strong> (<em>int</em>) – Set verbosity level.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Four np.arrays with train set, train labels, test set and test labels.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.get_tree_matrix">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">get_tree_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">trained_model</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">only_idx</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.get_tree_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a confusion matrix with a single row given a random forest.
+Late and early positive is every segment start, that got detected within
+the given tolerance incl. exact true predictions.
+If “step_tol” is given, then “True Positive” means, for any segment
+start there is at least one window (early or late but within tolerance)
+which detected that. “step_tol” can be any value, since the value
+itself is given by the window size.
+If “step_tol” is not given, then “True Positive” is counted for each
+window individually. A segment start “exists” as many times as the
+window size such that “True Positive” can be higher than actual segment
+starts exist.
+“Early Positive” and “Late Positive” are set to zero.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trained_model</strong> (<em>model</em>) – A trained model with a method predict(..).</p></li>
+<li><p><strong>X</strong> (<em>Array</em><em> or </em><em>list</em>) – Array of shape (n_samples, n_features) for prediction.</p></li>
+<li><p><strong>y</strong> (<em>Array</em><em> or </em><em>list</em>) – Array of shape (n_samples, n_classes) with labels associated with X.</p></li>
+<li><p><strong>only_idx</strong> (<em>int</em>) – Get values in confusion matrix only for the input parameter at the
+given index in n_features.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em><em> or </em><em>None</em>) – If int is given: Number of steps to tolerate for a prediction
+to be true. Otherwise only look for exact matches.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list of list with values as in the confusion matrix.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.load_dataset">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">load_dataset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">out_params</span></em>, <em class="sig-param"><span class="n">in_params</span></em>, <em class="sig-param"><span class="n">traj_list</span></em>, <em class="sig-param"><span class="n">traj_offset</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.load_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all trajectory data and store the MSE for each ensemble
+and parameter as a result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>String</em>) – Path to files to load. Within this folder, iterate
+over trajy..trajx where y and x are values from traj_list.
+Loads path/trajx.nc_wcb and path/trajx/in_param.nc_wcb
+where in_param is an input parameter from in_params.</p></li>
+<li><p><strong>out_params</strong> (<em>List of string</em>) – List of output parameters to get MSE for.</p></li>
+<li><p><strong>in_params</strong> (<em>List of string</em>) – List of input parameters to get MSE for.</p></li>
+<li><p><strong>traj_list</strong> (<em>List of int</em>) – List of trajectory numbers to load.</p></li>
+<li><p><strong>traj_offset</strong> (<em>int</em>) – Offset for the new index of the trajectories.</p></li>
+<li><p><strong>verbosity</strong> (<em>int</em>) – Set verbosity level.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFrame MSE and predicted error for each output and input parameter and trajectory.
+Also has output parameter values for not perturbed trajectory</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xarray.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.load_sensitivity">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">load_sensitivity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">out_params</span></em>, <em class="sig-param"><span class="n">in_params</span><span class="o">=</span><span class="default_value">['da_1']</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.load_sensitivity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the sensitivities from the unperturbed trajectory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>String</em>) – path and name of file to load. Should be the unperturbed
+trajectory with ‘Output Parameter’ as column.</p></li>
+<li><p><strong>out_params</strong> (<em>List of string</em>) – List of output parameters to get sensitivities for.</p></li>
+<li><p><strong>in_params</strong> (<em>List of string</em>) – List of input parameters for the sensitivies.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataframe with model state parameters, sensitivities
+and time after ascent.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xarray.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.load_unperturbed">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">load_unperturbed</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">out_params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.load_unperturbed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the unperturbed trajectory output parameters.
+Should not be necessary since load_sensitivity() already
+stores those values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>String</em>) – path and name of file to load. Should be the unperturbed
+trajectory with ‘Output Parameter’ as column.</p></li>
+<li><p><strong>out_params</strong> (<em>List of string</em>) – List of output parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataframe with model state parameters and time after ascent.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xarray.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.parse_load">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">parse_load</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_path</span></em>, <em class="sig-param"><span class="n">out_params</span></em>, <em class="sig-param"><span class="n">all_params_list</span></em>, <em class="sig-param"><span class="n">store_many_appended_data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">load_on_the_fly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.parse_load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the args.data_path and corresponding arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_path</strong> (<em>string</em>) – Path to folders with ensemble datasets or to single NetCDF file
+with all data concatenated along ‘trajectory’ axis.
+If a path to numpy arrays is given, it is assumed to be a training
+or test set.</p></li>
+<li><p><strong>out_params</strong> (<em>list of string</em>) – List of output parameters.</p></li>
+<li><p><strong>all_params_list</strong> (<em>list of string</em>) – List of all input params to get predicted errors for.</p></li>
+<li><p><strong>store_many_appended_data</strong> (<em>string</em>) – Store the appended input data to this path as NetCDF file for each appended
+version. Used mainly for debugging.</p></li>
+<li><p><strong>load_on_the_fly</strong> (<em>boolean</em>) – Load data and find the segments on the fly for predicting a dataset,
+or load precalculated training or test set.</p></li>
+<li><p><strong>verbosity</strong> (<em>int</em>) – Set verbosity level.
+0: No output except for exceptions
+1: Print datasets
+2: Print loading statements</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>Either array of datapaths for loading on the fly or xarray.Dataset with</em></p></li>
+<li><p><em>already loaded data.</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.plot_histogram">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">plot_histogram</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">bins</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">by</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hist_log</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">drop_zero</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.plot_histogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a histogram over column for a dataframe with usually but not limited
+to either “segment_start” or “Predicted Segment Start”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>Dataframe</em>) – A dataframe with the column specified by column.</p></li>
+<li><p><strong>bins</strong> (<em>int</em>) – Number of bins.</p></li>
+<li><p><strong>by</strong> (<em>string</em>) – Column name to group by in different colors.</p></li>
+<li><p><strong>hist_log</strong> (<em>bool</em>) – If true, use logarithmic x-axis.</p></li>
+<li><p><strong>drop_zero</strong> (<em>bool</em>) – If true, drop rows where the value in column is zero.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Holoviews histogram plot</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.plot_tree_matrix">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">plot_tree_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">train</span></em>, <em class="sig-param"><span class="n">test</span></em>, <em class="sig-param"><span class="n">train_labels</span></em>, <em class="sig-param"><span class="n">test_labels</span></em>, <em class="sig-param"><span class="n">feature_names</span></em>, <em class="sig-param"><span class="n">class_names</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">8</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.plot_tree_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: Plot the single row confusion matrix. Currently this method only
+returns a single row confusion matrix.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.predict_segments">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">predict_segments</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">threshold_jump</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">threshold_acc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">repeats</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.predict_segments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given sensitivities in a dataframe, predict when a segment of interest starts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em>) – Dataframe from find_segments() with sensitivities for every model state parameter and all trajectories
+and a column segment_start with boolean wether a segment starts.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em><em> or </em><em>DataArray</em>) – Threshold a gradient needs to overcome to be considered a segment.
+If DataArray, then dimensions need to have at least one dimension with df
+in common for defining thresholds along those dimensions.</p></li>
+<li><p><strong>threshold_jump</strong> (<em>float</em>) – Threshold a gradient needs to jump in two consecutive
+time steps for a segment of interest (basically second order derivative).
+If DataArray, then dimensions need to have at least one dimension with df
+in common for defining thresholds along those dimensions.</p></li>
+<li><p><strong>threshold_acc</strong> (<em>float</em>) – Threshold a gradient needs to accelerate (basically third order derivative).
+If DataArray, then dimensions need to have at least one dimension with df
+in common for defining thresholds along those dimensions.</p></li>
+<li><p><strong>repeats</strong> (<em>int</em>) – Optional number of time steps at which any of the criteria must be
+fullfilled within window_size. Defaults to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dataframe with predicted segment starts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.rolling_window">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">rolling_window</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.rolling_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a rolling window for a given array of arbitrary dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> (<em>np.ndarray</em>) – Numpy array to create rolling window for.</p></li>
+<li><p><strong>window</strong> (<em>int</em>) – Size of the window.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>View of np.ndarray with rolling window.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.show_tree_stats">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">show_tree_stats</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">train</span></em>, <em class="sig-param"><span class="n">test</span></em>, <em class="sig-param"><span class="n">train_labels</span></em>, <em class="sig-param"><span class="n">test_labels</span></em>, <em class="sig-param"><span class="n">feature_names</span></em>, <em class="sig-param"><span class="n">class_names</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">8</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.show_tree_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: Plot the single row confusion matrix. Currently this method
+only returns a single row confusion matrix and prints some info about
+the model used.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_identifier.train_many_models">
+<code class="sig-prename descclassname">scripts.segment_identifier.</code><code class="sig-name descname">train_many_models</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">max_features_list</span></em>, <em class="sig-param"><span class="n">min_threshold</span></em>, <em class="sig-param"><span class="n">max_threshold</span></em>, <em class="sig-param"><span class="n">threshold_step</span></em>, <em class="sig-param"><span class="n">precalc</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">distinct_outparams</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">n_estimators</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">save_memory</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_split</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">max_depth</span><span class="o">=</span><span class="default_value">36</span></em>, <em class="sig-param"><span class="n">max_leaf_nodes</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">classifier</span><span class="o">=</span><span class="default_value">'random_forest'</span></em>, <em class="sig-param"><span class="n">learning_rate</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_identifier.train_many_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train different models for different max feature splits and thresholds
+for true segment starts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>list</em><em> or </em><em>np.ndarray of paths</em><em> or </em><em>dataset</em>) – Dataset to find the segments for. If list or np.ndarray is given,
+load a pickled numpy array as testset from disk. Must have “test”
+in its name.</p></li>
+<li><p><strong>max_features_list</strong> (<em>list of string</em><em> or </em><em>int</em><em> or </em><em>float</em>) – <p>A list of possible number of features for the best split
+to train a model for.
+From sklearn.ensemble.RandomForestClassifier:
+The number of features to consider when looking for the best split:</p>
+<p>If int, then consider max_features features at each split.
+If float, then max_features is a fraction and</p>
+<blockquote>
+<div><p>round(max_features * n_features) features are considered at each split.</p>
+</div></blockquote>
+<p>If “auto”, then max_features=sqrt(n_features).
+If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
+If “log2”, then max_features=log2(n_features).
+If None, then max_features=n_features.</p>
+<p>Note: the search for a split does not stop until at least one valid
+partition of the node samples is found, even if it requires to
+effectively inspect more than max_features features.</p>
+</p></li>
+<li><p><strong>min_threshold</strong> (<em>float</em>) – Minimum threshold for errors to identify true segment starts.</p></li>
+<li><p><strong>max_threshold</strong> (<em>float</em>) – Maximum threshold for errors to identify true segment starts.</p></li>
+<li><p><strong>threshold_step</strong> (<em>float</em>) – Step size between minimum and maximum threshold.</p></li>
+<li><p><strong>precalc</strong> (<em>bool</em>) – If true, calculate segment starts for different thresholds
+before everything else, otherwise calculate those a new
+for every feature.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>distinct_outparams</strong> (<em>bool</em>) – If true, try to predict perturbing an input parameter for a segment
+start for each output parameter independently. This may not be useful,
+since one input parameter can have a high impact on multiple output
+parameters.</p></li>
+<li><p><strong>n_estimators</strong> (<em>int</em>) – Number of trees.</p></li>
+<li><p><strong>save_memory</strong> (<em>bool</em>) – If true and not “no_split”, use the first “test_size” many rows for
+training. This means, that the data is not stratified! Do not use this
+unless the classes to predict is roughly uniformly distributed.</p></li>
+<li><p><strong>no_split</strong> (<em>bool</em>) – If true, do not split data into training and test set and use everything
+for training.</p></li>
+<li><p><strong>verbosity</strong> (<em>int</em>) – Set verbosity level.</p></li>
+<li><p><strong>max_depth</strong> (<em>int</em>) – From sklearn.ensemble.RandomForestClassifier:
+The maximum depth of the tree. If None, then nodes are expanded until
+all leaves are pure or until all leaves contain less than
+min_samples_split (here: 2) samples.</p></li>
+<li><p><strong>max_leaf_nodes</strong> (<em>int</em>) – From sklearn.ensemble.RandomForestClassifier:
+Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
+defined as relative reduction in impurity. If None then unlimited
+number of leaf nodes.</p></li>
+<li><p><strong>classifier</strong> (<em>string</em>) – Choose a classifier for prediction. Options are “random_forest”
+and “adaboost”. The latter ignores “max_leaf_nodes” and “max_depth” and
+rather uses “learning_rate”.</p></li>
+<li><p><strong>learning_rate</strong> (<em>float</em>) – From sklean.ensemble.AdaBoostClassifier:
+Learning rate shrinks the contribution of each classifier by
+“learning_rate”. There is a trade-off between “learning_rate” and
+“n_estimators”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>List of list of trained models, where the first dimension corresponds</em></p></li>
+<li><p><em>to the max feature split used and the second dimension corresponds</em></p></li>
+<li><p><em>to the different segment thresholds.</em></p></li>
+<li><p><em>Also returns np.array of segment thresholds.</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="segment_statistics.html" class="btn btn-neutral float-right" title="segment_statistics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="plot_mse.html" class="btn btn-neutral float-left" title="plot_mse" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

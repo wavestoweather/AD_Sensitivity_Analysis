@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>plot_mse &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="segment_identifier" href="segment_identifier.html" />
+    <link rel="prev" title="parameters" href="parameters.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="executing.html">Executing Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/scripts/plot_mse.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="plot-mse">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code><a class="headerlink" href="#plot-mse" title="Permalink to this headline">¶</a></h1>
+<p>Used to get statistics on different errors over ensemble results and predicted errors.
+You can run <cite>python plot_mse.py –help</cite> to get an overview of the
+usage of this script.</p>
+<span class="target" id="module-scripts.plot_mse"></span><dl class="py function">
+<dt id="scripts.plot_mse.load_and_plot">
+<code class="sig-prename descclassname">scripts.plot_mse.</code><code class="sig-name descname">load_and_plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">kind</span></em>, <em class="sig-param"><span class="n">sens_kind</span></em>, <em class="sig-param"><span class="n">error_kind</span></em>, <em class="sig-param"><span class="n">plot_types</span></em>, <em class="sig-param"><span class="n">out_params</span></em>, <em class="sig-param"><span class="n">ratio_type</span></em>, <em class="sig-param"><span class="n">backend</span></em>, <em class="sig-param"><span class="n">filetype</span></em>, <em class="sig-param"><span class="n">files</span></em>, <em class="sig-param"><span class="n">store_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_mse.load_and_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load several files from intermediate results from create_mse.py and
+reduce them and finally plot the results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kind</strong> (<em>string</em>) – Define the operation that had been used to calculate the error of
+the ensembles. Possible options:
+mse: Mean squared error
+maxse: Maximum error
+nozeromse: Mean squared error ignoring time steps with zero error
+sum: Cumulative squared error
+me: Mean error
+mae: Mean absolute error</p></li>
+<li><p><strong>sens_kind</strong> (<em>string</em>) – Operation to summarize all sensitivities (aka predicted errors) across
+multiple ensembles. Possible options:
+sum: Sum of all errors
+max: Maximum error across all ensembles
+mean: Mean error</p></li>
+<li><p><strong>error_kind</strong> (<em>string</em>) – Operation to summarize all deviations of ensembles from an
+unperturbed trajectory across multiple ensembles. Possible options:
+sum: Sum of all deviations
+max: Maximum deviation across all ensembles
+mean: Mean deviation</p></li>
+<li><p><strong>plot_types</strong> (<em>bool</em>) – Wether to plot the errors grouped by the type of error.</p></li>
+<li><p><strong>out_params</strong> (<em>list of string</em>) – List of output parameters to plot the datapoints for.</p></li>
+<li><p><strong>ratio_type</strong> (<em>string</em>) – “vanilla”: Use the derivative ratio in the file.
+“adjusted”: Can be added to any to any type below where the sensitivity
+is adjusted to the parameter value such that perturbing this value by a
+certain percentage gives an approximation of the resulting error/difference
+for any given hydrometeor.
+“per_timestep”: Use the highest derivative per timestep as denominator.
+“window”: Use the highest derivative in the given window by min_x and max_x.
+“per_xaxis”: Use the highest derivative per x_axis value. If x_axis is “timestep”
+it is the same as “per_timestep”.
+“x_per_out_param”: Replace ‘x’ with any other option than “vanilla”. Use the highest
+derivative but per output parameter. (that <em>should</em> be the vanilla version)
+“x_weighted”: Append this to any ratio type to use the inverse of the
+output parameter value as weight. Only works with “x_per_out_param”.</p></li>
+<li><p><strong>backend</strong> (<em>string</em>) – Either “matplotlib” or “bokeh” for plotting.</p></li>
+<li><p><strong>filetype</strong> (<em>string</em>) – Define which type to load. Options are “csv” and “netcdf”.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.plot_mse.reduce_df">
+<code class="sig-prename descclassname">scripts.plot_mse.</code><code class="sig-name descname">reduce_df</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">error_key</span></em>, <em class="sig-param"><span class="n">sens_kind</span><span class="o">=</span><span class="default_value">'mean'</span></em>, <em class="sig-param"><span class="n">error_kind</span><span class="o">=</span><span class="default_value">'mean'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.plot_mse.reduce_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an appended dataframe, reduce the (predicted) errors such that a
+single datapoint for each output parameter, perturbed parameter
+and ratio type is left.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – </p></li>
+<li><p><strong>error_key</strong> (<em>string</em>) – Name of the column for predicted errors.</p></li>
+<li><p><strong>sens_kind</strong> (<em>string</em>) – How to reduce the predicted errors over all trajectories. Options are:
+sum: Take the sum of all errors.
+max: Take the maximum of all errors.
+mean: Take the mean of all errors.</p></li>
+<li><p><strong>error_kind</strong> (<em>string</em>) – How to reduce the true errors from perturbed ensembles. Options are:
+sum: Take the sum of all errors.
+max: Take the maximum of all errors.
+mean: Take the mean of all errors.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Reduced pandas.Dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="segment_identifier.html" class="btn btn-neutral float-right" title="segment_identifier" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="parameters.html" class="btn btn-neutral float-left" title="parameters" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
