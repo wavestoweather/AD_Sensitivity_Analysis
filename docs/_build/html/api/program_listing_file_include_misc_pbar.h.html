@@ -81,7 +81,20 @@
               
             
             
-              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/latexify.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">latexify</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/merge.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -284,7 +297,6 @@
         <span class="k">if</span><span class="p">(</span><span class="n">rem_time</span> <span class="o">&gt;=</span> <span class="mi">60</span><span class="p">)</span>
             <span class="n">rem_string</span> <span class="o">=</span> <span class="n">rem_string</span> <span class="o">+</span> <span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="kt">int</span><span class="p">(</span><span class="n">rem_time</span><span class="o">%</span><span class="mi">3600</span><span class="o">/</span><span class="mi">60</span><span class="p">))</span> <span class="o">+</span> <span class="s">&quot;min &quot;</span><span class="p">;</span>
         <span class="n">rem_string</span> <span class="o">=</span> <span class="n">rem_string</span> <span class="o">+</span> <span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="kt">int</span><span class="p">(</span><span class="n">rem_time</span><span class="o">%</span><span class="mi">60</span><span class="p">))</span> <span class="o">+</span> <span class="s">&quot;s&quot;</span><span class="p">;</span>
-        <span class="kt">int</span> <span class="n">old_precision</span> <span class="o">=</span> <span class="n">out</span><span class="o">-&gt;</span><span class="n">precision</span><span class="p">();</span>
         <span class="o">*</span><span class="n">out</span> <span class="o">&lt;&lt;</span> <span class="n">bar</span> <span class="o">&lt;&lt;</span> <span class="n">right_string</span> <span class="o">&lt;&lt;</span> <span class="n">rem_string</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;    </span><span class="se">\r</span><span class="s">&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">flush</span><span class="p">;</span>
     <span class="p">}</span>
 

@@ -1,0 +1,320 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>segment_statistics &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Runge-Kutta 4" href="../groups/rk.html" />
+    <link rel="prev" title="segment_identifier" href="segment_identifier.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="executing.html">Executing Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/scripts/segment_statistics.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="segment-statistics">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code><a class="headerlink" href="#segment-statistics" title="Permalink to this headline">¶</a></h1>
+<p>Used to get statistics on segment starts over ensemble results.
+You can run <cite>python segment_statistics.py –help</cite> to get an overview of the
+usage of this script.</p>
+<span class="target" id="module-scripts.segment_statistics"></span><dl class="py function">
+<dt id="scripts.segment_statistics.clean_predictions">
+<code class="sig-prename descclassname">scripts.segment_statistics.</code><code class="sig-name descname">clean_predictions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">step_tol</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_statistics.clean_predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p>We iterate over the prediction. The first predicted segment
+makes the next predictions within the step tolerance invalid.
+This is just an approximation to clean the data.
+This is useful to get an idea of the distribution of
+true and false positive for comparison.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – Array of shape (n_samples, n_classes)</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray from input but cleaned from duplicate predictions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_statistics.create_hist_seg_dataset">
+<code class="sig-prename descclassname">scripts.segment_statistics.</code><code class="sig-name descname">create_hist_seg_dataset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">all_params_list</span></em>, <em class="sig-param"><span class="n">model_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">remove_pred_duplicates</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_statistics.create_hist_seg_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a xarray.Dataset useful for plotting histograms. Indexes where
+segment starts are, are stored here.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>list</em><em> or </em><em>np.ndarray</em><em> or </em><em>xarray.Dataset</em>) – Either a precalculated set of data that had been stored as <a href="#id1"><span class="problematic" id="id2">*</span></a>.npy
+or a dataset where windows (if any) need to be calculated.</p></li>
+<li><p><strong>all_params_list</strong> (<em>list of string</em>) – List of input parameters.</p></li>
+<li><p><strong>model_path</strong> (<em>string</em>) – Path to model saved as <a href="#id3"><span class="problematic" id="id4">*</span></a>.joblid.</p></li>
+<li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
+<li><p><strong>remove_pred_duplicates</strong> (<em>boolean</em>) – If true: Remove segment starts that are predicted more than once.
+Only useful if a model is given and “step_tol” &gt; 1.</p></li>
+<li><p><strong>verbosity</strong> (<em>int</em>) – Set verbosity level.
+0: No output except for exceptions
+1: Print datasets
+2: Print loading statements
+3: Print building/training statements
+4: Set verbosity of random forest to 2
+5: Get predicted results for each entry
+6: Get count for segment starts for every input parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>xarray.Dataset either with columns “trajectory”, “time_after_ascent”</em></p></li>
+<li><p><em>and “Input Parameter” or “datapoint” and “Input Parameter” if data</em></p></li>
+<li><p><em>is a list or np.ndarray.</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.segment_statistics.plot_segment_hist">
+<code class="sig-prename descclassname">scripts.segment_statistics.</code><code class="sig-name descname">plot_segment_hist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ds</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">store_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">1680</span></em>, <em class="sig-param"><span class="n">height</span><span class="o">=</span><span class="default_value">1050</span></em>, <em class="sig-param"><span class="n">bins</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">group</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">stacked</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_statistics.plot_segment_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a histogram of segment starts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – Dataset created by create_hist_seg_dataset(..).</p></li>
+<li><p><strong>y</strong> (<em>string</em>) – Column for histogram where a segment start occurs.</p></li>
+<li><p><strong>store_path</strong> (<em>string</em>) – Path and name where to save images.</p></li>
+<li><p><strong>width</strong> (<em>int</em>) – Width in pixels for the plot.</p></li>
+<li><p><strong>height</strong> (<em>int</em>) – Height in pixels for the plot.</p></li>
+<li><p><strong>bins</strong> (<em>int</em>) – Number of bins.</p></li>
+<li><p><strong>group</strong> (<em>string</em>) – Column to group by.</p></li>
+<li><p><strong>stacked</strong> (<em>boolean</em>) – Plot a stacked histogram. Only useful with “group”.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – Alpha value for the histogram.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Histogram plot.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../groups/rk.html" class="btn btn-neutral float-right" title="Runge-Kutta 4" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="segment_identifier.html" class="btn btn-neutral float-left" title="segment_identifier" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,411 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>convert_to_met3d &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="create_median" href="create_median.html" />
+    <link rel="prev" title="Executing Scripts" href="executing.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="executing.html">Executing Scripts</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="latexify.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">latexify</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="merge.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/scripts/convert_to_met3d.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="convert-to-met3d">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code><a class="headerlink" href="#convert-to-met3d" title="Permalink to this headline">¶</a></h1>
+<p>Used to convert a NetCDF file in WCB2 style to Met3D style.
+You can run <cite>python convert_to_met3d.py –help</cite> to get an overview of the
+usage of this script.</p>
+<span class="target" id="module-scripts.convert_to_met3d"></span><dl class="py function">
+<dt id="scripts.convert_to_met3d.add_ascend_velocity">
+<code class="sig-prename descclassname">scripts.convert_to_met3d.</code><code class="sig-name descname">add_ascend_velocity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.convert_to_met3d.add_ascend_velocity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add ascend velocity in [m/s] in column “w” by calculating the difference
+of the height “z” in consecutive time steps assuming a time step size of
+20 s.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ds</strong> (<em>pandas.Dataframe</em><em> or </em><em>any dataset</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dataframe or dataset with “w” added.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.convert_to_met3d.add_norm_time">
+<code class="sig-prename descclassname">scripts.convert_to_met3d.</code><code class="sig-name descname">add_norm_time</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">norm_col</span></em>, <em class="sig-param"><span class="n">group</span></em>, <em class="sig-param"><span class="n">columns</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">flag</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.convert_to_met3d.add_norm_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a view that consists only of entries that are flagged.
+Those are normed along norm_col such that every entry for every
+trajectory starts at norm_col==0. columns is a list of
+columns that the returned view shall have.
+if columns is None, take all columns. If flag is None, take all trajectories.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pandas.Dataframe</em>) – Dataframe with columns norm_col, group and flag at minimum.</p></li>
+<li><p><strong>norm_col</strong> (<em>string</em>) – Column where the minimum value where flag is true is substracted from.
+Usually it is “time”</p></li>
+<li><p><strong>group</strong> (<em>string</em>) – Column for grouping operation, i.e. “trajectory”.</p></li>
+<li><p><strong>columns</strong> (<em>list of string</em>) – List of columns that the returned view shall have. If None is given,
+return all columns.</p></li>
+<li><p><strong>flag</strong> (<em>string</em>) – Column with bools, i.e. start of an ascend.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pandas.Dataframe with added “time_after_ascent”.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.convert_to_met3d.add_sat">
+<code class="sig-prename descclassname">scripts.convert_to_met3d.</code><code class="sig-name descname">add_sat</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.convert_to_met3d.add_sat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add saturation as a column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ds</strong> (<em>pandas.Dataframe</em><em> or </em><em>any dataset</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dataframe or dataset with “S” added.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.convert_to_met3d.add_turb_flux">
+<code class="sig-prename descclassname">scripts.convert_to_met3d.</code><code class="sig-name descname">add_turb_flux</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.convert_to_met3d.add_turb_flux" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a column “Q_TURBULENCE” where we account any difference from
+mixing ratios in consecutive time steps that cannot be explained
+by inflow from above the trajectory and sedimentation to turbulences
+(aka in- and outflow from the side).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ds</strong> (<em>pandas.Dataframe</em><em> or </em><em>any dataset</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dataframe or dataset with “Q_TURBULENCE” added.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.convert_to_met3d.convert_wcb2">
+<code class="sig-prename descclassname">scripts.convert_to_met3d.</code><code class="sig-name descname">convert_wcb2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em>, <em class="sig-param"><span class="n">store_path</span></em>, <em class="sig-param"><span class="n">fl</span></em>, <em class="sig-param"><span class="n">ensemble</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.convert_to_met3d.convert_wcb2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a NetCDF-file stored in wcb2-style, find those, which satisfy
+the criterium given by “fl” (e.g. “conv_600” for convective ascends
+with 600 hPa), mark the start of the ascend, make sedimentation and
+inflow from above positive values (for consistency), add attributes
+to the columns for Met3D support, add a column for the type of trajectory,
+add ascend velocity, mixing ratio changes from turbulences and saturation.
+Stores the converted NetCDF-file to “store_path” with zlib compression
+of level 9.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<em>path</em>) – Path to NetCDF-file with trajectories stored in wcb2 style.</p></li>
+<li><p><strong>store_path</strong> (<em>path</em>) – Path to store converted NetCDF-file.</p></li>
+<li><p><strong>fl</strong> (<em>string</em>) – Flag for the type of trajectory to store. Options are
+“conv_400”, “conv_600”, “slan_400”, “slan_600”.</p></li>
+<li><p><strong>ensemble</strong> (<em>int</em>) – ID of ensemble from file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.convert_to_met3d.differ">
+<code class="sig-prename descclassname">scripts.convert_to_met3d.</code><code class="sig-name descname">differ</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">axis</span></em>, <em class="sig-param"><span class="n">hPa</span></em>, <em class="sig-param"><span class="n">debug</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.convert_to_met3d.differ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function used for rolling of datasets or arrays.
+Find the time step where a convective ascend starts of a given
+pressure difference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>(</em><em>$D</em><em>) </em><em>arrays</em>) – Array where the last dimension is the window size</p></li>
+<li><p><strong>axis</strong> (<em>int</em>) – Time step axis</p></li>
+<li><p><strong>hPa</strong> (<em>float</em><em> or </em><em>int</em>) – Threshold at which the ascend is met. Usually either 400 or 600 hPa</p></li>
+<li><p><strong>debug</strong> (<em>bool</em>) – Print debug statements if true</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Array of bools where start of ascend is marked with true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.convert_to_met3d.differ_slan">
+<code class="sig-prename descclassname">scripts.convert_to_met3d.</code><code class="sig-name descname">differ_slan</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">axis</span></em>, <em class="sig-param"><span class="n">hPa</span></em>, <em class="sig-param"><span class="n">min_window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.convert_to_met3d.differ_slan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function used for rolling of datasets or arrays.
+Find the time step where a slantwise ascend starts of a given
+pressure difference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>(</em><em>$D</em><em>) </em><em>arrays</em>) – Array where the last dimension is the window size</p></li>
+<li><p><strong>axis</strong> (<em>int</em>) – Time step axis</p></li>
+<li><p><strong>hPa</strong> (<em>float</em><em> or </em><em>int</em>) – Threshold at which the ascend is met. Usually either 400 or 600 hPa</p></li>
+<li><p><strong>min_window</strong> (<em>int</em>) – Minimum amount of time steps (i.e. of size 20 s) for the ascend. If
+the ascend is faster than the minimum amount, it is a <em>convective</em>
+ascend identified by differ(..).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Array of bools where start of ascend is marked with true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="scripts.convert_to_met3d.find_runs">
+<code class="sig-prename descclassname">scripts.convert_to_met3d.</code><code class="sig-name descname">find_runs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.convert_to_met3d.find_runs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find runs of consecutive items in an array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>np.array</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Three arrays of values, start index and length of repeats.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="create_median.html" class="btn btn-neutral float-right" title="create_median" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="executing.html" class="btn btn-neutral float-left" title="Executing Scripts" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

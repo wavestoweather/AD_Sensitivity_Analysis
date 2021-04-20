@@ -1,6 +1,7 @@
 __pycache__/*
 execute_id*
 checkpoint_id*
+*.joblid
 *.txt
 *.pyc
 *.log
@@ -9,6 +10,10 @@ checkpoint_id*
 pics/*
 data/*
 build/*
+scripts/Plot_sensitivities.py
+scripts/create_cache.py
+scripts/plot_outcomes.py
+scripts/plotter.sh
 # Sphinx build
 docs/_build/doctrees/*
 docs/_static/*

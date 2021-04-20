@@ -9,19 +9,62 @@ try:
     import Deriv_dask
     import latexify
     import loader
+    import convert_to_met3d.find_runs as find_runs
+    import convert_to_met3d.differ as differ
+    import convert_to_met3d.differ_slan as differ_slan
+
+    import convert_to_met3d.window_conv_400 as window_conv_400
+    import convert_to_met3d.window_conv_600 as window_conv_600
+    import convert_to_met3d.window_slan_400 as window_slan_400
+    import convert_to_met3d.window_slan_400_min as window_slan_400_min
+    import convert_to_met3d.window_slan_600 as window_slan_600
+    import convert_to_met3d.window_slan_600_min as window_slan_600_min
 except:
     import scripts.Deriv_dask as Deriv_dask
     import scripts.latexify as latexify
     import scripts.loader as loader
+    import scripts.convert_to_met3d.find_runs as find_runs
+    import scripts.convert_to_met3d.differ as differ
+    import scripts.convert_to_met3d.differ_slan as differ_slan
+
+    import scripts.convert_to_met3d.window_conv_400 as window_conv_400
+    import scripts.convert_to_met3d.window_conv_600 as window_conv_600
+    import scripts.convert_to_met3d.window_slan_400 as window_slan_400
+    import scripts.convert_to_met3d.window_slan_400_min as window_slan_400_min
+    import scripts.convert_to_met3d.window_slan_600 as window_slan_600
+    import scripts.convert_to_met3d.window_slan_600_min as window_slan_600_min
+
+pandas.options.mode.chained_assignment = None
+np.set_printoptions(threshold=sys.maxsize)
+
 
 def norm_time(df, norm_col, group, columns=None, flag=None):
-    '''
+    """
     Return a view that consists only of entries that are flagged.
     Those are normed along norm_col such that every entry for every
     trajectory starts at norm_col==0. columns is a list of
     columns that the returned view shall have.
     if columns is None, take all columns. If flag is None, take all trajectories.
-    '''
+
+    Parameters
+    ----------
+    df : pandas.Dataframe
+        Dataframe with columns norm_col, group and flag at minimum.
+    norm_col : string
+        Column where the minimum value where flag is true is substracted from.
+        Usually it is "time"
+    group : string
+        Column for grouping operation, i.e. "trajectory".
+    columns : list of string
+        List of columns that the returned view shall have. If None is given,
+        return all columns.
+    flag : string
+        Column with bools, i.e. start of an ascend.
+
+    Returns
+    -------
+    pandas.Dataarray shifted norm_col.
+    """
     if columns is None:
         df_flagged = df.copy()
     else:
@@ -34,252 +77,115 @@ def norm_time(df, norm_col, group, columns=None, flag=None):
 
     return df_flagged.groupby([group]).apply(reducer, norm_col)
 
+
 def get_statistics_pandas(df, group, flag=None):
-    '''
-    Create a median, 25, and 75 percentile trajectory. If flag is set, Use only areas where flag is true.
-    '''
+    """
+    Create a median, 25, and 75 percentile trajectory.
+    If flag is set, Use only areas where flag is true.
+    Drops flag and type columns since those might not be valid anymore and
+    need to be recalculated.
+
+    Parameters
+    ----------
+    df : pandas.Dataframe
+        Dataframe with columns "WCB_flag", "dp2h", "slan_400", "slan_600",
+        "conv_400", "conv_600", "type" and group.
+    group : string
+        Column to group by, e.g. "time_after_ascent" to calculate the percentiles
+        along.
+    flag : string
+        Column with bools.
+    Returns
+    -------
+    Median, 25, 75 percentile trajectory
+    """
     if flag is not None:
         df_tmp = df.loc[df[flag] == True]
     else:
         df_tmp = df.copy()
-    drop_vars = ["WCB_flag", "dp2h", "slan_400", "slan_600", "conv_400", "conv_600", "type"]
+    drop_vars = [
+        "WCB_flag",
+        "dp2h",
+        "slan_400",
+        "slan_600",
+        "conv_400",
+        "conv_600",
+        "type",
+    ]
     groupy = df_tmp.drop(drop_vars, axis=1).groupby(group)
 
-    return groupy.median(), groupy.quantile(.25), groupy.quantile(.75)
+    return groupy.median(), groupy.quantile(0.25), groupy.quantile(0.75)
+
 
 def get_statistics_dask(df, group, flag=None):
-    '''
-    Create a median, 25, and 75 percentile trajectory. If flag is set, Use only areas where flag is true.
-    '''
+    """
+    Create a median, 25, and 75 percentile trajectory.
+    If flag is set, Use only areas where flag is true.
+    Drops flag and type columns since those might not be valid anymore and
+    need to be recalculated.
+
+    Parameters
+    ----------
+    df : dask.Dataframe
+        Dataframe with columns "WCB_flag", "dp2h", "slan_400", "slan_600",
+        "conv_400", "conv_600", "type" and group.
+    group : string
+        Column to group by, e.g. "time_after_ascent" to calculate the percentiles
+        along.
+    flag : string
+        Column with bools.
+    Returns
+    -------
+    Median, 25, 75 percentile trajectory
+    """
     if flag is not None:
         df_tmp = df.loc[df[flag] == True]
     else:
         df_tmp = df.copy()
-    drop_vars = ["WCB_flag", "dp2h", "slan_400", "slan_600", "conv_400", "conv_600", "type"]
+    drop_vars = [
+        "WCB_flag",
+        "dp2h",
+        "slan_400",
+        "slan_600",
+        "conv_400",
+        "conv_600",
+        "type",
+    ]
     groupy = df_tmp.drop_vars(drop_vars, errors="ignore").groupby(group)
-    return groupy.median(keep_attr=True), groupy.quantile(0.25, keep_attrs=True), groupy.quantile(0.75, keep_attrs=True)
-
-np.set_printoptions(threshold=sys.maxsize)
-
-# 400 hPa and 600 hPa ascent
-window_conv_400 = 1 * 3 * 60
-window_conv_600 = 3 * 3 * 60
-window_slan_400 = 35 * 6 * 3
-window_slan_400_min = 15 * 6 * 3
-window_slan_600 = 22  * 3 * 60
-window_slan_600_min = 65 * 6 * 3
-
-def find_runs(x):
-    """Find runs of consecutive items in an array."""
-
-    n = x.shape[0]
-
-    # handle empty array
-    if n == 0:
-        return np.array([]), np.array([]), np.array([])
-
-    else:
-        # find run starts
-        loc_run_start = np.empty(n, dtype=bool)
-        loc_run_start[0] = True
-        np.not_equal(x[:-1], x[1:], out=loc_run_start[1:])
-        run_starts = np.nonzero(loc_run_start)[0]
-
-        # find run values
-        run_values = x[loc_run_start]
-
-        # find run lengths
-        run_lengths = np.diff(np.append(run_starts, n))
-
-        return run_values, run_starts.astype(np.int64), run_lengths.astype(np.int64)
-
-def differ(x, axis, hPa, debug=False):
-    if debug:
-        print("x")
-        print(np.shape(x))
-    window_size = len(x[0][0][0])
-    ascent = np.argmax(x, axis=axis) < np.argmin(x, axis=3)
-    amount = np.max(x, axis=axis) - np.min(x, axis=axis) >= hPa*100
-    # ascent = np.nanargmax(x, axis=axis) < np.nanargmin(x, axis=3)
-    # amount = np.nanmax(x, axis=axis) - np.nanmin(x, axis=axis) >= hPa*100
-    both = np.logical_and(ascent, amount)
-
-    # Calculate the differences within every window
-    differences = np.diff(x, axis=3) # Ignore nan
-    if debug:
-        print("diffs")
-        print(np.shape(differences))
-        print("ascent")
-        print(np.shape(ascent))
-        print("amount")
-        print(np.shape(amount))
-        print("both")
-        print(np.shape(both))
-    # Get minimum length of window with value >= hPa
-    min_lengths = np.full(np.shape(both), np.inf)
-    counter = 0
-
-    for ens in range(len(differences)):
-        if not both[ens].any():
-            continue
-        for traj in range(len(differences[ens])):
-            if not both[ens][traj].any():
-                # No timestep in this trajectory satisfies
-                # the constraint
-                continue
-            for timestep in range(len(differences[ens][traj])):
-                if not both[ens][traj][timestep].any():
-                    continue
-                window = differences[ens][traj][timestep]
-                start = 0
-                end = 0
-                curr_sum = 0
-                min_len = np.inf
-                    # 17926
-                while(end < len(window)):
-                    # Find a window where the ascend is done by pushing the end further
-                    # Reset the start if the end is suddenly a strong descend
-                    while( (curr_sum > -hPa*100 and end < len(window)) or (np.isnan(curr_sum)) ):
-                        if (curr_sum >= 0 and window[end] < 0 or np.isnan(curr_sum) ):
-                            start = end;
-                            curr_sum = 0;
-
-                        curr_sum += window[end]
-                        end += 1
-                    # Check, if a smaller window exists where the ascend is done by pushing the start
-                    while(curr_sum <= -hPa*100 and start < len(window)):
-                        if(end-start < min_len):
-                            min_len = end-start
-                        curr_sum -= window[start]
-                        start += 1
-                min_lengths[ens][traj][timestep] = min_len
-
-    # Take the minimum overall and that's whenever True shall stand
-    # Those are minimum window sizes for every trajectory
-    return_bools = []
-    min_len_traj_all = []
-    for ens in range(len(x)):
-        min_len_traj = np.nanmin(min_lengths[ens], axis=1)
-        min_len_traj_all.append(min_len_traj)
-        min_len_traj[min_len_traj == np.inf] = -1
-        return_bools_tmp = np.full(np.shape(both[ens]), 0)#, dtype=bool)
-        return_bools_tmp = np.transpose(return_bools_tmp)
-        min_lengths_trans = min_lengths[ens].transpose()
-        if debug:
-            print("min_lengths_trans")
-            print(np.shape(min_lengths_trans))
-            print("min_len_traj")
-            print(np.shape(min_len_traj))
-            print("return_bools_tmp")
-            print(np.shape(return_bools_tmp))
-        for timestep in range(len(return_bools_tmp)):
-            return_bools_tmp[timestep] = (min_lengths_trans[timestep] == min_len_traj)
-        return_bools.append(np.transpose(return_bools_tmp))
-
-    # Shift everything such that the beginning starts at the actual start and ends accordingly
-    for ens in range(len(return_bools)):
-        for traj in range(len(return_bools[ens])):
-            if min_len_traj_all[ens][traj] == -1:
-                continue
-            min_len_traj = min_len_traj_all[ens]
-            vals, start, length = find_runs(return_bools[ens][traj])
-
-            for i in range(len(vals)):
-                if vals[i] > 0:
-                    set_start = int(start[i] - min_len_traj[traj])
-                    set_end = set_start + min_len_traj[traj] + 1
-
-                    if length[i] > min_len_traj[traj]:
-                        set_end = set_start + length[i] + 1
-
-                    return_bools[ens][traj][start[i]:length[i]+start[i]] = False
-                    return_bools[ens][traj][set_start:int(set_end)] = True
-
-    return return_bools
-
-def differ_slan(x, axis, hPa, min_window):
-    window_size = len(x[0][0][0])
-    ascent = np.argmax(x, axis=axis) < np.argmin(x, axis=3)
-    amount = np.max(x, axis=axis) - np.min(x, axis=axis) >= hPa*100
-    both = np.logical_and(ascent, amount)
-
-    # Calculate the differences within every window
-    differences = np.diff(x, axis=3)
-    # Get minimum length of window with value >= hPa
-    min_lengths = np.full(np.shape(both), np.inf)
-
-
-    for ens in range(len(differences)):
-        if not both[ens].any():
-            continue
-        for traj in range(len(differences[ens])):
-            if not both[ens][traj].any():
-                # No timestep in this trajectory satisfies
-                # the constraint
-                continue
-            for timestep in range(len(differences[ens][traj])):
-                if not both[ens][traj][timestep].any():
-                    continue
-                window = differences[ens][traj][timestep]
-                start = 0
-                end = 0
-                curr_sum = 0
-                min_len = np.inf
-                while(end < len(window)):
-                    while( (curr_sum > -hPa*100 and end < len(window)) or (np.isnan(curr_sum)) ):
-                        if (curr_sum >= 0 and window[end] < 0 or np.isnan(curr_sum) ):
-                            start = end
-                            curr_sum = 0
-                        curr_sum += window[end]
-                        end += 1
-                    while(curr_sum <= -hPa*100 and start < len(window)):
-                        if(end-start < min_len and end-start >= min_window):
-                            min_len = end-start
-                        curr_sum -= window[start]
-                        start += 1
-                min_lengths[ens][traj][timestep] = min_len
-    # Take the minimum overall and that's whenever True shall stand
-    # Those are minimum window sizes for every trajectory
-    return_bools = []
-    min_len_traj_all = []
-    for ens in range(len(x)):
-        min_len_traj = np.nanmin(min_lengths[ens], axis=1)
-        min_len_traj_all.append(min_len_traj)
-        min_len_traj[min_len_traj == np.inf] = -1
-        return_bools_tmp = np.full(np.shape(both[ens]), 0)#, dtype=bool)
-        return_bools_tmp = np.transpose(return_bools_tmp)
-        min_lengths_trans = min_lengths[ens].transpose()
-        for timestep in range(len(return_bools_tmp)):
-            return_bools_tmp[timestep] = (min_lengths_trans[timestep] == min_len_traj)
-        return_bools.append(np.transpose(return_bools_tmp))
-
-    # Shift everything such that the beginning starts at the actual start and ends accordingly
-    for ens in range(len(return_bools)):
-        for traj in range(len(return_bools[ens])):
-            if min_len_traj_all[ens][traj] == -1:
-                continue
-            vals, start, length = find_runs(return_bools[ens][traj])
-            for i in range(len(vals)):
-                if vals[i] > 0:
-                    set_start = int(start[i] - min_len_traj[traj])
-                    set_end = set_start + min_len_traj[traj] + 1
-
-                    if length[i] > min_len_traj[traj]:
-                        set_end = set_start + length[i] + 1
-
-                    return_bools[ens][traj][start[i]:length[i]+start[i]] = False
-                    return_bools[ens][traj][set_start:int(set_end)] = True
-    return return_bools
+    return (
+        groupy.median(keep_attr=True),
+        groupy.quantile(0.25, keep_attrs=True),
+        groupy.quantile(0.75, keep_attrs=True),
+    )
 
 
 def norm_time_xarray(df, norm_col, group, columns=None, flag=None):
-    '''
+    """
     Return a view that consists only of entries that are flagged.
     Those are normed along norm_col such that every entry for every
     trajectory starts at norm_col==0. columns is a list of
     columns that the returned view shall have.
     if columns is None, take all columns. If flag is None, take all trajectories.
-    '''
+
+    Parameters
+    ----------
+    df : xarray.Dataframe
+        Dataframe with columns norm_col, group and flag at minimum.
+    norm_col : string
+        Column where the minimum value where flag is true is substracted from.
+        Usually it is "time"
+    group : string
+        Column for grouping operation, i.e. "trajectory".
+    columns : list of string
+        List of columns that the returned view shall have. If None is given,
+        return all columns.
+    flag : string
+        Column with bools, i.e. start of an ascend.
+
+    Returns
+    -------
+    xarray.Dataarray shifted norm_col.
+    """
     if columns is None:
         df_flagged = df.copy()
     else:
@@ -289,13 +195,30 @@ def norm_time_xarray(df, norm_col, group, columns=None, flag=None):
         mini = x.where(x[flag])[col].min()
         x[col] = x[col] - mini
         return x
+
     return df_flagged.groupby(group).apply(reducer, **{"col": norm_col})
 
 
 def get_statistics_xarray(df, group, flag=None):
-    '''
-    Create a median, 25, and 75 percentile trajectory. If flag is set, Use only areas where flag is true.
-    '''
+    """
+    Create a median, 25, and 75 percentile trajectory.
+    If flag is set, Use only areas where flag is true.
+    Drops flag and type columns since those might not be valid anymore and
+    need to be recalculated.
+
+    Parameters
+    ----------
+    df : xarray.Dataframe
+        Dataframe with column group.
+    group : string
+        Column to group by, e.g. "time_after_ascent" to calculate the percentiles
+        along.
+    flag : string
+        Column with bools.
+    Returns
+    -------
+    Median, 25, 75 percentile trajectory
+    """
     if flag is not None:
         df_tmp = df.where(df[flag])
     else:
@@ -303,9 +226,29 @@ def get_statistics_xarray(df, group, flag=None):
 
     groupy = df_tmp.groupby(group)
 
-    return groupy.median(), groupy.quantile(.25), groupy.quantile(.75)
+    return groupy.median(), groupy.quantile(0.25), groupy.quantile(0.75)
+
 
 def add_attrs(ds, ref_ds_path=None, attrs=None):
+    """
+    Add attributes to most columns with default values and values
+    from a file in ref_ds_path if given.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+
+    ref_ds_path : Path
+        Path to NetCDF-file with attributes to read from.
+    attrs : dict
+        Dictionary with attributes to add. Must have the following keys:
+        "ds": Generic attributes for the dataset
+        "time": Attributes for the column "time"
+
+    Returns
+    -------
+    Dataset with added attributes.
+    """
     if ref_ds_path is not None:
         ds_2 = xr.open_dataset(ref_ds_path, decode_times=False)
         duration = ds_2.attrs["duration_in_sec"]
@@ -318,7 +261,8 @@ def add_attrs(ds, ref_ds_path=None, attrs=None):
             "pollon": pollon,
             "pollat": pollat,
             "output_timestep_in_sec": output_timestep_in_sec,
-            "cloud_type": 2723}
+            "cloud_type": 2723,
+        }
 
         ds["time"].attrs = ds_2["time"].attrs
 
@@ -329,220 +273,285 @@ def add_attrs(ds, ref_ds_path=None, attrs=None):
     ds["time_after_ascent"].attrs = {
         "standard_name": "time_after_ascent",
         "long_name": "time after rapid ascent started",
-        "units": "seconds since start of convective/slantwise ascent"}
+        "units": "seconds since start of convective/slantwise ascent",
+    }
     ds["lon"].attrs = {
         "standard_name": "longitude",
         "long_name": "longitude",
-        "units": "degrees_east"}
+        "units": "degrees_east",
+    }
     ds["lat"].attrs = {
         "standard_name": "latitude",
         "long_name": "latitude",
-        "units": "degrees_north"}
+        "units": "degrees_north",
+    }
     ds["pressure"].attrs = {
         "standard_name": "air_pressure",
         "long_name": "pressure",
         "units": "Pa",
         "positive": "down",
-        "axis": "Z"}
+        "axis": "Z",
+    }
     ds["z"].attrs = {
         "standard_name": "height",
         "long_name": "height above mean sea level",
         "auxiliary_data": "yes",
-        "units": "m AMSL"}
+        "units": "m AMSL",
+    }
     ds["T"].attrs = {
         "standard_name": "air_temperature",
         "long_name": "temperature",
         "auxiliary_data": "yes",
-        "units": "K"}
+        "units": "K",
+    }
     ds["S"].attrs = {
         "standard_name": "saturation",
         "long_name": "saturation",
         "auxiliary_data": "yes",
-        "units": "percentage"}
+        "units": "percentage",
+    }
     ds["conv_400"].attrs = {
         "standard_name": "convective_400hPa_ascent",
         "long_name": "convective 400hPa ascent",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
     ds["conv_600"].attrs = {
         "standard_name": "convective_600hPa_ascent",
         "long_name": "convective 600hPa ascent",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
     ds["slan_400"].attrs = {
         "standard_name": "slantwise_400hPa_ascent",
         "long_name": "slantwise 400hPa ascent",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
     ds["slan_600"].attrs = {
         "standard_name": "slantwise_600hPa_ascent",
         "long_name": "slantwise 600hPa ascent",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
     ds["w"].attrs = {
         "standard_name": "ascend_velocity",
         "long_name": "ascend velocity",
         "auxiliary_data": "yes",
-        "units": "m s^-1"}
+        "units": "m s^-1",
+    }
 
     ds["QV"].attrs = {
         "standard_name": "specific_humidity",
         "long_name": "specific humidity",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
     ds["QC"].attrs = {
         "standard_name": "mass_fraction_of_cloud_liquid_water_in_air",
         "long_name": "specific cloud liquid water content",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
     ds["QR"].attrs = {
         "standard_name": "mass_fraction_of_rain_in_air",
         "long_name": "specific rain content",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
     ds["QS"].attrs = {
         "standard_name": "mass_fraction_of_snow_in_air",
         "long_name": "specific snow content",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
     ds["QI"].attrs = {
         "standard_name": "mass_fraction_of_cloud_ice_in_air",
         "long_name": "specific cloud ice content",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
     ds["QG"].attrs = {
         "standard_name": "mass_fraction_of_graupel_in_air",
         "long_name": "specific graupel content",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1"}
+        "units": "kg kg^-1",
+    }
 
     ds["QR_IN"].attrs = {
         "standard_name": "sedi_influx_of_rain",
         "long_name": "sedimentation (from above) of rain droplet mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QS_IN"].attrs = {
         "standard_name": "sedi_influx_of_snow",
         "long_name": "sedimentation (from above) of snow crystal mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QI_IN"].attrs = {
         "standard_name": "sedi_influx_of_cloud_ice",
         "long_name": "sedimentation (from above) of ice crystal mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QG_IN"].attrs = {
         "standard_name": "sedi_influx_of_graupel",
         "long_name": "sedimentation (from above) of graupel mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
 
     ds["QR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain",
         "long_name": "sedimentation of rain droplet mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow",
         "long_name": "sedimentation of snow crystal mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QI_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_cloud_ice",
         "long_name": "sedimentation of ice crystal mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
     ds["QG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel",
         "long_name": "sedimentation of graupel mixing ratio",
         "auxiliary_data": "yes",
-        "units": "kg kg^-1 s^-1"}
+        "units": "kg kg^-1 s^-1",
+    }
 
     ds["NCCLOUD"].attrs = {
         "standard_name": "specif_number_of_cloud_droplets_in_air",
         "long_name": "specific cloud droplet number",
         "auxiliary_data": "yes",
-        "units": "kg^-1"}
+        "units": "kg^-1",
+    }
     ds["NCRAIN"].attrs = {
         "standard_name": "specif_number_of_rain_drops_in_air",
         "long_name": "specific rain drop number",
         "auxiliary_data": "yes",
-        "units": "kg^-1"}
+        "units": "kg^-1",
+    }
     ds["NCSNOW"].attrs = {
         "standard_name": "specif_number_of_snow_flakes_in_air",
         "long_name": "specific snow flake number",
         "auxiliary_data": "yes",
-        "units": "kg^-1"}
+        "units": "kg^-1",
+    }
     ds["NCICE"].attrs = {
         "standard_name": "specif_number_of_cloud_ice_in_air",
         "long_name": "specific cloud ice number",
         "auxiliary_data": "yes",
-        "units": "kg^-1"}
+        "units": "kg^-1",
+    }
     ds["NCGRAUPEL"].attrs = {
         "standard_name": "specif_number_of_graupel_in_air",
         "long_name": "specific graupel number",
         "auxiliary_data": "yes",
-        "units": "kg^-1"}
+        "units": "kg^-1",
+    }
 
     ds["NR_IN"].attrs = {
         "standard_name": "sedi_influx_of_rain_number",
         "long_name": "sedimentation (from above) of specific rain drop number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NS_IN"].attrs = {
         "standard_name": "sedi_influx_of_snow_number",
         "long_name": "sedimentation (from above) of specific snow flake number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NI_IN"].attrs = {
         "standard_name": "sedi_influx_of_ics_number",
         "long_name": "sedimentation (from above) of specific cloud ice number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NG_IN"].attrs = {
         "standard_name": "sedi_influx_of_graupel_number",
         "long_name": "sedimentation (from above) of specific graupel number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
 
     ds["NR_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_rain_number",
         "long_name": "sedimentation of rain droplet number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NS_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_snow_number",
         "long_name": "sedimentation of snow crystal number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NI_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_ice_number",
         "long_name": "sedimentation of ice crystal number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["NG_OUT"].attrs = {
         "standard_name": "sedi_outflux_of_graupel_number",
         "long_name": "sedimentation of graupel number",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
 
     ds["Q_TURBULENCE"].attrs = {
         "standard_name": "turbulence_flux",
         "long_name": "flux from turbulence",
         "auxiliary_data": "yes",
-        "units": "kg^-1 s^-1"}
+        "units": "kg^-1 s^-1",
+    }
     ds["type"].attrs = {
         "standard_name": "trajectory_type",
         "long_name": "trajectory type",
-        "auxiliary_data": "yes"}
+        "auxiliary_data": "yes",
+    }
 
     return ds
 
-def do_the_stuff_more(store_path, version="no exclusions", fls=["conv_400", "conv_600", "slan_400", "slan_600"], file_list=None):
+
+def get_percentiles(
+    store_path,
+    version="no exclusions",
+    fls=["conv_400", "conv_600", "slan_400", "slan_600"],
+    file_list=None,
+):
     """
-    Versions
-    --------
-    no exclusions: Get all trajectories with the corresponding flag
-    excl other: Get all trajectories with the corresponding flag without the other type (ie flag is conv_400, excl slan_600)
-    excl same: Get all trajectories with the corresponding flag without the same type (ie flag is conv_400, excl conv_600)
-    excl all: Get all trajectories with the corresponding flag without all others (ie flag is conv_400, excl conv_600 and slan_600)
-    conv_X and slan_X are mutually exclusive by definition already!
+    Load NetCDF-files and calculate the median, 25 and 75 percentile
+    trajectories. Different versions include different trajectories.
+    Stores those trajectories on disk.
+
+    Parameters
+    ----------
+    store_path : path
+        Path where to store the statistic trajectories.
+    version : string
+        Define which trajectories are included for the statistic trajectories.
+        Options are:
+        no exclusions: Get all trajectories with the corresponding flag
+        excl other: Get all trajectories with the corresponding flag without
+            the other type (ie flag is conv_400, excl slan_600)
+        excl same: Get all trajectories with the corresponding flag without
+            the same type (ie flag is conv_400, excl conv_600)
+        excl all: Get all trajectories with the corresponding flag without
+            all others (ie flag is conv_400, excl conv_600 and slan_600)
+        conv_X and slan_X are mutually exclusive by definition already!
+    fls : list of string
+        List of flags to calculate the statistic trajectories for. Options are
+        "conv_400", "conv_600", "slan_400", "slan_600"
+    file_list : list of paths
+        List of NetCDF-files to load for calculating the statistic trajectories
+        for.
     """
     store_path = store_path + version.replace(" ", "_") + "_"
     n = 0
@@ -595,7 +604,9 @@ def do_the_stuff_more(store_path, version="no exclusions", fls=["conv_400", "con
                     if fl_no == fl:
                         continue
                     ids = np.unique(ds_tmp.where(ds_tmp[fl] == True)["trajectory"])
-                    non_ids = np.unique(ds_tmp.where(ds_tmp[fl_no] == True)["trajectory"])
+                    non_ids = np.unique(
+                        ds_tmp.where(ds_tmp[fl_no] == True)["trajectory"]
+                    )
                     ids = np.setdiff1d(ids, non_ids)
                     ds_tmp = ds_tmp.where(ds_tmp["trajectory"].isin(ids))
             elif version != "no exclusions":
@@ -606,15 +617,13 @@ def do_the_stuff_more(store_path, version="no exclusions", fls=["conv_400", "con
                 ds = ds.append(ds_tmp)
             else:
                 ds = ds_tmp
-            # datasets.append(ds_tmp)
 
-        # ds = xr.merge(datasets, join="outer")
         t_c2 = timer()
-        print("loading done in {} s".format(t_c2-t_c), flush=True)
+        print(f"loading done in {t_c2-t_c} s")
         ds = ds.dropna()
         print(ds.describe())
         t_c = timer()
-        # medi, quan25, quan75 = get_statistics_dask(ds, group="time_after_ascent")
+
         medi, quan25, quan75 = get_statistics_pandas(ds, group="time_after_ascent")
         medi["trajectory"] = n
         n += 1
@@ -623,7 +632,7 @@ def do_the_stuff_more(store_path, version="no exclusions", fls=["conv_400", "con
         quan75["trajectory"] = n
         n += 1
         t_c2 = timer()
-        print("statistics done in {} s".format(t_c2-t_c), flush=True)
+        print(f"statistics done in {t_c2-t_c} s")
 
         t_c = timer()
         # Set flags for slantwise or convective parts
@@ -635,18 +644,25 @@ def do_the_stuff_more(store_path, version="no exclusions", fls=["conv_400", "con
         # The time needs to be adjusted
         def adjust(this_df):
             this_df = this_df.reset_index()
-            this_df["ensemble"] = n%3
+            this_df["ensemble"] = n % 3
             start_time = this_df["time"][0]
-            end_time = start_time + 20*len(this_df.index)
+            end_time = start_time + 20 * len(this_df.index)
             this_df["time"] = np.arange(start_time, end_time, 20)
             return this_df
+
         medi = adjust(medi)
         quan25 = adjust(quan25)
         quan75 = adjust(quan75)
 
-        medi = xr.Dataset.from_dataframe(medi.set_index(["ensemble", "trajectory", "time"]))
-        quan25 = xr.Dataset.from_dataframe(quan25.set_index(["ensemble", "trajectory", "time"]).dropna())
-        quan75 = xr.Dataset.from_dataframe(quan75.set_index(["ensemble", "trajectory", "time"]).dropna())
+        medi = xr.Dataset.from_dataframe(
+            medi.set_index(["ensemble", "trajectory", "time"])
+        )
+        quan25 = xr.Dataset.from_dataframe(
+            quan25.set_index(["ensemble", "trajectory", "time"]).dropna()
+        )
+        quan75 = xr.Dataset.from_dataframe(
+            quan75.set_index(["ensemble", "trajectory", "time"]).dropna()
+        )
 
         # Set a new column name to the corresponding trajectories
         type_name = ""
@@ -668,94 +684,156 @@ def do_the_stuff_more(store_path, version="no exclusions", fls=["conv_400", "con
 
         if fl == "conv_600":
             t_c = timer()
-            conv_600 = medi["pressure"].rolling(dim={"time": window_conv_600}, min_periods=1).reduce(
-                differ, **{"hPa": 600}).fillna(False).astype(dtype=bool)
+            conv_600 = (
+                medi["pressure"]
+                .rolling(dim={"time": window_conv_600}, min_periods=1)
+                .reduce(differ, **{"hPa": 600})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             medi = medi.assign(conv_600=conv_600)
             t_c2 = timer()
-            print("Got conv_600 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got conv_600 in {t_c2-t_c} s")
 
             t_c = timer()
-            conv_600 = quan25["pressure"].rolling(dim={"time": window_conv_600}, min_periods=1).reduce(
-                differ, **{"hPa": 600, "debug": False}).fillna(False).astype(dtype=bool)
+            conv_600 = (
+                quan25["pressure"]
+                .rolling(dim={"time": window_conv_600}, min_periods=1)
+                .reduce(differ, **{"hPa": 600, "debug": False})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             quan25 = quan25.assign(conv_600=conv_600)
             t_c2 = timer()
-            print("Got conv_600 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got conv_600 in {t_c2-t_c} s")
 
             t_c = timer()
-            conv_600 = quan75["pressure"].rolling(dim={"time": window_conv_600}, min_periods=1).reduce(
-                differ, **{"hPa": 600}).fillna(False).astype(dtype=bool)
+            conv_600 = (
+                quan75["pressure"]
+                .rolling(dim={"time": window_conv_600}, min_periods=1)
+                .reduce(differ, **{"hPa": 600})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             quan75 = quan75.assign(conv_600=conv_600)
             t_c2 = timer()
-            print("Got conv_600 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got conv_600 in {t_c2-t_c} s")
         elif fl == "conv_400":
             t_c = timer()
-            conv_400 = medi["pressure"].rolling(dim={"time": window_conv_400}, min_periods=1).reduce(
-                differ, **{"hPa": 400}).fillna(False).astype(dtype=bool)
+            conv_400 = (
+                medi["pressure"]
+                .rolling(dim={"time": window_conv_400}, min_periods=1)
+                .reduce(differ, **{"hPa": 400})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             medi = medi.assign(conv_400=conv_400)
             t_c2 = timer()
-            print("Got conv_400 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got conv_400 in {t_c2-t_c} s")
 
             t_c = timer()
-            conv_400 = quan25["pressure"].rolling(dim={"time": window_conv_400}, min_periods=1).reduce(
-                differ, **{"hPa": 400}).fillna(False).astype(dtype=bool)
+            conv_400 = (
+                quan25["pressure"]
+                .rolling(dim={"time": window_conv_400}, min_periods=1)
+                .reduce(differ, **{"hPa": 400})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             quan25 = quan25.assign(conv_400=conv_400)
             t_c2 = timer()
-            print("Got conv_400 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got conv_400 in {t_c2-t_c} s")
 
             t_c = timer()
-            conv_400 = quan75["pressure"].rolling(dim={"time": window_conv_400}, min_periods=1).reduce(
-                differ, **{"hPa": 400}).fillna(False).astype(dtype=bool)
+            conv_400 = (
+                quan75["pressure"]
+                .rolling(dim={"time": window_conv_400}, min_periods=1)
+                .reduce(differ, **{"hPa": 400})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             quan75 = quan75.assign(conv_400=conv_400)
             t_c2 = timer()
-            print("Got conv_400 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got conv_400 in {t_c2-t_c} s")
         elif fl == "slan_600":
             t_c = timer()
-            slan_600 = medi["pressure"].rolling(dim={"time": window_slan_600}, min_periods=1).reduce(
-                differ_slan, **{"hPa": 600, "min_window": window_slan_600_min}).fillna(False).astype(dtype=bool)
+            slan_600 = (
+                medi["pressure"]
+                .rolling(dim={"time": window_slan_600}, min_periods=1)
+                .reduce(differ_slan, **{"hPa": 600, "min_window": window_slan_600_min})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             medi = medi.assign(slan_600=slan_600)
             t_c2 = timer()
-            print("Got slan_600 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got slan_600 in {t_c2-t_c} s")
 
             t_c = timer()
-            slan_600 = quan25["pressure"].rolling(dim={"time": window_slan_600}, min_periods=1).reduce(
-                differ_slan, **{"hPa": 600, "min_window": window_slan_600_min}).fillna(False).astype(dtype=bool)
+            slan_600 = (
+                quan25["pressure"]
+                .rolling(dim={"time": window_slan_600}, min_periods=1)
+                .reduce(differ_slan, **{"hPa": 600, "min_window": window_slan_600_min})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             quan25 = quan25.assign(slan_600=slan_600)
             t_c2 = timer()
-            print("Got slan_600 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got slan_600 in {t_c2-t_c} s")
 
             t_c = timer()
-            slan_600 = quan75["pressure"].rolling(dim={"time": window_slan_600}, min_periods=1).reduce(
-                differ_slan, **{"hPa": 600, "min_window": window_slan_600_min}).fillna(False).astype(dtype=bool)
+            slan_600 = (
+                quan75["pressure"]
+                .rolling(dim={"time": window_slan_600}, min_periods=1)
+                .reduce(differ_slan, **{"hPa": 600, "min_window": window_slan_600_min})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             quan75 = quan75.assign(slan_600=slan_600)
             t_c2 = timer()
-            print("Got slan_600 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got slan_600 in {t_c2-t_c} s")
         elif fl == "slan_400":
             t_c = timer()
-            slan_400 = medi["pressure"].rolling(dim={"time": window_slan_400}, min_periods=1).reduce(
-                differ_slan, **{"hPa": 400, "min_window": window_slan_400_min}).fillna(False).astype(dtype=bool)
+            slan_400 = (
+                medi["pressure"]
+                .rolling(dim={"time": window_slan_400}, min_periods=1)
+                .reduce(differ_slan, **{"hPa": 400, "min_window": window_slan_400_min})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             medi = medi.assign(slan_400=slan_400)
             t_c2 = timer()
-            print("Got slan_400 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got slan_400 in {t_c2-t_c} s")
 
             t_c = timer()
-            slan_400 = quan25["pressure"].rolling(dim={"time": window_slan_400}, min_periods=1).reduce(
-                differ_slan, **{"hPa": 400, "min_window": window_slan_400_min}).fillna(False).astype(dtype=bool)
+            slan_400 = (
+                quan25["pressure"]
+                .rolling(dim={"time": window_slan_400}, min_periods=1)
+                .reduce(differ_slan, **{"hPa": 400, "min_window": window_slan_400_min})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             quan25 = quan25.assign(slan_400=slan_400)
             t_c2 = timer()
-            print("Got slan_400 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got slan_400 in {t_c2-t_c} s")
 
             t_c = timer()
-            slan_400 = quan75["pressure"].rolling(dim={"time": window_slan_400}, min_periods=1).reduce(
-                differ_slan, **{"hPa": 400, "min_window": window_slan_400_min}).fillna(False).astype(dtype=bool)
+            slan_400 = (
+                quan75["pressure"]
+                .rolling(dim={"time": window_slan_400}, min_periods=1)
+                .reduce(differ_slan, **{"hPa": 400, "min_window": window_slan_400_min})
+                .fillna(False)
+                .astype(dtype=bool)
+            )
             quan75 = quan75.assign(slan_400=slan_400)
             t_c2 = timer()
-            print("Got slan_400 in {} s".format(t_c2-t_c), flush=True)
+            print(f"Got slan_400 in {t_c2-t_c} s")
         print("Rolling done")
 
         t_c = timer()
         # Set time_after_ascent to zero where flag first occurs
         def adjust_ascent_time(this_ds):
-            start_idx = np.where(~np.isnan(this_ds.where(this_ds[fl] == True)["time_after_ascent"]))[2][0]
+            start_idx = np.where(
+                ~np.isnan(this_ds.where(this_ds[fl] == True)["time_after_ascent"])
+            )[2][0]
             start_time = this_ds.isel(time=start_idx)["time_after_ascent"].values
             this_ds["time_after_ascent"] -= start_time
             return this_ds
@@ -768,45 +846,100 @@ def do_the_stuff_more(store_path, version="no exclusions", fls=["conv_400", "con
         quan25 = add_attrs(quan25, ref_ds_path)
         quan75 = add_attrs(quan75, ref_ds_path)
         t_c2 = timer()
-        print("Set time after ascent in {} s".format(t_c2-t_c), flush=True)
+        print(f"Set time after ascent in {t_c2-t_c} s")
 
         comp = dict(zlib=True, complevel=9)
         encoding = {var: comp for var in medi.data_vars}
-        medi.to_netcdf(store_path + fl + "_median.nc_wcb",
-            encoding=encoding, compute=True, engine="netcdf4", format="NETCDF4", mode="w")
-        quan25.to_netcdf(store_path + fl + "_quan25.nc_wcb",
-            encoding=encoding, compute=True, engine="netcdf4", format="NETCDF4", mode="w")
-        quan75.to_netcdf(store_path + fl + "_quan75.nc_wcb",
-            encoding=encoding, compute=True, engine="netcdf4", format="NETCDF4", mode="w")
+        medi.to_netcdf(
+            store_path + fl + "_median.nc_wcb",
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w",
+        )
+        quan25.to_netcdf(
+            store_path + fl + "_quan25.nc_wcb",
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w",
+        )
+        quan75.to_netcdf(
+            store_path + fl + "_quan75.nc_wcb",
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w",
+        )
         print("storing done")
 
-def add_flags():
+
+def add_flags(path="/data/project/wcb/netcdf/traj_stats/"):
+    """
+    Load all files in path, calculate where the ascend starts based on the
+    filename and store it on disk with "2" added to the name.
+
+    path : path
+        Path to folder with NetCDF-files.
+    """
     file_list = []
-    for f in os.listdir("/data/project/wcb/netcdf/traj_stats/"):
-        file_list.append(os.path.join("/data/project/wcb/netcdf/traj_stats/", f))
+    for f in os.listdir(path):
+        file_list.append(os.path.join(path, f))
 
     file_list = np.sort(np.asarray(file_list))
     for f in file_list:
         with xr.open_dataset(f) as ds:
             if "conv_400" in f:
-                conv_400 = (ds["P"].rolling(dim={"time": window_conv_400}, min_periods=1).reduce(
-                    differ, **{"hPa": 400}).fillna(False).astype(dtype=bool))
+                conv_400 = (
+                    ds["P"]
+                    .rolling(dim={"time": window_conv_400}, min_periods=1)
+                    .reduce(differ, **{"hPa": 400})
+                    .fillna(False)
+                    .astype(dtype=bool)
+                )
                 ds = ds.assign(conv_400=conv_400)
             elif "conv_600" in f:
-                conv_600 = (ds["P"].rolling(dim={"time": window_conv_600}, min_periods=1).reduce(
-                    differ, **{"hPa": 600}).fillna(False).astype(dtype=bool))
+                conv_600 = (
+                    ds["P"]
+                    .rolling(dim={"time": window_conv_600}, min_periods=1)
+                    .reduce(differ, **{"hPa": 600})
+                    .fillna(False)
+                    .astype(dtype=bool)
+                )
                 ds = ds.assign(conv_600=conv_600)
             elif "slan_400" in f:
-                slan_400 = (ds["P"].rolling(dim={"time": window_slan_400}, min_periods=1).reduce(
-                    differ_slan, **{"hPa": 400, "min_window": window_slan_400_min}).fillna(False).astype(dtype=bool))
+                slan_400 = (
+                    ds["P"]
+                    .rolling(dim={"time": window_slan_400}, min_periods=1)
+                    .reduce(
+                        differ_slan, **{"hPa": 400, "min_window": window_slan_400_min}
+                    )
+                    .fillna(False)
+                    .astype(dtype=bool)
+                )
                 ds = ds.assign(slan_400=slan_400)
             elif "slan_600" in f:
-                slan_600 = (ds["P"].rolling(dim={"time": window_slan_600}, min_periods=1).reduce(
-                    differ_slan, **{"hPa": 600, "min_window": window_slan_600_min}).fillna(False).astype(dtype=bool))
+                slan_600 = (
+                    ds["P"]
+                    .rolling(dim={"time": window_slan_600}, min_periods=1)
+                    .reduce(
+                        differ_slan, **{"hPa": 600, "min_window": window_slan_600_min}
+                    )
+                    .fillna(False)
+                    .astype(dtype=bool)
+                )
                 ds = ds.assign(slan_600=slan_600)
             ds.to_netcdf(f + "2")
 
-def do_the_stuff_more_slan_600():
+
+def get_percentiles_slan_600():
+    """
+    Debug method. TODO: Delete this?
+
+    """
     file_list = []
     for f in os.listdir(netcdf_path):
         if os.path.isfile(os.path.join(netcdf_path, f)):
@@ -822,7 +955,7 @@ def do_the_stuff_more_slan_600():
     for i in range(0, len(file_list), 3):
         t_c = timer()
         ds = None
-        for f in file_list[i:i+3]:
+        for f in file_list[i : i + 3]:
             ds_tmp = xr.open_dataset(f).to_dataframe().reset_index()
             ids = ds_tmp.loc[ds_tmp[fl] == True]["id"]
             ds_tmp = ds_tmp.loc[ds_tmp["id"].isin(ids)]
@@ -832,18 +965,20 @@ def do_the_stuff_more_slan_600():
                 ds = ds.append(ds_tmp)
 
         t_c2 = timer()
-        print("loading done in {} s".format(t_c2-t_c), flush=True)
+        print(f"loading done in {t_c2-t_c} s")
         # Make id and time columns instead of MultiIndex
         t_c = timer()
         normed = norm_time(ds, "time", "id", None, fl)
         t_c2 = timer()
-        print("norming done in {} s".format(t_c2-t_c), flush=True)
+        print(f"norming done in {t_c2-t_c} s")
         for flag in ["conv_600", "conv_400", "slan_400", "slan_600"]:
             normed[flag] = False
         t_c = timer()
-        xr.Dataset.from_dataframe(normed.reset_index().set_index(["time", "id"])).to_netcdf(store_path_tmp + fl + "_normed_{}".format(i//3))
+        xr.Dataset.from_dataframe(
+            normed.reset_index().set_index(["time", "id"])
+        ).to_netcdf(store_path_tmp + fl + "_normed_{}".format(i // 3))
         t_c2 = timer()
-        print("storing done in {} s".format(t_c2-t_c), flush=True)
+        print(f"storing done in {t_c2-t_c} s")
 
     ds = None
     file_list = []
@@ -864,7 +999,10 @@ def do_the_stuff_more_slan_600():
                 continue
             ds_tmp = xr.open_dataset(f).to_dataframe().reset_index()
             # Load only certain timesteps
-            ds_tmp = ds_tmp.loc[(ds_tmp.time > (min_time + n*i)) & (ds_tmp.time < (min_time + n*(i+1)))]
+            ds_tmp = ds_tmp.loc[
+                (ds_tmp.time > (min_time + n * i))
+                & (ds_tmp.time < (min_time + n * (i + 1)))
+            ]
 
             if ds_tmp.empty:
                 finished[j] = True
@@ -884,7 +1022,7 @@ def do_the_stuff_more_slan_600():
         quan25["id"] = 11
         quan75["id"] = 12
         t_c2 = timer()
-        print("statistics done in {} s".format(t_c2-t_c), flush=True)
+        print(f"statistics done in {t_c2-t_c} s")
         t_c = timer()
         # Set flags for slantwise or convective parts
         for flag in ["conv_600", "conv_400", "slan_400", "slan_600"]:
@@ -892,34 +1030,62 @@ def do_the_stuff_more_slan_600():
             quan25[flag] = False
             quan75[flag] = False
 
-        medi = xr.Dataset.from_dataframe(medi.reset_index().set_index(["time", "id"]).dropna())
-        quan25 = xr.Dataset.from_dataframe(quan25.reset_index().set_index(["time", "id"]).dropna())
-        quan75 = xr.Dataset.from_dataframe(quan75.reset_index().set_index(["time", "id"]).dropna())
+        medi = xr.Dataset.from_dataframe(
+            medi.reset_index().set_index(["time", "id"]).dropna()
+        )
+        quan25 = xr.Dataset.from_dataframe(
+            quan25.reset_index().set_index(["time", "id"]).dropna()
+        )
+        quan75 = xr.Dataset.from_dataframe(
+            quan75.reset_index().set_index(["time", "id"]).dropna()
+        )
 
         type_name = "Slantwise 600hPa"
         medi["type"] = type_name + " 50. Quantile"
         quan25["type"] = type_name + " 25. Quantile"
         quan75["type"] = type_name + " 75. Quantile"
         t_c2 = timer()
-        print("Resetting done in {} s".format(t_c2-t_c), flush=True)
-
+        print(f"Resetting done in {t_c2-t_c} s")
 
         t_c = timer()
         comp = dict(zlib=True, complevel=9)
         encoding = {var: comp for var in ds.data_vars}
-        medi.to_netcdf(store_path_tmp + "medi/" + fl + "_median_{}.nc_wcb".format(i),
-            encoding=encoding, compute=True, engine="netcdf4", format="NETCDF4", mode="w")
-        quan25.to_netcdf(store_path_tmp + "quan25/" + fl + "_quan25_{}.nc_wcb".format(i),
-            encoding=encoding, compute=True, engine="netcdf4", format="NETCDF4", mode="w")
-        quan75.to_netcdf(store_path_tmp + "quan75/" + fl + "_quan75_{}.nc_wcb".format(i),
-            encoding=encoding, compute=True, engine="netcdf4", format="NETCDF4", mode="w")
+        medi.to_netcdf(
+            store_path_tmp + "medi/" + fl + "_median_{}.nc_wcb".format(i),
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w",
+        )
+        quan25.to_netcdf(
+            store_path_tmp + "quan25/" + fl + "_quan25_{}.nc_wcb".format(i),
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w",
+        )
+        quan75.to_netcdf(
+            store_path_tmp + "quan75/" + fl + "_quan75_{}.nc_wcb".format(i),
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w",
+        )
         t_c2 = timer()
-        print("storing done in {} s".format(t_c2 - t_c), flush=True)
+        print(f"storing done in {t_c2-t_c} s")
 
 
-def merge_stuff(input_path, output,
-    ensembles=["conv_400", "conv_600", "slan_400", "slan_600"], dropna=None,
-    max_diff=None, complevel=9):
+def merge_stuff(
+    input_path,
+    output,
+    ensembles=["conv_400", "conv_600", "slan_400", "slan_600"],
+    dropna=None,
+    max_diff=None,
+    complevel=9,
+):
     """
     Merge statistical trajectories to a single file.
     Each category given in ensembles will be merged to a single ensemble.
@@ -967,23 +1133,25 @@ def merge_stuff(input_path, output,
                 # are somewhat similar ie modulo 20
                 # Since we are merging "representatives" the exact time
                 # should not matter
-                ds_tmp["time"] = ds_tmp["time"] - ds_tmp["time"]%20
+                ds_tmp["time"] = ds_tmp["time"] - ds_tmp["time"] % 20
                 max_t = 25000
                 if "slan" in f:
                     max_t = 82000
                 ds_tmp = ds_tmp.where(ds_tmp["time_after_ascent"] <= max_t)
                 if max_diff is not None:
+
                     def adjust(ds_tmp, key):
                         ll = np.asarray(ds_tmp[key])
                         before = ll[0, 0, 0]
                         for i, l in enumerate(ll[0, 0, :]):
-                            if np.abs(before-l) > max_diff:
-                                ll[0, 0, i] = before + np.sign(l-before)*max_diff
+                            if np.abs(before - l) > max_diff:
+                                ll[0, 0, i] = before + np.sign(l - before) * max_diff
                                 before = ll[0, 0, i]
                             else:
                                 before = l
                         ds_tmp[key] = (ds_tmp[key].dims, ll)
                         return ds_tmp
+
                     ds_tmp = adjust(ds_tmp, "lon")
                     ds_tmp = adjust(ds_tmp, "lat")
 
@@ -999,15 +1167,15 @@ def merge_stuff(input_path, output,
             "long_name": "time",
             "units": "seconds since 2016-09-20 00:00:00",
             "trajectory_starttime": "2016-09-20 00:00:00",
-            "forecast_inittime": "2016-09-20 00:00:00"
+            "forecast_inittime": "2016-09-20 00:00:00",
         },
         "ds": {
-            "duration_in_sec": (max_t-min_t).item(),
-            "pollon": 160.,
-            "pollat": 51.,
+            "duration_in_sec": (max_t - min_t).item(),
+            "pollon": 160.0,
+            "pollat": 51.0,
             "output_timestep_in_sec": 20,
-            "cloud_type": 2723
-        }
+            "cloud_type": 2723,
+        },
     }
     merged_ds = add_attrs(merged_ds, attrs=attrs)
     if dropna == "drop":
@@ -1023,30 +1191,152 @@ def merge_stuff(input_path, output,
     comp = dict(zlib=True, complevel=complevel)
     encoding = {var: comp for var in merged_ds.data_vars}
 
-    merged_ds.to_netcdf(output, compute=True, engine="netcdf4",
-        encoding=encoding, format="NETCDF4", mode="w")
+    merged_ds.to_netcdf(
+        output,
+        compute=True,
+        engine="netcdf4",
+        encoding=encoding,
+        format="NETCDF4",
+        mode="w",
+    )
     return merged_ds
 
 
+# def get_all_stats(mean_dfs, out_params, others_path, sub_folders,
+#     ratio_type=["per_timestep", "window"], in_params=None):
+#     """
+#     TODO: Delete this ?
+
+#     Parameters
+#     ----------
+#     mean_dfs :
+#     out_params :
+#     others_path :
+#     sub_folders :
+#     ratio_type :
+#     in_params :
+#     """
+#     df_dic = {"MSE": np.asarray([]),
+#             "Max Error": np.asarray([]),
+#             "MSE (no zero)": np.asarray([]),
+#             "Mean Error": np.asarray([]),
+#             "Mean Absolute Sensitivity": np.asarray([]),
+#             "Max Sensitivity": np.asarray([]),
+#             "Median Absolute Sensitivity": np.asarray([]),
+#             "Mean Absolute Sensitivity (no zero)": np.asarray([]),
+#             "Median Absolute Sensitivity (no zero)": np.asarray([]),
+#             "Mean Absolute Sensitivity (no zero sens)": np.asarray([]),
+#             "Median Absolute Sensitivity (no zero sens)": np.asarray([]),
+#             "Output Parameter": np.asarray([]),
+#             "Perturbed Parameter": np.asarray([]),
+#             "Ratio Type": np.asarray([])}
+
+#     folder_mean_dic = {}
+#     folder_sens_dic = {}
+#     folder_mean_df = {}
+#     # Pre calculate the sensitivities from the not perturbed version
+#     for folder in sub_folders:
+
+#         # Load mean for this
+
+#         mean = deriv_dask.cache
+#         sens_dic = {}
+#         mean_dic = {}
+#         for out_param in out_params:
+#             mean_dic[out_param] = np.reshape(np.asarray(
+#                 mean.loc[mean["Output Parameter"] == out_param][out_param]),
+#                 (len(mean.loc[mean["Output Parameter"] == out_param][out_param].index), 1, 1))
+#             # print(mean["time"])
+#             if isinstance(ratio_type, list):
+#                 sens_dic[out_param] = {}
+#                 for rt in ratio_type:
+#                     sens_dic[out_param][rt] = self._recalc_ratios(mean.loc[mean["Output Parameter"] == out_param],
+#                         rt, ratio_window, in_params)
+#             else:
+#                 sens_dic[out_param] = self._recalc_ratios(mean.loc[mean["Output Parameter"] == out_param],
+#                     ratio_type, ratio_window, in_params)
+#         folder_mean_dic[folder] = mean_dic
+#         folder_sens_dic[folder] = sens_dic
+#         folder_mean_df[folder] = mean
+#     # Load the perturbed versions
+#     for perturbed_param in in_params:
+#         # Load the dfs with the perturbed ensembles
+#         for folder in sub_folders:
+#             min_x = np.min(folder_mean_df[folder]["time"])
+#             max_x = np.max(folder_mean_df[folder]["time"])
+#             ds = xr.open_dataset(
+#                 others_path + "/" + folder + "/d" + perturbed_param + ".nc_wcb",
+#                 decode_times=False)[out_params]
+#             ds = ds.sel(time=np.arange(min_x, max_x+20, 20)).compute()
+#             for out_param in out_params:
+#                 def add_to_df(sens_df, rt):
+#                     #
+
+#                 if isinstance(ratio_type, list):
+#                     for rt in ratio_type:
+#                         add_to_df(sens_dic[out_param][rt], rt)
+#                 else:
+#                     add_to_df(sens_dic[out_param], ratio_type)
+
+#     return pandas.DataFrame.from_dict(df_dic)
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        path = sys.argv[1] # /data/project/wcb/netcdf/vladiana_met/
-    else:
-        path = "../data/sim_processed/conv_400_0_t000000_p001_mult_outSat_sbShape_sbConv/"
-    if len(sys.argv) > 2:
-        store_path = sys.argv[2] # /data/project/wcb/netcdf/vladiana_met_stats/
-    else:
-        store_path = "../data/median/"
-    if len(sys.argv) > 3:
-        flags = [sys.argv[3]]
-    else:
-        flags = ["slan_400", "slan_600"]
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="""
+        Calculate statistic trajectories from "path" for given types via
+        "flags" and store them to "store_path".
+        """
+    )
+    parser.add_argument(
+        "--path",
+        default="../data/sim_processed/conv_400_0_t000000_p001_mult_outSat_sbShape_sbConv/",
+        # my path /data/project/wcb/netcdf/vladiana_met/
+        help="""
+        Path to NetCDF-files stored in Met3D style.
+        """,
+    )
+    parser.add_argument(
+        "--store_path",
+        default="../data/median/",
+        # my path "/data/project/wcb/netcdf/vladiana_met_stats/"
+        help="""
+        Path where statistic trajectories shall be stored.
+        """,
+    )
+    parser.add_argument(
+        "--flags",
+        default=["conv_400", "conv_600", "slan_400", "slan_600"],
+        type=str,
+        nargs="+",
+        help="""
+        Flags for the type of trajectories to look for.
+        """,
+    )
+    parser.add_argument(
+        "--version",
+        default="no exclusions",
+        type=str,
+        help="""
+        Define which trajectories are included for the statistic trajectories.
+        Options are:
+        no exclusions: Get all trajectories with the corresponding flag
+        excl other: Get all trajectories with the corresponding flag without
+            the other type (ie flag is conv_400, excl slan_600)
+        excl same: Get all trajectories with the corresponding flag without
+            the same type (ie flag is conv_400, excl conv_600)
+        excl all: Get all trajectories with the corresponding flag without
+            all others (ie flag is conv_400, excl conv_600 and slan_600)
+        conv_X and slan_X are mutually exclusive by definition already!
+        """,
+    )
+    args = parser.parse_args()
 
     file_list = []
-    for f in os.listdir(path):
-        file_list.append(os.path.join(path, f))
+    for f in os.listdir(args.path):
+        file_list.append(os.path.join(args.path, f))
 
     file_list = np.sort(np.asarray(file_list))
-    do_the_stuff_more(store_path, "no exclusions", flags, file_list)
-
-
+    do_the_stuff_more(args.store_path, args.version, args.flags, file_list)
