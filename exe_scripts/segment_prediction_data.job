@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=n_ens_merge_traj
-#SBATCH --output=logs/n_ens_merge_traj_%A_%a.out
-#SBATCH --error=logs/n_ens_merge_traj_%A_%a.err
-#SBATCH --time=8:00:00 # Should be enough time for about 30 parameters
+#SBATCH --job-name=seg_pred
+#SBATCH --output=logs/%x_%A_%a.out
+#SBATCH --error=logs/%x_%A_%a.err
+#SBATCH --time=45:00:00 # 45 hours should be enough time for about 60 parameters for all trajectories. Most might be fine with 30 hours
 #SBATCH -p parallel
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=32
@@ -23,19 +23,23 @@ module load lang/Python/3.7.4-GCCcore-8.3.0
 cd ..
 SAVEDPWD=$(pwd)
 export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}
-N_CONFIGS=10
-ID_NUMBER=$SLURM_ARRAY_TASK_ID
 # ie "/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana/conv_600_0_traj_t000000_p001.nc_wcb"
 SAVE_INPUTFILENAME=$1
-TRAJ=$2
+TRAJ=$SLURM_ARRAY_TASK_ID
 INPUT_FILENAME="${AD_SIM_HOME}/data/${SAVE_INPUTFILENAME##*/}"
 FOLDER_NAME=${SAVE_INPUTFILENAME##*/}
 FOLDER_NAME=${FOLDER_NAME%.*}
 SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/perturbed_ensembles/${FOLDER_NAME}/traj${TRAJ}/"
 OUTPUT_PATH="${AD_SIM_HOME}/output/"
-SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/all/"
+SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/top_params/"
+
+echo "Using {$1} and storing to {$SAVE_OUTPUTPATH}"
 
 cleanup(){
+    if [ ${1} == "a_HET" ]
+    then
+        mv ${OUTPUT_PATH}${1}/id0_* ${OUTPUT_PATH}_notPerturbed.nc_wcb
+    fi
     find ${OUTPUT_PATH}${1}/ -type f -name "*.nc_wcb" -exec rm {} \;
 }
 
@@ -48,6 +52,11 @@ copy_out(){
 
 # Copy executable, input file, configuration file
 # Create directories for temporary files, output data
+if [ ! -d "${SAVE_OUTPUTPATH}" ]
+then
+    mkdir -p "${SAVE_OUTPUTPATH}"
+fi
+
 if [ ! -d "${AD_SIM_HOME}/build/apps/src/microphysics/" ]
 then
     mkdir -p "${AD_SIM_HOME}/build/apps/src/microphysics/"
@@ -75,22 +84,7 @@ then
     mkdir -p "${AD_SIM_HOME}/configs/all"
 fi
 
-f_list=( $(ls -d ${SAVE_ENSEMBLECONFIG}* | sed 's/\/$//') )
-length=${#f_list[*]}
-
-let IDX_START=$ID_NUMBER*$N_CONFIGS
-
-if (( $IDX_START + $N_CONFIGS > $length - 1 ))
-then
-    let N_CONFIGS=$length-$IDX_START
-fi
-
-config_list=${f_list[@]:$IDX_START:$N_CONFIGS}
-for CONFIG in ${config_list[@]}
-do
-    cp ${CONFIG} ${AD_SIM_HOME}/configs/all/
-done
-
+cp ${SAVE_ENSEMBLECONFIG}* ${AD_SIM_HOME}/configs/all/
 cp ${SAVEDPWD}/dmin_wetgrowth_lookup.dat ${AD_SIM_HOME}/
 cp ${SAVEDPWD}/scripts/*.py ${AD_SIM_HOME}/scripts/.
 cd ${AD_SIM_HOME}
@@ -119,7 +113,7 @@ do
     # Output variables
     PROGRESSBAR="0"
     START_TIME="-2800"
-    WRITE_INDEX="1000"
+    WRITE_INDEX="1500"
     SNAPSHOT_INDEX="1"
     TARGET_TIME_AFTER_START="26000"
 
@@ -138,6 +132,8 @@ do
     -l ${INPUT_FILENAME} -r ${TRAJ} -g 0 \
     -m ${ENSEMBLE_CONFIG} \
     -h ${NEW_CHECKPOINTS}
+
+    echo "Finished unperturbed ensemble for ${SUFF}"
 
     declare -a arr_files
     declare -a old_files
@@ -172,6 +168,8 @@ do
         done
         unset arr_files
     done
+  
+    echo "Finished ensembles for ${SUFF}"
 
     OLD_PATH=$PATH
     OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
@@ -183,6 +181,7 @@ do
     export PATH=$OLD_PATH
 
     cleanup $SUFF
+    
 done
 
 copy_out

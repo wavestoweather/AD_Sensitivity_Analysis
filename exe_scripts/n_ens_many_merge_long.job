@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=ens_traj
-#SBATCH --output=logs/ens_traj_%A_%a.out
-#SBATCH --error=logs/ens_traj_%A_%a.err
-#SBATCH --time=24:00:00 # Should be enough time for about 30 parameters
+#SBATCH --job-name=slan_ens_merge_traj
+#SBATCH --output=logs/slan_ens_merge_traj_%A_%a.out
+#SBATCH --error=logs/slan_ens_merge_traj_%A_%a.err
+#SBATCH --time=30:00:00 # Should be enough time for about 30 parameters
 #SBATCH -p parallel
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=32
@@ -13,10 +13,11 @@
 
 # send with sbatch --array=0-44 /lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana/conv_600_0_traj_t000000_p001.nc_wcb 0
 module purge
-module load tools/parallel/20181122
-module load numlib/GSL/2.5-GCCcore-6.4.0
-module load data/netCDF-C++4/4.3.0-foss-2018a
-module load devel/Boost/1.68.0-foss-2018a
+module load tools/parallel/20200522
+module load numlib/GSL/2.5-GCCcore-8.3.0
+module load data/netCDF-C++4/4.3.1-gompi-2019b
+module load devel/Boost/1.71.0-gompi-2019b
+module load lang/Python/3.7.4-GCCcore-8.3.0
 
 # Store working directory to be safe
 cd ..
@@ -34,16 +35,28 @@ SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/perturbed_ensembles/${F
 OUTPUT_PATH="${AD_SIM_HOME}/output/"
 SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/all/"
 
+cleanup(){
+    if [ ${1} == "a_ccn_1" ]
+    then 
+        mv ${OUTPUT_PATH}${1}/id0_* ${OUTPUT_PATH}_notPerturbed.nc_wcb
+    fi
+    find ${OUTPUT_PATH}${1}/ -type f -name "*.nc_wcb" -exec rm {} \;
+}
+
 copy_out(){
-    SUFF=${1##*/}
-    SUFF=${SUFF%.*}
-    echo "Copy from ${OUTPUT_PATH}${SUFF}.nc_wcb to ${SAVE_OUTPUTPATH}${SUFF}.nc_wcb"
-    cp ${OUTPUT_PATH}${SUFF}.nc_wcb ${SAVE_OUTPUTPATH}${SUFF}.nc_wcb
-    find ${OUTPUT_PATH}${SUFF}/ -type f -name "*.nc_wcb" -exec rm {} \;
+    echo "Copy from ${OUTPUT_PATH}*.nc_wcb to ${SAVE_OUTPUTPATH}*.nc_wcb"
+    find ${OUTPUT_PATH} -type f -name "*.nc_wcb" -exec cp {} ${SAVE_OUTPUTPATH} \;
+    wait
+    exit 0
 }
 
 # Copy executable, input file, configuration file
 # Create directories for temporary files, output data
+if [ ! -d "${SAVE_OUTPUTPATH}" ]
+then
+    mkdir -p "${SAVE_OUTPUTPATH}"
+fi
+
 if [ ! -d "${AD_SIM_HOME}/build/apps/src/microphysics/" ]
 then
     mkdir -p "${AD_SIM_HOME}/build/apps/src/microphysics/"
@@ -59,6 +72,11 @@ cp ${SAVE_INPUTFILENAME} ${AD_SIM_HOME}/data/
 if [ ! -d "${AD_SIM_HOME}/tmp/" ]
 then
     mkdir -p "${AD_SIM_HOME}/tmp/"
+fi
+
+if [ ! -d "${AD_SIM_HOME}/scripts/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/scripts/"
 fi
 
 if [ ! -d "${AD_SIM_HOME}/configs/all" ]
@@ -83,6 +101,7 @@ do
 done
 
 cp ${SAVEDPWD}/dmin_wetgrowth_lookup.dat ${AD_SIM_HOME}/
+cp ${SAVEDPWD}/scripts/*.py ${AD_SIM_HOME}/scripts/.
 cd ${AD_SIM_HOME}
 
 for ENSEMBLE_CONFIG in ${AD_SIM_HOME}/configs/all/*
@@ -109,9 +128,9 @@ do
     # Output variables
     PROGRESSBAR="0"
     START_TIME="-2800"
-    WRITE_INDEX="1000"
+    WRITE_INDEX="4500"
     SNAPSHOT_INDEX="1"
-    TARGET_TIME_AFTER_START="26000"
+    TARGET_TIME_AFTER_START="83000"
 
     # Operational variables
     START_OVER="0"
@@ -162,9 +181,17 @@ do
         done
         unset arr_files
     done
+
+    OLD_PATH=$PATH
+    OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+    source  /home/mahieron/plot_env/bin/activate
     # Merge the output
     python ${AD_SIM_HOME}/scripts/merge.py ${OUTPUT_PATH}${SUFF}/ ${OUTPUT_PATH}${SUFF}.nc_wcb
+    deactivate
+    export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
+    export PATH=$OLD_PATH
 
-    # Copy it
-    copy_out $ENSEMBLE_CONFIG
+    cleanup $SUFF
 done
+
+copy_out
