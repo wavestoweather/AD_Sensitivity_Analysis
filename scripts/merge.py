@@ -30,7 +30,7 @@ min_time2 = None
 max_time2 = None
 t = None
 
-for i in pb.progressbar(range(len(file_list))):
+for i in range(len(file_list)):
     f = file_list[i]
 
     # print(f)
@@ -73,7 +73,7 @@ for i in pb.progressbar(range(len(file_list))):
     #     ds = ds_tmp
 time_index = np.arange(min_time2, max_time2+19, 20)
 # print(f"Time index: {time_index}")
-for i in pb.progressbar(range(len(sets))):
+for i in range(len(sets)):
     sets[i] = sets[i].reindex({"time": time_index})
     # if i == 2:
     #     print(sets[i])
@@ -102,7 +102,7 @@ ds["ensemble_history"].attrs = {
     "auxiliary_data": "yes"}
 
 # ds["type"] = np.unique(ds["type"])[-1]
-t = timer()
+# t = timer()
 comp = dict(zlib=True, complevel=9)
 encoding = {var: comp for var in ds.data_vars}
 ds.to_netcdf(
@@ -112,5 +112,5 @@ ds.to_netcdf(
     engine="netcdf4",
     format="NETCDF4",
     mode="w")
-t2 = timer()
-print(f"Writing done in {t2-t} s")
+# t2 = timer()
+# print(f"Writing done in {t2-t} s")
