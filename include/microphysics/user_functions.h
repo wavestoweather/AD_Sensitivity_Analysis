@@ -1587,15 +1587,15 @@ void rain_evaporation_sb(
 
         float_t mue;
         // Equation 20 of Seifert (2008)
-        if(D_v <= get_at(cc.rain.constants, Particle_cons_idx::cmu3))
+        if(D_r <= get_at(cc.rain.constants, Particle_cons_idx::cmu3))
             mue = get_at(cc.rain.constants, Particle_cons_idx::cmu0)
                 * tanh( pow(4.0*get_at(cc.rain.constants, Particle_cons_idx::cmu2)
-                * (D_v-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
+                * (D_r-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
                     get_at(cc.rain.constants, Particle_cons_idx::cmu5))) + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
         else
             mue = get_at(cc.rain.constants, Particle_cons_idx::cmu1)
                 * tanh( pow(get_at(cc.rain.constants, Particle_cons_idx::cmu2)
-                * (D_v-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
+                * (D_r-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
                     get_at(cc.rain.constants, Particle_cons_idx::cmu5))) + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
         // Equation A8
         float_t lambda = pow(
@@ -4483,11 +4483,11 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
 
         codi::RealReverse mue;
         // Equation 20 of Seifert (2008)
-        if(D_v <= get_at(cc.rain.constants, Particle_cons_idx::cmu3))
-            mue = get_at(cc.rain.constants, Particle_cons_idx::cmu0) * tanh( pow(4.0*get_at(cc.rain.constants, Particle_cons_idx::cmu2)*(D_v-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
+        if(D_r <= get_at(cc.rain.constants, Particle_cons_idx::cmu3))
+            mue = get_at(cc.rain.constants, Particle_cons_idx::cmu0) * tanh( pow(4.0*get_at(cc.rain.constants, Particle_cons_idx::cmu2)*(D_r-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
                 get_at(cc.rain.constants, Particle_cons_idx::cmu5))) + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
         else
-            mue = get_at(cc.rain.constants, Particle_cons_idx::cmu1) * tanh( pow(get_at(cc.rain.constants, Particle_cons_idx::cmu2)*(D_v-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
+            mue = get_at(cc.rain.constants, Particle_cons_idx::cmu1) * tanh( pow(get_at(cc.rain.constants, Particle_cons_idx::cmu2)*(D_r-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
                 get_at(cc.rain.constants, Particle_cons_idx::cmu5))) + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
         // Equation A8
         codi::RealReverse lambda = pow(M_PI/6.0*get_at(cc.constants, Cons_idx::rho_w)*(mue+3.0)*(mue+2.0)*(mue+1.0)/x_r, 1.0/3.0);
