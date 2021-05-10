@@ -3690,8 +3690,8 @@ void rain_freeze(
                 fr_q_h = fr_q - fr_q_g;
                 fr_n_g = fr_n_g - fr_n_i;
                 fr_q_g = fr_q_g - fr_q_i;
-                fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp);
-                fr_q_tmp = qr_prime/max(fr_q, qr_prime);
+                fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp*cc.dt_prime);
+                fr_q_tmp = qr_prime/max(fr_q, qr_prime*cc.dt_prime);
             } else
             {
                 // heterogeneous freezing
@@ -3727,8 +3727,8 @@ void rain_freeze(
                     fr_q_h = fr_q - fr_q_g;
                     fr_n_g = fr_n_g - fr_n_i;
                     fr_q_g = fr_q_g - fr_q_i;
-                    fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp);
-                    fr_q_tmp = qr_prime/max(fr_q ,qr_prime);
+                    fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp*cc.dt_prime);
+                    fr_q_tmp = qr_prime/max(fr_q ,qr_prime*cc.dt_prime);
                 } else
                 {
                     fr_n = fr_q = fr_n_i = fr_q_i = fr_n_g = fr_q_g
