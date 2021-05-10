@@ -1274,7 +1274,7 @@ const double kc_autocon = 9.44e9;
 /**
  * Height of the trajectory package [m].
  */
-const double parcel_height = 250.0;
+const double parcel_height = 50.0;
 
 /**
  * Lower temperature threshold for ice nucleation, -5°C

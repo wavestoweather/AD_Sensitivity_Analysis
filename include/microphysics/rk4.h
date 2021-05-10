@@ -234,6 +234,22 @@ void set_limits(
         y[qg_idx]*ref.qref/get_at(cc.graupel.constants, Particle_cons_idx::min_x));
     y[Nh_idx] = min(max(y[Nh_idx], y[qh_idx]*ref.qref/get_at(cc.hail.constants, Particle_cons_idx::max_x)),
         y[qh_idx]*ref.qref/get_at(cc.hail.constants, Particle_cons_idx::min_x));
+#ifdef ASSERT_MIXING
+    // assert( ("Water vapor mixing ratio below zero", y[qv_idx] >= 0) );
+    // assert( ("Cloud droplet mixing ratio below zero", y[qc_idx] >= 0) );
+    // assert( ("Rain droplet mixing ratio below zero", y[qr_idx] >= 0) );
+    // assert( ("Snowflake mixing ratio below zero", y[qs_idx] >= 0) );
+    // assert( ("Ice crystal mixing ratio below zero", y[qi_idx] >= 0) );
+    // assert( ("Graupel mixing ratio below zero", y[qg_idx] >= 0) );
+    // assert( ("Hail mixing ratio below zero", y[qh_idx] >= 0) );
+    if(y[qv_idx] < 0) std::cout << "!!!!!!!!!!!!!!! Water vapor below zero: " << y[qv_idx] << "\n";
+    if(y[qc_idx] < 0) std::cout << "!!!!!!!!!!!!!!! Cloud droplet below zero: " << y[qc_idx] << "\n";
+    if(y[qr_idx] < 0) std::cout << "!!!!!!!!!!!!!!! Rain droplet below zero: " << y[qr_idx] << "\n";
+    if(y[qs_idx] < 0) std::cout << "!!!!!!!!!!!!!!! Snowflake below zero: " << y[qs_idx] << "\n";
+    if(y[qi_idx] < 0) std::cout << "!!!!!!!!!!!!!!! Ice crystal below zero: " << y[qi_idx] << "\n";
+    if(y[qg_idx] < 0) std::cout << "!!!!!!!!!!!!!!! Graupel below zero: " << y[qg_idx] << "\n";
+    if(y[qh_idx] < 0) std::cout << "!!!!!!!!!!!!!!! Hail below zero: " << y[qh_idx] << "\n";
+#endif
     // Set everything negative to zero
     y[qv_idx] = (y[qv_idx] < 0) ? 0 : y[qv_idx];
     y[qc_idx] = (y[qc_idx] < 0) ? 0 : y[qc_idx];
