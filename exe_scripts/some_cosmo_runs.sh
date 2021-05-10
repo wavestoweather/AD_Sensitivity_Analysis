@@ -18,9 +18,6 @@ WRITE_INDEX="1000"
 SNAPSHOT_INDEX="1"
 TARGET_TIME_AFTER_START="26000"
 
-# PROGRESSBAR="0"
-# TARGET_TIME_AFTER_START="6400"
-
 # Operational variables
 START_OVER="0"
 START_OVER_ENVIRONMENT="1"
@@ -41,15 +38,14 @@ do
         mkdir -p ${OUTPUT_PATH}${FILENAME}
     fi
     INPUT_FILENAME=${IN_PATH}${FILENAME}
+    OUPTUT_FILENAME=${FILENAME/"_traj"}
 
     ${AD_SIM_HOME}/build/apps/src/microphysics/./trajectories -w ${WRITE_INDEX} -a ${AUTO_TYPE} \
         -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME_AFTER_START} -d ${TIMESTEP} \
         -i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} \
-        -o ${OUTPUT_PATH}${FILENAME}"/wcb${TARGET_TIME_AFTER_START}_traj0_MAP_t000000_p001" \
+        -o ${OUTPUT_PATH}"_wcb${TARGET_TIME_AFTER_START}_traj0_MAP_t000000_p001_"${OUPTUT_FILENAME} \
         -e ${START_OVER_ENVIRONMENT} \
         -p ${PROGRESSBAR} \
         -n ${START_TIME} \
         -l ${INPUT_FILENAME}.nc_wcb -r ${TRAJ} -g 0
-    mv ${OUTPUT_PATH}${FILENAME}"/wcb${TARGET_TIME_AFTER_START}_traj0_MAP_t000000_p001.nc_wcb" ${OUTPUT_PATH}${FILENAME}".nc_wcb"
-    rm -r ${OUTPUT_PATH}${FILENAME}/
 done
