@@ -33,9 +33,9 @@ NEW_CHECKPOINTS=${AD_SIM_HOME}/tmp
 for FILENAME in "conv_400_0_traj_t000000_p001_met3d" "conv_400_10_traj_t000600_p001_met3d" "conv_600_20_traj_t001200_p001_met3d" "conv_600_40_traj_t002400_p001_met3d"
 do
 
-    if [ ! -d ${OUTPUT_PATH}${FILENAME} ]
+    if [ ! -d ${OUTPUT_PATH} ]
     then
-        mkdir -p ${OUTPUT_PATH}${FILENAME}
+        mkdir -p ${OUTPUT_PATH}
     fi
     INPUT_FILENAME=${IN_PATH}${FILENAME}
     OUPTUT_FILENAME=${FILENAME/"_traj"}
