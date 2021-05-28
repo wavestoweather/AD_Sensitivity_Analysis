@@ -3,7 +3,7 @@ Algorithmic Differentiation as Sensitivity Analysis in Microphysics
 
 Microphysical processes in convective clouds have an impact on radiation in climate models, precipitation and dynamical features. These processes are usually parametrized, i.e. in numerical weather prediction (NWP) models, due to the small scale in which those processes operate and the lack of understanding of some. Understanding the impact of uncertainties in parametrization to uncertainty in cloud responses is crucial for tuning such models. In addition, parameter values can depend on discretization details such as the grid interval, time resolution and other choices made by modeling physical processes. Typical sensitivity analysis investigate few model parameters selected by experts and perturb those based on (joint) proposal distributions that may be refined by experts. In this paper we propose algorithmic differentiation (AD) as a tool to detect the magnitude and time step at which a model state parameter is sensitive to any of hundreds of model parameters. We implement a two-moment scheme and identify the 20 most important parameters to each hydrometeor and validate those parameters by comparing perturbed ensembles and the resulting divergence with predicted deviations. Finally, we use the output of AD for detecting the time step at which perturbing a parameter is necessary with a random forest and a precision and recall of about 75% for each model parameter and hydrometeor.
 
-This repository consists of an implementation of a two-moment scheme (similar to [ICON](https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html)) with [AD using CoDiPack](https://github.com/scicompkl/codipack) where environment and intial variables are read from [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) files. Python scripts and Jupyter notebooks are used for post-processing, data analysis and for training a random forest for detecting starts of segments where perturbing a parameter has the highest impact. For the C++ code we follow the
+This repository consists of an implementation of a two-moment scheme (similar to [ICON](https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html)) with [AD using CoDiPack](https://github.com/scicompkl/codipack) where environment and intial variables are read from [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) files. Python scripts and Jupyter notebooks are used for post-processing and data analysis. For the C++ code we follow the
 [doxygen standard](http://www.doxygen.nl/manual/docblocks.html). \
 We recommend an [anaconda](https://www.anaconda.com/) environment for which you may
 use `requirements_conda.txt`. Either way, `requirements_pip.txt` with pip is needed
@@ -111,7 +111,7 @@ Each script tries to compile the code. If you don't want that, you can comment t
 In order to to run a simulation with four different trajectories to compare our
 simulation with cosmo, use `exe_scripts/comparison_runs.sh`.
 
-To run ensemble simulations on representative trajectories, execute `exe_scripts/ensemble_runs.sh`.
+To run ensemble simulations on representative trajectories, execute `exe_scripts/ensemble_runs.sh data/representatives/no_exclusions_conv_400_median.nc_wcb`, where the second argument can be any trajectory file.
 You may alter the variable `NTASKS=4` to the number of cores of your machine to speed-up the simulation.
 All necessary commandline parameters are explained in each script.
 
@@ -181,11 +181,8 @@ Using Jupyter Notebooks
 -----------------------
 - **Plot_MSE.ipynb:** Get the most important parameters for each output parameter, calculate and plot correlation and
 predicted errors over time.
-- **Plot_Segment_identifier.ipynb:** An interactive notebook that shows different ways to identify segments, comparisons to sensitivities and plots confusion matrix for different input parameters and detection methods.
 - **Plot_physics.ipynb:** Plot single microphysical processes with a given range
 of input parameters. Helpful if you want to see "what happens" in each processes and for debugging.
-- **Plot_sensitivities.ipynb:** Use this as a starting point to plot results
-from a simulation and to plot the sensitivities.
 
 
 Adding New Physics

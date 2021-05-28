@@ -89,6 +89,8 @@
 <li class="toctree-l1"><a class="reference internal" href="convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="latexify.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">latexify</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="merge.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
@@ -205,19 +207,25 @@ true and false positive for comparison.</p>
 
 <dl class="py function">
 <dt id="scripts.segment_statistics.create_hist_seg_dataset">
-<code class="sig-prename descclassname">scripts.segment_statistics.</code><code class="sig-name descname">create_hist_seg_dataset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">all_params_list</span></em>, <em class="sig-param"><span class="n">model_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">remove_pred_duplicates</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_statistics.create_hist_seg_dataset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a xarray.Dataset useful for plotting histograms. Indexes where
+<code class="sig-prename descclassname">scripts.segment_statistics.</code><code class="sig-name descname">create_hist_seg_dataset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">all_params_list</span></em>, <em class="sig-param"><span class="n">model_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">step_tol</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">remove_pred_duplicates</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">cooldown</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">verbosity</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_statistics.create_hist_seg_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a xarray.DataSet useful for plotting histograms. Indexes where
 segment starts are, are stored here.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>list</em><em> or </em><em>np.ndarray</em><em> or </em><em>xarray.Dataset</em>) – Either a precalculated set of data that had been stored as <a href="#id1"><span class="problematic" id="id2">*</span></a>.npy
+<li><p><strong>data</strong> (<em>list</em><em> or </em><em>np.ndarray</em><em> or </em><em>xarray.DataSet</em>) – Either a precalculated set of data that had been stored as <a href="#id1"><span class="problematic" id="id2">*</span></a>.npy
 or a dataset where windows (if any) need to be calculated.</p></li>
 <li><p><strong>all_params_list</strong> (<em>list of string</em>) – List of input parameters.</p></li>
 <li><p><strong>model_path</strong> (<em>string</em>) – Path to model saved as <a href="#id3"><span class="problematic" id="id4">*</span></a>.joblid.</p></li>
 <li><p><strong>step_tol</strong> (<em>int</em>) – Number of steps to tolerate for a prediction to be true.</p></li>
 <li><p><strong>remove_pred_duplicates</strong> (<em>boolean</em>) – If true: Remove segment starts that are predicted more than once.
 Only useful if a model is given and “step_tol” &gt; 1.</p></li>
+<li><p><strong>cooldown</strong> (<em>int</em>) – Minimum number of timesteps between last time the error threshold has
+been met and the next time step. This is useful if the original data
+is based on ensembles that start at every few time step which leads to
+an error of zero until the divergence of the ensemble is high enough
+again, resulting in a new segment start although it is just the
+start of the ensemble.</p></li>
 <li><p><strong>verbosity</strong> (<em>int</em>) – Set verbosity level.
 0: No output except for exceptions
 1: Print datasets
@@ -230,7 +238,7 @@ Only useful if a model is given and “step_tol” &gt; 1.</p></li>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><em>xarray.Dataset either with columns “trajectory”, “time_after_ascent”</em></p></li>
+<li><p><em>xarray.DataSet either with columns “trajectory”, “time_after_ascent”</em></p></li>
 <li><p><em>and “Input Parameter” or “datapoint” and “Input Parameter” if data</em></p></li>
 <li><p><em>is a list or np.ndarray.</em></p></li>
 </ul>
@@ -241,12 +249,12 @@ Only useful if a model is given and “step_tol” &gt; 1.</p></li>
 
 <dl class="py function">
 <dt id="scripts.segment_statistics.plot_segment_hist">
-<code class="sig-prename descclassname">scripts.segment_statistics.</code><code class="sig-name descname">plot_segment_hist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ds</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">store_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">1680</span></em>, <em class="sig-param"><span class="n">height</span><span class="o">=</span><span class="default_value">1050</span></em>, <em class="sig-param"><span class="n">bins</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">group</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">stacked</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_statistics.plot_segment_hist" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">scripts.segment_statistics.</code><code class="sig-name descname">plot_segment_hist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ds</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">store_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">1680</span></em>, <em class="sig-param"><span class="n">height</span><span class="o">=</span><span class="default_value">1050</span></em>, <em class="sig-param"><span class="n">bins</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">group</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">stacked</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">alpha</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">plot_ensemble_starts</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#scripts.segment_statistics.plot_segment_hist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot a histogram of segment starts.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xarray.Dataset</em>) – Dataset created by create_hist_seg_dataset(..).</p></li>
+<li><p><strong>ds</strong> (<em>xarray.DataSet</em>) – Dataset created by create_hist_seg_dataset(..).</p></li>
 <li><p><strong>y</strong> (<em>string</em>) – Column for histogram where a segment start occurs.</p></li>
 <li><p><strong>store_path</strong> (<em>string</em>) – Path and name where to save images.</p></li>
 <li><p><strong>width</strong> (<em>int</em>) – Width in pixels for the plot.</p></li>
@@ -255,6 +263,8 @@ Only useful if a model is given and “step_tol” &gt; 1.</p></li>
 <li><p><strong>group</strong> (<em>string</em>) – Column to group by.</p></li>
 <li><p><strong>stacked</strong> (<em>boolean</em>) – Plot a stacked histogram. Only useful with “group”.</p></li>
 <li><p><strong>alpha</strong> (<em>float</em>) – Alpha value for the histogram.</p></li>
+<li><p><strong>plot_ensemble_starts</strong> (<em>boolean</em>) – Plot vertical lines where ensembles had been started, assuming
+those started at -1000 s with 1800 s distance.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
