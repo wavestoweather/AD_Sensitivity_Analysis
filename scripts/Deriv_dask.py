@@ -2211,6 +2211,9 @@ class Deriv_dask:
                     df_group = df_tmp_out[[x_axis, by] + add_cols]
                 else:
                     df_group = df_tmp_out[[x_axis, y, by] + add_cols]
+                # print(df_group)
+                # print("############################")
+                # print(df_group[by])
                 types = df_group[by].unique()
                 types = np.sort(types[::-1])
                 if rolling_avg is not None:
@@ -2470,7 +2473,7 @@ class Deriv_dask:
                         if twin is not None:
                             plot_list[-1] = plot_list[-1] * twin
                     else:
-                        param_plot = (
+                        plot_list.append(
                             df_group[df_group[y] != 0]
                             .hvplot.scatter(
                                 x=x_axis,
@@ -2483,7 +2486,7 @@ class Deriv_dask:
                             )
                             .opts(
                                 opts.Scatter(size=scatter_size, fontscale=fontscale),
-                                **layout_kwargs,
+                                # **layout_kwargs,
                             )
                         )
 
@@ -2588,23 +2591,67 @@ class Deriv_dask:
                 if rolling_avg is not None:
                     series = df_group[y].rolling(rolling_avg, min_periods=1).mean()
                     df_group.update(series)
+                if kind == "scatter":
+                    plot_func = df_group.hvplot.scatter
+                    if datashade:
+                        options = opts.Scatter(show_grid=True)
+                    else:
+                        options = opts.Scatter(s=scatter_size, show_grid=True)
+                elif kind == "hexbin":
+
+                    def agg(x):
+                        # print(f"{y}: {np.shape(x)} -- {np.sum(x)}, {np.log(np.sum(x))}")
+                        return np.log(np.sum(x))
+
+                    plot_func = df_group.hvplot.hexbin
+                    if self.backend == "matplotlib":
+                        options = opts.HexTiles(
+                            colorbar=False,
+                            cmap="viridis",
+                            logz=False,
+                            show_grid=True,
+                            gridsize=int(np.ceil(width / 30)),
+                            aggregator=agg,
+                        )
+                    else:
+                        options = opts.HexTiles(
+                            colorbar=False,
+                            logz=False,
+                            show_grid=True,
+                            tools=["hover"],
+                            gridsize=int(np.ceil(width / 30)),
+                            aggregator=agg,
+                        )
+                else:
+                    plot_func = df_group.hvplot.line
+                    if self.backend == "bokeh":
+                        options = opts.Curve(
+                            line_width=self.vertical_mark_fontsize - 2, show_grid=True
+                        )
+                    else:
+                        options = opts.Curve(
+                            linewidth=self.vertical_mark_fontsize - 4, show_grid=True
+                        )
 
                 if log:
                     # Apply should be more expensive
                     df_group[y] = da.log(da.fabs(df_group[y]))
-                param_plot = plot_func(
-                    x=x_axis,
-                    y=y,
-                    title="Values of of {}".format(latexify.parse_word(y)),
-                    label=None,
-                    datashade=datashade,
-                ).opts(**layout_kwargs)
+                plot_list.append(
+                    plot_func(
+                        x=x_axis,
+                        y=y,
+                        title="Values of of {}".format(latexify.parse_word(y)),
+                        label=None,
+                        datashade=datashade,
+                    ).opts(**layout_kwargs)
+                )
         if len(plot_list) > 1:
             all_plots = plot_list[0] + plot_list[1]
             for i in range(len(plot_list) - 2):
                 all_plots = all_plots + plot_list[i + 2]
         else:
             all_plots = plot_list[0]
+            plot_singles = False
         # layout_kwargs = {}
         # if self.backend == "bokeh":
         #     layout_kwargs["width"] = width
@@ -2616,21 +2663,33 @@ class Deriv_dask:
 
         for k in kwargs:
             scatter_kwargs[k] = kwargs[k]
-
-        final_plots = all_plots.opts(
-            opts.Scatter(
-                xticks=xticks,
-                xaxis="bottom",
-                # fontsize=self.font_dic,
-                show_grid=True,
-                show_legend=True,
-                **scatter_kwargs,
-            ),
-            opts.Layout(**layout_kwargs),
-        ).cols(col_wrap)
+        if len(plot_list) > 1:
+            final_plots = all_plots.opts(
+                opts.Scatter(
+                    xticks=xticks,
+                    xaxis="bottom",
+                    # fontsize=self.font_dic,
+                    show_grid=True,
+                    show_legend=True,
+                    **scatter_kwargs,
+                ),
+                opts.Layout(**layout_kwargs),
+            ).cols(col_wrap)
+        else:
+            final_plots = all_plots.opts(
+                opts.Scatter(
+                    xticks=xticks,
+                    xaxis="bottom",
+                    # fontsize=self.font_dic,
+                    show_grid=True,
+                    show_legend=True,
+                    **scatter_kwargs,
+                ),
+                opts.Layout(**layout_kwargs),
+            )
 
         if self.backend == "matplotlib":
-            final_plots = final_plots.opts(sublabel_format="", tight=True)
+            final_plots = final_plots.opts(sublabel_format="")
 
         if datashade:
             final_plots = final_plots.opts(plot=dict(width=width, height=height))
@@ -3042,12 +3101,15 @@ class Deriv_dask:
         abs_y=False,
         split_ellipse=False,
         error_key="MSE",
-        xlabel="Sensitivity Ratio",
+        xlabel=None,
+        sens_key="Sensitivity",
+        ylabel=None,
         log_func=np.log,
         plot_singles=False,
         plot_types=True,
         title=None,
         linewidth=None,
+        inf_val=None,
         **kwargs,
     ):
         """
@@ -3146,9 +3208,13 @@ class Deriv_dask:
             Create two confidence ellipses, on for sensitivity >= 0
             and another for sensitvity <= 0.
         error_key : string
-            Name of column with predicted errors.
+            Name of column with actual errors.
         xlabel : string
             Alternative label for x-axis.
+        sens_key : string
+            Name of column with predicted errors aka sensitivities.
+        ylabel : string
+            Alternative label for y-axis.
         log_func: callable
             Function for logarithm (i.e. np.log10 or np.log (default))
         plot_singles : bool
@@ -3162,6 +3228,9 @@ class Deriv_dask:
             title based on different labels is used.
         linewidth : int
             Width of ellipse.
+        inf_val : float or None
+            If float: Mark values at this x-value as negative infinity. The
+            confidence ellipse does not take these values into account.
         kwargs : Dict of args
             Arguments are passed to ellipse, i.e. {"color": "red"}
         """
@@ -3174,7 +3243,7 @@ class Deriv_dask:
             )
         else:
             mse_df = mse_df_.copy()
-        mse_df = mse_df.loc[mse_df["Sensitivity"] != 0]
+        # mse_df = mse_df.loc[mse_df["Sensitivity"] != 0]
 
         import hvplot.dask  # adds hvplot method to dask objects
         import hvplot.pandas
@@ -3184,7 +3253,7 @@ class Deriv_dask:
 
         dsshade.dynamic = False
         if kind == "paper":
-            fontscale = width / 300  # 500
+            fontscale = width / 350  # 500
         else:
             fontscale = width / 2200
         if formatter_limits is not None:
@@ -3216,33 +3285,41 @@ class Deriv_dask:
             layout_kwargs["fig_inches"] = fig_inches
 
         if abs_x:
-            mse_df["Sensitivity"] = np.abs(mse_df["Sensitivity"])
+            mse_df[sens_key] = np.abs(mse_df[sens_key])
             if log_x:
-                mse_df["Sensitivity"] = log_func(mse_df["Sensitivity"])
+                mse_df[sens_key] = log_func(mse_df[sens_key])
+                if inf_val is not None:
+                    inf_val = log_func(inf_val)
         if abs_y:
             mse_df[error_key] = np.abs(mse_df[error_key])
             if log_y:
                 mse_df[error_key] = log_func(mse_df[error_key])
 
         if not abs_x and log_x:
-            sign = np.sign(mse_df["Sensitivity"])
-            mse_df["Sensitivity"] = log_func(np.abs(mse_df["Sensitivity"]))
-            mse_df["Sensitivity"] = mse_df["Sensitivity"] - np.min(
-                mse_df["Sensitivity"]
-            )
-            mse_df["Sensitivity"] *= sign
+            sign = np.sign(mse_df[sens_key])
+            mse_df[sens_key] = log_func(np.abs(mse_df[sens_key]))
+            mse_df[sens_key] = mse_df[sens_key] - np.min(mse_df[sens_key])
+            mse_df[sens_key] *= sign
+            sign = np.sign(inf_val)
+            if inf_val is not None:
+                inf_val = log_func(inf_val) * sign
         if not abs_y and log_y:
             sign = np.sign(mse_df[error_key])
             mse_df[error_key] = sign * log_func(np.abs(mse_df[error_key]))
 
-        ylabel = ""
-        if log_x:
-            xlabel = xlabel
-        if log_y:
-            ylabel = "Log "
+        if xlabel is None:
+            if log_x:
+                xlabel = "Log " + sens_key
+            else:
+                xlabel = sens_key
+        if ylabel is None:
+            if log_y:
+                ylabel = "Log " + error_key
+            else:
+                ylabel = error_key
         hspace = 0.05
         if title is None:
-            title = ylabel + error_key + " over " + xlabel
+            title = ylabel + " over " + xlabel
 
         # Plot all into one plot
         if kind == "single_plot":
@@ -3265,7 +3342,7 @@ class Deriv_dask:
 
                     mse_plot = (
                         mse_df.hvplot.scatter(
-                            x="Sensitivity",
+                            x=sens_key,
                             y=error_key,
                             by=by_col,
                             title=title,
@@ -3277,7 +3354,7 @@ class Deriv_dask:
                             xticks=xticks,
                         )
                         .opts(aspect=aspect, fontscale=fontscale)
-                        .options(xlabel=xlabel, ylabel=ylabel + error_key)
+                        .options(xlabel=xlabel, ylabel=ylabel)
                     )
 
         all_opts = dict(
@@ -3343,8 +3420,14 @@ class Deriv_dask:
                     )
 
                 if by is None:
-                    x = df[x]
-                    y = df[y]
+                    if inf_val is not None:
+                        df_tmp = df.loc[df[x] != inf_val]
+                    else:
+                        df_tmp = df
+                    x = df_tmp[x]
+                    y = df_tmp[y]
+                    if len(df_tmp[x]) == 1:
+                        return None
                     return create_ellipse(x, y, **new_kwargs)
                 else:
                     by_list = np.unique(df[by])
@@ -3354,6 +3437,10 @@ class Deriv_dask:
                         if color is not None:
                             new_kwargs["color"] = color[b]
                         df_tmp = df.loc[df[by] == b]
+                        if inf_val is not None:
+                            df_tmp = df_tmp.loc[df_tmp[x] != inf_val]
+                        if len(df_tmp[x]) == 1:
+                            continue
                         if ells is None:
                             ells = create_ellipse(df_tmp[x], df_tmp[y], **new_kwargs)
                         else:
@@ -3366,23 +3453,20 @@ class Deriv_dask:
                 if kind == "paper":
                     tmp_df = mse_df.loc[mse_df["Output Parameter"] == out_params[0]]
                     min_x = (
-                        np.min(tmp_df["Sensitivity"])
-                        - np.abs(np.min(tmp_df["Sensitivity"])) / 10
+                        np.min(tmp_df[sens_key]) - np.abs(np.min(tmp_df[sens_key])) / 10
                     )
                     max_x = 2
                 else:
                     min_x = (
-                        np.min(mse_df["Sensitivity"])
-                        - np.abs(np.min(mse_df["Sensitivity"])) / 7
+                        np.min(mse_df[sens_key]) - np.abs(np.min(mse_df[sens_key])) / 7
                     )
                     max_x = (
-                        np.max(mse_df["Sensitivity"])
-                        + np.abs(np.max(mse_df["Sensitivity"])) / 7
+                        np.max(mse_df[sens_key]) + np.abs(np.max(mse_df[sens_key])) / 7
                     )
             else:
-                delta_x = np.max(mse_df["Sensitivity"]) - np.min(mse_df["Sensitivity"])
-                min_x = np.min(mse_df["Sensitivity"]) - delta_x / 10
-                max_x = np.max(mse_df["Sensitivity"]) + delta_x / 10
+                delta_x = np.max(mse_df[sens_key]) - np.min(mse_df[sens_key])
+                min_x = np.min(mse_df[sens_key]) - delta_x / 10
+                max_x = np.max(mse_df[sens_key]) + delta_x / 10
 
             if not plot_types:
                 cmap = plt.get_cmap("tab10")
@@ -3415,8 +3499,8 @@ class Deriv_dask:
                 legend = "top_left"  # bottom
             else:
                 if log_x and not abs_x:
-                    pos_plot = mse_df.loc[mse_df["Sensitivity"] >= 0].hvplot.hist(
-                        y="Sensitivity",
+                    pos_plot = mse_df.loc[mse_df[sens_key] >= 0].hvplot.hist(
+                        y=sens_key,
                         by=by_col,
                         alpha=0.5,
                         legend=True,
@@ -3427,7 +3511,7 @@ class Deriv_dask:
 
                     max_y = 0
                     for key in pos_plot:
-                        max_x_tick = np.max(key["Sensitivity"])
+                        max_x_tick = np.max(key[sens_key])
                         min_x_tick = 0
                         delta_tick = max_x_tick / (this_x_ticks - 1)
                         max_y = np.max(key["Sensitivity_count"])
@@ -3440,8 +3524,8 @@ class Deriv_dask:
                         for i in range(this_x_ticks)
                     ]
 
-                    neg_plot = mse_df.loc[mse_df["Sensitivity"] < 0].hvplot.hist(
-                        y="Sensitivity",
+                    neg_plot = mse_df.loc[mse_df[sens_key] < 0].hvplot.hist(
+                        y=sens_key,
                         by=by_col,
                         alpha=0.5,
                         legend=False,
@@ -3452,7 +3536,7 @@ class Deriv_dask:
                     for key in neg_plot:
                         if np.max(key["Sensitivity_count"]) > max_y:
                             max_y = np.max(key["Sensitivity_count"])
-                        max_x_tick = np.min(key["Sensitivity"])
+                        max_x_tick = np.min(key[sens_key])
                         min_x_tick = 0
                         delta_tick = max_x_tick / (this_x_ticks - 1)
 
@@ -3490,7 +3574,7 @@ class Deriv_dask:
                         opts_dic["aspect"] = aspect
                     all_plots = (
                         mse_df.hvplot.hist(
-                            y="Sensitivity",
+                            y=sens_key,
                             by=by_col,
                             alpha=alpha,
                             legend=True,
@@ -3525,8 +3609,8 @@ class Deriv_dask:
                     split_ellipse = True
                     this_x_ticks = int(np.floor(xticks / 2))
                     # Make two scatter plots with correct ticks
-                    pos_plot = tmp_df.loc[tmp_df["Sensitivity"] >= 0].hvplot.scatter(
-                        x="Sensitivity",
+                    pos_plot = tmp_df.loc[tmp_df[sens_key] >= 0].hvplot.scatter(
+                        x=sens_key,
                         title=title,
                         y=error_key,
                         by=by_col,
@@ -3540,9 +3624,9 @@ class Deriv_dask:
                     )
 
                     # Get cosest value to zero for proper ticks
-                    max_x_tick = np.max(tmp_df["Sensitivity"])
-                    if -1 * np.min(tmp_df["Sensitivity"]) > max_x_tick:
-                        max_x_tick = -1 * np.min(tmp_df["Sensitivity"])
+                    max_x_tick = np.max(tmp_df[sens_key])
+                    if -1 * np.min(tmp_df[sens_key]) > max_x_tick:
+                        max_x_tick = -1 * np.min(tmp_df[sens_key])
                     delta_tick = max_x_tick / (this_x_ticks - 1)
                     pos_x_ticks = [
                         (
@@ -3552,8 +3636,8 @@ class Deriv_dask:
                         for i in range(this_x_ticks)
                     ]
 
-                    neg_plot = tmp_df.loc[tmp_df["Sensitivity"] < 0].hvplot.scatter(
-                        x="Sensitivity",
+                    neg_plot = tmp_df.loc[tmp_df[sens_key] < 0].hvplot.scatter(
+                        x=sens_key,
                         y=error_key,
                         by=by_col,
                         datashade=False,
@@ -3567,9 +3651,9 @@ class Deriv_dask:
 
                     neg_x_ticks = [
                         (
-                            np.min(tmp_df["Sensitivity"]) + i * delta_tick,
+                            np.min(tmp_df[sens_key]) + i * delta_tick,
                             format_tick(
-                                np.min(tmp_df["Sensitivity"]) + i * delta_tick,
+                                np.min(tmp_df[sens_key]) + i * delta_tick,
                                 False,
                                 -max_x_tick,
                             ),
@@ -3581,7 +3665,7 @@ class Deriv_dask:
                         pos_plot.opts(opts.Scatter(**scatter_kwargs))  # s=scatter_size
                         .opts(xticks=pos_x_ticks, **opts_dic)
                         .options(
-                            ylabel=ylabel + error_key + " " + out_param,
+                            ylabel=ylabel,
                             xlabel="",
                             yaxis=False,
                         )
@@ -3590,15 +3674,15 @@ class Deriv_dask:
                     neg_plot = (
                         neg_plot.opts(opts.Scatter(**scatter_kwargs))  # s=scatter_size
                         .opts(xticks=neg_x_ticks, **opts_dic)
-                        .options(ylabel=ylabel + error_key + " " + out_param, xlabel="")
+                        .options(ylabel=ylabel, xlabel="")
                     )
 
                     # Make three histograms
                     if hist:
                         xdist_pos = (
-                            tmp_df.loc[tmp_df["Sensitivity"] >= 0]
+                            tmp_df.loc[tmp_df[sens_key] >= 0]
                             .hvplot.hist(
-                                y="Sensitivity",
+                                y=sens_key,
                                 by=by_col,
                                 alpha=alpha,
                                 legend=False,
@@ -3607,9 +3691,9 @@ class Deriv_dask:
                             .opts(fontscale=fontscale)
                         )
                         xdist_neg = (
-                            tmp_df.loc[tmp_df["Sensitivity"] < 0]
+                            tmp_df.loc[tmp_df[sens_key] < 0]
                             .hvplot.hist(
-                                y="Sensitivity",
+                                y=sens_key,
                                 by=by_col,
                                 alpha=alpha,
                                 legend=False,
@@ -3628,16 +3712,16 @@ class Deriv_dask:
                     # Make four ellipses
                     if confidence is not None:
                         ells_pos = correl_conf_ell(
-                            df=tmp_df.loc[tmp_df["Sensitivity"] >= 0],
-                            x="Sensitivity",
+                            df=tmp_df.loc[tmp_df[sens_key] >= 0],
+                            x=sens_key,
                             y=error_key,
                             by=by_col,
                             confidence=confidence,
                             color=colors,
                         )
                         ells_neg = correl_conf_ell(
-                            df=tmp_df.loc[tmp_df["Sensitivity"] <= 0],
-                            x="Sensitivity",
+                            df=tmp_df.loc[tmp_df[sens_key] <= 0],
+                            x=sens_key,
                             y=error_key,
                             by=by_col,
                             confidence=confidence,
@@ -3694,10 +3778,21 @@ class Deriv_dask:
                     # experimental
                     # Assume 10^-80 (or here -80) for kind==paper is
                     # negative infinity
-                    if kind == "paper" and np.min(tmp_df["Sensitivity"]) == -80:
+                    if (
+                        kind == "paper" and inf_val is not None
+                    ):  # np.min(tmp_df[sens_key]) == -80:
+                        xticks_list = [(inf_val, "-Infinity")]
+                        tick_val = int(np.ceil(inf_val / 10.0)) * 10
+                        delta_tick = int(-tick_val / (xticks - 1))
+                        tick_val += delta_tick
+                        while tick_val < 0:
+                            xticks_list.append((tick_val, tick_val))
+                            tick_val += delta_tick
+                        xticks_list.append((0, 0))
+
                         mse_plot = (
                             tmp_df.hvplot.scatter(
-                                x="Sensitivity",
+                                x=sens_key,
                                 y=error_key,
                                 by=by_col,
                                 datashade=False,
@@ -3712,19 +3807,9 @@ class Deriv_dask:
                             .opts(opts.Scatter(**scatter_kwargs))  # s=scatter_size
                             .opts(**opts_dic2)
                             .options(
-                                ylabel=ylabel + error_key + " " + out_param,
+                                ylabel=ylabel,
                                 xlabel="",
-                                xticks=[
-                                    (-80, "-Infinity"),
-                                    (-70, -70),
-                                    (-60, -60),
-                                    (-50, -50),
-                                    (-40, -40),
-                                    (-30, -30),
-                                    (-20, -20),
-                                    (-10, -10),
-                                    (0, 0),
-                                ],
+                                xticks=xticks_list,
                             )
                         )
                         # Save space by removing legend title
@@ -3732,7 +3817,7 @@ class Deriv_dask:
                     else:
                         mse_plot = (
                             tmp_df.hvplot.scatter(
-                                x="Sensitivity",
+                                x=sens_key,
                                 y=error_key,
                                 by=by_col,
                                 datashade=False,
@@ -3746,15 +3831,13 @@ class Deriv_dask:
                             )
                             .opts(opts.Scatter(**scatter_kwargs))  # s=scatter_size
                             .opts(**opts_dic2)
-                            .options(
-                                ylabel=ylabel + error_key + " " + out_param, xlabel=""
-                            )
+                            .options(ylabel=ylabel, xlabel="")
                         )
 
                     # Adding histograms around those
                     if hist:
                         xdist = tmp_df.hvplot.hist(
-                            y="Sensitivity",
+                            y=sens_key,
                             by=by_col,
                             alpha=alpha,
                             legend=False,
@@ -3774,16 +3857,16 @@ class Deriv_dask:
                     if confidence is not None:
                         if split_ellipse:
                             ells_pos = correl_conf_ell(
-                                df=tmp_df.loc[tmp_df["Sensitivity"] >= 0],
-                                x="Sensitivity",
+                                df=tmp_df.loc[tmp_df[sens_key] >= 0],
+                                x=sens_key,
                                 y=error_key,
                                 by=by_col,
                                 confidence=confidence,
                                 color=colors,
                             )
                             ells_neg = correl_conf_ell(
-                                df=tmp_df.loc[tmp_df["Sensitivity"] <= 0],
-                                x="Sensitivity",
+                                df=tmp_df.loc[tmp_df[sens_key] <= 0],
+                                x=sens_key,
                                 y=error_key,
                                 by=by_col,
                                 confidence=confidence,
@@ -3797,26 +3880,28 @@ class Deriv_dask:
                                 mse_plot = mse_plot * ells_pos
                         elif kind == "paper":
                             # Assuming -80 are the infinity placements
-                            tmp_df_ell = tmp_df.loc[tmp_df["Sensitivity"] > -80]
+                            tmp_df_ell = tmp_df.loc[tmp_df[sens_key] > -80]
                             ells = correl_conf_ell(
                                 df=tmp_df_ell,
-                                x="Sensitivity",
+                                x=sens_key,
                                 y=error_key,
                                 by=by_col,
                                 confidence=confidence,
                                 color=colors,
                             )
-                            mse_plot = mse_plot * ells
+                            if ells is not None:
+                                mse_plot = mse_plot * ells
                         else:
                             ells = correl_conf_ell(
                                 df=tmp_df,
-                                x="Sensitivity",
+                                x=sens_key,
                                 y=error_key,
                                 by=by_col,
                                 confidence=confidence,
                                 color=colors,
                             )
-                            mse_plot = mse_plot * ells
+                            if ells is not None:
+                                mse_plot = mse_plot * ells
                     if hist:
                         if self.backend == "bokeh":
                             mse_plot = (

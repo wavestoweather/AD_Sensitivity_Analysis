@@ -594,6 +594,7 @@ def convert_wcb2(f, store_path, fl, ensemble):
         "standard_name": "time_after_ascent",
         "long_name": "time after rapid ascent started",
         "units": "seconds since start of convective/slantwise ascent",
+        "auxiliary_data": "yes",
     }
     ds["lon"].attrs = {
         "standard_name": "longitude",

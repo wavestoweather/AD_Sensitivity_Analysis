@@ -8,11 +8,11 @@ import xarray as xr
 
 try:
     from Deriv_dask import Deriv_dask
-    from latexify import in_params_dic, physical_params
+    from latexify import in_params_dic, physical_params, in_params_grouping
     from segment_identifier import d_unnamed
 except:
     from scripts.Deriv_dask import Deriv_dask
-    from scripts.latexify import in_params_dic, physical_params
+    from scripts.latexify import in_params_dic, physical_params, in_params_grouping
     from scripts.segment_identifier import d_unnamed
 
 
@@ -39,12 +39,14 @@ def load_and_append(name_list, filetype="csv"):
                 if filetype == "csv":
                     all_df = d_unnamed(pd.read_csv(name))
                 else:
-                    all_df = xr.open_dataset(name).to_dataframe()
+                    all_df = xr.open_dataset(name, decode_times=False).to_dataframe()
             else:
                 if filetype == "csv":
                     all_df = all_df.append(d_unnamed(pd.read_csv(name)))
                 else:
-                    all_df = all_df.append(xr.open_dataset(name).to_dataframe())
+                    all_df = all_df.append(
+                        xr.open_dataset(name, decode_times=False).to_dataframe()
+                    )
         except:
             pass
     return all_df
@@ -120,20 +122,42 @@ def get_errors_by_file(
     -------
     pandas.Dataframe with all trajectories and their errors merged together.
     """
-
-    out_params = ["QV", "QC", "QR", "QG", "QH", "QI", "QS"]
+    # Ugly workaround to pickle load_mse(..)
+    # I could move this function outside of this method though
+    global load_mse
+    out_params = [
+        "QV",
+        "QC",
+        "QR",
+        "QG",
+        "QH",
+        "QI",
+        "QS",
+        "NC",
+        "NR",
+        "NG",
+        "NH",
+        "NI",
+        "NS",
+    ]
     in_params = []
-    for key in in_params_dic:
-        in_params.extend(in_params_dic[key])
+    for key in in_params_grouping:
+        if key == "1-moment":
+            continue
+        in_params.extend(in_params_grouping[key])
     for e in physical_params:
-        in_params.remove(e)
+        if e in in_params:
+            in_params.remove(e)
 
     def load_mse(i):
         try:
             mean_file = "traj" + str(i) + "_notPerturbed.nc_wcb"
             if not os.path.isfile(base_path + mean_file):
-                mean_file = "traj" + str(traj) + "/_notPerturbed.nc_wcb"
+                mean_file = "traj" + str(i) + "/_notPerturbed.nc_wcb"
             others_path = base_path + "traj" + str(i) + "/"
+            if not os.path.isfile(base_path + mean_file):
+                mean_file = "_notPerturbed.nc_wcb"
+                others_path = base_path
             mean_traj = Deriv_dask(
                 direc=base_path,
                 parquet=False,
@@ -401,7 +425,7 @@ if __name__ == "__main__":
         """,
     )
     parser.add_argument(
-        "--n_cpu",
+        "--n_cpus",
         type=int,
         default=6,
         help="""
