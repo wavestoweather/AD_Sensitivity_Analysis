@@ -23,7 +23,7 @@
 #define qv_idx 6            /*!< Water vapor mass density index */
 #define Nc_idx 7            /*!< Number of cloud droplets index */
 #define Nr_idx 8            /*!< Number of rain droplets index */
-#define qi_idx 9           /*!< Ice mass density index */
+#define qi_idx 9            /*!< Ice mass density index */
 #define Ni_idx 10           /*!< Number of ice crystals index */
 #define qs_idx 11           /*!< Snow mass density index */
 #define Ns_idx 12           /*!< Number of snow particles index */

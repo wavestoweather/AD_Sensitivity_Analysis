@@ -1856,17 +1856,6 @@ struct segment_t
         method          = value_method;
     }
 
-    // enum OutParam {
-    //     vapor, cloud, rain, ice, graupel, hail, snow
-    // };
-    // std::unordered_map<std::string, OutParam> const table_out_param = {
-    //     {"snow", OutParam::snow}, {"vapor", OutParam::vapor},
-    //     {"cloud", OutParam::cloud}, {"rain", OutParam::rain},
-    //     {"ice", OutParam::ice}, {"graupel", OutParam::graupel},
-    //     {"hail", OutParam::hail}
-    // };
-
-
     void add_param(param_t &param)
     {
         params.push_back(param);
@@ -2042,8 +2031,7 @@ struct segment_t
             {
                 // the first num_comp many values refer to output parameters
                 idx = value_name - num_comp;
-                // std::cout << "idx " << idx << ", grad " << gradients[out_param][idx] << "\n"
-                //           << "old_sign " << old_sign << ", out_param " << out_param << "\n";
+
                 if(old_sign == 0)
                 {
                     // set sign; no perturbing needed.
@@ -3096,17 +3084,8 @@ struct IO_handle_t{
                 countp_str.push_back(p);
             countp_str[0] = 1;
 
-            // std::cout << "\nstartp_str: ";
-            // for(auto &p: startp_str) std::cout << p << ", ";
-            // std::cout << "\ncountp_str: ";
-            // for(auto &p: countp_str) std::cout << p << ", ";
-            // std::cout << "\nn_snapshots " << n_snapshots << "\n";
-
-
-
             for(uint64_t i=0; i<output_buffer_str.size(); i++)
             {
-                // startp_str[0] = 0;
                 // write one string at a time.
                 for(const auto &t: output_buffer_str[i])
                 {

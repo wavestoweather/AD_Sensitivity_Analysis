@@ -1719,7 +1719,6 @@ void sedimentation_explicit(
     std::vector<float_t> &res,
     model_constants_t &cc)
 {
-    // float_t rhocorr = pow(compute_rhoa(p_prime,T_prime,S)/get_at(cc.constants, Cons_idx::rho_0), -get_at(cc.constants, Cons_idx::rho_vel));
     float_t rhocorr = get_at(cc.rain.constants, Particle_cons_idx::rho_v); // Every other than from cloud should be the same
 
 
@@ -1803,12 +1802,6 @@ void sedimentation_explicit(
         {
             float_t x = particle_mean_mass(q, N, get_at(pc.constants, Particle_cons_idx::min_x_sedimentation), get_at(pc.constants, Particle_cons_idx::max_x));
             float_t lam = pow(get_at(pc.constants, Particle_cons_idx::lambda)*x, get_at(pc.constants, Particle_cons_idx::b_vel));
-            /////// DT PROBLEM
-            // float_t v_n = max(get_at(pc.constants, Particle_cons_idx::alfa_n) * lam, get_at(pc.constants, Particle_cons_idx::vsedi_min));
-            // float_t v_q = max(get_at(pc.constants, Particle_cons_idx::alfa_q) * lam, get_at(pc.constants, Particle_cons_idx::vsedi_min));
-
-            // v_n = min(v_n, get_at(pc.constants, Particle_cons_idx::vsedi_max)*cc.dt_prime);
-            // v_q = min(v_q, get_at(pc.constants, Particle_cons_idx::vsedi_max)*cc.dt_prime);
 
             float_t v_n = max(get_at(pc.constants, Particle_cons_idx::alfa_n) * lam, get_at(pc.constants, Particle_cons_idx::vsedi_min)/cc.dt_prime);
             float_t v_q = max(get_at(pc.constants, Particle_cons_idx::alfa_q) * lam, get_at(pc.constants, Particle_cons_idx::vsedi_min)/cc.dt_prime);
@@ -1816,12 +1809,6 @@ void sedimentation_explicit(
             v_n = min(v_n, get_at(pc.constants, Particle_cons_idx::vsedi_max)/cc.dt_prime);
             v_q = min(v_q, get_at(pc.constants, Particle_cons_idx::vsedi_max)/cc.dt_prime);
 
-            // float_t v_n = max(get_at(pc.constants, Particle_cons_idx::alfa_n) * lam, get_at(pc.constants, Particle_cons_idx::vsedi_min));///cc.dt_prime);
-            // float_t v_q = max(get_at(pc.constants, Particle_cons_idx::alfa_q) * lam, get_at(pc.constants, Particle_cons_idx::vsedi_min));///cc.dt_prime);
-
-            // v_n = min(v_n, get_at(pc.constants, Particle_cons_idx::vsedi_max));///cc.dt_prime);
-            // v_q = min(v_q, get_at(pc.constants, Particle_cons_idx::vsedi_max));///cc.dt_prime);
-            /////// DT PROBLEM SOLVED
             v_n *= rhocorr;
             v_q *= rhocorr;
 
@@ -2098,8 +2085,6 @@ void vapor_dep_relaxation(
         float_t g_i = 4.0*M_PI / (get_at(cc.constants, Cons_idx::L_ed)*get_at(cc.constants, Cons_idx::L_ed)
             / (get_at(cc.constants, Cons_idx::K_T)*get_at(cc.constants, Cons_idx::R_v)*T_prime*T_prime)
             + get_at(cc.constants, Cons_idx::R_v)*T_prime / (D_vtp*p_sat_ice));
-        // float_t g_i = 4.0*M_PI / (get_at(cc.constants, Cons_idx::L_ed)*get_at(cc.constants, Cons_idx::L_ed) /(get_at(cc.constants, Cons_idx::K_T)*T_prime*e_d/qv_prime) + e_d/qv_prime / (D_vtp*p_sat_ice));
-        // float_t g_i = 4.0*M_PI / (get_at(cc.constants, Cons_idx::L_ed)*get_at(cc.constants, Cons_idx::L_ed) / (get_at(cc.constants, Cons_idx::K_T)*get_at(cc.constants, Cons_idx::R_v)*T_prime*T_prime) - get_at(cc.constants, Cons_idx::L_ed)/(get_at(cc.constants, Cons_idx::K_T)*T_prime) + get_at(cc.constants, Cons_idx::R_v)*T_prime / (D_vtp*p_sat_ice));
 
         auto vapor_deposition = [&](
             float_t &q,
@@ -2134,12 +2119,7 @@ void vapor_dep_relaxation(
         //
         // float_t qvsidiff = qv_prime - p_sat_ice /(get_at(cc.constants, Cons_idx::R_v)*T_prime);
         float_t qvsidiff = qv_prime - convert_Si_to_qv(p_prime, T_prime, float_t(1), cc);
-        // float_t qvsidiff =  convert_Si_to_qv(p_prime, T_prime, float_t(1)) - qv_prime;
-        // convert_S_to_qv(
-        //     p_prime,
-        //     T_prime,
-        //     S_after);
-        // float_t qvsidiff = p_sat_ice /(get_at(cc.constants, Cons_idx::R_v)*T_prime) - qv_prime; // dt problem?
+
         if(abs(qvsidiff) > EPSILON)
         {
             float_t tau_i_i = 1.0/qvsidiff*dep_ice/cc.dt_prime;
@@ -2173,10 +2153,6 @@ void vapor_dep_relaxation(
                     dep_graupel = dep_graupel/tmp_sum * ((res[qv_idx] + qv_prime)/cc.dt_prime);
                     dep_hail = dep_hail/tmp_sum * ((res[qv_idx] + qv_prime)/cc.dt_prime);
                 }
-                // dep_ice     = min(dep_ice,      qi_prime/cc.dt_prime);
-                // dep_snow    = min(dep_snow,     qs_prime/cc.dt_prime);
-                // dep_graupel = min(dep_graupel,  qg_prime/cc.dt_prime);
-                // dep_hail    = min(dep_hail,     qh_prime/cc.dt_prime);
             }
             float_t dep_sum = dep_ice + dep_graupel + dep_snow + dep_hail;
 
@@ -3959,14 +3935,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     const double &dt,
     bool fixed=false)
 {
-    // Limit Nx for every particle
-    // y[Nc_idx] = min(max(y[Nc_idx], y[qc_idx]/get_at(cc.cloud.constants, Particle_cons_idx::max_x)), y[qc_idx]/get_at(cc.cloud.constants, Particle_cons_idx::min_x));
-    // y[Nr_idx] = min(max(y[Nr_idx], y[qr_idx]/get_at(cc.rain.constants, Particle_cons_idx::max_x)), y[qr_idx]/get_at(cc.rain.constants, Particle_cons_idx::min_x));
-    // y[Ni_idx] = min(max(y[Ni_idx], y[qi_idx]/get_at(cc.ice.constants, Particle_cons_idx::max_x)), y[qi_idx]/get_at(cc.ice.constants, Particle_cons_idx::min_x));
-    // y[Ns_idx] = min(max(y[Ns_idx], y[qs_idx]/get_at(cc.snow.constants, Particle_cons_idx::max_x)), y[qs_idx]/get_at(cc.snow.constants, Particle_cons_idx::min_x));
-    // y[Ng_idx] = min(max(y[Ng_idx], y[qg_idx]/get_at(cc.graupel.constants, Particle_cons_idx::max_x)), y[qg_idx]/get_at(cc.graupel.constants, Particle_cons_idx::min_x));
-    // y[Nh_idx] = min(max(y[Nh_idx], y[qh_idx]/get_at(cc.hail.constants, Particle_cons_idx::max_x)), y[qh_idx]/get_at(cc.hail.constants, Particle_cons_idx::min_x));
-
     // // Decrypt the variables
     codi::RealReverse p = y[p_idx];
     codi::RealReverse T = y[T_idx];
@@ -4058,12 +4026,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         qv_prime,
         cc);
     codi::RealReverse e_d = compute_pv(T_prime, S, cc);
-    // codi::RealReverse e_d = S*saturation_pressure_water(T_prime, cc);
-
-    // codi::RealReverse e_d = qv_prime * get_at(cc.constants, Cons_idx::R_v) * T_prime; // Could use get_at(cc.constants, Cons_idx::R_v) as well. The difference is minor
-    // codi::RealReverse S_i = (T_prime < get_at(cc.constants, Cons_idx::T_freeze)) ? p_sat/(p_prime-p_sat) * (p_prime - p_sat_ice)/p_sat_ice : codi::RealReverse(1);
     codi::RealReverse S_i = (T_prime < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverse(1);
-    // codi::RealReverse S_i = (T_prime < get_at(cc.constants, Cons_idx::T_freeze)) ? qv_prime * get_at(cc.constants, Cons_idx::R_v) * T_prime / p_sat_ice : codi::RealReverse(1);
 
     codi::RealReverse s_sw = S - 1.0;   // super saturation over water
     codi::RealReverse s_si = S_i - 1.0; // super saturation over ice
@@ -4088,7 +4051,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                   << "\ns_si: " << s_si.getValue()
                   << "\nS: " << S.getValue()
                   << "\nT: " << T_prime.getValue()
-                //   << "\nconvert_qv_to_S: " << convert_qv_to_S(p_prime, T_prime, qv_prime, cc)
                   << "\nqv: " << qv_prime.getValue()
                   << "\nqc: " << qc_prime.getValue()
                   << "\nqr: " << qr_prime.getValue()
@@ -4103,8 +4065,6 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                   << "\nNi: " << Ni.getValue()
                   << "\nNg: " << Ng.getValue()
                   << "\nNs: " << Ns.getValue()
-                //   << "\nconvert_S_to_qv: " << convert_S_to_qv(p_prime, T_prime, S, cc)
-                //   << "\nconvert_S_to_qv(S=1): " << convert_S_to_qv(p_prime, T_prime, codi::RealReverse(1), cc)
                   << "\n\n";
     }
 #endif
@@ -4509,7 +4469,7 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
         codi::RealReverse x_r = particle_mean_mass(qr_prime, Nr, get_at(cc.rain.constants, Particle_cons_idx::min_x), get_at(cc.rain.constants, Particle_cons_idx::max_x));
         codi::RealReverse D_r = particle_diameter(x_r, get_at(cc.rain.constants, Particle_cons_idx::a_geo), get_at(cc.rain.constants, Particle_cons_idx::b_geo));
         // Parameters based on Seifert (2008)
-        codi::RealReverse sc = 4.33 * Nr * qr_prime * get_at(cc.rain.constants, Particle_cons_idx::rho_v); // rhain%rho_v(i, k)
+        codi::RealReverse sc = 4.33 * Nr * qr_prime * get_at(cc.rain.constants, Particle_cons_idx::rho_v);
         // Breakup Seifert (2008), Eq. A13
         codi::RealReverse breakup = 0.0;
         if(D_r > 0.30e-3)

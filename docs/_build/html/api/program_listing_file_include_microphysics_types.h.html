@@ -1780,17 +1780,6 @@
         <span class="n">method</span>          <span class="o">=</span> <span class="n">value_method</span><span class="p">;</span>
     <span class="p">}</span>
 
-    <span class="c1">// enum OutParam {</span>
-    <span class="c1">//     vapor, cloud, rain, ice, graupel, hail, snow</span>
-    <span class="c1">// };</span>
-    <span class="c1">// std::unordered_map&lt;std::string, OutParam&gt; const table_out_param = {</span>
-    <span class="c1">//     {&quot;snow&quot;, OutParam::snow}, {&quot;vapor&quot;, OutParam::vapor},</span>
-    <span class="c1">//     {&quot;cloud&quot;, OutParam::cloud}, {&quot;rain&quot;, OutParam::rain},</span>
-    <span class="c1">//     {&quot;ice&quot;, OutParam::ice}, {&quot;graupel&quot;, OutParam::graupel},</span>
-    <span class="c1">//     {&quot;hail&quot;, OutParam::hail}</span>
-    <span class="c1">// };</span>
-
-
     <span class="kt">void</span> <span class="n">add_param</span><span class="p">(</span><span class="n">param_t</span> <span class="o">&amp;</span><span class="n">param</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="n">params</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">param</span><span class="p">);</span>
@@ -1962,8 +1951,7 @@
             <span class="p">{</span>
                 <span class="c1">// the first num_comp many values refer to output parameters</span>
                 <span class="n">idx</span> <span class="o">=</span> <span class="n">value_name</span> <span class="o">-</span> <span class="n">num_comp</span><span class="p">;</span>
-                <span class="c1">// std::cout &lt;&lt; &quot;idx &quot; &lt;&lt; idx &lt;&lt; &quot;, grad &quot; &lt;&lt; gradients[out_param][idx] &lt;&lt; &quot;\n&quot;</span>
-                <span class="c1">//           &lt;&lt; &quot;old_sign &quot; &lt;&lt; old_sign &lt;&lt; &quot;, out_param &quot; &lt;&lt; out_param &lt;&lt; &quot;\n&quot;;</span>
+
                 <span class="k">if</span><span class="p">(</span><span class="n">old_sign</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="p">{</span>
                     <span class="c1">// set sign; no perturbing needed.</span>
@@ -2267,7 +2255,7 @@
             <span class="c1">// the ensemble number is taken from the filename after idxx_y</span>
             <span class="c1">// where y is the ensemble number</span>
             <span class="k">auto</span> <span class="n">sub_str_it</span> <span class="o">=</span> <span class="n">filename</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;_wcb&quot;</span><span class="p">);</span>
-            <span class="kt">uint32_t</span> <span class="n">ens</span> <span class="o">=</span> <span class="p">(</span><span class="n">sub_str_it</span> <span class="o">!=</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">::</span><span class="n">npos</span><span class="p">)</span> <span class="o">?</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">filename</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">sub_str_it</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="n">sub_str_it</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">:</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="kt">uint32_t</span> <span class="n">ens</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">stoi</span><span class="p">(</span><span class="n">filename</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">sub_str_it</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="n">sub_str_it</span><span class="o">-</span><span class="mi">1</span><span class="p">));</span>
             <span class="n">ens_var</span><span class="p">.</span><span class="n">putVar</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ens</span><span class="p">);</span>
             <span class="n">traj_var</span><span class="p">.</span><span class="n">putVar</span><span class="p">(</span><span class="o">&amp;</span><span class="n">cc</span><span class="p">.</span><span class="n">id</span><span class="p">);</span>
 
@@ -2998,17 +2986,8 @@
                 <span class="n">countp_str</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
             <span class="n">countp_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
 
-            <span class="c1">// std::cout &lt;&lt; &quot;\nstartp_str: &quot;;</span>
-            <span class="c1">// for(auto &amp;p: startp_str) std::cout &lt;&lt; p &lt;&lt; &quot;, &quot;;</span>
-            <span class="c1">// std::cout &lt;&lt; &quot;\ncountp_str: &quot;;</span>
-            <span class="c1">// for(auto &amp;p: countp_str) std::cout &lt;&lt; p &lt;&lt; &quot;, &quot;;</span>
-            <span class="c1">// std::cout &lt;&lt; &quot;\nn_snapshots &quot; &lt;&lt; n_snapshots &lt;&lt; &quot;\n&quot;;</span>
-
-
-
             <span class="k">for</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">output_buffer_str</span><span class="p">.</span><span class="n">size</span><span class="p">();</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
             <span class="p">{</span>
-                <span class="c1">// startp_str[0] = 0;</span>
                 <span class="c1">// write one string at a time.</span>
                 <span class="k">for</span><span class="p">(</span><span class="k">const</span> <span class="k">auto</span> <span class="o">&amp;</span><span class="nl">t</span><span class="p">:</span> <span class="n">output_buffer_str</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
                 <span class="p">{</span>

@@ -181,7 +181,7 @@
 <div class="section" id="algorithmic-differentiation-as-sensitivity-analysis-in-microphysics">
 <h1>Algorithmic Differentiation as Sensitivity Analysis in Microphysics<a class="headerlink" href="#algorithmic-differentiation-as-sensitivity-analysis-in-microphysics" title="Permalink to this headline">¶</a></h1>
 <p>Microphysical processes in convective clouds have an impact on radiation in climate models, precipitation and dynamical features. These processes are usually parametrized, i.e. in numerical weather prediction (NWP) models, due to the small scale in which those processes operate and the lack of understanding of some. Understanding the impact of uncertainties in parametrization to uncertainty in cloud responses is crucial for tuning such models. In addition, parameter values can depend on discretization details such as the grid interval, time resolution and other choices made by modeling physical processes. Typical sensitivity analysis investigate few model parameters selected by experts and perturb those based on (joint) proposal distributions that may be refined by experts. In this paper we propose algorithmic differentiation (AD) as a tool to detect the magnitude and time step at which a model state parameter is sensitive to any of hundreds of model parameters. We implement a two-moment scheme and identify the 20 most important parameters to each hydrometeor and validate those parameters by comparing perturbed ensembles and the resulting divergence with predicted deviations. Finally, we use the output of AD for detecting the time step at which perturbing a parameter is necessary with a random forest and a precision and recall of about 75% for each model parameter and hydrometeor.</p>
-<p>This repository consists of an implementation of a two-moment scheme (similar to [ICON](<a class="reference external" href="https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html">https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html</a>)) with [AD using CoDiPack](<a class="reference external" href="https://github.com/scicompkl/codipack">https://github.com/scicompkl/codipack</a>) where environment and intial variables are read from [NetCDF](<a class="reference external" href="https://www.unidata.ucar.edu/software/netcdf/">https://www.unidata.ucar.edu/software/netcdf/</a>) files. Python scripts and Jupyter notebooks are used for post-processing, data analysis and for training a random forest for detecting starts of segments where perturbing a parameter has the highest impact. For the C++ code we follow the
+<p>This repository consists of an implementation of a two-moment scheme (similar to [ICON](<a class="reference external" href="https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html">https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html</a>)) with [AD using CoDiPack](<a class="reference external" href="https://github.com/scicompkl/codipack">https://github.com/scicompkl/codipack</a>) where environment and intial variables are read from [NetCDF](<a class="reference external" href="https://www.unidata.ucar.edu/software/netcdf/">https://www.unidata.ucar.edu/software/netcdf/</a>) files. Python scripts and Jupyter notebooks are used for post-processing and data analysis. For the C++ code we follow the
 [doxygen standard](<a class="reference external" href="http://www.doxygen.nl/manual/docblocks.html">http://www.doxygen.nl/manual/docblocks.html</a>). We recommend an [anaconda](<a class="reference external" href="https://www.anaconda.com/">https://www.anaconda.com/</a>) environment for which you may
 use <cite>requirements_conda.txt</cite>. Either way, <cite>requirements_pip.txt</cite> with pip is needed
 as well for the documentation.</p>
@@ -254,8 +254,10 @@ as well for the documentation.</p>
 </ul>
 </div>
 <div class="section" id="compiling-code">
-<h2>Compiling code<a class="headerlink" href="#compiling-code" title="Permalink to this headline">¶</a></h2>
-<p>You can alter the Makefile to your choice. The variable <cite>SEASON</cite> can be set to
+<h2>Compiling Code<a class="headerlink" href="#compiling-code" title="Permalink to this headline">¶</a></h2>
+<p>You can alter the Makefile to your choice or skip this step and use the scripts in the next step which compile the code as well. Make sure that <cite>-DNPROCS</cite> is set to the number of cores you want to use
+in ensemble simulations.
+The variable <cite>SEASON</cite> can be set to
 <cite>SPRING</cite>, <cite>SUMMER</cite>, <cite>AUTUMN</cite>, <cite>WINTER</cite> and <cite>SPRING95</cite> and sets variables used
 in Hande et al. nucleation (not used by default, so you can ignore it). With <cite>FLUX</cite> the microphysics takes incoming particles from above into account (default: on).
 Leave it empty, if you do not want to use it. <cite>SOURCE</cite> is used to toggle different input files (default is <cite>WCB2</cite>; just leave it with that).
@@ -277,22 +279,59 @@ to create a binary for test cases that scan different microphysical processes
 under <cite>build/apps/src/scratch/scan</cite>.</p>
 </div>
 <div class="section" id="running-a-simulation">
-<h2>Running a simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this headline">¶</a></h2>
-<p>You can use <cite>./execute.sh</cite> in the folder <cite>exe_scripts/</cite> to compile the code, execute a single simulation and do post-processing
-to make the data ready for analysis and to plot the simulation results.
-All necessary commandline parameters are explained there.
-In order to run multiple ensembles, use <cite>./execute_ensembles.sh</cite>.</p>
+<h2>Running a Simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this headline">¶</a></h2>
+<p>Each script tries to compile the code. If you don’t want that, you can comment the code. In order to to run a simulation with four different trajectories to compare our
+simulation with cosmo, use <cite>exe_scripts/comparison_runs.sh</cite>.</p>
+<p>To run ensemble simulations on representative trajectories, execute <cite>exe_scripts/ensemble_runs.sh data/representatives/no_exclusions_conv_400_median.nc_wcb</cite>, where the second argument can be any trajectory file.
+You may alter the variable <cite>NTASKS=4</cite> to the number of cores of your machine to speed-up the simulation.
+All necessary commandline parameters are explained in each script.</p>
+</div>
+<div class="section" id="postprocess-and-creating-plots">
+<h2>Postprocess and Creating Plots<a class="headerlink" href="#postprocess-and-creating-plots" title="Permalink to this headline">¶</a></h2>
+<p>First, you have to go to <cite>scripts/</cite>, where we calculate the mean squared deviation and store it on disk for later plotting with
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">python</span> <span class="pre">segment_identifier.py</span> <span class="pre">--data_path</span> <span class="pre">data/vladiana_keyparams/</span> <span class="pre">--verbosity</span> <span class="pre">3</span> <span class="pre">--store_appended_data</span> <span class="pre">data/vladiana_keyparams_errors/conv_stats_errors.nc</span> <span class="pre">--only_append</span>
+<span class="pre">`</span></code>
+Make sure, the folder for the output already exists or create it.
+To create plots that show the correlation between predicted and true mean squared deviation including sensitivities with zero sensitivity and values below 1e-200 set as zero sensitvity values, use
+<a href="#id1"><span class="problematic" id="id2">``</span></a>`
+python plot_mse.py </p>
+<blockquote>
+<div><p>–data_path ../data/vladiana_keyparams_errors/conv_stats_errors.nc –add_zero_sens –plot_types –backend bokeh –store_path ../pics/correlation_zerosens –confidence 0.90 –xlabel PredictedLogMSD –ylabel TrueLogMSD –title TrueDeviationvsPrediction –width 900 –height 900 –plot_variant correlation –set_zero 1e-200</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">To</span> <span class="pre">plot</span> <span class="pre">the</span> <span class="pre">evolution</span> <span class="pre">of</span> <span class="pre">sensitivities</span> <span class="pre">for</span> <span class="pre">water</span> <span class="pre">vapor</span> <span class="pre">towards</span> <span class="pre">five</span> <span class="pre">model</span> <span class="pre">parameters</span> <span class="pre">within</span> <span class="pre">2500</span> <span class="pre">s</span> <span class="pre">and</span> <span class="pre">7500</span> <span class="pre">s</span> <span class="pre">after</span> <span class="pre">the</span> <span class="pre">ascent</span> <span class="pre">started</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">given</span> <span class="pre">trajectory,</span> <span class="pre">use</span>
+<span class="pre">`</span></code>
+python plot_mse.py </p>
+<blockquote>
+<div><p>–data_path ../data/vladiana_keyparams_errors/conv_stats_errors.nc –backend bokeh –store_path ../pics/time_bokeh_log_traj1_min2500_max7500 –xlabel TimeAfterAscent[min] –ylabel Valuesof –title ResultsofADOverTime –width 1200 –height 900 –plot_variant time_plot –traj 1 –twinlabel PredictedSquaredDeviation –n_model_params 5 –max_time 7500 –min_time 2500 –out_parameter QV</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">The</span> <span class="pre">plot</span> <span class="pre">for</span> <span class="pre">all</span> <span class="pre">COSMO</span> <span class="pre">data</span> <span class="pre">over</span> <span class="pre">a</span> <span class="pre">map</span> <span class="pre">and</span> <span class="pre">different</span> <span class="pre">model</span> <span class="pre">state</span> <span class="pre">variables</span> <span class="pre">can</span> <span class="pre">be</span> <span class="pre">created</span> <span class="pre">via</span>
+<span class="pre">`</span></code>
+python plot_cosmo.py –pollon 160 –pollat 51 –traj_type conv –store_path ../pics/<a href="#id17"><span class="problematic" id="id18">cosmo_</span></a> –verbosity 3 –data_path ../data/vladiana/
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">This</span> <span class="pre">can</span> <span class="pre">take</span> <span class="pre">a</span> <span class="pre">while.</span> <span class="pre">If</span> <span class="pre">you</span> <span class="pre">wish</span> <span class="pre">to</span> <span class="pre">use</span> <span class="pre">this</span> <span class="pre">script</span> <span class="pre">more</span> <span class="pre">than</span> <span class="pre">once,</span> <span class="pre">you</span> <span class="pre">may</span> <span class="pre">store</span> <span class="pre">intermediate</span> <span class="pre">data</span> <span class="pre">that</span> <span class="pre">can</span> <span class="pre">be</span> <span class="pre">loaded</span> <span class="pre">faster</span> <span class="pre">in</span> <span class="pre">subsequent</span> <span class="pre">calls</span> <span class="pre">via</span>
+<span class="pre">`</span></code>
+python plot_cosmo.py –pollon 160 –pollat 51 –traj_type conv –store_path ../pics/<a href="#id19"><span class="problematic" id="id20">cosmo_</span></a> –verbosity 3 –data_path ../data/vladiana/ –store_data ../data/intermediate.h5
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">and</span> <span class="pre">use</span> <span class="pre">it</span> <span class="pre">in</span> <span class="pre">different</span> <span class="pre">executions</span> <span class="pre">with</span>
+<span class="pre">`</span></code>
+python plot_cosmo.py –pollon 160 –pollat 51 –traj_type conv –store_path ../pics/<a href="#id21"><span class="problematic" id="id22">cosmo_</span></a> –verbosity 3 –data_path ../data/intermediate.h5
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">At</span> <span class="pre">last,</span> <span class="pre">you</span> <span class="pre">might</span> <span class="pre">want</span> <span class="pre">to</span> <span class="pre">plot</span> <span class="pre">the</span> <span class="pre">cmparison</span> <span class="pre">of</span> <span class="pre">our</span> <span class="pre">simulation</span> <span class="pre">vs</span> <span class="pre">COSMO</span> <span class="pre">using</span>
+<span class="pre">`</span></code>
+python plot_simulation_example.py –data_cosmo_path ../data/sim_comp_input/ –data_sim_path ../data/sim_comp_test/ –width 1200 –height 900 –traj 0 –verbosity 3 –backend bokeh
+<a href="#id3"><span class="problematic" id="id4">``</span></a><a href="#id5"><span class="problematic" id="id6">`</span></a></p>
 </div>
 <div class="section" id="using-jupyter-notebooks">
 <h2>Using Jupyter Notebooks<a class="headerlink" href="#using-jupyter-notebooks" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p><strong>Plot_physics.ipynb:</strong> Plot single microphysical processes with a given range</p></li>
+<li><p><strong>Plot_MSE.ipynb:</strong> Get the most important parameters for each output parameter, calculate and plot correlation and</p></li>
 </ul>
-<p>of input parameters. Helpful if you want to see “what happens” and for debugging.
-- <strong>Plot_sensitivities.ipynb:</strong> Use this as a starting point to plot results
-from a simulation and to plot the sensitivities.
-- <strong>Plot_simulation.ipynb:</strong> Plot the data from netcdf files to get an idea, what’s inside.
-Or you just use [Panoply](<a class="reference external" href="https://www.giss.nasa.gov/tools/panoply/">https://www.giss.nasa.gov/tools/panoply/</a>) if you want something more elaborate. We also approve [Met.3D](<a class="reference external" href="https://met3d.wavestoweather.de/met-3d.html">https://met3d.wavestoweather.de/met-3d.html</a>) for visualization and work towards as much compatibility as possible.</p>
+<p>predicted errors over time.
+- <strong>Plot_physics.ipynb:</strong> Plot single microphysical processes with a given range
+of input parameters. Helpful if you want to see “what happens” in each processes and for debugging.</p>
 </div>
 <div class="section" id="adding-new-physics">
 <h2>Adding New Physics<a class="headerlink" href="#adding-new-physics" title="Permalink to this headline">¶</a></h2>
@@ -303,7 +342,7 @@ The datatype <cite>codi::RealReverse</cite> is from CODIPACK and can mostly
 be handled like <cite>double</cite>. Next you may open <cite>include/microphysics/rk4.h</cite> and either copy <cite>RK4_step(..)</cite> as
 <cite>my_RK4_step(..)</cite> and make it use your function,
 or simply add pragmas around the function calls like that:
-<a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>C++
+<a href="#id7"><span class="problematic" id="id8">``</span></a><a href="#id9"><span class="problematic" id="id10">`</span></a>C++
 #ifdef MY_MICROPHYSICS</p>
 <blockquote>
 <div><p>my_physics(k, yold, ref, cc, nc);</p>
@@ -332,13 +371,13 @@ to
 <span class="pre">#if</span> <span class="pre">defined</span> <span class="pre">RK4</span> <span class="pre">||</span> <span class="pre">defined</span> <span class="pre">MY_MICROPHYSICS</span>
 <span class="pre">`</span></code>
 Otherwise you need to add additional lines of code, such as:
-<a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a>C++
+<a href="#id11"><span class="problematic" id="id12">``</span></a><a href="#id13"><span class="problematic" id="id14">`</span></a>C++
 #if defined(MY_MICROPHYSICS)</p>
 <blockquote>
 <div><p>my_RK4_step(..);</p>
 </div></blockquote>
 <p>#elif defined(RK4)
-<a href="#id9"><span class="problematic" id="id10">``</span></a>`
+<a href="#id15"><span class="problematic" id="id16">``</span></a>`
 You can store your model constants and add new ones in the struct
 <cite>model_constants_t</cite>, which is located in <cite>include/microphysics/types.h</cite>.
 Make sure to use the type <cite>codi::RealReverse</cite> if you want to get
@@ -461,12 +500,6 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gae9b7a71a19774dd7e7c2084b84ff3237.html">Template Function density_ice</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga355bd293f6e3fcd91a04096b32d0960f.html">Template Function density_water</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga66cd2ac671d5b9a7a7a970bd1ad5be32.html">Template Function diffusivity</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga0e5622e507cb616977a0a15d69687db9.html">Template Function do_the_tanh</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gadd33cbf4a39206ac8cf2b68c0993a06b.html">Function do_the_tanh_primal</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga616477977b3e80510cdf42cd1d27b74d.html">Function do_the_tanh_rev</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga5ed3f255ff5a991935963dad993bcb66.html">Template Function do_the_thing</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gaa3462717fd91ad9da7ffdae61e2b09df.html">Function do_the_thing_primal</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga1ff29542cada07221c8458775511d554.html">Function do_the_thing_rev</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_euler_8h_1aedd6fc5c246e18efd9de5e358dc46ddf.html">Function euler_step</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gaffe2ae0cb1502e1f76bcc80726b87574.html">Template Function evaporation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga1e9d3cfdfcd2e43b9557c8cfd9d910f1.html">Function exists</a></li>
@@ -499,7 +532,7 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga9c81dc19d57f1c07cb62331b01c517f2.html">Function moment_gamma</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gaafbe24d75db4f70e6376253728a7e7e4.html">Function parse_arguments</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga810c0a9e328bae2f1502f88eb8f9821a.html">Template Function particle_cloud_riming</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gaee193476fc437b42639d73ed62dfae2d.html">Template Function particle_collection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga23e2e4a069e200e6efb2eedc79a67129.html">Template Function particle_collection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gac251f43459bdf6fbdf31891fff0be2d5.html">Template Function particle_mean_mass</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gace42c68f06a6a71cd5bdd9c68f214e1f.html">Template Function particle_particle_collection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga7865c1c02644d6d3ae3c25943c2efbd6.html">Template Function particle_rain_riming</a></li>
@@ -510,7 +543,6 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga74f4767c3eb70af6864d67470a7c773b.html">Function Press_Temp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__general_1gab47a3e7939687b90ee14022283252445.html">Function printy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gac93325864febf4f0a082a9bd8f9ae555.html">Template Function rain_evaporation_sb</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga691b9bb9f587a59b01bf856d43ea2cee.html">Template Function rain_evaporation_sb_test</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gad65088f5f27aa745b08809cc283a2ddb.html">Template Function rain_freeze</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gadb2646f93dcb6ee4fddace473bdd46b4.html">Template Function rain_self_collection_sb</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga58a9a31b0d17bb05a5d2d97f78dd8b5b.html">Function read_init_netcdf</a></li>
