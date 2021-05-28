@@ -7,10 +7,17 @@ Welcome to AD with ICON and Processing Results' documentation!
    :maxdepth: 4
    :caption: Python Documentation
 
-   scripts/Deriv_dask
-   scripts/Deriv
-   scripts/plot_outcomes
-   scripts/Sim
+   scripts/executing
+   scripts/convert_to_met3d
+   scripts/create_median
+   scripts/dask_loader
+   scripts/latexify
+   scripts/merge
+   scripts/parameters
+   scripts/plot_mse
+   scripts/segment_identifier
+   scripts/segment_statistics
+
 
 .. toctree::
    :maxdepth: 4

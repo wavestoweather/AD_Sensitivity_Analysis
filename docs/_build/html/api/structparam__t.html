@@ -1,0 +1,426 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Struct param_t &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Struct particle_model_constants_t" href="structparticle__model__constants__t.html" />
+    <link rel="prev" title="Struct nc_parameters_t" href="structnc__parameters__t.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/latexify.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">latexify</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/merge.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="library_root.html">C++ API</a> &raquo;</li>
+        
+      <li>Struct param_t</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/structparam__t.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="struct-param-t">
+<span id="exhale-struct-structparam-t"></span><h1>Struct param_t<a class="headerlink" href="#struct-param-t" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a></p></li>
+</ul>
+<div class="section" id="struct-documentation">
+<h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="cpp struct">
+<dt id="_CPPv47param_t">
+<span id="_CPPv37param_t"></span><span id="_CPPv27param_t"></span><span id="param_t"></span><span class="target" id="structparam__t"></span><em class="property">struct </em><code class="sig-name descname">param_t</code><a class="headerlink" href="#_CPPv47param_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Types</p>
+<dl class="cpp enum">
+<dt id="_CPPv4N7param_t8OutParamE">
+<span id="_CPPv3N7param_t8OutParamE"></span><span id="_CPPv2N7param_t8OutParamE"></span><span class="target" id="structparam__t_1a08429999d1f8964952e072f540e926ba"></span><em class="property">enum </em><code class="sig-name descname">OutParam</code><a class="headerlink" href="#_CPPv4N7param_t8OutParamE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt id="_CPPv4N7param_t8OutParam5modelE">
+<span id="_CPPv3N7param_t8OutParam5modelE"></span><span id="_CPPv2N7param_t8OutParam5modelE"></span><span class="target" id="structparam__t_1a08429999d1f8964952e072f540e926baa20f35e630daf44dbfa4c3f68f5399d8c"></span><em class="property">enumerator </em><code class="sig-name descname">model</code><a class="headerlink" href="#_CPPv4N7param_t8OutParam5modelE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N7param_t8OutParam5cloudE">
+<span id="_CPPv3N7param_t8OutParam5cloudE"></span><span id="_CPPv2N7param_t8OutParam5cloudE"></span><span class="target" id="structparam__t_1a08429999d1f8964952e072f540e926baaa1234b3161b4fbfdfb96dd576b65bbea"></span><em class="property">enumerator </em><code class="sig-name descname">cloud</code><a class="headerlink" href="#_CPPv4N7param_t8OutParam5cloudE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N7param_t8OutParam4rainE">
+<span id="_CPPv3N7param_t8OutParam4rainE"></span><span id="_CPPv2N7param_t8OutParam4rainE"></span><span class="target" id="structparam__t_1a08429999d1f8964952e072f540e926baa23678db5efde9ab46bce8c23a6d91b50"></span><em class="property">enumerator </em><code class="sig-name descname">rain</code><a class="headerlink" href="#_CPPv4N7param_t8OutParam4rainE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N7param_t8OutParam3iceE">
+<span id="_CPPv3N7param_t8OutParam3iceE"></span><span id="_CPPv2N7param_t8OutParam3iceE"></span><span class="target" id="structparam__t_1a08429999d1f8964952e072f540e926baa7bdff76536f12a7c5ffde207e72cfe3a"></span><em class="property">enumerator </em><code class="sig-name descname">ice</code><a class="headerlink" href="#_CPPv4N7param_t8OutParam3iceE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N7param_t8OutParam7graupelE">
+<span id="_CPPv3N7param_t8OutParam7graupelE"></span><span id="_CPPv2N7param_t8OutParam7graupelE"></span><span class="target" id="structparam__t_1a08429999d1f8964952e072f540e926baaf15d84341cd69c3bed9f345e5d806fb1"></span><em class="property">enumerator </em><code class="sig-name descname">graupel</code><a class="headerlink" href="#_CPPv4N7param_t8OutParam7graupelE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N7param_t8OutParam4hailE">
+<span id="_CPPv3N7param_t8OutParam4hailE"></span><span id="_CPPv2N7param_t8OutParam4hailE"></span><span class="target" id="structparam__t_1a08429999d1f8964952e072f540e926baa559608508b42a01c1068fae4fcdc2aef"></span><em class="property">enumerator </em><code class="sig-name descname">hail</code><a class="headerlink" href="#_CPPv4N7param_t8OutParam4hailE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt id="_CPPv4N7param_t8OutParam4snowE">
+<span id="_CPPv3N7param_t8OutParam4snowE"></span><span id="_CPPv2N7param_t8OutParam4snowE"></span><span class="target" id="structparam__t_1a08429999d1f8964952e072f540e926baa2b93fbdf27d43547bec8794054c28e00"></span><em class="property">enumerator </em><code class="sig-name descname">snow</code><a class="headerlink" href="#_CPPv4N7param_t8OutParam4snowE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N7param_t7param_tEv">
+<span id="_CPPv3N7param_t7param_tEv"></span><span id="_CPPv2N7param_t7param_tEv"></span><span id="param_t::param_t"></span><span class="target" id="structparam__t_1a310f687805d686c943ea15faf079f82e"></span><code class="sig-name descname">param_t</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7param_t7param_tEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N7param_t7param_tENSt6stringE">
+<span id="_CPPv3N7param_t7param_tENSt6stringE"></span><span id="_CPPv2N7param_t7param_tENSt6stringE"></span><span id="param_t::param_t__ss"></span><span class="target" id="structparam__t_1a16e037e06f0a51bfc90f85172dab1139"></span><code class="sig-name descname">param_t</code><span class="sig-paren">(</span>std::string <em>param_type</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7param_t7param_tENSt6stringE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N7param_t8add_typeENSt6stringE">
+<span id="_CPPv3N7param_t8add_typeENSt6stringE"></span><span id="_CPPv2N7param_t8add_typeENSt6stringE"></span><span id="param_t::add_type__ss"></span><span class="target" id="structparam__t_1add122e3a0d2072c54e0e9a184bf69a75"></span>void <code class="sig-name descname">add_type</code><span class="sig-paren">(</span>std::string <em>param_type</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7param_t8add_typeENSt6stringE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N7param_t8add_meanEd">
+<span id="_CPPv3N7param_t8add_meanEd"></span><span id="_CPPv2N7param_t8add_meanEd"></span><span id="param_t::add_mean__double"></span><span class="target" id="structparam__t_1ab5d585fd8de0b071b54e6aa11a8e08e6"></span>void <code class="sig-name descname">add_mean</code><span class="sig-paren">(</span>double <em>m</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7param_t8add_meanEd" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N7param_t8add_nameENSt6stringER17model_constants_t">
+<span id="_CPPv3N7param_t8add_nameENSt6stringER17model_constants_t"></span><span id="_CPPv2N7param_t8add_nameENSt6stringER17model_constants_t"></span><span id="param_t::add_name__ss.model_constants_tR"></span><span class="target" id="structparam__t_1a3a55b33b09b7ef113f5ff732e1972b41"></span>void <code class="sig-name descname">add_name</code><span class="sig-paren">(</span>std::string <em>n</em>, <a class="reference internal" href="structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7param_t8add_nameENSt6stringER17model_constants_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N7param_t9add_sigmaEd">
+<span id="_CPPv3N7param_t9add_sigmaEd"></span><span id="_CPPv2N7param_t9add_sigmaEd"></span><span id="param_t::add_sigma__double"></span><span class="target" id="structparam__t_1ae54c55cd432b24beb40bd42d4f18d828"></span>void <code class="sig-name descname">add_sigma</code><span class="sig-paren">(</span>double <em>s</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7param_t9add_sigmaEd" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N7param_t14add_sigma_percEd">
+<span id="_CPPv3N7param_t14add_sigma_percEd"></span><span id="_CPPv2N7param_t14add_sigma_percEd"></span><span id="param_t::add_sigma_perc__double"></span><span class="target" id="structparam__t_1aec8fc1b5ef8e091b5e687f3c37a0f814"></span>void <code class="sig-name descname">add_sigma_perc</code><span class="sig-paren">(</span>double <em>s</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7param_t14add_sigma_percEd" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N7param_t17add_rand_functionENSt6stringE">
+<span id="_CPPv3N7param_t17add_rand_functionENSt6stringE"></span><span id="_CPPv2N7param_t17add_rand_functionENSt6stringE"></span><span id="param_t::add_rand_function__ss"></span><span class="target" id="structparam__t_1ac9b8742be30698afd4562308d71852ae"></span>void <code class="sig-name descname">add_rand_function</code><span class="sig-paren">(</span>std::string <em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7param_t17add_rand_functionENSt6stringE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N7param_t5checkEv">
+<span id="_CPPv3N7param_t5checkEv"></span><span id="_CPPv2N7param_t5checkEv"></span><span id="param_t::check"></span><span class="target" id="structparam__t_1a27991e3bc3e81cbe59877b1e2d3ee81c"></span>int <code class="sig-name descname">check</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7param_t5checkEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK7param_t3putERN2pt5ptreeE">
+<span id="_CPPv3NK7param_t3putERN2pt5ptreeE"></span><span id="_CPPv2NK7param_t3putERN2pt5ptreeE"></span><span id="param_t::put__pt::ptreeRC"></span><span class="target" id="structparam__t_1ab6001861e7f1fc88a71b4574c5733824"></span>void <code class="sig-name descname">put</code><span class="sig-paren">(</span>pt::ptree &amp;<em>ptree</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv4NK7param_t3putERN2pt5ptreeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N7param_t7from_ptERN2pt5ptreeER17model_constants_t">
+<span id="_CPPv3N7param_t7from_ptERN2pt5ptreeER17model_constants_t"></span><span id="_CPPv2N7param_t7from_ptERN2pt5ptreeER17model_constants_t"></span><span id="param_t::from_pt__pt::ptreeR.model_constants_tR"></span><span class="target" id="structparam__t_1a325b065ff167c4c7924fcb243c3084eb"></span>int <code class="sig-name descname">from_pt</code><span class="sig-paren">(</span>pt::ptree &amp;<em>ptree</em>, <a class="reference internal" href="structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7param_t7from_ptERN2pt5ptreeER17model_constants_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK7param_t7perturbER17model_constants_t">
+<span id="_CPPv3NK7param_t7perturbER17model_constants_t"></span><span id="_CPPv2NK7param_t7perturbER17model_constants_t"></span><span id="param_t::perturb__model_constants_tRC"></span><span class="target" id="structparam__t_1a319dd88863353c5f7dc55647fc83e869"></span>void <code class="sig-name descname">perturb</code><span class="sig-paren">(</span><a class="reference internal" href="structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv4NK7param_t7perturbER17model_constants_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t4meanE">
+<span id="_CPPv3N7param_t4meanE"></span><span id="_CPPv2N7param_t4meanE"></span><span id="param_t::mean__double"></span><span class="target" id="structparam__t_1af8fdfa1af3e3a4a399f781985d401543"></span>double <code class="sig-name descname">mean</code><a class="headerlink" href="#_CPPv4N7param_t4meanE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t5sigmaE">
+<span id="_CPPv3N7param_t5sigmaE"></span><span id="_CPPv2N7param_t5sigmaE"></span><span id="param_t::sigma__double"></span><span class="target" id="structparam__t_1a4bb5c7e69743cc5f9f092f7b4f47f620"></span>double <code class="sig-name descname">sigma</code><a class="headerlink" href="#_CPPv4N7param_t5sigmaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t10sigma_percE">
+<span id="_CPPv3N7param_t10sigma_percE"></span><span id="_CPPv2N7param_t10sigma_percE"></span><span id="param_t::sigma_perc__double"></span><span class="target" id="structparam__t_1a187bbd90bb3177332e9b1a2fa06ef50c"></span>double <code class="sig-name descname">sigma_perc</code><a class="headerlink" href="#_CPPv4N7param_t10sigma_percE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t3errE">
+<span id="_CPPv3N7param_t3errE"></span><span id="_CPPv2N7param_t3errE"></span><span id="param_t::err__i"></span><span class="target" id="structparam__t_1a23294ebc37316f1c9480e4cc43e936a5"></span>int <code class="sig-name descname">err</code><a class="headerlink" href="#_CPPv4N7param_t3errE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t4nameE">
+<span id="_CPPv3N7param_t4nameE"></span><span id="_CPPv2N7param_t4nameE"></span><span id="param_t::name__i"></span><span class="target" id="structparam__t_1a8d18a9a7b73cb67878d6c008cf9958b7"></span>int <code class="sig-name descname">name</code><a class="headerlink" href="#_CPPv4N7param_t4nameE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t8out_nameE">
+<span id="_CPPv3N7param_t8out_nameE"></span><span id="_CPPv2N7param_t8out_nameE"></span><span id="param_t::out_name__i"></span><span class="target" id="structparam__t_1a9c9b9b5125489b898741e2b44ae37dd3"></span>int <code class="sig-name descname">out_name</code><a class="headerlink" href="#_CPPv4N7param_t8out_nameE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t14particle_paramE">
+<span id="_CPPv3N7param_t14particle_paramE"></span><span id="_CPPv2N7param_t14particle_paramE"></span><span id="param_t::particle_param__b"></span><span class="target" id="structparam__t_1a105f0bb1fe51bc21fd11a3d1144a136b"></span>bool <code class="sig-name descname">particle_param</code><a class="headerlink" href="#_CPPv4N7param_t14particle_paramE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t8get_randE">
+<span id="_CPPv3N7param_t8get_randE"></span><span id="_CPPv2N7param_t8get_randE"></span><span class="target" id="structparam__t_1a641c79d11eb2b251c7b4e5db70f3518d"></span>std::function&lt;double<span class="sig-paren">(</span><span class="sig-paren">)</span>&gt; <code class="sig-name descname">get_rand</code><a class="headerlink" href="#_CPPv4N7param_t8get_randE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>distribution used for random number generation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t10normal_disE">
+<span id="_CPPv3N7param_t10normal_disE"></span><span id="_CPPv2N7param_t10normal_disE"></span><span id="param_t::normal_dis__std::normal_distribution:double:"></span><span class="target" id="structparam__t_1a77a6a3d5f5aad600d6944ae8f26c938c"></span>std::normal_distribution&lt;double&gt; <code class="sig-name descname">normal_dis</code><a class="headerlink" href="#_CPPv4N7param_t10normal_disE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t11uniform_disE">
+<span id="_CPPv3N7param_t11uniform_disE"></span><span id="_CPPv2N7param_t11uniform_disE"></span><span id="param_t::uniform_dis__std::uniform_real_distribution:double:"></span><span class="target" id="structparam__t_1a3e72d26d5353c4737ebf14873303ac26"></span>std::uniform_real_distribution&lt;double&gt; <code class="sig-name descname">uniform_dis</code><a class="headerlink" href="#_CPPv4N7param_t11uniform_disE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t10param_nameE">
+<span id="_CPPv3N7param_t10param_nameE"></span><span id="_CPPv2N7param_t10param_nameE"></span><span id="param_t::param_name__ss"></span><span class="target" id="structparam__t_1ac3fa792b601834bee03e8b14e0e50dd0"></span>std::string <code class="sig-name descname">param_name</code><a class="headerlink" href="#_CPPv4N7param_t10param_nameE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t13outparam_nameE">
+<span id="_CPPv3N7param_t13outparam_nameE"></span><span id="_CPPv2N7param_t13outparam_nameE"></span><span id="param_t::outparam_name__ss"></span><span class="target" id="structparam__t_1ad24589d7d5ef69fec1cfaf716ebdd341"></span>std::string <code class="sig-name descname">outparam_name</code><a class="headerlink" href="#_CPPv4N7param_t13outparam_nameE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t9func_nameE">
+<span id="_CPPv3N7param_t9func_nameE"></span><span id="_CPPv2N7param_t9func_nameE"></span><span id="param_t::func_name__ss"></span><span class="target" id="structparam__t_1a3bcac0429e62570998a46040ea69c49e"></span>std::string <code class="sig-name descname">func_name</code><a class="headerlink" href="#_CPPv4N7param_t9func_nameE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N7param_t15table_out_paramE">
+<span id="_CPPv3N7param_t15table_out_paramE"></span><span id="_CPPv2N7param_t15table_out_paramE"></span><span id="param_t::table_out_param__std::unordered_map:ss.OutParam:C"></span><span class="target" id="structparam__t_1ab1d09241627e430a0c4de0d2b8f11cd6"></span>std::unordered_map&lt;std::string, <a class="reference internal" href="#_CPPv4N7param_t8OutParamE" title="param_t::OutParam">OutParam</a>&gt; <em class="property">const</em> <code class="sig-name descname">table_out_param</code> = {{&quot;model&quot;, <a class="reference internal" href="#_CPPv4N7param_t8OutParamE" title="param_t::OutParam">OutParam</a>::<a class="reference internal" href="#_CPPv4N7param_t8OutParam5modelE" title="param_t::OutParam::model">model</a>}, {&quot;cloud&quot;, <a class="reference internal" href="#_CPPv4N7param_t8OutParamE" title="param_t::OutParam">OutParam</a>::<a class="reference internal" href="#_CPPv4N7param_t8OutParam5cloudE" title="param_t::OutParam::cloud">cloud</a>}, {&quot;rain&quot;, <a class="reference internal" href="#_CPPv4N7param_t8OutParamE" title="param_t::OutParam">OutParam</a>::<a class="reference internal" href="#_CPPv4N7param_t8OutParam4rainE" title="param_t::OutParam::rain">rain</a>}, {&quot;ice&quot;, <a class="reference internal" href="#_CPPv4N7param_t8OutParamE" title="param_t::OutParam">OutParam</a>::<a class="reference internal" href="#_CPPv4N7param_t8OutParam3iceE" title="param_t::OutParam::ice">ice</a>}, {&quot;graupel&quot;, <a class="reference internal" href="#_CPPv4N7param_t8OutParamE" title="param_t::OutParam">OutParam</a>::<a class="reference internal" href="#_CPPv4N7param_t8OutParam7graupelE" title="param_t::OutParam::graupel">graupel</a>}, {&quot;hail&quot;, <a class="reference internal" href="#_CPPv4N7param_t8OutParamE" title="param_t::OutParam">OutParam</a>::<a class="reference internal" href="#_CPPv4N7param_t8OutParam4hailE" title="param_t::OutParam::hail">hail</a>}, {&quot;snow&quot;, <a class="reference internal" href="#_CPPv4N7param_t8OutParamE" title="param_t::OutParam">OutParam</a>::<a class="reference internal" href="#_CPPv4N7param_t8OutParam4snowE" title="param_t::OutParam::snow">snow</a>}}<a class="headerlink" href="#_CPPv4N7param_t15table_out_paramE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="structparticle__model__constants__t.html" class="btn btn-neutral float-right" title="Struct particle_model_constants_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="structnc__parameters__t.html" class="btn btn-neutral float-left" title="Struct nc_parameters_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="_static/collapsible-lists/css/tree_view.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Runge-Kutta 4" href="groups/rk.html" /> 
+    <link rel="next" title="Executing Scripts" href="scripts/executing.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -82,7 +82,20 @@
               
             
             
-              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="scripts/executing.html">Executing Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/latexify.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">latexify</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/merge.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="groups/ufunc.html">User Functions</a></li>
@@ -165,23 +178,29 @@
   <div class="section" id="welcome-to-ad-with-icon-and-processing-results-documentation">
 <h1>Welcome to AD with ICON and Processing Results’ documentation!<a class="headerlink" href="#welcome-to-ad-with-icon-and-processing-results-documentation" title="Permalink to this headline">¶</a></h1>
 </div>
-<div class="section" id="ad-with-icon-and-processing-results">
-<h1>AD with ICON and Processing Results<a class="headerlink" href="#ad-with-icon-and-processing-results" title="Permalink to this headline">¶</a></h1>
-<p>Here are various scripts to plot and process data from [netCDF](<a class="reference external" href="https://www.unidata.ucar.edu/software/netcdf/">https://www.unidata.ucar.edu/software/netcdf/</a>) files and my implementation of two moment scheme (similar to [ICON](<a class="reference external" href="https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html">https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html</a>)) with [AD using CoDiPack](<a class="reference external" href="https://github.com/scicompkl/codipack">https://github.com/scicompkl/codipack</a>). For the C++ code we follow the
+<div class="section" id="algorithmic-differentiation-as-sensitivity-analysis-in-microphysics">
+<h1>Algorithmic Differentiation as Sensitivity Analysis in Microphysics<a class="headerlink" href="#algorithmic-differentiation-as-sensitivity-analysis-in-microphysics" title="Permalink to this headline">¶</a></h1>
+<p>Microphysical processes in convective clouds have an impact on radiation in climate models, precipitation and dynamical features. These processes are usually parametrized, i.e. in numerical weather prediction (NWP) models, due to the small scale in which those processes operate and the lack of understanding of some. Understanding the impact of uncertainties in parametrization to uncertainty in cloud responses is crucial for tuning such models. In addition, parameter values can depend on discretization details such as the grid interval, time resolution and other choices made by modeling physical processes. Typical sensitivity analysis investigate few model parameters selected by experts and perturb those based on (joint) proposal distributions that may be refined by experts. In this paper we propose algorithmic differentiation (AD) as a tool to detect the magnitude and time step at which a model state parameter is sensitive to any of hundreds of model parameters. We implement a two-moment scheme and identify the 20 most important parameters to each hydrometeor and validate those parameters by comparing perturbed ensembles and the resulting divergence with predicted deviations. Finally, we use the output of AD for detecting the time step at which perturbing a parameter is necessary with a random forest and a precision and recall of about 75% for each model parameter and hydrometeor.</p>
+<p>This repository consists of an implementation of a two-moment scheme (similar to [ICON](<a class="reference external" href="https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html">https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html</a>)) with [AD using CoDiPack](<a class="reference external" href="https://github.com/scicompkl/codipack">https://github.com/scicompkl/codipack</a>) where environment and intial variables are read from [NetCDF](<a class="reference external" href="https://www.unidata.ucar.edu/software/netcdf/">https://www.unidata.ucar.edu/software/netcdf/</a>) files. Python scripts and Jupyter notebooks are used for post-processing, data analysis and for training a random forest for detecting starts of segments where perturbing a parameter has the highest impact. For the C++ code we follow the
 [doxygen standard](<a class="reference external" href="http://www.doxygen.nl/manual/docblocks.html">http://www.doxygen.nl/manual/docblocks.html</a>). We recommend an [anaconda](<a class="reference external" href="https://www.anaconda.com/">https://www.anaconda.com/</a>) environment for which you may
-use <cite>requirements_conda.txt</cite> and then <cite>requirements_pip.txt</cite> with pip.</p>
+use <cite>requirements_conda.txt</cite>. Either way, <cite>requirements_pip.txt</cite> with pip is needed
+as well for the documentation.</p>
 <div class="section" id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p><strong>scripts:</strong> Python scripts to plot stuff and read files for a quick glance or to create parquet files from simulation output.</p></li>
+<li><p><strong>scripts:</strong> Python scripts for plots and training a random forest.</p></li>
 <li><p><strong>src:</strong> C++ code. The two moment scheme is under “microphysics”.</p></li>
 <li><p><strong>include:</strong> Header files.</p></li>
-<li><p><strong>doc:</strong> Documentation. Go in this folder and type <cite>make html</cite> to create a HTML documentation (recommended) and <cite>make latexpdf</cite> to create a pdf documentation with Latex.</p></li>
+<li><p><strong>docs:</strong> Documentation. Go in this folder and type <cite>make html</cite> to create a HTML documentation (recommended) and <cite>make latexpdf</cite> to create a pdf documentation with Latex.</p></li>
 <li><p><strong>*.ipynb:</strong> Jupyter Notebooks to get started. See below for more explanation.</p></li>
+<li><p><strong>exe_scripts:</strong> Bash scripts to make and run the simulation. Examples for SLURM scripts are there as well.</p></li>
+<li><p><strong>configs:</strong> Configuration files for running ensembles during simulation.</p></li>
+<li><p><strong>data:</strong> Example NetCDF files with environment variables and initial datapoints. Output data can be stored here.</p></li>
+<li><p><strong>pics:</strong> Default folder to save plots.</p></li>
 </ul>
 </div>
-<div class="section" id="python-prerequisites-for-post-processing">
-<h2>Python Prerequisites for Post-Processing<a class="headerlink" href="#python-prerequisites-for-post-processing" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="python-prerequisites-for-post-processing-and-plotting">
+<h2>Python Prerequisites for Post-Processing and Plotting<a class="headerlink" href="#python-prerequisites-for-post-processing-and-plotting" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>[Python3](<a class="reference external" href="https://www.python.org/">https://www.python.org/</a>) (Tested with v3.7.6)</p></li>
 <li><p>[pandas](<a class="reference external" href="https://pandas.pydata.org/">https://pandas.pydata.org/</a>) (Tested with v1.0.1)</p></li>
@@ -189,23 +208,18 @@ use <cite>requirements_conda.txt</cite> and then <cite>requirements_pip.txt</cit
 <li><p>[progressbar2](<a class="reference external" href="https://pypi.org/project/progressbar2/">https://pypi.org/project/progressbar2/</a>) (Tested with v3.37.1)</p></li>
 <li><p>[seaborn](<a class="reference external" href="https://seaborn.pydata.org/">https://seaborn.pydata.org/</a>) (Tested with v0.10.0)</p></li>
 <li><p>[scipy](<a class="reference external" href="https://www.scipy.org/">https://www.scipy.org/</a>) (Tested with v1.4.1)</p></li>
-<li><p>[netCDF4](<a class="reference external" href="https://unidata.github.io/netcdf4-python/netCDF4/index.html">https://unidata.github.io/netcdf4-python/netCDF4/index.html</a>) (Tested with v1.5.3)</p></li>
+<li><p>[scikit-learn](<a class="reference external" href="https://scikit-learn.org/stable/index.html">https://scikit-learn.org/stable/index.html</a>) (Tested with v0.24.1)</p></li>
+<li><p>[scikit-multilearn](<a class="reference external" href="http://scikit.ml/">http://scikit.ml/</a>) (Tested with v0.2.0)</p></li>
+<li><p>[netCDF4 for Python](<a class="reference external" href="https://unidata.github.io/netcdf4-python/netCDF4/index.html">https://unidata.github.io/netcdf4-python/netCDF4/index.html</a>) (Tested with v1.5.3)</p></li>
 <li><p>[pillow, formerly known as PIL](<a class="reference external" href="https://pillow.readthedocs.io/en/stable/">https://pillow.readthedocs.io/en/stable/</a>) (Tested with v7.0.0)</p></li>
 <li><p>[xarray, formerly known as xray](<a class="reference external" href="http://xarray.pydata.org/en/stable/">http://xarray.pydata.org/en/stable/</a>) (Tested with v0.15.0)</p></li>
-<li><p>[fastparquet](<a class="reference external" href="https://github.com/dask/fastparquet">https://github.com/dask/fastparquet</a>) (Tested with v0.3.3)</p></li>
-<li><p>[python-snappy](<a class="reference external" href="http://google.github.io/snappy/">http://google.github.io/snappy/</a>) (Tested with v0.5.4)</p></li>
-</ul>
-</div>
-<div class="section" id="python-prerequisites-for-plotting">
-<h2>Python Prerequisites for Plotting<a class="headerlink" href="#python-prerequisites-for-plotting" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>[Iris](<a class="reference external" href="https://github.com/SciTools/iris">https://github.com/SciTools/iris</a>) (Install from conda-forge; Tested with v2.4.0)</p></li>
+<li><p>[joblib](<a class="reference external" href="https://joblib.readthedocs.io/en/latest/">https://joblib.readthedocs.io/en/latest/</a>) (Tested with v0.16.0)</p></li>
+<li><p>[numpy](<a class="reference external" href="https://numpy.org/">https://numpy.org/</a>) (Tested with v1.19.1)</p></li>
 <li><p>[holoviews](<a class="reference external" href="http://holoviews.org/">http://holoviews.org/</a>) (Tested with v1.13.2)</p></li>
 <li><p>[hvplot](<a class="reference external" href="https://hvplot.holoviz.org/">https://hvplot.holoviz.org/</a>) (Tested with v0.5.2)</p></li>
 <li><p>[datashader](<a class="reference external" href="https://datashader.org/index.html">https://datashader.org/index.html</a>) (Tested with v0.10.0)</p></li>
 <li><p>[matplotlib](<a class="reference external" href="https://matplotlib.org/">https://matplotlib.org/</a>) (Tested with v3.1.3)</p></li>
-<li><p>[geoviews](<a class="reference external" href="https://geoviews.org/">https://geoviews.org/</a>) (Install via <cite>conda install -c pyviz geoviews</cite>; Tested with v1.8.1)</p></li>
-<li><p>[GEOS](<a class="reference external" href="https://github.com/libgeos/geos">https://github.com/libgeos/geos</a>) (Tested with v3.7.1)</p></li>
+<li><p>[bokeh](<a class="reference external" href="https://bokeh.org/">https://bokeh.org/</a>) (Tested with v2.0.2)</p></li>
 <li><p>[cartopy](<a class="reference external" href="https://scitools.org.uk/cartopy/docs/latest/">https://scitools.org.uk/cartopy/docs/latest/</a>) (Tested with v0.17.0)</p></li>
 </ul>
 </div>
@@ -213,8 +227,8 @@ use <cite>requirements_conda.txt</cite> and then <cite>requirements_pip.txt</cit
 <h2>Docs Prerequisites<a class="headerlink" href="#docs-prerequisites" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>[Sphinx](<a class="reference external" href="http://www.sphinx-doc.org/en/master/">http://www.sphinx-doc.org/en/master/</a>) (Tested with v3.0.3)</p></li>
-<li><p>[Read the Docs Sphinx Theme](<a class="reference external" href="https://sphinx-rtd-theme.readthedocs.io/en/stable/">https://sphinx-rtd-theme.readthedocs.io/en/stable/</a>) (Tested with v0.1.8-1)</p></li>
-<li><p>[recommonmark](<a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/markdown.html">https://www.sphinx-doc.org/en/master/usage/markdown.html</a>) (To use Markdown; Tested with v0.4.0)</p></li>
+<li><p>[Read the Docs Sphinx Theme](<a class="reference external" href="https://sphinx-rtd-theme.readthedocs.io/en/stable/">https://sphinx-rtd-theme.readthedocs.io/en/stable/</a>) (Tested with v0.4.3)</p></li>
+<li><p>[recommonmark](<a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/markdown.html">https://www.sphinx-doc.org/en/master/usage/markdown.html</a>) (To use Markdown; Tested with v0.6.0)</p></li>
 <li><p>[Doxygen](<a class="reference external" href="http://www.doxygen.nl/index.html">http://www.doxygen.nl/index.html</a>) (Tested with v1.8.13-4)</p></li>
 <li><p>[Exhale](<a class="reference external" href="https://exhale.readthedocs.io/en/latest/overview.html">https://exhale.readthedocs.io/en/latest/overview.html</a>) (Tested with v0.2.3)</p></li>
 <li><p>[Breathe](<a class="reference external" href="https://breathe.readthedocs.io/en/latest/">https://breathe.readthedocs.io/en/latest/</a>) (Tested with v4.18.1)</p></li>
@@ -236,6 +250,7 @@ use <cite>requirements_conda.txt</cite> and then <cite>requirements_pip.txt</cit
 <li><p>[GNU Parallel](<a class="reference external" href="https://www.gnu.org/software/parallel/">https://www.gnu.org/software/parallel/</a>) (Executing multiple processes with ease; Tested with v20161222)</p></li>
 <li><p>[JupyterLab](<a class="reference external" href="https://jupyter.org/">https://jupyter.org/</a>) (Working with Python and Plotting but in an easier way; Tested with v1.2.6)</p></li>
 <li><p>JupyterLab extension for geoviews: <cite>jupyter labextension install &#64;pyviz/jupyterlab_pyviz</cite></p></li>
+<li><p>[Panel](<a class="reference external" href="https://panel.holoviz.org/">https://panel.holoviz.org/</a>) (Tested with v0.9.5)</p></li>
 </ul>
 </div>
 <div class="section" id="compiling-code">
@@ -248,7 +263,7 @@ Leave it empty, if you do not want to use it. <cite>SOURCE</cite> is used to tog
 with <cite>Rv</cite> the gas constant for water vapor and <cite>p_sat</cite> the
 saturation vapor pressure over a flat surface of liquid water (see <cite>physical_parametrizations.h</cite>).
 If it is not on, then saturation of 1 is assumed. Variable <cite>TIMESTEPPER</cite> can be used to set the method to use (default: Runge Kutta)
-and the microphysical process (default: one moment scheme for warm clouds).</p>
+and the microphysical process (default: two moment scheme with ice phase including hail and graupel).</p>
 <p>To compile the code, simply type
 <code class="docutils literal notranslate"><span class="pre">`</span>
 <span class="pre">make</span> <span class="pre">release</span>
@@ -263,9 +278,10 @@ under <cite>build/apps/src/scratch/scan</cite>.</p>
 </div>
 <div class="section" id="running-a-simulation">
 <h2>Running a simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this headline">¶</a></h2>
-<p>You can use <cite>./execute.sh</cite> to execute your simulation and do post-processing
-to make the data ready for analysis.
-All necessary commandline parameters are explained there.</p>
+<p>You can use <cite>./execute.sh</cite> in the folder <cite>exe_scripts/</cite> to compile the code, execute a single simulation and do post-processing
+to make the data ready for analysis and to plot the simulation results.
+All necessary commandline parameters are explained there.
+In order to run multiple ensembles, use <cite>./execute_ensembles.sh</cite>.</p>
 </div>
 <div class="section" id="using-jupyter-notebooks">
 <h2>Using Jupyter Notebooks<a class="headerlink" href="#using-jupyter-notebooks" title="Permalink to this headline">¶</a></h2>
@@ -276,7 +292,7 @@ All necessary commandline parameters are explained there.</p>
 - <strong>Plot_sensitivities.ipynb:</strong> Use this as a starting point to plot results
 from a simulation and to plot the sensitivities.
 - <strong>Plot_simulation.ipynb:</strong> Plot the data from netcdf files to get an idea, what’s inside.
-Or you just use [Panoply](<a class="reference external" href="https://www.giss.nasa.gov/tools/panoply/">https://www.giss.nasa.gov/tools/panoply/</a>) if you want something more elaborate.</p>
+Or you just use [Panoply](<a class="reference external" href="https://www.giss.nasa.gov/tools/panoply/">https://www.giss.nasa.gov/tools/panoply/</a>) if you want something more elaborate. We also approve [Met.3D](<a class="reference external" href="https://met3d.wavestoweather.de/met-3d.html">https://met3d.wavestoweather.de/met-3d.html</a>) for visualization and work towards as much compatibility as possible.</p>
 </div>
 <div class="section" id="adding-new-physics">
 <h2>Adding New Physics<a class="headerlink" href="#adding-new-physics" title="Permalink to this headline">¶</a></h2>
@@ -351,6 +367,24 @@ parameters. Change the contents of <cite>output_par_idx</cite> and <cite>output_
 parameters and input parameters. These vectors are used to write the headers
 of your output files.</p>
 <div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="scripts/executing.html">Executing Scripts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="scripts/executing.html#makefile">Makefile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripts/executing.html#execution">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripts/executing.html#slurm">Slurm</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/latexify.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">latexify</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/merge.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
 </div>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
@@ -392,12 +426,21 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/structgamma__table__t.html">Struct gamma_table_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/structglobal__args__t.html">Struct global_args_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/structinput__parameters__t.html">Struct input_parameters_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/structIO__handle__t.html">Struct IO_handle_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/structmodel__constants__t.html">Struct model_constants_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/structnc__parameters__t.html">Struct nc_parameters_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/structparam__t.html">Struct param_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/structparticle__model__constants__t.html">Struct particle_model_constants_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/structreference__quantities__t.html">Struct reference_quantities_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/structsegment__t.html">Struct segment_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/structtable__t.html">Struct table_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/classProgressBar.html">Class ProgressBar</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="api/library_root.html#enums">Enums</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/enum_error_8h_1a06fc87d81c62e9abb8790b6e5713c55b.html">Enum &#64;0</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/enum_group__constants_1gad22bd04eb1d0a2b5b44d97be2a3c064a.html">Enum Cons_idx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/enum_group__constants_1ga1f5a0965e024e76b6285df1e61b8c919.html">Enum Particle_cons_idx</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/library_root.html#functions">Functions</a><ul>
@@ -407,18 +450,27 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga26ed2175e4e5b89e13d2e162b6a1cdfc.html">Template Function ccn_act_seifert</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gaa395b3302791f6fc670780d895c88f2b.html">Template Function cloud_freeze_hom</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_implicit__euler_8h_1a1e3bf0cafe4b25093bdbfa4b6d0733f2.html">Function compute_diff_length_square</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga4a1362c0c3900a27bf75081751c3b5a7.html">Template Function compute_pa</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gac745ee3bea0fc3bb43e3d46969fc30d8.html">Template Function compute_pv</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga856599a0f1d18d2ea331b09049b4f972.html">Template Function compute_rhoa</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gad956fcb0b36f2df6326022259bee14a3.html">Template Function compute_rhoh</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gac5346588e097b540e1145113e0c45300.html">Template Function convert_qv_to_S</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gac97ea74aedb2562f1972d2872c0be175.html">Template Function convert_S_to_qv</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga6704eeb3e3225fe649403266fb78bc26.html">Template Function convert_Si_to_qv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gac24b5f0f2febea62d63c884b9a4bcdb0.html">Template Function compute_pa</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gacbad11c2fb9017f995cf5a5d1ec3dfaa.html">Template Function compute_pv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga7a80a81bb672e6d6bc53c43635f49aad.html">Template Function compute_rhoa</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gacc59dd0aca9b01cb54128a87e1604599.html">Template Function compute_rhoh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga9402c9edec2e01d0a32d90edc4bbe422.html">Template Function convert_qv_to_S</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gaa806a74738171e34b6b928789983a9ff.html">Template Function convert_S_to_qv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga385fe09ca960e30f4096a05cfe5e25b0.html">Template Function convert_Si_to_qv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gae6656d8816d12244ab401f8627fa2388.html">Function create_run_script</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gae9b7a71a19774dd7e7c2084b84ff3237.html">Template Function density_ice</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga355bd293f6e3fcd91a04096b32d0960f.html">Template Function density_water</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga66cd2ac671d5b9a7a7a970bd1ad5be32.html">Template Function diffusivity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga0e5622e507cb616977a0a15d69687db9.html">Template Function do_the_tanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gadd33cbf4a39206ac8cf2b68c0993a06b.html">Function do_the_tanh_primal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga616477977b3e80510cdf42cd1d27b74d.html">Function do_the_tanh_rev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga5ed3f255ff5a991935963dad993bcb66.html">Template Function do_the_thing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gaa3462717fd91ad9da7ffdae61e2b09df.html">Function do_the_thing_primal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga1ff29542cada07221c8458775511d554.html">Function do_the_thing_rev</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_euler_8h_1aedd6fc5c246e18efd9de5e358dc46ddf.html">Function euler_step</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gaff639b6ef7e600e55107622158f3d538.html">Template Function evaporation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gaffe2ae0cb1502e1f76bcc80726b87574.html">Template Function evaporation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga1e9d3cfdfcd2e43b9557c8cfd9d910f1.html">Function exists</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__constants_1ga0a349284d344a65ded7d438ef3b471d7.html">Template Function get_at</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__gradients_1gaf7dae38497345bf12ebab894c4dca5bd.html">Function get_gradients</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga2edb69dc32ef945a1dcfd9fb83204634.html">Template Function graupel_hail_conv</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga44105174636599764f574b87e138f89d.html">Template Function graupel_melting</a></li>
@@ -431,21 +483,20 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gae83fae1edd67e34513d7abeb06af3616.html">Template Function ice_riming</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga7d9faec3eda3375ebdcce82554c2dca4.html">Template Function ice_self_collection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_implicit__euler_8h_1a5bafa9e43aacbce425489554e0064cfb.html">Function implicit_euler_step</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga972543a894103649e760f07095f6aedc.html">Function init_global_args</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gac03abfac06224ad39f0ffc9462fec764.html">Function init_input_parameters</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gafcb7ba4cf91ace9072d73b46909cf07f.html">Function init_nc_parameters</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga3463e8dc2e5d1abbe8e19f0b0b5157cf.html">Function init_particle_collection_1</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga0a0afff7dd02df370a23d87454c7d31e.html">Function init_particle_collection_2</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga0c1f7977c1923622f48fab539c08c055.html">Template Function latent_heat_evap</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gab1c91fec262d6af28408b235d0ed92ec.html">Template Function latent_heat_ice</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gabd00805fb1be7038553dedbff2ea237f.html">Template Function latent_heat_melt</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga8e9719eaf9f7cd1427903bdd82334e09.html">Template Function latent_heat_water</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga22290caa11958916a30f8b1afb710cbb.html">Template Function latent_heat_ice</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga32f6dd5a96cca34e3befb795dc2ebe28.html">Template Function latent_heat_melt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga7e2f85e40ad6fc9c21c574266100073f.html">Template Function latent_heat_water</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga2775c4d2ec8c85871724d9c3e1525e10.html">Template Function load_checkpoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gac51eeeb288e456e4ca5e809342dce596.html">Function load_ens_config</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gacc114b39484d2bdefeb1efe4ed638ff0.html">Function load_lookup_table</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga6418d272fbbab9dce33fbbe742695588.html">Function load_nc_parameters</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga9df23aaaf7c2d75fb06d9cbda9cf506a.html">Function load_nc_parameters_var</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gab97a18e89157a0d17801447c8fe2ac6d.html">Template Function mean_free_path</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga9c81dc19d57f1c07cb62331b01c517f2.html">Function moment_gamma</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gaea20c025629c3b1f7a5cf97d3467be9f.html">Function open_netcdf</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gaafbe24d75db4f70e6376253728a7e7e4.html">Function parse_arguments</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga810c0a9e328bae2f1502f88eb8f9821a.html">Template Function particle_cloud_riming</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gaee193476fc437b42639d73ed62dfae2d.html">Template Function particle_collection</a></li>
@@ -459,11 +510,12 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga74f4767c3eb70af6864d67470a7c773b.html">Function Press_Temp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__general_1gab47a3e7939687b90ee14022283252445.html">Function printy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gac93325864febf4f0a082a9bd8f9ae555.html">Template Function rain_evaporation_sb</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga691b9bb9f587a59b01bf856d43ea2cee.html">Template Function rain_evaporation_sb_test</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gad65088f5f27aa745b08809cc283a2ddb.html">Template Function rain_freeze</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gadb2646f93dcb6ee4fddace473bdd46b4.html">Template Function rain_self_collection_sb</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gac4d1b3718430b948a3970a89ad143913.html">Function read_init_netcdf</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga16d17ee68a1a19138345f54cb6ce55ff.html">Function read_netcdf_write_stream</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__gradients_1ga12654f024c9d2f74c6109f825a5eed6f.html">Function register_everything</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga58a9a31b0d17bb05a5d2d97f78dd8b5b.html">Function read_init_netcdf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gacefe99269d8f7f510dd61cfb43243b4c.html">Function read_netcdf_write_stream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gaf88f468d6a8396655ae2fd338699e206.html">Function resize_counter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga5dfd51c04214ff3227afe95328647e9b.html">Function RHS</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga73c076cb5896ea8efa5a7862e7bc59b7.html">Function RHS_SB</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga8043dc2967f77e92fff28f362a310af9.html">Function RHS_SB_no_ice</a></li>
@@ -472,10 +524,9 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__rk_1gab50ab9a467d2634225be0a4cc4254dfd.html">Function RK4_step</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__rk_1ga4625a1a080d90bf616e260edbcf45125.html">Function RK4_step_2_no_ice</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__rk_1gac944a753a97ca0f47dbf43a64075e344.html">Function RK4_step_2_sb_ice</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gab722a6f4148d75ab7131821f18c6de4d.html">Template Function saturation_adjust</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga2a8a162336da8144cd4f2b611a8425de.html">Template Function saturation_pressure_ice</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga88aa8d1ac8129b0ce39d9b64780c4441.html">Template Function saturation_pressure_water</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga49cda83d3ea4964b71db7cb9d4ef97c6.html">Template Function saturation_pressure_water_icon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gaf1402eaee8fd6d3290d7913900ee038c.html">Template Function saturation_adjust</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga629ee1399e5f18a4e03321ff4e247287.html">Template Function saturation_pressure_ice</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gabddcef65c5340cbbeb086ebd2f5d33f7.html">Template Function saturation_pressure_water</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga41fb2a120504f6a0c936112fd2def98f.html">Template Function sedimentation_explicit</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gaab68f866e7ee86dc4fd3cdd2409a88e4.html">Function set_input_from_arguments</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__rk_1gab2e87ea5f74ec70dbb4b911743e48b03.html">Template Function set_limits</a></li>
@@ -483,26 +534,25 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gaac8e29a9ea842fcce9e387cca2b51614.html">Function setCoefficients(codi::RealReverse, codi::RealReverse, model_constants_t&amp;)</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga1d57b27a1c95a50623ee0d5482740804.html">Function setup_bulk_sedi</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gab8ab429a5815051f90dfc4c25ad3fa5b.html">Function setup_cloud_autoconversion</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga396330d4334834fc58b6d047b46e99d2.html">Function setup_model_constants</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga2adbe9554830da4c2526d574e067f9ec.html">Function setup_model_constants</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga50341cde21d552d960a638a2f36ad75d.html">Template Function snow_melting</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gad179382e28465d82546fe733f3f44d46.html">Template Function snow_riming</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gabbbaa255863c8af060117d79d82ee3ba.html">Template Function snow_self_collection</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga6df194258488ec083549211dc1bf6bf4.html">Template Function specific_heat_dry_air</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga37e16a9316161e8fe8c42f494da80564.html">Template Function specific_heat_ice</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gad545adac674160a058d872898dfe683d.html">Template Function specific_heat_ice</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gaecfb96a3636dad8c3dfdd3d17a39b81d.html">Template Function specific_heat_water</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga77494919ef07c7502247f8302e53afe1.html">Template Function specific_heat_water_vapor</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga9f345d7d861533a3c39f2c409e72cb2c.html">Template Function surface_tension_water</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gae041db175205a71f4dbb155e1d1cb762.html">Template Function thermal_conductivity_dry_air</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga97371992807bf29b7643d34a895094e4.html">Template Function thermal_conductivity_moist_air</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga616c91c9e6f91572395332a77607eaa4.html">Template Function thermal_conductivity_moist_air</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga15565411d1f159ce0580d31928a28471.html">Function trunc</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1gadebf5b56ee7a77b2460282d4c686dceb.html">Template Function vapor_dep_relaxation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__ufunc_1ga7940722d45a682446666ce78b62f7ea2.html">Template Function vapor_dep_relaxation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga70e78167fc9ef320777ab256fb52dfba.html">Function vent_coeff_a</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gad22f3d2deb63fa7972f6f42b8c5ad3ef.html">Function vent_coeff_b</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gaa1a095c87f6b5e2b816210e3bc132b48.html">Template Function water_vapor_sat_ratio</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gae59f62771ea5a2ce775ceda6272c9a61.html">Template Function water_vapor_sat_ratio_dotzek</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gadab51007d566f2da441e6edbc9d2e394.html">Function write_headers</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gad2046a65ce11faf1066215384ebbe663.html">Function write_output</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1gae1fdd6b9749a10404ccf774a8e6b1955.html">Function write_reference_quantities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1ga394eaa56063c9edba8c60023f8982954.html">Template Function water_vapor_sat_ratio</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__parametrizations_1gab98b3f0ddfeca149787fc71c767fa20b.html">Template Function water_vapor_sat_ratio_dotzek</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga90c22793915d3bd42acc3f9f4b4657c9.html">Template Function write_checkpoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/function_group__io_1ga5d39eaffe2854e49fc2a4f506305ebe6.html">Function write_output</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="api/library_root.html#variables">Variables</a><ul>
@@ -514,6 +564,7 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga10b20b404a7302f88aae98065f9f7cfe.html">Variable afrac_dust</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaaf94427ca75b7edc65713c7d24097eab.html">Variable afrac_orga</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaf67288fb64a4a527b832abe205ca84cf.html">Variable afrac_soot</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga510d18151b48987c4d86bc30b659d9e6.html">Variable alpha_depo</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga3a91a5b846b3407547772cb227efa64d.html">Variable alpha_spacefilling</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga77702f19a1267107fbdb2eb48df049ea.html">Variable always_sat_adj</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaa230b0e065f83fa02ac39cc809a09102.html">Variable amd</a></li>
@@ -528,10 +579,6 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga499f41fbe7f38115c73a79d51a12ea6a.html">Variable c_dep</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga54c3d0897ba9e94ca844b259838208df.html">Variable C_mult</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gae4d56275bfb52a136a7e0b3b7ea71d60.html">Variable c_prime</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga263947bc8ce087f7b55e2f5075af0bfc.html">Variable const0</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga726e5d8727a0774bc0bde532bf159757.html">Variable const3</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga1a2f6b8bf72c47659e19099403c246ea.html">Variable const4</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gac222c4556cd008dfe11c4f0438834b26.html">Variable const5</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga3d95d7052117de6cb188a562c9e80e1f.html">Variable cp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga4bbf6841900c529c46d5cd0e25cdc376.html">Variable cv</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga22334a179320874b0b93f2e06f4006af.html">Variable d_ccn</a></li>
@@ -539,7 +586,6 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaefae57a548c205456ee75e71dcc8007d.html">Variable D_conv_i</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga1eea7c68b244ae5ae4a5b34244b74c19.html">Variable D_conv_ig</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga8cbf8fb02586b55f29e8a473e0dd00da.html">Variable D_conv_sg</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga7b3e2f2df9103dd2e0fb8969edb9c571.html">Variable D_crit_c</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gac33ed052e896d46c9b86ae0b3c0f7aa6.html">Variable D_crit_i</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga98ea58ce8fd604fa9495b4d108275a33.html">Variable D_crit_r</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga195b70b16c4ae6bb00df7ed4a19f8f4b.html">Variable d_dep</a></li>
@@ -553,58 +599,69 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga6e13dada537a17dd63e60c181a4b975f.html">Variable ecoll_min</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gae289efa576d2d30e0246967d2ba7edd7.html">Variable enhanced_melting</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga94827e2d927e061829e6b000e8e07d8d.html">Variable Epsilon</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga1830677ef00cde15b32ec211df0b073d.html">Variable grav</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga52319f193520e1cd81814d7bf0e77de6.html">Variable gravity_acc</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga4366806f46b7e85b585d365f905b0fa3.html">Variable ice_multiplication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga5ceadc119c43e91a0b32b33dbad2f5ac.html">Variable k_1_accr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga260a35525b4560caff7fd5c6074f37f3.html">Variable k_1_conv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga490526085868f80e1230ba337df0f3e9.html">Variable k_2_conv</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gad1afc19e3b181b5ec8a9f49df8639ce3.html">Variable k_b</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga32bb502f0c1378c5b89645edbf276e7f.html">Variable k_r</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga2681cee4e0af0e26d3a76c9d1602a42a.html">Variable K_T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga6dc77439bc25a185887c959c11f0e2b1.html">Variable kc_autocon</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gab1f39e954daa6fcfe91b4d2f8afc59cf.html">Variable kin_visc_air</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gae688b255c9b5c9dd3bb46cb8c65cea81.html">Variable L_ed</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gac1729321b653bcaa4bfdffe7fdf00f3a.html">Variable L_ew</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gadf66f62257294567807f8eadddda6e29.html">Variable L_wd</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga58cbfdb9770043dc6898e278a9f97552.html">Variable ltabdminwgg</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaa49da6c6165ff40f0659a431310efe64.html">Variable Ma</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gae038aabb848c6fd2453a6b41e1336c8d.html">Variable Mw</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gae8e8afe3e32d7fcb15dfd1506292eff3.html">Variable M_a</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga3538c17cea5ad77eb08d1b83bac8705b.html">Variable M_w</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga3588e5c0fa10f92ea55dd16b0529aac0.html">Variable N_avo</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga5413cb42efd9530883c4584dd606527e.html">Variable n_f</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaa8882e90dea913e77969f4fb04b26429.html">Variable n_lookup</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaeada8e4ae6666ac00d84ef7f19ecae7c.html">Variable n_lookup_highres</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga36f6d59db9285858b20314f8de4e9264.html">Variable n_lookup_hr_dummy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gad42dc5f665e38fd7a381d7991cd0216f.html">Variable n_lookup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga551177af01e4fd240b633e64e32fad0f.html">Variable n_lookup_highres</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga676370dd7d6bd28a5e760ec4c386f34a.html">Variable n_lookup_hr_dummy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gae086631607ed7214f41bdfc2b4d07254.html">Variable N_Sc</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga1de1c1076b60e02212c7ca4b8c08defd.html">Variable N_sc</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaea26713cc518b7ffbeb3a2b2f59cc08e.html">Variable na_dust</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaf786e3d2d2780afa796f920280fa5a07.html">Variable na_dust_2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaf89afb7568b198aabdc21c8aaa06e47d.html">Variable na_dust_3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaf071b774592f472d5af14b783538a3f5.html">Variable na_dust_phillips</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga1497cebde81d8e7615aefcd354029494.html">Variable na_orga</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gab52520a5b067d3e7da1a12fd61bbe079.html">Variable na_orga_2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gafa32c5339472e3097323e0c5bad4daaf.html">Variable na_orga_3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga7dc39d0b81195efc553c858df0b95da3.html">Variable na_orga_phillips</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga000a74f75df3237173807d1463d7c343.html">Variable na_soot</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga518b12afa6ea70fda648aff2d5160616.html">Variable na_soot_2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga9267a582a4fea99532b8071be875a69f.html">Variable na_soot_3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gac8fbea91062e6a536ecb2efcf51e6800.html">Variable na_soot_phillips</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaf9ac46ad53dda6bd48a33994115407e2.html">Variable ni_het_max</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga887a2cd85ab3eef010e398e29c34022f.html">Variable ni_hom_max</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga4bc1d32b4f6f539c449d0364063aa228.html">Variable nuc_c_type</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga27805cb464b8dfe4ee58635d4cd6e886.html">Variable nuc_type</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__io_1ga1b7271ddd60c22960c39ae6caf4d5254.html">Variable optString</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga6aaeffeb79b64a354d43b50362cd5df6.html">Variable out_diff</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga1aca20cb2f5218521bb69285705defba.html">Variable out_diff_tmp</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga5d324e98573541e288bd723184ac53e8.html">Variable out_tmp</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga2e0aad28e3078b74e13b692c93b18962.html">Variable outfile</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga9e117ce0a54e44653da89a66a987d9ea.html">Variable output_grad_descr</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gab902bc3bc3df8c6747f88f2e90a41d23.html">Variable p_sat_const_a</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gad5e8654aea2d3f9795bd5f98cb7ffae1.html">Variable p_sat_const_b</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga7a53171befa628e7350e814cfed82e6f.html">Variable p_sat_ice_const_a</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaa3aead469956e0fa642e27f043c8a52d.html">Variable p_sat_ice_const_b</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gad6a3ad046a6823e441fb4e7388b81022.html">Variable p_sat_low_temp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gabb663dfebb938e7ddfc02eae1d8a2a5a.html">Variable p_sat_melt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga6de8735fc19a888e77d3a72b99adf7a0.html">Variable parcel_height</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga66bb4a856ed1df36dd9c8d8943a6af8b.html">Variable q_crit</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gab96bc3d98d6aaaa32da54bf8ce13c98f.html">Variable q_crit_c</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga4eaea2f9452cf35f0639ef7eddd6e6c5.html">Variable q_crit_fr</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga27ecd03128984e4861b013c10843eb09.html">Variable q_crit_i</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga4d4952b99ba74a53a537b0361bb72891.html">Variable q_crit_r</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaf4a0a2f1958d4c5a23ba881ae780b60f.html">Variable r1_const</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga7e13c0fdad5e224dee752cff9576336f.html">Variable r_0</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga33ed5ff9e8739157a22a42c498b8adce.html">Variable R_a</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga180d918973249e2e465d8cdd387f31a3.html">Variable r_const</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gacfaf9380c3f9464c863b5dd6e1a4313e.html">Variable R_universal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga1d944c79ac37f3210e8d6ec381104cf8.html">Variable R_v</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga2e7a3f169a98aaa7a553168d654bba8d.html">Variable Ra</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga5a86a51d2f5b06551555c83a227432f6.html">Variable rand_device</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gad971776329fa6e58faf94468f1acf5dc.html">Variable rand_generator</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga4066e07b45853e6a2d87b1b350415257.html">Variable rho_0</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga82480c06ebc43bb6591a92f1fe36566c.html">Variable rho_ice</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga7f927fd188adc491312f70ab463ebc9b.html">Variable rho_vel</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gac6db49b3d904b30c6c4efd7f2ed9a357.html">Variable rho_vel_c</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga7fe0572f2803a8c3016f01c0ad728cd3.html">Variable rho_w</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga367846da193a7787d80dbb3c8717df1f.html">Variable Rv</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga58bd1f69f0658bc58308ddbb06bba6f1.html">Variable s_smax</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gacf0a818e839f4119d7a8952f49672b02.html">Variable s_sstep</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gab1e1f3c37a5572659efc83168461ac31.html">Variable sediment_n</a></li>
@@ -620,11 +677,8 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaf6cbe9d31e77913712815497333cb4a2.html">Variable T_sat_low_temp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaa7839971afc4901579237b2ad57c375a.html">Variable t_tmax</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga24f11a9d31b7b6fc191149cb858fb402.html">Variable t_tstep</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaded1ce0fd1c31170beca87d3411f9cfc.html">Variable table_g1</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga9d0ff48bdfc88a8bd9a8f03f3263414a.html">Variable table_g2</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaaf68174f772b09ae2e4e9c5f399b97fe.html">Variable table_r1</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga6709afb9f6dc2ac7427a561792dcab85.html">Variable table_r2</a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga7e1c84f045a7a50fc630b8a4492d55fb.html">Variable table_r3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gaf6bf8f3071833614f7116c3b37fbb934.html">Variable table_param</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga54f2987ebd6c2c860d95b15d4dbfc528.html">Variable table_particle_param</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga7b36472a0720086e00a542efeb6f5f7a.html">Variable trace</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1gadcf582d6e7130ca9eb22939277b604a6.html">Variable use_hdcp2_het</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/variable_group__constants_1ga94aa7863dc38365e1c9ea7cea10c31e8.html">Variable x_conv</a></li>
@@ -670,6 +724,7 @@ of your output files.</p>
 <li class="toctree-l4"><a class="reference internal" href="api/define_group__constants_1gac841b7a1e99cf3a60cd24f78f82863a1.html">Define qv_idx</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/define_group__constants_1ga990f1e407a16f0dc95d7f75405fe4c63.html">Define S_idx</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/define_group__constants_1gaef6e548b54b216cd5f24c78dfc0867b7.html">Define sub_idx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/define_error_8h_1aa9e805f7b821448bcf6e883ab4d824b2.html">Define SUCCESS_OR_DIE</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/define_group__constants_1ga8bc37eb2cc5b614681a5300d99b0cf48.html">Define T_idx</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/define_group__constants_1ga9b6429e8afd8830baa3291777ae4897d.html">Define w_idx</a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/define_group__constants_1ga3a7a373c052614ce9bcafd92e1d3a038.html">Define z_idx</a></li>
@@ -700,7 +755,7 @@ of your output files.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="groups/rk.html" class="btn btn-neutral float-right" title="Runge-Kutta 4" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="scripts/executing.html" class="btn btn-neutral float-right" title="Executing Scripts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
     </div>

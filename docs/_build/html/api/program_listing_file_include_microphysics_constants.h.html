@@ -81,7 +81,20 @@
               
             
             
-              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/latexify.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">latexify</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/merge.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -169,7 +182,7 @@
 
 <span class="cp">#include</span> <span class="cpf">&quot;codi.hpp&quot;</span><span class="cp"></span>
 <span class="cp">#include</span> <span class="cpf">&lt;cmath&gt;</span><span class="cp"></span>
-<span class="cp">#include</span> <span class="cpf">&quot;types.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;random&gt;</span><span class="cp"></span>
 
 <span class="c1">// Indices of the output parameters</span>
 <span class="cp">#define p_idx 0</span>
@@ -210,7 +223,7 @@
 <span class="cp">#define num_par 12</span>
 <span class="cp">#elif defined(RK4ICE) || defined(RK4NOICE)</span>
 <span class="cp">#define num_comp 33</span>
-<span class="cp">#define num_par 56*6+17</span>
+<span class="cp">#define num_par 56*6+124</span>
 <span class="cp">#endif</span>
 
 <span class="c1">// Those are for an inflow vector</span>
@@ -222,14 +235,25 @@
 <span class="cp">#define Ns_in_idx 5</span>
 <span class="cp">#define Nr_in_idx 6</span>
 <span class="cp">#define Ng_in_idx 7</span>
+<span class="cp">#if defined MET3D &amp;&amp; defined TURBULENCE</span>
+<span class="cp">#define qv_in_idx 8</span>
+<span class="cp">#define num_inflows 9</span>
+<span class="cp">#else</span>
 <span class="cp">#define num_inflows 8</span>
+<span class="cp">#endif</span>
+
+<span class="c1">// Random generators</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">random_device</span> <span class="n">rand_device</span><span class="p">{};</span>
+<span class="n">std</span><span class="o">::</span><span class="n">mt19937</span> <span class="n">rand_generator</span><span class="p">{</span><span class="n">rand_device</span><span class="p">()};</span>
+
 <span class="c1">// Constants</span>
 
 <span class="cp">#if defined(TRACE_TIME)</span>
 <span class="c1">// Relative to ascent time</span>
 <span class="kt">double</span> <span class="n">trace_time</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-<span class="k">const</span> <span class="kt">double</span> <span class="n">trace_start</span> <span class="o">=</span> <span class="mi">4400</span><span class="p">;</span>
-<span class="k">const</span> <span class="kt">double</span> <span class="n">trace_end</span> <span class="o">=</span> <span class="mi">4800</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">trace_start</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1000</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">trace_end</span> <span class="o">=</span> <span class="mi">3500</span><span class="p">;</span>
 <span class="kt">bool</span> <span class="n">trace</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
 <span class="cp">#else</span>
 <span class="kt">bool</span> <span class="n">trace</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
@@ -264,7 +288,33 @@
 <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">output_grad_idx</span> <span class="o">=</span>
     <span class="p">{</span><span class="s">&quot;da_1&quot;</span><span class="p">,</span> <span class="s">&quot;da_2&quot;</span><span class="p">,</span> <span class="s">&quot;de_1&quot;</span><span class="p">,</span> <span class="s">&quot;de_2&quot;</span><span class="p">,</span> <span class="s">&quot;dd&quot;</span><span class="p">,</span> <span class="s">&quot;dN_c&quot;</span><span class="p">,</span> <span class="s">&quot;dgamma&quot;</span><span class="p">,</span> <span class="s">&quot;dbeta_c&quot;</span><span class="p">,</span>
     <span class="s">&quot;dbeta_r&quot;</span><span class="p">,</span> <span class="s">&quot;ddelta1&quot;</span><span class="p">,</span> <span class="s">&quot;ddelta2&quot;</span><span class="p">,</span> <span class="s">&quot;dzeta&quot;</span><span class="p">,</span> <span class="s">&quot;drain_gfak&quot;</span><span class="p">,</span> <span class="s">&quot;dcloud_k_au&quot;</span><span class="p">,</span>
-    <span class="s">&quot;dcloud_k_sc&quot;</span><span class="p">,</span> <span class="s">&quot;dkc_autocon&quot;</span><span class="p">,</span> <span class="s">&quot;dinv_z&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dcloud_k_sc&quot;</span><span class="p">,</span> <span class="s">&quot;dkc_autocon&quot;</span><span class="p">,</span> <span class="s">&quot;dinv_z&quot;</span><span class="p">,</span> <span class="s">&quot;dw&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dq_crit_i&quot;</span><span class="p">,</span> <span class="s">&quot;dD_crit_i&quot;</span><span class="p">,</span> <span class="s">&quot;dD_conv_i&quot;</span><span class="p">,</span> <span class="s">&quot;dq_crit_r&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dD_crit_r&quot;</span><span class="p">,</span> <span class="s">&quot;dq_crit_fr&quot;</span><span class="p">,</span> <span class="s">&quot;dD_coll_c&quot;</span><span class="p">,</span> <span class="s">&quot;dq_crit&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dD_conv_sg&quot;</span><span class="p">,</span> <span class="s">&quot;dD_conv_ig&quot;</span><span class="p">,</span> <span class="s">&quot;dx_conv&quot;</span><span class="p">,</span> <span class="s">&quot;dparcel_height&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dalpha_spacefilling&quot;</span><span class="p">,</span> <span class="s">&quot;dT_nuc&quot;</span><span class="p">,</span> <span class="s">&quot;dT_freeze&quot;</span><span class="p">,</span> <span class="s">&quot;dT_f&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dD_eq&quot;</span><span class="p">,</span> <span class="s">&quot;drho_w&quot;</span><span class="p">,</span> <span class="s">&quot;drho_0&quot;</span><span class="p">,</span> <span class="s">&quot;drho_vel&quot;</span><span class="p">,</span>
+    <span class="s">&quot;drho_vel_c&quot;</span><span class="p">,</span> <span class="s">&quot;drho_ice&quot;</span><span class="p">,</span> <span class="s">&quot;dM_w&quot;</span><span class="p">,</span> <span class="s">&quot;dM_a&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dR_universal&quot;</span><span class="p">,</span> <span class="s">&quot;dEpsilon&quot;</span><span class="p">,</span> <span class="s">&quot;dgravity_acc&quot;</span><span class="p">,</span> <span class="s">&quot;dR_a&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dR_v&quot;</span><span class="p">,</span> <span class="s">&quot;da_v&quot;</span><span class="p">,</span> <span class="s">&quot;db_v&quot;</span><span class="p">,</span> <span class="s">&quot;da_prime&quot;</span><span class="p">,</span>
+    <span class="s">&quot;db_prime&quot;</span><span class="p">,</span> <span class="s">&quot;dc_prime&quot;</span><span class="p">,</span> <span class="s">&quot;dK_T&quot;</span><span class="p">,</span> <span class="s">&quot;dL_wd&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dL_ed&quot;</span><span class="p">,</span> <span class="s">&quot;dD_v&quot;</span><span class="p">,</span> <span class="s">&quot;decoll_min&quot;</span><span class="p">,</span> <span class="s">&quot;decoll_gg&quot;</span><span class="p">,</span>
+    <span class="s">&quot;decoll_gg_wet&quot;</span><span class="p">,</span> <span class="s">&quot;dkin_visc_air&quot;</span><span class="p">,</span> <span class="s">&quot;dC_mult&quot;</span><span class="p">,</span> <span class="s">&quot;dT_mult_min&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dT_mult_max&quot;</span><span class="p">,</span> <span class="s">&quot;dT_mult_opt&quot;</span><span class="p">,</span> <span class="s">&quot;dconst0&quot;</span><span class="p">,</span> <span class="s">&quot;dconst3&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dconst4&quot;</span><span class="p">,</span> <span class="s">&quot;dconst5&quot;</span><span class="p">,</span> <span class="s">&quot;dD_rainfrz_gh&quot;</span><span class="p">,</span> <span class="s">&quot;dD_rainfrz_ig&quot;</span><span class="p">,</span> <span class="s">&quot;ddv0&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dp_sat_melt&quot;</span><span class="p">,</span> <span class="s">&quot;dcp&quot;</span><span class="p">,</span> <span class="s">&quot;dk_b&quot;</span><span class="p">,</span> <span class="s">&quot;da_HET&quot;</span><span class="p">,</span>
+    <span class="s">&quot;db_HET&quot;</span><span class="p">,</span> <span class="s">&quot;dN_sc&quot;</span><span class="p">,</span> <span class="s">&quot;dn_f&quot;</span><span class="p">,</span> <span class="s">&quot;dN_avo&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dna_dust&quot;</span><span class="p">,</span> <span class="s">&quot;dna_soot&quot;</span><span class="p">,</span> <span class="s">&quot;dna_orga&quot;</span><span class="p">,</span> <span class="s">&quot;dni_het_max&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dni_hom_max&quot;</span><span class="p">,</span> <span class="s">&quot;da_dep&quot;</span><span class="p">,</span> <span class="s">&quot;db_dep&quot;</span><span class="p">,</span> <span class="s">&quot;dc_dep&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dd_dep&quot;</span><span class="p">,</span> <span class="s">&quot;dnim_imm&quot;</span><span class="p">,</span> <span class="s">&quot;dnin_dep&quot;</span><span class="p">,</span> <span class="s">&quot;dalf_imm&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dbet_dep&quot;</span><span class="p">,</span> <span class="s">&quot;dbet_imm&quot;</span><span class="p">,</span> <span class="s">&quot;dr_const&quot;</span><span class="p">,</span> <span class="s">&quot;dr1_const&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dcv&quot;</span><span class="p">,</span> <span class="s">&quot;dp_sat_const_a&quot;</span><span class="p">,</span> <span class="s">&quot;dp_sat_ice_const_a&quot;</span><span class="p">,</span> <span class="s">&quot;dp_sat_const_b&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dp_sat_ice_const_b&quot;</span><span class="p">,</span> <span class="s">&quot;dp_sat_low_temp&quot;</span><span class="p">,</span> <span class="s">&quot;dT_sat_low_temp&quot;</span><span class="p">,</span> <span class="s">&quot;dalpha_depo&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dr_0&quot;</span><span class="p">,</span> <span class="s">&quot;dk_1_conv&quot;</span><span class="p">,</span> <span class="s">&quot;dk_2_conv&quot;</span><span class="p">,</span> <span class="s">&quot;dk_1_accr&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dk_r&quot;</span><span class="p">,</span> <span class="s">&quot;da_ccn_1&quot;</span><span class="p">,</span> <span class="s">&quot;da_ccn_2&quot;</span><span class="p">,</span> <span class="s">&quot;da_ccn_3&quot;</span><span class="p">,</span> <span class="s">&quot;da_ccn_4&quot;</span><span class="p">,</span>
+    <span class="s">&quot;db_ccn_1&quot;</span><span class="p">,</span> <span class="s">&quot;db_ccn_2&quot;</span><span class="p">,</span> <span class="s">&quot;db_ccn_3&quot;</span><span class="p">,</span> <span class="s">&quot;db_ccn_4&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dc_ccn_1&quot;</span><span class="p">,</span> <span class="s">&quot;dc_ccn_2&quot;</span><span class="p">,</span> <span class="s">&quot;dc_ccn_3&quot;</span><span class="p">,</span> <span class="s">&quot;dc_ccn_4&quot;</span><span class="p">,</span>
+    <span class="s">&quot;dd_ccn_1&quot;</span><span class="p">,</span> <span class="s">&quot;dd_ccn_2&quot;</span><span class="p">,</span> <span class="s">&quot;dd_ccn_3&quot;</span><span class="p">,</span> <span class="s">&quot;dd_ccn_4&quot;</span><span class="p">,</span>
     <span class="c1">// Rain</span>
     <span class="s">&quot;drain_a_geo&quot;</span><span class="p">,</span> <span class="s">&quot;drain_b_geo&quot;</span><span class="p">,</span> <span class="s">&quot;drain_min_x&quot;</span><span class="p">,</span> <span class="s">&quot;drain_min_x_act&quot;</span><span class="p">,</span>
     <span class="s">&quot;drain_min_x_nuc_homo&quot;</span><span class="p">,</span> <span class="s">&quot;drain_min_x_nuc_hetero&quot;</span><span class="p">,</span> <span class="s">&quot;drain_min_x_melt&quot;</span><span class="p">,</span>
@@ -366,6 +416,762 @@
     <span class="s">&quot;dsnow_vsedi_min&quot;</span><span class="p">,</span> <span class="s">&quot;dsnow_vsedi_max&quot;</span><span class="p">};</span>
 <span class="cp">#endif</span>
 
+<span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span> <span class="n">output_grad_descr</span> <span class="o">=</span>
+    <span class="p">{</span><span class="s">&quot;Dimensional coefficient used in one-moment warm physics for qc and qr calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Dimensional coefficient used in one-moment warm physics for qc and qr calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Dimensional coefficients used in one-moment warm physics for temperature calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Dimensional coefficients used in one-moment warm physics for temperature calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Dimensional coefficient used in one-moment warm physics qr calculation for sedimentation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Number concentration of cloud droplets needed for one-moment scheme&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent used in one-moment warm physics for qc and qr calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent used in one-moment warm physics for qc and qr calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent used in one-moment warm physics for qc and qr calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponents used in one-moment warm physics for qr calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for gamma evaluation in rain evaporation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for autoconversion of cloud to rain&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for autoconversion of cloud to rain&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Kernel for autoconversion&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Inverse of air parcel size (height) used in explicit sedimentation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Change in buoancy&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Treshold (ratio mass) for ice selfcollection&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Treshold (diameter) for ice selfcollection&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Threshold (diameter) for ice conversion in selfcollection&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Threshold (ratio mass) for ice rain riming and snow rain riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Threshold (diameter) for ice rain riming and snow rain riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Threshold (ratio mass) for rain freeze and cloud water&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Upper bound for diameter in collision efficiency&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Default threshold (ratio mass)&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Threshold (diameter) for conversion snow to graupel, ice to graupel&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Threshold (diameter) for conversion snow to graupel, ice to graupel&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum mass of conversion due to riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Height of the trajectory package&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Molar mass of water&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Molar mass of dry air&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Universal gas constant&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Quotient of the individual gas constants&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Gravitational acceleration&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Gas constant for dry air&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Gas constant for water vapor&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Heat conductivity of air&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Kinematic viscosity of dry air&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Diffusivity of water vapor in air at $0^</span><span class="se">\\</span><span class="s">circ ext{C}$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Parameter for saturation adjustment. Constant saturated water vapor pressure&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Parameter for saturation adjustment. Constant saturated ice pressure&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Parameter for saturation adjustment. Constant saturated water vapor pressure&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Parameter for saturation adjustment. Constant saturated ice pressure&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Parameter for saturation adjustment. Saturated water vapor pressure at $T = 233$K&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Parameter for saturation adjustment&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Depostion coefficient for homogeneous ice nucleation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Aerosol particle radius prior to freezing used in homogeneous nucleation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of the particle used in one-moment schemes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for evaporation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for freezing&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for different collision processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for sedimentation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Maximum size of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient used in density correction for the increased terminal fall velocity with decreasing air density&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for 2nd mass moment&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for calculating the shape parameter $</span><span class="se">\\</span><span class="s">mu$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for calculating the shape parameter $</span><span class="se">\\</span><span class="s">mu$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for calculating the shape parameter $</span><span class="se">\\</span><span class="s">mu$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Constant for calculating the shape parameter $</span><span class="se">\\</span><span class="s">mu$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Constant for calculating the shape parameter $</span><span class="se">\\</span><span class="s">mu$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for calculating the shape parameter $</span><span class="se">\\</span><span class="s">mu$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Constant in rain sedimentation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for rain sedimentation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for rain sedimentation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Right edge of incomplete gamma function,  which had been initialized with $</span><span class="se">\\</span><span class="s">text{nm}_1$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Right edge of incomplete gamma function,  which had been initialized with $</span><span class="se">\\</span><span class="s">text{nm}_2$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Number of bins of the incomplete gamma function lookup table 1&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Number of bins of the incomplete gamma function lookup table 2&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Number of bins of the incomplete gamma function lookup table 3&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for capacity of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Inverse of capacity. Coefficient in evaporation and vapor deposition&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Constant for average ventilation. Used in melting and ice-vapor processes.&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for average ventilation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of the particle used in one-moment schemes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for freezing&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for conversion processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Maximum size of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient used in density correction for the increased terminal fall velocity with decreasing air density&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for 2nd mass moment&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for capacity of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Inverse of capacity. Coefficient in evaporation and vapor deposition&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Constant for average ventilation. Used in melting and ice-vapor processes.&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for average ventilation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of the particle used in one-moment schemes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for melting&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for evaporation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for vapor deposition&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for different collision processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for conversion processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for sedimentation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Maximum size of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Variance for the assumed Gaussian velocity distributions used in collection and riming processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient used in density correction for the increased terminal fall velocity with decreasing air density&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for 2nd mass moment&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient in graupel self collection and cloud riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Right edge of incomplete gamma function,  which had been initialized with $</span><span class="se">\\</span><span class="s">text{nm}_1$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Right edge of incomplete gamma function,  which had been initialized with $</span><span class="se">\\</span><span class="s">text{nm}_2$&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Number of bins of the incomplete gamma function lookup table 1&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Number of bins of the incomplete gamma function lookup table 2&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming coefficient. Maximum collision efficiency with cloud droplets&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for capacity of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Vapor deposition coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Inverse of capacity. Coefficient in evaporation and vapor deposition&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Constant for average ventilation. Used in melting and ice-vapor processes.&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for average ventilation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum sedimentation velocity parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Maximum sedimentation velocity parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of the particle used in one-moment schemes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for melting&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for vapor deposition&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for sedimentation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Maximum size of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Variance for the assumed Gaussian velocity distributions used in collection and riming processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient used in density correction for the increased terminal fall velocity with decreasing air density&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for 2nd mass moment&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient in graupel self collection and cloud riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming coefficient. Maximum collision efficiency with cloud droplets&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for capacity of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Vapor deposition coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Inverse of capacity. Coefficient in evaporation and vapor deposition&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Constant for average ventilation. Used in melting and ice-vapor processes.&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for average ventilation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum sedimentation velocity parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Maximum sedimentation velocity parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of the particle used in one-moment schemes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for ice activation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for homogenous nucleation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for heterogeneous nucleation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for melting&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for evaporation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for vapor deposition&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for ice-ice collision&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for different collision processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for conversion processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for sedimentation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Maximum size of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for collision particle number&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for collision particle number&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Variance for the assumed Gaussian velocity distributions used in collection and riming processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient used in density correction for the increased terminal fall velocity with decreasing air density&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for 2nd mass moment&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient in graupel self collection and cloud riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming coefficient. Maximum collision efficiency with cloud droplets&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for capacity of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Vapor deposition coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Inverse of capacity. Coefficient in evaporation and vapor deposition&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Constant for average ventilation. Used in melting and ice-vapor processes.&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for average ventilation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum sedimentation velocity parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Maximum sedimentation velocity parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for diameter size calculation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of the particle used in one-moment schemes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for melting&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for evaporation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for vapor deposition&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for different collision processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for sedimentation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum size of particle for riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Maximum size of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for collision particle number&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for collision particle number&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Variance for the assumed Gaussian velocity distributions used in collection and riming processes&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Exponent for particle velocity&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient used in density correction for the increased terminal fall velocity with decreasing air density&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for 2nd mass moment&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient in graupel self collection and cloud riming&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Shape parameter of the generalized $</span><span class="se">\\</span><span class="s">Gamma$-distribution&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Riming coefficient. Maximum collision efficiency with cloud droplets&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for capacity of particle&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Vapor deposition coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Not used&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Inverse of capacity. Coefficient in evaporation and vapor deposition&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Constant for average ventilation. Used in melting and ice-vapor processes.&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Coefficient for average ventilation&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Sedimentation velocity coefficient&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Minimum sedimentation velocity parameter&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Maximum sedimentation velocity parameter&quot;</span><span class="p">};</span>
+
+<span class="k">enum</span> <span class="k">class</span> <span class="nc">Cons_idx</span><span class="o">:</span> <span class="kt">uint32_t</span><span class="p">{</span>
+    <span class="n">a1_prime</span><span class="p">,</span>
+    <span class="n">a2_prime</span><span class="p">,</span>
+    <span class="n">e1_prime</span><span class="p">,</span>
+    <span class="n">e2_prime</span><span class="p">,</span>
+    <span class="n">d_prime</span><span class="p">,</span>
+    <span class="n">gamma</span><span class="p">,</span>
+    <span class="n">betac</span><span class="p">,</span>
+    <span class="n">betar</span><span class="p">,</span>
+    <span class="n">delta1</span><span class="p">,</span>
+    <span class="n">delta2</span><span class="p">,</span>
+    <span class="n">zeta</span><span class="p">,</span>
+    <span class="n">Nc_prime</span><span class="p">,</span>
+<span class="cp">#if defined(RK4ICE) || defined(RK4NOICE)</span>
+    <span class="n">rain_gfak</span><span class="p">,</span>
+    <span class="n">cloud_k_au</span><span class="p">,</span>
+    <span class="n">cloud_k_sc</span><span class="p">,</span>
+    <span class="n">kc_autocon</span><span class="p">,</span>
+    <span class="n">inv_z</span><span class="p">,</span>
+
+    <span class="n">dw</span><span class="p">,</span>
+    <span class="n">q_crit_i</span><span class="p">,</span>
+    <span class="n">D_crit_i</span><span class="p">,</span>
+    <span class="n">D_conv_i</span><span class="p">,</span>
+    <span class="n">q_crit_r</span><span class="p">,</span>
+    <span class="n">D_crit_r</span><span class="p">,</span>
+    <span class="n">q_crit_fr</span><span class="p">,</span>
+    <span class="n">D_coll_c</span><span class="p">,</span>
+    <span class="n">q_crit</span><span class="p">,</span>
+    <span class="n">D_conv_sg</span><span class="p">,</span>
+    <span class="n">D_conv_ig</span><span class="p">,</span>
+    <span class="n">x_conv</span><span class="p">,</span>
+    <span class="n">parcel_height</span><span class="p">,</span>
+    <span class="n">alpha_spacefilling</span><span class="p">,</span>
+    <span class="n">T_nuc</span><span class="p">,</span>
+    <span class="n">T_freeze</span><span class="p">,</span>
+    <span class="n">T_f</span><span class="p">,</span>
+    <span class="n">D_eq</span><span class="p">,</span>
+    <span class="n">rho_w</span><span class="p">,</span>
+    <span class="n">rho_0</span><span class="p">,</span>
+    <span class="n">rho_vel</span><span class="p">,</span>
+    <span class="n">rho_vel_c</span><span class="p">,</span>
+    <span class="n">rho_ice</span><span class="p">,</span>
+    <span class="n">M_w</span><span class="p">,</span>
+    <span class="n">M_a</span><span class="p">,</span>
+    <span class="n">R_universal</span><span class="p">,</span>
+    <span class="n">Epsilon</span><span class="p">,</span>
+    <span class="n">gravity_acc</span><span class="p">,</span>
+    <span class="n">R_a</span><span class="p">,</span>
+    <span class="n">R_v</span><span class="p">,</span>
+    <span class="n">a_v</span><span class="p">,</span>
+    <span class="n">b_v</span><span class="p">,</span>
+    <span class="n">a_prime</span><span class="p">,</span>
+    <span class="n">b_prime</span><span class="p">,</span>
+    <span class="n">c_prime</span><span class="p">,</span>
+    <span class="n">K_T</span><span class="p">,</span>
+    <span class="n">L_wd</span><span class="p">,</span>
+    <span class="n">L_ed</span><span class="p">,</span>
+    <span class="n">D_v</span><span class="p">,</span>
+    <span class="n">ecoll_min</span><span class="p">,</span>
+    <span class="n">ecoll_gg</span><span class="p">,</span>
+    <span class="n">ecoll_gg_wet</span><span class="p">,</span>
+    <span class="n">kin_visc_air</span><span class="p">,</span>
+    <span class="n">C_mult</span><span class="p">,</span>
+    <span class="n">T_mult_min</span><span class="p">,</span>
+    <span class="n">T_mult_max</span><span class="p">,</span>
+    <span class="n">T_mult_opt</span><span class="p">,</span>
+
+    <span class="n">const0</span><span class="p">,</span>
+    <span class="n">const3</span><span class="p">,</span>
+    <span class="n">const4</span><span class="p">,</span>
+    <span class="n">const5</span><span class="p">,</span>
+    <span class="n">D_rainfrz_gh</span><span class="p">,</span>
+    <span class="n">D_rainfrz_ig</span><span class="p">,</span>
+    <span class="n">dv0</span><span class="p">,</span>
+    <span class="n">p_sat_melt</span><span class="p">,</span>
+    <span class="n">cp</span><span class="p">,</span>
+    <span class="n">k_b</span><span class="p">,</span>
+    <span class="n">a_HET</span><span class="p">,</span>
+    <span class="n">b_HET</span><span class="p">,</span>
+    <span class="n">N_sc</span><span class="p">,</span>
+    <span class="n">n_f</span><span class="p">,</span>
+    <span class="n">N_avo</span><span class="p">,</span>
+    <span class="n">na_dust</span><span class="p">,</span>
+    <span class="n">na_soot</span><span class="p">,</span>
+    <span class="n">na_orga</span><span class="p">,</span>
+    <span class="n">ni_het_max</span><span class="p">,</span>
+    <span class="n">ni_hom_max</span><span class="p">,</span>
+    <span class="n">a_dep</span><span class="p">,</span>
+    <span class="n">b_dep</span><span class="p">,</span>
+    <span class="n">c_dep</span><span class="p">,</span>
+    <span class="n">d_dep</span><span class="p">,</span>
+    <span class="n">nim_imm</span><span class="p">,</span>
+    <span class="n">nin_dep</span><span class="p">,</span>
+    <span class="n">alf_imm</span><span class="p">,</span>
+    <span class="n">bet_dep</span><span class="p">,</span>
+    <span class="n">bet_imm</span><span class="p">,</span>
+    <span class="n">r_const</span><span class="p">,</span>
+    <span class="n">r1_const</span><span class="p">,</span>
+    <span class="n">cv</span><span class="p">,</span>
+    <span class="n">p_sat_const_a</span><span class="p">,</span>
+    <span class="n">p_sat_ice_const_a</span><span class="p">,</span>
+    <span class="n">p_sat_const_b</span><span class="p">,</span>
+    <span class="n">p_sat_ice_const_b</span><span class="p">,</span>
+    <span class="n">p_sat_low_temp</span><span class="p">,</span>
+    <span class="n">T_sat_low_temp</span><span class="p">,</span>
+    <span class="n">alpha_depo</span><span class="p">,</span>
+    <span class="n">r_0</span><span class="p">,</span>
+    <span class="n">k_1_conv</span><span class="p">,</span>
+    <span class="n">k_2_conv</span><span class="p">,</span>
+    <span class="n">k_1_accr</span><span class="p">,</span>
+    <span class="n">k_r</span><span class="p">,</span>
+    <span class="n">a_ccn_1</span><span class="p">,</span> <span class="n">a_ccn_2</span><span class="p">,</span> <span class="n">a_ccn_3</span><span class="p">,</span> <span class="n">a_ccn_4</span><span class="p">,</span>
+    <span class="n">b_ccn_1</span><span class="p">,</span> <span class="n">b_ccn_2</span><span class="p">,</span> <span class="n">b_ccn_3</span><span class="p">,</span> <span class="n">b_ccn_4</span><span class="p">,</span>
+    <span class="n">c_ccn_1</span><span class="p">,</span> <span class="n">c_ccn_2</span><span class="p">,</span> <span class="n">c_ccn_3</span><span class="p">,</span> <span class="n">c_ccn_4</span><span class="p">,</span>
+    <span class="n">d_ccn_1</span><span class="p">,</span> <span class="n">d_ccn_2</span><span class="p">,</span> <span class="n">d_ccn_3</span><span class="p">,</span> <span class="n">d_ccn_4</span><span class="p">,</span>
+<span class="cp">#endif</span>
+    <span class="n">n_items</span>
+<span class="p">};</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">&gt;</span> <span class="k">const</span> <span class="n">table_param</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">{</span><span class="s">&quot;a_1&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">a1_prime</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;a_2&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">a2_prime</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;e_1&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">e1_prime</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;e_2&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">e2_prime</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;d&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">d_prime</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;N_c&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">Nc_prime</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;gamma&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">gamma</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;beta_c&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">betac</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;beta_r&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">betar</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;delta1&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">delta1</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;delta2&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">delta2</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;zeta&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">zeta</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;rain_gfak&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">rain_gfak</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;cloud_k_au&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">cloud_k_au</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;cloud_k_sc&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">cloud_k_sc</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;kc_autocon&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">kc_autocon</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;inv_z&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">inv_z</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;dw&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">dw</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;q_crit_i&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">q_crit_i</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;D_crit_i&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">D_crit_i</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;D_conv_i&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">D_conv_i</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;q_crit_r&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">q_crit_r</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;D_crit_r&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">D_crit_r</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;q_crit_fr&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">q_crit_fr</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;D_coll_c&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">D_coll_c</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;q_crit&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">q_crit</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;D_conv_sg&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">D_conv_sg</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;D_conv_ig&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">D_conv_ig</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;x_conv&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">x_conv</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;parcel_height&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">parcel_height</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;alpha_spacefilling&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">alpha_spacefilling</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;T_nuc&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">T_nuc</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;T_freeze&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">T_freeze</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;T_f&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">T_f</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;D_eq&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">D_eq</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;rho_w&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">rho_w</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;rho_0&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">rho_0</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;rho_vel&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">rho_vel</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;rho_vel_c&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">rho_vel_c</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;rho_ice&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">rho_ice</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;M_w&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">M_w</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;M_a&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">M_a</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;R_universal&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">R_universal</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;Epsilon&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">Epsilon</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;gravity_acc&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">gravity_acc</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;R_a&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">R_a</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;R_v&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">R_v</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;a_v&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">a_v</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;b_v&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">b_v</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;a_prime&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">a_prime</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;b_prime&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">b_prime</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;c_prime&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">c_prime</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;K_T&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">K_T</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;L_wd&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">L_wd</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;L_ed&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">L_ed</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;D_v&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">D_v</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;ecoll_min&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">ecoll_min</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;ecoll_gg&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">ecoll_gg</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;ecoll_gg_wet&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">ecoll_gg_wet</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;kin_visc_air&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">kin_visc_air</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;C_mult&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">C_mult</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;T_mult_min&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">T_mult_min</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;T_mult_max&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">T_mult_max</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;T_mult_opt&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">T_mult_opt</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;const0&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">const0</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;const3&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">const3</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;const4&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">const4</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;const5&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">const5</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;D_rainfrz_ig&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">D_rainfrz_ig</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;D_rainfrz_gh&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">D_rainfrz_gh</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;dv0&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">dv0</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;p_sat_melt&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">p_sat_melt</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;cp&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">cp</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;k_b&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">k_b</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;a_HET&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">a_HET</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;b_HET&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">b_HET</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;N_sc&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">N_sc</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;n_f&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">n_f</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;N_avo&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">N_avo</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;na_dust&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">na_dust</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;na_soot&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">na_soot</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;na_orga&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">na_orga</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;ni_het_max&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">ni_het_max</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;ni_hom_max&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">ni_hom_max</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;a_dep&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">a_dep</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;b_dep&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">b_dep</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;c_dep&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">c_dep</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;d_dep&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">d_dep</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;nim_imm&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">nim_imm</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;nin_dep&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">nin_dep</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;alf_imm&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">alf_imm</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;bet_dep&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">bet_dep</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;bet_imm&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">bet_imm</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;r_const&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">r_const</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;r1_const&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">r1_const</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;cv&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">cv</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;p_sat_const_a&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">p_sat_const_a</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;p_sat_ice_const_a&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">p_sat_ice_const_a</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;p_sat_const_b&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">p_sat_const_b</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;p_sat_ice_const_b&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">p_sat_ice_const_b</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;p_sat_low_temp&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">p_sat_low_temp</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;T_sat_low_temp&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">T_sat_low_temp</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;alpha_depo&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">alpha_depo</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;r_0&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">r_0</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;k_1_conv&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">k_1_conv</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;k_2_conv&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">k_2_conv</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;k_1_accr&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">k_1_accr</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;k_r&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">k_r</span><span class="p">},</span>
+<span class="cp">#if defined(RK4ICE) || defined(RK4NOICE)</span>
+    <span class="p">{</span><span class="s">&quot;a_ccn_1&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">a_ccn_1</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;a_ccn_2&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">a_ccn_2</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;a_ccn_3&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">a_ccn_3</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;a_ccn_4&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">a_ccn_4</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;b_ccn_1&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">b_ccn_1</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;b_ccn_2&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">b_ccn_2</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;b_ccn_3&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">b_ccn_3</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;b_ccn_4&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">b_ccn_4</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;c_ccn_1&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">c_ccn_1</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;c_ccn_2&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">c_ccn_2</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;c_ccn_3&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">c_ccn_3</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;c_ccn_4&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">c_ccn_4</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;d_ccn_1&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">d_ccn_1</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;d_ccn_2&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">d_ccn_2</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;d_ccn_3&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">d_ccn_3</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;d_ccn_4&quot;</span><span class="p">,</span> <span class="n">Cons_idx</span><span class="o">::</span><span class="n">d_ccn_4</span><span class="p">}</span>
+<span class="cp">#endif</span>
+<span class="p">};</span>
+
+<span class="k">enum</span> <span class="k">class</span> <span class="nc">Particle_cons_idx</span><span class="o">:</span> <span class="kt">uint32_t</span><span class="p">{</span>
+    <span class="n">a_geo</span><span class="p">,</span>
+    <span class="n">b_geo</span><span class="p">,</span>
+    <span class="n">min_x</span><span class="p">,</span>
+    <span class="n">min_x_act</span><span class="p">,</span>
+    <span class="n">min_x_nuc_homo</span><span class="p">,</span>
+    <span class="n">min_x_nuc_hetero</span><span class="p">,</span>
+    <span class="n">min_x_melt</span><span class="p">,</span>
+    <span class="n">min_x_evap</span><span class="p">,</span>
+    <span class="n">min_x_freezing</span><span class="p">,</span>
+    <span class="n">min_x_depo</span><span class="p">,</span>
+    <span class="n">min_x_collision</span><span class="p">,</span>
+    <span class="n">min_x_collection</span><span class="p">,</span>
+    <span class="n">min_x_conversion</span><span class="p">,</span>
+    <span class="n">min_x_sedimentation</span><span class="p">,</span>
+    <span class="n">min_x_riming</span><span class="p">,</span>
+
+    <span class="n">max_x</span><span class="p">,</span>
+    <span class="n">sc_theta_q</span><span class="p">,</span>
+    <span class="n">sc_delta_q</span><span class="p">,</span>
+    <span class="n">sc_theta_n</span><span class="p">,</span>
+    <span class="n">sc_delta_n</span><span class="p">,</span>
+    <span class="n">s_vel</span><span class="p">,</span>
+    <span class="n">a_vel</span><span class="p">,</span>
+    <span class="n">b_vel</span><span class="p">,</span>
+    <span class="n">rho_v</span><span class="p">,</span>
+    <span class="n">c_z</span><span class="p">,</span>
+    <span class="n">sc_coll_n</span><span class="p">,</span>
+    <span class="n">cmu0</span><span class="p">,</span>
+    <span class="n">cmu1</span><span class="p">,</span>
+    <span class="n">cmu2</span><span class="p">,</span>
+    <span class="n">cmu3</span><span class="p">,</span>
+    <span class="n">cmu4</span><span class="p">,</span>
+    <span class="n">cmu5</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">,</span>
+    <span class="n">beta</span><span class="p">,</span>
+    <span class="n">gamma</span><span class="p">,</span>
+    <span class="n">g1</span><span class="p">,</span>
+    <span class="n">g2</span><span class="p">,</span>
+    <span class="n">mu</span><span class="p">,</span>
+    <span class="n">nu</span><span class="p">,</span>
+    <span class="n">nm1</span><span class="p">,</span>
+    <span class="n">nm2</span><span class="p">,</span>
+    <span class="n">nm3</span><span class="p">,</span>
+
+    <span class="n">q_crit_c</span><span class="p">,</span>
+    <span class="n">d_crit_c</span><span class="p">,</span>
+    <span class="n">ecoll_c</span><span class="p">,</span>
+    <span class="n">cap</span><span class="p">,</span>
+    <span class="n">a_ven</span><span class="p">,</span>
+    <span class="n">b_ven</span><span class="p">,</span>
+    <span class="n">c_s</span><span class="p">,</span>
+    <span class="n">a_f</span><span class="p">,</span>
+    <span class="n">b_f</span><span class="p">,</span>
+    <span class="n">alfa_n</span><span class="p">,</span>
+    <span class="n">alfa_q</span><span class="p">,</span>
+    <span class="n">lambda</span><span class="p">,</span>
+    <span class="n">vsedi_min</span><span class="p">,</span>
+    <span class="n">vsedi_max</span><span class="p">,</span>
+    <span class="n">n_items</span>
+<span class="p">};</span>
+
+<span class="k">template</span><span class="o">&lt;</span>
+    <span class="k">class</span> <span class="nc">float_t</span><span class="p">,</span>
+    <span class="k">class</span> <span class="nc">enum_t</span><span class="o">&gt;</span>
+<span class="kr">inline</span> <span class="n">float_t</span> <span class="n">get_at</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">float_t</span><span class="o">&gt;</span> <span class="n">vec</span><span class="p">,</span> <span class="n">enum_t</span> <span class="n">idx</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">vec</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">idx</span><span class="p">)];</span>
+<span class="p">};</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">&gt;</span> <span class="k">const</span> <span class="n">table_particle_param</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">{</span><span class="s">&quot;a_geo&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">a_geo</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;b_geo&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">b_geo</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;min_x&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;min_x_act&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_act</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;min_x_nuc_homo&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_nuc_homo</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;min_x_nuc_hetero&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_nuc_hetero</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;min_x_melt&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_melt</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;min_x_evap&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_evap</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;min_x_freezing&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_freezing</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;min_x_depo&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_depo</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;min_x_collision&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_collision</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;min_x_collection&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_collection</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;min_x_conversion&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_conversion</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;min_x_sedimentation&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_sedimentation</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;min_x_riming&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">min_x_riming</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;max_x&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">max_x</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;sc_theta_q&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">sc_theta_q</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;sc_delta_q&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">sc_delta_q</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;sc_theta_n&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">sc_theta_n</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;sc_delta_n&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">sc_delta_n</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;s_vel&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">s_vel</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;a_vel&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">a_vel</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;b_vel&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">b_vel</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;rho_v&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">rho_v</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;c_z&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">c_z</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;sc_coll_n&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">sc_coll_n</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;cmu0&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">cmu0</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;cmu1&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">cmu1</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;cmu2&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">cmu2</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;cmu3&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">cmu3</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;cmu4&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">cmu4</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;cmu5&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">cmu5</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;alpha&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">alpha</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;beta&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">beta</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;gamma&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">gamma</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;nu&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">nu</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;g1&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">g1</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;g2&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">g2</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;mu&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">mu</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;nm1&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">nm1</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;nm2&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">nm2</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;nm3&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">nm3</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;q_crit_c&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">q_crit_c</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;d_crit_c&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">d_crit_c</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;ecoll_c&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">ecoll_c</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;cap&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">cap</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;a_ven&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">a_ven</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;b_ven&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">b_ven</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;c_s&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">c_s</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;a_f&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">a_f</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;b_f&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">b_f</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;alfa_n&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">alfa_n</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;alfa_q&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">alfa_q</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;lambda&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">lambda</span><span class="p">},</span> <span class="p">{</span><span class="s">&quot;vsedi_min&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">vsedi_min</span><span class="p">},</span>
+    <span class="p">{</span><span class="s">&quot;vsedi_max&quot;</span><span class="p">,</span> <span class="n">Particle_cons_idx</span><span class="o">::</span><span class="n">vsedi_max</span><span class="p">}</span>
+<span class="p">};</span>
+
 <span class="kt">double</span> <span class="n">sediment_q</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 <span class="kt">double</span> <span class="n">sediment_n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 <span class="kt">double</span> <span class="n">sediment_q_total</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
@@ -373,17 +1179,21 @@
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">R_universal</span> <span class="o">=</span> <span class="mf">8.3144598</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">Mw</span> <span class="o">=</span> <span class="mf">0.018015265</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">M_w</span> <span class="o">=</span> <span class="mf">0.018015265</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">Ma</span> <span class="o">=</span> <span class="mf">0.02896546</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">M_a</span> <span class="o">=</span> <span class="mf">0.02896546</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">Rv</span> <span class="o">=</span> <span class="n">R_universal</span><span class="o">/</span><span class="n">Mw</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">R_v</span> <span class="o">=</span> <span class="n">R_universal</span><span class="o">/</span><span class="n">M_w</span><span class="p">;</span> <span class="c1">//  461.51 in ICON</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">Ra</span> <span class="o">=</span> <span class="n">R_universal</span><span class="o">/</span><span class="n">Ma</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">R_a</span> <span class="o">=</span> <span class="n">R_universal</span><span class="o">/</span><span class="n">M_a</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">Epsilon</span> <span class="o">=</span> <span class="n">Ra</span><span class="o">/</span><span class="n">Rv</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">Epsilon</span> <span class="o">=</span> <span class="n">R_a</span><span class="o">/</span><span class="n">R_v</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">gravity_acc</span> <span class="o">=</span> <span class="mf">9.81</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">r_0</span> <span class="o">=</span> <span class="mf">0.25e-6</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">alpha_depo</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">gravity_acc</span> <span class="o">=</span> <span class="mf">9.80665</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">q_crit_i</span> <span class="o">=</span> <span class="mf">1.0e-6</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">double</span> <span class="n">D_crit_i</span> <span class="o">=</span> <span class="mf">1.0e-4</span><span class="p">;</span>
@@ -394,7 +1204,6 @@
 <span class="k">const</span> <span class="kt">double</span> <span class="n">D_crit_r</span> <span class="o">=</span> <span class="mf">1.0e-4</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">q_crit_fr</span> <span class="o">=</span> <span class="mf">1.0e-6</span><span class="p">;</span>
-<span class="k">const</span> <span class="kt">double</span> <span class="n">q_crit_c</span> <span class="o">=</span> <span class="mf">1.0e-6</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">q_crit</span> <span class="o">=</span> <span class="mf">1.0e-7</span><span class="p">;</span>
 
@@ -403,9 +1212,9 @@
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">x_conv</span> <span class="o">=</span> <span class="mf">1.0e-10</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">D_crit_c</span> <span class="o">=</span> <span class="mf">1.0e-5</span><span class="p">;</span>
-
 <span class="k">const</span> <span class="kt">double</span> <span class="n">D_coll_c</span> <span class="o">=</span> <span class="mf">4.0e-5</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">kc_autocon</span> <span class="o">=</span> <span class="mf">9.44e9</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">parcel_height</span> <span class="o">=</span> <span class="mf">250.0</span><span class="p">;</span>
 
@@ -427,7 +1236,6 @@
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">rho_ice</span> <span class="o">=</span> <span class="mf">916.7</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">R_v</span> <span class="o">=</span> <span class="mf">461.51</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">a_v</span> <span class="o">=</span> <span class="mf">0.78</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">double</span> <span class="n">b_v</span> <span class="o">=</span> <span class="mf">0.308</span><span class="p">;</span>
@@ -450,11 +1258,6 @@
 <span class="k">const</span> <span class="kt">double</span> <span class="n">T_mult_min</span> <span class="o">=</span> <span class="mf">265.0</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">double</span> <span class="n">T_mult_max</span> <span class="o">=</span> <span class="mf">270.0</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">double</span> <span class="n">T_mult_opt</span> <span class="o">=</span> <span class="mf">268.0</span><span class="p">;</span>
-
-<span class="k">const</span> <span class="kt">double</span> <span class="n">const0</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="n">D_coll_c</span> <span class="o">-</span> <span class="n">D_crit_c</span><span class="p">);</span>
-<span class="k">const</span> <span class="kt">double</span> <span class="n">const3</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="n">T_mult_opt</span> <span class="o">-</span> <span class="n">T_mult_min</span><span class="p">);</span>
-<span class="k">const</span> <span class="kt">double</span> <span class="n">const4</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="n">T_mult_opt</span> <span class="o">-</span> <span class="n">T_mult_max</span><span class="p">);</span>
-<span class="k">const</span> <span class="kt">double</span> <span class="n">const5</span> <span class="o">=</span> <span class="n">alpha_spacefilling</span> <span class="o">*</span> <span class="n">rho_w</span><span class="o">/</span><span class="n">rho_ice</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">bool</span> <span class="n">ice_multiplication</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">bool</span> <span class="n">enhanced_melting</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
@@ -485,13 +1288,12 @@
 <span class="k">const</span> <span class="kt">double</span> <span class="n">n_f</span> <span class="o">=</span> <span class="mf">0.333</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">N_avo</span> <span class="o">=</span> <span class="mf">6.02214179e23</span><span class="p">;</span>
-<span class="k">const</span> <span class="kt">double</span> <span class="n">grav</span> <span class="o">=</span> <span class="mf">9.80665</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">double</span> <span class="n">amd</span> <span class="o">=</span> <span class="mf">28.97</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">double</span> <span class="n">amw</span> <span class="o">=</span> <span class="mf">18.0154</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">na_dust</span> <span class="o">=</span> <span class="mf">162.0e3</span><span class="p">;</span>
-<span class="k">const</span> <span class="kt">double</span> <span class="n">na_soot</span> <span class="o">=</span> <span class="mf">15.0e6</span><span class="p">;</span>
-<span class="k">const</span> <span class="kt">double</span> <span class="n">na_orga</span> <span class="o">=</span> <span class="mf">177.0e6</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_dust_phillips</span> <span class="o">=</span> <span class="mf">162.0e3</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_soot_phillips</span> <span class="o">=</span> <span class="mf">15.0e6</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_orga_phillips</span> <span class="o">=</span> <span class="mf">177.0e6</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">double</span> <span class="n">ni_het_max</span> <span class="o">=</span> <span class="mf">500.0e3</span><span class="p">;</span>
 <span class="k">const</span> <span class="kt">double</span> <span class="n">ni_hom_max</span> <span class="o">=</span> <span class="mf">5000.0e3</span><span class="p">;</span>
 
@@ -554,6 +1356,32 @@
 
 <span class="k">const</span> <span class="kt">int</span> <span class="n">nuc_type</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
 
+<span class="k">const</span> <span class="kt">double</span> <span class="n">k_1_accr</span> <span class="o">=</span> <span class="mf">5.0e-4</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">k_r</span> <span class="o">=</span> <span class="mf">5.78</span><span class="p">;</span>
+<span class="c1">// const double k_r = 5.28;</span>
+
+<span class="cp">#ifdef SB_CONV</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">k_1_conv</span> <span class="o">=</span> <span class="mi">400</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">k_2_conv</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">;</span>
+<span class="cp">#else</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">k_1_conv</span> <span class="o">=</span> <span class="mi">600</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">k_2_conv</span> <span class="o">=</span> <span class="mf">0.68</span><span class="p">;</span>
+<span class="cp">#endif</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_dust</span> <span class="o">=</span> <span class="mf">160e4</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_dust_2</span> <span class="o">=</span> <span class="mf">160e4</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_dust_3</span> <span class="o">=</span> <span class="mf">70e4</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_soot</span> <span class="o">=</span> <span class="mf">30e6</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_soot_2</span> <span class="o">=</span> <span class="mf">25e6</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_soot_3</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_orga</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_orga_2</span> <span class="o">=</span> <span class="mf">30e6</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">na_orga_3</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
 <span class="k">const</span> <span class="kt">bool</span> <span class="n">use_hdcp2_het</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">t_tmax</span> <span class="o">=</span> <span class="mi">30</span><span class="p">;</span>
@@ -568,7 +1396,6 @@
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">r1_const</span> <span class="o">=</span> <span class="mf">461.5</span><span class="p">;</span>
 
-<span class="c1">// const double cp = 1005.7;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">cv</span> <span class="o">=</span> <span class="mf">718.66</span><span class="p">;</span>
 
@@ -576,15 +1403,17 @@
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">p_sat_const_a</span> <span class="o">=</span> <span class="mf">17.2693882</span><span class="p">;</span>
 
-<span class="c1">// const double p_sat_ice_const_a = 21.8745584;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">p_sat_ice_const_a</span> <span class="o">=</span> <span class="mf">21.8745584</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">p_sat_const_b</span> <span class="o">=</span> <span class="mf">35.86</span><span class="p">;</span>
 
-<span class="c1">// const double p_sat_ice_const_b = 7.66;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">p_sat_ice_const_b</span> <span class="o">=</span> <span class="mf">7.66</span><span class="p">;</span>
 
 <span class="k">const</span> <span class="kt">double</span> <span class="n">p_sat_low_temp</span> <span class="o">=</span> <span class="mf">610.78</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">double</span> <span class="n">T_sat_low_temp</span> <span class="o">=</span> <span class="mf">273.16</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">T_sat_low_temp</span> <span class="o">=</span> <span class="mf">273.15</span><span class="p">;</span>
+
+
 
 <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="o">&gt;</span> <span class="n">afrac_dust</span> <span class="o">=</span> <span class="p">{</span>
 <span class="p">{</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">},</span>
@@ -895,17 +1724,19 @@
 <span class="p">{</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">}</span>
 <span class="p">};</span>
 
-<span class="n">table_t</span> <span class="n">ltabdminwgg</span><span class="p">;</span>
-<span class="n">gamma_table_t</span> <span class="n">table_g1</span><span class="p">,</span> <span class="n">table_g2</span><span class="p">,</span> <span class="n">table_r1</span><span class="p">,</span> <span class="n">table_r2</span><span class="p">,</span> <span class="n">table_r3</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">n_lookup</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">n_lookup_highres</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">n_lookup_hr_dummy</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
 
-<span class="k">const</span> <span class="kt">uint64_t</span> <span class="n">n_lookup</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">;</span>
-<span class="k">const</span> <span class="kt">uint64_t</span> <span class="n">n_lookup_highres</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">;</span>
-<span class="k">const</span> <span class="kt">uint64_t</span> <span class="n">n_lookup_hr_dummy</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+<span class="c1">// std::stringstream out_tmp;</span>
+<span class="c1">// std::ofstream outfile;</span>
+<span class="c1">// std::ofstream out_diff[num_comp];</span>
+<span class="c1">// std::stringstream out_diff_tmp[num_comp];</span>
+<span class="c1">// uint64_t n_snapshots = 0;</span>
 
-<span class="n">std</span><span class="o">::</span><span class="n">stringstream</span> <span class="n">out_tmp</span><span class="p">;</span>
-<span class="n">std</span><span class="o">::</span><span class="n">ofstream</span> <span class="n">outfile</span><span class="p">;</span>
-<span class="n">std</span><span class="o">::</span><span class="n">ofstream</span> <span class="n">out_diff</span><span class="p">[</span><span class="n">num_comp</span><span class="p">];</span>
-<span class="n">std</span><span class="o">::</span><span class="n">stringstream</span> <span class="n">out_diff_tmp</span><span class="p">[</span><span class="n">num_comp</span><span class="p">];</span>
+
+<span class="c1">// std::vector&lt;std::ofstream&gt; out_diff(num_comp);</span>
+<span class="c1">// std::vector&lt;std::stringstream&gt; out_diff_tmp(num_comp);</span>
  <span class="c1">// end of group constants</span>
 
 <span class="cp">#endif</span>

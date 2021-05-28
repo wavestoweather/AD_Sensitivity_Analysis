@@ -81,7 +81,20 @@
               
             
             
-              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/latexify.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">latexify</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/merge.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -171,7 +184,6 @@
 <li><p><a class="reference internal" href="#includes" id="id2">Includes</a></p></li>
 <li><p><a class="reference internal" href="#namespaces" id="id3">Namespaces</a></p></li>
 <li><p><a class="reference internal" href="#functions" id="id4">Functions</a></p></li>
-<li><p><a class="reference internal" href="#variables" id="id5">Variables</a></p></li>
 </ul>
 </div>
 <div class="section" id="definition-include-microphysics-program-io-h">
@@ -185,6 +197,9 @@
 <div class="section" id="includes">
 <h2>Includes<a class="headerlink" href="#includes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">boost/property_tree/json_parser.hpp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">boost/property_tree/ptree.hpp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">boost/property_tree/xml_parser.hpp</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cmath</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">codi.hpp</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">constants.h</span></code> (<a class="reference internal" href="file_include_microphysics_constants.h.html#file-include-microphysics-constants-h"><span class="std std-ref">File constants.h</span></a>)</p></li>
@@ -195,6 +210,7 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">netcdf</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">stdlib.h</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sys/stat.h</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">types.h</span></code> (<a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">vector</span></code></p></li>
 </ul>
@@ -208,26 +224,21 @@
 <div class="section" id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="function_group__io_1ga972543a894103649e760f07095f6aedc.html#exhale-function-group-io-1ga972543a894103649e760f07095f6aedc"><span class="std std-ref">Function init_global_args</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__io_1gac03abfac06224ad39f0ffc9462fec764.html#exhale-function-group-io-1gac03abfac06224ad39f0ffc9462fec764"><span class="std std-ref">Function init_input_parameters</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__io_1gae6656d8816d12244ab401f8627fa2388.html#exhale-function-group-io-1gae6656d8816d12244ab401f8627fa2388"><span class="std std-ref">Function create_run_script</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__io_1ga1e9d3cfdfcd2e43b9557c8cfd9d910f1.html#exhale-function-group-io-1ga1e9d3cfdfcd2e43b9557c8cfd9d910f1"><span class="std std-ref">Function exists</span></a></p></li>
 <li><p><a class="reference internal" href="function_group__io_1gafcb7ba4cf91ace9072d73b46909cf07f.html#exhale-function-group-io-1gafcb7ba4cf91ace9072d73b46909cf07f"><span class="std std-ref">Function init_nc_parameters</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__io_1ga2775c4d2ec8c85871724d9c3e1525e10.html#exhale-function-group-io-1ga2775c4d2ec8c85871724d9c3e1525e10"><span class="std std-ref">Template Function load_checkpoint</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__io_1gac51eeeb288e456e4ca5e809342dce596.html#exhale-function-group-io-1gac51eeeb288e456e4ca5e809342dce596"><span class="std std-ref">Function load_ens_config</span></a></p></li>
 <li><p><a class="reference internal" href="function_group__io_1gacc114b39484d2bdefeb1efe4ed638ff0.html#exhale-function-group-io-1gacc114b39484d2bdefeb1efe4ed638ff0"><span class="std std-ref">Function load_lookup_table</span></a></p></li>
 <li><p><a class="reference internal" href="function_group__io_1ga6418d272fbbab9dce33fbbe742695588.html#exhale-function-group-io-1ga6418d272fbbab9dce33fbbe742695588"><span class="std std-ref">Function load_nc_parameters</span></a></p></li>
 <li><p><a class="reference internal" href="function_group__io_1ga9df23aaaf7c2d75fb06d9cbda9cf506a.html#exhale-function-group-io-1ga9df23aaaf7c2d75fb06d9cbda9cf506a"><span class="std std-ref">Function load_nc_parameters_var</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__io_1gaea20c025629c3b1f7a5cf97d3467be9f.html#exhale-function-group-io-1gaea20c025629c3b1f7a5cf97d3467be9f"><span class="std std-ref">Function open_netcdf</span></a></p></li>
 <li><p><a class="reference internal" href="function_group__io_1gaafbe24d75db4f70e6376253728a7e7e4.html#exhale-function-group-io-1gaafbe24d75db4f70e6376253728a7e7e4"><span class="std std-ref">Function parse_arguments</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__io_1gac4d1b3718430b948a3970a89ad143913.html#exhale-function-group-io-1gac4d1b3718430b948a3970a89ad143913"><span class="std std-ref">Function read_init_netcdf</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__io_1ga16d17ee68a1a19138345f54cb6ce55ff.html#exhale-function-group-io-1ga16d17ee68a1a19138345f54cb6ce55ff"><span class="std std-ref">Function read_netcdf_write_stream</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__io_1ga58a9a31b0d17bb05a5d2d97f78dd8b5b.html#exhale-function-group-io-1ga58a9a31b0d17bb05a5d2d97f78dd8b5b"><span class="std std-ref">Function read_init_netcdf</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__io_1gacefe99269d8f7f510dd61cfb43243b4c.html#exhale-function-group-io-1gacefe99269d8f7f510dd61cfb43243b4c"><span class="std std-ref">Function read_netcdf_write_stream</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__io_1gaf88f468d6a8396655ae2fd338699e206.html#exhale-function-group-io-1gaf88f468d6a8396655ae2fd338699e206"><span class="std std-ref">Function resize_counter</span></a></p></li>
 <li><p><a class="reference internal" href="function_group__io_1gaab68f866e7ee86dc4fd3cdd2409a88e4.html#exhale-function-group-io-1gaab68f866e7ee86dc4fd3cdd2409a88e4"><span class="std std-ref">Function set_input_from_arguments</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__io_1gadab51007d566f2da441e6edbc9d2e394.html#exhale-function-group-io-1gadab51007d566f2da441e6edbc9d2e394"><span class="std std-ref">Function write_headers</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__io_1gad2046a65ce11faf1066215384ebbe663.html#exhale-function-group-io-1gad2046a65ce11faf1066215384ebbe663"><span class="std std-ref">Function write_output</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__io_1gae1fdd6b9749a10404ccf774a8e6b1955.html#exhale-function-group-io-1gae1fdd6b9749a10404ccf774a8e6b1955"><span class="std std-ref">Function write_reference_quantities</span></a></p></li>
-</ul>
-</div>
-<div class="section" id="variables">
-<h2>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p><a class="reference internal" href="variable_group__io_1ga1b7271ddd60c22960c39ae6caf4d5254.html#exhale-variable-group-io-1ga1b7271ddd60c22960c39ae6caf4d5254"><span class="std std-ref">Variable optString</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__io_1ga90c22793915d3bd42acc3f9f4b4657c9.html#exhale-function-group-io-1ga90c22793915d3bd42acc3f9f4b4657c9"><span class="std std-ref">Template Function write_checkpoint</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__io_1ga5d39eaffe2854e49fc2a4f506305ebe6.html#exhale-function-group-io-1ga5d39eaffe2854e49fc2a4f506305ebe6"><span class="std std-ref">Function write_output</span></a></p></li>
 </ul>
 </div>
 </div>

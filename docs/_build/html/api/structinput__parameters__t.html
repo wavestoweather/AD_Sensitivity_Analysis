@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Struct model_constants_t" href="structmodel__constants__t.html" />
+    <link rel="next" title="Struct IO_handle_t" href="structIO__handle__t.html" />
     <link rel="prev" title="Struct global_args_t" href="structglobal__args__t.html" /> 
 </head>
 
@@ -83,7 +83,20 @@
               
             
             
-              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Python Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/executing.html">Executing Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/convert_to_met3d.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">convert_to_met3d</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/create_median.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">create_median</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/dask_loader.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dask_loader</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/latexify.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">latexify</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/merge.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/parameters.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">parameters</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/plot_mse.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plot_mse</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_identifier.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_identifier</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/segment_statistics.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">segment_statistics</span></code></a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -177,6 +190,37 @@
 <span id="_CPPv318input_parameters_t"></span><span id="_CPPv218input_parameters_t"></span><span id="input_parameters_t"></span><span class="target" id="structinput__parameters__t"></span><em class="property">struct </em><code class="sig-name descname">input_parameters_t</code><a class="headerlink" href="#_CPPv418input_parameters_t" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Structure to collect all input parameters. </p>
 <div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="cpp function">
+<dt id="_CPPv4N18input_parameters_t18input_parameters_tEv">
+<span id="_CPPv3N18input_parameters_t18input_parameters_tEv"></span><span id="_CPPv2N18input_parameters_t18input_parameters_tEv"></span><span id="input_parameters_t::input_parameters_t"></span><span class="target" id="structinput__parameters__t_1a708aaa367a29ebb4b5b515838bd55fe1"></span><code class="sig-name descname">input_parameters_t</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18input_parameters_t18input_parameters_tEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N18input_parameters_t17set_outputfile_idERKNSt6stringE8uint64_t">
+<span id="_CPPv3N18input_parameters_t17set_outputfile_idERKNSt6stringE8uint64_t"></span><span id="_CPPv2N18input_parameters_t17set_outputfile_idERKNSt6stringE8uint64_t"></span><span id="input_parameters_t::set_outputfile_id__ssCR.uint64_t"></span><span class="target" id="structinput__parameters__t_1a80161d3b7a8bc0404e75734fd52da426"></span>void <code class="sig-name descname">set_outputfile_id</code><span class="sig-paren">(</span><em class="property">const</em> std::string &amp;<em>all_ids</em>, uint64_t <em>ensemble_id</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18input_parameters_t17set_outputfile_idERKNSt6stringE8uint64_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Change the output filename such that it starts with “idx-y-z_” where x-y are the ids of preceding trajectories and z is the current id</p>
+<p>all_ids String of form x-y-z with x,y and z positive ints and z being the current id. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK18input_parameters_t3putERN2pt5ptreeERKd">
+<span id="_CPPv3NK18input_parameters_t3putERN2pt5ptreeERKd"></span><span id="_CPPv2NK18input_parameters_t3putERN2pt5ptreeERKd"></span><span id="input_parameters_t::put__pt::ptreeR.doubleCRC"></span><span class="target" id="structinput__parameters__t_1ab34b0f075eb20c50359f3e2b248150aa"></span>void <code class="sig-name descname">put</code><span class="sig-paren">(</span>pt::ptree &amp;<em>ptree</em>, <em class="property">const</em> double &amp;<em>time</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv4NK18input_parameters_t3putERN2pt5ptreeERKd" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4NK18input_parameters_t3putERN2pt5ptreeE">
+<span id="_CPPv3NK18input_parameters_t3putERN2pt5ptreeE"></span><span id="_CPPv2NK18input_parameters_t3putERN2pt5ptreeE"></span><span id="input_parameters_t::put__pt::ptreeRC"></span><span class="target" id="structinput__parameters__t_1a632e1a8e685564f83f6a828aec816c26"></span>void <code class="sig-name descname">put</code><span class="sig-paren">(</span>pt::ptree &amp;<em>ptree</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv4NK18input_parameters_t3putERN2pt5ptreeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt id="_CPPv4N18input_parameters_t7from_ptERN2pt5ptreeE">
+<span id="_CPPv3N18input_parameters_t7from_ptERN2pt5ptreeE"></span><span id="_CPPv2N18input_parameters_t7from_ptERN2pt5ptreeE"></span><span id="input_parameters_t::from_pt__pt::ptreeR"></span><span class="target" id="structinput__parameters__t_1aa6f357c90300ac8e4470e55c6807b1a1"></span>int <code class="sig-name descname">from_pt</code><span class="sig-paren">(</span>pt::ptree &amp;<em>ptree</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18input_parameters_t7from_ptERN2pt5ptreeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set values from property tree used in reading checkpoint files. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric">Public Members</p>
 <dl class="cpp var">
 <dt id="_CPPv4N18input_parameters_t11t_end_primeE">
@@ -227,6 +271,30 @@
 </dd></dl>
 
 <dl class="cpp var">
+<dt id="_CPPv4N18input_parameters_t19ENS_CONFIG_FILENAMEE">
+<span id="_CPPv3N18input_parameters_t19ENS_CONFIG_FILENAMEE"></span><span id="_CPPv2N18input_parameters_t19ENS_CONFIG_FILENAMEE"></span><span id="input_parameters_t::ENS_CONFIG_FILENAME__ss"></span><span class="target" id="structinput__parameters__t_1a9fa8a2bcc3285278fc95cf306a67d1e7"></span>std::string <code class="sig-name descname">ENS_CONFIG_FILENAME</code><a class="headerlink" href="#_CPPv4N18input_parameters_t19ENS_CONFIG_FILENAMEE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Filename for ensemble configuration file. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N18input_parameters_t19CHECKPOINT_FILENAMEE">
+<span id="_CPPv3N18input_parameters_t19CHECKPOINT_FILENAMEE"></span><span id="_CPPv2N18input_parameters_t19CHECKPOINT_FILENAMEE"></span><span id="input_parameters_t::CHECKPOINT_FILENAME__ss"></span><span class="target" id="structinput__parameters__t_1ad693f30f03be296f627638ecbd44bcc5"></span>std::string <code class="sig-name descname">CHECKPOINT_FILENAME</code><a class="headerlink" href="#_CPPv4N18input_parameters_t19CHECKPOINT_FILENAMEE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Filename for checkpoint file. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N18input_parameters_t11FOLDER_NAMEE">
+<span id="_CPPv3N18input_parameters_t11FOLDER_NAMEE"></span><span id="_CPPv2N18input_parameters_t11FOLDER_NAMEE"></span><span id="input_parameters_t::FOLDER_NAME__ss"></span><span class="target" id="structinput__parameters__t_1ab8aee043f425349f2e1a6f9509ef7173"></span>std::string <code class="sig-name descname">FOLDER_NAME</code><a class="headerlink" href="#_CPPv4N18input_parameters_t11FOLDER_NAMEE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Folder name for newly generated checkpoints. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N18input_parameters_t2idE">
+<span id="_CPPv3N18input_parameters_t2idE"></span><span id="_CPPv2N18input_parameters_t2idE"></span><span id="input_parameters_t::id__uint32_t"></span><span class="target" id="structinput__parameters__t_1a6c605548b02bea642a2dac76f4a3f593"></span>uint32_t <code class="sig-name descname">id</code><a class="headerlink" href="#_CPPv4N18input_parameters_t2idE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>ID given for this instance, i.e. thread_id or id by GNU parallel. </p>
+</dd></dl>
+
+<dl class="cpp var">
 <dt id="_CPPv4N18input_parameters_t10start_overE">
 <span id="_CPPv3N18input_parameters_t10start_overE"></span><span id="_CPPv2N18input_parameters_t10start_overE"></span><span id="input_parameters_t::start_over__b"></span><span class="target" id="structinput__parameters__t_1a490be412ff42fa3e4bc3bd2a18a651bc"></span>bool <code class="sig-name descname">start_over</code><a class="headerlink" href="#_CPPv4N18input_parameters_t10start_overE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Start over at new timestep of trajectory? </p>
@@ -270,14 +338,20 @@
 
 <dl class="cpp var">
 <dt id="_CPPv4N18input_parameters_t14progress_indexE">
-<span id="_CPPv3N18input_parameters_t14progress_indexE"></span><span id="_CPPv2N18input_parameters_t14progress_indexE"></span><span id="input_parameters_t::progress_index__uint32_t"></span><span class="target" id="structinput__parameters__t_1a4258a98d18c3b2d1b71b79b21c61f7d9"></span>uint32_t <code class="sig-name descname">progress_index</code><a class="headerlink" href="#_CPPv4N18input_parameters_t14progress_indexE" title="Permalink to this definition">¶</a><br /></dt>
+<span id="_CPPv3N18input_parameters_t14progress_indexE"></span><span id="_CPPv2N18input_parameters_t14progress_indexE"></span><span id="input_parameters_t::progress_index__uint64_t"></span><span class="target" id="structinput__parameters__t_1ab33d4645ffa1c6a6143ca38003945ae6"></span>uint64_t <code class="sig-name descname">progress_index</code><a class="headerlink" href="#_CPPv4N18input_parameters_t14progress_indexE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Index for updating progressbar. </p>
 </dd></dl>
 
 <dl class="cpp var">
 <dt id="_CPPv4N18input_parameters_t8ensembleE">
-<span id="_CPPv3N18input_parameters_t8ensembleE"></span><span id="_CPPv2N18input_parameters_t8ensembleE"></span><span id="input_parameters_t::ensemble__uint32_t"></span><span class="target" id="structinput__parameters__t_1a4b6a2019ac593bff84256545196985e1"></span>uint32_t <code class="sig-name descname">ensemble</code> = 0<a class="headerlink" href="#_CPPv4N18input_parameters_t8ensembleE" title="Permalink to this definition">¶</a><br /></dt>
+<span id="_CPPv3N18input_parameters_t8ensembleE"></span><span id="_CPPv2N18input_parameters_t8ensembleE"></span><span id="input_parameters_t::ensemble__uint32_t"></span><span class="target" id="structinput__parameters__t_1a4b6a2019ac593bff84256545196985e1"></span>uint32_t <code class="sig-name descname">ensemble</code><a class="headerlink" href="#_CPPv4N18input_parameters_t8ensembleE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Index of ensemble. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt id="_CPPv4N18input_parameters_t12current_timeE">
+<span id="_CPPv3N18input_parameters_t12current_timeE"></span><span id="_CPPv2N18input_parameters_t12current_timeE"></span><span id="input_parameters_t::current_time__double"></span><span class="target" id="structinput__parameters__t_1a104b439d9cae17d8b9b19f1afa480032"></span>double <code class="sig-name descname">current_time</code><a class="headerlink" href="#_CPPv4N18input_parameters_t12current_timeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Time for and from checkpoint files. </p>
 </dd></dl>
 
 </div>
@@ -294,7 +368,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="structmodel__constants__t.html" class="btn btn-neutral float-right" title="Struct model_constants_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="structIO__handle__t.html" class="btn btn-neutral float-right" title="Struct IO_handle_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="structglobal__args__t.html" class="btn btn-neutral float-left" title="Struct global_args_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
