@@ -211,9 +211,23 @@ int main(int argc, char** argv)
                 trace = ( ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime)  >= trace_start) && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) <= trace_end) ) ? true : false;
 #endif
 #endif
+#if defined(MET3D)
                 if(trace)
-                    std::cout << cc.id << " timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
-
+                    std::cout << "###################################################\n"
+                              << cc.id << " timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
+                if(trace)
+                {
+                    auto total_q =
+                        y_single_old[qv_idx]
+                        + y_single_old[qc_idx]
+                        + y_single_old[qr_idx]
+                        + y_single_old[qg_idx]
+                        + y_single_old[qh_idx]
+                        + y_single_old[qi_idx]
+                        + y_single_old[qs_idx];
+                    std::cout << cc.id << " total q: " << total_q << "\n";
+                }
+#endif
 #endif
                 bool last_step = ( ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + !input.start_over))
                     || (sub == cc.num_sub_steps-input.start_over) );
@@ -290,6 +304,22 @@ int main(int argc, char** argv)
 #if defined MET3D && defined TURBULENCE
                 y_single_old[qv_idx] += inflow[qv_in_idx]/cc.num_sub_steps;
 #endif
+#if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
+#ifdef MET3D
+                if(trace)
+                {
+                    auto total_q =
+                        y_single_old[qv_idx]
+                        + y_single_old[qc_idx]
+                        + y_single_old[qr_idx]
+                        + y_single_old[qg_idx]
+                        + y_single_old[qh_idx]
+                        + y_single_old[qi_idx]
+                        + y_single_old[qs_idx];
+                    std::cout << cc.id << " total q after influx: " << total_q << "\n";
+                }
+#endif
+#endif
                 cc.register_input(tape);
                 if(sub == 1)
                 {
@@ -354,6 +384,24 @@ int main(int argc, char** argv)
 #endif
                 }
 #endif
+#if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
+#ifdef MET3D
+                if(trace)
+                {
+                    auto total_q =
+                        y_single_new[qv_idx]
+                        + y_single_new[qc_idx]
+                        + y_single_new[qr_idx]
+                        + y_single_new[qg_idx]
+                        + y_single_new[qh_idx]
+                        + y_single_new[qi_idx]
+                        + y_single_new[qs_idx];
+                    std::cout << cc.id << " total q after RK: " << total_q << "\n";
+                }
+#endif
+#endif
+
+
                 get_gradients(y_single_new, y_diff, cc, tape);
 
                 // Time update

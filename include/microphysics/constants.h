@@ -18,24 +18,24 @@
 #define T_idx 1             /*!< Temperature index */
 #define w_idx 2             /*!< Vertical acceleration index */
 #define S_idx 3             /*!< Satruation index */
-#define qc_idx 4            /*!< Cloud droplet mixing ratio index */
-#define qr_idx 5            /*!< Rain droplet mixing ratio index */
-#define qv_idx 6            /*!< Water vapor mixing ratio index */
+#define qc_idx 4            /*!< Cloud droplet mass density index */
+#define qr_idx 5            /*!< Rain droplet mass density index */
+#define qv_idx 6            /*!< Water vapor mass density index */
 #define Nc_idx 7            /*!< Number of cloud droplets index */
 #define Nr_idx 8            /*!< Number of rain droplets index */
-#define qi_idx 9           /*!< Ice mixing ratio index */
+#define qi_idx 9           /*!< Ice mass density index */
 #define Ni_idx 10           /*!< Number of ice crystals index */
-#define qs_idx 11           /*!< Snow mixing ratio index */
+#define qs_idx 11           /*!< Snow mass density index */
 #define Ns_idx 12           /*!< Number of snow particles index */
-#define qg_idx 13           /*!< Graupel mixing ratio index */
+#define qg_idx 13           /*!< Graupel mass density index */
 #define Ng_idx 14           /*!< Number of graupel particles index */
-#define qh_idx 15           /*!< Hail mixing ratio index */
+#define qh_idx 15           /*!< Hail mass density index */
 #define Nh_idx 16           /*!< Number of hail particles index */
-#define qi_out_idx 17       /*!< Ice mixing ratio precipitation index */
-#define qs_out_idx 18       /*!< Snow mixing ratio precipitation index */
-#define qr_out_idx 19       /*!< Rain mixing ratio precipitation index */
-#define qg_out_idx 20       /*!< Graupel mixing ratio precipitation index */
-#define qh_out_idx 21       /*!< Hail mixing ratio precipitation index */
+#define qi_out_idx 17       /*!< Ice mass density precipitation index */
+#define qs_out_idx 18       /*!< Snow mass density precipitation index */
+#define qr_out_idx 19       /*!< Rain mass density precipitation index */
+#define qg_out_idx 20       /*!< Graupel mass density precipitation index */
+#define qh_out_idx 21       /*!< Hail mass density precipitation index */
 #define lat_heat_idx 22     /*!< Latent heating index */
 #define lat_cool_idx 23     /*!< Latent cooling index */
 #define Ni_out_idx 24       /*!< Ice particles precipitation index */
