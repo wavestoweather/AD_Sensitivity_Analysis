@@ -97,6 +97,9 @@ void print_particle_params(
         << "vsedi_max = " << get_at(pc.constants, Particle_cons_idx::vsedi_max) << "\n"
         << "g1 = " << get_at(pc.constants, Particle_cons_idx::g1) << "\n"
         << "g2 = " << get_at(pc.constants, Particle_cons_idx::g2) << "\n"
+        << "nm1 = " << get_at(pc.constants, Particle_cons_idx::nm1) << "\n"
+        << "nm2 = " << get_at(pc.constants, Particle_cons_idx::nm2) << "\n"
+        << "nm3 = " << get_at(pc.constants, Particle_cons_idx::nm3) << "\n"
         << "\n";
 }
 
@@ -273,7 +276,7 @@ void print_input_parameters(input_parameters_t &in)
         << "Name of output file: " << in.OUTPUT_FILENAME << "\n"
 	    << "Scaling factor: " << in.scaling_fact << "\n"
         << "Name of input file: " << in.INPUT_FILENAME << "\n"
-        << "Start over mixing ratios and particle numbers at each timestep of a trajectory?: " << in.start_over << "\n"
+        << "Start over mass densities and particle number densities at each timestep of a trajectory?: " << in.start_over << "\n"
         << "Start over pressure, temperature and ascent at each timestep of a trajectory?: " << in.start_over_env << "\n"
         << "Fix temperature and pressure at each substep?: " << in.fixed_iteration << "\n"
         << "Auto type for rain evaporation (1, 2, 3): " << in.auto_type << "\n"
@@ -312,7 +315,7 @@ void display_usage()
 	    << "-d: Timestep in seconds for a substep between each new trajectory input.\n"
 	    << "-o: Name of the output file.\n"
         << "-l: Path and name of input file.\n"
-        << "-s: Start over mixing ratios and particle numbers at each timestep of a trajectory.\n"
+        << "-s: Start over mass densities and particle number densities at each timestep of a trajectory.\n"
         << "-e: Start over temperature, pressure and ascent at each timestep of a trajectory.\n"
         << "-t: Set pressure, temperature and vertical velocity fixed at each substep.\n"
         << "-a: Set auto type (1=KB, 2=KK, 3=SB).\n"

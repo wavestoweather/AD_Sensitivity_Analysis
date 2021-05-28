@@ -273,7 +273,7 @@ struct gamma_table_t{
      * \f[ \text{int}(0)(x) \exp(-t) t^{a-1} \text{d}t \f]
      * with constant a from x=0 to the 99.5% value of the normalized incomplete
      * gamma function. This 99.5 % - value has been fitted
-     * with high accuracy as function of a in the range a in [0;20], but can
+     * with high accuracy as function of a in the range in [0;20], but can
      * safely be applied also to higher values of a. (Fit created with the
      * matlab-program "gamma_unvoll_lower_lookup.m" by Ulrich Blahak, 2008/11/13).
      *
