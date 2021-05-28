@@ -74,9 +74,11 @@ Optional Prerequisites
 - [Panel](https://panel.holoviz.org/) (Tested with v0.9.5)
 
 
-Compiling code
+Compiling Code
 ---------------
-You can alter the Makefile to your choice. \
+You can alter the Makefile to your choice or skip this step and use the scripts in the next step which compile the code as well. \
+Make sure that `-DNPROCS` is set to the number of cores you want to use
+in ensemble simulations.
 The variable `SEASON` can be set to
 `SPRING`, `SUMMER`, `AUTUMN`, `WINTER` and `SPRING95` and sets variables used
 in Hande et al. nucleation (not used by default, so you can ignore it). \
@@ -103,12 +105,76 @@ to create a binary for test cases that scan different microphysical processes
 under `build/apps/src/scratch/scan`.
 
 
-Running a simulation
+Running a Simulation
 ---------------------
-You can use `./execute.sh` in the folder `exe_scripts/` to compile the code, execute a single simulation and do post-processing
-to make the data ready for analysis and to plot the simulation results.
-All necessary commandline parameters are explained there.
-In order to run multiple ensembles, use `./execute_ensembles.sh`.
+Each script tries to compile the code. If you don't want that, you can comment the code. \
+In order to to run a simulation with four different trajectories to compare our
+simulation with cosmo, use `exe_scripts/comparison_runs.sh`.
+
+To run ensemble simulations on representative trajectories, execute `exe_scripts/ensemble_runs.sh`.
+You may alter the variable `NTASKS=4` to the number of cores of your machine to speed-up the simulation.
+All necessary commandline parameters are explained in each script.
+
+
+Postprocess and Creating Plots
+------------------------------
+First, you have to go to `scripts/`, where we calculate the mean squared deviation and store it on disk for later plotting with
+```
+python segment_identifier.py --data_path data/vladiana_keyparams/ --verbosity 3 --store_appended_data data/vladiana_keyparams_errors/conv_stats_errors.nc --only_append
+```
+Make sure, the folder for the output already exists or create it.
+To create plots that show the correlation between predicted and true mean squared deviation including sensitivities with zero sensitivity and values below 1e-200 set as zero sensitvity values, use
+```
+python plot_mse.py \
+	--data_path ../data/vladiana_keyparams_errors/conv_stats_errors.nc \
+	--add_zero_sens \
+	--plot_types \
+	--backend bokeh \
+	--store_path ../pics/correlation_zerosens \
+	--confidence 0.90 \
+	--xlabel Predicted\ Log\ MSD \
+	--ylabel True\ Log\ MSD \
+	--title True\ Deviation\ vs\ Prediction \
+	--width 900 \
+	--height 900 \
+	--plot_variant correlation \
+	--set_zero 1e-200
+```
+To plot the evolution of sensitivities for water vapor towards five model parameters within 2500 s and 7500 s after the ascent started for a given trajectory, use
+```
+python plot_mse.py \
+	--data_path ../data/vladiana_keyparams_errors/conv_stats_errors.nc \
+	--backend bokeh \
+	--store_path ../pics/time_bokeh_log_traj1_min2500_max7500 \
+	--xlabel Time\ After\ Ascent\ [min] \
+	--ylabel Values\ of \
+	--title Results\ of\ AD\ Over\ Time \
+	--width 1200 \
+	--height 900 \
+	--plot_variant time_plot \
+	--traj 1 \
+	--twinlabel Predicted\ Squared\ Deviation \
+	--n_model_params 5 \
+	--max_time 7500 \
+	--min_time 2500 \
+	--out_parameter QV
+```
+The plot for all COSMO data over a map and different model state variables can be created via
+```
+python plot_cosmo.py --pollon 160 --pollat 51 --traj_type conv --store_path ../pics/cosmo_ --verbosity 3 --data_path ../data/vladiana/
+```
+This can take a while. If you wish to use this script more than once, you may store intermediate data that can be loaded faster in subsequent calls via
+```
+python plot_cosmo.py --pollon 160 --pollat 51 --traj_type conv --store_path ../pics/cosmo_ --verbosity 3 --data_path ../data/vladiana/ --store_data ../data/intermediate.h5
+```
+and use it in different executions with
+```
+python plot_cosmo.py --pollon 160 --pollat 51 --traj_type conv --store_path ../pics/cosmo_ --verbosity 3 --data_path ../data/intermediate.h5
+```
+At last, you might want to plot the cmparison of our simulation vs COSMO using
+```
+python plot_simulation_example.py --data_cosmo_path ../data/sim_comp_input/ --data_sim_path ../data/sim_comp_test/ --width 1200 --height 900 --traj 0 --verbosity 3 --backend bokeh
+```
 
 
 Using Jupyter Notebooks

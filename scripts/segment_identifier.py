@@ -5,6 +5,7 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 import os.path
 import pandas as pd
+from progressbar import progressbar as pb
 from timeit import default_timer as timer
 import warnings
 import xarray as xr
@@ -15,9 +16,21 @@ from skmultilearn.model_selection import iterative_train_test_split
 from itertools import product
 
 try:
-    from latexify import in_params_numeric_value_dic, parse_word
+    from latexify import (
+        in_params_numeric_value_dic,
+        parse_word,
+        in_params_dic,
+        physical_params,
+        in_params_grouping,
+    )
 except:
-    from scripts.latexify import in_params_numeric_value_dic, parse_word
+    from scripts.latexify import (
+        in_params_numeric_value_dic,
+        parse_word,
+        in_params_dic,
+        physical_params,
+        in_params_grouping,
+    )
 
 
 def d_unnamed(df):
@@ -112,6 +125,7 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
     Load all trajectory data and store the MSE for each ensemble
     and parameter as a result.
 
+
     Parameters
     ----------
     path: String
@@ -119,12 +133,16 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
         over trajy..trajx where y and x are values from traj_list.
         Loads path/trajx.nc_wcb and path/trajx/in_param.nc_wcb
         where in_param is an input parameter from in_params.
+        If traj_list is a list of files, no subsequent folder with trajx
+        is assumed and instead only a single trajectory as source for
+        this ensemble is assumed. This is usually the case for quantile
+        trajectories.
     out_params: List of string
         List of output parameters to get MSE for.
     in_params: List of string
         List of input parameters to get MSE for.
     traj_list: List of int
-        List of trajectory numbers to load.
+        List of trajectory numbers to load or list of files.
     traj_offset : int
         Offset for the new index of the trajectories.
     verbosity : int
@@ -146,18 +164,26 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
     idx_offset = 0
     n_timesteps = 0
     time_after_ascent = None
+    one_iteration = False
 
-    for traj in traj_list:
-        if not os.path.isfile(
+    for traj_idx, traj in enumerate(traj_list):
+        if os.path.isfile(path + traj):
+            trajectories.append(traj_idx + traj_offset)
+            one_iteration = True
+        elif os.path.isfile(
             path + "traj" + str(traj) + "/" + in_params[0][1::] + ".nc_wcb"
         ):
+            trajectories.append(traj + traj_offset)
+        else:
             continue
-        trajectories.append(traj + traj_offset)
+
         if n_timesteps == 0:
             not_perturbed_path = path + "traj" + str(traj) + "_notPerturbed.nc_wcb"
             # I wasn't consistent with the way not perturbed parameters are stored
             if not os.path.isfile(not_perturbed_path):
                 not_perturbed_path = path + "traj" + str(traj) + "/_notPerturbed.nc_wcb"
+            if not os.path.isfile(not_perturbed_path):
+                not_perturbed_path = path + "_notPerturbed.nc_wcb"
 
             val_df = load_sensitivity(not_perturbed_path, out_params, in_params)
             val_array = val_df.loc[{"Output Parameter": out_params[0]}][out_params[0]]
@@ -165,6 +191,8 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
             time_after_ascent = np.asarray(
                 val_df.loc[{"Output Parameter": out_params[0]}]["time_after_ascent"]
             ).flatten()
+        if one_iteration:
+            break
 
     mse = np.zeros((len(out_params), len(in_params), len(trajectories), n_timesteps))
     predicted = np.zeros(
@@ -173,7 +201,7 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
     not_perturbed = np.zeros((len(out_params), len(trajectories), n_timesteps))
 
     for traj_idx, traj in enumerate(traj_list):
-        if not os.path.isfile(
+        if not os.path.isfile(path + traj) and not os.path.isfile(
             path + "traj" + str(traj) + "/" + in_params[0][1::] + ".nc_wcb"
         ):
             idx_offset += 1
@@ -183,8 +211,11 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
         # I wasn't consistent with the way not perturbed parameters are stored
         if not os.path.isfile(not_perturbed_path):
             not_perturbed_path = path + "traj" + str(traj) + "/_notPerturbed.nc_wcb"
+        if not os.path.isfile(not_perturbed_path):
+            not_perturbed_path = path + "_notPerturbed.nc_wcb"
+
         if verbosity > 1:
-            print(f"Loading from {not_perturbed_path}")
+            print(f"Loading from {not_perturbed_path} for index {traj_idx}")
         val_df = load_sensitivity(not_perturbed_path, out_params, in_params)
         val_only_df = val_df.loc[{"Output Parameter": out_params[0]}][out_params]
         for out_idx, out_p in enumerate(out_params):
@@ -193,19 +224,43 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
             not_perturbed[out_idx, traj_idx - idx_offset, :] = np.asarray(
                 val_array
             ).flatten()
-            for in_idx, in_p in enumerate(in_params):
-                ds = xr.open_dataset(
-                    path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb",
-                    decode_times=False,
-                )
-                tmp1 = np.asarray(ds[out_p].load())
-                tmp2 = np.asarray(val_only_df[out_p])
-                mse[out_idx, in_idx, traj_idx - idx_offset, :] = np.nanmean(
-                    (tmp1 - tmp2) ** 2, axis=1
-                ).flatten()
-                predicted[out_idx, in_idx, traj_idx - idx_offset, :] = np.asarray(
-                    sens_df[in_p]
-                ).flatten()
+            if verbosity > 2:
+                for in_idx in pb(range(len(in_params))):
+                    in_p = in_params[in_idx]
+                    load_path = path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb"
+                    if not os.path.isfile(load_path):
+                        load_path = path + in_p[1::] + ".nc_wcb"
+                    ds = xr.open_dataset(
+                        load_path,
+                        decode_times=False,
+                    )
+                    tmp1 = np.asarray(ds[out_p].load())
+                    tmp2 = np.asarray(val_only_df[out_p])
+                    mse[out_idx, in_idx, traj_idx - idx_offset, :] = np.nanmean(
+                        (tmp1 - tmp2) ** 2, axis=1
+                    ).flatten()
+                    predicted[out_idx, in_idx, traj_idx - idx_offset, :] = np.asarray(
+                        sens_df[in_p]
+                    ).flatten()
+            else:
+                for in_idx, in_p in enumerate(in_params):
+                    load_path = path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb"
+                    if not os.path.isfile(load_path):
+                        load_path = path + in_p[1::] + ".nc_wcb"
+                    ds = xr.open_dataset(
+                        load_path,
+                        decode_times=False,
+                    )
+                    tmp1 = np.asarray(ds[out_p].load())
+                    tmp2 = np.asarray(val_only_df[out_p])
+                    mse[out_idx, in_idx, traj_idx - idx_offset, :] = np.nanmean(
+                        (tmp1 - tmp2) ** 2, axis=1
+                    ).flatten()
+                    predicted[out_idx, in_idx, traj_idx - idx_offset, :] = np.asarray(
+                        sens_df[in_p]
+                    ).flatten()
+        if one_iteration:
+            break
 
     return xr.Dataset(
         data_vars={
@@ -231,6 +286,7 @@ def parse_load(
     all_params_list,
     store_many_appended_data=None,
     load_on_the_fly=False,
+    min_time=-1000,
     verbosity=0,
 ):
     """
@@ -270,6 +326,7 @@ def parse_load(
         if verbosity > 1:
             print(f"Loading {data_path}")
         data = xr.open_dataset(data_path, decode_times=False)
+        data = data.where(data["time_after_ascent"] >= min_time, drop=True)
     else:
         if verbosity > 1:
             print(f"Checking {data_path}")
@@ -280,24 +337,29 @@ def parse_load(
             if verbosity > 1:
                 print(f"Loading from {paths}")
             for p in range(len(paths)):
-                if "quan" in paths[p] or "median" in paths[p] or "perturb" in paths[p]:
-                    continue
                 path = data_path + paths[p] + "/"
-                n_trajs = len(list(os.listdir(path)))
+                traj_dirs = list(os.listdir(path))
+                if "traj" in traj_dirs[0]:
+                    n_trajs = len(traj_dirs)
+                    traj_list = np.arange(len(traj_dirs))
+                else:
+                    n_trajs = 1
+                    traj_list = traj_dirs
                 if verbosity > 1:
                     print(f"Loading from {path} with {n_trajs} trajectories")
-                try:
-                    tmp = load_dataset(
-                        path=path,
-                        out_params=out_params,
-                        in_params=all_params_list,
-                        traj_list=np.arange(n_trajs),
-                        traj_offset=traj_offset,
-                        verbosity=verbosity,
-                    )
-                except:
-                    print(f"Loading      {path} failed.")
-                    tmp = None
+                # try:
+
+                tmp = load_dataset(
+                    path=path,
+                    out_params=out_params,
+                    in_params=all_params_list,
+                    traj_list=traj_list,
+                    traj_offset=traj_offset,
+                    verbosity=verbosity,
+                )
+                # except:
+                # print(f"Loading      {path} failed.")
+                # tmp = None
                 if tmp is None:
                     continue
 
@@ -317,16 +379,15 @@ def parse_load(
                         mode="w",
                     )
                 traj_offset += n_trajs
+            data = data.where(data["time_after_ascent"] >= min_time, drop=True)
         else:  # numpy arrays with training data
-            # create a dictionary for every threshold that holds a list
-            # of X and y
             for i in range(len(paths)):
                 paths[i] = data_path + paths[i]
             data = np.sort(paths)
     return data
 
 
-def find_segments(df, error_threshold=0):
+def find_segments(df, error_threshold=0, cooldown=0):
     """
     Iterate over time steps to mark the start of a segment with large errors, where large
     is defined via error_threshold. The dataframe needs to have a column (or index)
@@ -334,30 +395,67 @@ def find_segments(df, error_threshold=0):
 
     Parameters
     ----------
-    df : DataFrame
+    df : xarray.DataFrame
         Dataframe with MSE created by load_dataset() for every model state
         parameter and all trajectories.
     error_threshold : float
         Threshold for errors to identify true segment starts.
+    cooldown : int
+        Minimum number of timesteps between last time the error threshold has
+        been met and the next time step. This is useful if the original data
+        is based on ensembles that start at every few time step which leads to
+        an error of zero until the divergence of the ensemble is high enough
+        again, resulting in a new segment start although it is just the
+        start of the ensemble.
 
     Returns
     -------
-    Dataframe with additional column "segment_start" (1 for start, else 0)
+    xarray.DataFrame with additional column "segment_start" (1 for start, else 0)
     """
 
-    def start(x, axis):
-        return np.logical_and(
-            x[:, :, :, :, 0] <= error_threshold, x[:, :, :, :, 1] > error_threshold
+    if cooldown == 0:
+
+        def start(x, axis):
+            return np.logical_and(
+                x[:, :, :, :, 0] <= error_threshold, x[:, :, :, :, 1] > error_threshold
+            )
+
+        rolled = (
+            df["Mean Squared Error"]
+            .rolling(time_after_ascent=2, min_periods=2)
+            .reduce(start)
+            .fillna(False)
+            .astype(dtype=bool)
         )
 
-    rolled = (
-        df["Mean Squared Error"]
-        .rolling(time_after_ascent=2, min_periods=2)
-        .reduce(start)
-        .fillna(False)
-        .astype(dtype=bool)
-    )
+    else:
 
+        def start(x, axis):
+            logic = np.logical_and(
+                x[:, :, :, :, -2] <= error_threshold,
+                x[:, :, :, :, -1] > error_threshold,
+            )
+            max_val = min(np.shape(x)[-1], cooldown)
+            if max_val > np.shape(x)[-1] - 2:
+                max_val = np.shape(x)[-1] - 2
+            for i in range(max_val):
+                logic = np.logical_and(
+                    logic,
+                    np.logical_or(
+                        np.isnan(x[:, :, :, :, i]), x[:, :, :, :, i] <= error_threshold
+                    ),
+                )
+            return logic
+
+        if cooldown + 2 > len(df["time_after_ascent"]):
+            cooldown = len(df["time_after_ascent"]) - 2
+        rolled = (
+            df["Mean Squared Error"]
+            .rolling(time_after_ascent=2 + cooldown, min_periods=2)
+            .reduce(start)
+            .fillna(False)
+            .astype(dtype=bool)
+        )
     df = df.assign(segment_start=rolled)
     df["segment_start"].attrs = {
         "standard_name": "segment_start",
@@ -1307,6 +1405,7 @@ def create_chached_matrix_dic(
     min_acc_thresh=-80,
     max_acc_thres=0,
     step_tol=2,
+    cooldown=0,
 ):
     """
 
@@ -1334,12 +1433,19 @@ def create_chached_matrix_dic(
         Maximum threshold value for third derivative to predict the start of a segment.
     step_tol : int
         Number of steps to tolerate for a prediction to be true.
+    cooldown : int
+        Minimum number of timesteps between last time the error threshold has
+        been met and the next time step. This is useful if the original data
+        is based on ensembles that start at every few time step which leads to
+        an error of zero until the divergence of the ensemble is high enough
+        again, resulting in a new segment start although it is just the
+        start of the ensemble.
 
     Returns
     -------
     Dictionary with confusion matrices for every output parameter.
     """
-    cached_data = find_segments(segment_data, segment_threshold)
+    cached_data = find_segments(segment_data, segment_threshold, cooldown)
     delta_def = (max_def_thresh - min_def_thresh) / (steps - 1)
     delta_jum = (max_jum_thresh - min_jum_thresh) / (steps - 1)
     cached_matrix_dic = {}
@@ -1423,6 +1529,7 @@ def create_df_confusion(
     max_acc_thres=0,
     step_tol=2,
     how=False,
+    cooldown=0,
 ):
     """
     Create an xr.Dataset using get_stats_combinations(..) for
@@ -1454,6 +1561,13 @@ def create_df_confusion(
         Number of steps to tolerate for a prediction to be true.
     how : bool
         If true, combine predictions using "and", otherwise "or".
+    cooldown : int
+        Minimum number of timesteps between last time the error threshold has
+        been met and the next time step. This is useful if the original data
+        is based on ensembles that start at every few time step which leads to
+        an error of zero until the divergence of the ensemble is high enough
+        again, resulting in a new segment start although it is just the
+        start of the ensemble.
 
     Returns
     -------
@@ -1463,7 +1577,7 @@ def create_df_confusion(
     Columns are "TP over P", "FP over P", "FN over P_windows", "TP", "P", "FP",
     "FN", "P_windows".
     """
-    cached_data = find_segments(df, segment_threshold)
+    cached_data = find_segments(df, segment_threshold, cooldown)
     delta_def = (max_def_thresh - min_def_thresh) / (steps - 1)
     delta_jum = (max_jum_thresh - min_jum_thresh) / (steps - 1)
 
@@ -1772,7 +1886,7 @@ def create_input_labels(ds, step_tol, distinct_outparams, verbosity=0):
         y_final = np.reshape(
             y_final, (-1, n_input_params, (2 * step_tol + 1) * n_out_params)
         )
-    print(f"y before sum: {np.shape(y_final)}")
+
     y_final = np.sum(y_final, axis=2) > 0
     # Binary classification still needs two dimension
     # where it is either it or not
@@ -1977,17 +2091,11 @@ def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=None):
     """
     pred = trained_model.predict(X)
 
-    # create the confusion matrix
-    # The confusion matrix has the dimensions
-    # tp, fn, fp, tn, ep, lp, p_act, p_act_win, pr, re, f1, fpr
-    # Using the test set
-    # n_steps, n_features = np.shape(y)
-
     if only_idx is None:
         p_act_win = np.sum(y)
         n = np.sum((y == 0))
-        p_pred = np.sum(pred)
         if step_tol is None:
+            p_pred = np.sum(pred)
             tp = np.sum((pred == True) & (y == 1))
             ep = tp
             lp = 0
@@ -1998,16 +2106,8 @@ def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=None):
             y_idx = sorted(y_idx, key=lambda x: x[1])
             tp = 0
             fn = 0
-            # print(f"Old tp: {np.sum((pred == True) & (y == 1))}")
-            # print(f"Old p_pred: {np.sum(pred)}")
-            # print(f"Old p: {np.sum(y)}")
-            # print(np.shape(y_idx))
-            # print(np.shape( np.argwhere(pred) ))
-            # print(f"pred: {sorted(np.argwhere(pred), key=lambda x: x[1])}")
-            # print(f"y_idx: {y_idx}")
-            # print(f"pred: {pred[y_idx[0][0]]}, {pred[y_idx[1][0]]}, {pred[y_idx[2][0]]}")
+
             got_last = False
-            not_fp = 0
             # Go through all segment starts
             for i, y_i in enumerate(y_idx):
                 if i > 0:
@@ -2016,8 +2116,6 @@ def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=None):
                         if got_last and y_i[0] - y_idx[i - 1][0] == 1:
                             # same segment start, just another index
                             # in the other window
-                            if pred[y_i[0], y_i[1]]:
-                                not_fp += 1
                             continue
                         elif not got_last and y_i[0] - y_idx[i - 1][0] > 1:
                             # new segment start and the last was not detected
@@ -2046,15 +2144,40 @@ def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=None):
                         got_last = True
             if not got_last:
                 fn += 1
-            fp = np.sum(pred) - not_fp - tp
+            # This would be fp_windows
+            # fp = np.sum(pred) - not_fp - tp
+            idx = np.argwhere(pred)
+            idx = np.asarray(sorted(idx, key=lambda x: x[1]))
+            p_pred = 0
+            # index offset from start of segment to current index
+            got_last = 0
+            for i, pred_i in enumerate(idx):
+                if i > 0:
+                    if pred_i[1] == idx[i - 1][1]:
+                        # same input parameter
+                        if pred_i[0] - idx[i - got_last][0] <= 2 * step_tol:
+                            # within tolerance => same segment
+                            got_last += 1
+                        else:
+                            p_pred += 1
+                            got_last = 1
+                    else:
+                        # new input parameter and therefore segment
+                        got_last = 1
+                        p_pred += 1
+                else:
+                    got_last = 1
+                    p_pred += 1
+
+            fp = p_pred - tp
             ep = 0
             lp = 0
     else:
         p_act_win = np.sum(y[:, only_idx])
         n = np.sum((y[:, only_idx] == 0))
 
-        p_pred = np.sum(pred[:, only_idx])
         if step_tol == None:
+            p_pred = np.sum(pred[:, only_idx])
             fp = np.sum((pred[:, only_idx] == True) & (y[:, only_idx] == 0))
             tp = np.sum((pred[:, only_idx] == True) & (y[:, only_idx] == 1))
             ep = tp
@@ -2068,15 +2191,12 @@ def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=None):
             tp = 0
             fn = 0
             got_last = False
-            not_fp = 0
             # Go through all segment starts
             for i, y_i in enumerate(y_idx):
                 if i > 0:
                     if got_last and y_i[0] - y_idx[i - 1][0] == 1:
                         # same segment start, just another index
                         # in the other window
-                        if pred[y_i[0], only_idx]:
-                            not_fp += 1
                         continue
                     elif not got_last and y_i[0] - y_idx[i - 1][0] > 1:
                         # new segment start and the last was not detected
@@ -2096,7 +2216,24 @@ def get_tree_matrix(trained_model, X, y, only_idx=None, step_tol=None):
                         got_last = True
             if not got_last:
                 fn += 1
-            fp = np.sum(pred[:, only_idx]) - not_fp - tp
+            # This would be fp_windows
+            # fp = np.sum(pred[:, only_idx]) - not_fp - tp
+            idx = np.argwhere(pred[:, only_idx])
+            p_pred = 0
+            got_last = 0
+            for i, pred_i in enumerate(idx):
+                if i > 0:
+                    if pred_i[0] - idx[i - got_last][0] <= 2 * step_tol:
+                        # within tolerance => same segment
+                        got_last += 1
+                    else:
+                        p_pred += 1
+                        got_last = 1
+                else:
+                    got_last = 1
+                    p_pred += 1
+
+            fp = p_pred - tp
 
     if step_tol is None:
         if p_pred == 0:
@@ -2215,6 +2352,7 @@ def train_many_models(
     max_leaf_nodes=1000,
     classifier="random_forest",
     learning_rate=1.0,
+    cooldown=0,
 ):
     """
     Train different models for different max feature splits and thresholds
@@ -2290,6 +2428,13 @@ def train_many_models(
         Learning rate shrinks the contribution of each classifier by
         "learning_rate". There is a trade-off between "learning_rate" and
         "n_estimators".
+    cooldown : int
+        Minimum number of timesteps between last time the error threshold has
+        been met and the next time step. This is useful if the original data
+        is based on ensembles that start at every few time step which leads to
+        an error of zero until the divergence of the ensemble is high enough
+        again, resulting in a new segment start although it is just the
+        start of the ensemble.
 
     Returns
     -------
@@ -2306,7 +2451,7 @@ def train_many_models(
         ds_cache = {}
         if precalc:
             for seg_thresh in seg_thresholds:
-                ds_cache[seg_thresh] = find_segments(data, 10.0 ** seg_thresh)
+                ds_cache[seg_thresh] = find_segments(data, 10.0 ** seg_thresh, cooldown)
     else:
         load_data = True
 
@@ -2328,7 +2473,7 @@ def train_many_models(
             elif precalc:
                 ds = ds_cache[seg_thresh]
             else:
-                ds = find_segments(data, 10.0 ** seg_thresh)
+                ds = find_segments(data, 10.0 ** seg_thresh, cooldown)
             if verbosity > 2:
                 print(f"Training for {feat_idx}, {seg_idx}")
 
@@ -2362,6 +2507,8 @@ def create_dataset_pretrained(
     verbosity=0,
     in_params=None,
     predict_train=False,
+    independent_windows=True,
+    cooldown=0,
 ):
     """
     Create a dataset with dimensions "Max Features", "Output Parameter",
@@ -2415,21 +2562,36 @@ def create_dataset_pretrained(
         Only useful if "data" is a list or array of paths to load data from.
         If true, use train data for the confusion matrix, otherwise use
         test data.
+    cooldown : int
+        Minimum number of timesteps between last time the error threshold has
+        been met and the next time step. This is useful if the original data
+        is based on ensembles that start at every few time step which leads to
+        an error of zero until the divergence of the ensemble is high enough
+        again, resulting in a new segment start although it is just the
+        start of the ensemble.
+    independent_windows : bool or None
+        If true: count true positive predictions for each window independently.
+        If false: count detected segments within tolerance as true positive
+        predictions, ignoring multiple true labels for the same segment
+        and multiple true predictions.
 
     Returns
     -------
     xarray.Dataset of confusion matrix as described above.
     """
-    pass_step_tol = None
+    if independent_windows:
+        pass_step_tol = None
+    else:
+        pass_step_tol = step_tol
+
     if isinstance(data, list) or isinstance(data, np.ndarray):
         precalc = False
         load_data = True
     else:
         load_data = False
-        in_params = list(np.unique(data["Input Parameter"]))
-        if len(data["trajectory"]) == 1:
-            pass_step_tol = step_tol
-
+    print(max_features_list)
+    print(in_params)
+    print(seg_thresholds)
     dims_forest = (len(max_features_list), 1, 1 + len(in_params), len(seg_thresholds))
     if predict_train:
         input_param_coords = ["All Input Parameters Train Set"] + in_params
@@ -2455,7 +2617,7 @@ def create_dataset_pretrained(
     test_cache = {}
     if precalc:
         for seg_thresh in seg_thresholds:
-            ds = find_segments(data, 10.0 ** seg_thresh)
+            ds = find_segments(data, 10.0 ** seg_thresh, cooldown)
             test, test_labels, _, _ = create_input_labels(
                 ds, step_tol, distinct_outparams
             )
@@ -2482,7 +2644,7 @@ def create_dataset_pretrained(
         elif precalc:
             test, test_labels = test_cache[seg_thresh]
         else:
-            ds = find_segments(data, 10.0 ** seg_thresh)
+            ds = find_segments(data, 10.0 ** seg_thresh, cooldown)
             test, test_labels, _, _ = create_input_labels(
                 ds, step_tol, distinct_outparams
             )
@@ -2580,6 +2742,7 @@ def create_dataset_forest(
     max_leaf_nodes=1000,
     classifier="random_forest",
     learning_rate=1.0,
+    cooldown=0,
 ):
     """
     Create a dataset with dimensions "Max Features", "Output Parameter",
@@ -2659,6 +2822,13 @@ def create_dataset_forest(
         Learning rate shrinks the contribution of each classifier by
         "learning_rate". There is a trade-off between "learning_rate" and
         "n_estimators".
+    cooldown : int
+        Minimum number of timesteps between last time the error threshold has
+        been met and the next time step. This is useful if the original data
+        is based on ensembles that start at every few time step which leads to
+        an error of zero until the divergence of the ensemble is high enough
+        again, resulting in a new segment start although it is just the
+        start of the ensemble.
 
     Returns
     -------
@@ -2695,14 +2865,14 @@ def create_dataset_forest(
     ds_cache = {}
     if precalc:
         for seg_thresh in seg_thresholds:
-            ds_cache[seg_thresh] = find_segments(data, 10.0 ** seg_thresh)
+            ds_cache[seg_thresh] = find_segments(data, 10.0 ** seg_thresh, cooldown)
 
     for feat_idx, max_features in enumerate(max_features_list):
         for seg_idx, seg_thresh in enumerate(seg_thresholds):
             if precalc:
                 ds = ds_cache[seg_thresh]
             else:
-                ds = find_segments(data, 10.0 ** seg_thresh)
+                ds = find_segments(data, 10.0 ** seg_thresh, cooldown)
             if verbosity > 2:
                 print(f"Running for {feat_idx}, {seg_idx}")
 
@@ -2830,6 +3000,8 @@ def create_big_stratified_set(
     threshold,
     distinct_outparams=False,
     train_size=0.75,
+    cooldown=0,
+    min_time=-1000,
     verbosity=0,
 ):
     """
@@ -2861,6 +3033,17 @@ def create_big_stratified_set(
         parameters.
     train_size : float
         Size in percentage for the training set.
+    cooldown : int
+        Minimum number of timesteps between last time the error threshold has
+        been met and the next time step. This is useful if the original data
+        is based on ensembles that start at every few time step which leads to
+        an error of zero until the divergence of the ensemble is high enough
+        again, resulting in a new segment start although it is just the
+        start of the ensemble.
+    min_time : float or int
+        Minimum value of "time_after_ascent". This is useful if ensembles
+        started later than the baseline trajectory. If None is given, use
+        all time steps.
     verbosity : int
         Set verbosity level.
 
@@ -2879,6 +3062,9 @@ def create_big_stratified_set(
         nonlocal all_test
         nonlocal all_test_labels
 
+        if min_time is not None:
+            ds = ds.where(ds["time_after_ascent"] >= min_time, drop=True)
+
         total_trajs = len(ds.trajectory)
         if total_trajs < n_trajs_iter:
             traj_step = total_trajs
@@ -2895,6 +3081,7 @@ def create_big_stratified_set(
                         {"trajectory": ds.trajectory[i * traj_step : total_trajs - 1]}
                     ),
                     10.0 ** threshold,
+                    cooldown,
                 )
             else:
                 ds_tmp = find_segments(
@@ -2906,6 +3093,7 @@ def create_big_stratified_set(
                         }
                     ),
                     10.0 ** threshold,
+                    cooldown,
                 )
 
             train, train_labels, test, test_labels = get_stratified_sets(
@@ -2959,9 +3147,7 @@ def create_big_stratified_set(
             except:
                 print(f"Loading      {path} failed.")
                 continue
-            append_data(
-                data
-            )  # TODO: Why did I have that here? find_segments(data, 10.0**threshold))
+            append_data(data)
             traj_offset += n_trajs
     return all_train, all_labels, all_test, all_test_labels
 
@@ -2970,7 +3156,6 @@ if __name__ == "__main__":
     import argparse
     from joblib import dump, load
     import os
-    import progressbar as pb
     import sys
 
     parser = argparse.ArgumentParser(
@@ -3238,6 +3423,43 @@ if __name__ == "__main__":
         "n_estimators".
         """,
     )
+    parser.add_argument(
+        "--cooldown",
+        type=int,
+        default=0,
+        help="""
+        Minimum number of timesteps between last time the error threshold has
+        been met and the next time step. This is useful if the original data
+        is based on ensembles that start at every few time step which leads to
+        an error of zero until the divergence of the ensemble is high enough
+        again, resulting in a new segment start although it is just the
+        start of the ensemble.
+        """,
+    )
+    parser.add_argument(
+        "--independent_windows",
+        action="store_true",
+        help="""
+        If true: count true positive predictions for each window independently.
+        This *should* be done when using stratified datasets.
+        If false: count detected segments within tolerance as true positive
+        predictions, ignoring multiple true labels for the same segment
+        and multiple true predictions. This is arguably closer to real life
+        usage of the model.
+        """,
+    )
+    parser.add_argument(
+        "--in_params",
+        nargs="+",
+        default=[],
+        help="""
+        You can define a subset of input parameters that shall be used.
+        This is useful if the ensemble simulation was not run with
+        perturbing all  268 parameters but only a few.
+        If none are given, i.e. this parameter is not used, all 268 ensemble
+        simulations will be loaded.
+        """,
+    )
 
     args = parser.parse_args()
     if args.classifier != "random_forest" and args.classifier != "adaboost":
@@ -3253,80 +3475,41 @@ if __name__ == "__main__":
         else:
             store_name = args.store_name
 
-    out_params = ["QV", "QC", "QR", "QG", "QH", "QI", "QS"]
-    # the following lines can give you the most important parameters
-    # reduced_df = d_unnamed(pd.read_csv("../stats_full/conv_adjusted_mse_errorMean_sensMean.csv"))
-    # reduced_df = reduced_df.loc[reduced_df["Ratio Type"] == "adjusted"]
-    # reduced_df = reduced_df.loc[reduced_df["Sensitivity"] != 0]
-    # top20_sens_dic = {}
-    # all_params_list = []
-    # for out_p in out_params:
-    #     df = reduced_df.loc[reduced_df["Output Parameter"] == out_p]
-    #     top20_sens_dic[out_p] = list(np.unique( df.nlargest(20, "Sensitivity")["Perturbed Parameter"] ))
-    #     all_params_list.extend(top20_sens_dic[out_p])
-    # del(reduced_df)
-    # all_params_list = list(set(all_params_list))
-    all_params_list = [
-        "dc_ccn_4",
-        "dice_b_geo",
-        "da_prime",
-        "dT_mult_max",
-        "dsnow_b_f",
-        "dsnow_c_s",
-        "dsnow_b_vel",
-        "dsnow_a_f",
-        "dgraupel_vsedi_min",
-        "dT_mult_min",
-        "dgraupel_ecoll_c",
-        "db_prime",
-        "dice_c_s",
-        "db_v",
-        "dp_sat_melt",
-        "drain_b_geo",
-        "dhail_b_vel",
-        "dsnow_b_geo",
-        "dD_rainfrz_gh",
-        "db_HET",
-        "dgraupel_b_f",
-        "dgraupel_b_vel",
-        "drain_beta",
-        "dice_b_f",
-        "drain_mu",
-        "dice_b_vel",
-        "db_ccn_4",
-        "dcloud_b_vel",
-        "dsnow_a_geo",
-        "dp_sat_ice_const_b",
-        "da_HET",
-        "drain_c_z",
-        "drain_b_vel",
-        "drain_a_geo",
-        "dhail_b_geo",
-        "dgraupel_c_s",
-        "dgraupel_b_geo",
-        "dice_a_geo",
-        "drain_gamma",
-        "dinv_z",
-        "drain_a_vel",
-        "dhail_a_vel",
-        "dcloud_b_geo",
-        "drain_alpha",
-        "drain_cmu2",
-        "drho_vel",
-        "dhail_a_geo",
-        "dgraupel_a_geo",
-        "dsnow_a_vel",
-        "drain_cmu4",
-        "dkin_visc_air",
-        "dk_r",
-        "drain_cmu3",
-        "dice_a_f",
-        "drain_nu",
-        "dgraupel_max_x",
-        "drain_g2",
-        "dice_a_vel",
-        "dgraupel_a_vel",
+    out_params = [
+        "QV",
+        "QC",
+        "QR",
+        "QG",
+        "QH",
+        "QI",
+        "QS",
+        "NCCLOUD",
+        "NCRAIN",
+        "NCGRAUPEL",
+        "NCHAIL",
+        "NCICE",
+        "NCSNOW",
+        "QR_OUT",
+        "QG_OUT",
+        "QH_OUT",
+        "QI_OUT",
+        "QS_OUT",
+        "NR_OUT",
+        "NG_OUT",
+        "NH_OUT",
+        "NI_OUT",
+        "NS_OUT",
     ]
+
+    all_params_list = args.in_params
+    if len(all_params_list) == 0:
+        for key in in_params_grouping:
+            if key == "1-moment":
+                continue
+            all_params_list.extend(in_params_grouping[key])
+        for e in physical_params:
+            if e in all_params_list:
+                all_params_list.remove(e)
 
     if args.create_trainset:
         store_appended_data = "./"
@@ -3349,29 +3532,31 @@ if __name__ == "__main__":
                 out_params=out_params,
                 threshold=threshold,
                 distinct_outparams=False,
+                cooldown=args.cooldown,
+                min_time=-1000,  # Ensembles actually start here
                 verbosity=args.verbosity,
             )
 
             np.save(
-                file=f"{store_appended_data}_thresh{threshold:.1e}_train",
+                file=f"{store_appended_data}_thresh{threshold:.1e}_cool{args.cooldown}_train",
                 arr=train,
                 allow_pickle=True,
                 fix_imports=False,
             )  # I refuse to support Python2 in this year and age
             np.save(
-                file=f"{store_appended_data}_thresh{threshold:.1e}_labels",
+                file=f"{store_appended_data}_thresh{threshold:.1e}_cool{args.cooldown}_labels",
                 arr=labels,
                 allow_pickle=True,
                 fix_imports=False,
             )
             np.save(
-                file=f"{store_appended_data}_thresh{threshold:.1e}_test",
+                file=f"{store_appended_data}_thresh{threshold:.1e}_cool{args.cooldown}_test",
                 arr=test,
                 allow_pickle=True,
                 fix_imports=False,
             )
             np.save(
-                file=f"{store_appended_data}_thresh{threshold:.1e}_test_labels",
+                file=f"{store_appended_data}_thresh{threshold:.1e}_cool{args.cooldown}_test_labels",
                 arr=test_labels,
                 allow_pickle=True,
                 fix_imports=False,
@@ -3384,6 +3569,7 @@ if __name__ == "__main__":
         all_params_list=all_params_list,
         store_many_appended_data=args.store_many_appended_data,
         load_on_the_fly=args.load_on_the_fly,
+        min_time=-1000,  # Ensembles actually start here
         verbosity=args.verbosity,
     )
 
@@ -3437,7 +3623,7 @@ if __name__ == "__main__":
                 forest_verbosity = 2
             for seg_idx, seg_thresh in enumerate(seg_thresholds):
                 model = load(
-                    f"{args.model_path}_{args.classifier}_{max_features}_{seg_thresh:.1e}.joblid"
+                    f"{args.model_path}_{args.classifier}_{max_features}_{seg_thresh:.1e}_{args.cooldown}.joblid"
                 )
                 if args.classifier == "random_forest":
                     model = model.set_params(**{"estimator__verbose": forest_verbosity})
@@ -3469,8 +3655,10 @@ if __name__ == "__main__":
                 max_leaf_nodes=args.max_leaf_nodes,
                 classifier=args.classifier,
                 learning_rate=args.learning_rate,
+                cooldown=args.cooldown,
             )
         else:
+            # This branch can make use of load-on-the-fly.
             models, seg_thresholds = train_many_models(
                 data=data,
                 max_features_list=max_features_list,
@@ -3488,6 +3676,7 @@ if __name__ == "__main__":
                 max_leaf_nodes=args.max_leaf_nodes,
                 classifier=args.classifier,
                 learning_rate=args.learning_rate,
+                cooldown=args.cooldown,
             )
         if args.store_models is not None:
             for feat_idx, max_features in enumerate(max_features_list):
@@ -3496,7 +3685,7 @@ if __name__ == "__main__":
                         max_features = "None"
                     dump(
                         models[feat_idx][seg_idx],
-                        f"{args.store_models}_{args.classifier}_{max_features}_{seg_thresh:.1e}.joblid",
+                        f"{args.store_models}_{args.classifier}_{max_features}_{seg_thresh:.1e}_{args.cooldown}.joblid",
                     )
     if args.only_training:
         exit()
@@ -3512,7 +3701,10 @@ if __name__ == "__main__":
             step_tol=step_tol,
             distinct_outparams=distinct_outparams,
             precalc=True,
+            cooldown=args.cooldown,
             verbosity=args.verbosity,
+            independent_windows=args.independent_windows,
+            in_params=all_params_list,
         )
         traj_idx = n_trajs
 
@@ -3542,7 +3734,10 @@ if __name__ == "__main__":
                 step_tol=step_tol,
                 distinct_outparams=distinct_outparams,
                 precalc=True,
+                cooldown=args.cooldown,
                 verbosity=args.verbosity,
+                independent_windows=args.independent_windows,
+                in_params=all_params_list,
             )
 
             if confus_matrix is None:
@@ -3558,7 +3753,6 @@ if __name__ == "__main__":
         # This path can make use of args.load_on_the_fly
         if args.verbosity > 2:
             print("Predicting starts")
-        # TODO: all_params_list might have wrong order
         confus_matrix = create_dataset_pretrained(
             data=data,
             models=models,
@@ -3569,6 +3763,8 @@ if __name__ == "__main__":
             verbosity=args.verbosity,
             in_params=all_params_list,
             predict_train=args.predict_trainset,
+            cooldown=args.cooldown,
+            independent_windows=args.independent_windows,
         )
 
     confus_matrix["TP over P"] = confus_matrix["TP"] / confus_matrix["P"]

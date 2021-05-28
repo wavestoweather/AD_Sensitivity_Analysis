@@ -1,6 +1,13 @@
+from bokeh.models import Range1d, LinearAxis, GlyphRenderer
 from glob import glob
+import holoviews as hv
+from holoviews.operation.datashader import datashade as dsshade
+from holoviews import opts
+import hvplot.pandas
+import matplotlib
 from multiprocessing import Pool
 import numpy as np
+import os
 import pandas as pd
 from progressbar import progressbar as pb
 import xarray as xr
@@ -12,6 +19,7 @@ try:
         physical_params,
         in_params_grouping,
         in_params_descr_dic,
+        parse_word,
     )
     from segment_identifier import d_unnamed
     from create_mse import load_and_append
@@ -22,6 +30,7 @@ except:
         physical_params,
         in_params_grouping,
         in_params_descr_dic,
+        parse_word,
     )
     from scripts.segment_identifier import d_unnamed
     from scripts.create_mse import load_and_append
@@ -123,100 +132,72 @@ def reduce_df(df, error_key, sens_kind="mean", error_kind="mean"):
     ).reset_index()
 
 
-def load_and_plot(
-    kind,
-    sens_kind,
-    error_kind,
-    plot_types,
+def plot_mse(
+    df,
     out_params,
-    ratio_type,
-    backend,
-    filetype,
-    files,
-    store_path,
+    store_path="pics/correlation",
+    backend="bokeh",
+    plot_types=True,
+    add_zero_sens=False,
+    confidence=0.90,
+    title=None,
+    xlabel="Sensitivity",
+    ylabel=None,
+    width=900,
+    height=900,
 ):
     """
-    Load several files from intermediate results from create_mse.py and
-    reduce them and finally plot the results.
+    Plot the dataframe which should hold parameters with their sensitivity
+    to one model state parameter and the actual deviation when perturbing
+    on a log-log plot.
 
     Parameters
     ----------
-    kind : string
-        Define the operation that had been used to calculate the error of
-        the ensembles. Possible options:
-        mse: Mean squared error
-        maxse: Maximum error
-        nozeromse: Mean squared error ignoring time steps with zero error
-        sum: Cumulative squared error
-        me: Mean error
-        mae: Mean absolute error
-    sens_kind : string
-        Operation to summarize all sensitivities (aka predicted errors) across
-        multiple ensembles. Possible options:
-        sum: Sum of all errors
-        max: Maximum error across all ensembles
-        mean: Mean error
-    error_kind : string
-        Operation to summarize all deviations of ensembles from an
-        unperturbed trajectory across multiple ensembles. Possible options:
-        sum: Sum of all deviations
-        max: Maximum deviation across all ensembles
-        mean: Mean deviation
-    plot_types : bool
-        Wether to plot the errors grouped by the type of error.
+    df : pandas.Dataframe
+        A dataframe with columns "Output Parameter" for the model state
+        variables, which must have only one value,
+        "Input Parameter" for the perturbed model parameter,
+        "Predicted Squared Error" for the sensitivity calculated to deviations
+        in the next timestep, "Mean Squared Error" for the actual deviations
     out_params : list of string
-        List of output parameters to plot the datapoints for.
-    ratio_type : string
-        "vanilla": Use the derivative ratio in the file.
-        "adjusted": Can be added to any to any type below where the sensitivity
-        is adjusted to the parameter value such that perturbing this value by a
-        certain percentage gives an approximation of the resulting error/difference
-        for any given hydrometeor.
-        "per_timestep": Use the highest derivative per timestep as denominator.
-        "window": Use the highest derivative in the given window by min_x and max_x.
-        "per_xaxis": Use the highest derivative per x_axis value. If x_axis is "timestep"
-        it is the same as "per_timestep".
-        "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
-        derivative but per output parameter. (that *should* be the vanilla version)
-        "x_weighted": Append this to any ratio type to use the inverse of the
-        output parameter value as weight. Only works with "x_per_out_param".
+        *Should* be only a list of a single value, namely the output parameter
+        in the given dataframe.
+    store_path : string
+        Path to folder where to store the images.
     backend : string
         Either "matplotlib" or "bokeh" for plotting.
-    filetype : string
-        Define which type to load. Options are "csv" and "netcdf".
+    plot_types : bool
+        Wether to plot the errors grouped by the type of the model parameters.
+    add_zero_sens : bool
+        Add sensitivities of value zero to the far left and mark it with
+        negative infinity.
+    confidence : float or None
+        Plot a confidence ellipse around each sample with confidence
+        between 0 and 1. If none is given, no ellipse will be plotted.
+    title : string
+        Title for the plot.
+    xlabel : string
+        Alternative label for x-axis.
+    ylabel : string
+        Alternative label for y-axis.
+    width : int
+        Width of plot in pixels.
+    height : int
+        Height of plot in pixels.
     """
 
-    if kind == "mse":
-        error_key = "MSE"
-    elif kind == "maxse":
-        error_key = "Max Error"
-    elif kind == "nozeromse":
-        error_key = "MSE (no zero)"
-    elif kind == "sum":
-        error_key = "Cumulative Squared Error"
-    elif kind == "me":
-        error_key = "Mean Error"
-    elif kind == "mae":
-        error_key = "Mean Absolute Error"
-    all_df = load_and_append(files, filetype)
+    in_params = np.unique(df["Input Parameter"])
 
-    in_params = np.unique(all_df["Perturbed Parameter"])
-    # clean up the data. Some parameters might have slipped through that
-    # are not used or not tracked with AD.
-    del_list = []
-    for in_p in in_params:
-        if (
-            "Not used" == in_params_descr_dic[in_p]
-            or "Is not tracked with AD" in in_params_descr_dic[in_p]
-        ):
-            del_list.append(in_p)
-    all_df = all_df[~all_df["Perturbed Parameter"].isin(del_list)]
+    datashade = False
+    alpha = 0.5
+    s = 12
+    f_limits = (-2, 2)
+    plot_kind = "paper"
 
-    reduced_df = reduce_df(
-        all_df, error_key, sens_kind=sens_kind, error_kind=error_kind
-    )
+    error_key = "Mean Squared Error"
+    sens_key = "Predicted Squared Error"
 
-    # out_params = ["QV"]
+    df_tmp = df.copy()
     if plot_types:
         # We need to add a column 'Group' to plot it correctly
         tmp_dic = {}
@@ -226,17 +207,9 @@ def load_and_plot(
                     tmp_dic[in_p] = g
                     break
 
-        reduced_df["Group"] = reduced_df.apply(
-            lambda row: tmp_dic[row["Perturbed Parameter"]], axis=1
+        df_tmp["Group"] = df_tmp.apply(
+            lambda row: tmp_dic[row["Input Parameter"]], axis=1
         )
-
-    datashade = False
-    alpha = 0.5
-    s = 6
-    f_limits = (-2, 2)
-    confidence = 0.90
-    hist = True
-    plot_kind = "grid_plot"
 
     # Dummy for plotting
     mean_traj = Deriv_dask(
@@ -247,120 +220,433 @@ def load_and_plot(
         backend=backend,
         file_ending="",
     )
-
-    tmp_df = reduced_df.loc[reduced_df["Sensitivity"] != 0]
-    if ratio_type is not None:
-        tmp_df = reduced_df.loc[reduced_df["Ratio Type"] == ratio_type]
+    if add_zero_sens:
+        inf_val = np.min(df_tmp.loc[df_tmp[sens_key] != 0][sens_key]) / 10
+        df_tmp[sens_key] = df_tmp[sens_key].replace({0: inf_val})
+    else:
+        df_tmp = df_tmp.loc[df[sens_key] != 0]
+        inf_val = None
 
     mean_traj.plot_mse(
         out_params=out_params,
-        mse_df_=tmp_df,
+        mse_df_=df_tmp,
         in_params=in_params,
         datashade=datashade,
         alpha=alpha,
         formatter_limits=f_limits,
         s=s,
-        hist=hist,
-        confidence=None,
-        kind=plot_kind,
-        error_key=error_key,
-        prefix=store_path + kind + "_s_" + sens_kind + "_e_" + error_kind + "_",
-    )
-
-    mean_traj.plot_mse(
-        out_params=out_params,
-        mse_df_=tmp_df,
-        in_params=in_params,
-        datashade=datashade,
-        alpha=alpha,
-        formatter_limits=f_limits,
-        s=s,
-        hist=hist,
-        log_x=False,
-        log_y=True,
-        kind=plot_kind,
-        error_key=error_key,
-        prefix=store_path + kind + "_s_" + sens_kind + "_e_" + error_kind + "_ly",
-    )
-
-    mean_traj.plot_mse(
-        out_params=out_params,
-        mse_df_=tmp_df,
-        in_params=in_params,
-        datashade=datashade,
-        alpha=alpha,
-        formatter_limits=f_limits,
-        s=s,
-        hist=False,
-        confidence=confidence,
-        abs_x=False,
-        log_x=True,
-        log_y=True,
-        kind=plot_kind,
-        error_key=error_key,
-        prefix=store_path + kind + "_s_" + sens_kind + "_e_" + error_kind + "_lxly",
-    )
-
-    mean_traj.plot_mse(
-        out_params=out_params,
-        mse_df_=tmp_df,
-        in_params=in_params,
-        datashade=datashade,
-        alpha=alpha,
-        formatter_limits=f_limits,
-        s=s,
-        hist=False,
-        confidence=confidence,
-        abs_x=False,
-        log_x=True,
-        log_y=False,
-        kind=plot_kind,
-        error_key=error_key,
-        prefix=store_path + kind + "_s_" + sens_kind + "_e_" + error_kind + "_lx",
-    )
-
-    mean_traj.plot_mse(
-        out_params=out_params,
-        mse_df_=tmp_df,
-        in_params=in_params,
-        datashade=datashade,
-        alpha=alpha,
-        formatter_limits=f_limits,
-        s=s,
-        hist=False,
-        confidence=confidence,
-        abs_x=True,
-        log_x=True,
-        log_y=True,
-        kind=plot_kind,
-        error_key=error_key,
-        prefix=store_path + kind + "_s_" + sens_kind + "_e_" + error_kind + "_lxlyabs",
-    )
-
-    mean_traj.plot_mse(
-        out_params=out_params,
-        mse_df_=tmp_df,
-        in_params=in_params,
-        datashade=datashade,
-        alpha=alpha,
-        formatter_limits=f_limits,
-        s=s,
+        height=height,
+        width=width,
         hist=True,
         confidence=confidence,
+        log_func=np.log10,
         abs_x=True,
         log_x=True,
         log_y=True,
         kind=plot_kind,
         error_key=error_key,
-        plot_singles=True,
-        prefix=store_path
-        + kind
-        + "_s_"
-        + sens_kind
-        + "_e_"
-        + error_kind
-        + "_lxlyabshist",
+        sens_key=sens_key,
+        prefix="_s_e_lxlyabshist",
+        title=title,
+        linewidth=3,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        plot_path=store_path,
+        inf_val=inf_val,
     )
+
+
+def plot_time_evolution(
+    df,
+    store_path="../pics/time_evo",
+    backend="matplotlib",
+    title=None,
+    xlabel=None,
+    ylabel=None,
+    twinlabel=None,
+    min_x=None,
+    max_x=None,
+    plot_deviation=False,
+    perturb_delta=None,
+    alpha=1,
+    width=900,
+    height=900,
+    logy=False,
+    logtwin=False,
+    min_time=None,
+    max_time=None,
+):
+    """
+    Plot over time after ascent the model state (left y-axis) and
+    sensitivity (right y-axis).
+    We cut off the highest predicted value, if the difference to the second
+    biggest value is an order of magnitude or more,
+    since this can be an outlier which
+    makes the rest of the values hard to see.
+
+    Parameters
+    ----------
+    df : pandas.Dataframe
+        A dataframe with columns "Output Parameter" for the model state
+        variables, which must have only one value,
+        "Input Parameter" for the perturbed model parameter,
+        "Predicted Squared Error" for the sensitivity calculated to deviations
+        in the next timestep, "Mean Squared Error" for the actual deviations
+    store_path : string
+        Path to folder where to store the images.
+    backend : string
+        Either "matplotlib" or "bokeh" for plotting. Currently, only matplotlib
+        gives correct plots.
+    title : string
+        Title for the plot.
+    xlabel : string
+        Alternative label for x-axis.
+    ylabel : string
+        Alternative label for y-axis.
+    twinlabel : string
+        Label for twin axis.
+    min_x : float
+        Set the start time relative to the start of the ascent. In case
+        of plotting the deviation via perturbance it is a good idea to set
+        min_x to the first step when it is actually perturbed.
+    max_x : float
+        Set the last time relative to the start of the ascent.
+    plot_deviation : bool
+        If true, plot the deviation from perturbing parameters. If false,
+        plot the actual model state variable.
+    perturb_delta : float
+        Time difference between different ensembles where perturbing started.
+        This will plot vertical lines at each of those time steps.
+    alpha : float
+        Alpha value for the dots.
+    width : int
+        Width of plot in pixels.
+    height : int
+        Height of plot in pixels.
+    logy : bool
+        If true, use log10 on y-axis
+    logtwin : bool
+        If true, use log10 on twin-axis
+    min_time : float or None
+        If float: Plot starting with this time relative to the ascent in seconds.
+    max_time : float or None
+        If float: Plot ending with this time relative to the ascent in seconds.
+    """
+    s = 14
+    import matplotlib.ticker as tick
+
+    fontscale = height / 350
+    if backend == "matplotlib":
+        fontscale = height / 900 * 0.8
+        s = 2
+        matplotlib.rcParams["font.family"] = "sans-serif"
+        matplotlib.rcParams["font.sans-serif"] = "Helvetica"
+        title_font_size = 13 * fontscale
+        axis_label_text_font_size = matplotlib.rcParams["font.size"] * fontscale
+        major_label_text_font_size = matplotlib.rcParams["font.size"] * fontscale
+        aspect = width / height
+    else:
+        axis_label_text_font_size = int(13 * fontscale * 0.8)
+        major_label_text_font_size = int(11 * fontscale * 0.8)
+
+    hv.extension(backend)
+
+    if min_x is not None:
+        df = df.loc[df["time_after_ascent"] >= min_x]
+    if max_x is not None:
+        df = df.loc[df["time_after_ascent"] <= max_x]
+    # Make time after ascent to minuts
+    df["time_after_ascent"] /= 60
+    y = "Not Perturbed Value"
+    if plot_deviation:
+        y = "Mean Squared Error"
+
+    min_log_y = np.NaN
+    if logy:
+        df[y] = np.log10(df[y])
+        min_log_y = np.nanmin(df.loc[df[y] != -np.inf][y]) - 1
+        df.replace(-np.inf, min_log_y, inplace=True)
+    min_log_twin = np.NaN
+    if logtwin:
+        df["Predicted Squared Error"] = np.log10(df["Predicted Squared Error"])
+        min_log_twin = (
+            np.nanmin(
+                df.loc[df["Predicted Squared Error"] != -np.inf][
+                    "Predicted Squared Error"
+                ]
+            )
+            - 1
+        )
+        df.replace(-np.inf, min_log_twin, inplace=True)
+
+    df = df.loc[df["Predicted Squared Error"] < np.max(df["Predicted Squared Error"])]
+
+    lower_y = np.min(df["Predicted Squared Error"])
+    upper_y = np.max(df["Predicted Squared Error"])
+    delta = (upper_y - lower_y) / 12
+    lower_y -= delta
+    upper_y += delta
+
+    lower_y2 = np.min(df[y])
+    upper_y2 = np.max(df[y])
+    delta2 = (upper_y2 - lower_y2) / 12
+    lower_y2 -= delta2
+    upper_y2 += delta2
+
+    renderer = hv.Store.renderers[backend].instance(fig="png", dpi=300)
+
+    min_t = np.min(df["time_after_ascent"])
+    max_t = np.max(df["time_after_ascent"])
+
+    if perturb_delta is not None:
+        perturb_lines = None
+        t = min_t
+        while t < max_t:
+            if perturb_lines is None:
+                perturb_lines = hv.VLine(x=t).opts(color="black")
+            else:
+                perturb_lines *= hv.VLine(x=t).opts(color="black")
+            t += perturb_delta
+
+    if len(np.unique(df["Input Parameter"])) < 10:
+        cmap = matplotlib.pyplot.get_cmap("tab10")
+    else:
+        cmap = matplotlib.pyplot.get_cmap("tab20")
+
+    cmap_map = {}
+    cmap_values = [matplotlib.colors.to_hex(cmap(0)[0:-1])]
+    data_types = [parse_word(np.unique(df["Output Parameter"])[0])]
+    data_types_2 = [np.unique(df["Output Parameter"])[0]]
+    for i, rt in enumerate(np.unique(df["Input Parameter"])):
+        data_types.append(parse_word(rt))
+        cmap_values.append(matplotlib.colors.to_hex(cmap(i + 1)[0:-1]))
+        cmap_map[rt] = matplotlib.colors.to_hex(cmap(i + 1)[0:-1])
+        data_types_2.append(rt)
+
+    if backend == "matplotlib":
+
+        def apply_axis_format(plot, element):
+            ax = plot.handles["axis"]
+            ax.set_title(
+                title,
+                loc="left",
+                # fontdic={},
+                **{
+                    "fontweight": "bold",
+                    "fontsize": title_font_size,
+                },
+            )
+            ax.set_ylabel(
+                ylabel,
+                **{
+                    "rotation": 90,
+                    "fontstyle": "italic",
+                    "fontsize": axis_label_text_font_size,
+                },
+            )
+            ax.set_xlabel(
+                xlabel,
+                **{
+                    "fontstyle": "italic",
+                    "fontsize": axis_label_text_font_size,
+                },
+            )
+            ax.minorticks_on()
+
+            def format_fn(tick_val, tick_pose):
+                # Can implement an even fancier format here if needed
+                if logy and tick_val == min_log_y:
+                    return "-Infinity"
+                return f"{tick_val:1.2e}"
+
+            ax.yaxis.set_major_formatter(tick.FuncFormatter(format_fn))
+            ax.tick_params(
+                axis="both", which="major", labelsize=major_label_text_font_size
+            )
+            plot.handles["axis"] = ax
+
+        left = (
+            df.loc[df["Input Parameter"] == data_types_2[1]]
+            .hvplot.scatter(
+                x="time_after_ascent",
+                y=y,
+                alpha=alpha,
+                label=data_types[0],
+                ylabel=ylabel,
+                xlabel=xlabel,
+                legend=False,
+                aspect=aspect,
+                color=[cmap_values[0]],
+            )
+            .opts(
+                initial_hooks=[apply_axis_format],
+            )
+            .opts(
+                opts.Scatter(
+                    s=s,
+                )
+            )
+        )
+
+        def twinx_per_timestep(plot, element):
+            ax = plot.handles["axis"]
+            twinax = ax.twinx()
+            twinax.set_ylim((lower_y, upper_y))
+            twinax.set_ylabel(
+                twinlabel,
+                labelpad=9.0,
+                **{
+                    "rotation": 270,
+                    "fontstyle": "italic",
+                    "fontsize": axis_label_text_font_size,
+                },
+            )
+            if logtwin:
+                yticks_tmp = twinax.get_yticks()
+                yticks_tmp[0] = min_log_twin
+                if yticks_tmp[1] - yticks_tmp[0] < 3.5:
+                    yticks_tmp = np.delete(yticks_tmp, 1)
+                twinax.set_yticks(yticks_tmp)
+            else:
+                twinax.minorticks_on()
+
+            def format_fn(tick_val, tick_pose):
+                # Can implement an even fancier format here if needed
+                if logtwin and tick_val == min_log_twin:
+                    return "-Infinity"
+                return f"{tick_val:1.2e}"
+
+            twinax.yaxis.set_major_formatter(tick.FuncFormatter(format_fn))
+            twinax.tick_params(
+                axis="both", which="major", labelsize=major_label_text_font_size
+            )
+            plot.handles["axis"] = twinax
+
+        def twinx2(plot, element):
+            ax = plot.handles["axis"]
+            twinax = ax.twinx()
+            twinax.set_ylim((lower_y, upper_y))
+            twinax.set_yticks([])
+            plot.handles["axis"] = twinax
+
+        twin = None
+        for i, in_p in enumerate(data_types_2[1::]):
+            if twin is None:
+                twin = (
+                    df.loc[df["Input Parameter"] == in_p]
+                    .hvplot.scatter(
+                        x="time_after_ascent",
+                        y="Predicted Squared Error",
+                        alpha=alpha,
+                        legend=False,
+                        aspect=aspect,
+                        color=cmap_values[i + 1],
+                    )
+                    .opts(
+                        initial_hooks=[twinx_per_timestep],
+                        apply_ranges=False,
+                    )
+                    .opts(
+                        opts.Scatter(
+                            s=s,
+                            cmap=cmap_map,
+                        ),
+                    )
+                )
+            else:
+                twin = twin * df.loc[df["Input Parameter"] == in_p].hvplot.scatter(
+                    x="time_after_ascent",
+                    y="Predicted Squared Error",
+                    alpha=alpha,
+                    legend=False,
+                    aspect=aspect,
+                    color=cmap_values[i + 1],
+                ).opts(initial_hooks=[twinx2], apply_ranges=False,).opts(
+                    opts.Scatter(
+                        s=s,
+                        cmap=cmap_map,
+                    ),
+                )
+        legend_overlay = hv.NdOverlay(
+            {
+                data_types[i]: hv.Scatter((np.NaN, np.NaN)).opts(
+                    opts.Scatter(
+                        s=s * 8,
+                        color=cmap_values[i],
+                    )
+                )
+                for i in range(len(data_types))
+            }
+        )
+        if perturb_delta is not None:
+            image = left * twin * perturb_lines * legend_overlay
+        else:
+            image = left * twin * legend_overlay
+    else:
+
+        left = df.hvplot.scatter(
+            x="time_after_ascent",
+            y=y,
+            alpha=alpha,
+            label=data_types[0],
+            ylabel=ylabel,
+            xlabel=xlabel,
+            legend="top_right",
+            size=s,
+            color=[cmap_values[0]],
+        )
+
+        def apply_twin_axis(plot, element):
+            p = plot.state
+            p.extra_y_ranges = {"twiny": Range1d(start=lower_y, end=upper_y)}
+            p.add_layout(
+                LinearAxis(
+                    y_range_name="twiny",
+                    axis_label_text_font_size=f"{axis_label_text_font_size}pt",
+                    major_label_text_font_size=f"{major_label_text_font_size}pt",
+                    axis_label=twinlabel,
+                ),
+                "right",
+            )
+            glyph = p.select(dict(type=GlyphRenderer))[0]
+            glyph.y_range_name = "twiny"
+
+        df["Input Parameter"] = parse_word(df["Input Parameter"])
+        twin = df.hvplot.scatter(
+            x="time_after_ascent",
+            y="Predicted Squared Error",
+            by="Input Parameter",
+            alpha=alpha,
+            size=s,
+            colormap=cmap_values,
+        ).opts(
+            hooks=[apply_twin_axis],
+            apply_ranges=True,
+        )
+
+        if perturb_delta is not None:
+            image = left * twin * perturb_lines
+        else:
+            image = left * twin
+    if backend == "matplotlib":
+        image = image.opts(
+            fig_inches=((width / 300.0, height / 300.0)),
+            fontscale=fontscale,
+        )
+    else:
+        image = image.opts(
+            width=width,
+            height=height,
+            title=title,
+            fontscale=fontscale,
+        )
+
+    i = 0
+    save = store_path + "_" + "{:03d}".format(i)
+    while os.path.isfile(save + ".png"):
+        i = i + 1
+        save = store_path + "_" + "{:03d}".format(i)
+    renderer.save(image, save)
 
 
 if __name__ == "__main__":
@@ -368,54 +654,27 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description="""
-        Plot mean squared error over maximal sensitivity calculated
-        via the given ratio type (i.e. sensitivity per timestep) and given
-        the trajectory to use for sensitivities and mean (i.e. the original trajectory
-        from which model parameters have been perturbed).
+        Plot either mean squared deviation from perturbance over mean
+        predicted deviation calculated via the sensitivity where the predicted
+        axis is at most 1 such that plots for particle numbers are not entirely
+        correct. Or plot the model state variable and predicted squared error
+        over time.
         """
     )
     parser.add_argument(
-        "--all",
+        "--data_path",
+        type=str,
+        required=True,
+        help="""
+        Path to dataframe as NetCDF-file which had been created via create_mse.py.
+        """,
+    )
+    parser.add_argument(
+        "--add_zero_sens",
         action="store_true",
         help="""
-        Plot all kinds of error calculations and error predictions and the
-        operation used to get a synopsis. This can take a long time!
-        """,
-    )
-    parser.add_argument(
-        "--kind",
-        default="mse",
-        help="""
-        Define the operation that had been used to calculate the error of
-        the ensembles. Possible options:
-        mse: Mean squared error
-        maxse: Maximum error
-        nozeromse: Mean squared error ignoring time steps with zero error
-        sum: Cumulative squared error
-        me: Mean error
-        mae: Mean absolute error
-        """,
-    )
-    parser.add_argument(
-        "--sens_kind",
-        default="mean",
-        help="""
-        Operation to summarize all sensitivities (aka predicted errors) across
-        multiple ensembles. Possible options:
-        sum: Sum of all errors
-        max: Maximum error across all ensembles
-        mean: Mean error
-        """,
-    )
-    parser.add_argument(
-        "--error_kind",
-        default="mean",
-        help="""
-        Operation to summarize all deviations of ensembles from an
-        unperturbed trajectory across multiple ensembles. Possible options:
-        sum: Sum of all deviations
-        max: Maximum deviation across all ensembles
-        mean: Mean deviation
+        Add sensitivities of value zero to the far left and mark it with
+        negative infinity.
         """,
     )
     parser.add_argument(
@@ -430,19 +689,10 @@ if __name__ == "__main__":
         "--out_parameter",
         type=str,
         nargs="+",
-        required=True,
+        default=[],
         help="""
-        Output parameter to plot for. Multiple options are possible.
-        Possible options are
-        QV, QC, QR, QG, QH, QS, QI.
-        """,
-    )
-    parser.add_argument(
-        "--ratio_type",
-        default=None,
-        help="""
-        Plot only the given ratio type. If none is given, plot all ratio types.
-        We recommend 'adjusted'.
+        Output parameter to plot for. Default plots all that are available
+        in the dataframe.
         """,
     )
     parser.add_argument(
@@ -451,82 +701,265 @@ if __name__ == "__main__":
         help="""
         Choose a backend for plotting. Options are:
         matplotlib: Most plots should be fine with it.
-        bokeh: Can be used in case colors are wrong.
-        """,
-    )
-    parser.add_argument(
-        "--filetype",
-        default="csv",
-        type=str,
-        help="""
-        Define which type to load. Options are "csv" and "netcdf".
-        """,
-    )
-    parser.add_argument(
-        "--files",
-        nargs="+",
-        default=[
-            "stats_full/mse_adjusted_conv_400_0.csv",
-            "stats_full/mse_adjusted_conv_600_0.csv",
-            "stats_full/mse_adjusted_conv_600_2.csv",
-            "stats_full/mse_adjusted_conv_600_3.csv",
-        ],
-        help="""
-        Define the files to load.
+        bokeh: Recommended.
         """,
     )
     parser.add_argument(
         "--store_path",
-        default="../pics/mse_",
+        default="../pics/correlation",
         type=str,
         help="""
         Path to store the generated images.
         """,
     )
-
+    parser.add_argument(
+        "--confidence",
+        type=float,
+        default=0.90,
+        help="""
+        Plot a confidence ellipse around each sample with confidence
+        between 0 and 1. If none is given, no ellipse will be plotted.
+        """,
+    )
+    parser.add_argument(
+        "--xlabel",
+        default="Predicted Log MSD",
+        type=str,
+        help="""
+        Alternative label for x-axis.
+        """,
+    )
+    parser.add_argument(
+        "--ylabel",
+        default="True Log MSD",
+        type=str,
+        help="""
+        Alternative label for y-axis. If plot_variant is "time_plot", then
+        " [out_parameter]" is added.
+        """,
+    )
+    parser.add_argument(
+        "--title",
+        default="True Deviation vs Prediction",
+        type=str,
+        help="""
+        Title for the plot where " for [out_param]" is added.
+        """,
+    )
+    parser.add_argument(
+        "--width",
+        default=900,
+        type=int,
+        help="""
+        Width of plot in pixels.
+        """,
+    )
+    parser.add_argument(
+        "--height",
+        default=900,
+        type=int,
+        help="""
+        Height of plot in pixels.
+        """,
+    )
+    parser.add_argument(
+        "--set_zero",
+        default=None,
+        type=float,
+        help="""
+        If plot_variant is "correlation".
+        Set any predicted squared errors with this value or lower to zero.
+        This makes the plots easier to look at, when only a single parameter
+        has a predicted error of 1e-200 or less.
+        """,
+    )
+    parser.add_argument(
+        "--plot_variant",
+        default="correlation",
+        type=str,
+        help="""
+        Plot either correlation plots with true deviation over predicted
+        deviation by perturbing a parameter with "correlation" or
+        use "time_plot" to plot (a single or mean) trajectory and
+        the predicted deviation over time with the actual model
+        state variable.
+        """,
+    )
+    parser.add_argument(
+        "--traj",
+        type=int,
+        default=-1,
+        help="""
+        If plot_type is "time_plot", the trajectory with this index will
+        be plotted. If a value below zero is given, plot the mean of all.
+        """,
+    )
+    parser.add_argument(
+        "--in_parameter",
+        type=str,
+        nargs="+",
+        default=[],
+        help="""
+        If plot_type is "time_plot", then plot the predicted deviation
+        for those model parameters. If none are given, plot the top ten
+        most influential parameters for each model state parameter.
+        This plots all those predictions in one plot.
+        """,
+    )
+    parser.add_argument(
+        "--logy",
+        action="store_true",
+        help="""
+        If plot_type is "time_plot", plot the y-axis as log10.
+        """,
+    )
+    parser.add_argument(
+        "--twinlabel",
+        default="Predicted Squared Error",
+        type=str,
+        help="""
+        Only if plot_type is "time_plot". Label for the twin axis.
+        """,
+    )
+    parser.add_argument(
+        "--logtwin",
+        action="store_true",
+        help="""
+        If plot_type is "time_plot", plot the twin-axis as log10.
+        """,
+    )
+    parser.add_argument(
+        "--n_model_params",
+        type=int,
+        default=5,
+        help="""
+        If plot_type is "time_plot", plot this many model parameters.
+        """,
+    )
+    parser.add_argument(
+        "--min_time",
+        type=float,
+        default=None,
+        help="""
+        If plot_type is "time_plot", use this as start point for the plot
+        as in time after ascent.
+        """,
+    )
+    parser.add_argument(
+        "--max_time",
+        type=float,
+        default=None,
+        help="""
+        If plot_type is "time_plot", use this as last point for the plot
+        as in time after ascent.
+        """,
+    )
     args = parser.parse_args()
+    ds = xr.open_dataset(args.data_path, decode_times=False)
+    if len(args.out_parameter) == 0:
+        out_params = []
+        for out_p in ds["Output Parameter"]:
+            out_params.append(out_p.item())
+    else:
+        out_params = args.out_parameter
 
-    if args.all:
-        from itertools import product
-        from timeit import default_timer as timer
-
-        kind = ["mse", "maxse", "nozeromse", "sum", "me", "mae"]
-        sens_kind = ["max", "mean"]
-        error_kind = ["max", "mean"]
-        n = len(kind) * len(sens_kind) * len(error_kind)
-        i = 0
-        t_start = timer()
-        for k, s, e in product(kind, sens_kind, error_kind):
-            t = timer()
-            load_and_plot(
-                k,
-                s,
-                e,
-                args.plot_types,
-                args.out_parameter,
-                args.ratio_type,
-                args.backend,
-                args.filetype,
-                args.files,
-                args.store_path,
+    if args.plot_variant == "correlation":
+        for out_p in out_params:
+            df = (
+                ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+                .to_dataframe()
+                .reset_index()
             )
-            t2 = timer()
-            ti = t2 - t
-            i += 1
-            t_all = (t2 - t_start) / i * n
-            print(
-                f"\n{i:3d}/{n} in {ti:3.3f}s, estimated end total {t_all:3.3f}s, total {t2-t_start:3.3f}s\n"
+            df = df.loc[df["Output Parameter"] == out_p]
+            if (
+                np.min(df["Predicted Squared Error"]) == 0
+                and np.max(df["Predicted Squared Error"]) == 0
+            ):
+                # nothing to see here; Usually applies to
+                # variables with no contents
+                continue
+            print(f"Plotting for {out_p}")
+            if args.set_zero is not None:
+                print("Replacing following parameters and values with zero:")
+                print(
+                    df.loc[
+                        (df["Predicted Squared Error"] <= args.set_zero)
+                        & (df["Predicted Squared Error"] != 0)
+                    ][
+                        [
+                            "Input Parameter",
+                            "Predicted Squared Error",
+                            "Mean Squared Error",
+                        ]
+                    ]
+                )
+                df["Predicted Squared Error"] = df["Predicted Squared Error"].where(
+                    df["Predicted Squared Error"] > args.set_zero, 0.0
+                )
+            plot_mse(
+                df=df,
+                out_params=[out_p],
+                store_path=args.store_path,
+                backend=args.backend,
+                plot_types=args.plot_types,
+                add_zero_sens=args.add_zero_sens,
+                confidence=args.confidence,
+                title=args.title + " for " + out_p,
+                xlabel=args.xlabel,
+                ylabel=args.ylabel,
+                width=args.width,
+                height=args.height,
+            )
+    elif args.plot_variant == "time_plot":
+        if args.traj < 0:
+            df = ds.mean(dim=["trajectory"], skipna=True).to_dataframe().reset_index()
+            df_mean = (
+                ds.mean(dim=["time_after_ascent", "trajectory"], skipna=True)
+                .to_dataframe()
+                .reset_index()
+            )
+        else:
+            df_mean = (
+                ds.mean(dim=["time_after_ascent"], skipna=True)
+                .to_dataframe()
+                .reset_index()
+            )
+            df = ds.to_dataframe().reset_index()
+            df = df.loc[df["trajectory"] == args.traj]
+            df_mean = df_mean.loc[df_mean["trajectory"] == args.traj]
+        for out_p in out_params:
+            df_tmp = df.loc[df["Output Parameter"] == out_p]
+            df_mean_tmp = df_mean.loc[df_mean["Output Parameter"] == out_p]
+            if len(args.in_parameter) == 0:
+                in_params = np.unique(
+                    df_mean_tmp.nlargest(
+                        args.n_model_params, "Predicted Squared Error"
+                    )["Input Parameter"]
+                )
+            else:
+                in_params = args.in_parameter
+            df_tmp = df_tmp.loc[df_tmp["Input Parameter"].isin(in_params)]
+            if (
+                np.min(df_tmp["Predicted Squared Error"]) == 0
+                and np.max(df_tmp["Predicted Squared Error"]) == 0
+            ):
+                # nothing to see here
+                continue
+            print(f"Plotting for {out_p}")
+            plot_time_evolution(
+                df=df_tmp,
+                backend=args.backend,
+                store_path=args.store_path,
+                title=args.title + " for " + out_p,
+                xlabel=args.xlabel,
+                ylabel=args.ylabel + " " + parse_word(out_p),
+                twinlabel=args.twinlabel,
+                logy=args.logy,
+                width=args.width,
+                height=args.height,
+                logtwin=args.logtwin,
+                min_x=args.min_time,
+                max_x=args.max_time,
             )
     else:
-        load_and_plot(
-            args.kind,
-            args.sens_kind,
-            args.error_kind,
-            args.plot_types,
-            args.out_parameter,
-            args.ratio_type,
-            args.backend,
-            args.filetype,
-            args.files,
-            args.store_path,
-        )
+        print(f"plot_variant '{args.plot_variant}': No such plot variant. ABORTING!")

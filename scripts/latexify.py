@@ -251,7 +251,7 @@ mappings = {
     "lat_cool": "Latent Cooling",
     "latent_heat": "Latent Heating",
     "latent_cool": "Latent Cooling",
-    "dinv_z": r"$\partial z^{-1}$",
+    "dinv_z": r"$ \partial z^{-1} $",
     "ratio_deriv": "Derivative Ratio",
     "in_param": "Input Parameter",
     "p": "Pressure",
@@ -259,27 +259,27 @@ mappings = {
     "S": "Saturation",
     "Si": "Saturation w.r.t. Ice",
     "Q_TURBULENCE": "Mass Mixing from Turbulence",
-    "qv": "Water Vapor Mixing Ratio",
-    "qc": "Cloud Droplet Mixing Ratio",
-    "qr": "Rain Droplet Mixing Ratio",
-    "qs": "Snow Mixing Ratio",
-    "qi": "Ice Mixing Ratio",
-    "qg": "Graupel Mixing Ratio",
-    "qh": "Hail Mixing Ratio",
-    "Nv": "Water Vapor Particle Number",
-    "Nc": "Cloud Droplet Particle Number",
-    "Nr": "Rain Droplet Particle Number",
-    "Ns": "Snow Particle Number",
-    "Ni": "Ice Particle Number",
-    "Ng": "Graupel Particle Number",
-    "Nh": "Hail Particle Number",
-    "qvout": "Precipitation of Water Vapor Mixing Ratio",
-    "qcout": "Precipitation of Cloud Droplet Mixing Ratio",
-    "qrout": "Precipitation of Rain Droplet Mixing Ratio",
-    "qsout": "Precipitation of Snow Mixing Ratio",
-    "qiout": "Precipitation of Ice Mixing Ratio",
-    "qgout": "Precipitation of Graupel Mixing Ratio",
-    "qhout": "Precipitation of Hail Mixing Ratio",
+    "qv": "Water Vapor Mass Density",
+    "qc": "Cloud Droplet Mass Density",
+    "qr": "Rain Droplet Mass Density",
+    "qs": "Snow Mass Density",
+    "qi": "Ice Mass Density",
+    "qg": "Graupel Mass Density",
+    "qh": "Hail Mass Density",
+    "Nv": "Water Vapor Particle Density",
+    "Nc": "Cloud Droplet Particle Density",
+    "Nr": "Rain Droplet Particle Density",
+    "Ns": "Snow Particle Density",
+    "Ni": "Ice Particle Density",
+    "Ng": "Graupel Particle Density",
+    "Nh": "Hail Particle Density",
+    "qvout": "Precipitation of Water Vapor Mass Density",
+    "qcout": "Precipitation of Cloud Droplet Mass Density",
+    "qrout": "Precipitation of Rain Droplet Mass Density",
+    "qsout": "Precipitation of Snow Mass Density",
+    "qiout": "Precipitation of Ice Mass Density",
+    "qgout": "Precipitation of Graupel Mass Density",
+    "qhout": "Precipitation of Hail Mass Density",
     "Nrout": "Precipitation of Rain Droplets",
     "Nsout": "Precipitation of Snow Crystals",
     "Niout": "Precipitation of Ice Crystals",
@@ -288,33 +288,37 @@ mappings = {
     "LATITUDE": "Latitude",
     "LONGITDUE": "longitude",
     "pressure": "Pressure",
-    "QV": "Water Vapor Mixing Ratio",
-    "QC": "Cloud Droplet Mixing Ratio",
-    "QR": "Rain Droplet Mixing Ratio",
-    "QS": "Snow Mixing Ratio",
-    "QI": "Ice Mixing Ratio",
-    "QG": "Graupel Mixing Ratio",
-    "QH": "Hail Mixing Ratio",
-    "NCCLOUD": "Cloud Droplet Particle Number",
-    "NCRAIN": "Rain Droplet Particle Number",
-    "NCSNOW": "Snow Particle Number",
-    "NCICE": "Ice Particle Number",
-    "NCGRAUPEL": "Graupel Particle Number",
-    "NCHAIL": "Hail Particle Number",
-    "QR_IN": "sedimentation (from above) of rain droplet mixing ratio",
-    "QS_IN": "sedimentation (from above) of snow crystal mixing ratio",
-    "QI_IN": "sedimentation (from above) of ice crystal mixing ratio",
-    "QG_IN": "sedimentation (from above) of graupel mixing ratio",
-    "QR_OUT": "sedimentation of rain droplet mixing ratio",
-    "QS_OUT": "sedimentation of snow crystal mixing ratio",
-    "QI_OUT": "sedimentation of ice crystal mixing ratio",
-    "QG_OUT": "sedimentation of graupel mixing ratio",
-    "QH_OUT": "sedimentation of hail mixing ratio",
+    "pressure_hPa": "Pressure",
+    "QV": "Water Vapor Mass Density",
+    "QC": "Cloud Droplet Mass Density",
+    "QR": "Rain Droplet Mass Density",
+    "QS": "Snow Mass Density",
+    "QI": "Ice Mass Density",
+    "QG": "Graupel Mass Density",
+    "QH": "Hail Mass Density",
+    "NCCLOUD": "Cloud Droplet Particle Density",
+    "NCRAIN": "Rain Droplet Particle Density",
+    "NCSNOW": "Snow Particle Density",
+    "NCICE": "Ice Particle Density",
+    "NCGRAUPEL": "Graupel Particle Density",
+    "NCHAIL": "Hail Particle Density",
+    "QR_IN": "sedimentation (from above) of rain droplet mass density",
+    "QS_IN": "sedimentation (from above) of snow crystal mass density",
+    "QI_IN": "sedimentation (from above) of ice crystal mass density",
+    "QG_IN": "sedimentation (from above) of graupel mass density",
+    "QR_OUT": "sedimentation of rain droplet mass density",
+    "QS_OUT": "sedimentation of snow crystal mass density",
+    "QI_OUT": "sedimentation of ice crystal mass density",
+    "QG_OUT": "sedimentation of graupel mass density",
+    "QH_OUT": "sedimentation of hail mass density",
     "NR_OUT": "sedimentation of rain droplets",
     "NS_OUT": "sedimentation of snow crystals",
     "NI_OUT": "sedimentation of ice crystals",
     "NG_OUT": "sedimentation of graupel particles",
     "NH_OUT": "sedimentation of hail particles",
+    "Q_liquid": "Liquid Water Content",
+    "Q_cold": "Cold Hydrometeor Content",
+    "Q_total": "Total Water Content",
     "lat": "Latitude",
     "lon": "longitude",
     "z": "Height [m]",
@@ -324,31 +328,39 @@ mappings = {
     "timestep": "Time [s] after ascend begins",
     "time": "Time [s] after COSMO simulation begins",
     "time_after_ascent": "Time [s] after ascend begins",
+    "time_after_ascent_h": "Time [h] after ascend begins",
     "step": "Simulation step",
-    "dmin_x_nuc_hetero": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{het}}$",
-    "dmin_x_nuc_homo": r"$\partial x_{\mathrm{min},\mathrm{nuc},\mathrm{hom}}$",
-    "dmin_x_melt": r"$\partial x_{\mathrm{min},\mathrm{melt}}$",
-    "dmin_x_evap": r"$\partial x_{\mathrm{min},\mathrm{evap}}$",
-    "dmin_x_freezing": r"$\partial x_{\mathrm{min},\mathrm{frz}}$",
-    "dmin_x_depo": r"$\partial x_{\mathrm{min},\mathrm{dep}}$",
-    "dmin_x_collision": r"$\partial x_{\mathrm{min},\mathrm{coli}}$",
-    "dmin_x_collection": r"$\partial x_{\mathrm{min},\mathrm{coll}}$",
-    "dmin_x_conversion": r"$\partial x_{\mathrm{min},\mathrm{con}}$",
-    "dmin_x_sedimentation": r"$\partial x_{\mathrm{min},\mathrm{sed}}$",
-    "dmin_x_riming": r"$\partial x_{\mathrm{min},\mathrm{rim}}$",
-    "dEpsilon": r"$\partial \varepsilon$",
-    "dkin_visc_air": r"$\partial \nu_{\mathrm{kin}, \mathrm{air}}$",
-    "dK_T": r"$K_{\mathrm{air}}$",
-    "dp_sat_const_a": r"$\partial p_{\mathrm{sat}, a}$",
-    "dp_sat_ice_const_a": r"$\partial p_{\mathrm{sat}, \mathrm{ice}, a}$",
-    "dp_sat_const_b": r"$\partial p_{\mathrm{sat}, b}$",
-    "dp_sat_ice_const_b": r"$\partial p_{\mathrm{sat}, \mathrm{ice}, b}$",
-    "dp_sat_low_temp": r"$\partial p_{\mathrm{sat}, \mathrm{low}, T}$",
-    "dT_sat_low_temp": r"$\partial T_{\mathrm{sat}, \mathrm{low}, T}$",
-    "ddv0": r"$D_{0, \mathrm{vapor}}$",
+    "dmin_x_nuc_hetero": r"$ \partial x_{\mathrm{min},\mathrm{nuc},\mathrm{het}} $",
+    "dmin_x_nuc_homo": r"$ \partial x_{\mathrm{min},\mathrm{nuc},\mathrm{hom}} $",
+    "dmin_x_melt": r"$ \partial x_{\mathrm{min},\mathrm{melt}} $",
+    "dmin_x_evap": r"$ \partial x_{\mathrm{min},\mathrm{evap}} $",
+    "dmin_x_freezing": r"$ \partial x_{\mathrm{min},\mathrm{frz}} $",
+    "dmin_x_depo": r"$ \partial x_{\mathrm{min},\mathrm{dep}} $",
+    "dmin_x_collision": r"$ \partial x_{\mathrm{min},\mathrm{coli}} $",
+    "dmin_x_collection": r"$ \partial x_{\mathrm{min},\mathrm{coll}} $",
+    "dmin_x_conversion": r"$ \partial x_{\mathrm{min},\mathrm{con}} $",
+    "dmin_x_sedimentation": r"$ \partial x_{\mathrm{min},\mathrm{sed}} $",
+    "dmin_x_riming": r"$ \partial x_{\mathrm{min},\mathrm{rim}} $",
+    "dEpsilon": r"$ \partial \varepsilon$",
+    "dkin_visc_air": r"$ \partial \nu_{\mathrm{kin}, \mathrm{air}} $",
+    "dK_T": r"$K_{\mathrm{air}} $",
+    "dp_sat_const_a": r"$ \partial p_{\mathrm{sat}, a} $",
+    "dp_sat_ice_const_a": r"$ \partial p_{\mathrm{sat}, \mathrm{ice}, a} $",
+    "dp_sat_const_b": r"$ \partial p_{\mathrm{sat}, b} $",
+    "dp_sat_ice_const_b": r"$ \partial p_{\mathrm{sat}, \mathrm{ice}, b} $",
+    "dp_sat_low_temp": r"$ \partial p_{\mathrm{sat}, \mathrm{low}, T} $",
+    "dT_sat_low_temp": r"$ \partial T_{\mathrm{sat}, \mathrm{low}, T} $",
+    "ddv0": r"$D_{0, \mathrm{vapor}} $",
     "instance_id": "Instance ID",
-    "dT_mult_min": r"$\partial T_{\mathrm{mult}, \mathrm{min}}$",
-    "dT_mult_max": r"$\partial T_{\mathrm{mult}, \mathrm{max}}$",
+    "dT_mult_min": r"$ \partial T_{\mathrm{mult}, \mathrm{min}} $",
+    "dT_mult_max": r"$ \partial T_{\mathrm{mult}, \mathrm{max}} $",
+    "dp_sat_melt": r"$ p_{\mathrm{sat}, \mathrm{melt}} $",
+    "dkin_visc_air": r"$ \nu_{\mathrm{kin}, \mathrm{air}} $",
+    "drain_cmu1": r"$ \mu_{\mathrm{rain}, c, 1} $",
+    "drain_cmu2": r"$ \mu_{\mathrm{rain}, c, 2} $",
+    "drain_cmu3": r"$ \mu_{\mathrm{rain}, c, 3} $",
+    "drain_cmu4": r"$ \mu_{\mathrm{rain}, c, 4} $",
+    "Specific_Humidity": "specific humidity",
 }
 
 
@@ -891,11 +903,11 @@ in_params_descr_dic = {
     "dT_freeze": "Lower temperature threshold for raindrop freezing",
     "dT_f": "Lower temperature threshold for (instantaneous) raindrop freezing",
     "dD_eq": "Equilibrium diameter for Seifert & Beheng (2008), ie Eq. 20.",
-    "drho_w": r"Density of liquid water in \f$\text{kg}/\text{m}^3\f$",
+    "drho_w": r"Density of liquid water in \f$ \mathrm{kg}/\mathrm{m}^3\f $",
     "drho_0": "Norm air density",
     "drho_vel": "Exponent for density correction",
     "drho_vel_c": "Exponent for density correction of cloud droplets",
-    "drho_ice": r"Density of ice in $\text{kg}/\text{m}^3$",
+    "drho_ice": r"Density of ice in $ \mathrm{kg}/\mathrm{m}^3 $",
     "dM_w": "Molar mass of water",
     "dM_a": "Molar mass of dry air",
     "dR_universal": "Universal gas constant",
@@ -905,13 +917,13 @@ in_params_descr_dic = {
     "dR_v": "Gas constant for water vapor",
     "da_v": "Constant used in rain evaporation after Seifert (2008)",
     "db_v": "Coefficient used in rain evaporation after Seifert (2008)",
-    "da_prime": "Various coefficients from ICON regarding evaporation from melting ice particles",
-    "db_prime": "Various coefficients from ICON regarding evaporation from melting ice particles",
-    "dc_prime": "Various coefficients from ICON regarding evaporation from melting ice particles",
+    "da_prime": "Constant used to calculate the terminal fall velocity of raindrops during rain evaporation",
+    "db_prime": "Coefficient used to calculate the terminal fall velocity of raindrops during rain evaporation",
+    "dc_prime": "Exponent used to calculate the terminal fall velocity of raindrops during rain evaporation",
     "dK_T": "Heat conductivity of air",
     "dL_wd": "Latent heat of evaporation of water",
     "dL_ed": " Heat of sublimination ice -> vapor",
-    "dD_v": r"Diffusivity of water vapor in air at $0^\circ\text{C}$",
+    "dD_v": r"Diffusivity of water vapor in air at $0^\circ\mathrm{C} $",
     "decoll_min": "Min. efficiency for collisions graupel - cloud, ice - cloud, snow - cloud",
     "decoll_gg": "Collision efficiency for graupel selfcollection",
     "decoll_gg_wet": "Collision efficiency for wet graupel",
@@ -926,20 +938,20 @@ in_params_descr_dic = {
     "dconst5": "Coefficient used in riming processes for enhanced melting or conversion of snow or ice to graupel",
     "dD_rainfrz_gh": " Size thresholds for partitioning of freezing rain in the hail scheme",
     "dD_rainfrz_ig": "Size thresholds for partitioning of freezing rain in the hail scheme",
-    "ddv0": r"Diffusivity of water vapor in air at $0^\circ\text{C}$",
-    "dp_sat_melt": r"Saturation pressure at $\text{T}=\text{T}_\text{freeze}$",
-    "dcp": r"Specific heat capacity of air at constant pressure in $\text{J}/\text{K}/\text{kg}$",
-    "dk_b": r"Boltzmann constant in $\text{J}/\text{K}$",
+    "ddv0": r"Diffusivity of water vapor in air at $0^\circ\mathrm{C} $",
+    "dp_sat_melt": r"Saturation pressure at $ \mathrm{T}=\mathrm{T}_\mathrm{freeze} $",
+    "dcp": r"Specific heat capacity of air at constant pressure in $ \mathrm{J}/\mathrm{K}/\mathrm{kg} $",
+    "dk_b": r"Boltzmann constant in $ \mathrm{J}/\mathrm{K} $",
     "da_HET": "Exponent for rain freeze with data of Barklie and Gokhale",
     "db_HET": "Coefficient for rain freeze with data of Barklie and Gokhale",
     "dN_sc": "Schmidt number",
     "dn_f": " Exponent of N_sc in the vent-coeff",
-    "dN_avo": r"Avogadro number in $\text{mol}^{-1}$",
-    "dna_dust": r"Initial number density of dust [$m^{-3}$]",
-    "dna_soot": r"Initial number density of soot [$m^{-3}$]",
-    "dna_orga": r"Initial number density of organics [$m^{-3}$]",
-    "dni_het_max": r"Constants for Phillips et al. ice nucleation scheme max number of IN between $1-10$ per liter, i.e. 1d3-10d3",
-    "dni_hom_max": r"Constants for Phillips et al. ice nucleation scheme number of liquid aerosols between $100-5000$ per liter",
+    "dN_avo": r"Avogadro number in $ \mathrm{mol}^{-1} $",
+    "dna_dust": r"Initial number density of dust [$m^{-3} $]",
+    "dna_soot": r"Initial number density of soot [$m^{-3} $]",
+    "dna_orga": r"Initial number density of organics [$m^{-3} $]",
+    "dni_het_max": r"Constants for Phillips et al. ice nucleation scheme max number of IN between $ 1^{-10} $ per liter, i.e. 1d3-10d3",
+    "dni_hom_max": r"Constants for Phillips et al. ice nucleation scheme number of liquid aerosols between $ 100-5000 $ per liter",
     "da_dep": "Cons_idxeters for deposition formula (2) of Hande et al.",
     "db_dep": "Cons_idxeters for deposition formula (2) of Hande et al.",
     "dc_dep": "Parameters for deposition formula (2) of Hande et al.",
@@ -967,12 +979,12 @@ in_params_descr_dic = {
     "dd_ccn_4": "Parameter for calculating CCN concentration during CCN activation after Hande et al 2016",
     "dr_const": "Parameter for saturation adjustment",
     "dr1_const": "Parameter for saturation adjustment",
-    "dcv": r"Specific heat capacity of water vapor at constant pressure in $\text{J}/\text{K}/\text{kg}$",
+    "dcv": r"Specific heat capacity of water vapor at constant pressure in $ \mathrm{J}/\mathrm{K}/\mathrm{kg} $",
     "dp_sat_const_a": "Parameter for saturation adjustment. Constant saturated water vapor pressure",
     "dp_sat_ice_const_a": "Parameter for saturation adjustment. Constant saturated ice pressure",
     "dp_sat_const_b": "Parameter for saturation adjustment. Constant saturated water vapor pressure",
     "dp_sat_ice_const_b": "Parameter for saturation adjustment. Constant saturated ice pressure",
-    "dp_sat_low_temp": r"Parameter for saturation adjustment. Saturated water vapor pressure at $T = 233$K",
+    "dp_sat_low_temp": r"Parameter for saturation adjustment. Saturated water vapor pressure at $T = 233 $K",
     "dT_sat_low_temp": "Parameter for saturation adjustment",
     "dalpha_depo": "Depostion coefficient for homogeneous ice nucleation",
     "dr_0": "Aerosol particle radius prior to freezing used in homogeneous nucleation",
@@ -1007,19 +1019,19 @@ in_params_descr_dic = {
     "drain_rho_v": "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
     "drain_c_z": "Coefficient for 2nd mass moment used in freezing processes",
     "drain_sc_coll_n": "Not used",
-    "drain_cmu0": r"Coefficient for calculating the shape parameter $\mu$ during rain evaporation",
-    "drain_cmu1": r"Coefficient for calculating the shape parameter $\mu$ during rain evaporation",
-    "drain_cmu2": r"Coefficient for calculating the shape parameter $\mu$ during rain evaporation",
-    "drain_cmu3": r"Constant for calculating the shape parameter $\mu$ during rain evaporation",
-    "drain_cmu4": r"Constant for calculating the shape parameter $\mu$ during rain evaporation",
-    "drain_cmu5": r"Exponent for calculating the shape parameter $\mu$ during rain evaporation",
+    "drain_cmu0": r"Coefficient for calculating the shape parameter $ \mu $ during rain evaporation",
+    "drain_cmu1": r"Coefficient for calculating the shape parameter $ \mu $ during rain evaporation",
+    "drain_cmu2": r"Coefficient for calculating the shape parameter $ \mu $ during rain evaporation",
+    "drain_cmu3": r"Constant for calculating the shape parameter $ \mu $ during rain evaporation",
+    "drain_cmu4": r"Constant for calculating the shape parameter $ \mu $ during rain evaporation",
+    "drain_cmu5": r"Exponent for calculating the shape parameter $ \mu $ during rain evaporation",
     "drain_alpha": "Constant in rain sedimentation",
     "drain_beta": "Coefficient for rain sedimentation",
     "drain_gamma": "Exponent for rain sedimentation",
-    "drain_nu": r"Shape parameter of the generalized $\Gamma$-distribution",
-    "drain_g1": r"Right edge of incomplete gamma function,  which had been initialized with $\text{nm}_1$",
-    "drain_g2": r"Right edge of incomplete gamma function,  which had been initialized with $\text{nm}_2$",
-    "drain_mu": r"Shape parameter of the generalized $\Gamma$-distribution",
+    "drain_nu": r"Parameter to calculate the shape of the generalized $ \Gamma $-distribution",
+    "drain_g1": r"Right edge of incomplete gamma function,  which had been initialized with $ \mathrm{nm}_1 $",
+    "drain_g2": r"Right edge of incomplete gamma function,  which had been initialized with $ \mathrm{nm}_2 $",
+    "drain_mu": r"Shape parameter of the generalized $ \Gamma $-distribution",
     "drain_nm1": "Number of bins of the incomplete gamma function lookup table 1",
     "drain_nm2": "Number of bins of the incomplete gamma function lookup table 2",
     "drain_nm3": "Number of bins of the incomplete gamma function lookup table 3",
@@ -1073,10 +1085,10 @@ in_params_descr_dic = {
     "dcloud_alpha": "Not used",
     "dcloud_beta": "Not used",
     "dcloud_gamma": "Not used",
-    "dcloud_nu": r"Shape parameter of the generalized $\Gamma$-distribution",
+    "dcloud_nu": r"Parameter to calculate the shape parameter of the generalized $ \Gamma $-distribution",
     "dcloud_g1": "Not used",
     "dcloud_g2": "Not used",
-    "dcloud_mu": r"Shape parameter of the generalized $\Gamma$-distribution",
+    "dcloud_mu": r"Shape parameter of the generalized $ \Gamma $-distribution",
     "dcloud_nm1": "Not used",
     "dcloud_nm2": "Not used",
     "dcloud_nm3": "Not used",
@@ -1130,10 +1142,10 @@ in_params_descr_dic = {
     "dgraupel_alpha": "Not used",
     "dgraupel_beta": "Not used",
     "dgraupel_gamma": "Not used",
-    "dgraupel_nu": r"Shape parameter of the generalized $\Gamma$-distribution",
-    "dgraupel_g1": r"Right edge of incomplete gamma function,  which had been initialized with $\text{nm}_1$",
-    "dgraupel_g2": r"Right edge of incomplete gamma function,  which had been initialized with $\text{nm}_2$",
-    "dgraupel_mu": r"Shape parameter of the generalized $\Gamma$-distribution",
+    "dgraupel_nu": r"Parameter to calculate the shape parameter of the generalized $ \Gamma $-distribution",
+    "dgraupel_g1": r"Right edge of incomplete gamma function,  which had been initialized with $ \mathrm{nm}_1 $",
+    "dgraupel_g2": r"Right edge of incomplete gamma function,  which had been initialized with $ \mathrm{nm}_2 $",
+    "dgraupel_mu": r"Shape parameter of the generalized $ \Gamma $-distribution",
     "dgraupel_nm1": "Number of bins of the incomplete gamma function lookup table 1",
     "dgraupel_nm2": "Number of bins of the incomplete gamma function lookup table 2",
     "dgraupel_nm3": "Not used",
@@ -1187,10 +1199,10 @@ in_params_descr_dic = {
     "dhail_alpha": "Not used",
     "dhail_beta": "Not used",
     "dhail_gamma": "Not used",
-    "dhail_nu": r"Shape parameter of the generalized $\Gamma$-distribution",
+    "dhail_nu": r"Parameter to calculate the shape parameter of the generalized $ \Gamma $-distribution",
     "dhail_g1": "Not used",
     "dhail_g2": "Not used",
-    "dhail_mu": r"Shape parameter of the generalized $\Gamma$-distribution",
+    "dhail_mu": r"Shape parameter of the generalized $ \Gamma $-distribution",
     "dhail_nm1": "Not used",
     "dhail_nm2": "Not used",
     "dhail_nm3": "Not used",
@@ -1227,8 +1239,8 @@ in_params_descr_dic = {
     "dice_max_x": "Maximum size of particle",
     "dice_sc_theta_q": "Not used",
     "dice_sc_delta_q": "Not used",
-    "dice_sc_theta_n": "Coefficient for collision particle number",
-    "dice_sc_delta_n": "Coefficient for collision particle number",
+    "dice_sc_theta_n": "Coefficient for collision particle density",
+    "dice_sc_delta_n": "Coefficient for collision particle density",
     "dice_s_vel": "Variance for the assumed Gaussian velocity distributions used in collection and riming processes",
     "dice_a_vel": "Coefficient for particle velocity",
     "dice_b_vel": "Exponent for particle velocity",
@@ -1244,10 +1256,10 @@ in_params_descr_dic = {
     "dice_alpha": "Not used",
     "dice_beta": "Not used",
     "dice_gamma": "Not used",
-    "dice_nu": r"Shape parameter of the generalized $\Gamma$-distribution",
+    "dice_nu": r"Parameter to calculate the shape parameter of the generalized $ \Gamma $-distribution",
     "dice_g1": "Not used",
     "dice_g2": "Not used",
-    "dice_mu": r"Shape parameter of the generalized $\Gamma$-distribution",
+    "dice_mu": r"Shape parameter of the generalized $ \Gamma $-distribution",
     "dice_nm1": "Not used",
     "dice_nm2": "Not used",
     "dice_nm3": "Not used",
@@ -1284,8 +1296,8 @@ in_params_descr_dic = {
     "dsnow_max_x": "Maximum size of particle",
     "dsnow_sc_theta_q": "Not used",
     "dsnow_sc_delta_q": "Not used",
-    "dsnow_sc_theta_n": "Coefficient for collision particle number",
-    "dsnow_sc_delta_n": "Coefficient for collision particle number",
+    "dsnow_sc_theta_n": "Coefficient for collision particle density",
+    "dsnow_sc_delta_n": "Coefficient for collision particle density",
     "dsnow_s_vel": "Variance for the assumed Gaussian velocity distributions used in collection and riming processes",
     "dsnow_a_vel": "Coefficient for particle velocity",
     "dsnow_b_vel": "Exponent for particle velocity",
@@ -1301,10 +1313,10 @@ in_params_descr_dic = {
     "dsnow_alpha": "Not used",
     "dsnow_beta": "Not used",
     "dsnow_gamma": "Not used",
-    "dsnow_nu": r"Shape parameter of the generalized $\Gamma$-distribution",
+    "dsnow_nu": r"Parameter to calculate the shape parameter of the generalized $ \Gamma $-distribution",
     "dsnow_g1": "Not used",
     "dsnow_g2": "Not used",
-    "dsnow_mu": r"Shape parameter of the generalized $\Gamma$-distribution",
+    "dsnow_mu": r"Shape parameter of the generalized $ \Gamma $-distribution",
     "dsnow_nm1": "Not used",
     "dsnow_nm2": "Not used",
     "dsnow_nm3": "Not used",
@@ -1656,96 +1668,104 @@ def parse_word(word):
 
     Parameters
     ----------
-    word : string
-        Word to parse.
+    word : string or list like
+        Word or iterable to parse.
 
     Returns
     -------
     string
-        String to use with latex. If a formula has been detected, '$' will
+        String (or list of strings) to use with latex. If a formula has been detected, '$' will
         be added.
     """
-    subscript_no_math = ["snow", "graupel", "rain", "ice", "cloud", "hail", "vapor"]
-    no_math = ["geo", "min", "max", "ven", "vel"]
-    math_keys = [
-        "alpha",
-        "gamma",
-        "beta",
-        "delta",
-        "zeta",
-        "rho",
-        "nu",
-        "mu",
-        "lambda",
-        "theta",
-    ]
-    long_words = {
-        "freezing": "frz",
-        "collection": "coll",
-        "collision": "coli",
-        "sedimentation": "sed",
-        "conversion": "con",
-        "deposition": "dep",
-        "homogenous": "hom",
-        "heterogenous": "het",
-    }
 
-    maps = mappings.keys()
-    for w in maps:
-        if word == w:
+    def __parse_word(word):
+        subscript_no_math = ["snow", "graupel", "rain", "ice", "cloud", "hail", "vapor"]
+        no_math = ["geo", "min", "max", "ven", "vel"]
+        math_keys = [
+            "alpha",
+            "gamma",
+            "beta",
+            "delta",
+            "zeta",
+            "rho",
+            "nu",
+            "mu",
+            "lambda",
+            "theta",
+        ]
+        long_words = {
+            "freezing": "frz",
+            "collection": "coll",
+            "collision": "coli",
+            "sedimentation": "sed",
+            "conversion": "con",
+            "deposition": "dep",
+            "homogenous": "hom",
+            "heterogenous": "het",
+        }
+        if word in mappings:
             return mappings[word]
-    for l in long_words:
-        if l in word:
-            word = word.replace(l, long_words[l])
-    # The first "d" shall be a derivative symbol
-    word = r"\partial " + word[1::]
+        if "_ccn_" in word:
+            return r"$ \partial " + word[1] + r"_{\mathrm{ccn}, " + word[-1] + r"} $"
+        for l in long_words:
+            if l in word:
+                word = word.replace(l, long_words[l])
+        # The first "d" shall be a derivative symbol
+        word = r"\partial " + word[1::]
 
-    word = word.replace("delta_", "delta ")
-    # Check for this typo
-    word = word.replace("alfa", "alpha")
-    # if any of words is in there, make it to subscript
-    for w in subscript_no_math:
-        if w in word:
-            parts = word.split(" ")
-            start = parts[0]
-            parts = parts[1].split("_")
-            if len(parts) == 4:
-                word = (
-                    start
-                    + " "
-                    + parts[2]
-                    + r"_{"
-                    + parts[1]
-                    + r", \mathrm{"
-                    + parts[0]
-                    + r","
-                    + parts[3]
-                    + r"}}"
-                )
+        word = word.replace("delta_", "delta ")
+        # Check for this typo
+        word = word.replace("alfa", "alpha")
+        # if any of words is in there, make it to subscript
+        for w in subscript_no_math:
+            if w in word:
+                parts = word.split(" ")
+                start = parts[0]
+                parts = parts[1].split("_")
+                if len(parts) == 4:
+                    word = (
+                        start
+                        + " "
+                        + parts[2]
+                        + r"_{"
+                        + parts[1]
+                        + r", \mathrm{"
+                        + parts[0]
+                        + r","
+                        + parts[3]
+                        + r"}}"
+                    )
 
-            elif len(parts) == 3:
-                word = (
-                    start
-                    + " "
-                    + parts[2]
-                    + r"_{"
-                    + parts[1]
-                    + r", \mathrm{"
-                    + parts[0]
-                    + r"}}"
-                )
-            else:
-                word = start + " " + parts[1] + r"_{" + r"\mathrm{" + parts[0] + r"}}"
+                elif len(parts) == 3:
+                    word = (
+                        start
+                        + " "
+                        + parts[2]
+                        + r"_{"
+                        + parts[1]
+                        + r", \mathrm{"
+                        + parts[0]
+                        + r"}}"
+                    )
+                else:
+                    word = (
+                        start + " " + parts[1] + r"_{" + r"\mathrm{" + parts[0] + r"}}"
+                    )
 
-            break
-    word = r"$" + word + r" $"
-    for w in no_math:
-        word = word.replace(w, r"\mathrm{" + w + r"}")
-    for w in math_keys:
-        word = word.replace(w, "\\" + w)
-    if "nuc" in word:
-        word = word.replace("\\nuc", "nuc")
-    return word
+                break
+        word = r"$" + word + r" $"
+        for w in no_math:
+            word = word.replace(w, r"\mathrm{" + w + r"}")
+        for w in math_keys:
+            word = word.replace(w, "\\" + w)
+        if "nuc" in word:
+            word = word.replace("\\nuc", "nuc")
+        return word
+
+    if isinstance(word, str):
+        return __parse_word(word)
+    else:
+        return [__parse_word(w) for w in word]
 
 
 in_params_numeric_value_dic = {
@@ -2419,7 +2439,7 @@ in_params_value_dic = {
     "dcloud_a_f": "see Equation ..",
     "dcloud_b_f": "see Equation ..",
     "dcloud_c_z": "see Equation ..",
-    "dcloud_rho_v": "see Equation ..",
+    "dcloud_rho_v": "Density correction for terminal fall velocity",
     # Rain
     "drain_nu": -2.0 / 3.0,  # SB: -2/3 COSMO: 0.0
     "drain_mu": 1.0 / 3.0,  # SB: 1/3 COMSO: 1.0/3.0
@@ -2463,7 +2483,7 @@ in_params_value_dic = {
     "drain_nm3": "see Equation ..",
     "drain_g1": 1,
     "drain_g2": 6,
-    "drain_rho_v": "see Equation ..",
+    "drain_rho_v": "Density correction for terminal fall velocity",
     # Graupel
     "dgraupel_nu": 1.0,  # SB
     "dgraupel_mu": 1.0 / 3.0,  # SB
@@ -2506,7 +2526,7 @@ in_params_value_dic = {
     "dgraupel_lambda": "see Equation ..",
     "dgraupel_alfa_n": "see Equation ..",
     "dgraupel_alfa_q": "see Equation ..",
-    "dgraupel_rho_v": "see Equation ..",
+    "dgraupel_rho_v": "Density correction for terminal fall velocity",
     # Hail
     "dhail_nu": 1.0,
     "dhail_mu": 1.0 / 3.0,
@@ -2545,7 +2565,7 @@ in_params_value_dic = {
     "dhail_lambda": "see Equation ..",
     "dhail_alfa_n": "see Equation ..",
     "dhail_alfa_q": "see Equation ..",
-    "dhail_rho_v": "see Equation ..",
+    "dhail_rho_v": "Density correction for terminal fall velocity",
     # Ice
     "dice_nu": 1.0,
     "dice_mu": 1.0 / 3.0,
@@ -2588,7 +2608,7 @@ in_params_value_dic = {
     "dice_lambda": "see Equation ..",
     "dice_alfa_n": "see Equation ..",
     "dice_alfa_q": "see Equation ..",
-    "dice_rho_v": "see Equation ..",
+    "dice_rho_v": "Density correction for terminal fall velocity",
     # Snow
     "dsnow_nu": 1.0,  # COSMO: 0.0, SB 1.0
     "dsnow_mu": 1.0 / 3.0,  # COSMO 0.5, SB: 1.0/3.0
@@ -2629,7 +2649,7 @@ in_params_value_dic = {
     "dsnow_lambda": "see Equation ..",
     "dsnow_alfa_n": "see Equation ..",
     "dsnow_alfa_q": "see Equation ..",
-    "dsnow_rho_v": "see Equation ..",
+    "dsnow_rho_v": "Density correction for terminal fall velocity",
 }
 
 
@@ -2710,7 +2730,9 @@ def get_unit(param, brackets=False):
         "T": "K",
         "p": "Pa",
         "pressure": "Pa",
+        "pressure_hPa": "hPa",
         "time_after_ascent": "s",
+        "time_after_ascent_h": "h",
         "time": "s",
         "timestep": "s",
     }

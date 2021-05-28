@@ -87,13 +87,14 @@ def plot_segment_hist(
     group=None,
     stacked=False,
     alpha=1.0,
+    plot_ensemble_starts=False,
 ):
     """
     Plot a histogram of segment starts.
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : xarray.DataSet
         Dataset created by create_hist_seg_dataset(..).
     y : string
         Column for histogram where a segment start occurs.
@@ -111,6 +112,9 @@ def plot_segment_hist(
         Plot a stacked histogram. Only useful with "group".
     alpha : float
         Alpha value for the histogram.
+    plot_ensemble_starts : boolean
+        Plot vertical lines where ensembles had been started, assuming
+        those started at -1000 s with 1800 s distance.
 
     Returns
     -------
@@ -167,6 +171,16 @@ def plot_segment_hist(
             height=height,
             alpha=alpha,
         )
+    if plot_ensemble_starts and y == "time_after_ascent":
+        min_y = np.min(ds[y])
+        max_y = np.max(ds[y])
+        start = -1000
+        while min_y > start:
+            start += 1800
+        y_arr = np.arange(start, max_y, 1800)
+        for v in y_arr:
+            hist = hist * hv.VLine(x=v).opts(color="black")
+
     if store_path is not None:
         renderer = hv.Store.renderers["bokeh"].instance(fig="png", dpi=300)
         renderer.save(hist, store_path)
@@ -179,15 +193,16 @@ def create_hist_seg_dataset(
     model_path=None,
     step_tol=0,
     remove_pred_duplicates=True,
+    cooldown=0,
     verbosity=0,
 ):
     """
-    Create a xarray.Dataset useful for plotting histograms. Indexes where
+    Create a xarray.DataSet useful for plotting histograms. Indexes where
     segment starts are, are stored here.
 
     Parameters
     ----------
-    data : list or np.ndarray or xarray.Dataset
+    data : list or np.ndarray or xarray.DataSet
         Either a precalculated set of data that had been stored as *.npy
         or a dataset where windows (if any) need to be calculated.
     all_params_list : list of string
@@ -199,6 +214,13 @@ def create_hist_seg_dataset(
     remove_pred_duplicates : boolean
         If true: Remove segment starts that are predicted more than once.
         Only useful if a model is given and "step_tol" > 1.
+    cooldown : int
+        Minimum number of timesteps between last time the error threshold has
+        been met and the next time step. This is useful if the original data
+        is based on ensembles that start at every few time step which leads to
+        an error of zero until the divergence of the ensemble is high enough
+        again, resulting in a new segment start although it is just the
+        start of the ensemble.
     verbosity : int
         Set verbosity level.
         0: No output except for exceptions
@@ -211,7 +233,7 @@ def create_hist_seg_dataset(
 
     Returns
     -------
-    xarray.Dataset either with columns "trajectory", "time_after_ascent"
+    xarray.DataSet either with columns "trajectory", "time_after_ascent"
     and "Input Parameter" or "datapoint" and "Input Parameter" if data
     is a list or np.ndarray.
     """
@@ -255,7 +277,7 @@ def create_hist_seg_dataset(
             )
             time_after_ascent = data["time_after_ascent"]
             if "segment_start" not in data:
-                data = find_segments(data, 10.0 ** -10.0)
+                data = find_segments(data, 10.0 ** -10.0, cooldown)
             data, _, _, _ = create_input_labels(
                 ds=data,
                 step_tol=step_tol,
@@ -310,7 +332,7 @@ def create_hist_seg_dataset(
             )
             time_after_ascent = data["time_after_ascent"]
             if "segment_start" not in data:
-                data = find_segments(data, 10.0 ** -10.0)
+                data = find_segments(data, 10.0 ** -10.0, cooldown)
             _, data, _, _ = create_input_labels(
                 ds=data,
                 step_tol=step_tol,
@@ -419,7 +441,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--store_path",
         type=str,
-        default="../pics/segment_histogram.png",
+        default="../pics/segment_histogram",
         help="""
         Path and name where to save images.
         """,
@@ -464,6 +486,27 @@ if __name__ == "__main__":
         as step tolerance allowes. If "remove_pred_dupl" is set, count the
         amount of segments predicted by removing those which are within
         step tolerance and predicted multiple times.
+        """,
+    )
+    parser.add_argument(
+        "--plot_ensemble_starts",
+        action="store_true",
+        help="""
+        Plot vertical lines where ensembles had been started, assuming
+        those started at -1000 s with 1800 s distance.
+        """,
+    )
+    parser.add_argument(
+        "--cooldown",
+        type=int,
+        default=0,
+        help="""
+        Minimum number of timesteps between last time the error threshold has
+        been met and the next time step. This is useful if the original data
+        is based on ensembles that start at every few time step which leads to
+        an error of zero until the divergence of the ensemble is high enough
+        again, resulting in a new segment start although it is just the
+        start of the ensemble.
         """,
     )
     parser.add_argument(
@@ -558,7 +601,11 @@ if __name__ == "__main__":
     )
     out_params = np.asarray(["QV", "QC", "QR", "QG", "QH", "QI", "QS"])
 
-    if not "labels" in args.data_path and args.model_path is None:
+    if (
+        not "labels" in args.data_path
+        and args.model_path is None
+        and not ".nc" in args.data_path
+    ):
         print("'data_path' must contain labels if no model for prediction is given")
         print("ABORTING")
         exit()
@@ -576,6 +623,7 @@ if __name__ == "__main__":
             all_params_list=all_params_list,
             store_many_appended_data=False,
             load_on_the_fly=False,
+            min_time=-1000,
             verbosity=args.verbosity,
         )
 
@@ -585,6 +633,7 @@ if __name__ == "__main__":
         model_path=args.model_path,
         step_tol=args.step_tol,
         remove_pred_duplicates=args.remove_pred_dupl,
+        cooldown=args.cooldown,
         verbosity=args.verbosity,
     )
     # Plot the histogram
@@ -597,5 +646,6 @@ if __name__ == "__main__":
         height=args.height,
         bins=args.bins,
         stacked=args.stacked,
-        alpha=np.min(1.0, np.max(0.0, args.alpha)),
+        alpha=min(1.0, max(0.0, args.alpha)),
+        plot_ensemble_starts=args.plot_ensemble_starts,
     )
