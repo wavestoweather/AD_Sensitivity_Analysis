@@ -758,9 +758,10 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=30,
-        title="Liquid Water Content of Convective Trajectories",
+        title="Liquid Water of Convective Trajectories",
         datashade=True,
         show_legend=False,
+        backend="matplotlib",
     )
     if args.verbosity > 1:
         print("Plotting cold hydrometeor content")
@@ -771,9 +772,10 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=30,
-        title="Cold Hydrometeor Content of Convective Trajectories",
+        title="Cold Hydrometeor of Convective Trajectories",
         datashade=True,
         show_legend=False,
+        backend="matplotlib",
     )
     if args.verbosity > 1:
         print("Plotting temperature")
@@ -787,6 +789,7 @@ if __name__ == "__main__":
         title="Temperature of Convective Trajectories",
         datashade=True,
         show_legend=False,
+        backend="matplotlib",
     )
     if args.verbosity > 1:
         print("Plotting specific humidity")
@@ -802,36 +805,36 @@ if __name__ == "__main__":
         show_legend=True,
         backend="matplotlib",
     )
-    # if args.verbosity > 1:
-    #     print("Plotting all trajectories on a map")
-    # _ = plot_map(
-    #     df=df,
-    #     pollon=pollon,
-    #     pollat=pollat,
-    #     store_path=args.store_path,
-    #     width=args.width,
-    #     height=args.height,
-    #     title="Convective Trajectories",
-    #     tiles="EsriNatGeo",
-    #     datashade=True,
-    # )
+    if args.verbosity > 1:
+        print("Plotting all trajectories on a map")
+    _ = plot_map(
+        df=df,
+        pollon=pollon,
+        pollat=pollat,
+        store_path=args.store_path,
+        width=args.width,
+        height=args.height,
+        title="Convective Trajectories",
+        tiles="EsriNatGeo",
+        datashade=True,
+    )
 
-    # if args.verbosity > 1:
-    #     print("Plotting color coded pressure on a map with limited time")
-    # _ = plot_map(
-    #     df=df.loc[
-    #         (df["time_after_ascent"] >= -2800) & (df["time_after_ascent"] <= 26000)
-    #     ],
-    #     color_code="pressure_hPa",
-    #     pollon=pollon,
-    #     pollat=pollat,
-    #     store_path=args.store_path,
-    #     width=args.width,
-    #     height=args.height,
-    #     title="Convective Trajectories and Pressure",
-    #     tiles="EsriNatGeo",
-    #     s=1,
-    #     alpha=1,
-    #     datashade=False,
-    #     color_label="Pressure [hPa]",
-    # )
+    if args.verbosity > 1:
+        print("Plotting color coded pressure on a map with limited time")
+    _ = plot_map(
+        df=df.loc[
+            (df["time_after_ascent"] >= -2800) & (df["time_after_ascent"] <= 26000)
+        ],
+        color_code="pressure_hPa",
+        pollon=pollon,
+        pollat=pollat,
+        store_path=args.store_path,
+        width=args.width,
+        height=args.height,
+        title="Convective Trajectories and Pressure",
+        tiles="EsriNatGeo",
+        s=1,
+        alpha=1,
+        datashade=False,
+        color_label="Pressure [hPa]",
+    )

@@ -2735,6 +2735,20 @@ def get_unit(param, brackets=False):
         "time_after_ascent_h": "h",
         "time": "s",
         "timestep": "s",
+        "QR_OUT": r"kg/m³",
+        "QS_OUT": r"kg/m³",
+        "QI_OUT": r"kg/m³",
+        "QG_OUT": r"kg/m³",
+        "Q_total": r"kg/m³",
+        "QV": r"kg/m³",
+        "QC": r"kg/m³",
+        "QR": r"kg/m³",
+        "QG": r"kg/m³",
+        "QH": r"kg/m³",
+        "QI": r"kg/m³",
+        "QS": r"kg/m³",
+        "Q_cold": r"kg/m³",
+        "Q_liquid": r"kg/m³",
     }
     if param in unit_dic:
         if brackets:
