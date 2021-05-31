@@ -3803,6 +3803,8 @@ class Deriv_dask:
                                 xlim=(min_x, max_x),
                                 ylim=(min_y, max_y),
                                 color=cmap_values,
+                                width=width,
+                                height=height,
                             )
                             .opts(opts.Scatter(**scatter_kwargs))  # s=scatter_size
                             .opts(**opts_dic2)
@@ -3828,6 +3830,8 @@ class Deriv_dask:
                                 xlim=(min_x, max_x),
                                 ylim=(min_y, max_y),
                                 color=cmap_values,
+                                width=width,
+                                height=height,
                             )
                             .opts(opts.Scatter(**scatter_kwargs))  # s=scatter_size
                             .opts(**opts_dic2)
@@ -3976,6 +3980,7 @@ class Deriv_dask:
                         )
                     else:
                         mse_plot = all_plots.cols(1).opts(opts.Layout(**layout_kwargs))
+
         # Save image to disk
         # The renderer should be able to switch between
         # matplotlib and bokeh but the colors can be wrong with

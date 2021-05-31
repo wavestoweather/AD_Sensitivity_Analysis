@@ -217,7 +217,7 @@ def load_data(
             if verbosity > 2:
                 print(f"Got min time = {min_x} s, max time = {max_x} s.")
             df_sim = ds.to_dataframe()
-    df_sim["Simulation"] = "Our Simulation"
+    df_sim["Simulation"] = "Our Sim."
 
     df_cosmo = None
     for f in file_list_cosmo:
@@ -360,7 +360,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Pressure COSMO vs Our Simulation",
+        title="Pressure COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
@@ -373,7 +373,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Liquid Water Content COSMO vs Our Simulation",
+        title="Liquid Water COSMO vs Our Sim.",
         show_legend=False,
         backend=args.backend,
     )
@@ -386,7 +386,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Cold Hydrometeor Content COSMO vs Our Simulation",
+        title="Cold Hydrometeor COSMO vs Our Sim.",
         show_legend=False,
         backend=args.backend,
     )
@@ -399,7 +399,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Temperature COSMO vs Our Simulation",
+        title="Temperature COSMO vs Our Sim.",
         show_legend=False,
         backend=args.backend,
     )
@@ -412,12 +412,12 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Specific Humidity COSMO vs Our Simulation",
+        title="Specific Humidity COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
     if args.verbosity > 1:
-        print("Plotting graupel mixing ratio")
+        print("Plotting graupel mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QG",
@@ -425,12 +425,12 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Graupel Mixing Ratio COSMO vs Our Simulation",
+        title="Graupel Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
     if args.verbosity > 1:
-        print("Plotting snow mixing ratio")
+        print("Plotting snow mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QS",
@@ -438,12 +438,12 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Snow Mixing Ratio COSMO vs Our Simulation",
+        title="Snow Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
     if args.verbosity > 1:
-        print("Plotting ice mixing ratio")
+        print("Plotting ice mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QI",
@@ -451,13 +451,13 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Ice Mixing Ratio COSMO vs Our Simulation",
+        title="Ice Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
 
     if args.verbosity > 1:
-        print("Plotting hail mixing ratio")
+        print("Plotting hail mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QH",
@@ -465,12 +465,12 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Hail Mixing Ratio COSMO vs Our Simulation",
+        title="Hail Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
     if args.verbosity > 1:
-        print("Plotting vapor mixing ratio")
+        print("Plotting vapor mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QV",
@@ -478,12 +478,12 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Water Vapor Mixing Ratio COSMO vs Our Simulation",
+        title="Water Vapor Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
     if args.verbosity > 1:
-        print("Plotting cloud droplet mixing ratio")
+        print("Plotting cloud droplet mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QC",
@@ -491,12 +491,12 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Cloud Droplet Mixing Ratio COSMO vs Our Simulation",
+        title="Cloud Droplet Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
     if args.verbosity > 1:
-        print("Plotting rain droplet mixing ratio")
+        print("Plotting rain droplet mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QR",
@@ -504,12 +504,12 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Rain Droplet Mixing Ratio COSMO vs Our Simulation",
+        title="Rain Droplet Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
     if args.verbosity > 1:
-        print("Plotting total amount mixing ratio")
+        print("Plotting total amount mass density")
     _ = plot_scatter(
         df=df,
         y_axis="Q_total",
@@ -517,7 +517,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Total Mixing Ratio COSMO vs Our Simulation",
+        title="Total Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
@@ -527,7 +527,7 @@ if __name__ == "__main__":
     df["QS_OUT"] = np.abs(df["QS_OUT"])
     df["QG_OUT"] = np.abs(df["QG_OUT"])
     if args.verbosity > 1:
-        print("Plotting rain out mixing ratio")
+        print("Plotting rain out mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QR_OUT",
@@ -535,12 +535,12 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Rain Sed. Mixing Ratio COSMO vs Our Simulation",
+        title="Rain Sed. Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
     if args.verbosity > 1:
-        print("Plotting ice out mixing ratio")
+        print("Plotting ice out mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QI_OUT",
@@ -548,12 +548,12 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Ice Sed. Mixing Ratio COSMO vs Our Simulation",
+        title="Ice Sed. Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
     if args.verbosity > 1:
-        print("Plotting snow out mixing ratio")
+        print("Plotting snow out mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QS_OUT",
@@ -561,12 +561,12 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Snow Sed. Mixing Ratio COSMO vs Our Simulation",
+        title="Snow Sed. Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
     if args.verbosity > 1:
-        print("Plotting graupel out mixing ratio")
+        print("Plotting graupel out mass density")
     _ = plot_scatter(
         df=df,
         y_axis="QG_OUT",
@@ -574,7 +574,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Graupel Sed. Mixing Ratio COSMO vs Our Simulation",
+        title="Graupel Sed. Mass Density COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
@@ -588,7 +588,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Cloud Number COSMO vs Our Simulation",
+        title="Cloud Number COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
@@ -601,7 +601,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Rain Number COSMO vs Our Simulation",
+        title="Rain Number COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
@@ -614,7 +614,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Ice Number COSMO vs Our Simulation",
+        title="Ice Number COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
@@ -627,7 +627,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Snow Number COSMO vs Our Simulation",
+        title="Snow Number COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
@@ -640,7 +640,7 @@ if __name__ == "__main__":
         width=args.width,
         height=args.height,
         s=14,
-        title="Graupel Number COSMO vs Our Simulation",
+        title="Graupel Number COSMO vs Our Sim.",
         show_legend=True,
         backend=args.backend,
     )
