@@ -120,7 +120,7 @@ Postprocess and Creating Plots
 ------------------------------
 First, you have to go to `scripts/`, where we calculate the mean squared deviation and store it on disk for later plotting with
 ```
-python segment_identifier.py --data_path data/vladiana_keyparams/ --verbosity 3 --store_appended_data data/vladiana_keyparams_errors/conv_stats_errors.nc --only_append
+python segment_identifier.py --data_path ../data/vladiana_keyparams/ --verbosity 3 --store_appended_data ../data/vladiana_keyparams_errors/conv_stats_errors.nc --only_append
 ```
 Make sure, the folder for the output already exists or create it.
 To create plots that show the correlation between predicted and true mean squared deviation including sensitivities with zero sensitivity and values below 1e-200 set as zero sensitvity values, use
