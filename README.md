@@ -20,7 +20,7 @@ Contents
 - ***.ipynb:** Jupyter Notebooks to get started. See below for more explanation.
 - **exe_scripts:** Bash scripts to make and run the simulation. Examples for SLURM scripts are there as well.
 - **configs:** Configuration files for running ensembles during simulation.
-- **data:** Example NetCDF files with environment variables and initial datapoints. Output data can be stored here.
+- **data:** Example NetCDF files with environment variables and initial datapoints. Output data can be stored here. In order to see the metadata and data contents of each file, you can use `ncdump -h <filename.nc_wcb>`.
 - **pics:** Default folder to save plots.
 
 
