@@ -66,6 +66,9 @@ struct global_args_t{
     int folder_name_flag;
     char* folder_name_string;
 
+    int n_ens_flag;
+    char* n_ens_string;
+
     global_args_t();
 
     /**

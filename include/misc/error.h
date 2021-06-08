@@ -38,6 +38,7 @@ enum
         {                                                                   \
             std::cout << "Error: " << #f << " [" << __FILE__                \
                 << ":" << __LINE__ << "]: " << err << "\n" << std::flush;   \
+            MPI_Finalize();                                                 \
             exit(EXIT_FAILURE);                                             \
         }                                                                   \
     } while(0)

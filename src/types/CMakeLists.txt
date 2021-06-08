@@ -1,0 +1,14 @@
+set(TYPES_SRCS
+    table_t.cpp
+    particle_model_constants_t.cpp
+    gamma_table_t.cpp
+    global_args_t.cpp
+    input_parameters_t.cpp
+    model_constants_t.cpp
+    output_handle_t.cpp
+    param_t.cpp
+    segment_t.cpp
+    PARENT_SCOPE)
+
+# add_library(types ${TYPES_SRCS})
+# target_link_libraries(sub3 sub1 sub2)

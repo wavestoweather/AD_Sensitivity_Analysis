@@ -6,6 +6,7 @@ model_constants_t::model_constants_t()
     ensemble_id = 0;
     traj_id = 0;
     n_trajs = 1;
+    n_ensembles = 1;
     ens_desc = "root ";
     constants.resize(static_cast<int>(Cons_idx::n_items));
     std::fill(constants.begin(), constants.end(), 0);
@@ -427,7 +428,8 @@ void model_constants_t::setup_model_constants(
     this->dt_prime = input.dt_prime;
     this->dt_traject_prime = 20.0;
     this->dt_traject = this->dt_traject_prime/ref_quant.tref;
-    // The trajectories are calculated with 20 s timesteps.
+    this->num_steps = ceil(this->t_end_prime/this->dt_traject_prime);
+    // The trajectories from input files are calculated with 20 s timesteps.
     this->num_sub_steps = (floor( this->dt_traject_prime/this->dt ) < 1) ? 1 : floor( this->dt_traject_prime/this->dt );
 
     // Evaluate the general performance constants

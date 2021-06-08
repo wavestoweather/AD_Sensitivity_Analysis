@@ -41,7 +41,7 @@ do
         PROGRESSBAR="20"
         # End time in seconds for the simulation. Should be lower than
         # the maximum time of the netcdf-file
-        TARGET_TIME_AFTER_START="26000" # Minus Start_time
+        TARGET_TIME_AFTER_START="260" # Minus Start_time
     else
         # Update the progressbar after that many simulation steps
         PROGRESSBAR="5"
@@ -67,14 +67,14 @@ do
         rm "${OUTPUT_PATH}"*.nc_wcb
     fi
 
-    parallel -u -j ${NTASKS} --no-notice --delay .2 build/bin/./trajectories -w ${WRITE_INDEX} -a ${AUTO_TYPE} \
+    mpirun -n ${NTASKS} build/bin/./trajectories -w ${WRITE_INDEX} -a ${AUTO_TYPE} \
     -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME_AFTER_START} -d ${TIMESTEP} \
     -i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} \
-    -o ${OUTPUT_PATH}"wcb${TARGET_TIME_AFTER_START}_traj{1}_MAP_t000000_p001" \
+    -o ${OUTPUT_PATH}"wcb${TARGET_TIME_AFTER_START}_traj0_MAP_t000000_p001" \
     -e ${START_OVER_ENVIRONMENT} \
     -p ${PROGRESSBAR} \
     -n ${START_TIME} \
-    -l ${INPUT_FILENAME} -r {1} -g 0 ::: {0..0}
+    -l ${INPUT_FILENAME} -r 0 -g 0
 
     FILE_TYPE="netcdf"
     INPUT_TYPE="MET3D"

@@ -1,7 +1,7 @@
 #!/bin/bash
 cd ..
 # Set to the number of threads or CPUs in case you want to run ensemble simulations
-NTASKS=4
+NTASKS=2
 
 # Environmental conditions
 SCALING_FACTOR="1.0"
@@ -52,7 +52,7 @@ do
         # End time in seconds for the simulation. Should be lower than
         # the maximum time of the netcdf-file
         TARGET_TIME_AFTER_START="26000" # Minus Start_time
-        TARGET_TIME_AFTER_START="10000"
+        TARGET_TIME_AFTER_START="5400"
     else
         # Update the progressbar after that many simulation steps
         PROGRESSBAR="5"

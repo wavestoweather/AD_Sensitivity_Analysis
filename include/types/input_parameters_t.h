@@ -35,6 +35,7 @@ struct input_parameters_t{
     std::string CHECKPOINT_FILENAME; /*!< Filename for checkpoint file. */
     std::string FOLDER_NAME; /*!< Folder name for newly generated checkpoints. */
     uint32_t id; /*!< ID given for this instance, i.e. thread_id or id by GNU parallel. */
+    uint32_t n_ensembles;
 
     bool start_over; /*!< Start over at new timestep of trajectory? */
     bool start_over_env; /*!< Start over environment variables at new timestep of trajectory? */
@@ -69,6 +70,17 @@ struct input_parameters_t{
      * Set values from property tree used in reading checkpoint files.
      */
     int from_pt(pt::ptree &ptree);
+
+    /**
+     * Send the input parameters via MPI to all other processes.
+     */
+    void send_input_params();
+
+    /**
+     * Receive input parameters via MPI.
+     */
+    void rec_input_params();
+
     /**
      * Set the input parameters with the data from the global arguments.
      *

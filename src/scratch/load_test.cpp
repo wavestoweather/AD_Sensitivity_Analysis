@@ -15,7 +15,6 @@
 #include "include/microphysics/program_io.h"
 #include "include/microphysics/constants.h"
 #include "include/microphysics/general.h"
-#include "include/microphysics/gradient_handle.h"
 
 #include <netcdf>
 

@@ -36,11 +36,22 @@ struct model_constants_t{
      * Running id for the trajectory in this ensemble.
      */
     uint64_t traj_id;
+
     /**
-     * Total number of trajectories in this ensemble.
+     * Maximum number of trajectories in every ensemble.
      * Needed to write proper output files.
      */
+    uint64_t max_n_trajs;
+
+    /**
+     * Number of trajectories in the current ensemble.
+     */
     uint64_t n_trajs;
+
+    /**
+     * Total number of ensembles.
+     */
+    uint64_t n_ensembles;
 
     /**
      * Description of the ensemble i.e.

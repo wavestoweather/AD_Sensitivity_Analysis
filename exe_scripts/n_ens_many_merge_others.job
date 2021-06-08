@@ -48,6 +48,11 @@ copy_out(){
 
 # Copy executable, input file, configuration file
 # Create directories for temporary files, output data
+if [ ! -d "${SAVE_OUTPUTPATH}" ]
+then
+    mkdir -p "${SAVE_OUTPUTPATH}"
+fi
+
 if [ ! -d "${AD_SIM_HOME}/build/apps/src/microphysics/" ]
 then
     mkdir -p "${AD_SIM_HOME}/build/apps/src/microphysics/"

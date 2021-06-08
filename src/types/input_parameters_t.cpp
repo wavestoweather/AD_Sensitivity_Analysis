@@ -38,6 +38,7 @@ input_parameters_t::input_parameters_t()
 #endif
     current_time = std::nan("");;
     id = 0;
+    n_ensembles = 0;
 }
 
 void input_parameters_t::set_outputfile_id(
@@ -110,6 +111,7 @@ void input_parameters_t::put(
     input_params.put<uint32_t>("write_index", write_index);
     input_params.put<uint64_t>("progress_index", progress_index);
     input_params.put<uint32_t>("ensemble", ensemble);
+    input_params.put<uint32_t>("n_ensembles", n_ensembles);
     input_params.put<double>("current_time", time);
     input_params.put<std::string>("FOLDER_NAME", FOLDER_NAME);
     ptree.add_child("input_params", input_params);
@@ -187,6 +189,9 @@ int input_parameters_t::from_pt(
         } else if(first == "ensemble")
         {
             ensemble = it.second.get_value<uint32_t>();
+        } else if(first == "n_ensembles")
+        {
+            n_ensembles = it.second.get_value<uint32_t>();
         } else if(first == "current_time")
         {
             current_time = it.second.get_value<double>();
@@ -293,6 +298,11 @@ void input_parameters_t::set_input_from_arguments(
     if(1 == arg.folder_name_flag){
         this->FOLDER_NAME = arg.folder_name_string;
     }
+
+    // Maximum number of ensembles in the output
+    if(1 == arg.n_ens_flag){
+        this->n_ensembles = std::stoi(arg.n_ens_string);
+    }
 }
 
 void input_parameters_t::print_parameters()
@@ -330,5 +340,16 @@ void input_parameters_t::print_parameters()
         ?   "Checkpoint file: " + this->CHECKPOINT_FILENAME + "\n"
         :   "" )
         << "Folder name for newly generated checkpoints: " << this->FOLDER_NAME << "\n"
+        << "Maximum number of ensembles in the output file: " << this->n_ensembles << "\n"
         << std::endl << std::flush;
+}
+
+void input_parameters_t::send_input_params()
+{
+
+}
+
+void input_parameters_t::rec_input_params()
+{
+
 }

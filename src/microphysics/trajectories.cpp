@@ -46,8 +46,7 @@
 
 #include "include/misc/pbar.h"
 
-
-void parse_args_and_checkpoints(
+void parse_args(
     const int &argc,
     char* const * argv,
     const int &rank,
@@ -58,61 +57,126 @@ void parse_args_and_checkpoints(
     std::vector<segment_t> &segments,
     model_constants_t &cc,
     std::vector<double> &y_init,
-    checkpoint_t &checkpoint,
-    const bool &already_loaded)
+    checkpoint_t &checkpoint)
 {
-    if(!already_loaded)
-    {
-        SUCCESS_OR_DIE(global_args.parse_arguments(argc, argv, rank, n_processes));
+    SUCCESS_OR_DIE(global_args.parse_arguments(argc, argv, rank, n_processes));
 
-        ref_quant.Tref = 273.15;
+    ref_quant.Tref = 273.15;
 #ifdef WCB
-        ref_quant.qref = 1.0e-6;
+    ref_quant.qref = 1.0e-6;
 #else
-        ref_quant.qref = 1.0e-4;
+    ref_quant.qref = 1.0e-4;
 #endif
-        ref_quant.pref = 1.0e5;
-        ref_quant.wref = 1.; // 10.0
-        ref_quant.tref = 1.0;
-        ref_quant.zref = 1.0;
-        ref_quant.Nref = 1.0; 	// DUMMY
-        if(rank == 0)
-        {
-            print_reference_quantities(ref_quant);
-        }
-        input.set_input_from_arguments(global_args);
-        if(rank == 0)
-        {
-            if(global_args.checkpoint_flag)
-            {
-                checkpoint.load_checkpoint(global_args.checkpoint_string, cc,
-                    y_init, segments, input, ref_quant);
-                print_segments(segments);
-            }
-            else
-            {
-                cc.setup_model_constants(input, ref_quant);
-                if(global_args.ens_config_flag)
-                {
-                    load_ens_config(global_args.ens_config_string, cc, segments, input, ref_quant);
-                    for(auto &s: segments)
-                        SUCCESS_OR_DIE(s.check());
-                    print_segments(segments);
-                }
-            }
-        } else
-        {
-            checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
-        }
-    }
-    if(already_loaded)
-        checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
-    auto_type = input.auto_type;
-    if(!already_loaded)
+    ref_quant.pref = 1.0e5;
+    ref_quant.wref = 1.; // 10.0
+    ref_quant.tref = 1.0;
+    ref_quant.zref = 1.0;
+    ref_quant.Nref = 1.0; 	// DUMMY
+    if(rank == 0)
     {
-        load_lookup_table(cc.ltabdminwgg);
+        print_reference_quantities(ref_quant);
     }
+    input.set_input_from_arguments(global_args);
+
+    if(global_args.checkpoint_flag && rank == 0)
+    {
+        checkpoint.load_checkpoint(global_args.checkpoint_string, cc,
+            y_init, segments, input, ref_quant);
+        print_segments(segments);
+    }
+    else
+    {
+        cc.setup_model_constants(input, ref_quant);
+        if(global_args.ens_config_flag && rank == 0)
+        {
+            load_ens_config(global_args.ens_config_string, cc,
+                segments, input, ref_quant);
+            for(auto &s: segments)
+                SUCCESS_OR_DIE(s.check());
+            print_segments(segments);
+        }
+    }
+
+    // Communicate amount of ensembles and trajectories
+    SUCCESS_OR_DIE(MPI_Bcast(
+        &cc.n_ensembles, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD)
+    );
+    SUCCESS_OR_DIE(MPI_Bcast(
+        &cc.max_n_trajs, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD)
+    );
+
+    auto_type = input.auto_type;
+    load_lookup_table(cc.ltabdminwgg);
 }
+
+
+// void parse_args_and_checkpoints(
+//     const int &argc,
+//     char* const * argv,
+//     const int &rank,
+//     const int &n_processes,
+//     input_parameters_t &input,
+//     global_args_t &global_args,
+//     reference_quantities_t &ref_quant,
+//     std::vector<segment_t> &segments,
+//     model_constants_t &cc,
+//     std::vector<double> &y_init,
+//     checkpoint_t &checkpoint,
+//     const bool &already_loaded)
+// {
+//     if(!already_loaded)
+//     {
+//         SUCCESS_OR_DIE(global_args.parse_arguments(argc, argv, rank, n_processes));
+
+//         ref_quant.Tref = 273.15;
+// #ifdef WCB
+//         ref_quant.qref = 1.0e-6;
+// #else
+//         ref_quant.qref = 1.0e-4;
+// #endif
+//         ref_quant.pref = 1.0e5;
+//         ref_quant.wref = 1.; // 10.0
+//         ref_quant.tref = 1.0;
+//         ref_quant.zref = 1.0;
+//         ref_quant.Nref = 1.0; 	// DUMMY
+//         if(rank == 0)
+//         {
+//             print_reference_quantities(ref_quant);
+//         }
+//         input.set_input_from_arguments(global_args);
+//         if(rank == 0)
+//         {
+//             if(global_args.checkpoint_flag)
+//             {
+//                 checkpoint.load_checkpoint(global_args.checkpoint_string, cc,
+//                     y_init, segments, input, ref_quant);
+//                 print_segments(segments);
+//             }
+//             else
+//             {
+//                 cc.setup_model_constants(input, ref_quant);
+//                 if(global_args.ens_config_flag)
+//                 {
+//                     load_ens_config(global_args.ens_config_string, cc,
+//                         segments, input, ref_quant);
+//                     for(auto &s: segments)
+//                         SUCCESS_OR_DIE(s.check());
+//                     print_segments(segments);
+//                 }
+//             }
+//         } else
+//         {
+//             checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
+//         }
+//     }
+//     if(already_loaded)
+//         checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
+//     auto_type = input.auto_type;
+//     if(!already_loaded)
+//     {
+//         load_lookup_table(cc.ltabdminwgg);
+//     }
+// }
 
 void setup_simulation(
     const int &argc,
@@ -132,8 +196,8 @@ void setup_simulation(
     size_t &lenp,
     bool &already_loaded)
 {
-    parse_args_and_checkpoints(argc, argv, rank, n_processes, input, global_args,
-        ref_quant, segments, cc, y_init, checkpoint, already_loaded);
+
+    checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
     SUCCESS_OR_DIE(read_init_netcdf(y_init, nc_params, lenp, ref_quant,
 #ifdef MET3D
         input.start_time,
@@ -155,9 +219,9 @@ void setup_simulation(
     for(int ii = 0 ; ii < num_comp ; ii++)
         y_single_old[ii] = y_init[ii];
     // Currently we only load one trajectory per instance
-    out_handler.setup("netcdf", input.OUTPUT_FILENAME, cc,
-        ref_quant, input.INPUT_FILENAME, input.write_index,
-        input.snapshot_index);
+    // out_handler.setup("netcdf", input.OUTPUT_FILENAME, cc,
+    //     ref_quant, input.INPUT_FILENAME, input.write_index,
+    //     input.snapshot_index);
 
     if(rank == 0 && !already_loaded)
     {
@@ -555,6 +619,7 @@ int run_simulation(
     // Loop for timestepping: BEGIN
     try
     {
+        // std::cout << "Rank " << rank << ": in run_simulation\n";
         // Needed to read from trajectory file
         std::vector<int> ids(lenp);
         std::vector<size_t> startp, countp;
@@ -567,6 +632,7 @@ int run_simulation(
         // Loop over every timestep that is usually fixed to 20 s
         for(uint32_t t=0; t<cc.num_steps; ++t) //
         {
+            // std::cout << "Rank " << rank << ": run_simulation " << t << " of " << cc.num_steps << "\n";
             read_netcdf_write_stream(input.INPUT_FILENAME.c_str(), startp, countp,
                 nc_params, cc, input, ref_quant, y_single_old, inflow, ids,
                 traj_id,
@@ -579,6 +645,7 @@ int run_simulation(
                 inflow, tape, y_single_new, nc_params, y_diff, out_handler,
                 sub_start, traj_id, ensemble, segments, pbar, scheduler,
                 progress_index);
+            // std::cout << "Rank " << rank << ": finished run_substeps\n";
 #ifdef TRACE_QG
             if(trace)
                 std::cout << "\nSediment total q: " << sediment_q_total
@@ -665,29 +732,45 @@ int main(int argc, char** argv)
     std::vector<codi::RealReverse> y_single_old(num_comp);
     std::vector<codi::RealReverse> y_single_new(num_comp);
     std::vector<codi::RealReverse> inflow(num_inflows);
-    output_handle_t out_handler;
+
+    // std::cout << "Rank " << rank << " parse_args\n";
+    parse_args(argc, argv, rank, n_processes, input,
+        global_args, ref_quant, segments, cc, y_init, checkpoint);
+        //  y_single_old,
+        // checkpoint, out_handler, nc_params, lenp);
+
+    // std::cout << "Rank " << rank << " out_handler\n";
+    output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
+        ref_quant, input.INPUT_FILENAME, input.write_index,
+        input.snapshot_index, rank);
 
     if(rank == 0)
     {
+        // std::cout << "Rank " << rank << ": start setup_simulation\n";
         setup_simulation(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
             checkpoint, out_handler, nc_params, lenp, already_loaded);
+        // std::cout << "Rank " << rank << ": start run_simulation\n";
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
             out_handler, segments, lenp, scheduler));
+        // std::cout << "Rank " << rank << ": finished run_simulation\n";
     }
-
+    // std::cout << "Rank " << rank << ": going to scheduler loop\n";
     while(scheduler.receive_task(checkpoint))
     {
         // parse checkpoint
         // checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
+        // std::cout << "Rank " << rank << ": start setup_simulation\n";
         setup_simulation(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
             checkpoint, out_handler, nc_params, lenp, already_loaded);
         // run simulation
+        // std::cout << "Rank " << rank << ": start run_simulation\n";
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
             out_handler, segments, lenp, scheduler));
+        // std::cout << "Rank " << rank << ": finished run_simulation\n";
     }
 
 #ifdef USE_MPI

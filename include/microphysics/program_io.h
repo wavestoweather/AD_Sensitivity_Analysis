@@ -53,16 +53,26 @@ int load_ens_config(
     pt::ptree pt;
     boost::property_tree::read_json(filename, pt);
     std::string ens_desc;
+    cc.max_n_trajs = 0;
     for(auto &it: pt.get_child("segments"))
     {
         segment_t segment;
         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
         segments.push_back(segment);
+        if(segment.n_members > cc.max_n_trajs)
+            cc.max_n_trajs = segment.n_members;
         if(segment.activated)
             segment.perturb(cc, ref_quant, input, ens_desc);
     }
     cc.ens_desc += ens_desc;
-    input.set_outputfile_id(cc.ensemble_id);
+    if(input.n_ensembles != 0)
+        cc.n_ensembles = input.n_ensembles;
+    else
+    {
+        cc.n_ensembles = segments.size() + 1;
+    }
+
+
     return err;
 }
 
