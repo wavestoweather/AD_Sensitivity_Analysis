@@ -31,8 +31,9 @@ void output_handle_t::setup(
 {
     this->n_trajs_file = cc.max_n_trajs;
     this->traj = cc.traj_id;
+    this->ens = cc.ensemble_id;
     this->num_ens = cc.n_ensembles;
-    this->num_time = cc.num_steps;
+    this->num_time = cc.num_steps * cc.num_sub_steps + 1; // + 1 for initial time
 
     this->filetype = filetype;
     this->filename = filename;
@@ -63,8 +64,8 @@ void output_handle_t::setup(
 
         for(uint32_t i=0; i<output_buffer_flags.size(); i++)
             output_buffer_flags[i].resize(vec_size);
-        for(uint32_t i=0; i<output_buffer_str.size(); i++)
-            output_buffer_str[i].resize(vec_size);
+        // for(uint32_t i=0; i<output_buffer_str.size(); i++)
+        //     output_buffer_str[i].resize(vec_size);
         for(uint32_t i=0; i<output_buffer_int.size(); i++)
             output_buffer_int[i].resize(vec_size);
 
@@ -112,7 +113,7 @@ void output_handle_t::setup(
         //     return;
         // }
 
-        int ncid;
+        // int ncid;
         // Must be called by all processes defined in the communicator
         SUCCESS_OR_DIE(nc_create_par(
             (filename + ".nc_wcb").c_str(), // path
@@ -123,10 +124,11 @@ void output_handle_t::setup(
         );
         // if(rank == 0)
         // {
-            std::cout << "Creating file with " << num_comp << " output parameters\n";
-            std::cout << "with " << num_ens << " ensembles\n";
-            std::cout << "with " << n_trajs_file << " trajectories\n";
-            std::cout << "with " << num_time << " time steps\n";
+            // std::cout << "Creating file with " << num_comp << " output parameters\n";
+            // std::cout << "with " << num_ens << " ensembles\n";
+            // std::cout << "with " << n_trajs_file << " trajectories\n";
+            // std::cout << "with " << num_time << " time steps\n";
+            // std::cout << "with " << total_snapshots << " total snapshots\n";
             // Create dimensions
             SUCCESS_OR_DIE(nc_def_dim(
                 ncid, "Output_Parameter", num_comp, &dimid[Dim_idx::out_param_dim])
@@ -144,8 +146,8 @@ void output_handle_t::setup(
             // Create variables
             SUCCESS_OR_DIE(nc_def_var(
                 ncid,
-                "Output_Parameter",
-                NC_STRING,       // type
+                "Output_Parameter_ID",
+                NC_UINT64,       // type
                 1,          // ndims 2: matrix, 1: vector, 0: scalar
                 &dimid[Dim_idx::out_param_dim],    // ignored for ndims = 0
                 &varid[Var_idx::out_param])
@@ -174,6 +176,7 @@ void output_handle_t::setup(
                 &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
                 &varid[Var_idx::time])
             );
+        // }
         if(rank == -1)
         {
             for(uint32_t i=0; i<output_par_idx.size(); ++i)
@@ -183,10 +186,10 @@ void output_handle_t::setup(
                     NC_DOUBLE,       // type
                     3,          // ndims 2: matrix, 1: vector, 0: scalar
                     &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
-                    &varid[Var_idx::time + i+1])
+                    &varid[Var_idx::out_param + i+1])
                 );
 
-            uint64_t offset = Var_idx::time + output_par_idx.size();
+            uint64_t offset = Var_idx::out_param + output_par_idx.size();
             for(uint32_t i=0; i<output_grad_idx.size(); ++i)
                 SUCCESS_OR_DIE(nc_def_var(
                     ncid,
@@ -1045,11 +1048,72 @@ void output_handle_t::setup(
 
         // std::cout << "Rank: " << rank << " Attempt to par access\n";
         // SUCCESS_OR_DIE(nc_var_par_access(ncid, NC_GLOBAL, NC_INDEPENDENT));
-        std::cout << "Rank: " << rank << " Attempt to nc_enddef\n";
+        for(auto &id: varid)
+            SUCCESS_OR_DIE(nc_var_par_access(ncid, id, NC_INDEPENDENT));
+        // std::cout << "Rank: " << rank << " Attempt to nc_enddef\n";
         SUCCESS_OR_DIE(nc_enddef(ncid));
-        std::cout << "Rank: " << rank << " after nc_enddef\n";
+        // std::cout << "Rank: " << rank << " after nc_enddef\n";
+        if(rank == 0)
+        {
+            // Write dimensions here
+            std::vector<size_t> startp, countp;
+            startp.push_back(0);
+            countp.push_back(num_time);
+            std::vector<double> time_steps(num_time);
+            for(uint32_t i=0; i<num_time; i++)
+                time_steps[i] = cc.dt*i + cc.start_time; // start + i*dt
+            SUCCESS_OR_DIE(
+                nc_put_vara_double(
+                    ncid,                       // ncid
+                    varid[Var_idx::time],       // varid
+                    startp.data(),              // startp
+                    countp.data(),              // countp
+                    time_steps.data()            // op
+                )
+            );
 
+            countp[0] = n_trajs_file;
+            std::vector<uint64_t> data(n_trajs_file);
+            for(uint32_t i=0; i<n_trajs_file; i++)
+                data[i] = i;
+            SUCCESS_OR_DIE(
+                nc_put_vara(
+                    ncid,                       // ncid
+                    varid[Var_idx::trajectory],       // varid
+                    startp.data(),              // startp
+                    countp.data(),              // countp
+                    data.data()            // op
+                )
+            );
 
+            countp[0] = num_ens;
+            data.resize(num_ens);
+            for(uint32_t i=0; i<num_ens; i++)
+                data[i] = i;
+            SUCCESS_OR_DIE(
+                nc_put_vara(
+                    ncid,                       // ncid
+                    varid[Var_idx::ensemble],       // varid
+                    startp.data(),              // startp
+                    countp.data(),              // countp
+                    data.data()            // op
+                )
+            );
+
+            countp[0] = num_comp;
+            data.resize(num_comp);
+            for(uint32_t i=0; i<num_comp; i++)
+                data[i] = i;
+            SUCCESS_OR_DIE(
+                nc_put_vara(
+                    ncid,                       // ncid
+                    varid[Var_idx::out_param],       // varid
+                    startp.data(),              // startp
+                    countp.data(),              // countp
+                    data.data()            // op
+                )
+            );
+        }
         // std::vector<nc_vlen_t> att_in;
         // SUCCESS_OR_DIE(nc_get_att(in_ncid, NC_GLOBAL, "", att_in));
 
@@ -1752,7 +1816,7 @@ void output_handle_t::buffer(const model_constants_t &cc,
         output_buffer_flags[3][n_snapshots*offset] = nc_params.slan_600;
 
         // type
-        output_buffer_str[0][n_snapshots*offset] = nc_params.type[0];
+        // output_buffer_str[0][n_snapshots*offset] = nc_params.type[0];
 
         // simulation step
         output_buffer_int[0][n_snapshots*offset] = sub + t*cc.num_sub_steps;
@@ -1841,81 +1905,162 @@ void output_handle_t::flush_buffer()
 {
     if(filetype == "netcdf")
     {
-        bool got_it = false;
-        do{
-            try
-            {
-                datafile.open(filename + ".nc_wcb", NcFile::write);
-                got_it = true;
-            } catch(const std::exception& e2)
-            {
-                got_it = false;
-            }
-        } while(!got_it);
+        // std::cout << "Attempt to flush with flushed " << flushed_snapshots << " snaps: " << n_snapshots << " \n";
+        // bool got_it = false;
+        // do{
+        //     try
+        //     {
+        //         datafile.open(filename + ".nc_wcb", NcFile::write);
+        //         got_it = true;
+        //     } catch(const std::exception& e2)
+        //     {
+        //         got_it = false;
+        //     }
+        // } while(!got_it);
 
-        std::vector<uint64_t> startp, countp;
+        std::vector<size_t> startp, countp;
         startp.push_back(flushed_snapshots);
         countp.push_back(n_snapshots); // number of snapshots so far
+        // std::cout << "Attempt to flush time \n";
+        // std::cout << "len buffer "
+        //           << output_buffer[num_comp+num_par+1].size()
+        //           << "\n";
+        // std::cout << "start " << startp[0]
+        //           << ", count " << countp[0]
+        //           << ", in buffer " << output_buffer[num_comp+num_par+1][0]
+        //           << ", " << output_buffer[num_comp+num_par+1][1]
+        //           << ", " << output_buffer[num_comp+num_par+1][2]
+        //           << "\n";
         // time index
-        var_vector[num_comp+num_par+1].putVar(startp, countp,
-            output_buffer[num_comp+num_par+1].data());
+        // SUCCESS_OR_DIE(
+        //     nc_put_vara_double(
+        //         ncid,                       // ncid
+        //         varid[Var_idx::time],       // varid
+        //         startp.data(),              // startp
+        //         countp.data(),              // countp
+        //         output_buffer[num_comp+num_par+1].data()    // op
+        //     )
+        // );
+
+
+        // var_vector[num_comp+num_par+1].putVar(startp, countp,
+        //     output_buffer[num_comp+num_par+1].data());
 
         startp.insert(startp.begin(), traj);
-        startp.insert(startp.begin(), 0);
+        startp.insert(startp.begin(), ens);
         countp.insert(countp.begin(), 1);
         countp.insert(countp.begin(), 1);
-
+        // std::cout << "Attempt to flush model state \n";
         for(uint64_t i=0; i<num_comp; i++)
-            var_vector[i].putVar(startp, countp,
-                output_buffer[i].data());
+        {
+            SUCCESS_OR_DIE(
+                nc_put_vara(
+                    ncid,
+                    varid[i],
+                    startp.data(),
+                    countp.data(),
+                    output_buffer[i].data()
+                )
+            );
+        }
 
+        // std::cout << "Attempt to flush time_after_ascent \n";
         uint64_t offset = num_comp+num_par;
+        SUCCESS_OR_DIE(
+            nc_put_vara(
+                ncid,
+                varid[offset],
+                startp.data(),
+                countp.data(),
+                output_buffer[offset].data()
+            )
+        );
         // time after ascent
-        var_vector[offset].putVar(startp, countp,
-            output_buffer[num_comp+num_par].data());
-
+        // var_vector[offset].putVar(startp, countp,
+        //     output_buffer[num_comp+num_par].data());
+        // std::cout << "Attempt to flush flags \n";
         offset += 2;
         // flags
         for(uint64_t i=0; i<output_buffer_flags.size(); i++)
-            var_vector[offset+i].putVar(startp, countp,
-            output_buffer_flags[i].data());
-
-        offset += output_buffer_flags.size();
-        // type
-        std::vector<uint64_t> startp_str, countp_str;
-        for(auto &p: startp)
-            startp_str.push_back(p);
-        for(auto &p: countp)
-            countp_str.push_back(p);
-        countp_str[countp_str.size()-1] = 1;
-
-        for(uint64_t i=0; i<output_buffer_str.size(); i++)
         {
-            // write one string at a time.
-            for(const auto &t: output_buffer_str[i])
-            {
-                var_vector[offset+i].putVar(
-                    startp_str, countp_str, &t);
-                startp_str[startp_str.size()-1]++;
-                if(startp_str[startp_str.size()-1]-startp[startp_str.size()-1] == n_snapshots)
-                    break;
-            }
-        }
+            SUCCESS_OR_DIE(
+                nc_put_vara(
+                    ncid,
+                    varid[offset+i],
+                    startp.data(),
+                    countp.data(),
+                    output_buffer_flags[i].data()
+                )
+            );
 
-        offset += output_buffer_str.size();
+        }
+            // var_vector[offset+i].putVar(startp, countp,
+            // output_buffer_flags[i].data());
+        // std::cout << "Attempt to flush type \n";
+        // offset += output_buffer_flags.size();
+        // // type
+        // std::vector<uint64_t> startp_str, countp_str;
+        // for(auto &p: startp)
+        //     startp_str.push_back(p);
+        // for(auto &p: countp)
+        //     countp_str.push_back(p);
+        // countp_str[countp_str.size()-1] = 1;
+        // std::cout << "Attempt to flush strings \n";
+        // for(uint64_t i=0; i<output_buffer_str.size(); i++)
+        // {
+        //     // write one string at a time.
+        //     for(const auto &t: output_buffer_str[i])
+        //     {
+        //         std::cout << "Attempt to flush string at " << offset << " + " << i << " \n";
+        //         var_vector[offset+i].putVar(
+        //             startp_str, countp_str, &t);
+        //         startp_str[startp_str.size()-1]++;
+        //         if(startp_str[startp_str.size()-1]-startp[startp_str.size()-1] == n_snapshots)
+        //             break;
+        //     }
+        // }
+
+        // offset += output_buffer_str.size();
         // lat
-        var_vector[offset].putVar(startp, countp,
-            output_buffer[num_comp+num_par+2].data());
+        SUCCESS_OR_DIE(
+            nc_put_vara(
+                ncid,
+                varid[offset],
+                startp.data(),
+                countp.data(),
+                output_buffer[offset].data()
+            )
+        );
+        // var_vector[offset].putVar(startp, countp,
+        //     output_buffer[num_comp+num_par+2].data());
 
         offset += 1;
         // lon
-        var_vector[offset].putVar(startp, countp,
-            output_buffer[num_comp+num_par+3].data());
+        SUCCESS_OR_DIE(
+            nc_put_vara(
+                ncid,
+                varid[offset],
+                startp.data(),
+                countp.data(),
+                output_buffer[offset].data()
+            )
+        );
+        // var_vector[offset].putVar(startp, countp,
+        //     output_buffer[num_comp+num_par+3].data());
 
         offset += 1;
         // step
-        var_vector[offset].putVar(startp, countp,
-            output_buffer_int[0].data());
+        SUCCESS_OR_DIE(
+            nc_put_vara(
+                ncid,
+                varid[offset],
+                startp.data(),
+                countp.data(),
+                output_buffer_int[0].data()
+            )
+        );
+        // var_vector[offset].putVar(startp, countp,
+        //     output_buffer_int[0].data());
 
         offset = num_comp;
         // gradients
@@ -1923,8 +2068,19 @@ void output_handle_t::flush_buffer()
         countp.insert(countp.begin(), num_comp);
 
         for(uint64_t j=0; j<num_par; j++)
-            var_vector[offset+j].putVar(startp, countp,
-                output_buffer[num_comp+j].data());
+        {
+            SUCCESS_OR_DIE(
+                nc_put_vara(
+                    ncid,
+                    varid[offset + j],
+                    startp.data(),
+                    countp.data(),
+                    output_buffer[offset + j].data()
+                )
+            );
+        }
+            // var_vector[offset+j].putVar(startp, countp,
+            //     output_buffer[num_comp+j].data());
         datafile.close();
     } else
     {
@@ -1969,6 +2125,8 @@ void output_handle_t::process_step(
     if( (0 == (sub + t*cc.num_sub_steps) % write_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {
+        std::cout << "flush buffer\n";
         this->flush_buffer();
+        std::cout << "flush buffer done\n";
     }
 }

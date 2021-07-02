@@ -1,7 +1,7 @@
 #!/bin/bash
 cd ..
 # Set to the number of threads or CPUs in case you want to run ensemble simulations
-NTASKS=2
+NTASKS=4
 
 # Environmental conditions
 SCALING_FACTOR="1.0"
@@ -60,7 +60,7 @@ do
         # the maximum time of the netcdf-file
         TARGET_TIME_AFTER_START="83000" # Minus Start_time
     fi
-
+    PROGRESSBAR="0"
     INPUT_FILENAME="/data/project/wcb/netcdf/vladiana_met_stats/${FILENAME}.nc_wcb"
 
     echo "###################################"

@@ -391,13 +391,13 @@ int read_init_netcdf(
             nc_params.time_rel_var.getVar(startp, countp, &rel_start_time);
             // Calculate the needed index
             start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
-            uint64_t n_timesteps_input = ceil((cc.t_end-start_time)/20.0)-1;
-            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+            // uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1;
+            // cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         } else if(checkpoint_flag && !std::isnan(current_time) && std::isnan(start_time))
         {
             start_time_idx = ceil(current_time/cc.dt_traject);
-            uint64_t n_timesteps_input = ceil((cc.t_end-current_time)/20.0)-1;
-            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+            // uint64_t n_timesteps_input = ceil((cc.t_end-current_time)/20.0)-1;
+            // cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         } else if(checkpoint_flag && !std::isnan(current_time) && !std::isnan(start_time))
         {
             double rel_start_time;
@@ -405,12 +405,12 @@ int read_init_netcdf(
             nc_params.time_rel_var.getVar(startp, countp, &rel_start_time);
             // Calculate the needed index
             start_time_idx = ceil(start_time-rel_start_time + current_time)/cc.dt_traject;
-            uint64_t n_timesteps_input = ceil((cc.t_end-current_time-start_time)/20.0)-1;
-            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+            // uint64_t n_timesteps_input = ceil((cc.t_end-current_time-start_time)/20.0)-1;
+            // cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         } else
         {
-            uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1 - start_time_idx;
-            cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
+            // uint64_t n_timesteps_input = ceil(cc.t_end/20.0)-1 - start_time_idx;
+            // cc.num_steps = (n_timesteps-1 > n_timesteps_input) ? n_timesteps_input : n_timesteps-1;
         }
         // std::cout << "start_time_idx " << start_time_idx
         //           << ", current_time: " << current_time << ", start_time "
@@ -531,6 +531,7 @@ int read_init_netcdf(
                 get_at(cc.constants, Cons_idx::p_sat_const_b),
                 get_at(cc.constants, Cons_idx::Epsilon));
 #endif
+        cc.start_time = nc_params.time_abs[nc_params.time_idx];
         }
     } catch(netCDF::exceptions::NcException& e)
     {

@@ -196,7 +196,6 @@ void setup_simulation(
     size_t &lenp,
     bool &already_loaded)
 {
-
     checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
     SUCCESS_OR_DIE(read_init_netcdf(y_init, nc_params, lenp, ref_quant,
 #ifdef MET3D
@@ -206,6 +205,7 @@ void setup_simulation(
         (global_args.checkpoint_flag || already_loaded),
         cc, input.current_time)
     );
+
 #if defined(RK4_ONE_MOMENT)
     cc.setCoefficients(y_init[0] , y_init[1]);
 #endif
@@ -565,6 +565,7 @@ void run_substeps(
 
         // Time update
         time_new = (sub + t*cc.num_sub_steps)*cc.dt;
+        // std::cout << "rank ? process_step\n";
         out_handler.process_step(cc, nc_params, y_single_new, y_diff, sub, t,
             time_new, traj_id, input.write_index,
             input.snapshot_index,
@@ -572,6 +573,7 @@ void run_substeps(
             ensemble,
 #endif
             last_step, ref_quant);
+        // std::cout << "process_step done\n";
         // Interchange old and new for next step
         time_old = time_new;
         y_single_old.swap(y_single_new);
@@ -612,6 +614,10 @@ int run_simulation(
 #ifdef MET3D
     uint32_t ensemble;
 #endif
+    // std::cout << "rank " << rank
+    //           << ", num_steps: " << cc.num_steps
+    //           << ", num_sub_steps: " << cc.num_sub_steps
+    //           << ", start_over: " << input.start_over << "\n";
     // force any process that is not root to disable pbar
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
     ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps,
@@ -746,31 +752,31 @@ int main(int argc, char** argv)
 
     if(rank == 0)
     {
-        // std::cout << "Rank " << rank << ": start setup_simulation\n";
+        std::cout << "Rank " << rank << ": start setup_simulation\n";
         setup_simulation(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
             checkpoint, out_handler, nc_params, lenp, already_loaded);
-        // std::cout << "Rank " << rank << ": start run_simulation\n";
+        std::cout << "Rank " << rank << ": start run_simulation\n";
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
             out_handler, segments, lenp, scheduler));
-        // std::cout << "Rank " << rank << ": finished run_simulation\n";
+        std::cout << "Rank " << rank << ": finished run_simulation\n";
     }
-    // std::cout << "Rank " << rank << ": going to scheduler loop\n";
+    std::cout << "Rank " << rank << ": going to scheduler loop\n";
     while(scheduler.receive_task(checkpoint))
     {
         // parse checkpoint
         // checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
-        // std::cout << "Rank " << rank << ": start setup_simulation\n";
+        std::cout << "Rank " << rank << ": start setup_simulation\n";
         setup_simulation(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
             checkpoint, out_handler, nc_params, lenp, already_loaded);
         // run simulation
-        // std::cout << "Rank " << rank << ": start run_simulation\n";
+        std::cout << "Rank " << rank << ": start run_simulation\n";
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
             out_handler, segments, lenp, scheduler));
-        // std::cout << "Rank " << rank << ": finished run_simulation\n";
+        std::cout << "Rank " << rank << ": finished run_simulation\n";
     }
 
 #ifdef USE_MPI

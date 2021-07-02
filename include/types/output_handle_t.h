@@ -27,6 +27,7 @@ struct output_handle_t{
     std::stringstream out_diff_tmp[num_comp];
     uint64_t n_snapshots; // number of buffered snapshots
     uint64_t flushed_snapshots;
+    int ncid; // ID of output file
 
     std::string filetype;
     // for netCDF files and a vector for each column
@@ -36,7 +37,7 @@ struct output_handle_t{
     // slow index: num_comp
     std::array<std::vector<double>, num_comp+num_par+4 > output_buffer;
     std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
-    std::array<std::vector<std::string>, 1 > output_buffer_str;
+    // std::array<std::vector<std::string>, 1 > output_buffer_str;
     std::array<std::vector<uint64_t>, 1 > output_buffer_int;
     /**
      * ID for dimensions of output file.
@@ -54,6 +55,7 @@ struct output_handle_t{
     uint64_t n_trajs;
     uint64_t n_trajs_file;
     uint64_t traj;
+    uint64_t ens;
     uint64_t total_snapshots;
     std::string filename;
     /**
@@ -67,19 +69,19 @@ struct output_handle_t{
 
     enum Dim_idx
     {
-        out_param_dim,
-        ensemble_dim,
-        trajectory_dim,
         time_dim,
+        trajectory_dim,
+        ensemble_dim,
+        out_param_dim,
         n_dims
     };
 
     enum Var_idx
     {
-        out_param,
-        ensemble,
-        trajectory,
         time,
+        trajectory,
+        ensemble,
+        out_param,
 
         pressure,
         temperature,
