@@ -124,11 +124,11 @@ void output_handle_t::setup(
         );
         // if(rank == 0)
         // {
-            // std::cout << "Creating file with " << num_comp << " output parameters\n";
-            // std::cout << "with " << num_ens << " ensembles\n";
-            // std::cout << "with " << n_trajs_file << " trajectories\n";
-            // std::cout << "with " << num_time << " time steps\n";
-            // std::cout << "with " << total_snapshots << " total snapshots\n";
+            std::cout << "Creating file with " << num_comp << " output parameters\n";
+            std::cout << "with " << num_ens << " ensembles\n";
+            std::cout << "with " << n_trajs_file << " trajectories\n";
+            std::cout << "with " << num_time << " time steps\n";
+            std::cout << "with " << total_snapshots << " total snapshots\n";
             // Create dimensions
             SUCCESS_OR_DIE(nc_def_dim(
                 ncid, "Output_Parameter", num_comp, &dimid[Dim_idx::out_param_dim])
@@ -177,36 +177,39 @@ void output_handle_t::setup(
                 &varid[Var_idx::time])
             );
         // }
-        if(rank == -1)
-        {
-            for(uint32_t i=0; i<output_par_idx.size(); ++i)
-                SUCCESS_OR_DIE(nc_def_var(
-                    ncid,
-                    output_par_idx[i].c_str(),
-                    NC_DOUBLE,       // type
-                    3,          // ndims 2: matrix, 1: vector, 0: scalar
-                    &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
-                    &varid[Var_idx::out_param + i+1])
+        // if(rank == -1)
+        // {
+            // uint64_t offset = Var_idx::out_param + 1;
+            // model state
+            for(uint32_t i=0; i<num_comp; ++i)
+                SUCCESS_OR_DIE(
+                    nc_def_var(
+                        ncid,
+                        output_par_idx[i].c_str(),
+                        NC_DOUBLE,       // type
+                        3,          // ndims 2: matrix, 1: vector, 0: scalar
+                        &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
+                        &varid[i]
+                    )
                 );
-
-            uint64_t offset = Var_idx::out_param + output_par_idx.size();
+            // gradients
+            uint64_t offset = Var_idx::n_vars;
             for(uint32_t i=0; i<output_grad_idx.size(); ++i)
                 SUCCESS_OR_DIE(nc_def_var(
                     ncid,
                     output_grad_idx[i].c_str(),
                     NC_DOUBLE,       // type
                     4,          // ndims 2: matrix, 1: vector, 0: scalar
-                    &dimid[Dim_idx::out_param_dim],    // ignored for ndims = 0
-                    &varid[offset + i+1])
+                    &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
+                    &varid[offset + i])
                 );
 
-            offset += output_grad_idx.size();
             SUCCESS_OR_DIE(nc_def_var(
                 ncid,
                 "time_after_ascent",
                 NC_DOUBLE,       // type
                 3,          // ndims 2: matrix, 1: vector, 0: scalar
-                &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
+                &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
                 &varid[Var_idx::time_ascent])
             );
             SUCCESS_OR_DIE(nc_def_var(
@@ -214,7 +217,7 @@ void output_handle_t::setup(
                 "conv_400",
                 NC_BYTE,       // type
                 3,          // ndims 2: matrix, 1: vector, 0: scalar
-                &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
+                &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
                 &varid[Var_idx::conv_400])
             );
             SUCCESS_OR_DIE(nc_def_var(
@@ -222,7 +225,7 @@ void output_handle_t::setup(
                 "conv_600",
                 NC_BYTE,       // type
                 3,          // ndims 2: matrix, 1: vector, 0: scalar
-                &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
+                &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
                 &varid[Var_idx::conv_600])
             );
             SUCCESS_OR_DIE(nc_def_var(
@@ -230,7 +233,7 @@ void output_handle_t::setup(
                 "slan_400",
                 NC_BYTE,       // type
                 3,          // ndims 2: matrix, 1: vector, 0: scalar
-                &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
+                &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
                 &varid[Var_idx::slan_400])
             );
             SUCCESS_OR_DIE(nc_def_var(
@@ -238,23 +241,23 @@ void output_handle_t::setup(
                 "slan_600",
                 NC_BYTE,       // type
                 3,          // ndims 2: matrix, 1: vector, 0: scalar
-                &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
+                &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
                 &varid[Var_idx::slan_600])
             );
-            SUCCESS_OR_DIE(nc_def_var(
-                ncid,
-                "type",
-                NC_STRING,       // type
-                3,          // ndims 2: matrix, 1: vector, 0: scalar
-                &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
-                &varid[Var_idx::type])
-            );
+            // SUCCESS_OR_DIE(nc_def_var(
+            //     ncid,
+            //     "type",
+            //     NC_STRING,       // type
+            //     3,          // ndims 2: matrix, 1: vector, 0: scalar
+            //     &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
+            //     &varid[Var_idx::type])
+            // );
             SUCCESS_OR_DIE(nc_def_var(
                 ncid,
                 "lat",
                 NC_DOUBLE,       // type
                 3,          // ndims 2: matrix, 1: vector, 0: scalar
-                &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
+                &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
                 &varid[Var_idx::lat])
             );
             SUCCESS_OR_DIE(nc_def_var(
@@ -262,7 +265,7 @@ void output_handle_t::setup(
                 "lon",
                 NC_DOUBLE,       // type
                 3,          // ndims 2: matrix, 1: vector, 0: scalar
-                &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
+                &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
                 &varid[Var_idx::lon])
             );
             SUCCESS_OR_DIE(nc_def_var(
@@ -270,11 +273,11 @@ void output_handle_t::setup(
                 "step",
                 NC_UINT64,       // type
                 3,          // ndims 2: matrix, 1: vector, 0: scalar
-                &dimid[Dim_idx::ensemble_dim],    // ignored for ndims = 0
+                &dimid[Dim_idx::time_dim],    // ignored for ndims = 0
                 &varid[Var_idx::step])
             );
-        // if(rank == -1)
-        // {
+        if(rank == -1)
+        {
             // Add attributes; read attributes from in_filename first
             int in_ncid;
             SUCCESS_OR_DIE(nc_open(in_filename.c_str(), NC_NOWRITE, &in_ncid));
@@ -994,36 +997,36 @@ void output_handle_t::setup(
             );
 
             // type
-            att_val = "trajectory type";
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid[Var_idx::type],
-                "long_name",
-                strlen(att_val.c_str()),
-                att_val.c_str())
-            );
-            att_val = "trajectory_type";
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid[Var_idx::type],
-                "standard_name",
-                strlen(att_val.c_str()),
-                att_val.c_str())
-            );
-            att_val = "yes";
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid[Var_idx::type],
-                "auxiliary_data",
-                strlen(att_val.c_str()),
-                att_val.c_str())
-            );
+            // att_val = "trajectory type";
+            // SUCCESS_OR_DIE(nc_put_att_text(
+            //     ncid,
+            //     varid[Var_idx::type],
+            //     "long_name",
+            //     strlen(att_val.c_str()),
+            //     att_val.c_str())
+            // );
+            // att_val = "trajectory_type";
+            // SUCCESS_OR_DIE(nc_put_att_text(
+            //     ncid,
+            //     varid[Var_idx::type],
+            //     "standard_name",
+            //     strlen(att_val.c_str()),
+            //     att_val.c_str())
+            // );
+            // att_val = "yes";
+            // SUCCESS_OR_DIE(nc_put_att_text(
+            //     ncid,
+            //     varid[Var_idx::type],
+            //     "auxiliary_data",
+            //     strlen(att_val.c_str()),
+            //     att_val.c_str())
+            // );
 
             // step
             att_val = "simulation step";
             SUCCESS_OR_DIE(nc_put_att_text(
                 ncid,
-                varid[Var_idx::type],
+                varid[Var_idx::step],
                 "long_name",
                 strlen(att_val.c_str()),
                 att_val.c_str())
@@ -1031,7 +1034,7 @@ void output_handle_t::setup(
             att_val = "step";
             SUCCESS_OR_DIE(nc_put_att_text(
                 ncid,
-                varid[Var_idx::type],
+                varid[Var_idx::step],
                 "standard_name",
                 strlen(att_val.c_str()),
                 att_val.c_str())
@@ -1039,7 +1042,7 @@ void output_handle_t::setup(
             att_val = "yes";
             SUCCESS_OR_DIE(nc_put_att_text(
                 ncid,
-                varid[Var_idx::type],
+                varid[Var_idx::step],
                 "auxiliary_data",
                 strlen(att_val.c_str()),
                 att_val.c_str())
@@ -1729,6 +1732,9 @@ void output_handle_t::buffer(const model_constants_t &cc,
 {
     if(filetype == "netcdf")
     {
+        // this->traj = cc.traj_id;
+        // this->ens = cc.ensemble_id;
+
         const uint64_t offset = 1;
 
         // output parameters
@@ -1791,22 +1797,22 @@ void output_handle_t::buffer(const model_constants_t &cc,
         // gradients
         for(uint64_t i=0; i<num_comp; i++) // gradient sensitive to output parameter i
             for(uint64_t j=0; j<num_par; j++) // gradient of input parameter j
-                output_buffer[num_comp+j][i + n_snapshots*offset*num_comp] = y_diff[i][j];
+                output_buffer[Buffer_idx::n_buffer+j][i + n_snapshots*offset*num_comp] = y_diff[i][j];
 
         // time after ascent
-        output_buffer[num_comp+num_par][n_snapshots*offset] =
+        output_buffer[Buffer_idx::time_ascent_buf][n_snapshots*offset] =
             nc_params.time_rel + sub*cc.dt;
 
         // time index
-        output_buffer[num_comp+num_par+1][n_snapshots] =
-            nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt;
+        // output_buffer[num_comp+num_par+1][n_snapshots] =
+        //     nc_params.time_abs[t + nc_params.time_idx] + sub*cc.dt;
 
         // lat
-        output_buffer[num_comp+num_par+2][n_snapshots*offset] =
+        output_buffer[Buffer_idx::lat_buf][n_snapshots*offset] =
             (nc_params.lat[0] + sub*nc_params.dlat);
 
         // lon
-        output_buffer[num_comp+num_par+3][n_snapshots*offset] =
+        output_buffer[Buffer_idx::lon_buf][n_snapshots*offset] =
             (nc_params.lon[0] + sub*nc_params.dlon);
 
         // flags
@@ -1905,7 +1911,12 @@ void output_handle_t::flush_buffer()
 {
     if(filetype == "netcdf")
     {
-        // std::cout << "Attempt to flush with flushed " << flushed_snapshots << " snaps: " << n_snapshots << " \n";
+        std::cout << "Attempt to flush with flushed "
+                  << flushed_snapshots
+                  << " snaps: " << n_snapshots
+                  << " traj: " << traj
+                  << " ens: " << ens
+                  << " \n";
         // bool got_it = false;
         // do{
         //     try
@@ -1919,8 +1930,8 @@ void output_handle_t::flush_buffer()
         // } while(!got_it);
 
         std::vector<size_t> startp, countp;
-        startp.push_back(flushed_snapshots);
-        countp.push_back(n_snapshots); // number of snapshots so far
+        // startp.push_back(flushed_snapshots);
+        // countp.push_back(n_snapshots); // number of snapshots so far
         // std::cout << "Attempt to flush time \n";
         // std::cout << "len buffer "
         //           << output_buffer[num_comp+num_par+1].size()
@@ -1946,11 +1957,21 @@ void output_handle_t::flush_buffer()
         // var_vector[num_comp+num_par+1].putVar(startp, countp,
         //     output_buffer[num_comp+num_par+1].data());
 
-        startp.insert(startp.begin(), traj);
-        startp.insert(startp.begin(), ens);
-        countp.insert(countp.begin(), 1);
-        countp.insert(countp.begin(), 1);
+        // startp.insert(startp.begin(), traj);
+        // startp.insert(startp.begin(), ens);
+        // countp.insert(countp.begin(), 1);
+        // countp.insert(countp.begin(), 1);
+
+        startp.push_back(flushed_snapshots);
+        startp.push_back(traj);
+        startp.push_back(ens);
+
+        countp.push_back(n_snapshots);
+        countp.push_back(1);
+        countp.push_back(1);
+
         // std::cout << "Attempt to flush model state \n";
+        // uint64_t offset = Var_idx::out_param+1;
         for(uint64_t i=0; i<num_comp; i++)
         {
             SUCCESS_OR_DIE(
@@ -1963,30 +1984,30 @@ void output_handle_t::flush_buffer()
                 )
             );
         }
-
+        // time after ascent
         // std::cout << "Attempt to flush time_after_ascent \n";
-        uint64_t offset = num_comp+num_par;
+        // offset += num_comp;
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,
-                varid[offset],
+                varid[Var_idx::time_ascent],
                 startp.data(),
                 countp.data(),
-                output_buffer[offset].data()
+                output_buffer[Buffer_idx::time_ascent_buf].data()
             )
         );
         // time after ascent
         // var_vector[offset].putVar(startp, countp,
         //     output_buffer[num_comp+num_par].data());
         // std::cout << "Attempt to flush flags \n";
-        offset += 2;
+        // uint64_t offset = Var_idx::conv_400;
         // flags
         for(uint64_t i=0; i<output_buffer_flags.size(); i++)
         {
             SUCCESS_OR_DIE(
                 nc_put_vara(
                     ncid,
-                    varid[offset+i],
+                    varid[Var_idx::conv_400+i],
                     startp.data(),
                     countp.data(),
                     output_buffer_flags[i].data()
@@ -2025,35 +2046,35 @@ void output_handle_t::flush_buffer()
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,
-                varid[offset],
+                varid[Var_idx::lat],
                 startp.data(),
                 countp.data(),
-                output_buffer[offset].data()
+                output_buffer[Buffer_idx::lat_buf].data()
             )
         );
         // var_vector[offset].putVar(startp, countp,
         //     output_buffer[num_comp+num_par+2].data());
 
-        offset += 1;
+        // offset += 1;
         // lon
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,
-                varid[offset],
+                varid[Var_idx::lon],
                 startp.data(),
                 countp.data(),
-                output_buffer[offset].data()
+                output_buffer[Buffer_idx::lon_buf].data()
             )
         );
         // var_vector[offset].putVar(startp, countp,
         //     output_buffer[num_comp+num_par+3].data());
 
-        offset += 1;
+        // offset += 1;
         // step
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,
-                varid[offset],
+                varid[Var_idx::step],
                 startp.data(),
                 countp.data(),
                 output_buffer_int[0].data()
@@ -2062,26 +2083,32 @@ void output_handle_t::flush_buffer()
         // var_vector[offset].putVar(startp, countp,
         //     output_buffer_int[0].data());
 
-        offset = num_comp;
+        // offset = Var_idx::n_vars;
         // gradients
-        startp.insert(startp.begin(), 0);
-        countp.insert(countp.begin(), num_comp);
+        // startp.insert(startp.begin(), 0);
+        // countp.insert(countp.begin(), num_comp);
+        startp.push_back(0);
+        countp.push_back(num_comp);
+
+        std::cout << "Attempt to flush gradients with\n"
+                  << "startp: " << startp[0] << ", " << startp[1] << ", " << startp[2] << ", " << startp[3] << "\n"
+                  << "countp: " << countp[0] << ", " << countp[1] << ", " << countp[2] << ", " << countp[3] << "\n";
 
         for(uint64_t j=0; j<num_par; j++)
         {
             SUCCESS_OR_DIE(
                 nc_put_vara(
                     ncid,
-                    varid[offset + j],
+                    varid[Var_idx::n_vars + j],
                     startp.data(),
                     countp.data(),
-                    output_buffer[offset + j].data()
+                    output_buffer[Buffer_idx::n_buffer + j].data()
                 )
             );
         }
             // var_vector[offset+j].putVar(startp, countp,
             //     output_buffer[num_comp+j].data());
-        datafile.close();
+        // datafile.close();
     } else
     {
         outfile << out_tmp.rdbuf();

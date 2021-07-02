@@ -78,11 +78,7 @@ struct output_handle_t{
 
     enum Var_idx
     {
-        time,
-        trajectory,
-        ensemble,
-        out_param,
-
+        // this should be the same as the *_idx in constants.h
         pressure,
         temperature,
         ascent,
@@ -117,6 +113,11 @@ struct output_handle_t{
         dep,
         sub,
 
+        time,
+        trajectory,
+        ensemble,
+        out_param,
+
         time_ascent,
         lat,
         lon,
@@ -124,12 +125,24 @@ struct output_handle_t{
         conv_600,
         slan_400,
         slan_600,
-        type,
         step,
 
         // We do not clutter the gradient values here
-        // The index is given by output_grad_idx + an offset
+        // The index is given by n_vars + i
         n_vars
+    };
+    /**
+     * Indices within the double buffer
+     */
+    enum Buffer_idx
+    {
+        // The first entries are already given via constants.h *_idx
+        time_ascent_buf = num_comp,
+        lat_buf = num_comp+1,
+        lon_buf = num_comp+2,
+        n_buffer = num_comp+3
+        // We do not clutter the gradient values here
+        // The index is given by n_buffer + i
     };
 
     output_handle_t();

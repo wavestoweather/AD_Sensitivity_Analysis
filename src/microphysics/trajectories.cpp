@@ -196,7 +196,7 @@ void setup_simulation(
     size_t &lenp,
     bool &already_loaded)
 {
-    checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
+    checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant, out_handler);
     SUCCESS_OR_DIE(read_init_netcdf(y_init, nc_params, lenp, ref_quant,
 #ifdef MET3D
         input.start_time,
@@ -578,9 +578,12 @@ void run_substeps(
         time_old = time_new;
         y_single_old.swap(y_single_new);
 
-        // Check if parameter shall be perturbed
-        parameter_check(segments, cc, time_old, y_diff,
-            y_single_old, input, ref_quant, scheduler);
+        if(time_new != cc.t_end_prime)
+        {
+            // Check if parameter shall be perturbed
+            parameter_check(segments, cc, time_old, y_diff,
+                y_single_old, input, ref_quant, scheduler);
+        }
 
         // While debugging, the bar is not useful.
 #if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR) && !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)

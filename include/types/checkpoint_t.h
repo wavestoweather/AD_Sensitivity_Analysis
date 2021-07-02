@@ -16,6 +16,7 @@
 #include "include/types/segment_t.h"
 #include "include/types/input_parameters_t.h"
 #include "include/types/model_constants_t.h"
+#include "include/types/output_handle_t.h"
 #include "include/types/reference_quantities_t.h"
 
 namespace pt = boost::property_tree;
@@ -79,6 +80,18 @@ struct checkpoint_t
         std::vector<segment_t> &segments,
         input_parameters_t &input,
         const reference_quantities_t &ref_quant);
+    /**
+     * Same as above with an already loaded checkpoint instead of reading a
+     * file and adjusting time steps for flushing output.
+     */
+    template<class float_t>
+    int load_checkpoint(
+        model_constants_t &cc,
+        std::vector<float_t> &y,
+        std::vector<segment_t> &segments,
+        input_parameters_t &input,
+        const reference_quantities_t &ref_quant,
+        output_handle_t &out_handler);
 
     /**
      * Store all data in a property tree and write it as a json file to disk.
