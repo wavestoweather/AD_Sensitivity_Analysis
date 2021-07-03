@@ -379,20 +379,22 @@ void parameter_check(
                     scheduler.max_ensemble_id = ens_id;
                     MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
                 }
-
-                for(uint32_t i=0; i<s.n_members; ++i)
+                if(ens_id < cc.n_ensembles)
                 {
-                    const uint64_t total_members = s.n_members;
-                    checkpoint_t checkpoint(
-                        cc,
-                        y_single_old,
-                        segments,
-                        input,
-                        time_old,
-                        i,
-                        ens_id,
-                        total_members);
-                    scheduler.send_new_task(checkpoint);
+                    for(uint32_t i=0; i<s.n_members; ++i)
+                    {
+                        const uint64_t total_members = s.n_members;
+                        checkpoint_t checkpoint(
+                            cc,
+                            y_single_old,
+                            segments,
+                            input,
+                            time_old,
+                            i,
+                            ens_id,
+                            total_members);
+                        scheduler.send_new_task(checkpoint);
+                    }
                 }
 #else
                 checkpoint_t checkpoint(
@@ -565,7 +567,6 @@ void run_substeps(
 
         // Time update
         time_new = (sub + t*cc.num_sub_steps)*cc.dt;
-        // std::cout << "rank ? process_step\n";
         out_handler.process_step(cc, nc_params, y_single_new, y_diff, sub, t,
             time_new, traj_id, input.write_index,
             input.snapshot_index,
@@ -573,7 +574,6 @@ void run_substeps(
             ensemble,
 #endif
             last_step, ref_quant);
-        // std::cout << "process_step done\n";
         // Interchange old and new for next step
         time_old = time_new;
         y_single_old.swap(y_single_new);
@@ -617,10 +617,6 @@ int run_simulation(
 #ifdef MET3D
     uint32_t ensemble;
 #endif
-    // std::cout << "rank " << rank
-    //           << ", num_steps: " << cc.num_steps
-    //           << ", num_sub_steps: " << cc.num_sub_steps
-    //           << ", start_over: " << input.start_over << "\n";
     // force any process that is not root to disable pbar
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
     ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps,
@@ -628,7 +624,6 @@ int run_simulation(
     // Loop for timestepping: BEGIN
     try
     {
-        // std::cout << "Rank " << rank << ": in run_simulation\n";
         // Needed to read from trajectory file
         std::vector<int> ids(lenp);
         std::vector<size_t> startp, countp;
@@ -639,9 +634,8 @@ int run_simulation(
             sub_start = std::fmod(input.current_time, cc.dt_prime)
                     / (cc.dt_prime/(cc.num_sub_steps-input.start_over));
         // Loop over every timestep that is usually fixed to 20 s
-        for(uint32_t t=0; t<cc.num_steps; ++t) //
+        for(uint32_t t=0; t<cc.num_steps - cc.done_steps; ++t) //
         {
-            // std::cout << "Rank " << rank << ": run_simulation " << t << " of " << cc.num_steps << "\n";
             read_netcdf_write_stream(input.INPUT_FILENAME.c_str(), startp, countp,
                 nc_params, cc, input, ref_quant, y_single_old, inflow, ids,
                 traj_id,
@@ -654,7 +648,6 @@ int run_simulation(
                 inflow, tape, y_single_new, nc_params, y_diff, out_handler,
                 sub_start, traj_id, ensemble, segments, pbar, scheduler,
                 progress_index);
-            // std::cout << "Rank " << rank << ": finished run_substeps\n";
 #ifdef TRACE_QG
             if(trace)
                 std::cout << "\nSediment total q: " << sediment_q_total
@@ -742,44 +735,32 @@ int main(int argc, char** argv)
     std::vector<codi::RealReverse> y_single_new(num_comp);
     std::vector<codi::RealReverse> inflow(num_inflows);
 
-    // std::cout << "Rank " << rank << " parse_args\n";
     parse_args(argc, argv, rank, n_processes, input,
         global_args, ref_quant, segments, cc, y_init, checkpoint);
-        //  y_single_old,
-        // checkpoint, out_handler, nc_params, lenp);
 
-    // std::cout << "Rank " << rank << " out_handler\n";
     output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
         ref_quant, input.INPUT_FILENAME, input.write_index,
         input.snapshot_index, rank);
 
     if(rank == 0)
     {
-        std::cout << "Rank " << rank << ": start setup_simulation\n";
         setup_simulation(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
             checkpoint, out_handler, nc_params, lenp, already_loaded);
-        std::cout << "Rank " << rank << ": start run_simulation\n";
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
             out_handler, segments, lenp, scheduler));
-        std::cout << "Rank " << rank << ": finished run_simulation\n";
     }
-    std::cout << "Rank " << rank << ": going to scheduler loop\n";
+
     while(scheduler.receive_task(checkpoint))
     {
-        // parse checkpoint
-        // checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant);
-        std::cout << "Rank " << rank << ": start setup_simulation\n";
         setup_simulation(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
             checkpoint, out_handler, nc_params, lenp, already_loaded);
         // run simulation
-        std::cout << "Rank " << rank << ": start run_simulation\n";
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow, nc_params,
             out_handler, segments, lenp, scheduler));
-        std::cout << "Rank " << rank << ": finished run_simulation\n";
     }
 
 #ifdef USE_MPI

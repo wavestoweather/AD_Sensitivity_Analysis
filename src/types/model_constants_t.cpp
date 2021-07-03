@@ -8,6 +8,7 @@ model_constants_t::model_constants_t()
     n_trajs = 1;
     n_ensembles = 1;
     ens_desc = "root ";
+    done_steps = 0;
     constants.resize(static_cast<int>(Cons_idx::n_items));
     std::fill(constants.begin(), constants.end(), 0);
 }
@@ -62,7 +63,6 @@ void model_constants_t::get_gradient(
     this->snow.get_gradient(out_vec, idx);
 #endif
 }
-// template void model_constants_t::get_gradient<std::array<double, num_par> >(std::array<double, num_par>);
 
 void model_constants_t::put(
     pt::ptree &ptree) const
@@ -73,6 +73,8 @@ void model_constants_t::put(
     model_cons.put("traj_id", traj_id);
     model_cons.put("n_trajs", n_trajs);
     model_cons.put("ens_desc", ens_desc);
+    model_cons.put("num_steps", num_steps);
+    model_cons.put("n_ensembles", n_ensembles);
 
     // technical parameters
     model_cons.put("t_end_prime", t_end_prime);
@@ -86,7 +88,6 @@ void model_constants_t::put(
     model_cons.put("dt_half", dt_half);
     model_cons.put("dt_sixth", dt_sixth);
     model_cons.put("dt_third", dt_third);
-    model_cons.put("ensemble_id", ensemble_id);
 
     if(!perturbed_idx.empty())
     {
@@ -166,9 +167,15 @@ int model_constants_t::from_pt(
         } else if(first == "dt_third")
         {
             dt_third = it.second.get_value<double>();
-        } else if(first == "ensemble_id")
+        } else if(first == "n_ensembles")
         {
-            ensemble_id = it.second.get_value<uint64_t>();
+            n_ensembles = it.second.get_value<uint64_t>();
+        } else if(first == "num_steps")
+        {
+            num_steps = it.second.get_value<uint64_t>();
+        } else if(first == "done_steps")
+        {
+            done_steps = it.second.get_value<uint64_t>();
         } else if(first == "perturbed")
         {
             for(auto &it2: ptree.get_child("model_constants.perturbed"))

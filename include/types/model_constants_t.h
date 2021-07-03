@@ -153,7 +153,8 @@ struct model_constants_t{
     double dt;                /*!< Timestep size for the simulation. */
     double dt_traject_prime;  /*!< Timestep size of the trajectory from the netCDF file. */
     double dt_traject;        /*!< Timestep size of the trajectory from the netCDF file. */
-    uint64_t num_steps;       /*!< Number of timesteps to read from the netCDF file. */
+    uint64_t num_steps;       /*!< Number of time steps to read from the netCDF file. */
+    uint64_t done_steps;      /*!< Number of time steps already done before loading a checkpoint. */
     double start_time;        /*!< Start time in seconds from the netCDF file. */
 
     /**

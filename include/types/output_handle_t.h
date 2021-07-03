@@ -48,9 +48,6 @@ struct output_handle_t{
      */
     std::vector<int> varid;
 
-    NcFile datafile;
-    // std::vector<NcDim> dim_vector;
-    std::vector<NcVar> var_vector;
     uint64_t n_ens;
     uint64_t n_trajs;
     uint64_t n_trajs_file;

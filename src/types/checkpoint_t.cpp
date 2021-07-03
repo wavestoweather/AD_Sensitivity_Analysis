@@ -28,8 +28,6 @@ checkpoint_t::checkpoint_t(
     const uint64_t &n_trajs)
 {
     auto old_id = cc.ensemble_id;
-    std::cout << "Create new ensemble " << ens_id << " with " << n_trajs << " trajs "
-              << "with traj_id " << id << "\n";
     cc.ensemble_id = ens_id;
     auto old_tid = cc.traj_id;
     cc.traj_id = id;
@@ -121,19 +119,9 @@ int checkpoint_t::load_checkpoint(
     output_handle_t &out_handler)
 {
     int err = this->load_checkpoint(cc, y, segments, input, ref_quant);
-
-    // Decrease the number of steps by the time steps already done
-    double multiplier = cc.dt_traject_prime/cc.dt_prime/cc.dt_prime;
-    uint64_t done_steps = floor(input.current_time * multiplier);
-    cc.num_steps -= done_steps;
-    // an offset due to some trajectories starting later.
-    out_handler.flushed_snapshots = done_steps;
+    out_handler.flushed_snapshots = cc.done_steps;
     out_handler.traj = cc.traj_id;
     out_handler.ens = cc.ensemble_id;
-
-    std::cout << "2 cc.num_steps " << cc.num_steps << "\n";
-    std::cout << "2 loaded new checkpoint with ens " << cc.ensemble_id << " traj " << cc.traj_id
-              << " with " << cc.n_trajs << " trajs \n";
     return 0;
 }
 
