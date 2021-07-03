@@ -436,8 +436,6 @@ void model_constants_t::setup_model_constants(
     this->dt_traject_prime = 20.0;
     this->dt_traject = this->dt_traject_prime/ref_quant.tref;
     this->num_steps = ceil(this->t_end_prime/this->dt_traject_prime);
-    std::cout << "Got num_steps " << this->num_steps << " "
-              << this->t_end_prime << "/" << this->dt_traject_prime << "\n";
     // The trajectories from input files are calculated with 20 s timesteps.
     this->num_sub_steps = (floor( this->dt_traject_prime/this->dt ) < 1) ? 1 : floor( this->dt_traject_prime/this->dt );
 

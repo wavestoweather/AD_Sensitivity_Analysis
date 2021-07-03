@@ -133,7 +133,7 @@ void output_handle_t::setup(
                     output_par_idx[i].c_str(),
                     NC_DOUBLE,
                     3,
-                    &dimid[Dim_idx::time_dim],
+                    &dimid[Dim_idx::ensemble_dim],
                     &varid[i]
                 )
             );
@@ -145,7 +145,7 @@ void output_handle_t::setup(
                 output_grad_idx[i].c_str(),
                 NC_DOUBLE,
                 4,
-                &dimid[Dim_idx::time_dim],
+                &dimid[Dim_idx::out_param_dim],
                 &varid[offset + i])
             );
 
@@ -154,7 +154,7 @@ void output_handle_t::setup(
             "time_after_ascent",
             NC_DOUBLE,
             3,
-            &dimid[Dim_idx::time_dim],
+            &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::time_ascent])
         );
         SUCCESS_OR_DIE(nc_def_var(
@@ -162,7 +162,7 @@ void output_handle_t::setup(
             "conv_400",
             NC_BYTE,
             3,
-            &dimid[Dim_idx::time_dim],
+            &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::conv_400])
         );
         SUCCESS_OR_DIE(nc_def_var(
@@ -170,7 +170,7 @@ void output_handle_t::setup(
             "conv_600",
             NC_BYTE,
             3,
-            &dimid[Dim_idx::time_dim],
+            &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::conv_600])
         );
         SUCCESS_OR_DIE(nc_def_var(
@@ -178,7 +178,7 @@ void output_handle_t::setup(
             "slan_400",
             NC_BYTE,
             3,
-            &dimid[Dim_idx::time_dim],
+            &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::slan_400])
         );
         SUCCESS_OR_DIE(nc_def_var(
@@ -186,7 +186,7 @@ void output_handle_t::setup(
             "slan_600",
             NC_BYTE,
             3,
-            &dimid[Dim_idx::time_dim],
+            &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::slan_600])
         );
         SUCCESS_OR_DIE(nc_def_var(
@@ -194,7 +194,7 @@ void output_handle_t::setup(
             "lat",
             NC_DOUBLE,
             3,
-            &dimid[Dim_idx::time_dim],
+            &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::lat])
         );
         SUCCESS_OR_DIE(nc_def_var(
@@ -202,7 +202,7 @@ void output_handle_t::setup(
             "lon",
             NC_DOUBLE,
             3,
-            &dimid[Dim_idx::time_dim],
+            &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::lon])
         );
         SUCCESS_OR_DIE(nc_def_var(
@@ -210,7 +210,7 @@ void output_handle_t::setup(
             "step",
             NC_UINT64,
             3,
-            &dimid[Dim_idx::time_dim],
+            &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::step])
         );
         if(rank == -1)
@@ -1836,12 +1836,19 @@ void output_handle_t::flush_buffer()
     {
         // model state
         std::vector<size_t> startp, countp;
-        startp.push_back(flushed_snapshots);
-        startp.push_back(traj);
+        // startp.push_back(flushed_snapshots);
+        // startp.push_back(traj);
+        // startp.push_back(ens);
+        // countp.push_back(n_snapshots);
+        // countp.push_back(1);
+        // countp.push_back(1);
+
         startp.push_back(ens);
+        startp.push_back(traj);
+        startp.push_back(flushed_snapshots);
+        countp.push_back(1);
+        countp.push_back(1);
         countp.push_back(n_snapshots);
-        countp.push_back(1);
-        countp.push_back(1);
         for(uint64_t i=0; i<num_comp; i++)
         {
             SUCCESS_OR_DIE(
@@ -1915,8 +1922,10 @@ void output_handle_t::flush_buffer()
         );
 
         // gradients
-        startp.push_back(0);
-        countp.push_back(num_comp);
+        startp.insert(startp.begin(), 0);
+        countp.insert(countp.begin(), num_comp);
+        // startp.push_back(0);
+        // countp.push_back(num_comp);
         for(uint64_t j=0; j<num_par; j++)
         {
             SUCCESS_OR_DIE(
@@ -1972,8 +1981,6 @@ void output_handle_t::process_step(
     if( (0 == (sub + t*cc.num_sub_steps) % write_index)
         || ( t == cc.num_steps-1 && last_step ) )
     {
-        std::cout << "flush buffer\n";
         this->flush_buffer();
-        std::cout << "flush buffer done\n";
     }
 }

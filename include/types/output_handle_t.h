@@ -66,10 +66,10 @@ struct output_handle_t{
 
     enum Dim_idx
     {
-        time_dim,
-        trajectory_dim,
-        ensemble_dim,
         out_param_dim,
+        ensemble_dim,
+        trajectory_dim,
+        time_dim,
         n_dims
     };
 

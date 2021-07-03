@@ -59,7 +59,6 @@ void checkpoint_t::create_checkpoint(
     checkpoint.add_child("segments", segment_tree);
     // configuration from input_parameters_t
     input.put(checkpoint, current_time);
-    std::cout << "current time " << current_time << "\n";
     // Model constants
     cc.put(checkpoint);
     // Current status of y
