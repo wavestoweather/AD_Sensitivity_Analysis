@@ -1610,15 +1610,15 @@ void rain_evaporation_sb(
 
         float_t mue;
         // Equation 20 of Seifert (2008)
-        if(D_v <= get_at(cc.rain.constants, Particle_cons_idx::cmu3))
+        if(D_r <= get_at(cc.rain.constants, Particle_cons_idx::cmu3))
             mue = get_at(cc.rain.constants, Particle_cons_idx::cmu0)
                 * tanh( pow(4.0*get_at(cc.rain.constants, Particle_cons_idx::cmu2)
-                * (D_v-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
+                * (D_r-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
                     get_at(cc.rain.constants, Particle_cons_idx::cmu5))) + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
         else
             mue = get_at(cc.rain.constants, Particle_cons_idx::cmu1)
                 * tanh( pow(get_at(cc.rain.constants, Particle_cons_idx::cmu2)
-                * (D_v-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
+                * (D_r-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
                     get_at(cc.rain.constants, Particle_cons_idx::cmu5))) + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
         // Equation A8
         float_t lambda = pow(
@@ -3737,8 +3737,8 @@ void rain_freeze(
                 fr_q_h = fr_q - fr_q_g;
                 fr_n_g = fr_n_g - fr_n_i;
                 fr_q_g = fr_q_g - fr_q_i;
-                fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp);
-                fr_q_tmp = qr_prime/max(fr_q, qr_prime);
+                fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp*cc.dt_prime);
+                fr_q_tmp = qr_prime/max(fr_q, qr_prime*cc.dt_prime);
             } else
             {
                 // heterogeneous freezing
@@ -3774,8 +3774,8 @@ void rain_freeze(
                     fr_q_h = fr_q - fr_q_g;
                     fr_n_g = fr_n_g - fr_n_i;
                     fr_q_g = fr_q_g - fr_q_i;
-                    fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp);
-                    fr_q_tmp = qr_prime/max(fr_q ,qr_prime);
+                    fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp*cc.dt_prime);
+                    fr_q_tmp = qr_prime/max(fr_q ,qr_prime*cc.dt_prime);
                 } else
                 {
                     fr_n = fr_q = fr_n_i = fr_q_i = fr_n_g = fr_q_g
@@ -4534,11 +4534,11 @@ void RHS_SB_no_ice(std::vector<codi::RealReverse> &res,
 
         codi::RealReverse mue;
         // Equation 20 of Seifert (2008)
-        if(D_v <= get_at(cc.rain.constants, Particle_cons_idx::cmu3))
-            mue = get_at(cc.rain.constants, Particle_cons_idx::cmu0) * tanh( pow(4.0*get_at(cc.rain.constants, Particle_cons_idx::cmu2)*(D_v-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
+        if(D_r <= get_at(cc.rain.constants, Particle_cons_idx::cmu3))
+            mue = get_at(cc.rain.constants, Particle_cons_idx::cmu0) * tanh( pow(4.0*get_at(cc.rain.constants, Particle_cons_idx::cmu2)*(D_r-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
                 get_at(cc.rain.constants, Particle_cons_idx::cmu5))) + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
         else
-            mue = get_at(cc.rain.constants, Particle_cons_idx::cmu1) * tanh( pow(get_at(cc.rain.constants, Particle_cons_idx::cmu2)*(D_v-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
+            mue = get_at(cc.rain.constants, Particle_cons_idx::cmu1) * tanh( pow(get_at(cc.rain.constants, Particle_cons_idx::cmu2)*(D_r-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
                 get_at(cc.rain.constants, Particle_cons_idx::cmu5))) + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
         // Equation A8
         codi::RealReverse lambda = pow(M_PI/6.0*get_at(cc.constants, Cons_idx::rho_w)*(mue+3.0)*(mue+2.0)*(mue+1.0)/x_r, 1.0/3.0);
