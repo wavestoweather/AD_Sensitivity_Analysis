@@ -38,7 +38,7 @@ void output_handle_t::setup(
     this->filetype = filetype;
     this->filename = filename;
     dimid.resize(Dim_idx::n_dims);
-    varid.resize(output_par_idx.size() + output_grad_idx.size() + Dim_idx::n_dims + 9);
+    varid.resize(Var_idx::n_vars + num_par);
 
     if(filetype == "netcdf")
     {
@@ -68,867 +68,782 @@ void output_handle_t::setup(
         for(uint32_t i=0; i<output_buffer_int.size(); i++)
             output_buffer_int[i].resize(vec_size);
 
-        // Must be called by all processes defined in the communicator
-        SUCCESS_OR_DIE(nc_create_par(
-            (filename + ".nc_wcb").c_str(), // path
-            NC_NETCDF4,                     // creation mode
-            MPI_COMM_WORLD,                 // MPI communicator
-            MPI_INFO_NULL,                  // MPI_Info
-            &ncid)
-        );
-
-        // Create dimensions
-        SUCCESS_OR_DIE(nc_def_dim(
-            ncid, "Output_Parameter", num_comp, &dimid[Dim_idx::out_param_dim])
-        );
-        SUCCESS_OR_DIE(nc_def_dim(
-            ncid, "ensemble", num_ens, &dimid[Dim_idx::ensemble_dim])
-        );
-        SUCCESS_OR_DIE(nc_def_dim(
-            ncid, "trajectory", n_trajs_file, &dimid[Dim_idx::trajectory_dim])
-        );
-        SUCCESS_OR_DIE(nc_def_dim(
-            ncid, "time", num_time, &dimid[Dim_idx::time_dim])
-        );
-
-        // Create variables
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "Output_Parameter_ID",
-            NC_UINT64,  // type
-            1,          // ndims 2: matrix, 1: vector, 0: scalar
-            &dimid[Dim_idx::out_param_dim],    // ignored for ndims = 0
-            &varid[Var_idx::out_param])
-        );
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "ensemble",
-            NC_UINT64,
-            1,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::ensemble])
-        );
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "trajectory",
-            NC_UINT64,
-            1,
-            &dimid[Dim_idx::trajectory_dim],
-            &varid[Var_idx::trajectory])
-        );
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "time",
-            NC_DOUBLE,
-            1,
-            &dimid[Dim_idx::time_dim],
-            &varid[Var_idx::time])
-        );
-
-        // model state
-        for(uint32_t i=0; i<num_comp; ++i)
-            SUCCESS_OR_DIE(
-                nc_def_var(
-                    ncid,
-                    output_par_idx[i].c_str(),
-                    NC_DOUBLE,
-                    3,
-                    &dimid[Dim_idx::ensemble_dim],
-                    &varid[i]
-                )
-            );
-        // gradients
-        uint64_t offset = Var_idx::n_vars;
-        for(uint32_t i=0; i<output_grad_idx.size(); ++i)
-            SUCCESS_OR_DIE(nc_def_var(
-                ncid,
-                output_grad_idx[i].c_str(),
-                NC_DOUBLE,
-                4,
-                &dimid[Dim_idx::out_param_dim],
-                &varid[offset + i])
-            );
-
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "time_after_ascent",
-            NC_DOUBLE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::time_ascent])
-        );
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "conv_400",
-            NC_BYTE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::conv_400])
-        );
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "conv_600",
-            NC_BYTE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::conv_600])
-        );
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "slan_400",
-            NC_BYTE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::slan_400])
-        );
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "slan_600",
-            NC_BYTE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::slan_600])
-        );
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "lat",
-            NC_DOUBLE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::lat])
-        );
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "lon",
-            NC_DOUBLE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::lon])
-        );
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "step",
-            NC_UINT64,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::step])
-        );
-
-        // Add attributes; read attributes from in_filename first
-        int in_ncid;
-        SUCCESS_OR_DIE(nc_open(in_filename.c_str(), NC_NOWRITE, &in_ncid));
-
-        // get amount of attributes
-        int n_atts;
-        SUCCESS_OR_DIE(nc_inq(in_ncid, NULL, NULL, &n_atts, NULL));
-
-        // for every attribute, get the name, type and length, and the values
-        for(int i=0; i<n_atts; i++)
-        {
-            char att_name[NC_MAX_NAME];
-            SUCCESS_OR_DIE(nc_inq_attname(in_ncid, NC_GLOBAL, i, att_name));
-            nc_type att_type;
-            size_t att_len;
-            SUCCESS_OR_DIE(nc_inq_att(
-                in_ncid, NC_GLOBAL, att_name, &att_type, &att_len)
-            );
-            std::vector<nc_vlen_t> att_val(att_len);
-            SUCCESS_OR_DIE(nc_get_att(
-                in_ncid, NC_GLOBAL, att_name, att_val.data())
-            );
-            SUCCESS_OR_DIE(nc_put_att(
-                ncid, NC_GLOBAL, att_name, att_type, att_len, att_val.data())
-            );
-        }
-        ncclose(in_ncid);
-
-        // time
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::time],
-            "long_name",
-            strlen("time"),
-            "time")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::time],
-            "standard_name",
-            strlen("time"),
-            "time")
-        );
-        // att_val = "seconds since"; // TODO reference time
-        // SUCCESS_OR_DIE(nc_put_att_text(
-        //     ncid,
-        //     varid[Var_idx::time],
-        //     "units",
-        //     strlen(att_val.c_str()),
-        //     att_val.c_str())
-        // );
-        // att_val = ""; // TODO reference time
-        // SUCCESS_OR_DIE(nc_put_att_text(
-        //     ncid,
-        //     varid[Var_idx::time],
-        //     "forecast_inittime",
-        //     strlen(att_val.c_str()),
-        //     att_val.c_str())
-        // );
-        // att_val = ""; // TODO reference time
-        // SUCCESS_OR_DIE(nc_put_att_text(
-        //     ncid,
-        //     varid[Var_idx::time],
-        //     "trajectory_starttime",
-        //     strlen(att_val.c_str()),
-        //     att_val.c_str())
-        // );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::out_param],
-            "long_name",
-            strlen("gradients are calculated w.r.t. this output parameter"),
-            "gradients are calculated w.r.t. this output parameter")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::out_param],
-            "standard_name",
-            strlen("output_parameter_id"),
-            "output_parameter_id")
-        );
-
-        auto put_att_mass = [&](
-            const char *mass_name,
-            const char *long_mass_name,
-            auto &varid)
-        {
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "units",
-                strlen("kg m^-3"),
-                "kg m^-3")
-            );
-
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "auxiliary_data",
-                strlen("yes"),
-                "yes")
-            );
-
-            const char * att_val = (std::string(long_mass_name) + " mass density").c_str();
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "long_name",
-                strlen(att_val),
-                att_val)
-            );
-
-            const char * att_val_2 = (std::string(mass_name) + "_mass_density").c_str();
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "standard_name",
-                strlen(att_val_2),
-                att_val_2)
-            );
-        };
-
-        put_att_mass("water_vapor", "water vapor", varid[Var_idx::qv]);
-        put_att_mass("cloud_droplet", "cloud droplet", varid[Var_idx::qc]);
-        put_att_mass("rain_droplet", "rain droplet", varid[Var_idx::qr]);
-        put_att_mass("snow", "snow", varid[Var_idx::qs]);
-        put_att_mass("ice", "ice", varid[Var_idx::qi]);
-        put_att_mass("graupel", "graupel", varid[Var_idx::qg]);
-        put_att_mass("hail", "hail", varid[Var_idx::qh]);
-
-        auto put_att_nums = [&](
-            const char *name,
-            const char *long_name,
-            auto &varid)
-        {
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "units",
-                strlen("m^-3"),
-                "m^-3")
-            );
-
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "auxiliary_data",
-                strlen("yes"),
-                "yes")
-            );
-
-            const char *att_val = (std::string(long_name) + " number density").c_str();
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "long_name",
-                strlen(att_val),
-                att_val)
-            );
-
-            const char *att_val_2 = (std::string(name) + "_number_density").c_str();
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "standard_name",
-                strlen(att_val_2),
-                att_val_2)
-            );
-        };
-
-        put_att_nums("cloud_droplet", "cloud droplet", varid[Var_idx::ncloud]);
-        put_att_nums("rain_droplet", "rain droplet", varid[Var_idx::nrain]);
-        put_att_nums("snow", "snow", varid[Var_idx::nsnow]);
-        put_att_nums("ice", "ice", varid[Var_idx::nice]);
-        put_att_nums("graupel", "graupel", varid[Var_idx::ngraupel]);
-        put_att_nums("hail", "hail", varid[Var_idx::nhail]);
-
-        auto put_att_mass_sed = [&](
-            const char *mass_name,
-            const char *long_mass_name,
-            auto &varid)
-        {
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "units",
-                strlen("kg m^-3 s^-1"),
-                "kg m^-3 s^-1")
-            );
-
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "auxiliary_data",
-                strlen("yes"),
-                "yes")
-            );
-
-            const char *att_val = ("sedimentation of " + std::string(long_mass_name) + " mass").c_str();
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "long_name",
-                strlen(att_val),
-                att_val)
-            );
-
-            const char *att_val_2 = ("sedi_outflux_of_" + std::string(mass_name) + "_mass").c_str();
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "standard_name",
-                strlen(att_val_2),
-                att_val_2)
-            );
-        };
-
-        put_att_mass_sed("rain_droplet", "rain droplet", varid[Var_idx::qr_out]);
-        put_att_mass_sed("snow", "snow", varid[Var_idx::qs_out]);
-        put_att_mass_sed("ice", "ice", varid[Var_idx::qi_out]);
-        put_att_mass_sed("graupel", "graupel", varid[Var_idx::qg_out]);
-        put_att_mass_sed("hail", "hail", varid[Var_idx::qh_out]);
-
-        auto put_att_nums_sed = [&](
-            const char *name,
-            const char *long_name,
-            auto &varid)
-        {
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "units",
-                strlen("m^-3 s^-1"),
-                "m^-3 s^-1")
-            );
-
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "auxiliary_data",
-                strlen("yes"),
-                "yes")
-            );
-
-            const char *att_val = ("sedimentation of " + std::string(long_name) + " number").c_str();
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "long_name",
-                strlen(att_val),
-                att_val)
-            );
-
-            const char *att_val_2 = ("sedi_outflux_of_" + std::string(name) + "_number").c_str();
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "standard_name",
-                strlen(att_val_2),
-                att_val_2)
-            );
-        };
-
-        put_att_nums_sed("rain_droplet", "rain droplet", varid[Var_idx::nr_out]);
-        put_att_nums_sed("snow", "snow", varid[Var_idx::ns_out]);
-        put_att_nums_sed("ice", "ice", varid[Var_idx::ni_out]);
-        put_att_nums_sed("graupel", "graupel", varid[Var_idx::ng_out]);
-        put_att_nums_sed("hail", "hail", varid[Var_idx::nh_out]);
-
-        // all gradients are auxiliary data
-        for(int i=0; i<num_par; i++)
-        {
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid[Var_idx::n_vars + i],
-                "auxiliary_data",
-                strlen("yes"),
-                "yes")
-            );
-        }
-
-        // Pressure
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::pressure],
-            "long_name",
-            strlen("pressure"),
-            "pressure")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::pressure],
-            "standard_name",
-            strlen("air_pressure"),
-            "air_pressure")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::pressure],
-            "units",
-            strlen("Pa"),
-            "Pa")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::pressure],
-            "positive",
-            strlen("down"),
-            "down")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::pressure],
-            "axis",
-            strlen("Z"),
-            "Z")
-        );
-
-        // Temperature
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::temperature],
-            "long_name",
-            strlen("temperature"),
-            "temperature")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::temperature],
-            "standard_name",
-            strlen("air_temperature"),
-            "air_temperature")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::temperature],
-            "units",
-            strlen("K"),
-            "K")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::temperature],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // Ascent
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::ascent],
-            "long_name",
-            strlen("ascend velocity"),
-            "ascend velocity")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::ascent],
-            "standard_name",
-            strlen("ascend_velocity"),
-            "ascend_velocity")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::ascent],
-            "units",
-            strlen("m s^-1"),
-            "m s^-1")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::ascent],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // Saturation
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::sat],
-            "long_name",
-            strlen("saturation"),
-            "saturation")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::sat],
-            "standard_name",
-            strlen("saturation"),
-            "saturation")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::sat],
-            "units",
-            strlen("percentage"),
-            "percentage")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::sat],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // height
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::height],
-            "long_name",
-            strlen("height above mean sea level"),
-            "height above mean sea level")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::height],
-            "standard_name",
-            strlen("height"),
-            "height")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::height],
-            "units",
-            strlen("m AMSL"),
-            "m AMSL")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::height],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // inactive CCN number
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::inactive],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // depostion
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::dep],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // sublimination
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::sub],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // latent heat
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lat_heat],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // latent cool
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lat_cool],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // time after ascent
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::time_ascent],
-            "long_name",
-            strlen("time after rapid ascent started"),
-            "time after rapid ascent started")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::time_ascent],
-            "standard_name",
-            strlen("time_after_ascent"),
-            "time_after_ascent")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::time_ascent],
-            "units",
-            strlen("seconds since start of convective/slantwise ascent"),
-            "seconds since start of convective/slantwise ascent")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::time_ascent],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // lat
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lat],
-            "long_name",
-            strlen("rotated latitude"),
-            "rotated latitude")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lat],
-            "standard_name",
-            strlen("latitude"),
-            "latitude")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lat],
-            "units",
-            strlen("degrees"),
-            "degrees")
-        );
-
-        // lon
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lon],
-            "long_name",
-            strlen("rotated longitude"),
-            "rotated longitude")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lon],
-            "standard_name",
-            strlen("longitude"),
-            "longitude")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lon],
-            "units",
-            strlen("degrees"),
-            "degrees")
-        );
-
-        // conv_400
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_400],
-            "long_name",
-            strlen("convective 400hPa ascent"),
-            "convective 400hPa ascent")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_400],
-            "standard_name",
-            strlen("convective_400hPa_ascent"),
-            "convective_400hPa_ascent")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_400],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // conv_600
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_600],
-            "long_name",
-            strlen("convective 600hPa ascent"),
-            "convective 600hPa ascent")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_600],
-            "standard_name",
-            strlen("convective_600hPa_ascent"),
-            "convective_600hPa_ascent")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_600],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // slan_400
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_400],
-            "long_name",
-            strlen("slantwise 400hPa ascent"),
-            "slantwise 400hPa ascent")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_400],
-            "standard_name",
-            strlen("slantwise_400hPa_ascent"),
-            "slantwise_400hPa_ascent")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_400],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_600],
-            "long_name",
-            strlen("slantwise 600hPa ascent"),
-            "slantwise 600hPa ascent")
-        );
-
-        // Does this work?
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_600],
-            "standard_name",
-            strlen("slantwise_600hPa_ascent"),
-            "slantwise_600hPa_ascent")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_600],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        // step
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::step],
-            "long_name",
-            strlen("simulation step"),
-            "simulation step")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::step],
-            "standard_name",
-            strlen("step"),
-            "step")
-        );
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::step],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes")
-        );
-
-        for(auto &id: varid)
-            SUCCESS_OR_DIE(nc_var_par_access(ncid, id, NC_INDEPENDENT));
-        SUCCESS_OR_DIE(nc_enddef(ncid));
+        // Unfortunately, it is likely to run into an HDF Error if
+        // many parameters are investigated in combination with the
+        // amount of attributes for the time dimension.
+        // We have to create the file as a single process, close it and
+        // open it in parallel again for writing purpose
         if(rank == 0)
         {
+            SUCCESS_OR_DIE(nc_create(
+                (filename + ".nc_wcb").c_str(), // path
+                NC_NETCDF4,                     // creation mode
+                &ncid)
+            );
+
+            // Create dimensions
+            SUCCESS_OR_DIE(nc_def_dim(
+                ncid, "Output_Parameter", num_comp, &dimid[Dim_idx::out_param_dim])
+            );
+            SUCCESS_OR_DIE(nc_def_dim(
+                ncid, "ensemble", num_ens, &dimid[Dim_idx::ensemble_dim])
+            );
+            SUCCESS_OR_DIE(nc_def_dim(
+                ncid, "trajectory", n_trajs_file, &dimid[Dim_idx::trajectory_dim])
+            );
+            SUCCESS_OR_DIE(nc_def_dim(
+                ncid, "time", num_time, &dimid[Dim_idx::time_dim])
+            );
+
+            // Create variables
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "Output_Parameter_ID",
+                NC_UINT64,  // type
+                1,          // ndims 2: matrix, 1: vector, 0: scalar
+                &dimid[Dim_idx::out_param_dim],    // ignored for ndims = 0
+                &varid[Var_idx::out_param])
+            );
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "ensemble",
+                NC_UINT64,
+                1,
+                &dimid[Dim_idx::ensemble_dim],
+                &varid[Var_idx::ensemble])
+            );
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "trajectory",
+                NC_UINT64,
+                1,
+                &dimid[Dim_idx::trajectory_dim],
+                &varid[Var_idx::trajectory])
+            );
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "time",
+                NC_DOUBLE,
+                1,
+                &dimid[Dim_idx::time_dim],
+                &varid[Var_idx::time])
+            );
+
+            // model state
+            for(uint32_t i=0; i<num_comp; ++i)
+                SUCCESS_OR_DIE(
+                    nc_def_var(
+                        ncid,
+                        output_par_idx[i].c_str(),
+                        NC_DOUBLE,
+                        3,
+                        &dimid[Dim_idx::ensemble_dim],
+                        &varid[i]
+                    )
+                );
+            // gradients
+            for(uint32_t i=0; i<output_grad_idx.size(); ++i)
+                SUCCESS_OR_DIE(nc_def_var(
+                    ncid,
+                    output_grad_idx[i].c_str(),
+                    NC_DOUBLE,
+                    4,
+                    &dimid[Dim_idx::out_param_dim],
+                    &varid[Var_idx::n_vars + i])
+                );
+
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "time_after_ascent",
+                NC_DOUBLE,
+                3,
+                &dimid[Dim_idx::ensemble_dim],
+                &varid[Var_idx::time_ascent])
+            );
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "conv_400",
+                NC_BYTE,
+                3,
+                &dimid[Dim_idx::ensemble_dim],
+                &varid[Var_idx::conv_400])
+            );
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "conv_600",
+                NC_BYTE,
+                3,
+                &dimid[Dim_idx::ensemble_dim],
+                &varid[Var_idx::conv_600])
+            );
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "slan_400",
+                NC_BYTE,
+                3,
+                &dimid[Dim_idx::ensemble_dim],
+                &varid[Var_idx::slan_400])
+            );
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "slan_600",
+                NC_BYTE,
+                3,
+                &dimid[Dim_idx::ensemble_dim],
+                &varid[Var_idx::slan_600])
+            );
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "lat",
+                NC_DOUBLE,
+                3,
+                &dimid[Dim_idx::ensemble_dim],
+                &varid[Var_idx::lat])
+            );
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "lon",
+                NC_DOUBLE,
+                3,
+                &dimid[Dim_idx::ensemble_dim],
+                &varid[Var_idx::lon])
+            );
+            SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "step",
+                NC_UINT64,
+                3,
+                &dimid[Dim_idx::ensemble_dim],
+                &varid[Var_idx::step])
+            );
+
+            // Add attributes; read attributes from in_filename first
+            int in_ncid;
+            SUCCESS_OR_DIE(nc_open(in_filename.c_str(), NC_NOWRITE, &in_ncid));
+
+            // get amount of attributes
+            int n_atts;
+            SUCCESS_OR_DIE(nc_inq(in_ncid, NULL, NULL, &n_atts, NULL));
+
+            // for every attribute, get the name, type and length, and the values
+            for(int i=0; i<n_atts; i++)
+            {
+                char att_name[NC_MAX_NAME];
+                SUCCESS_OR_DIE(nc_inq_attname(in_ncid, NC_GLOBAL, i, att_name));
+                nc_type att_type;
+                size_t att_len;
+                SUCCESS_OR_DIE(nc_inq_att(
+                    in_ncid, NC_GLOBAL, att_name, &att_type, &att_len)
+                );
+                std::vector<nc_vlen_t> att_val(att_len);
+                SUCCESS_OR_DIE(nc_get_att(
+                    in_ncid, NC_GLOBAL, att_name, att_val.data())
+                );
+                SUCCESS_OR_DIE(nc_put_att(
+                    ncid, NC_GLOBAL, att_name, att_type, att_len, att_val.data())
+                );
+            }
+            // time
+            int in_time_id;
+            SUCCESS_OR_DIE(nc_inq_varid(in_ncid, "time", &in_time_id));
+            SUCCESS_OR_DIE(nc_inq_varnatts(in_ncid, in_time_id, &n_atts));
+            for(int i=0; i<n_atts; i++)
+            {
+                char att_name[NC_MAX_NAME];
+                SUCCESS_OR_DIE(nc_inq_attname(in_ncid, in_time_id, i, att_name));
+                if(!std::strcmp(att_name, "_FillValue"))
+                {
+                    continue;
+                }
+                // nc_type att_type;
+                size_t att_len;
+                SUCCESS_OR_DIE(nc_inq_att(
+                    in_ncid, in_time_id, att_name, NULL, &att_len)
+                );
+                char att_val[att_len];
+                SUCCESS_OR_DIE(nc_get_att(
+                    in_ncid, in_time_id, att_name, att_val)
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid[Var_idx::time],
+                    att_name,
+                    att_len,
+                    att_val)
+                );
+            }
+            SUCCESS_OR_DIE(ncclose(in_ncid));
+
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::out_param],
+                "long_name",
+                strlen("gradients are calculated w.r.t. this output parameter"),
+                "gradients are calculated w.r.t. this output parameter")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::out_param],
+                "standard_name",
+                strlen("output_parameter_id"),
+                "output_parameter_id")
+            );
+
+            auto put_att_mass = [&](
+                const char *mass_name,
+                const char *long_mass_name,
+                auto &varid)
+            {
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "units",
+                    strlen("kg m^-3"),
+                    "kg m^-3")
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "auxiliary_data",
+                    strlen("yes"),
+                    "yes")
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "long_name",
+                    strlen(long_mass_name),
+                    long_mass_name)
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "standard_name",
+                    strlen(mass_name),
+                    mass_name)
+                );
+            };
+            put_att_mass("water_vapor_mass_density", "water vapor mass density", varid[Var_idx::qv]);
+            put_att_mass("cloud_droplet_mass_density", "cloud droplet mass density", varid[Var_idx::qc]);
+            put_att_mass("rain_droplet_mass_density", "rain droplet mass density", varid[Var_idx::qr]);
+            put_att_mass("snow_mass_density", "snow mass density", varid[Var_idx::qs]);
+            put_att_mass("ice_mass_density", "ice mass density", varid[Var_idx::qi]);
+            put_att_mass("graupel_mass_density", "graupel mass density", varid[Var_idx::qg]);
+            put_att_mass("hail_mass_density", "hail mass density", varid[Var_idx::qh]);
+
+            auto put_att_nums = [&](
+                const char *name,
+                const char *long_name,
+                auto &varid)
+            {
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "units",
+                    strlen("m^-3"),
+                    "m^-3")
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "auxiliary_data",
+                    strlen("yes"),
+                    "yes")
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "long_name",
+                    strlen(long_name),
+                    long_name)
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "standard_name",
+                    strlen(name),
+                    name)
+                );
+            };
+            put_att_nums("cloud_droplet_number_density", "cloud droplet number density", varid[Var_idx::ncloud]);
+            put_att_nums("rain_droplet_number_density", "rain droplet number density", varid[Var_idx::nrain]);
+            put_att_nums("snow_number_density", "snow number density", varid[Var_idx::nsnow]);
+            put_att_nums("ice_number_density", "ice number density", varid[Var_idx::nice]);
+            put_att_nums("graupel_number_density", "graupel number density", varid[Var_idx::ngraupel]);
+            put_att_nums("hail_number_density", "hail number density", varid[Var_idx::nhail]);
+
+            auto put_att_mass_sed = [&](
+                const char *mass_name,
+                const char *long_mass_name,
+                auto &varid)
+            {
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "units",
+                    strlen("kg m^-3 s^-1"),
+                    "kg m^-3 s^-1")
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "auxiliary_data",
+                    strlen("yes"),
+                    "yes")
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "long_name",
+                    strlen(long_mass_name),
+                    long_mass_name)
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "standard_name",
+                    strlen(mass_name),
+                    mass_name)
+                );
+            };
+            put_att_mass_sed(
+                "sedi_outflux_of_rain_droplet_mass",
+                "sedimentation of rain droplet mass",
+                varid[Var_idx::qr_out]
+            );
+            put_att_mass_sed(
+                "sedi_outflux_of_snow_mass",
+                "sedimentation of snow mass",
+                varid[Var_idx::qs_out]
+            );
+            put_att_mass_sed(
+                "sedi_outflux_of_ice_mass",
+                "sedimentation of ice mass",
+                varid[Var_idx::qi_out]
+            );
+            put_att_mass_sed(
+                "sedi_outflux_of_graupel_mass",
+                "sedimentation of graupel mass",
+                varid[Var_idx::qg_out]
+            );
+            put_att_mass_sed(
+                "sedi_outflux_of_hail_mass",
+                "sedimentation of hail mass",
+                varid[Var_idx::qh_out]
+            );
+
+            auto put_att_nums_sed = [&](
+                const char *name,
+                const char *long_name,
+                auto &varid)
+            {
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "units",
+                    strlen("m^-3 s^-1"),
+                    "m^-3 s^-1")
+                );
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "auxiliary_data",
+                    strlen("yes"),
+                    "yes")
+                );
+                const char *att_val = ("sedimentation of " + std::string(long_name) + " number").c_str();
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "long_name",
+                    strlen(att_val),
+                    att_val)
+                );
+                const char *att_val_2 = ("sedi_outflux_of_" + std::string(name) + "_number").c_str();
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid,
+                    "standard_name",
+                    strlen(att_val_2),
+                    att_val_2)
+                );
+            };
+            put_att_nums_sed("sedi_outflux_of_rain_droplet_number", "sedimentation of rain droplet number", varid[Var_idx::nr_out]);
+            put_att_nums_sed("sedi_outflux_of_snow_number", "sedimentation of snow number", varid[Var_idx::ns_out]);
+            put_att_nums_sed("sedi_outflux_of_ice_number", "sedimentation of ice number", varid[Var_idx::ni_out]);
+            put_att_nums_sed("sedi_outflux_of_graupel_number", "sedimentation of graupel number", varid[Var_idx::ng_out]);
+            put_att_nums_sed("sedi_outflux_of_hail_number", "sedimentation of hail number", varid[Var_idx::nh_out]);
+
+            // all gradients are auxiliary data
+            for(int i=0; i<num_par; i++)
+            {
+                SUCCESS_OR_DIE(nc_put_att_text(
+                    ncid,
+                    varid[Var_idx::n_vars + i],
+                    "auxiliary_data",
+                    strlen("yes"),
+                    "yes")
+                );
+            }
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::pressure],
+                "long_name",
+                strlen("pressure"),
+                "pressure")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::pressure],
+                "standard_name",
+                strlen("air_pressure"),
+                "air_pressure")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::pressure],
+                "units",
+                strlen("Pa"),
+                "Pa")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::pressure],
+                "positive",
+                strlen("down"),
+                "down")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::pressure],
+                "axis",
+                strlen("Z"),
+                "Z")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::temperature],
+                "long_name",
+                strlen("temperature"),
+                "temperature")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::temperature],
+                "standard_name",
+                strlen("air_temperature"),
+                "air_temperature")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::temperature],
+                "units",
+                strlen("K"),
+                "K")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::temperature],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::ascent],
+                "long_name",
+                strlen("ascend velocity"),
+                "ascend velocity")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::ascent],
+                "standard_name",
+                strlen("ascend_velocity"),
+                "ascend_velocity")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::ascent],
+                "units",
+                strlen("m s^-1"),
+                "m s^-1")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::ascent],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::sat],
+                "long_name",
+                strlen("saturation"),
+                "saturation")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::sat],
+                "standard_name",
+                strlen("saturation"),
+                "saturation")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::sat],
+                "units",
+                strlen("percentage"),
+                "percentage")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::sat],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::height],
+                "long_name",
+                strlen("height above mean sea level"),
+                "height above mean sea level")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::height],
+                "standard_name",
+                strlen("height"),
+                "height")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::height],
+                "units",
+                strlen("m AMSL"),
+                "m AMSL")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::height],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::inactive],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::dep],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::sub],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::lat_heat],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::lat_cool],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::time_ascent],
+                "long_name",
+                strlen("time after rapid ascent started"),
+                "time after rapid ascent started")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::time_ascent],
+                "standard_name",
+                strlen("time_after_ascent"),
+                "time_after_ascent")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::time_ascent],
+                "units",
+                strlen("seconds since start of convective/slantwise ascent"),
+                "seconds since start of convective/slantwise ascent")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::time_ascent],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::lat],
+                "long_name",
+                strlen("rotated latitude"),
+                "rotated latitude")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::lat],
+                "standard_name",
+                strlen("latitude"),
+                "latitude")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::lat],
+                "units",
+                strlen("degrees"),
+                "degrees")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::lon],
+                "long_name",
+                strlen("rotated longitude"),
+                "rotated longitude")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::lon],
+                "standard_name",
+                strlen("longitude"),
+                "longitude")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::lon],
+                "units",
+                strlen("degrees"),
+                "degrees")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::conv_400],
+                "long_name",
+                strlen("convective 400hPa ascent"),
+                "convective 400hPa ascent")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::conv_400],
+                "standard_name",
+                strlen("convective_400hPa_ascent"),
+                "convective_400hPa_ascent")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::conv_400],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::conv_600],
+                "long_name",
+                strlen("convective 600hPa ascent"),
+                "convective 600hPa ascent")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::conv_600],
+                "standard_name",
+                strlen("convective_600hPa_ascent"),
+                "convective_600hPa_ascent")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::conv_600],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::slan_400],
+                "long_name",
+                strlen("slantwise 400hPa ascent"),
+                "slantwise 400hPa ascent")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::slan_400],
+                "standard_name",
+                strlen("slantwise_400hPa_ascent"),
+                "slantwise_400hPa_ascent")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::slan_400],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::slan_600],
+                "long_name",
+                strlen("slantwise 600hPa ascent"),
+                "slantwise 600hPa ascent")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::slan_600],
+                "standard_name",
+                strlen("slantwise_600hPa_ascent"),
+                "slantwise_600hPa_ascent")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::slan_600],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::step],
+                "long_name",
+                strlen("simulation step"),
+                "simulation step")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::step],
+                "standard_name",
+                strlen("step"),
+                "step")
+            );
+            SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::step],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes")
+            );
+
+            SUCCESS_OR_DIE(nc_enddef(ncid));
             // Write dimensions here
             std::vector<size_t> startp, countp;
             startp.push_back(0);
@@ -942,7 +857,7 @@ void output_handle_t::setup(
                     varid[Var_idx::time],       // varid
                     startp.data(),              // startp
                     countp.data(),              // countp
-                    time_steps.data()            // op
+                    time_steps.data()           // op
                 )
             );
 
@@ -987,412 +902,130 @@ void output_handle_t::setup(
                     data.data()
                 )
             );
+            SUCCESS_OR_DIE(ncclose(ncid));
         }
-        // std::vector<nc_vlen_t> att_in;
-        // SUCCESS_OR_DIE(nc_get_att(in_ncid, NC_GLOBAL, "", att_in));
+        // Barrier here?
+        // Open it again for writing with all processes
+        SUCCESS_OR_DIE(
+            nc_open_par(
+                (filename + ".nc_wcb").c_str(),
+                NC_WRITE,
+                MPI_COMM_WORLD,
+                MPI_INFO_NULL,
+                &ncid
+            )
+        );
+        // gather all necessary variable ids
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "Output_Parameter_ID",
+                &varid[Var_idx::out_param]
+            )
+        );
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "ensemble",
+                &varid[Var_idx::ensemble]
+            )
+        );
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "trajectory",
+                &varid[Var_idx::trajectory]
+            )
+        );
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "time",
+                &varid[Var_idx::time]
+            )
+        );
 
-        // NcFile in_datafile(in_filename, NcFile::read);
-        // // global attributes
-        // auto attributes = in_datafile.getAtts();
-        // for(auto & name_attr: attributes)
-        // {
-        //     auto attribute = name_attr.second;
-        //     NcType type = attribute.getType();
-        //     if(type.getName() == "double")
-        //     {
-        //         std::vector<float> values(1);
-        //         attribute.getValues(values.data());
-        //         datafile.putAtt(attribute.getName(), type, values[0]);
-        //     } else if(type.getName() == "int64"
-        //         || type.getName() == "int32" || type.getName() == "int")
-        //     {
-        //         std::vector<int> values(1);
-        //         attribute.getValues(values.data());
-        //         datafile.putAtt(attribute.getName(), type, values[0]);
-        //     } else if(type.getName() == "char")
-        //     {
-        //         std::string values;
-        //         attribute.getValues(values);
-        //         datafile.putAtt(attribute.getName(), values);
-        //     }
-        // }
+        // model state
+        for(uint32_t i=0; i<num_comp; ++i)
+            SUCCESS_OR_DIE(
+                nc_inq_varid(
+                    ncid,
+                    output_par_idx[i].c_str(),
+                    &varid[i]
+                )
+            );
 
-        // // column attributes
+        // gradients
+        for(uint32_t i=0; i<output_grad_idx.size(); ++i)
+            SUCCESS_OR_DIE(
+                nc_inq_varid(
+                    ncid,
+                    output_grad_idx[i].c_str(),
+                    &varid[Var_idx::n_vars + i]
+                )
+            );
 
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "time_after_ascent",
+                &varid[Var_idx::time_ascent]
+            )
+        );
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "conv_400",
+                &varid[Var_idx::conv_400]
+            )
+        );
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "conv_600",
+                &varid[Var_idx::conv_600]
+            )
+        );
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "slan_400",
+                &varid[Var_idx::slan_400]
+            )
+        );
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "slan_600",
+                &varid[Var_idx::slan_600]
+            )
+        );
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "lat",
+                &varid[Var_idx::lat]
+            )
+        );
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "lon",
+                &varid[Var_idx::lon]
+            )
+        );
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "step",
+                &varid[Var_idx::step]
+            )
+        );
 
-
-
-
-
-//         if(rank != 0)
-//         {
-//             datafile.open(filename + ".nc_wcb", NcFile::write);
-//         } else
-//         {
-//             std::cout << "nc_var_par_access\n";
-//             SUCCESS_OR_DIE(nc_var_par_access(ncid, NC_GLOBAL, NC_INDEPENDENT));
-//             std::cout << "Return\n";
-//             return;
-//         }
-
-//         // try
-//         // {
-//         //     std::cout << "File exists?\n";
-//         //     datafile.open(filename + ".nc_wcb", NcFile::newFile);
-//         //     std::cout << "No\n";
-//         // }
-//         // catch(const std::exception& e)
-//         // {
-//         //     std::cout << "Yes\n";
-//         //     SUCCESS_OR_DIE(nc_var_par_access(ncid, NC_GLOBAL, NC_INDEPENDENT));
-//         //     std::cout << "Return\n";
-//         //     // Apparently the file exists already
-//         //     // fill_vectors();
-//         //     return;
-//         // }
-//         // Add dimensions
-//         NcDim param_dim = datafile.addDim("Output Parameter", num_comp);
-//         NcDim ens_dim = datafile.addDim("ensemble", 1);
-//         NcDim traj_dim = datafile.addDim("trajectory", n_trajs_file);
-//         NcDim time_dim = datafile.addDim("time"); // unlimited dimension
-
-//         NcVar param_var = datafile.addVar("Output Parameter", ncString, param_dim);
-//         NcVar ens_var = datafile.addVar("ensemble", ncInt64, ens_dim);
-//         NcVar traj_var = datafile.addVar("trajectory", ncInt64, traj_dim);
-
-//         ens_var.setCompression(
-//             enableShuffleFilter, enableDeflateFilter, deflateLevel);
-//         traj_var.setCompression(
-//             enableShuffleFilter, enableDeflateFilter, deflateLevel);
-//         param_var.setCompression(
-//             enableShuffleFilter, enableDeflateFilter, deflateLevel);
-
-//         std::vector<uint64_t> startp, countp;
-//         startp.push_back(0);
-//         countp.push_back(n_trajs_file);
-//         std::vector<uint64_t> traj_ids(n_trajs_file);
-//         for(uint64_t i=0; i<n_trajs_file; i++)
-//         {
-//             traj_ids[i] = i;
-//         }
-//         ens_var.putVar(&cc.ensemble_id);
-//         traj_var.putVar(startp, countp, traj_ids.data());
-
-
-//         startp[0] = 0;
-//         countp[0] = 1;
-//         for(const auto &p: output_par_idx)
-//         {
-//             param_var.putVar(startp, countp, &p);
-//             startp[0]++;
-//         }
-//         std::vector<NcDim> dim_vector;
-//         dim_vector.push_back(ens_dim);
-//         dim_vector.push_back(traj_dim);
-//         dim_vector.push_back(time_dim);
-
-//         for(auto &out_par: output_par_idx)
-//             var_vector.emplace_back(datafile.addVar(out_par, ncDouble, dim_vector));
-//         std::vector<NcDim> dim_vector_grad;
-
-//         dim_vector_grad.push_back(param_dim);
-//         dim_vector_grad.push_back(ens_dim);
-//         dim_vector_grad.push_back(traj_dim);
-//         dim_vector_grad.push_back(time_dim);
-//         for(auto &out_grad: output_grad_idx)
-//             var_vector.emplace_back(datafile.addVar(out_grad, ncDouble, dim_vector_grad));
-
-//         var_vector.emplace_back(datafile.addVar("time_after_ascent", ncDouble, dim_vector));
-//         var_vector.emplace_back(datafile.addVar("time", ncDouble, time_dim));
-//         var_vector.emplace_back(datafile.addVar("conv_400", ncByte, dim_vector));
-//         var_vector.emplace_back(datafile.addVar("conv_600", ncByte, dim_vector));
-//         var_vector.emplace_back(datafile.addVar("slan_400", ncByte, dim_vector));
-//         var_vector.emplace_back(datafile.addVar("slan_600", ncByte, dim_vector));
-//         var_vector.emplace_back(datafile.addVar("type", ncString, dim_vector));
-//         var_vector.emplace_back(datafile.addVar("lat", ncDouble, dim_vector));
-//         var_vector.emplace_back(datafile.addVar("lon", ncDouble, dim_vector));
-//         var_vector.emplace_back(datafile.addVar("step", ncUint64, dim_vector));
-
-//         for(auto &var: var_vector)
-//             var.setCompression(
-//                 enableShuffleFilter, enableDeflateFilter, deflateLevel);
-
-//         NcFile in_datafile(in_filename, NcFile::read);
-
-//         // global attributes
-//         auto attributes = in_datafile.getAtts();
-//         for(auto & name_attr: attributes)
-//         {
-//             auto attribute = name_attr.second;
-//             NcType type = attribute.getType();
-//             if(type.getName() == "double")
-//             {
-//                 std::vector<float> values(1);
-//                 attribute.getValues(values.data());
-//                 datafile.putAtt(attribute.getName(), type, values[0]);
-//             } else if(type.getName() == "int64"
-//                 || type.getName() == "int32" || type.getName() == "int")
-//             {
-//                 std::vector<int> values(1);
-//                 attribute.getValues(values.data());
-//                 datafile.putAtt(attribute.getName(), type, values[0]);
-//             } else if(type.getName() == "char")
-//             {
-//                 std::string values;
-//                 attribute.getValues(values);
-//                 datafile.putAtt(attribute.getName(), values);
-//             }
-//         }
-//         // add another global attribute describing where this ensemble
-//         // originates from
-//         std::string att_name = "Ensemble History";
-//         std::string att_val = cc.ens_desc;
-//         datafile.putAtt(
-//             att_name,
-//             att_val);
-//         // column attributes
-//         // Output Parameter is new. Hence we add it like that:
-//         att_name = "long_name";
-//         att_val = "gradients are calculated w.r.t. this output parameter";
-//         param_var.putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "standard_name";
-//         att_val = "output_parameter";
-//         param_var.putAtt(
-//             att_name,
-//             att_val);
-//         // Same for step
-//         uint32_t offset = num_comp+num_par;
-//         NcVar *var = &var_vector[offset+9];
-//         att_val = "step";
-//         var->putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "long_name";
-//         att_val = "simulation step";
-//         var->putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "auxiliary_data";
-//         att_val = "yes";
-//         var->putAtt(att_name, att_val);
-//         // and hail N
-//         att_name = "long_name";
-//         att_val = "specific hail number";
-//         var_vector[Nh_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "standard_name";
-//         att_val = "specific_number_of_hail_in_air";
-//         var_vector[Nh_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "units";
-//         att_val = "kg^-1";
-//         var_vector[Nh_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "auxiliary_data";
-//         att_val = "yes";
-//         var_vector[Nh_idx].putAtt(att_name, att_val);
-//         // hail out
-//         att_name = "long_name";
-//         att_val = "sedimentation of specific hail number";
-//         var_vector[Nh_out_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "standard_name";
-//         att_val = "sedi_outflux_of_hail_number";
-//         var_vector[Nh_out_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "units";
-//         att_val = "kg^-1 s^-1";
-//         var_vector[Nh_out_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "auxiliary_data";
-//         att_val = "yes";
-//         var_vector[Nh_out_idx].putAtt(att_name, att_val);
-
-//         // hail q
-//         att_name = "long_name";
-//         att_val = "specific hail content";
-//         var_vector[qh_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "standard_name";
-//         att_val = "mass_fraction_of_hail_in_air";
-//         var_vector[qh_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "units";
-//         att_val = "kg kg^-1";
-//         var_vector[qh_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "auxiliary_data";
-//         att_val = "yes";
-//         var_vector[qh_idx].putAtt(att_name, att_val);
-
-//         // hail q out
-//         att_name = "long_name";
-//         att_val = "sedimentation of hail mixing ratio";
-//         var_vector[qh_out_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "standard_name";
-//         att_val = "sedi_outflux_of_hail";
-//         var_vector[qh_out_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "units";
-//         att_val = "kg kg^-1 s^-1";
-//         var_vector[qh_out_idx].putAtt(
-//             att_name,
-//             att_val);
-//         att_name = "auxiliary_data";
-//         att_val = "yes";
-//         var_vector[qh_out_idx].putAtt(att_name, att_val);
-
-//         auto vars = in_datafile.getVars();
-//         for(auto & name_var: vars)
-//         {
-//             auto column_name = name_var.first;
-//             auto it = std::find(output_par_idx.begin(), output_par_idx.end(), column_name);
-//             if(it != output_par_idx.end())
-//             {
-//                 uint32_t idx = std::distance(output_par_idx.begin(), it);
-//                 var = &var_vector[idx];
-//             }
-//             else if(column_name == "time_after_ascent")
-//                 var = &var_vector[offset];
-//             else if(column_name == "time")
-//                 var = &var_vector[offset+1];
-//             else if(column_name == "conv_400")
-//                 var = &var_vector[offset+2];
-//             else if(column_name == "conv_600")
-//                 var = &var_vector[offset+3];
-//             else if(column_name == "slan_400")
-//                 var = &var_vector[offset+4];
-//             else if(column_name == "slan_600")
-//                 var = &var_vector[offset+5];
-//             else if(column_name == "type")
-//                 var = &var_vector[offset+6];
-//             else if(column_name == "lat")
-//                 var = &var_vector[offset+7];
-//             else if(column_name == "lon")
-//                 var = &var_vector[offset+8];
-//             else if(column_name == "ensemble")
-//                 var = &ens_var;
-//             else if(column_name == "trajectory")
-//                 var = &traj_var;
-//             else if(column_name == "Q_TURBULENCE")
-// #if defined MET3D && defined TURBULENCE
-//                 var = &var_vector[offset+10];
-// #else
-//                 continue;
-// #endif
-//             else
-//                 continue;
-//             // add auxiliary column to nearly all columns by default
-//             if(column_name != "time" && column_name != "time_after_ascent"
-//                 && column_name != "lon" && column_name != "lat"
-//                 && column_name != "pressure" && column_name != "trajectory"
-//                 && column_name != "ensemble")
-//             {
-//                 att_name = "auxiliary_data";
-//                 att_val = "yes";
-//                 var->putAtt(att_name, att_val);
-//             }
-//             if(column_name == "ensemble")
-//             {
-//                 att_name = "standard_name";
-//                 att_val = "ensemble";
-//                 var->putAtt(att_name, att_val);
-//                 att_name = "long_name";
-//                 att_val = "ensemble id that is only consistent within a given history via trajectory id";
-//                 var->putAtt(att_name, att_val);
-//                 continue;
-//             }
-//             if(column_name == "trajectory")
-//             {
-//                 att_name = "standard_name";
-//                 att_val = "trajectory";
-//                 var->putAtt(att_name, att_val);
-//                 att_name = "long_name";
-//                 att_val = "trajectory";
-//                 var->putAtt(att_name, att_val);
-//                 att_name = "description";
-//                 att_val = "last number is the id of the instance that ran "
-//                     "the simulation and the numbers before are the history";
-//                 var->putAtt(att_name, att_val);
-//                 continue;
-//             }
-//             auto attributes = name_var.second.getAtts();
-//             for(auto & name_attr: attributes)
-//             {
-//                 // ie long_name, standard_name
-//                 auto attribute = name_attr.second;
-//                 if(attribute.getName() == "_FillValue")
-//                     continue;
-//                 NcType type = attribute.getType();
-//                 if(type.getName() == "double" || type.getName() == "float")
-//                 {
-//                     std::vector<double> values(1);
-//                     var->putAtt(
-//                         attribute.getName(),
-//                         type,
-//                         values.size(),
-//                         values.data());
-//                 } else if(type.getName() == "int64"
-//                     || type.getName() == "int32" || type.getName() == "int")
-//                 {
-//                     std::vector<int> values(1);
-//                     var->putAtt(
-//                         attribute.getName(),
-//                         type,
-//                         values.size(),
-//                         values.data());
-//                 } else if(type.getName() == "uint64"
-//                     || type.getName() == "uint32" || type.getName() == "uint")
-//                 {
-//                     std::vector<uint64_t> values(1);
-//                     var->putAtt(
-//                         attribute.getName(),
-//                         type,
-//                         values.size(),
-//                         values.data());
-//                 } else if(type.getName() == "char")
-//                 {
-//                     std::string values;
-//                     attribute.getValues(values);
-//                     var->putAtt(
-//                         attribute.getName(),
-//                         values);
-//                 }
-//             }
-//         }
-//         // all the gradients are auxiliary data
-//         for(uint64_t j=0; j<num_par; j++)
-//         {
-//             att_name = "auxiliary data";
-//             att_val = "yes";
-//             var_vector[num_comp+j].putAtt(att_name, att_val);
-//             // add descriptions to all gradients
-//             att_name = "standard_name";
-//             att_val = output_grad_idx[j].substr(1);
-//             var_vector[num_comp+j].putAtt(att_name, att_val);
-//             att_name = "long_name";
-//             att_val = output_grad_descr[j];
-//             var_vector[num_comp+j].putAtt(att_name, att_val);
-//         }
-//         in_datafile.close();
-//         datafile.close();
         // Make the access independent which is a must due to the dynamic
         // work schedule; This can be expensive though.
-        // SUCCESS_OR_DIE(nc_var_par_access(ncid, NC_GLOBAL, NC_INDEPENDENT));
+        for(auto &id: varid)
+            SUCCESS_OR_DIE(nc_var_par_access(ncid, id, NC_INDEPENDENT));
     } else
     {
         // write attributes
