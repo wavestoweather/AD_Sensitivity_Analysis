@@ -73,6 +73,13 @@ struct netcdf_reader_t{
         const int &simulation_mode,
         const double current_time);
 
+    void read_initial_values(
+        std::vector<double> &y_init,
+        reference_quantities_t &ref_quant,
+        model_constants_t &cc,
+        const bool &checkpoint_flag,
+        const uint64_t &traj_id,
+        const uint64_t &ens_id);
     /**
      * Read values for initializing a simulation.
      *
@@ -87,7 +94,7 @@ struct netcdf_reader_t{
         std::vector<double> &y_init,
         reference_quantities_t &ref_quant,
         model_constants_t &cc,
-        bool const &checkpoint_flag);
+        const bool &checkpoint_flag);
 
     double get_lat(const uint32_t &t) const {return buffer[Par_idx::lat][t%n_timesteps_buffer];};
     double get_lon(const uint32_t &t) const {return buffer[Par_idx::lon][t%n_timesteps_buffer];};

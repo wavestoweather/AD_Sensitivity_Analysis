@@ -291,14 +291,6 @@ void netcdf_reader_t::buffer_params(
     countp.push_back(n_timesteps_buffer);
 #endif
     // Error here
-    std::cout << "startp: " << startp[0]
-              << ", " << startp[1]
-              << ", " << startp[2]
-              << "\n";
-    std::cout << "countp: " << countp[0]
-              << ", " << countp[1]
-              << ", " << countp[2]
-              << "\n";
     for(int i=0; i<Par_idx::n_pars; i++)
     {
         SUCCESS_OR_DIE(
@@ -707,10 +699,22 @@ void netcdf_reader_t::read_initial_values(
     std::vector<double> &y_init,
     reference_quantities_t &ref_quant,
     model_constants_t &cc,
-    bool const &checkpoint_flag)
+    const bool &checkpoint_flag,
+    const uint64_t &traj_id,
+    const uint64_t &ens_id)
 {
-    traj_idx = cc.traj_id;
-    ens_idx = cc.ensemble_id;
+    traj_idx = traj_id;
+    ens_idx = ens_id;
+    this->read_initial_values(y_init, ref_quant, cc, checkpoint_flag);
+}
+
+
+void netcdf_reader_t::read_initial_values(
+    std::vector<double> &y_init,
+    reference_quantities_t &ref_quant,
+    model_constants_t &cc,
+    const bool &checkpoint_flag)
+{
     buffer_params(ref_quant);
 
     std::vector<size_t> startp, countp;

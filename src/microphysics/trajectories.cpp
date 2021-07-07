@@ -686,7 +686,8 @@ int main(int argc, char** argv)
         {
             cc.traj_id = scheduler.current_traj;
             cc.ensemble_id = scheduler.current_ens;
-            netcdf_reader.read_initial_values(y_init, ref_quant, cc, global_args.checkpoint_flag);
+            netcdf_reader.read_initial_values(y_init, ref_quant, cc,
+                global_args.checkpoint_flag, cc.traj_id, cc.ensemble_id);
             // Set "old" values as temporary holder of values.
             for(int ii = 0 ; ii < num_comp ; ii++)
                 y_single_old[ii] = y_init[ii];
@@ -700,7 +701,8 @@ int main(int argc, char** argv)
                     global_args, ref_quant, segments, cc, y_init, y_single_old,
                     checkpoint, out_handler, already_loaded, netcdf_reader);
 
-                netcdf_reader.read_initial_values(y_init, ref_quant, cc, global_args.checkpoint_flag);
+                netcdf_reader.read_initial_values(y_init, ref_quant, cc,
+                    global_args.checkpoint_flag, cc.traj_id, cc.ensemble_id);
 
                 // Set "old" values as temporary holder of values.
                 for(int ii = 0 ; ii < num_comp ; ii++)
@@ -719,7 +721,8 @@ int main(int argc, char** argv)
                 global_args, ref_quant, segments, cc, y_init, y_single_old,
                 checkpoint, out_handler, already_loaded, netcdf_reader);
 
-            netcdf_reader.read_initial_values(y_init, ref_quant, cc, global_args.checkpoint_flag);
+            netcdf_reader.read_initial_values(y_init, ref_quant, cc,
+                global_args.checkpoint_flag, input.traj, input.ensemble);
 
             // Set "old" values as temporary holder of values.
             for(int ii = 0 ; ii < num_comp ; ii++)
@@ -735,11 +738,12 @@ int main(int argc, char** argv)
                 global_args, ref_quant, segments, cc, y_init, y_single_old,
                 checkpoint, out_handler, already_loaded, netcdf_reader);
 
-            netcdf_reader.read_initial_values(y_init, ref_quant, cc, global_args.checkpoint_flag);
+            netcdf_reader.read_initial_values(y_init, ref_quant, cc,
+                global_args.checkpoint_flag, input.traj, input.ensemble);
             // Set "old" values as temporary holder of values.
             for(int ii = 0 ; ii < num_comp ; ii++)
                 y_single_old[ii] = y_init[ii];
-            std::cout << "rank " << rank << " run sim\n";
+
             // run simulation
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,
