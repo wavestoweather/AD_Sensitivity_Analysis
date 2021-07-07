@@ -3,7 +3,6 @@
 #include <array>
 #include <cmath>
 #include <fstream>
-// #include "ncType.h"
 #include <mpi.h>
 #include <netcdf.h>
 #include <netcdf_par.h>
@@ -11,13 +10,12 @@
 #include <string>
 #include <vector>
 
-// #include "include/microphysics/constants.h"
 #include "include/misc/error.h"
 #include "include/types/model_constants_t.h"
-#include "include/types/nc_parameters_t.h"
+#include "include/types/netcdf_reader_t.h"
 #include "include/types/reference_quantities_t.h"
 
-using namespace netCDF;
+// using namespace netCDF;
 
 struct output_handle_t{
     // for txt files
@@ -63,6 +61,12 @@ struct output_handle_t{
      * Number of ensembles in the output.
      */
     uint64_t num_ens;
+
+    /**
+     * Simulation mode determines the order of the output file and
+     * the mpi access mode.
+     */
+    int simulation_mode;
 
     enum Dim_idx
     {
@@ -152,7 +156,8 @@ struct output_handle_t{
         const std::string in_filename,
         const uint32_t write_index,
         const uint32_t snapshot_index,
-        const int &rank);
+        const int &rank,
+        const int &simulation_mode);
 
     void setup(
         const std::string filetype,
@@ -168,7 +173,7 @@ struct output_handle_t{
      * for netCDF files.
      */
     void buffer(const model_constants_t &cc,
-        const nc_parameters_t &nc_params,
+        const netcdf_reader_t &netcdf_reader,
         const std::vector<codi::RealReverse> &y_single_new,
         const std::vector< std::array<double, num_par > >  &y_diff,
         const uint32_t sub,
@@ -189,7 +194,7 @@ struct output_handle_t{
      */
     void process_step(
         const model_constants_t &cc,
-        const nc_parameters_t &nc_params,
+        const netcdf_reader_t &netcdf_reader,
         const std::vector<codi::RealReverse> &y_single_new,
         const std::vector< std::array<double, num_par > >  &y_diff,
         const uint32_t sub,

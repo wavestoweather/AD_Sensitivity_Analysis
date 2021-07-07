@@ -23,8 +23,6 @@ input_parameters_t::input_parameters_t()
     // Filename for input
     INPUT_FILENAME = "/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/foehn201305_case/foehn201305_warming.nc";
 
-    // Scaling factor
-    scaling_fact = 1.0;	// No scaling
     start_over = true;
     start_over_env = true;
     fixed_iteration = false;
@@ -39,6 +37,7 @@ input_parameters_t::input_parameters_t()
     current_time = std::nan("");;
     id = 0;
     n_ensembles = 0;
+    simulation_mode = trajectory_sensitvity_perturbance;
 }
 
 void input_parameters_t::set_outputfile_id(
@@ -105,7 +104,6 @@ void input_parameters_t::put(
     input_params.put<bool>("start_over", start_over);
     input_params.put<bool>("start_over_env", start_over_env);
     input_params.put<bool>("fixed_iteration", fixed_iteration);
-    input_params.put<double>("scaling_fact", scaling_fact);
     input_params.put<uint32_t>("auto_type", auto_type);
     input_params.put<uint32_t>("traj", traj);
     input_params.put<uint32_t>("write_index", write_index);
@@ -114,6 +112,7 @@ void input_parameters_t::put(
     input_params.put<uint32_t>("n_ensembles", n_ensembles);
     input_params.put<double>("current_time", time);
     input_params.put<std::string>("FOLDER_NAME", FOLDER_NAME);
+    input_params.put<int>("simulation_mode", simulation_mode);
     ptree.add_child("input_params", input_params);
 }
 
@@ -171,9 +170,6 @@ int input_parameters_t::from_pt(
         {
             fixed_iteration = (it.second.data() == "1"
                 || it.second.data() == "true") ? true : false;
-        } else if(first == "scaling_fact")
-        {
-            scaling_fact = it.second.get_value<double>();
         } else if(first == "auto_type")
         {
             auto_type = it.second.get_value<uint32_t>();
@@ -198,6 +194,9 @@ int input_parameters_t::from_pt(
         } else if(first == "FOLDER_NAME")
         {
             FOLDER_NAME = it.second.data();
+        } else if(first == "simulation_mode")
+        {
+            simulation_mode = it.second.get_value<int>();
         } else
         {
             err = INPUT_NAME_CHECKPOINT_ERR;
@@ -234,9 +233,24 @@ void input_parameters_t::set_input_from_arguments(
         this->INPUT_FILENAME = arg.input_file;
     }
 
-    // Scaling factor
-    if(1 == arg.scaling_fact_flag){
-        this->scaling_fact = std::strtod(arg.scaling_fact_string, nullptr);
+    // Simulation mode
+    if(1 == arg.simulation_mode_flag){
+        this->simulation_mode = std::stoi(arg.simulation_mode_string);
+        switch(this->simulation_mode)
+        {
+            case trajectory_sensitvity_perturbance:
+            case trajectory_sensitivity:
+            case trajectory_perturbance:
+                break;
+            case grid_sensitivity:
+                std::cout << "Grid based sensitivity analysis is not supported yet\n";
+                SUCCESS_OR_DIE(ARGUMENT_ERR);
+                break;
+            default:
+                std::cout << "No such simulation mode. Aborting.\n";
+                SUCCESS_OR_DIE(ARGUMENT_ERR);
+                break;
+        }
     }
 
     // Starting over mixing ratios and particle numbers
@@ -325,9 +339,8 @@ void input_parameters_t::print_parameters()
         << "Write index: " << this->write_index << "\n"
         << "Progressbar index: " << this->progress_index << "\n"
         << "Name of output file: " << this->OUTPUT_FILENAME << "\n"
-        << "Scaling factor: " << this->scaling_fact << "\n"
         << "Name of input file: " << this->INPUT_FILENAME << "\n"
-        << "Start over mixing ratios and particle numbers at each timestep of a trajectory?: " << this->start_over << "\n"
+        << "Start over mixing ratios and particle numbers at each timestep of a trajectory? (Deprecated and will be removed): " << this->start_over << "\n"
         << "Start over pressure, temperature and ascent at each timestep of a trajectory?: " << this->start_over_env << "\n"
         << "Fix temperature and pressure at each substep?: " << this->fixed_iteration << "\n"
         << "Auto type for rain evaporation (1, 2, 3): " << this->auto_type << "\n"
@@ -341,15 +354,6 @@ void input_parameters_t::print_parameters()
         :   "" )
         << "Folder name for newly generated checkpoints: " << this->FOLDER_NAME << "\n"
         << "Maximum number of ensembles in the output file: " << this->n_ensembles << "\n"
+        << "Simulation mode: " << this->simulation_mode << "\n"
         << std::endl << std::flush;
-}
-
-void input_parameters_t::send_input_params()
-{
-
-}
-
-void input_parameters_t::rec_input_params()
-{
-
 }

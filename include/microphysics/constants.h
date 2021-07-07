@@ -81,6 +81,31 @@
 #define SIMULATION_MESSAGE_STR 4
 #define SIMULATION_MESSAGE_INT 5
 #define SIMULATION_MESSAGE_NSNAPS 6
+
+////////////////////////////////////////////////////////////////////////////////
+// Simulation modes
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * Input data are trajectories. Perturbed ensembles are possible.
+ * The output contains sensitivities.
+ */
+#define trajectory_sensitvity_perturbance 0
+/**
+ * Input data are trajectories. Perturbed ensembles are not possible.
+ * The output contains sensitivities.
+ */
+#define trajectory_sensitivity 1
+/**
+ * Input data are trajectories. Perturbed ensembles are possible.
+ * The output does not contain sensitivities.
+ */
+#define trajectory_perturbance 2
+/**
+ * Input data is a grid. Perturbed ensembles are not possible.
+ * The output contains sensitivities.
+ */
+#define grid_sensitivity 3
+
 ////////////////////////////////////////////////////////////////////////////////
 // Random generators
 ////////////////////////////////////////////////////////////////////////////////

@@ -444,9 +444,6 @@ void model_constants_t::setup_model_constants(
     this->dt_third = this->dt/3.0;
     this->dt_sixth = this->dt/6.0;
 
-    // Scaling factor from input
-    this->scaling_fact = input.scaling_fact;
-
     // Accomodation coefficient
     this->alpha_d = 1.0;
 
@@ -472,14 +469,6 @@ void model_constants_t::setup_model_constants(
         this->constants[static_cast<int>(Cons_idx::c_ccn_1)+i] = c_ccn[i];
         this->constants[static_cast<int>(Cons_idx::d_ccn_1)+i] = d_ccn[i];
     }
-
-    // this->a1_scale = (1350. * F_aut)/pow(Nc , 1.79);
-    // this->a2_scale = 67.0 * F_acc;
-    // this->e1_scale = 2.0 * M_PI * this->nar * ( (0.78 * tgamma(2.0 - this->nbr))/(lambda_pp*lambda_pp) );
-    // this->e2_scale = this->scaling_fact * 2.0 * M_PI * this->nar * 0.31
-    //     * pow(this->cr/get_at(this->constants, Particle_cons_idx::mu), 0.5) * pow(this->Sc, 1.0/3.0) * pow(this->rho0, 0.25)
-    //     * (tgamma(this->epsilonr + this->nbr)/pow(lambda_pp ,this->epsilonr));
-    // this->d_scale = 4.0e-3;
 
     if(nuc_type == 6)
     {
@@ -877,9 +866,7 @@ void model_constants_t::print()
         << "a2_scale = " << this->a2_scale << "\n"
         << "e1_scale = " << this->e1_scale << "\n"
         << "e2_scale = " << this->e2_scale << "\n"
-        << "d_scale = " << this->d_scale << "\n"
-        << "Scaling factor = " << this->scaling_fact << "\n";
-
+        << "d_scale = " << this->d_scale << "\n";
     for(auto const &t: table_param)
     {
         std::cout << t.first << " = " << get_at(this->constants, t.second) << "\n";

@@ -5,6 +5,7 @@
 // #include <sys/stat.h>
 #include <getopt.h>
 #include "include/misc/error.h"
+#include "include/microphysics/constants.h"
 
 /**
  * Helper structure to handle command line arguments.
@@ -20,14 +21,18 @@ struct global_args_t{
     int snapshot_index_flag; /*!< Snapshot every x iterations specified? */
     char* snapshot_index_string;
 
+    /**
+     * Use a simulation mode for sensitivity analysis, perturbance only,
+     * perturbance with sensitivity analysis for trajectories and grid based data.
+     */
+    int simulation_mode_flag;
+    char* simulation_mode_string;
+
     int output_flag; /*!< Output path specified? */
     char* output_string;
 
     int input_flag; /*!< Input netCDF file specified? */
     char* input_file;
-
-    int scaling_fact_flag; /*!< Scaling factor specified? */
-    char* scaling_fact_string;
 
     int start_over_flag; /*!< Reload mixing ratios and particle numbers from trajectory every few seconds? */
     char* start_over_string;

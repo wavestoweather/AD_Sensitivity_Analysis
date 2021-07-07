@@ -11,7 +11,7 @@ set(TYPES_SRCS
     types/param_t.cpp
     types/segment_t.cpp
     types/checkpoint_t.cpp
-    types/nc_parameters_t.cpp
+    types/netcdf_reader_t.cpp
     types/task_scheduler_t.cpp
     misc/general.cpp
     )

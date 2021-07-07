@@ -2,56 +2,74 @@
 
 task_scheduler_t::task_scheduler_t(
     const int &rank,
-    const int &n_processes)
+    const int &n_processes,
+    const int &simulation_mode)
 {
-    free_worker.resize(n_processes);
-    if(rank == 0)
+    if((simulation_mode == grid_sensitivity) || (simulation_mode == trajectory_sensitivity))
     {
-        std::fill(free_worker.begin()+1, free_worker.end(), 1);
-        free_worker[0] = 0;
+        static_scheduling = true;
     } else
     {
-        std::fill(free_worker.begin(), free_worker.end(), 0);
+        static_scheduling = false;
     }
-    work_available.resize(n_processes);
-    std::fill(work_available.begin(), work_available.end(), 0);
-    max_ensemble_id = 0;
 
-    SUCCESS_OR_DIE(
-        MPI_Win_create(
-            free_worker.data(),
-            n_processes*sizeof(std::int8_t),
-            sizeof(std::int8_t),
-            MPI_INFO_NULL,
-            MPI_COMM_WORLD,
-            &free_window)
-    );
-    SUCCESS_OR_DIE(
-        MPI_Win_create(
-            work_available.data(),
-            n_processes*sizeof(std::int8_t),
-            sizeof(std::int8_t),
-            MPI_INFO_NULL,
-            MPI_COMM_WORLD,
-            &work_window)
-    );
-    SUCCESS_OR_DIE(
-        MPI_Win_create(
-            &max_ensemble_id,
-            sizeof(std::uint64_t),
-            sizeof(std::uint64_t),
-            MPI_INFO_NULL,
-            MPI_COMM_WORLD,
-            &ens_window)
-    );
+    if(!static_scheduling)
+    {
+        free_worker.resize(n_processes);
+        if(rank == 0)
+        {
+            std::fill(free_worker.begin()+1, free_worker.end(), 1);
+            free_worker[0] = 0;
+        } else
+        {
+            std::fill(free_worker.begin(), free_worker.end(), 0);
+        }
+        work_available.resize(n_processes);
+        std::fill(work_available.begin(), work_available.end(), 0);
+        max_ensemble_id = 0;
 
+        SUCCESS_OR_DIE(
+            MPI_Win_create(
+                free_worker.data(),
+                n_processes*sizeof(std::int8_t),
+                sizeof(std::int8_t),
+                MPI_INFO_NULL,
+                MPI_COMM_WORLD,
+                &free_window)
+        );
+        SUCCESS_OR_DIE(
+            MPI_Win_create(
+                work_available.data(),
+                n_processes*sizeof(std::int8_t),
+                sizeof(std::int8_t),
+                MPI_INFO_NULL,
+                MPI_COMM_WORLD,
+                &work_window)
+        );
+        SUCCESS_OR_DIE(
+            MPI_Win_create(
+                &max_ensemble_id,
+                sizeof(std::uint64_t),
+                sizeof(std::uint64_t),
+                MPI_INFO_NULL,
+                MPI_COMM_WORLD,
+                &ens_window)
+        );
+    } else
+    {
+        current_traj = rank-n_processes;
+        current_ens = 0;
+    }
     my_rank = rank;
+    this->n_processes = n_processes;
 }
 
 bool task_scheduler_t::send_task(
     checkpoint_t &checkpoint,
     const bool send_to_self)
 {
+    if(static_scheduling) return true;
+
     bool orig_is_dest = false;
     bool locked = false;
     if(my_rank == 0 || !checkpoint_queue.empty())
@@ -107,6 +125,7 @@ bool task_scheduler_t::send_task(
 void task_scheduler_t::send_new_task(
     checkpoint_t &checkpoint)
 {
+    if(static_scheduling) return;
 
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, work_window);
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, free_window);
@@ -131,6 +150,7 @@ void task_scheduler_t::send_new_task(
 
 void task_scheduler_t::signal_send_task()
 {
+    if(static_scheduling) return;
     // Check for any remaining tasks on any other process and signal
     // them where to send it.
     if(my_rank == 0)
@@ -177,6 +197,18 @@ void task_scheduler_t::signal_send_task()
 bool task_scheduler_t::receive_task(
     checkpoint_t &checkpoint)
 {
+    if(static_scheduling)
+    {
+        uint64_t next_idx = current_traj + n_processes;
+        if(next_idx > n_trajectories)
+        {
+            next_idx = next_idx%n_trajectories;
+            current_ens++;
+        }
+        if(current_ens >= n_ensembles) return false;
+        current_traj = next_idx;
+        return true;
+    }
     bool signal_sent = false;
     // check if work is directly available
     while(!checkpoint.receive_checkpoint())

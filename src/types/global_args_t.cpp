@@ -11,11 +11,11 @@ global_args_t::global_args_t()
     snapshot_index_flag = 0;
     snapshot_index_string = nullptr;
 
+    simulation_mode_flag = 0;
+    simulation_mode_string = nullptr;
+
     output_flag = 0;
     output_string = nullptr;
-
-    scaling_fact_flag = 0;
-    scaling_fact_string = nullptr;
 
     input_flag = 0;
     input_file = nullptr;
@@ -107,8 +107,8 @@ int global_args_t::parse_arguments(
                 }
                 case 'b':
                 {
-                    this->scaling_fact_flag = 1;
-                    this->scaling_fact_string = optarg;
+                    this->simulation_mode_flag = 1;
+                    this->simulation_mode_string = optarg;
                     break;
                 }
                 case 'o':
@@ -238,7 +238,25 @@ void global_args_t::display_usage()
         << "-f: Time to integrate in seconds. "
         << "If higher than number of entries from input file, then it stops early\n"
         << "-i: Snapshot index.\n"
-        << "-b: Scaling factor.\n"
+        << "-b: Simulation mode. There are different options:\n"
+        << "\t'trajectory_sensitvity_perturbance': (default) \n"
+        << "\t\tThe input data is one trajectory. The output includes "
+        << "\t\tsensitivities. Ensembles are started given an ensemble "
+        << "\t\tconfiguration file. This mode can only process one input "
+        << "\t\ttrajectory at a time.\n"
+        << "\t'trajectory_sensitivity': \n"
+        << "\t\tThe input data can consist of multiple trajectories and ensembles.\n"
+        << "\t\tThe output contains sensitivities but no perturbances are possible.\n"
+        << "\t\tThe flag '-m' is ignored here."
+        << "\t'trajectory_perturbance': \n"
+        << "\t\tThe input data is one trajectory. The output does not include "
+        << "\t\tsensitivities. Ensembles are started given an ensemble "
+        << "\t\tconfiguration file. This mode can only process one input "
+        << "\t\ttrajectory at a time.\n"
+        << "\t'grid_sensitivity': \n"
+        << "\t\tThe input is a grid file. The output consists of a grid of "
+        << "\t\toutput parameters and their sensitivities. Perturbances are "
+        << "\t\tnot possible, hence the flag '-m' is ignored.\n"
         << "-d: Timestep in seconds for a substep between each new trajectory input.\n"
         << "-o: Name of the output file.\n"
         << "-l: Path and name of input file.\n"
@@ -250,7 +268,10 @@ void global_args_t::display_usage()
         << "-w: Write index for the snapshots.\n"
         << "-p: Index for updating the progressbar.\n"
 #ifdef MET3D
-        << "-n: No simulation until given time (relative to ascend).\n"
+        << "-n: No simulation until given time (relative to ascend). "
+        << "If 'time_after_ascend' is not a valid column in the input data, "
+        << "then the time is relative to the start of the trajectory. "
+        << "Negative values are set to zero in the latter case.\n"
 #endif
         << "-m: Name of an ensemble configuration file.\n"
         << "-c: Name of a checkpoint file.\n"

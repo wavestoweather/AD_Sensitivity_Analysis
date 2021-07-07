@@ -16,6 +16,8 @@
  */
 struct task_scheduler_t{
 
+    uint64_t current_ens;
+    int current_traj;
     /**
      * A queue of all the available work to send to someone in case
      * all are busy at the moment.
@@ -54,9 +56,8 @@ struct task_scheduler_t{
     MPI_Win ens_window;
     int my_rank;
 
-
-
-    task_scheduler_t(const int &rank, const int &n_processes);
+    task_scheduler_t(const int &rank, const int &n_processes,
+        const int &simulation_mode);
 
     /**
      * Check if someone is available to send a task from queue to and send it.
@@ -79,6 +80,7 @@ struct task_scheduler_t{
      * Busy waiting until a new task is available and returns true.
      * If all processes are waiting, then no more work is available
      * and it returns false, signaling that all processes are finished.
+     * Returns immediately if static scheduling is enabled.
      *
      * @return False if all processes are finished and there is no new work
      * True if new work had been found and loaded.
@@ -94,7 +96,15 @@ struct task_scheduler_t{
      * Signal to rank 0 how much work is available.
      */
     void signal_work_avail();
+
+    void set_n_ensembles(const int &n) {n_ensembles = n;};
+    void set_n_trajectories(const int &n) {n_trajectories = n;};
+
   private:
+    bool static_scheduling;
+    uint64_t n_ensembles;
+    uint64_t n_trajectories;
+    uint64_t n_processes;
     /**
      * Only for rank 0. Checks for any available work on other
      * processes and signals them to send it.

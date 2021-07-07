@@ -41,14 +41,14 @@ struct input_parameters_t{
     bool start_over_env; /*!< Start over environment variables at new timestep of trajectory? */
     bool fixed_iteration; /*!< Fix temperature and pressure at every iteration? */
 
-    double scaling_fact; /*!< Scaling factor. */
-
     uint32_t auto_type; /*!< Particle type. */
     uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
     uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
     uint64_t progress_index; /*!< Index for updating progressbar. */
     uint32_t ensemble; /*!< Index of ensemble. */
     double current_time; /*!< Time for and from checkpoint files. */
+
+    int simulation_mode; /*!< Simulation mode. */
 
     input_parameters_t();
 
@@ -70,16 +70,6 @@ struct input_parameters_t{
      * Set values from property tree used in reading checkpoint files.
      */
     int from_pt(pt::ptree &ptree);
-
-    /**
-     * Send the input parameters via MPI to all other processes.
-     */
-    void send_input_params();
-
-    /**
-     * Receive input parameters via MPI.
-     */
-    void rec_input_params();
 
     /**
      * Set the input parameters with the data from the global arguments.

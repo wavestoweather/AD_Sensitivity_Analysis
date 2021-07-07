@@ -189,8 +189,6 @@ struct model_constants_t{
     const double alpha_r = 1.0/(br + 1.0 - nbr);   /*!< Constants for the IFS model. */
     const double epsilonr = 0.5*dr + 2.5 - nbr;   /*!< Constants for the IFS model. */
 
-    double scaling_fact; /*!< Scaling factor. */
-
     // See constants.h for a description of those.
     std::vector<codi::RealReverse> constants;
 
