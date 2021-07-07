@@ -42,9 +42,6 @@ void output_handle_t::setup(
     dimid.resize(Dim_idx::n_dims);
     varid.resize(Var_idx::n_vars + num_par);
 
-    const int deflateLevel = 9; // compression level
-    const bool enableShuffleFilter = true; // increases compression with little cost
-    const bool enableDeflateFilter = true; // enable compression
     flushed_snapshots = 0;
     n_snapshots = 0;
     // Allocate memory for the buffer

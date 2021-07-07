@@ -64,7 +64,9 @@ void checkpoint_t::create_checkpoint(
     // Current status of y
     pt::ptree output_parameters;
     for(uint32_t i=0; i<num_comp; i++)
+    {
         output_parameters.put(std::to_string(i), y[i]);
+    }
     checkpoint.add_child("Output Parameters", output_parameters);
 }
 
@@ -80,7 +82,6 @@ int checkpoint_t::load_checkpoint(
     // Parse the input parameters
     SUCCESS_OR_DIE(input.from_pt(checkpoint));
     cc.setup_model_constants(input, ref_quant);
-
     // Parse the model constants
     SUCCESS_OR_DIE(cc.from_pt(checkpoint));
 
@@ -121,7 +122,7 @@ int checkpoint_t::load_checkpoint(
     out_handler.flushed_snapshots = cc.done_steps;
     out_handler.traj = cc.traj_id;
     out_handler.ens = cc.ensemble_id;
-    return 0;
+    return err;
 }
 
 template<class float_t>

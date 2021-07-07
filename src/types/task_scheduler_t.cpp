@@ -199,6 +199,7 @@ bool task_scheduler_t::receive_task(
 {
     if(static_scheduling)
     {
+        std::cout << "using static scheduling\n";
         uint64_t next_idx = current_traj + n_processes;
         if(next_idx > n_trajectories)
         {

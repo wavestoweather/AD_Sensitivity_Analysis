@@ -1,14 +1,16 @@
 #include "include/types/netcdf_reader_t.h"
 
 netcdf_reader_t::netcdf_reader_t(
-    const uint64_t &buffer_size)
+    const uint32_t &buffer_size)
 {
     dimid.resize(Dim_idx::n_dims);
     varid.resize(Par_idx::n_pars);
-    n_timesteps_buffer = buffer_size;
-    time_buffer_idx = 0;
+    this->n_timesteps_buffer = buffer_size;
+    std::cout << "Got buffer_size " << buffer_size
+              << ", n_t_buffer: " << this->n_timesteps_buffer << "\n";
+    this->time_buffer_idx = 0;
     for(auto &b: buffer)
-        b.resize(n_timesteps_buffer);
+        b.resize(this->n_timesteps_buffer);
 }
 
 
@@ -278,6 +280,7 @@ void netcdf_reader_t::buffer_params(
     startp.push_back(ens_idx);
     startp.push_back(traj_idx);
     startp.push_back(time_idx);
+
     countp.push_back(1);
     countp.push_back(1);
     countp.push_back(n_timesteps_buffer);
@@ -287,7 +290,15 @@ void netcdf_reader_t::buffer_params(
     countp.push_back(1);
     countp.push_back(n_timesteps_buffer);
 #endif
-
+    // Error here
+    std::cout << "startp: " << startp[0]
+              << ", " << startp[1]
+              << ", " << startp[2]
+              << "\n";
+    std::cout << "countp: " << countp[0]
+              << ", " << countp[1]
+              << ", " << countp[2]
+              << "\n";
     for(int i=0; i<Par_idx::n_pars; i++)
     {
         SUCCESS_OR_DIE(
@@ -300,6 +311,7 @@ void netcdf_reader_t::buffer_params(
             )
         );
     }
+
     for(auto &v: buffer[Par_idx::pressure])
     {
         v /= ref_quant.pref;
@@ -568,7 +580,6 @@ void netcdf_reader_t::init_netcdf(
                     &ncid
                 )
             );
-            already_open = true;
         } else
         {
             SUCCESS_OR_DIE(
@@ -578,7 +589,6 @@ void netcdf_reader_t::init_netcdf(
                     &ncid
                 )
             );
-            already_open = true;
         }
 
         SUCCESS_OR_DIE(
@@ -645,6 +655,7 @@ void netcdf_reader_t::init_netcdf(
         );
 
         load_vars();
+        already_open = true;
     }
     std::vector<size_t> startp, countp;
 #ifdef MET3D
@@ -682,7 +693,7 @@ void netcdf_reader_t::init_netcdf(
         // Calculate the needed index
         start_time_idx = ceil(start_time-rel_start_time + current_time)/cc.dt_traject;
     }
-    n_timesteps_in -= start_time_idx;
+    // n_timesteps_in -= start_time_idx;
     time_idx = start_time_idx;
     this->start_time_idx = start_time_idx;
 #else
@@ -739,6 +750,7 @@ void netcdf_reader_t::read_initial_values(
                 &tmp_id
             )
         );
+        // std::cout << "startp: " << startp[0] << ", " << startp[1] << ", " << startp[2] << "\n";
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,

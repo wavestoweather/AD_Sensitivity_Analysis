@@ -23,7 +23,7 @@ struct netcdf_reader_t{
      *
      * @param buffer_size Number of time steps to read at once
      */
-    netcdf_reader_t(const uint64_t &buffer_size);
+    netcdf_reader_t(const uint32_t &buffer_size);
 
     /**
      * Read data from the buffer and store in in y_single_old and inflows.
@@ -104,7 +104,7 @@ private:
     std::vector<int> startp, countp;
     int ncid;
     uint64_t n_timesteps_in; /*!< Total number of time steps that can be read from the input file. */
-    uint64_t n_timesteps_buffer; /*!< Number of time steps that can be stored in the buffer. */
+    uint32_t n_timesteps_buffer; /*!< Number of time steps that can be stored in the buffer. */
     uint64_t time_buffer_idx; /*!< Current index to read from the buffer. */
     uint64_t start_time_idx; /*!< The initia start time index. */
     uint64_t time_idx; /*!< Current index to read from netcdf file. */

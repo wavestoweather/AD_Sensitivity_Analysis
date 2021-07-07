@@ -136,8 +136,6 @@ void setup_simulation(
         (global_args.checkpoint_flag || already_loaded),
         cc, input.simulation_mode, input.current_time
     );
-
-
 #if defined(RK4_ONE_MOMENT)
     cc.setCoefficients(y_init[0] , y_init[1]);
 #endif
@@ -671,8 +669,7 @@ int main(int argc, char** argv)
         ref_quant, input.INPUT_FILENAME, input.write_index,
         input.snapshot_index, rank, input.simulation_mode);
 
-    netcdf_reader_t netcdf_reader(input.snapshot_index);
-
+    netcdf_reader_t netcdf_reader(input.write_index);
     task_scheduler_t scheduler(rank, n_processes, input.simulation_mode);
 
 
@@ -721,7 +718,9 @@ int main(int argc, char** argv)
             setup_simulation(argc, argv, rank, n_processes, input,
                 global_args, ref_quant, segments, cc, y_init, y_single_old,
                 checkpoint, out_handler, already_loaded, netcdf_reader);
+
             netcdf_reader.read_initial_values(y_init, ref_quant, cc, global_args.checkpoint_flag);
+
             // Set "old" values as temporary holder of values.
             for(int ii = 0 ; ii < num_comp ; ii++)
                 y_single_old[ii] = y_init[ii];
@@ -735,10 +734,12 @@ int main(int argc, char** argv)
             setup_simulation(argc, argv, rank, n_processes, input,
                 global_args, ref_quant, segments, cc, y_init, y_single_old,
                 checkpoint, out_handler, already_loaded, netcdf_reader);
+
             netcdf_reader.read_initial_values(y_init, ref_quant, cc, global_args.checkpoint_flag);
             // Set "old" values as temporary holder of values.
             for(int ii = 0 ; ii < num_comp ; ii++)
                 y_single_old[ii] = y_init[ii];
+            std::cout << "rank " << rank << " run sim\n";
             // run simulation
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,
