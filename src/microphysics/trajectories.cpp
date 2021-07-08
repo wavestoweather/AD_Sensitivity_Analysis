@@ -441,17 +441,18 @@ void run_substeps(
 #endif
         // CODIPACK
         tape.setActive();
-
+#if defined(FLUX) && !defined(WCB)
         //	 Add the inflow
         y_single_old[qr_idx] += inflow[qr_in_idx]/cc.num_sub_steps;
         y_single_old[Nr_idx] += inflow[Nr_in_idx]/cc.num_sub_steps;
-#if defined(RK4ICE)
+    #if defined(RK4ICE)
         y_single_old[qi_idx] += inflow[qi_in_idx]/cc.num_sub_steps;
         y_single_old[qs_idx] += inflow[qs_in_idx]/cc.num_sub_steps;
         y_single_old[qg_idx] += inflow[qg_in_idx]/cc.num_sub_steps;
         y_single_old[Ni_idx] += inflow[Ni_in_idx]/cc.num_sub_steps;
         y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
         y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
+    #endif
 #endif
 #if defined MET3D && defined TURBULENCE
         y_single_old[qv_idx] += inflow[qv_in_idx]/cc.num_sub_steps;

@@ -6,8 +6,6 @@ netcdf_reader_t::netcdf_reader_t(
     dimid.resize(Dim_idx::n_dims);
     varid.resize(Par_idx::n_pars);
     this->n_timesteps_buffer = buffer_size;
-    std::cout << "Got buffer_size " << buffer_size
-              << ", n_t_buffer: " << this->n_timesteps_buffer << "\n";
     this->time_buffer_idx = 0;
     for(auto &b: buffer)
         b.resize(this->n_timesteps_buffer);
@@ -197,28 +195,28 @@ void netcdf_reader_t::load_vars()
         nc_inq_varid(
             ncid,
             "NI_IN",
-            &varid[Par_idx::qi_in]
+            &varid[Par_idx::ni_in]
         )
     );
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NS_IN",
-            &varid[Par_idx::qs_in]
+            &varid[Par_idx::ns_in]
         )
     );
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NR_IN",
-            &varid[Par_idx::qr_in]
+            &varid[Par_idx::nr_in]
         )
     );
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NG_IN",
-            &varid[Par_idx::qg_in]
+            &varid[Par_idx::ng_in]
         )
     );
     SUCCESS_OR_DIE(
@@ -290,7 +288,7 @@ void netcdf_reader_t::buffer_params(
     countp.push_back(1);
     countp.push_back(n_timesteps_buffer);
 #endif
-    // Error here
+
     for(int i=0; i<Par_idx::n_pars; i++)
     {
         SUCCESS_OR_DIE(
@@ -303,7 +301,57 @@ void netcdf_reader_t::buffer_params(
             )
         );
     }
-
+    // SUCCESS_OR_DIE(
+    //         nc_get_vara(
+    //             ncid,
+    //             varid[Par_idx::height],
+    //             startp.data(),
+    //             countp.data(),
+    //             buffer[Par_idx::height].data()
+    //         )
+    //     );
+    // std::cout << "varid qr_in(" << Par_idx::qr_in << "): "
+    //           << varid[Par_idx::qr_in] << ", "
+    //           << "varid height(" << Par_idx::height << "): "
+    //           << varid[Par_idx::height] << "\n";
+    // load_vars();
+    // std::cout << "varid qr_in(" << Par_idx::qr_in << "): "
+    //           << varid[Par_idx::qr_in] << ", "
+    //           << "varid height(" << Par_idx::height << "): "
+    //           << varid[Par_idx::height] << "\n";
+    // SUCCESS_OR_DIE(
+    //             nc_inq_varid(
+    //                 ncid,
+    //                 "QR_IN",
+    //                 &varid[Par_idx::qr_in]
+    //             )
+    //         );
+    // SUCCESS_OR_DIE(
+    //         nc_get_vara(
+    //             ncid,
+    //             varid[Par_idx::qr_in],
+    //             startp.data(),
+    //             countp.data(),
+    //             buffer[Par_idx::qr_in].data()
+    //         )
+    //     );
+    // std::cout << "buffer.size(): " << buffer[Par_idx::qr_in].size() << "\n";
+    // std::cout << "n_timesteps_buffer: " << n_timesteps_buffer << "\n";
+    // std::cout << "time_idx: " << time_idx << "\n";
+    // std::cout << "startp: " << startp[0] << ", "
+    //           << startp[1] << ", " << startp[2] << "\n";
+    // std::cout << "varid qr_in(" << Par_idx::qr_in << "): "
+    //           << varid[Par_idx::qr_in] << ", "
+    //           << "varid height(" << Par_idx::height << "): "
+    //           << varid[Par_idx::height] << "\n";
+    // std::cout << "before buffer " << buffer[Par_idx::qr_in][0]
+    //           << ", " << buffer[Par_idx::qr_in][1]
+    //           << ", " << buffer[Par_idx::qr_in][2]
+    //           << "\n";
+    // std::cout << "before buffer height " << buffer[Par_idx::height][0]
+    //           << ", " << buffer[Par_idx::height][1]
+    //           << ", " << buffer[Par_idx::height][2]
+    //           << "\n";
     for(auto &v: buffer[Par_idx::pressure])
     {
         v /= ref_quant.pref;
@@ -314,8 +362,13 @@ void netcdf_reader_t::buffer_params(
     for(auto &v: buffer[Par_idx::temperature])
         v /= ref_quant.Tref;
 #if defined(FLUX) && !defined(WCB)
+
     for(auto &v: buffer[Par_idx::qr_in])
         v /= ref_quant.qref;
+    // std::cout << "after buffer " << buffer[Par_idx::qr_in][0]
+    //           << ", " << buffer[Par_idx::qr_in][1]
+    //           << ", " << buffer[Par_idx::qr_in][2]
+    //           << "\n";
     for(auto &v: buffer[Par_idx::nr_in])
         v /= ref_quant.Nref;
   #if defined(RK4ICE)
@@ -459,6 +512,14 @@ void netcdf_reader_t::read_buffer(
             "QC",
 #else
             "qc",
+#endif
+            &(y_single_old[qc_idx])
+        );
+        load_var1(
+#if defined WCB || defined WCB2 || defined MET3D
+            "QR",
+#else
+            "qr", // labbadabadubdub
 #endif
             &(y_single_old[qc_idx])
         );

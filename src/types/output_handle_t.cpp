@@ -35,7 +35,7 @@ void output_handle_t::setup(
     this->traj = cc.traj_id;
     this->ens = cc.ensemble_id;
     this->num_ens = cc.n_ensembles;
-    this->num_time = cc.num_steps * cc.num_sub_steps + 1; // + 1 for initial time
+    this->num_time = cc.num_steps * cc.num_sub_steps;
 
     this->filetype = filetype;
     this->filename = filename;
