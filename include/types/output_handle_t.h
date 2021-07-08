@@ -168,6 +168,17 @@ struct output_handle_t{
         const uint32_t write_index,
         const uint32_t snapshot_index,
         const int &rank);
+
+    /**
+     * Reset the number of flushed and recorded snapshots and update
+     * the current trajectory and ensemble id. This function is needed
+     * for static scheduling.
+     *
+     * @param traj_id New trajectory id for the output
+     * @param ens_id New ensemble id for the output
+     */
+    void reset(const uint32_t traj_id, const uint32_t ens_id);
+
     /**
      * Writes data either to a stringstream for txt files or to different vectors
      * for netCDF files.

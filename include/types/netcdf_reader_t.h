@@ -17,7 +17,8 @@ struct netcdf_reader_t{
     uint64_t n_ensembles;
     uint64_t n_trajectories;
     // double dlon, dlat;
-
+    uint64_t start_time_idx; /*!< The initia start time index. */
+    uint64_t time_idx; /*!< Current index to read from netcdf file. */
 
     /**
      *
@@ -50,6 +51,19 @@ struct netcdf_reader_t{
         const bool &start_over_env);
 
     /**
+     * Set dimids of this object and set the maximum amount of trajectories and
+     * ensembles in cc.
+     *
+     * @param input_file Path to file to read
+     * @param cc Model constants with number of ensembles and trajectories on return
+     * @param simulation_mode The simulation mode defined on the command line
+     */
+    void set_dims(
+        const char *input_file,
+        model_constants_t &cc,
+        const int &simulation_mode);
+
+    /**
     * Read initial values from the netcdf file and stores them to y_init.
     * Also stores the amount of trajectories in the input file and
     * several quantities to cc such as the number of steps to simulate.
@@ -75,7 +89,7 @@ struct netcdf_reader_t{
 
     void read_initial_values(
         std::vector<double> &y_init,
-        reference_quantities_t &ref_quant,
+        const reference_quantities_t &ref_quant,
         model_constants_t &cc,
         const bool &checkpoint_flag,
         const uint64_t &traj_id,
@@ -90,9 +104,10 @@ struct netcdf_reader_t{
      * @param cc Model constants. On out: Added number of simulation steps
      * @param checkpoint_flag Wether the data is already there due to loading a checkpoint
      */
+    template<class float_t>
     void read_initial_values(
-        std::vector<double> &y_init,
-        reference_quantities_t &ref_quant,
+        std::vector<float_t> &y_init,
+        const reference_quantities_t &ref_quant,
         model_constants_t &cc,
         const bool &checkpoint_flag);
 
@@ -113,8 +128,7 @@ private:
     uint64_t n_timesteps_in; /*!< Total number of time steps that can be read from the input file. */
     uint32_t n_timesteps_buffer; /*!< Number of time steps that can be stored in the buffer. */
     uint64_t time_buffer_idx; /*!< Current index to read from the buffer. */
-    uint64_t start_time_idx; /*!< The initia start time index. */
-    uint64_t time_idx; /*!< Current index to read from netcdf file. */
+
     uint32_t traj_idx; /*!< Index of trajectory to read from. */
     uint32_t ens_idx; /*!< Index of ensemble to read from. */
     bool already_open; /*!< Is the netCDF file already open? */
@@ -126,7 +140,7 @@ private:
     /**
      * ID for variables of output file.
      */
-    std::vector<int> varid;
+    std::vector<int> varid, varid_once;
 
     enum Par_idx
     {
@@ -168,6 +182,23 @@ private:
         trajectory_dim_idx,
         ensemble_dim_idx,
         n_dims
+    };
+    // Index for variable ids that are read during initialization
+    enum Par_once_idx
+    {
+        qv,
+        qc,
+        qr,
+        qi,
+        qs,
+        qg,
+        nc,
+        nr,
+        ni,
+        ns,
+        ng,
+        time,
+        n_pars_once
     };
     std::array<std::vector<double>, Par_idx::n_pars > buffer;
 

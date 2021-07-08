@@ -110,7 +110,7 @@ void parse_args(
 }
 
 
-void setup_simulation(
+void setup_simulation_base(
     const int &argc,
     char* const * argv,
     const int &rank,
@@ -122,20 +122,23 @@ void setup_simulation(
     model_constants_t &cc,
     std::vector<double> &y_init,
     std::vector<codi::RealReverse> &y_single_old,
-    checkpoint_t &checkpoint,
-    output_handle_t &out_handler,
     bool &already_loaded,
     netcdf_reader_t &netcdf_reader)
 {
-    checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant, out_handler);
-    netcdf_reader.init_netcdf(
+    if(!already_loaded)
+    {
+        netcdf_reader.init_netcdf(
 #ifdef MET3D
-        input.start_time,
+            input.start_time,
 #endif
-        input.INPUT_FILENAME.c_str(),
-        (global_args.checkpoint_flag || already_loaded),
-        cc, input.simulation_mode, input.current_time
-    );
+            input.INPUT_FILENAME.c_str(),
+            (global_args.checkpoint_flag || already_loaded),
+            cc, input.simulation_mode, input.current_time
+        );
+    } else
+    {
+        netcdf_reader.time_idx = netcdf_reader.start_time_idx;
+    }
 #if defined(RK4_ONE_MOMENT)
     cc.setCoefficients(y_init[0] , y_init[1]);
 #endif
@@ -176,6 +179,30 @@ void setup_simulation(
 #endif
     }
     already_loaded = true;
+}
+
+void setup_simulation(
+    const int &argc,
+    char* const * argv,
+    const int &rank,
+    const int &n_processes,
+    input_parameters_t &input,
+    global_args_t &global_args,
+    reference_quantities_t &ref_quant,
+    std::vector<segment_t> &segments,
+    model_constants_t &cc,
+    std::vector<double> &y_init,
+    std::vector<codi::RealReverse> &y_single_old,
+    checkpoint_t &checkpoint,
+    output_handle_t &out_handler,
+    bool &already_loaded,
+    netcdf_reader_t &netcdf_reader)
+{
+    checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant, out_handler);
+    setup_simulation_base(argc, argv, rank, n_processes, input,
+            global_args, ref_quant, segments, cc, y_init, y_single_old,
+            already_loaded, netcdf_reader);
+
 }
 
 void substep_trace(
@@ -549,30 +576,17 @@ int run_simulation(
     // Loop for timestepping: BEGIN
     try
     {
-        // Needed to read from trajectory file
-        // std::vector<int> ids(lenp);
-        // std::vector<size_t> startp, countp;
-        // resize_counter(startp, countp, input.traj);
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
         uint32_t sub_start = 1;
         if(global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0)
             sub_start = std::fmod(input.current_time, cc.dt_prime)
                     / (cc.dt_prime/(cc.num_sub_steps-input.start_over));
 
-
         // Loop over every timestep that is usually fixed to 20 s
         for(uint32_t t=0; t<cc.num_steps - cc.done_steps; ++t) //
         {
             netcdf_reader.read_buffer(cc, ref_quant, y_single_old,
                 inflow, t, global_args.checkpoint_flag, input.start_over_env);
-            // out_handler.buffer(); // does not make too much sense, does it?
-//             read_netcdf_write_stream(input.INPUT_FILENAME.c_str(), startp, countp,
-//                 nc_params, cc, input, ref_quant, y_single_old, inflow, ids,
-//                 traj_id,
-// #ifdef MET3D
-//                 ensemble,
-// #endif
-//                 t, global_args.checkpoint_flag, out_handler);
             // Iterate over each substep
             run_substeps(input, ref_quant, t, cc, y_single_old,
                 inflow, tape, y_single_new, netcdf_reader, y_diff, out_handler,
@@ -666,19 +680,21 @@ int main(int argc, char** argv)
     parse_args(argc, argv, rank, n_processes, input,
         global_args, ref_quant, segments, cc, y_init, checkpoint);
 
-    output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
-        ref_quant, input.INPUT_FILENAME, input.write_index,
-        input.snapshot_index, rank, input.simulation_mode);
-
     netcdf_reader_t netcdf_reader(input.write_index);
+    if((input.simulation_mode == grid_sensitivity) || (input.simulation_mode == trajectory_sensitivity))
+    {
+        netcdf_reader.set_dims(input.INPUT_FILENAME.c_str(), cc, input.simulation_mode);
+    }
+    output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
+            ref_quant, input.INPUT_FILENAME, input.write_index,
+            input.snapshot_index, rank, input.simulation_mode);
     task_scheduler_t scheduler(rank, n_processes, input.simulation_mode);
-
 
     if((input.simulation_mode == grid_sensitivity) || (input.simulation_mode == trajectory_sensitivity))
     {   // static scheduling with parallel read and write enabled
-        setup_simulation(argc, argv, rank, n_processes, input,
-                global_args, ref_quant, segments, cc, y_init, y_single_old,
-                checkpoint, out_handler, already_loaded, netcdf_reader);
+        setup_simulation_base(argc, argv, rank, n_processes, input,
+            global_args, ref_quant, segments, cc, y_init, y_single_old,
+            already_loaded, netcdf_reader);
 
         scheduler.set_n_ensembles(netcdf_reader.n_ensembles);
         scheduler.set_n_trajectories(netcdf_reader.n_trajectories);
@@ -687,27 +703,31 @@ int main(int argc, char** argv)
         {
             cc.traj_id = scheduler.current_traj;
             cc.ensemble_id = scheduler.current_ens;
+
             netcdf_reader.read_initial_values(y_init, ref_quant, cc,
                 global_args.checkpoint_flag, cc.traj_id, cc.ensemble_id);
             // Set "old" values as temporary holder of values.
             for(int ii = 0 ; ii < num_comp ; ii++)
                 y_single_old[ii] = y_init[ii];
+
             // run simulation
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,
                 out_handler, segments, scheduler, netcdf_reader));
             while(scheduler.receive_task(checkpoint))
             {
-                setup_simulation(argc, argv, rank, n_processes, input,
+                setup_simulation_base(argc, argv, rank, n_processes, input,
                     global_args, ref_quant, segments, cc, y_init, y_single_old,
-                    checkpoint, out_handler, already_loaded, netcdf_reader);
+                    already_loaded, netcdf_reader);
 
                 netcdf_reader.read_initial_values(y_init, ref_quant, cc,
-                    global_args.checkpoint_flag, cc.traj_id, cc.ensemble_id);
+                    global_args.checkpoint_flag, scheduler.current_traj, scheduler.current_ens);
+                out_handler.reset(scheduler.current_traj, scheduler.current_ens);
 
                 // Set "old" values as temporary holder of values.
                 for(int ii = 0 ; ii < num_comp ; ii++)
                     y_single_old[ii] = y_init[ii];
+
                 // run simulation
                 SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                     global_args, y_single_old, y_diff, y_single_new, inflow,
@@ -716,6 +736,7 @@ int main(int argc, char** argv)
         }
     } else
     {   // dynamic scheduling with parallel read and write disabled
+        netcdf_reader.set_dims(input.INPUT_FILENAME.c_str(), cc, input.simulation_mode);
         if(rank == 0)
         {
             setup_simulation(argc, argv, rank, n_processes, input,
@@ -751,7 +772,6 @@ int main(int argc, char** argv)
                 out_handler, segments, scheduler, netcdf_reader));
         }
     }
-
 
 #ifdef USE_MPI
     MPI_Finalize();

@@ -51,13 +51,13 @@ void output_handle_t::setup(
     const uint64_t vec_size_grad = num_comp * total_snapshots;
     for(uint32_t i=0; i<num_comp; i++)
         output_buffer[i].resize(vec_size);
-    for(uint32_t i=num_comp; i<num_comp+num_par; i++)
+    for(uint32_t i=Buffer_idx::n_buffer; i<Buffer_idx::n_buffer+num_par; i++)
         output_buffer[i].resize(vec_size_grad);
 
-    output_buffer[num_comp+num_par].resize(vec_size);          // time after ascent
-    output_buffer[num_comp+num_par+1].resize(total_snapshots); // just time index
-    output_buffer[num_comp+num_par+2].resize(vec_size);        // lat
-    output_buffer[num_comp+num_par+3].resize(vec_size);        // lon
+    output_buffer[Buffer_idx::time_ascent_buf].resize(vec_size);
+    // output_buffer[num_comp+num_par+1].resize(total_snapshots); // just time index
+    output_buffer[Buffer_idx::lat_buf].resize(vec_size);        // lat
+    output_buffer[Buffer_idx::lon_buf].resize(vec_size);        // lon
 
     for(uint32_t i=0; i<output_buffer_flags.size(); i++)
         output_buffer_flags[i].resize(vec_size);
@@ -77,7 +77,6 @@ void output_handle_t::setup(
             NC_NETCDF4,                     // creation mode
             &ncid)
         );
-
         // Create dimensions
         SUCCESS_OR_DIE(nc_def_dim(
             ncid, "Output_Parameter", num_comp, &dimid[Dim_idx::out_param_dim])
@@ -1019,11 +1018,27 @@ void output_handle_t::setup(
         )
     );
 
-    // Make the access independent which is a must due to the dynamic
-    // work schedule; This can be expensive though.
-    for(auto &id: varid)
-        SUCCESS_OR_DIE(nc_var_par_access(ncid, id, NC_INDEPENDENT));
+    if((this->simulation_mode == trajectory_sensitvity_perturbance)
+        || (this->simulation_mode == trajectory_perturbance))
+    {
+        // Make the access independent which is a must due to the dynamic
+        // work schedule; This can be expensive though.
+        for(auto &id: varid)
+            SUCCESS_OR_DIE(nc_var_par_access(ncid, id, NC_INDEPENDENT));
+    }
 }
+
+
+void output_handle_t::reset(
+    const uint32_t traj_id,
+    const uint32_t ens_id)
+{
+    flushed_snapshots = 0;
+    n_snapshots = 0;
+    this->traj = traj_id;
+    this->ens = ens_id;
+}
+
 
 void output_handle_t::buffer(
     const model_constants_t &cc,
@@ -1097,7 +1112,6 @@ void output_handle_t::buffer(
         }
     }
 
-    // gradients
     for(uint64_t i=0; i<num_comp; i++) // gradient sensitive to output parameter i
         for(uint64_t j=0; j<num_par; j++) // gradient of input parameter j
             output_buffer[Buffer_idx::n_buffer+j][i + n_snapshots*offset*num_comp] = y_diff[i][j];
@@ -1130,21 +1144,14 @@ void output_handle_t::flush_buffer()
 {
     if(filetype == "netcdf")
     {
-        // model state
         std::vector<size_t> startp, countp;
-        // startp.push_back(flushed_snapshots);
-        // startp.push_back(traj);
-        // startp.push_back(ens);
-        // countp.push_back(n_snapshots);
-        // countp.push_back(1);
-        // countp.push_back(1);
-
         startp.push_back(ens);
         startp.push_back(traj);
         startp.push_back(flushed_snapshots);
         countp.push_back(1);
         countp.push_back(1);
         countp.push_back(n_snapshots);
+
         for(uint64_t i=0; i<num_comp; i++)
         {
             SUCCESS_OR_DIE(
@@ -1157,7 +1164,6 @@ void output_handle_t::flush_buffer()
                 )
             );
         }
-
         // time after ascent
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -1168,7 +1174,6 @@ void output_handle_t::flush_buffer()
                 output_buffer[Buffer_idx::time_ascent_buf].data()
             )
         );
-
         // flags
         for(uint64_t i=0; i<output_buffer_flags.size(); i++)
         {
@@ -1183,7 +1188,6 @@ void output_handle_t::flush_buffer()
             );
 
         }
-
         // lat
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -1194,7 +1198,6 @@ void output_handle_t::flush_buffer()
                 output_buffer[Buffer_idx::lat_buf].data()
             )
         );
-
         // lon
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -1205,7 +1208,6 @@ void output_handle_t::flush_buffer()
                 output_buffer[Buffer_idx::lon_buf].data()
             )
         );
-
         // step
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -1216,12 +1218,9 @@ void output_handle_t::flush_buffer()
                 output_buffer_int[0].data()
             )
         );
-
         // gradients
         startp.insert(startp.begin(), 0);
         countp.insert(countp.begin(), num_comp);
-        // startp.push_back(0);
-        // countp.push_back(num_comp);
         for(uint64_t j=0; j<num_par; j++)
         {
             SUCCESS_OR_DIE(

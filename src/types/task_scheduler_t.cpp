@@ -200,7 +200,7 @@ bool task_scheduler_t::receive_task(
     if(static_scheduling)
     {
         uint64_t next_idx = current_traj + n_processes;
-        if(next_idx > n_trajectories)
+        if(next_idx >= n_trajectories)
         {
             next_idx = next_idx%n_trajectories;
             current_ens++;
