@@ -9,6 +9,7 @@ netcdf_reader_t::netcdf_reader_t(
     this->time_buffer_idx = 0;
     for(auto &b: buffer)
         b.resize(this->n_timesteps_buffer);
+    already_open = false;
 }
 
 

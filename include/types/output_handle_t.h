@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <cmath>
 #include <fstream>
 #include <mpi.h>
@@ -15,8 +17,6 @@
 #include "include/types/netcdf_reader_t.h"
 #include "include/types/reference_quantities_t.h"
 
-// using namespace netCDF;
-
 struct output_handle_t{
     // for txt files
     std::stringstream out_tmp;
@@ -26,6 +26,8 @@ struct output_handle_t{
     uint64_t n_snapshots; // number of buffered snapshots
     uint64_t flushed_snapshots;
     int ncid; // ID of output file
+    int local_num_comp;
+    int local_num_par;
 
     std::string filetype;
     // for netCDF files and a vector for each column
@@ -53,6 +55,8 @@ struct output_handle_t{
     uint64_t ens;
     uint64_t total_snapshots;
     std::string filename;
+
+
     /**
      * Number of time steps to write in the output.
      */
@@ -197,7 +201,7 @@ struct output_handle_t{
     /**
      * Write the buffered data to disk.
      */
-    void flush_buffer();
+    void flush_buffer(const model_constants_t &cc);
 
     /**
      * Buffer the current data  (model state and gradients) and
@@ -219,14 +223,4 @@ struct output_handle_t{
 #endif
         const bool last_step,
         const reference_quantities_t &ref_quant);
-
-    /**
-    //  * Receive the buffer from a different MPI process.
-    //  */
-    // void receive_buffer();
-
-    // /**
-    //  * Send the buffer to a different MPI process.
-    //  */
-    // void send_buffer();
 };

@@ -1,6 +1,7 @@
 #include "include/types/model_constants_t.h"
 
-model_constants_t::model_constants_t()
+model_constants_t::model_constants_t(
+    const std::string &tracking_filename)
 {
     id = "0";
     ensemble_id = 0;
@@ -11,33 +12,103 @@ model_constants_t::model_constants_t()
     done_steps = 0;
     constants.resize(static_cast<int>(Cons_idx::n_items));
     std::fill(constants.begin(), constants.end(), 0);
+    int track_amount = num_par / 64 + ( num_par%64 != 0 );
+    track_param.resize(track_amount);
+    track_state = 0;
+    for(auto &t: track_param)
+        t = 0;
+    if(tracking_filename != "")
+    {
+        local_num_comp = 0;
+        local_num_par = 0;
+        this->load_configuration(tracking_filename);
+    } else
+    {
+        local_num_comp = num_comp;
+        local_num_par = num_par;
+        track_state = -1;
+        for(auto &t: track_param)
+            t = -1;
+    }
+
 }
 
 void model_constants_t::register_input(
     codi::RealReverse::TapeType &tape)
 {
-    for(auto &c: this->constants)
-        tape.registerInput(c);
-    this->rain.register_input(tape);
-    this->cloud.register_input(tape);
-    this->hail.register_input(tape);
-    this->ice.register_input(tape);
-    this->snow.register_input(tape);
-    this->graupel.register_input(tape);
+    for(uint32_t i=0; i<static_cast<int>(Cons_idx::n_items); i++)
+        if(trace_check(i, false))
+            tape.registerInput(this->constants[i]);
+
+    uint32_t offset = static_cast<uint32_t>(Cons_idx::n_items);
+    if(local_num_par == num_par)
+    {
+        this->rain.register_input(tape, offset);
+        this->cloud.register_input(tape, offset);
+#if defined(RK4ICE)
+        this->graupel.register_input(tape, offset);
+        this->hail.register_input(tape, offset);
+        this->ice.register_input(tape, offset);
+        this->snow.register_input(tape, offset);
+#endif
+    } else
+    {
+        for(auto &c: this->rain.constants)
+        {
+            if(trace_check(offset, false))
+                tape.registerInput(c);
+            offset++;
+        }
+        for(auto &c: this->cloud.constants)
+        {
+            if(trace_check(offset, false))
+                tape.registerInput(c);
+            offset++;
+        }
+#if defined(RK4ICE)
+        for(auto &c: this->graupel.constants)
+        {
+            if(trace_check(offset, false))
+                tape.registerInput(c);
+            offset++;
+        }
+        for(auto &c: this->hail.constants)
+        {
+            if(trace_check(offset, false))
+                tape.registerInput(c);
+            offset++;
+        }
+        for(auto &c: this->ice.constants)
+        {
+            if(trace_check(offset, false))
+                tape.registerInput(c);
+            offset++;
+        }
+        for(auto &c: this->snow.constants)
+        {
+            if(trace_check(offset, false))
+                tape.registerInput(c);
+            offset++;
+        }
+#endif
+    }
 }
 
 
 void model_constants_t::get_gradients(
     std::vector<codi::RealReverse> &y_single_new,
     std::vector< std::array<double, num_par > > &y_diff,
-    codi::RealReverse::TapeType &tape)
+    codi::RealReverse::TapeType &tape) const
 {
     for(uint32_t ii = 0 ; ii < num_comp ; ii++)
-        tape.registerOutput(y_single_new[ii]);
+        if(trace_check(ii, true))
+            tape.registerOutput(y_single_new[ii]);
 
     tape.setPassive();
     for(uint32_t ii = 0 ; ii < num_comp ; ii++)
     {
+        if(!trace_check(ii, true))
+            continue;
         y_single_new[ii].setGradient(1.0);
         tape.evaluate();
 
@@ -51,17 +122,62 @@ void model_constants_t::get_gradient(
     std::array<double, num_par> &out_vec) const
 {
     for(int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
-        out_vec[i] = this->constants[i].getGradient();
-#if defined(RK4ICE) || defined(RK4NOICE)
+        if(trace_check(i, false))
+            out_vec[i] = this->constants[i].getGradient();
+
 
     uint32_t idx = static_cast<uint32_t>(Cons_idx::n_items);
-    this->rain.get_gradient(out_vec, idx);
-    this->cloud.get_gradient(out_vec, idx);
-    this->graupel.get_gradient(out_vec, idx);
-    this->hail.get_gradient(out_vec, idx);
-    this->ice.get_gradient(out_vec, idx);
-    this->snow.get_gradient(out_vec, idx);
+    if(local_num_par == num_par)
+    {
+        this->rain.get_gradient(out_vec, idx);
+        this->cloud.get_gradient(out_vec, idx);
+#if defined(RK4ICE)
+        this->graupel.get_gradient(out_vec, idx);
+        this->hail.get_gradient(out_vec, idx);
+        this->ice.get_gradient(out_vec, idx);
+        this->snow.get_gradient(out_vec, idx);
 #endif
+    } else
+    {
+        for(auto &c: this->rain.constants)
+        {
+            if(trace_check(idx, false))
+                out_vec[idx] = c.getGradient();
+            idx++;
+        }
+        for(auto &c: this->cloud.constants)
+        {
+            if(trace_check(idx, false))
+                out_vec[idx] = c.getGradient();
+            idx++;
+        }
+#if defined(RK4ICE)
+        for(auto &c: this->graupel.constants)
+        {
+            if(trace_check(idx, false))
+                out_vec[idx] = c.getGradient();
+            idx++;
+        }
+        for(auto &c: this->hail.constants)
+        {
+            if(trace_check(idx, false))
+                out_vec[idx] = c.getGradient();
+            idx++;
+        }
+        for(auto &c: this->ice.constants)
+        {
+            if(trace_check(idx, false))
+                out_vec[idx] = c.getGradient();
+            idx++;
+        }
+        for(auto &c: this->snow.constants)
+        {
+            if(trace_check(idx, false))
+                out_vec[idx] = c.getGradient();
+            idx++;
+        }
+#endif
+    }
 }
 
 void model_constants_t::put(
@@ -88,6 +204,13 @@ void model_constants_t::put(
     model_cons.put("dt_half", dt_half);
     model_cons.put("dt_sixth", dt_sixth);
     model_cons.put("dt_third", dt_third);
+    model_cons.put("local_num_comp", local_num_comp);
+    model_cons.put("local_num_par", local_num_par);
+    model_cons.put("track_state", track_state);
+    pt::ptree track_param_tree;
+    for(int i=0; i<track_param.size(); i++)
+        track_param_tree.put(std::to_string(i), track_param[i]);
+    model_cons.add_child("track_param", track_param_tree);
 
     if(!perturbed_idx.empty())
     {
@@ -176,6 +299,16 @@ int model_constants_t::from_pt(
         } else if(first == "done_steps")
         {
             done_steps = it.second.get_value<uint64_t>();
+        } else if(first == "track_state")
+        {
+            track_state = it.second.get_value<uint64_t>();
+        } else if(first == "track_param")
+        {
+            for(auto &it2: ptree.get_child("model_constants.track_param"))
+            {
+                uint32_t idx = std::stoi(it2.first);
+                track_param[idx] = it2.second.get_value<uint64_t>();
+            }
         } else if(first == "perturbed")
         {
             for(auto &it2: ptree.get_child("model_constants.perturbed"))
@@ -849,6 +982,7 @@ void model_constants_t::setup_model_constants(
 #endif
 }
 
+
 void model_constants_t::print()
 {
 #ifdef SILENT_MODE
@@ -872,4 +1006,65 @@ void model_constants_t::print()
         std::cout << t.first << " = " << get_at(this->constants, t.second) << "\n";
     }
     std::cout << std::endl << std::flush;
+}
+
+
+
+bool model_constants_t::trace_check(
+    const int &idx,
+    const bool state_param) const
+{
+    if(state_param)
+    {
+        return (track_state & (1 << idx));
+    } else
+    {
+        int i = idx/64;
+        return ( track_param[i] & (1 << (idx%64) ) );
+    }
+}
+
+
+void model_constants_t::load_configuration(
+    const std::string &filename)
+{
+    boost::property_tree::ptree config_tree;
+    boost::property_tree::read_json(filename, config_tree);
+
+    auto it_child = config_tree.find("model_state_variable");
+    if( it_child == config_tree.not_found() )
+    {
+        track_state = -1;
+        local_num_comp = num_comp;
+    } else
+    {
+        for(auto &it: config_tree.get_child("model_state_variable"))
+        {
+            uint32_t id = it.second.get_value<std::uint32_t>();
+            track_state = track_state | (((uint64_t) 1) << id);
+            local_num_comp++;
+        }
+    }
+
+    auto it_child2 = config_tree.find("out_params");
+    if( it_child2 == config_tree.not_found() )
+    {
+        for(auto &t: track_param)
+            t = -1;
+        local_num_par = num_par;
+    } else
+    {
+        for(auto &it: config_tree.get_child("out_params"))
+        {
+            std::string id_name = it.second.get_value<std::string>();
+            auto it_tmp = std::find(
+                output_grad_idx.begin(),
+                output_grad_idx.end(),
+                id_name);
+            int id = std::distance(output_grad_idx.begin(), it_tmp);
+            uint32_t idx = id/64;
+            track_param[idx] = track_param[idx] | (((uint64_t) 1) << (id%64));
+            local_num_par++;
+        }
+    }
 }

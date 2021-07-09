@@ -27,7 +27,9 @@ struct particle_model_constants_t{
      *
      * @param tape Tape where the parameters should be registered on.
      */
-    void register_input(codi::RealReverse::TapeType &tape);
+    void register_input(
+        codi::RealReverse::TapeType &tape,
+        uint32_t &id);
 
     /**
      * Get the gradients of all its members. You need to register them on a
@@ -36,7 +38,9 @@ struct particle_model_constants_t{
      * @param out_vec On out: Stores all gradients.
      * @param idx Start index of out_vec where the gradients should be stored.
      */
-    void get_gradient(std::array<double, num_par> &out_vec, uint32_t &idx) const;
+    void get_gradient(
+        std::array<double, num_par> &out_vec,
+        uint32_t &idx) const;
 
     void put(pt::ptree &ptree, const std::string &type_name) const;
 

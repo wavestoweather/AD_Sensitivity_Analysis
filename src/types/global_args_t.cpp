@@ -20,8 +20,8 @@ global_args_t::global_args_t()
     input_flag = 0;
     input_file = nullptr;
 
-    start_over_flag = 0;
-    start_over_string = nullptr;
+    time_start_idx_flag = 0;
+    time_start_idx_string = nullptr;
 
     start_over_env_flag = 0;
     start_over_env_string = nullptr;
@@ -52,8 +52,8 @@ global_args_t::global_args_t()
     checkpoint_flag = 0;
     checkpoint_string = nullptr;
 
-    gnu_id_flag = 0;
-    gnu_id_string = nullptr;
+    tracking_file_flag = 0;
+    tracking_file_string = nullptr;
 
     folder_name_flag = 0;
     folder_name_string = nullptr;
@@ -125,8 +125,8 @@ int global_args_t::parse_arguments(
                 }
                 case 's':
                 {
-                    this->start_over_flag = 1;
-                    this->start_over_string = optarg;
+                    this->tracking_file_flag = 1;
+                    this->tracking_file_string = optarg;
                     break;
                 }
                 case 'e':
@@ -187,8 +187,8 @@ int global_args_t::parse_arguments(
                 }
                 case 'g':
                 {
-                    this->gnu_id_flag = 1;
-                    this->gnu_id_string = optarg;
+                    this->time_start_idx_flag = 1;
+                    this->time_start_idx_string = optarg;
                     break;
                 }
                 case 'h':
@@ -260,22 +260,22 @@ void global_args_t::display_usage()
         << "-d: Timestep in seconds for a substep between each new trajectory input.\n"
         << "-o: Name of the output file.\n"
         << "-l: Path and name of input file.\n"
-        << "-s: Start over mixing ratios and particle numbers at each timestep of a trajectory.\n"
+        << "-s: Set tracking according to the given json configuration file.\n"
         << "-e: Start over temperature, pressure and ascent at each timestep of a trajectory.\n"
         << "-t: Set pressure, temperature and vertical velocity fixed at each substep.\n"
         << "-a: Set auto type (1=KB, 2=KK, 3=SB).\n"
-        << "-r: Set index of trajectory.\n"
+        << "-r: Set index of trajectory (only in simulation mode with perturbance).\n"
         << "-w: Write index for the snapshots.\n"
         << "-p: Index for updating the progressbar.\n"
 #ifdef MET3D
-        << "-n: No simulation until given time (relative to ascend). "
-        << "If 'time_after_ascend' is not a valid column in the input data, "
-        << "then the time is relative to the start of the trajectory. "
-        << "Negative values are set to zero in the latter case.\n"
+        << "-n: No simulation until given time (relative to ascend).\n"
+        // << "If 'time_after_ascend' is not a valid column in the input data, "
+        // << "then the time is relative to the start of the trajectory. "
+        // << "Negative values are set to zero in the latter case.\n"
 #endif
         << "-m: Name of an ensemble configuration file.\n"
         << "-c: Name of a checkpoint file.\n"
-        << "-g: ID (uint) for this instance.\n"
+        << "-g: No simulation until given time index is reached. Superceeds -n.\n"
         << "-h: Path and name to subsequent folders for any checkpoints and "
         << "execution scripts from this simulation.\n"
         << "-k: Maximum number of ensembles in the output file. If none given "

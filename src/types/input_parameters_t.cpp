@@ -22,8 +22,9 @@ input_parameters_t::input_parameters_t()
     FOLDER_NAME = "";
     // Filename for input
     INPUT_FILENAME = "/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/foehn201305_case/foehn201305_warming.nc";
+    tracking_filename = "";
 
-    start_over = true;
+    // start_over = true;
     start_over_env = true;
     fixed_iteration = false;
     auto_type = 3;
@@ -31,6 +32,7 @@ input_parameters_t::input_parameters_t()
     write_index = 100000;
     progress_index = 1000;
     ensemble = 0;
+    start_time_idx = -1;
 #ifdef MET3D
     start_time = std::nan("");
 #endif
@@ -40,50 +42,50 @@ input_parameters_t::input_parameters_t()
     simulation_mode = trajectory_sensitvity_perturbance;
 }
 
-void input_parameters_t::set_outputfile_id(
-    const uint64_t ensemble_id)
-{
-    std::string ens_string;
-    if(ensemble_id == 0)
-        ens_string += "000";
-    else
-        for(int64_t i=ensemble_id; i<1000; i*=10)
-            ens_string += "0";
-    std::string id_str = "ensid" + ens_string + std::to_string(ensemble_id) + "_";
+// void input_parameters_t::set_outputfile_id(
+//     const uint64_t ensemble_id)
+// {
+//     std::string ens_string;
+//     if(ensemble_id == 0)
+//         ens_string += "000";
+//     else
+//         for(int64_t i=ensemble_id; i<1000; i*=10)
+//             ens_string += "0";
+//     std::string id_str = "ensid" + ens_string + std::to_string(ensemble_id) + "_";
 
-    if(ensemble_id == 0)
-    {
-        auto pos = OUTPUT_FILENAME.rfind("/");
-        if(pos == std::string::npos)
-        {
-            OUTPUT_FILENAME.insert(0, id_str);
-        } else
-        {
-            OUTPUT_FILENAME.insert(pos+1, id_str);
-        }
-    } else
-    {
-        std::string to_replace = "ensid";
-        auto pos = OUTPUT_FILENAME.rfind(to_replace);
-        if(pos != std::string::npos)
-        {
-            // This *should* always be the correct branch
-            OUTPUT_FILENAME.replace(pos, to_replace.length()+10, id_str);
-        } else
-        {
-            // If for any weird reason, "ensid" is not part of OUTPUT_FILENAME:
-            // Add to beginning of the filename. Check for any path characters
-            auto pos_folder = OUTPUT_FILENAME.rfind("/");
-            if(pos == std::string::npos)
-            {
-                OUTPUT_FILENAME.insert(0, id_str);
-            } else
-            {
-                OUTPUT_FILENAME.insert(pos_folder+1, id_str);
-            }
-        }
-    }
-}
+//     if(ensemble_id == 0)
+//     {
+//         auto pos = OUTPUT_FILENAME.rfind("/");
+//         if(pos == std::string::npos)
+//         {
+//             OUTPUT_FILENAME.insert(0, id_str);
+//         } else
+//         {
+//             OUTPUT_FILENAME.insert(pos+1, id_str);
+//         }
+//     } else
+//     {
+//         std::string to_replace = "ensid";
+//         auto pos = OUTPUT_FILENAME.rfind(to_replace);
+//         if(pos != std::string::npos)
+//         {
+//             // This *should* always be the correct branch
+//             OUTPUT_FILENAME.replace(pos, to_replace.length()+10, id_str);
+//         } else
+//         {
+//             // If for any weird reason, "ensid" is not part of OUTPUT_FILENAME:
+//             // Add to beginning of the filename. Check for any path characters
+//             auto pos_folder = OUTPUT_FILENAME.rfind("/");
+//             if(pos == std::string::npos)
+//             {
+//                 OUTPUT_FILENAME.insert(0, id_str);
+//             } else
+//             {
+//                 OUTPUT_FILENAME.insert(pos_folder+1, id_str);
+//             }
+//         }
+//     }
+// }
 
 void input_parameters_t::put(
     pt::ptree &ptree,
@@ -94,14 +96,16 @@ void input_parameters_t::put(
     input_params.put<double>("dt_prime", dt_prime);
     input_params.put<double>("dt_traject_prime", dt_traject_prime);
     input_params.put<double>("dt_traject", dt_traject);
+    input_params.put<long>("start_time_idx", start_time_idx);
 #ifdef MET3D
-    input_params.put<double>("start_time", start_time);
+    if(start_time_idx == -1)
+        input_params.put<double>("start_time", start_time);
 #endif
     input_params.put<int>("snapshot_index", snapshot_index);
     input_params.put<uint64_t>("num_sub_steps", num_sub_steps);
     input_params.put<std::string>("OUTPUT_FILENAME", OUTPUT_FILENAME);
     input_params.put<std::string>("INPUT_FILENAME", INPUT_FILENAME);
-    input_params.put<bool>("start_over", start_over);
+    // input_params.put<bool>("start_over", start_over);
     input_params.put<bool>("start_over_env", start_over_env);
     input_params.put<bool>("fixed_iteration", fixed_iteration);
     input_params.put<uint32_t>("auto_type", auto_type);
@@ -141,6 +145,9 @@ int input_parameters_t::from_pt(
         } else if(first == "dt_traject")
         {
             dt_traject = it.second.get_value<double>();
+        } else if(first == "start_time_idx")
+        {
+            start_time_idx = it.second.get_value<long>();
 #ifdef MET3D
         } else if(first == "start_time")
         {
@@ -158,10 +165,10 @@ int input_parameters_t::from_pt(
         } else if(first == "INPUT_FILENAME")
         {
             INPUT_FILENAME = it.second.data();
-        } else if(first == "start_over")
-        {
-            start_over = (it.second.data() == "1"
-                || it.second.data() == "true") ? true : false;
+        // } else if(first == "start_over")
+        // {
+        //     start_over = (it.second.data() == "1"
+        //         || it.second.data() == "true") ? true : false;
         } else if(first == "start_over_env")
         {
             start_over_env = (it.second.data() == "1"
@@ -254,8 +261,13 @@ void input_parameters_t::set_input_from_arguments(
     }
 
     // Starting over mixing ratios and particle numbers
-    if(1 == arg.start_over_flag){
-        this->start_over = (strcmp(arg.start_over_string, "0"));
+    // if(1 == arg.start_over_flag){
+    //     this->start_over = (strcmp(arg.start_over_string, "0"));
+    // }
+
+    // Check if any tracking configuration is available
+    if(1 == arg.tracking_file_flag){
+        this->tracking_filename = arg.tracking_file_string;
     }
 
     // Starting over environment variables (p, T, w)
@@ -286,9 +298,16 @@ void input_parameters_t::set_input_from_arguments(
     if(1 == arg.progress_index_flag){
         this->progress_index = std::stoull(arg.progress_index_string);
     }
+
+    // Start time index
+    if(1 == arg.time_start_idx_flag)
+    {
+        this->start_time_idx = std::stol(arg.time_start_idx_string);
+    }
+
 #ifdef MET3D
     // Simulation start time
-    if(1 == arg.delay_start_flag){
+    if( (1 == arg.delay_start_flag) && (0 == arg.time_start_idx_flag) ){
         this->start_time = std::strtod(arg.delay_start_string, nullptr);
     }
 #endif
@@ -303,10 +322,10 @@ void input_parameters_t::set_input_from_arguments(
         this->CHECKPOINT_FILENAME = arg.checkpoint_string;
     }
 
-    // ID for this process
-    if(1 == arg.gnu_id_flag){
-        this->id = std::stoi(arg.gnu_id_string);
-    }
+    // // ID for this process
+    // if(1 == arg.gnu_id_flag){
+    //     this->id = std::stoi(arg.gnu_id_string);
+    // }
 
     // Folder name for new generated checkpoints
     if(1 == arg.folder_name_flag){
@@ -329,8 +348,13 @@ void input_parameters_t::print_parameters()
         << "---------------------------\n"
         << "Time to integrate: " << this->t_end_prime << " Seconds\n"
         << "Timestep: " << this->dt_prime << " Seconds\n"
+        << ( ((this->CHECKPOINT_FILENAME == "") && (this->start_time_idx != -1))
+        ? "Start time: " + std::to_string(this->start_time_idx * this->dt_traject_prime) + " Seconds\n"
+        : "")
 #ifdef MET3D
-        << "Start time (relative to ascend): " << this->start_time << " Seconds" << "\n"
+        << ( ((this->CHECKPOINT_FILENAME == "") && (this->start_time_idx == -1))
+        ? "Start time (relative to ascend): " + std::to_string(this->start_time) + " Seconds\n"
+        : "")
 #endif
         << ( (this->CHECKPOINT_FILENAME != "")
         ?   "Start time from checkpoint (relative to ascend): " + std::to_string(this->current_time + this->start_time) + "\n"
@@ -340,7 +364,9 @@ void input_parameters_t::print_parameters()
         << "Progressbar index: " << this->progress_index << "\n"
         << "Name of output file: " << this->OUTPUT_FILENAME << "\n"
         << "Name of input file: " << this->INPUT_FILENAME << "\n"
-        << "Start over mixing ratios and particle numbers at each timestep of a trajectory? (Deprecated and will be removed): " << this->start_over << "\n"
+        << ( (this->tracking_filename != "")
+        ? "Tracking specified by file: " + this->tracking_filename + "\n"
+        : "")
         << "Start over pressure, temperature and ascent at each timestep of a trajectory?: " << this->start_over_env << "\n"
         << "Fix temperature and pressure at each substep?: " << this->fixed_iteration << "\n"
         << "Auto type for rain evaporation (1, 2, 3): " << this->auto_type << "\n"
@@ -352,8 +378,13 @@ void input_parameters_t::print_parameters()
         << ( (this->CHECKPOINT_FILENAME != "")
         ?   "Checkpoint file: " + this->CHECKPOINT_FILENAME + "\n"
         :   "" )
-        << "Folder name for newly generated checkpoints: " << this->FOLDER_NAME << "\n"
-        << "Maximum number of ensembles in the output file: " << this->n_ensembles << "\n"
+        << ( (this->FOLDER_NAME != "")
+        ? "Folder name for newly generated checkpoints: " + this->FOLDER_NAME + "\n"
+        : "")
+        << ( ( (this->simulation_mode == trajectory_sensitvity_perturbance)
+            || (this->simulation_mode == trajectory_perturbance) )
+        ? "Maximum number of ensembles in the output file: " + std::to_string(this->n_ensembles) + "\n"
+        : "")
         << "Simulation mode: " << this->simulation_mode << "\n"
         << std::endl << std::flush;
 }

@@ -7,12 +7,18 @@ particle_model_constants_t::particle_model_constants_t()
     std::fill(constants.begin(), constants.end(), 0);
 }
 
+
 void particle_model_constants_t::register_input(
-    codi::RealReverse::TapeType &tape)
+    codi::RealReverse::TapeType &tape,
+    uint32_t &idx)
 {
     for(auto &c: this->constants)
+    {
         tape.registerInput(c);
+        idx++;
+    }
 }
+
 
 void particle_model_constants_t::get_gradient(
     std::array<double, num_par> &out_vec,
@@ -24,8 +30,7 @@ void particle_model_constants_t::get_gradient(
         idx++;
     }
 }
-// template void particle_model_constants_t::get_gradient< std::array<double, num_par> >(
-//     std::array<double, num_par>);
+
 
 void particle_model_constants_t::put(
     pt::ptree &ptree,
@@ -45,6 +50,7 @@ void particle_model_constants_t::put(
     ptree.add_child(type_name, perturbed_vals);
 }
 
+
 int particle_model_constants_t::from_pt(
     pt::ptree &ptree)
 {
@@ -57,6 +63,7 @@ int particle_model_constants_t::from_pt(
     }
     return err;
 }
+
 
 void particle_model_constants_t::print(
     const std::string &title)

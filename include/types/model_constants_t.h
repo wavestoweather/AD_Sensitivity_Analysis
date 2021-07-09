@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include "codi.hpp"
 #include <string>
 #include <vector>
@@ -204,23 +205,27 @@ struct model_constants_t{
     table_t ltabdminwgg;
     gamma_table_t table_g1, table_g2, table_r1, table_r2, table_r3;
 
-    model_constants_t();
+    int local_num_comp;
+    int local_num_par;
+
+    model_constants_t(const std::string &tracking_filename);
 
     /**
      * Register the model parameters on the tape for codi::RealReverse.
      *
      * @param tape Tape where the parameters should be registered on.
      */
-    void register_input(codi::RealReverse::TapeType &tape);
+    void register_input(
+        codi::RealReverse::TapeType &tape);
 
     /**
      * Register output on tape, evaluate it, get all gradients and
      * reset the tape.
      */
     void get_gradients(
-    std::vector<codi::RealReverse> &y_single_new,
-    std::vector< std::array<double, num_par > > &y_diff,
-    codi::RealReverse::TapeType &tape);
+        std::vector<codi::RealReverse> &y_single_new,
+        std::vector< std::array<double, num_par > > &y_diff,
+        codi::RealReverse::TapeType &tape) const;
 
     /**
      * Get the gradients of all its members. You need to register them on a
@@ -228,7 +233,8 @@ struct model_constants_t{
      *
      * @param out_vec On out: Stores all gradients.
      */
-    void get_gradient(std::array<double, num_par> &out_vec) const;
+    void get_gradient(
+        std::array<double, num_par> &out_vec) const;
 
     /**
      * Put any perturbed parameter to a property tree.
@@ -284,6 +290,28 @@ struct model_constants_t{
      */
     void print();
 
+    /**
+     * Check if a certain model state variable or model parameter
+     * should be written to the output.
+     *
+     * @param idx Index of the model state variable or model parameter
+     *              to check.
+     * @param state_param If true: idx is a model state variable
+     */
+    bool trace_check(const int &idx, const bool state_param) const;
+
+    /**
+     * Define which data shall be written by loading a configuration file.
+     *
+     * @param filename Path to json configuration file
+     */
+    void load_configuration(const std::string &filename);
+
   private:
+    /**
+     * Used to switch on or off certain trackings.
+     */
+    uint64_t track_state;
+    std::vector<uint64_t> track_param;
 
 };

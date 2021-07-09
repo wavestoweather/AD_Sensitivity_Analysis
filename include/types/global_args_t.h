@@ -34,8 +34,11 @@ struct global_args_t{
     int input_flag; /*!< Input netCDF file specified? */
     char* input_file;
 
-    int start_over_flag; /*!< Reload mixing ratios and particle numbers from trajectory every few seconds? */
-    char* start_over_string;
+    // int start_over_flag; /*!< Reload mixing ratios and particle numbers from trajectory every few seconds? */
+    // char* start_over_string;
+
+    int time_start_idx_flag;
+    char* time_start_idx_string;
 
     int start_over_env_flag; /*!< Reload pressure, temperature and ascent from trajectory every few seconds? */
     char* start_over_env_string;
@@ -65,8 +68,11 @@ struct global_args_t{
     int checkpoint_flag; /*!< Checkpoint file for the simulation. */
     char* checkpoint_string;
 
-    int gnu_id_flag; /*!< ID given for this instance, i.e. thread_id or id by GNU parallel. */
-    char* gnu_id_string;
+    int tracking_file_flag;
+    char* tracking_file_string;
+
+    // int gnu_id_flag; /*!< ID given for this instance, i.e. thread_id or id by GNU parallel. */
+    // char* gnu_id_string;
 
     int folder_name_flag;
     char* folder_name_string;

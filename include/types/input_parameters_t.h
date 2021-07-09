@@ -19,6 +19,7 @@ struct input_parameters_t{
     double dt_prime; /*!< Timestep size in seconds for the simulation. */
     double dt_traject_prime; /*!< Timestep size in seconds of the trajectory in the netCDF file. */
     double dt_traject; /*!< Timestep size of the trajectory in the netCDF file. */
+    long start_time_idx; /*!< Timestep index to start (multiply by dt_traject_prime to get the seconds). */
 #ifdef MET3D
     double start_time; /*!< start time in seconds relativ to ascend */
 #endif
@@ -34,10 +35,11 @@ struct input_parameters_t{
     std::string ENS_CONFIG_FILENAME; /*!< Filename for ensemble configuration file. */
     std::string CHECKPOINT_FILENAME; /*!< Filename for checkpoint file. */
     std::string FOLDER_NAME; /*!< Folder name for newly generated checkpoints. */
+    std::string tracking_filename; /*!< File to switch on specific variables to track. */
     uint32_t id; /*!< ID given for this instance, i.e. thread_id or id by GNU parallel. */
     uint32_t n_ensembles;
 
-    bool start_over; /*!< Start over at new timestep of trajectory? */
+    // bool start_over; /*!< Start over at new timestep of trajectory? */
     bool start_over_env; /*!< Start over environment variables at new timestep of trajectory? */
     bool fixed_iteration; /*!< Fix temperature and pressure at every iteration? */
 
@@ -59,8 +61,8 @@ struct input_parameters_t{
      * @params all_ids String of form x-y-z with x,y and z positive ints
      *                 and z being the current id.
      */
-    void set_outputfile_id(
-        const uint64_t ensemble_id);
+    // void set_outputfile_id(
+    //     const uint64_t ensemble_id);
 
     void put(pt::ptree &ptree, const double &time) const;
 

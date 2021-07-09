@@ -46,7 +46,7 @@
 
 #include "include/misc/pbar.h"
 
-void parse_args(
+model_constants_t parse_args(
     const int &argc,
     char* const * argv,
     const int &rank,
@@ -55,7 +55,6 @@ void parse_args(
     global_args_t &global_args,
     reference_quantities_t &ref_quant,
     std::vector<segment_t> &segments,
-    model_constants_t &cc,
     std::vector<double> &y_init,
     checkpoint_t &checkpoint)
 {
@@ -77,6 +76,8 @@ void parse_args(
         print_reference_quantities(ref_quant);
     }
     input.set_input_from_arguments(global_args);
+
+    model_constants_t cc(input.tracking_filename);
 
     if(global_args.checkpoint_flag && rank == 0)
     {
@@ -107,6 +108,7 @@ void parse_args(
 
     auto_type = input.auto_type;
     load_lookup_table(cc.ltabdminwgg);
+    return cc;
 }
 
 
@@ -453,12 +455,12 @@ void run_substeps(
     const uint64_t &progress_index)
 {
     double time_old, time_new;
-    for(uint32_t sub=sub_start; sub<=cc.num_sub_steps-input.start_over; ++sub) // cc.num_sub_steps
+    for(uint32_t sub=sub_start; sub<=cc.num_sub_steps; ++sub) // cc.num_sub_steps
     {
         substep_trace(sub, t, cc, input, ref_quant, y_single_old, inflow);
 
-        bool last_step = ( ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + !input.start_over))
-            || (sub == cc.num_sub_steps-input.start_over) );
+        bool last_step = ( ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + 1))
+            || (sub == cc.num_sub_steps) );
 #if defined(RK4_ONE_MOMENT)
         // Set the coefficients from the last timestep and from
         // the input files
@@ -571,7 +573,7 @@ int run_simulation(
 #endif
     // force any process that is not root to disable pbar
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
-    ProgressBar pbar = ProgressBar((cc.num_sub_steps-input.start_over)*cc.num_steps,
+    ProgressBar pbar = ProgressBar((cc.num_sub_steps)*cc.num_steps,
         progress_index, "simulation step", std::cout);
     // Loop for timestepping: BEGIN
     try
@@ -580,7 +582,7 @@ int run_simulation(
         uint32_t sub_start = 1;
         if(global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0)
             sub_start = std::fmod(input.current_time, cc.dt_prime)
-                    / (cc.dt_prime/(cc.num_sub_steps-input.start_over));
+                    / (cc.dt_prime/(cc.num_sub_steps));
 
         // Loop over every timestep that is usually fixed to 20 s
         for(uint32_t t=0; t<cc.num_steps - cc.done_steps; ++t) //
@@ -661,7 +663,6 @@ int main(int argc, char** argv)
     global_args_t global_args;
     std::vector<segment_t> segments;
     reference_quantities_t ref_quant;
-    model_constants_t cc;
 
     // Collect the initial values in a separated vector
     // See constants.h for storage order
@@ -677,8 +678,8 @@ int main(int argc, char** argv)
     std::vector<codi::RealReverse> y_single_new(num_comp);
     std::vector<codi::RealReverse> inflow(num_inflows);
 
-    parse_args(argc, argv, rank, n_processes, input,
-        global_args, ref_quant, segments, cc, y_init, checkpoint);
+    model_constants_t cc = parse_args(argc, argv, rank, n_processes, input,
+        global_args, ref_quant, segments, y_init, checkpoint);
 
     netcdf_reader_t netcdf_reader(input.write_index);
     if((input.simulation_mode == grid_sensitivity) || (input.simulation_mode == trajectory_sensitivity))

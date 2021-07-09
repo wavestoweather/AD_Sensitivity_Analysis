@@ -101,7 +101,7 @@ int checkpoint_t::load_checkpoint(
         segments.push_back(segment);
     }
     cc.ens_desc += ens_desc;
-    input.set_outputfile_id(cc.ensemble_id);
+    // input.set_outputfile_id(cc.ensemble_id);
     for(auto &it: checkpoint.get_child("Output Parameters"))
     {
         y[std::stoi(it.first)] = std::stod(it.second.data());
