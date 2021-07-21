@@ -1081,6 +1081,22 @@ void output_handle_t::reset(
 }
 
 
+void output_handle_t::buffer_gradient(
+    const model_constants_t &cc,
+    const std::vector< std::array<double, num_par > >  &y_diff,
+    const uint32_t snapshot_index)
+{
+    for(uint64_t i=0; i<num_comp; i++) // gradient sensitive to output parameter i
+    {
+        if(!cc.trace_check(i, true))
+            continue;
+        for(uint64_t j=0; j<num_par; j++) // gradient of input parameter j
+            if(cc.trace_check(j, false))
+                output_buffer[Buffer_idx::n_buffer+j][i + n_snapshots*num_comp] += y_diff[i][j]/snapshot_index;
+    }
+}
+
+
 void output_handle_t::buffer(
     const model_constants_t &cc,
     const netcdf_reader_t &netcdf_reader,
@@ -1092,9 +1108,9 @@ void output_handle_t::buffer(
     const double time_new,
     const uint32_t traj_id,
     const uint32_t ensemble,
-    const reference_quantities_t &ref_quant)
+    const reference_quantities_t &ref_quant,
+    const uint32_t snapshot_index)
 {
-    const uint64_t offset = 1;
 
     // output parameters
     for(uint64_t i=0; i<num_comp; i++)
@@ -1102,19 +1118,19 @@ void output_handle_t::buffer(
         switch(i)
         {
             case p_idx:
-                output_buffer[i][n_snapshots*offset] =
+                output_buffer[i][n_snapshots] =
                     y_single_new[i].getValue() * ref_quant.pref;
                 break;
             case T_idx:
-                output_buffer[i][n_snapshots*offset] =
+                output_buffer[i][n_snapshots] =
                     y_single_new[i].getValue() * ref_quant.Tref;
                 break;
             case w_idx:
-                output_buffer[i][n_snapshots*offset] =
+                output_buffer[i][n_snapshots] =
                     y_single_new[i].getValue() * ref_quant.wref;
                 break;
             case z_idx:
-                output_buffer[i][n_snapshots*offset] =
+                output_buffer[i][n_snapshots] =
                     y_single_new[i].getValue() * ref_quant.zref;
                 break;
             case qc_idx:
@@ -1129,7 +1145,7 @@ void output_handle_t::buffer(
             case qr_out_idx:
             case qg_out_idx:
             case qh_out_idx:
-                output_buffer[i][n_snapshots*offset] =
+                output_buffer[i][n_snapshots] =
                     y_single_new[i].getValue() * ref_quant.qref;
                 break;
             case Nc_idx:
@@ -1143,45 +1159,38 @@ void output_handle_t::buffer(
             case Nr_out_idx:
             case Ng_out_idx:
             case Nh_out_idx:
-                output_buffer[i][n_snapshots*offset] =
+                output_buffer[i][n_snapshots] =
                     y_single_new[i].getValue() * ref_quant.Nref;
                 break;
             default:
-                output_buffer[i][n_snapshots*offset] =
+                output_buffer[i][n_snapshots] =
                     y_single_new[i].getValue();
                 break;
         }
     }
 
-    for(uint64_t i=0; i<num_comp; i++) // gradient sensitive to output parameter i
-    {
-        if(!cc.trace_check(i, true))
-            continue;
-        for(uint64_t j=0; j<num_par; j++) // gradient of input parameter j
-            if(cc.trace_check(j, false))
-                output_buffer[Buffer_idx::n_buffer+j][i + n_snapshots*offset*num_comp] = y_diff[i][j];
-    }
+    buffer_gradient(cc, y_diff, snapshot_index);
 
     // lat
-    output_buffer[Buffer_idx::lat_buf][n_snapshots*offset] =
+    output_buffer[Buffer_idx::lat_buf][n_snapshots] =
         (netcdf_reader.get_lat(t) + sub*(netcdf_reader.get_lat(t+1)-netcdf_reader.get_lat(t)));
 
     // lon
-    output_buffer[Buffer_idx::lon_buf][n_snapshots*offset] =
+    output_buffer[Buffer_idx::lon_buf][n_snapshots] =
         (netcdf_reader.get_lon(t) + sub*(netcdf_reader.get_lon(t+1)-netcdf_reader.get_lon(t)));
 
 #ifdef MET3D
     // time after ascent
-    output_buffer[Buffer_idx::time_ascent_buf][n_snapshots*offset] =
+    output_buffer[Buffer_idx::time_ascent_buf][n_snapshots] =
         netcdf_reader.get_relative_time(t) + sub*cc.dt;
     // flags
-    output_buffer_flags[0][n_snapshots*offset] = netcdf_reader.get_conv_400(t);
-    output_buffer_flags[1][n_snapshots*offset] = netcdf_reader.get_conv_600(t);
-    output_buffer_flags[2][n_snapshots*offset] = netcdf_reader.get_slan_400(t);
-    output_buffer_flags[3][n_snapshots*offset] = netcdf_reader.get_slan_600(t);
+    output_buffer_flags[0][n_snapshots] = netcdf_reader.get_conv_400(t);
+    output_buffer_flags[1][n_snapshots] = netcdf_reader.get_conv_600(t);
+    output_buffer_flags[2][n_snapshots] = netcdf_reader.get_slan_400(t);
+    output_buffer_flags[3][n_snapshots] = netcdf_reader.get_slan_600(t);
 #endif
     // simulation step
-    output_buffer_int[0][n_snapshots*offset] = sub + t*cc.num_sub_steps;
+    output_buffer_int[0][n_snapshots] = sub + t*cc.num_sub_steps;
 
     n_snapshots++;
 }
@@ -1305,7 +1314,10 @@ void output_handle_t::process_step(
         || ( t == cc.num_steps-1 && last_step ) )
     {
         this->buffer(cc, netcdf_reader, y_single_new, y_diff, sub, t,
-            time_new, traj_id, ensemble, ref_quant);
+            time_new, traj_id, ensemble, ref_quant, snapshot_index);
+    } else
+    {
+        this->buffer_gradient(cc, y_diff, snapshot_index);
     }
 
     if( (0 == (sub + t*cc.num_sub_steps) % write_index)

@@ -184,8 +184,23 @@ struct output_handle_t{
     void reset(const uint32_t traj_id, const uint32_t ens_id);
 
     /**
+     * Buffer the gradients. If snapshot_index > 1, then the average gradient
+     * is saved.
+     *
+     * @param cc
+     * @param y_diff
+     * @param snpashot_index
+     */
+    void buffer_gradient(
+        const model_constants_t &cc,
+        const std::vector< std::array<double, num_par > >  &y_diff,
+        const uint32_t snapshot_index);
+
+    /**
      * Writes data either to a stringstream for txt files or to different vectors
      * for netCDF files.
+     *
+     *
      */
     void buffer(const model_constants_t &cc,
         const netcdf_reader_t &netcdf_reader,
@@ -196,16 +211,21 @@ struct output_handle_t{
         const double time_new,
         const uint32_t traj_id,
         const uint32_t ensemble,
-        const reference_quantities_t &ref_quant);
+        const reference_quantities_t &ref_quant,
+        const uint32_t snapshot_index);
 
     /**
      * Write the buffered data to disk.
+     *
+     * @param cc
      */
     void flush_buffer(const model_constants_t &cc);
 
     /**
      * Buffer the current data  (model state and gradients) and
      * flush it to disk if necessary (depending on the time step.).
+     *
+     * @param cc
      */
     void process_step(
         const model_constants_t &cc,
