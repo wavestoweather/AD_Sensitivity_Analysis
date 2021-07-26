@@ -35,7 +35,11 @@ struct output_handle_t{
     // fast index: record
     // each array = one column
     // slow index: num_comp
+#ifdef OUT_DOUBLE
     std::array<std::vector<double>, num_comp+num_par+4 > output_buffer;
+#else
+    std::array<std::vector<float>, num_comp+num_par+4 > output_buffer;
+#endif
     std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
     // std::array<std::vector<std::string>, 1 > output_buffer_str;
     std::array<std::vector<uint64_t>, 1 > output_buffer_int;

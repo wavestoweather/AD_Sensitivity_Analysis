@@ -81,9 +81,15 @@ void output_handle_t::setup(
             &ncid)
         );
         // Create dimensions
-        SUCCESS_OR_DIE(nc_def_dim(
-            ncid, "Output_Parameter", local_num_comp, &dimid[Dim_idx::out_param_dim])
-        );
+        // If there is only one model state variable for which we gather
+        // sensitivities for, drop that dimension and add that as a scalar.
+        // This is useful as long as Met3D does not support this dimension.
+        if (local_num_comp > 1)
+        {
+            SUCCESS_OR_DIE(nc_def_dim(
+                ncid, "Output_Parameter_ID", local_num_comp, &dimid[Dim_idx::out_param_dim])
+            );
+        }
         SUCCESS_OR_DIE(nc_def_dim(
             ncid, "ensemble", num_ens, &dimid[Dim_idx::ensemble_dim])
         );
@@ -99,7 +105,7 @@ void output_handle_t::setup(
             ncid,
             "Output_Parameter_ID",
             NC_UINT64,  // type
-            1,          // ndims 2: matrix, 1: vector, 0: scalar
+            (local_num_comp > 1),          // ndims 2: matrix, 1: vector, 0: scalar
             &dimid[Dim_idx::out_param_dim],    // ignored for ndims = 0
             &varid[Var_idx::out_param])
         );
@@ -122,7 +128,11 @@ void output_handle_t::setup(
         SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "time",
+#ifdef OUT_DOUBLE
             NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
             1,
             &dimid[Dim_idx::time_dim],
             &varid[Var_idx::time])
@@ -134,30 +144,51 @@ void output_handle_t::setup(
                 nc_def_var(
                     ncid,
                     output_par_idx[i].c_str(),
+#ifdef OUT_DOUBLE
                     NC_DOUBLE,
+#else
+                    NC_FLOAT,
+#endif
                     3,
                     &dimid[Dim_idx::ensemble_dim],
                     &varid[i]
                 )
             );
         // gradients
+        auto dim_pointer = &dimid[Dim_idx::out_param_dim];
+        int n_dims = 4;
+        if (local_num_comp == 1)
+        {
+            dim_pointer = &dimid[Dim_idx::ensemble_dim];
+            n_dims = 3;
+        }
         for(uint32_t i=0; i<output_grad_idx.size(); ++i)
         {
             if(cc.trace_check(i, false))
+            {
                 SUCCESS_OR_DIE(nc_def_var(
                     ncid,
                     output_grad_idx[i].c_str(),
+#ifdef OUT_DOUBLE
                     NC_DOUBLE,
-                    4,
-                    &dimid[Dim_idx::out_param_dim],
+#else
+                    NC_FLOAT,
+#endif
+                    n_dims,
+                    dim_pointer,
                     &varid[Var_idx::n_vars + i])
                 );
+            }
         }
 
         SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "time_after_ascent",
+#ifdef OUT_DOUBLE
             NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
             3,
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::time_ascent])
@@ -197,7 +228,11 @@ void output_handle_t::setup(
         SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "lat",
+#ifdef OUT_DOUBLE
             NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
             3,
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::lat])
@@ -205,7 +240,11 @@ void output_handle_t::setup(
         SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "lon",
+#ifdef OUT_DOUBLE
             NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
             3,
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::lon])
@@ -867,11 +906,15 @@ void output_handle_t::setup(
         std::vector<size_t> startp, countp;
         startp.push_back(0);
         countp.push_back(num_time);
+#ifdef OUT_DOUBLE
         std::vector<double> time_steps(num_time);
+#else
+        std::vector<float> time_steps(num_time);
+#endif
         for(uint32_t i=0; i<num_time; i++)
             time_steps[i] = cc.dt*i + cc.start_time; // start + i*dt
         SUCCESS_OR_DIE(
-            nc_put_vara_double(
+            nc_put_vara(
                 ncid,                       // ncid
                 varid[Var_idx::time],       // varid
                 startp.data(),              // startp
