@@ -12,7 +12,7 @@
 #include <vector>
 
 class ProgressBar {
-public:
+ public:
     ProgressBar() {
         end_step = 0;
         update_every = 1;
@@ -89,7 +89,7 @@ public:
         double current_box = static_cast<double>(t)/static_cast<double>(end_step) * bar_width_max;
         int n_full = current_box;
         std::string bar;
-        for (int i=0; i<n_full; i++) bar += bars[8];
+        for (int i=0; i < n_full; i++) bar += bars[8];
         // fill the one inbetween
         int bar_width = n_full;
         if (current_box > n_full) {
@@ -97,7 +97,7 @@ public:
             bar_width++;
         }
         // the rest
-        for (int i=0; i<bar_width_max-bar_width; i++) bar += bars[0];
+        for (int i=0; i < bar_width_max-bar_width; i++) bar += bars[0];
         bar += right_pad;
         // Get estimated remaining time "Rem. xxmin xxs"
         uint64_t rem_time = (end_step - t)/dt_step;
@@ -110,7 +110,7 @@ public:
         *out << bar << right_string << rem_string << "    \r" << std::flush;
     }
 
-private:
+ private:
     std::vector<std::string> bars = {" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"};
     std::chrono::time_point<std::chrono::system_clock> t_first = std::chrono::system_clock::now();
     uint64_t end_step;

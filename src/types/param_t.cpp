@@ -178,7 +178,6 @@ int param_t::check() {
             return err;
         default:
             return err;
-
     }
 }
 

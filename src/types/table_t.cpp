@@ -2,7 +2,6 @@
 
 
 table_t::table_t() {
-
 }
 
 

@@ -21,13 +21,11 @@
 #include "include/types/input_parameters_t.h"
 #include "include/types/output_handle_t.h"
 #include "include/types/model_constants_t.h"
-// #include "include/types/nc_parameters_t.h"
 #include "include/types/reference_quantities_t.h"
 #include "include/types/segment_t.h"
 #include "include/types/table_t.h"
 
 #include "include/misc/general.h"
-using namespace netCDF;
 
 namespace pt = boost::property_tree;
 
@@ -87,7 +85,7 @@ void create_run_script(
 
     if (which == "gnuparallel") {
         uint32_t j = n_processes - 1;
-        if (j>NPROCS)
+        if (j > NPROCS)
             j = NPROCS;
         std::string script = "parallel -u -j " + std::to_string(j)
             + " --no-notice --delay .2 ${AD_SIM_HOME}/build/apps/src/microphysics/./trajectories "
@@ -116,10 +114,8 @@ void create_run_script(
             std::system(("./" + script_name).c_str());
 
     } else if (which == "slurm") {
-
     }
 }
-
 
 
 /**
@@ -210,10 +206,10 @@ bool load_lookup_table(
         }
 
         // Read the values, one value per line
-        for (uint64_t n4=0; n4<table.n4; ++n4)
-            for (uint64_t n3=0; n3<table.n3; ++n3)
-                for (int i=0; i<anzT_wg_loc; ++i)
-                    for (uint64_t n1=0; n1<table.n1; ++n1) {
+        for (uint64_t n4=0; n4 < table.n4; ++n4)
+            for (uint64_t n3=0; n3 < table.n3; ++n3)
+                for (int i=0; i < anzT_wg_loc; ++i)
+                    for (uint64_t n1=0; n1 < table.n1; ++n1) {
                         std::getline(data, line);
                         dmin_wg_g_loc[
                               n4*table.n1*anzT_wg_loc*table.n3
@@ -238,13 +234,13 @@ bool load_lookup_table(
         table.dx4 = table.x4[1] - table.x4[0];
         table.odx4 = 1.0/table.dx4;
 
-        for (uint64_t i=0; i<table.n2; ++i)
+        for (uint64_t i=0; i < table.n2; ++i)
             table.x2[i] = minT + i*table.dx2;
 
         // Linear interpolation w.r.t. T
-        for (uint64_t i=0; i<table.n2; ++i) {
+        for (uint64_t i=0; i < table.n2; ++i) {
             uint64_t iu = 0;
-            for (int j=0; j<anzT_wg_loc-1; ++j) {
+            for (int j=0; j < anzT_wg_loc-1; ++j) {
                 if (table.x2[i] >= Tvec_wg_g_loc[j]
                     && table.x2[i] <= Tvec_wg_g_loc[j+1]) {
                     iu = j;
@@ -254,9 +250,9 @@ bool load_lookup_table(
             uint64_t io = iu+1;
 
             // actual linear interpolation
-            for (uint64_t n4=0; n4<table.n4; ++n4)
-                for (uint64_t n3=0; n3<table.n3; ++n3)
-                    for (uint64_t n1=0; n1<table.n1; ++n1)
+            for (uint64_t n4=0; n4 < table.n4; ++n4)
+                for (uint64_t n3=0; n3 < table.n3; ++n3)
+                    for (uint64_t n1=0; n1 < table.n1; ++n1)
                         table.table[
                               n4*table.n1*table.n2*table.n3
                             + n3*table.n1*table.n2

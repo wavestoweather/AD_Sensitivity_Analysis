@@ -13,7 +13,7 @@
 #include "include/types/reference_quantities_t.h"
 
 
-struct netcdf_reader_t{
+struct netcdf_reader_t {
 
     uint64_t n_ensembles;
     uint64_t n_trajectories;
@@ -123,7 +123,7 @@ struct netcdf_reader_t{
 
 #endif
 
-private:
+ private:
     std::vector<int> startp, countp;
     int ncid;
     uint64_t n_timesteps_in; /*!< Total number of time steps that can be read from the input file. */
@@ -214,7 +214,4 @@ private:
      *                  simulation units
      */
     void buffer_params(const reference_quantities_t &ref_quant);
-
-public:
-
 };

@@ -78,7 +78,7 @@ void saturation_adjust(
             get_at(cc.constants, Cons_idx::Epsilon));
         float_t T_dt0;
         // Do the Newton
-        for (uint32_t i=0; i<1; ++i) {
+        for (uint32_t i=0; i < 1; ++i) {
             T_dt0 = get_at(cc.constants, Cons_idx::p_sat_const_a)
                 * (get_at(cc.constants, Cons_idx::T_sat_low_temp)-get_at(cc.constants, Cons_idx::p_sat_const_b))
                 * ( 1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*T_qd0 ) * T_qd0
@@ -302,7 +302,7 @@ void ccn_act_seifert(
     float_t H_prime =
         1.0/(((L_prime/(get_at(cc.constants, Cons_idx::R_v)*T_prime)) - 1.0)
         *(L_prime/(thermal_conductivity_dry_air(T_prime)*T_prime))
-        + ((get_at(cc.constants, Cons_idx::R_v)*T_prime)/(cc.alpha_d*diffusivity(T_prime,p_prime)*psat_prime)));
+        + ((get_at(cc.constants, Cons_idx::R_v)*T_prime)/(cc.alpha_d*diffusivity(T_prime, p_prime)*psat_prime)));
     float_t c_prime =
         4.0*M_PI*H_prime*pow((3.0/(4.0*M_PI*rhow_prime))*Nc*Nc , 1.0/3.0);
     float_t qc_third = pow(qc , 1.0/3.0);
@@ -315,11 +315,11 @@ void ccn_act_seifert(
     float_t C3 = (cpv_prime*ref.qref)/cpa_prime;
     float_t C4 = (cpl_prime*ref.qref)/cpa_prime;
     float_t C5 = (get_at(cc.constants, Cons_idx::gravity_acc)*ref.wref*ref.tref)/(ref.Tref*cpa_prime);
-    float_t C6 = (ref.tref*L_prime*c_prime*pow(ref.qref,1.0/3.0))/(ref.Tref*cpa_prime);
+    float_t C6 = (ref.tref*L_prime*c_prime*pow(ref.qref, 1.0/3.0))/(ref.Tref*cpa_prime);
     float_t C7 = (ref.tref*L_prime*get_at(cc.constants, Cons_idx::e1_prime)
-        *pow(ref.qref,get_at(cc.constants, Cons_idx::delta1)))/(ref.Tref*cpa_prime);
+        *pow(ref.qref, get_at(cc.constants, Cons_idx::delta1)))/(ref.Tref*cpa_prime);
     float_t C8 = (ref.tref*L_prime*get_at(cc.constants, Cons_idx::e2_prime)
-        *pow(ref.qref,get_at(cc.constants, Cons_idx::delta2)))/(ref.Tref*cpa_prime);
+        *pow(ref.qref, get_at(cc.constants, Cons_idx::delta2)))/(ref.Tref*cpa_prime);
     // float_t B = ref.tref*nc.QRin;
     float_t C9 = (ref.tref*c_prime)/pow(ref.qref , 2.0/3.0);
     float_t C12 = ref.tref*get_at(cc.constants, Cons_idx::e1_prime)*pow(ref.qref , get_at(cc.constants, Cons_idx::delta1)-1.0);
@@ -329,7 +329,7 @@ void ccn_act_seifert(
 
     float_t dp = -( C1/(1.0 + C2*(qv/(1.0 + qv_prime))) )*( (p*w)/T );
     float_t dT = ( 1.0/(1.0 + C3*qv + C4*(qc + qr)) )*( -C5*w + C6*qc_third*(S-1.0)
-        + (C7*qr_delta1 + C8*qr_delta2)*min(S-1.0,0.0) );
+        + (C7*qr_delta1 + C8*qr_delta2)*min(S-1.0, 0.0) );
     float_t dS = (S/p)*dp - (S/qv)*( 1.0 - (qv/(C15+qv)) )*( C9*qc_third*(S-1.0)
         + (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0) ) - C16*(S/(T*T))*dT;
     dS = (S/p)*dp - C16*(S/(T*T))*dT;
@@ -1578,7 +1578,6 @@ void sedimentation_explicit(
 
     auto sedi_icon_sphere_lwf = [&](
         ) {
-
     };
 
     if (qr_prime > get_at(cc.constants, Cons_idx::q_crit)) {
@@ -3419,7 +3418,7 @@ void rain_freeze(
                     fr_n_g = fr_n_g - fr_n_i;
                     fr_q_g = fr_q_g - fr_q_i;
                     fr_n_tmp = Nr_tmp/max(fr_n, Nr_tmp*cc.dt_prime);
-                    fr_q_tmp = qr_prime/max(fr_q ,qr_prime*cc.dt_prime);
+                    fr_q_tmp = qr_prime/max(fr_q, qr_prime*cc.dt_prime);
                 } else {
                     fr_n = fr_q = fr_n_i = fr_q_i = fr_n_g = fr_q_g
                         = fr_n_h = fr_q_h = fr_n_tmp = fr_q_tmp = 0.0;

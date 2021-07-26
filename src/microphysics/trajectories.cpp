@@ -193,7 +193,6 @@ void setup_simulation(
     setup_simulation_base(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
             already_loaded, netcdf_reader);
-
 }
 
 void substep_trace(
@@ -311,7 +310,7 @@ void parameter_check(
                     MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
                 }
                 if (ens_id < cc.n_ensembles) {
-                    for (uint32_t i=0; i<s.n_members; ++i) {
+                    for (uint32_t i=0; i < s.n_members; ++i) {
                         const uint64_t total_members = s.n_members;
                         checkpoint_t checkpoint(
                             cc,
@@ -428,7 +427,7 @@ void run_substeps(
     const uint64_t &progress_index) {
 
     double time_old, time_new;
-    for (uint32_t sub=sub_start; sub<=cc.num_sub_steps; ++sub) {
+    for (uint32_t sub=sub_start; sub <= cc.num_sub_steps; ++sub) {
         substep_trace(sub, t, cc, input, ref_quant, y_single_old, inflow);
 
         bool last_step = ( ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + 1))
@@ -552,7 +551,7 @@ int run_simulation(
                     / (cc.dt_prime/(cc.num_sub_steps));
 
         // Loop over every timestep that is usually fixed to 20 s
-        for (uint32_t t=0; t<cc.num_steps - cc.done_steps; ++t) {
+        for (uint32_t t=0; t < cc.num_steps - cc.done_steps; ++t) {
             netcdf_reader.read_buffer(cc, ref_quant, y_single_old,
                 inflow, t, global_args.checkpoint_flag, input.start_over_env);
             // Iterate over each substep

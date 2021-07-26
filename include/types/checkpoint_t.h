@@ -24,10 +24,10 @@
 namespace pt = boost::property_tree;
 
 struct checkpoint_t {
-  private:
+ private:
     pt::ptree checkpoint;
 
-  public:
+ public:
     checkpoint_t();
 
     template<class float_t>

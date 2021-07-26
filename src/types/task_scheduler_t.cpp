@@ -141,7 +141,7 @@ void task_scheduler_t::signal_send_task() {
         uint32_t work_idx = 0;
         for (auto &worker: free_worker) {
             if (worker == 1) {
-                for (uint32_t i=work_idx; i<work_available.size(); ++i) {
+                for (uint32_t i=work_idx; i < work_available.size(); ++i) {
                     if (work_available[i] > 0) {
                         // signal to work_idx to send to worker
                         std::int8_t free = 1;
@@ -217,7 +217,7 @@ bool task_scheduler_t::receive_task(
                 free_worker[0] = 2;
                 // We send it to every worker, however broadcast a single
                 // value everytime we are here is not a good idea.
-                for (uint32_t i=1; i<free_worker.size(); ++i) {
+                for (uint32_t i=1; i < free_worker.size(); ++i) {
                     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, i, 0, free_window);
                     SUCCESS_OR_DIE(
                     MPI_Put(

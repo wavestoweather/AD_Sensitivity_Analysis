@@ -106,7 +106,7 @@ int segment_t::check() {
         err = VALUE_NAME_CONFIG_ERR;
     else if (method == -1)
         err = METHOD_CONFIG_ERR;
-    else if (out_param == -1 && value_name>=Param::rain_a_geo)
+    else if (out_param == -1 && value_name >= Param::rain_a_geo)
         err = OUTPARAM_CONFIG_ERR;
     switch (err) {
         case VALUE_NAME_CONFIG_ERR:

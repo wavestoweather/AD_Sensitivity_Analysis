@@ -2,7 +2,6 @@
 
 
 gamma_table_t::gamma_table_t() {
-
 }
 
 
@@ -53,7 +52,7 @@ void gamma_table_t::init_gamma_table(
     x[n_bins-2] = c1 * (1.0-exp(c2*pow(a, c3))) + c4*a;
     dx = x[n_bins-2] / (n_bins-2.0);
     odx = 1.0/dx;
-    for (uint64_t i=0; i<n_bins-2; ++i) {
+    for (uint64_t i=0; i < n_bins-2; ++i) {
         x[i] = (i-1) * dx;
         igf[i] = boost::math::tgamma_lower(a, x[i]);
     }
@@ -64,7 +63,7 @@ void gamma_table_t::init_gamma_table(
     // High resolution (lowest 2% of the x-values)
     dx_highres = x[std::round(0.01*(n_bins-1))] / (n_bins_highres - 1.0);
     odx_highres = 1.0/dx_highres;
-    for (uint64_t i=0; i<n_bins_highres; ++i) {
+    for (uint64_t i=0; i < n_bins_highres; ++i) {
         x_highres[i] = (i-1) * dx_highres;
         igf_highres[i] = boost::math::tgamma_lower(a, x_highres[i]);
     }

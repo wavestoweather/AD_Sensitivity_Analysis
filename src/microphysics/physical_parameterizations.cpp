@@ -46,13 +46,13 @@ A wet_growth_diam(
         std::vector<A> h3(4);
         std::vector<A> h4(2);
         // Tetra linear interpolation by Dmin
-        for (uint64_t i=0; i<16; ++i)
+        for (uint64_t i=0; i < 16; ++i)
             h1[i] = table.get(iu + i/8, ju + (i%8)/4, ku + (i%4)/2, lu+i%2);
 
-        for (uint64_t i=0; i<8; ++i) {
+        for (uint64_t i=0; i < 8; ++i) {
             h2[i] = h1[i] + (h1[8+i]-h1[i]) * table.odx1 * (p_lok-table.x1[iu]);
         }
-        for (uint64_t i=0; i<4; ++i) {
+        for (uint64_t i=0; i < 4; ++i) {
             h3[i] = h2[i] + (h2[4+i]-h2[i]) * table.odx2 * (T_lok-table.x2[iu]);
         }
 
@@ -73,7 +73,6 @@ A wet_growth_diam(
                   << "\nju: " << ju
                   << "\njo: " << jo << "\n";
 #endif
-
     }
     return dmin_loc;
 }

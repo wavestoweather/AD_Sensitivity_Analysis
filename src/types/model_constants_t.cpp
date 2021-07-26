@@ -187,7 +187,7 @@ void model_constants_t::put(
     model_cons.put("local_num_par", local_num_par);
     model_cons.put("track_state", track_state);
     pt::ptree track_param_tree;
-    for (uint32_t i=0; i<track_param.size(); i++)
+    for (uint32_t i=0; i < track_param.size(); i++)
         track_param_tree.put(std::to_string(i), track_param[i]);
     model_cons.add_child("track_param", track_param_tree);
 
@@ -525,12 +525,12 @@ void model_constants_t::setup_model_constants(
     // Performance constants for warm cloud; IFS
     // The file constants.h also defines some constants as nar, ...
 #ifndef MET3D
-    const double Nc = 50; 	// 50 over ocean; 300 over land
+    const double Nc = 50; // 50 over ocean; 300 over land
     const double F_aut = 1.5;
     const double F_acc = 2.0;
     const double lambda_pp = pow(this->nar * this->ar * tgamma(this->br + 1.0) , this->alpha_r);
 #endif
-    for (uint32_t i=0; i<4; i++) {
+    for (uint32_t i=0; i < 4; i++) {
         this->constants[static_cast<int>(Cons_idx::a_ccn_1)+i] = a_ccn[i];
         this->constants[static_cast<int>(Cons_idx::b_ccn_1)+i] = b_ccn[i];
         this->constants[static_cast<int>(Cons_idx::c_ccn_1)+i] = c_ccn[i];

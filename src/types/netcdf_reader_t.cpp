@@ -393,7 +393,7 @@ void netcdf_reader_t::buffer_params(
     countp.push_back(n_timesteps_buffer);
 #endif
 
-    for (int i=0; i<Par_idx::n_pars; i++) {
+    for (int i=0; i < Par_idx::n_pars; i++) {
         SUCCESS_OR_DIE(
             nc_get_vara(
                 ncid,
@@ -470,7 +470,7 @@ void netcdf_reader_t::read_buffer(
     y_single_old[Nh_out_idx] = 0;
 
     // Set values from a given trajectory
-    if ((step==0 && !checkpoint_flag) || start_over_env) {
+    if ((step == 0 && !checkpoint_flag) || start_over_env) {
         y_single_old[p_idx] = buffer[Par_idx::pressure][time_buffer_idx];
         y_single_old[T_idx] = buffer[Par_idx::temperature][time_buffer_idx];
 #if defined(RK4ICE) || defined(RK4NOICE)
@@ -514,7 +514,7 @@ void netcdf_reader_t::read_buffer(
 #endif
     }
 
-    if ((step==0 && !checkpoint_flag)) {
+    if ((step == 0 && !checkpoint_flag)) {
         read_initial_values(y_single_old, ref_quant, cc, checkpoint_flag);
     }
 }

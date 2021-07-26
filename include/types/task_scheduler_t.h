@@ -101,7 +101,7 @@ struct task_scheduler_t{
     void set_n_ensembles(const int &n) {n_ensembles = n;}
     void set_n_trajectories(const int &n) {n_trajectories = n;}
 
-  private:
+ private:
     bool static_scheduling;
     uint64_t n_ensembles;
     uint64_t n_trajectories;

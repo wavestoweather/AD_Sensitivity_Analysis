@@ -1,7 +1,6 @@
 #include "include/types/checkpoint_t.h"
 
 checkpoint_t::checkpoint_t() {
-
 }
 
 template<class float_t>
@@ -59,7 +58,7 @@ void checkpoint_t::create_checkpoint(
     cc.put(checkpoint);
     // Current status of y
     pt::ptree output_parameters;
-    for (uint32_t i=0; i<num_comp; i++) {
+    for (uint32_t i=0; i < num_comp; i++) {
         output_parameters.put(std::to_string(i), y[i]);
     }
     checkpoint.add_child("Output Parameters", output_parameters);

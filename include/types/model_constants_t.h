@@ -22,7 +22,7 @@ namespace pt = boost::property_tree;
 /**
  * Structure for constants of a model. Includes particle constants as well.
  */
-struct model_constants_t{
+struct model_constants_t {
 
     /**
      * Initial id of this simulation. Emerging ensembles from this
@@ -308,11 +308,10 @@ struct model_constants_t{
      */
     void load_configuration(const std::string &filename);
 
-  private:
+ private:
     /**
      * Used to switch on or off certain trackings.
      */
     uint64_t track_state;
     std::vector<uint64_t> track_param;
-
 };
