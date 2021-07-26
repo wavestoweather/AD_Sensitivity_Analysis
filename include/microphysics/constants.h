@@ -1,10 +1,12 @@
-#ifndef CONSTANTS_PHYSICS_H
-#define CONSTANTS_PHYSICS_H
+#pragma once
 
 #include <cmath>
-#include "codi.hpp"
 #include <random>
+#include <string>
 #include <unordered_map>
+#include <vector>
+
+#include "codi.hpp"
 
 /** @defgroup constants Constants
  * Various constants for accessing data in the right order and model constants
@@ -130,19 +132,16 @@ const double trace_end = 3500;
 /**
  * Used for header files of output parameters.
  */
-const std::vector<std::string> output_par_idx =
-    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr"};
+const std::vector<std::string> output_par_idx = {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr"};
 
 /**
  * Used for header files of gradients.
  */
-const std::vector<std::string> output_grad_idx =
-    {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
+const std::vector<std::string> output_grad_idx = {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
     "dbeta_r", "ddelta1", "ddelta2", "dzeta"};
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #ifdef MET3D
-const std::vector<std::string> output_par_idx =
-    {"pressure", "T", "w", "S", "QC", "QR", "QV", "NCCLOUD", "NCRAIN",
+const std::vector<std::string> output_par_idx = {"pressure", "T", "w", "S", "QC", "QR", "QV", "NCCLOUD", "NCRAIN",
      "QI", "NCICE", "QS", "NCSNOW", "QG", "NCGRAUPEL", "QH", "NCHAIL",
      "QI_OUT", "QS_OUT", "QR_OUT", "QG_OUT", "QH_OUT",
      "latent_heat", "latent_cool", "NI_OUT", "NS_OUT", "NR_OUT",
@@ -151,8 +150,7 @@ const std::vector<std::string> output_par_idx =
 /**
  * Used for header files of output parameters.
  */
-const std::vector<std::string> output_par_idx =
-    {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr",
+const std::vector<std::string> output_par_idx = {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr",
      "qi", "Ni", "qs", "Ns", "qg", "Ng", "qh", "Nh",
      "qiout", "qsout", "qrout", "qgout", "qhout",
      "latent_heat", "latent_cool", "Niout", "Nsout", "Nrout",
@@ -161,8 +159,7 @@ const std::vector<std::string> output_par_idx =
 /**
  * Used for header files of gradients.
  */
-const std::vector<std::string> output_grad_idx =
-    {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
+const std::vector<std::string> output_grad_idx = {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
     "dbeta_r", "ddelta1", "ddelta2", "dzeta", "drain_gfak", "dcloud_k_au",
     "dcloud_k_sc", "dkc_autocon", "dinv_z", "dw",
     "dq_crit_i", "dD_crit_i", "dD_conv_i", "dq_crit_r",
@@ -294,8 +291,7 @@ const std::vector<std::string> output_grad_idx =
 /**
  * Descriptions for every parameter used in the output netCDF file.
  */
-const std::vector<std::string> output_grad_descr =
-    {"Dimensional coefficient used in one-moment warm physics for qc and qr calculation",
+const std::vector<std::string> output_grad_descr = {"Dimensional coefficient used in one-moment warm physics for qc and qr calculation",
     "Dimensional coefficient used in one-moment warm physics for qc and qr calculation",
     "Dimensional coefficients used in one-moment warm physics for temperature calculation",
     "Dimensional coefficients used in one-moment warm physics for temperature calculation",
@@ -908,68 +904,52 @@ enum class Cons_idx: uint32_t{
  * Mapping of json configuration names to parameters in a model_constants_t
  */
 std::unordered_map<std::string, Cons_idx> const table_param = {
-    {"a_1", Cons_idx::a1_prime}, {"a_2", Cons_idx::a2_prime},
-    {"e_1", Cons_idx::e1_prime}, {"e_2", Cons_idx::e2_prime},
-    {"d", Cons_idx::d_prime}, {"N_c", Cons_idx::Nc_prime},
-    {"gamma", Cons_idx::gamma}, {"beta_c", Cons_idx::betac},
-    {"beta_r", Cons_idx::betar}, {"delta1", Cons_idx::delta1},
-    {"delta2", Cons_idx::delta2}, {"zeta", Cons_idx::zeta},
+    {"a_1", Cons_idx::a1_prime}, {"a_2", Cons_idx::a2_prime}, {"e_1", Cons_idx::e1_prime},
+    {"e_2", Cons_idx::e2_prime}, {"d", Cons_idx::d_prime}, {"N_c", Cons_idx::Nc_prime},
+    {"gamma", Cons_idx::gamma}, {"beta_c", Cons_idx::betac}, {"beta_r", Cons_idx::betar},
+    {"delta1", Cons_idx::delta1}, {"delta2", Cons_idx::delta2}, {"zeta", Cons_idx::zeta},
     {"rain_gfak", Cons_idx::rain_gfak}, {"cloud_k_au", Cons_idx::cloud_k_au},
     {"cloud_k_sc", Cons_idx::cloud_k_sc}, {"kc_autocon", Cons_idx::kc_autocon},
-    {"inv_z", Cons_idx::inv_z}, {"dw", Cons_idx::dw},
-    {"q_crit_i", Cons_idx::q_crit_i}, {"D_crit_i", Cons_idx::D_crit_i},
-    {"D_conv_i", Cons_idx::D_conv_i}, {"q_crit_r", Cons_idx::q_crit_r},
-    {"D_crit_r", Cons_idx::D_crit_r}, {"q_crit_fr", Cons_idx::q_crit_fr},
-    {"D_coll_c", Cons_idx::D_coll_c}, {"q_crit", Cons_idx::q_crit},
-    {"D_conv_sg", Cons_idx::D_conv_sg}, {"D_conv_ig", Cons_idx::D_conv_ig},
-    {"x_conv", Cons_idx::x_conv}, {"parcel_height", Cons_idx::parcel_height},
-    {"alpha_spacefilling", Cons_idx::alpha_spacefilling}, {"T_nuc", Cons_idx::T_nuc},
-    {"T_freeze", Cons_idx::T_freeze}, {"T_f", Cons_idx::T_f},
-    {"D_eq", Cons_idx::D_eq}, {"rho_w", Cons_idx::rho_w},
-    {"rho_0", Cons_idx::rho_0}, {"rho_vel", Cons_idx::rho_vel},
-    {"rho_vel_c", Cons_idx::rho_vel_c}, {"rho_ice", Cons_idx::rho_ice},
-    {"M_w", Cons_idx::M_w}, {"M_a", Cons_idx::M_a},
-    {"R_universal", Cons_idx::R_universal}, {"Epsilon", Cons_idx::Epsilon},
-    {"gravity_acc", Cons_idx::gravity_acc}, {"R_a", Cons_idx::R_a},
-    {"R_v", Cons_idx::R_v}, {"a_v", Cons_idx::a_v},
-    {"b_v", Cons_idx::b_v}, {"a_prime", Cons_idx::a_prime},
-    {"b_prime", Cons_idx::b_prime}, {"c_prime", Cons_idx::c_prime},
-    {"K_T", Cons_idx::K_T}, {"L_wd", Cons_idx::L_wd},
-    {"L_ed", Cons_idx::L_ed}, {"D_v", Cons_idx::D_v},
-    {"ecoll_min", Cons_idx::ecoll_min}, {"ecoll_gg", Cons_idx::ecoll_gg},
-    {"ecoll_gg_wet", Cons_idx::ecoll_gg_wet}, {"kin_visc_air", Cons_idx::kin_visc_air},
-    {"C_mult", Cons_idx::C_mult}, {"T_mult_min", Cons_idx::T_mult_min},
-    {"T_mult_max", Cons_idx::T_mult_max}, {"T_mult_opt", Cons_idx::T_mult_opt},
-    {"const0", Cons_idx::const0}, {"const3", Cons_idx::const3},
-    {"const4", Cons_idx::const4}, {"const5", Cons_idx::const5},
-    {"D_rainfrz_ig", Cons_idx::D_rainfrz_ig}, {"D_rainfrz_gh", Cons_idx::D_rainfrz_gh},
-    {"dv0", Cons_idx::dv0},
-    {"p_sat_melt", Cons_idx::p_sat_melt}, {"cp", Cons_idx::cp},
-    {"k_b", Cons_idx::k_b}, {"a_HET", Cons_idx::a_HET},
-    {"b_HET", Cons_idx::b_HET}, {"N_sc", Cons_idx::N_sc},
-    {"n_f", Cons_idx::n_f}, {"N_avo", Cons_idx::N_avo},
-    {"na_dust", Cons_idx::na_dust}, {"na_soot", Cons_idx::na_soot},
-    {"na_orga", Cons_idx::na_orga}, {"ni_het_max", Cons_idx::ni_het_max},
-    {"ni_hom_max", Cons_idx::ni_hom_max}, {"a_dep", Cons_idx::a_dep},
-    {"b_dep", Cons_idx::b_dep}, {"c_dep", Cons_idx::c_dep},
-    {"d_dep", Cons_idx::d_dep}, {"nim_imm", Cons_idx::nim_imm},
-    {"nin_dep", Cons_idx::nin_dep}, {"alf_imm", Cons_idx::alf_imm},
-    {"bet_dep", Cons_idx::bet_dep}, {"bet_imm", Cons_idx::bet_imm},
-    {"r_const", Cons_idx::r_const}, {"r1_const", Cons_idx::r1_const},
+    {"inv_z", Cons_idx::inv_z}, {"dw", Cons_idx::dw}, {"q_crit_i", Cons_idx::q_crit_i},
+    {"D_crit_i", Cons_idx::D_crit_i}, {"D_conv_i", Cons_idx::D_conv_i},
+    {"q_crit_r", Cons_idx::q_crit_r}, {"D_crit_r", Cons_idx::D_crit_r},
+    {"q_crit_fr", Cons_idx::q_crit_fr}, {"D_coll_c", Cons_idx::D_coll_c},
+    {"q_crit", Cons_idx::q_crit}, {"D_conv_sg", Cons_idx::D_conv_sg},
+    {"D_conv_ig", Cons_idx::D_conv_ig}, {"x_conv", Cons_idx::x_conv},
+    {"parcel_height", Cons_idx::parcel_height}, {"alpha_spacefilling", Cons_idx::alpha_spacefilling},
+    {"T_nuc", Cons_idx::T_nuc}, {"T_freeze", Cons_idx::T_freeze}, {"T_f", Cons_idx::T_f},
+    {"D_eq", Cons_idx::D_eq}, {"rho_w", Cons_idx::rho_w}, {"rho_0", Cons_idx::rho_0},
+    {"rho_vel", Cons_idx::rho_vel}, {"rho_vel_c", Cons_idx::rho_vel_c}, {"rho_ice", Cons_idx::rho_ice},
+    {"M_w", Cons_idx::M_w}, {"M_a", Cons_idx::M_a}, {"R_universal", Cons_idx::R_universal},
+    {"Epsilon", Cons_idx::Epsilon}, {"gravity_acc", Cons_idx::gravity_acc},
+    {"R_a", Cons_idx::R_a}, {"R_v", Cons_idx::R_v}, {"a_v", Cons_idx::a_v},
+    {"b_v", Cons_idx::b_v}, {"a_prime", Cons_idx::a_prime}, {"b_prime", Cons_idx::b_prime},
+    {"c_prime", Cons_idx::c_prime}, {"K_T", Cons_idx::K_T}, {"L_wd", Cons_idx::L_wd},
+    {"L_ed", Cons_idx::L_ed}, {"D_v", Cons_idx::D_v}, {"ecoll_min", Cons_idx::ecoll_min},
+    {"ecoll_gg", Cons_idx::ecoll_gg}, {"ecoll_gg_wet", Cons_idx::ecoll_gg_wet},
+    {"kin_visc_air", Cons_idx::kin_visc_air}, {"C_mult", Cons_idx::C_mult},
+    {"T_mult_min", Cons_idx::T_mult_min}, {"T_mult_max", Cons_idx::T_mult_max},
+    {"T_mult_opt", Cons_idx::T_mult_opt}, {"const0", Cons_idx::const0}, {"const3", Cons_idx::const3},
+    {"const4", Cons_idx::const4}, {"const5", Cons_idx::const5}, {"D_rainfrz_ig", Cons_idx::D_rainfrz_ig},
+    {"D_rainfrz_gh", Cons_idx::D_rainfrz_gh}, {"dv0", Cons_idx::dv0}, {"p_sat_melt", Cons_idx::p_sat_melt},
+    {"cp", Cons_idx::cp}, {"k_b", Cons_idx::k_b}, {"a_HET", Cons_idx::a_HET}, {"b_HET", Cons_idx::b_HET},
+    {"N_sc", Cons_idx::N_sc}, {"n_f", Cons_idx::n_f}, {"N_avo", Cons_idx::N_avo}, {"na_dust", Cons_idx::na_dust},
+    {"na_soot", Cons_idx::na_soot}, {"na_orga", Cons_idx::na_orga}, {"ni_het_max", Cons_idx::ni_het_max},
+    {"ni_hom_max", Cons_idx::ni_hom_max}, {"a_dep", Cons_idx::a_dep}, {"b_dep", Cons_idx::b_dep},
+    {"c_dep", Cons_idx::c_dep}, {"d_dep", Cons_idx::d_dep}, {"nim_imm", Cons_idx::nim_imm},
+    {"nin_dep", Cons_idx::nin_dep}, {"alf_imm", Cons_idx::alf_imm}, {"bet_dep", Cons_idx::bet_dep},
+    {"bet_imm", Cons_idx::bet_imm}, {"r_const", Cons_idx::r_const}, {"r1_const", Cons_idx::r1_const},
     {"cv", Cons_idx::cv}, {"p_sat_const_a", Cons_idx::p_sat_const_a},
     {"p_sat_ice_const_a", Cons_idx::p_sat_ice_const_a}, {"p_sat_const_b", Cons_idx::p_sat_const_b},
     {"p_sat_ice_const_b", Cons_idx::p_sat_ice_const_b}, {"p_sat_low_temp", Cons_idx::p_sat_low_temp},
     {"T_sat_low_temp", Cons_idx::T_sat_low_temp}, {"alpha_depo", Cons_idx::alpha_depo},
-    {"r_0", Cons_idx::r_0}, {"k_1_conv", Cons_idx::k_1_conv},
-    {"k_2_conv", Cons_idx::k_2_conv}, {"k_1_accr", Cons_idx::k_1_accr},
-    {"k_r", Cons_idx::k_r},
+    {"r_0", Cons_idx::r_0}, {"k_1_conv", Cons_idx::k_1_conv}, {"k_2_conv", Cons_idx::k_2_conv},
+    {"k_1_accr", Cons_idx::k_1_accr}, {"k_r", Cons_idx::k_r},
 #if defined(RK4ICE) || defined(RK4NOICE)
-    {"a_ccn_1", Cons_idx::a_ccn_1}, {"a_ccn_2", Cons_idx::a_ccn_2},
-    {"a_ccn_3", Cons_idx::a_ccn_3}, {"a_ccn_4", Cons_idx::a_ccn_4},
-    {"b_ccn_1", Cons_idx::b_ccn_1}, {"b_ccn_2", Cons_idx::b_ccn_2},
-    {"b_ccn_3", Cons_idx::b_ccn_3}, {"b_ccn_4", Cons_idx::b_ccn_4},
-    {"c_ccn_1", Cons_idx::c_ccn_1}, {"c_ccn_2", Cons_idx::c_ccn_2},
-    {"c_ccn_3", Cons_idx::c_ccn_3}, {"c_ccn_4", Cons_idx::c_ccn_4},
+    {"a_ccn_1", Cons_idx::a_ccn_1}, {"a_ccn_2", Cons_idx::a_ccn_2}, {"a_ccn_3", Cons_idx::a_ccn_3},
+    {"a_ccn_4", Cons_idx::a_ccn_4}, {"b_ccn_1", Cons_idx::b_ccn_1}, {"b_ccn_2", Cons_idx::b_ccn_2},
+    {"b_ccn_3", Cons_idx::b_ccn_3}, {"b_ccn_4", Cons_idx::b_ccn_4}, {"c_ccn_1", Cons_idx::c_ccn_1},
+    {"c_ccn_2", Cons_idx::c_ccn_2}, {"c_ccn_3", Cons_idx::c_ccn_3}, {"c_ccn_4", Cons_idx::c_ccn_4},
     {"d_ccn_1", Cons_idx::d_ccn_1}, {"d_ccn_2", Cons_idx::d_ccn_2},
     {"d_ccn_3", Cons_idx::d_ccn_3}, {"d_ccn_4", Cons_idx::d_ccn_4}
 #endif
@@ -1152,44 +1132,14 @@ enum class Particle_cons_idx: uint32_t{
 template<
     class float_t,
     class enum_t>
-inline float_t get_at(std::vector<float_t> vec, enum_t idx)
-{
+inline float_t get_at(std::vector<float_t> vec, enum_t idx) {
     return vec[static_cast<int>(idx)];
-};
+}
 
 /**
  * Mapping of json configuration names to parameters in a particle_model_constants_t
  */
-std::unordered_map<std::string, Particle_cons_idx> const table_particle_param = {
-    {"a_geo", Particle_cons_idx::a_geo},
-    {"b_geo", Particle_cons_idx::b_geo}, {"min_x", Particle_cons_idx::min_x},
-    {"min_x_act", Particle_cons_idx::min_x_act}, {"min_x_nuc_homo", Particle_cons_idx::min_x_nuc_homo},
-    {"min_x_nuc_hetero", Particle_cons_idx::min_x_nuc_hetero}, {"min_x_melt", Particle_cons_idx::min_x_melt},
-    {"min_x_evap", Particle_cons_idx::min_x_evap}, {"min_x_freezing", Particle_cons_idx::min_x_freezing},
-    {"min_x_depo", Particle_cons_idx::min_x_depo}, {"min_x_collision", Particle_cons_idx::min_x_collision},
-    {"min_x_collection", Particle_cons_idx::min_x_collection}, {"min_x_conversion", Particle_cons_idx::min_x_conversion},
-    {"min_x_sedimentation", Particle_cons_idx::min_x_sedimentation}, {"min_x_riming", Particle_cons_idx::min_x_riming},
-    {"max_x", Particle_cons_idx::max_x}, {"sc_theta_q", Particle_cons_idx::sc_theta_q},
-    {"sc_delta_q", Particle_cons_idx::sc_delta_q}, {"sc_theta_n", Particle_cons_idx::sc_theta_n},
-    {"sc_delta_n", Particle_cons_idx::sc_delta_n}, {"s_vel", Particle_cons_idx::s_vel},
-    {"a_vel", Particle_cons_idx::a_vel}, {"b_vel", Particle_cons_idx::b_vel},
-    {"rho_v", Particle_cons_idx::rho_v}, {"c_z", Particle_cons_idx::c_z},
-    {"sc_coll_n", Particle_cons_idx::sc_coll_n}, {"cmu0", Particle_cons_idx::cmu0},
-    {"cmu1", Particle_cons_idx::cmu1}, {"cmu2", Particle_cons_idx::cmu2},
-    {"cmu3", Particle_cons_idx::cmu3}, {"cmu4", Particle_cons_idx::cmu4},
-    {"cmu5", Particle_cons_idx::cmu5}, {"alpha", Particle_cons_idx::alpha},
-    {"beta", Particle_cons_idx::beta}, {"gamma", Particle_cons_idx::gamma},
-    {"nu", Particle_cons_idx::nu}, {"g1", Particle_cons_idx::g1},
-    {"g2", Particle_cons_idx::g2}, {"mu", Particle_cons_idx::mu},
-    {"nm1", Particle_cons_idx::nm1}, {"nm2", Particle_cons_idx::nm2},
-    {"nm3", Particle_cons_idx::nm3}, {"q_crit_c", Particle_cons_idx::q_crit_c},
-    {"d_crit_c", Particle_cons_idx::d_crit_c}, {"ecoll_c", Particle_cons_idx::ecoll_c},
-    {"cap", Particle_cons_idx::cap}, {"a_ven", Particle_cons_idx::a_ven},
-    {"b_ven", Particle_cons_idx::b_ven}, {"c_s", Particle_cons_idx::c_s},
-    {"a_f", Particle_cons_idx::a_f}, {"b_f", Particle_cons_idx::b_f},
-    {"alfa_n", Particle_cons_idx::alfa_n}, {"alfa_q", Particle_cons_idx::alfa_q},
-    {"lambda", Particle_cons_idx::lambda}, {"vsedi_min", Particle_cons_idx::vsedi_min},
-    {"vsedi_max", Particle_cons_idx::vsedi_max}
+std::unordered_map<std::string, Particle_cons_idx> const table_particle_param = { {"a_geo", Particle_cons_idx::a_geo}, {"b_geo", Particle_cons_idx::b_geo}, {"min_x", Particle_cons_idx::min_x}, {"min_x_act", Particle_cons_idx::min_x_act}, {"min_x_nuc_homo", Particle_cons_idx::min_x_nuc_homo}, {"min_x_nuc_hetero", Particle_cons_idx::min_x_nuc_hetero}, {"min_x_melt", Particle_cons_idx::min_x_melt}, {"min_x_evap", Particle_cons_idx::min_x_evap}, {"min_x_freezing", Particle_cons_idx::min_x_freezing}, {"min_x_depo", Particle_cons_idx::min_x_depo}, {"min_x_collision", Particle_cons_idx::min_x_collision}, {"min_x_collection", Particle_cons_idx::min_x_collection}, {"min_x_conversion", Particle_cons_idx::min_x_conversion}, {"min_x_sedimentation", Particle_cons_idx::min_x_sedimentation}, {"min_x_riming", Particle_cons_idx::min_x_riming}, {"max_x", Particle_cons_idx::max_x}, {"sc_theta_q", Particle_cons_idx::sc_theta_q}, {"sc_delta_q", Particle_cons_idx::sc_delta_q}, {"sc_theta_n", Particle_cons_idx::sc_theta_n}, {"sc_delta_n", Particle_cons_idx::sc_delta_n}, {"s_vel", Particle_cons_idx::s_vel}, {"a_vel", Particle_cons_idx::a_vel}, {"b_vel", Particle_cons_idx::b_vel}, {"rho_v", Particle_cons_idx::rho_v}, {"c_z", Particle_cons_idx::c_z}, {"sc_coll_n", Particle_cons_idx::sc_coll_n}, {"cmu0", Particle_cons_idx::cmu0}, {"cmu1", Particle_cons_idx::cmu1}, {"cmu2", Particle_cons_idx::cmu2}, {"cmu3", Particle_cons_idx::cmu3}, {"cmu4", Particle_cons_idx::cmu4}, {"cmu5", Particle_cons_idx::cmu5}, {"alpha", Particle_cons_idx::alpha}, {"beta", Particle_cons_idx::beta}, {"gamma", Particle_cons_idx::gamma}, {"nu", Particle_cons_idx::nu}, {"g1", Particle_cons_idx::g1}, {"g2", Particle_cons_idx::g2}, {"mu", Particle_cons_idx::mu}, {"nm1", Particle_cons_idx::nm1}, {"nm2", Particle_cons_idx::nm2}, {"nm3", Particle_cons_idx::nm3}, {"q_crit_c", Particle_cons_idx::q_crit_c}, {"d_crit_c", Particle_cons_idx::d_crit_c}, {"ecoll_c", Particle_cons_idx::ecoll_c}, {"cap", Particle_cons_idx::cap}, {"a_ven", Particle_cons_idx::a_ven}, {"b_ven", Particle_cons_idx::b_ven}, {"c_s", Particle_cons_idx::c_s}, {"a_f", Particle_cons_idx::a_f}, {"b_f", Particle_cons_idx::b_f}, {"alfa_n", Particle_cons_idx::alfa_n}, {"alfa_q", Particle_cons_idx::alfa_q}, {"lambda", Particle_cons_idx::lambda}, {"vsedi_min", Particle_cons_idx::vsedi_min}, {"vsedi_max", Particle_cons_idx::vsedi_max}
 };
 
 extern double sediment_q;
@@ -1346,7 +1296,7 @@ const double rho_vel = 0.4;
 /**
  * Exponent for density correction of cloud droplets
  */
-const double rho_vel_c = 1;//0.2;
+const double rho_vel_c = 1; // 0.2;
 
 /**
  * Density of ice in \f$\text{kg}/\text{m}^3\f$
@@ -2101,19 +2051,4 @@ const uint32_t n_lookup = 2000;
 const uint32_t n_lookup_highres = 10000;
 const uint32_t n_lookup_hr_dummy = 10;
 
-/**
- * Used for writing outputs.
- */
-// std::stringstream out_tmp;
-// std::ofstream outfile;
-// std::ofstream out_diff[num_comp];
-// std::stringstream out_diff_tmp[num_comp];
-// uint64_t n_snapshots = 0;
-
-
-// std::vector<std::ofstream> out_diff(num_comp);
-// std::vector<std::stringstream> out_diff_tmp(num_comp);
-
 /** @} */ // end of group constants
-
-#endif

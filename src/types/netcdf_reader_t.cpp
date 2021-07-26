@@ -1,20 +1,19 @@
 #include "include/types/netcdf_reader_t.h"
 
+
 netcdf_reader_t::netcdf_reader_t(
-    const uint32_t &buffer_size)
-{
+    const uint32_t &buffer_size) {
     dimid.resize(Dim_idx::n_dims);
     varid.resize(Par_idx::n_pars);
     this->n_timesteps_buffer = buffer_size;
     this->time_buffer_idx = 0;
-    for(auto &b: buffer)
+    for (auto &b: buffer)
         b.resize(this->n_timesteps_buffer);
     already_open = false;
 }
 
 
-void netcdf_reader_t::load_vars()
-{
+void netcdf_reader_t::load_vars() {
     varid.resize(Par_idx::n_pars);
     ////////////////////////////////////////////
     varid_once.resize(Par_once_idx::n_pars_once);
@@ -365,12 +364,11 @@ void netcdf_reader_t::load_vars()
 #endif
 }
 
+
 void netcdf_reader_t::buffer_params(
-    const reference_quantities_t &ref_quant)
-{
+    const reference_quantities_t &ref_quant) {
     // check amount of timesteps left to read
-    if(time_idx + n_timesteps_buffer > n_timesteps_in)
-    {
+    if (time_idx + n_timesteps_buffer > n_timesteps_in) {
         n_timesteps_buffer = n_timesteps_in - time_idx;
     }
 
@@ -395,8 +393,7 @@ void netcdf_reader_t::buffer_params(
     countp.push_back(n_timesteps_buffer);
 #endif
 
-    for(int i=0; i<Par_idx::n_pars; i++)
-    {
+    for (int i=0; i<Par_idx::n_pars; i++) {
         SUCCESS_OR_DIE(
             nc_get_vara(
                 ncid,
@@ -407,40 +404,39 @@ void netcdf_reader_t::buffer_params(
             )
         );
     }
-    for(auto &v: buffer[Par_idx::pressure])
-    {
+    for (auto &v: buffer[Par_idx::pressure]) {
         v /= ref_quant.pref;
 #if !defined WCB2 && !defined MET3D
         v *= 100;
 #endif
     }
-    for(auto &v: buffer[Par_idx::temperature])
+    for (auto &v: buffer[Par_idx::temperature])
         v /= ref_quant.Tref;
 #if defined(FLUX) && !defined(WCB)
 
-    for(auto &v: buffer[Par_idx::qr_in])
+    for (auto &v: buffer[Par_idx::qr_in])
         v /= ref_quant.qref;
-    for(auto &v: buffer[Par_idx::nr_in])
+    for (auto &v: buffer[Par_idx::nr_in])
         v /= ref_quant.Nref;
   #if defined(RK4ICE)
-    for(auto &v: buffer[Par_idx::qi_in])
+    for (auto &v: buffer[Par_idx::qi_in])
         v /= ref_quant.qref;
-    for(auto &v: buffer[Par_idx::qs_in])
+    for (auto &v: buffer[Par_idx::qs_in])
         v /= ref_quant.qref;
-    for(auto &v: buffer[Par_idx::qg_in])
+    for (auto &v: buffer[Par_idx::qg_in])
         v /= ref_quant.qref;
-    for(auto &v: buffer[Par_idx::ni_in])
+    for (auto &v: buffer[Par_idx::ni_in])
         v /= ref_quant.Nref;
-    for(auto &v: buffer[Par_idx::ns_in])
+    for (auto &v: buffer[Par_idx::ns_in])
         v /= ref_quant.Nref;
-    for(auto &v: buffer[Par_idx::ng_in])
+    for (auto &v: buffer[Par_idx::ng_in])
         v /= ref_quant.Nref;
   #endif
 #endif
-    for(auto &v: buffer[Par_idx::ascent])
+    for (auto &v: buffer[Par_idx::ascent])
         v /= ref_quant.wref;
 #if defined MET3D && defined TURBULENCE
-    for(auto &v: buffer[Par_idx::q_turb])
+    for (auto &v: buffer[Par_idx::q_turb])
         v /= ref_quant.qref;
 #endif
     time_buffer_idx = 0;
@@ -454,13 +450,11 @@ void netcdf_reader_t::read_buffer(
     std::vector<codi::RealReverse> &inflows,
     const uint32_t &step,
     const bool &checkpoint_flag,
-    const bool &start_over_env)
-{
+    const bool &start_over_env) {
     time_buffer_idx += step+start_time_idx-time_idx;
     time_idx = step+start_time_idx;
     // check if buffer needs to be reloaded
-    if(time_buffer_idx >= n_timesteps_buffer-1)
-    {
+    if (time_buffer_idx >= n_timesteps_buffer-1) {
         buffer_params(ref_quant);
     }
     // Reset outflow
@@ -476,17 +470,14 @@ void netcdf_reader_t::read_buffer(
     y_single_old[Nh_out_idx] = 0;
 
     // Set values from a given trajectory
-    if((step==0 && !checkpoint_flag) || start_over_env)
-    {
+    if ((step==0 && !checkpoint_flag) || start_over_env) {
         y_single_old[p_idx] = buffer[Par_idx::pressure][time_buffer_idx];
         y_single_old[T_idx] = buffer[Par_idx::temperature][time_buffer_idx];
 #if defined(RK4ICE) || defined(RK4NOICE)
         y_single_old[w_idx] = buffer[Par_idx::ascent][time_buffer_idx];
-        if(time_idx == n_timesteps_in)
-        {
+        if (time_idx == n_timesteps_in) {
             cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
-        } else
-        {
+        } else {
             cc.constants[static_cast<int>(Cons_idx::dw)] = (
                 (buffer[Par_idx::ascent][time_buffer_idx+1] - buffer[Par_idx::ascent][time_buffer_idx])
                 / (cc.dt*cc.num_sub_steps)
@@ -523,8 +514,7 @@ void netcdf_reader_t::read_buffer(
 #endif
     }
 
-    if((step==0 && !checkpoint_flag))
-    {
+    if ((step==0 && !checkpoint_flag)) {
         read_initial_values(y_single_old, ref_quant, cc, checkpoint_flag);
     }
 }
@@ -533,17 +523,14 @@ void netcdf_reader_t::read_buffer(
 void netcdf_reader_t::set_dims(
     const char *input_file,
     model_constants_t &cc,
-    const int &simulation_mode)
-{
+    const int &simulation_mode) {
     time_buffer_idx = 0;
-    traj_idx = 0;//cc.traj_id; // either the same via input.traj for all or static schedule without perturbance
-    ens_idx = 0;//cc.ensemble_id; // check cc name
+    traj_idx = 0;// cc.traj_id; // either the same via input.traj for all or static schedule without perturbance
+    ens_idx = 0;// cc.ensemble_id; // check cc name
     // num_sub_steps = cc.num_sub_steps;
 
-    if(!already_open)
-    {
-        if((simulation_mode == grid_sensitivity) || (simulation_mode == trajectory_sensitivity))
-        {
+    if (!already_open) {
+        if ((simulation_mode == grid_sensitivity) || (simulation_mode == trajectory_sensitivity)) {
             SUCCESS_OR_DIE(
                 nc_open_par(
                     input_file,
@@ -553,8 +540,7 @@ void netcdf_reader_t::set_dims(
                     &ncid
                 )
             );
-        } else
-        {
+        } else {
             SUCCESS_OR_DIE(
                 nc_open(
                     input_file,
@@ -599,8 +585,7 @@ void netcdf_reader_t::set_dims(
             &n_ensembles
         )
     );
-    if(n_trajectories <= traj_idx)
-    {
+    if (n_trajectories <= traj_idx) {
         std::cerr << "Number of trajectories in netCDF file: " << n_trajectories << "\n";
         std::cerr << "You asked for trajectory with index " << traj_idx
                     << " which does not exist. ABORTING.\n";
@@ -608,8 +593,7 @@ void netcdf_reader_t::set_dims(
     }
     cc.n_ensembles = n_ensembles;
     cc.max_n_trajs = n_trajectories;
-    if(!already_open)
-    {
+    if (!already_open) {
         SUCCESS_OR_DIE(
             nc_inq_dimid(
                 ncid,
@@ -643,8 +627,7 @@ void netcdf_reader_t::init_netcdf(
     const bool &checkpoint_flag,
     model_constants_t &cc,
     const int &simulation_mode,
-    const double current_time)
-{
+    const double current_time) {
     std::vector<size_t> startp, countp;
 #ifdef MET3D
     countp.push_back(1);
@@ -665,12 +648,10 @@ void netcdf_reader_t::init_netcdf(
             &rel_start_time
         )
     );
-    if(!std::isnan(start_time) && !checkpoint_flag)
-    {
+    if (!std::isnan(start_time) && !checkpoint_flag) {
         // Calculate the needed index
         start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
-    } else if(checkpoint_flag && !std::isnan(start_time))
-    {
+    } else if (checkpoint_flag && !std::isnan(start_time)) {
         // Calculate the needed index
         start_time_idx = ceil(start_time-rel_start_time + current_time)/cc.dt_traject;
     }
@@ -682,14 +663,14 @@ void netcdf_reader_t::init_netcdf(
 #endif
 }
 
+
 void netcdf_reader_t::read_initial_values(
     std::vector<double> &y_init,
     const reference_quantities_t &ref_quant,
     model_constants_t &cc,
     const bool &checkpoint_flag,
     const uint64_t &traj_id,
-    const uint64_t &ens_id)
-{
+    const uint64_t &ens_id) {
     traj_idx = traj_id;
     ens_idx = ens_id;
     this->read_initial_values(y_init, ref_quant, cc, checkpoint_flag);
@@ -701,14 +682,12 @@ void netcdf_reader_t::read_initial_values(
     std::vector<float_t> &y_init,
     const reference_quantities_t &ref_quant,
     model_constants_t &cc,
-    const bool &checkpoint_flag)
-{
+    const bool &checkpoint_flag) {
     buffer_params(ref_quant);
 
     std::vector<size_t> startp;
 
-    if(!checkpoint_flag)
-    {
+    if (!checkpoint_flag) {
 #if defined MET3D
         startp.push_back(ens_idx);
         startp.push_back(traj_idx);
@@ -863,17 +842,17 @@ void netcdf_reader_t::read_initial_values(
 #else
         float_t denom = 0;
         denom = (get_at(cc.cloud.max_x - cc.cloud.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.cloud.constants, Particle_cons_idx::min_x);
-        y_init[Nc_idx] = y_init[qc_idx] / (denom); //*10e2);  // Nc
+        y_init[Nc_idx] = y_init[qc_idx] / (denom); // *10e2);  // Nc
         denom = (get_at(cc.rain.max_x - cc.rain.constants, Particle_cons_idx::min_x)) / 2 + get_at(cc.rain.constants, Particle_cons_idx::min_x);
-        y_init[Nr_idx] = y_init[qr_idx] / (denom); //*10e2);  // Nr
+        y_init[Nr_idx] = y_init[qr_idx] / (denom); // *10e2);  // Nr
         denom = get_at(cc.cloud.constants, Particle_cons_idx::min_x) / 2.0;
     #if defined(RK4ICE)
         denom = (get_at(cc.ice.max_x - cc.ice.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.ice.constants, Particle_cons_idx::min_x);
-        y_init[Ni_idx] = y_init[qi_idx] / (denom); //*10e2); // Ni
+        y_init[Ni_idx] = y_init[qi_idx] / (denom); // *10e2); // Ni
         denom = (get_at(cc.snow.max_x - cc.snow.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.snow.constants, Particle_cons_idx::min_x);
-        y_init[Ns_idx] = y_init[qs_idx] / (denom); //*10e2); // Ns
+        y_init[Ns_idx] = y_init[qs_idx] / (denom); // *10e2); // Ns
         denom = (get_at(cc.graupel.max_x - cc.graupel.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
-        y_init[Ng_idx] = y_init[qg_idx] / (denom); //*10e2); // Ng
+        y_init[Ng_idx] = y_init[qg_idx] / (denom); // *10e2); // Ng
     #endif
 #endif
         // Actually only needed for single moment schemes

@@ -1,16 +1,17 @@
 #pragma once
 
-#include <array>
-#include "codi.hpp"
 #include <netcdf.h>
 #include <netcdf_par.h>
+
+#include <array>
 #include <vector>
+
+#include "codi.hpp"
 
 #include "include/misc/error.h"
 #include "include/types/model_constants_t.h"
 #include "include/types/reference_quantities_t.h"
 
-// using namespace netCDF;
 
 struct netcdf_reader_t{
 
@@ -24,7 +25,7 @@ struct netcdf_reader_t{
      *
      * @param buffer_size Number of time steps to read at once
      */
-    netcdf_reader_t(const uint32_t &buffer_size);
+    explicit netcdf_reader_t(const uint32_t &buffer_size);
 
     /**
      * Read data from the buffer and store in in y_single_old and inflows.
@@ -111,14 +112,14 @@ struct netcdf_reader_t{
         model_constants_t &cc,
         const bool &checkpoint_flag);
 
-    double get_lat(const uint32_t &t) const {return buffer[Par_idx::lat][t%n_timesteps_buffer];};
-    double get_lon(const uint32_t &t) const {return buffer[Par_idx::lon][t%n_timesteps_buffer];};
+    double get_lat(const uint32_t &t) const {return buffer[Par_idx::lat][t%n_timesteps_buffer];}
+    double get_lon(const uint32_t &t) const {return buffer[Par_idx::lon][t%n_timesteps_buffer];}
 #ifdef MET3D
-    double get_relative_time(const uint32_t &t) const {return buffer[Par_idx::time_after_ascent][t%n_timesteps_buffer];};
-    bool get_conv_400(const uint32_t &t) const {return (buffer[Par_idx::conv_400][t] > 0.5);};
-    bool get_conv_600(const uint32_t &t) const {return (buffer[Par_idx::conv_600][t] > 0.5);};
-    bool get_slan_400(const uint32_t &t) const {return (buffer[Par_idx::slan_400][t] > 0.5);};
-    bool get_slan_600(const uint32_t &t) const {return (buffer[Par_idx::slan_600][t] > 0.5);};
+    double get_relative_time(const uint32_t &t) const {return buffer[Par_idx::time_after_ascent][t%n_timesteps_buffer];}
+    bool get_conv_400(const uint32_t &t) const {return (buffer[Par_idx::conv_400][t] > 0.5);}
+    bool get_conv_600(const uint32_t &t) const {return (buffer[Par_idx::conv_600][t] > 0.5);}
+    bool get_slan_400(const uint32_t &t) const {return (buffer[Par_idx::slan_400][t] > 0.5);}
+    bool get_slan_600(const uint32_t &t) const {return (buffer[Par_idx::slan_600][t] > 0.5);}
 
 #endif
 
@@ -142,8 +143,7 @@ private:
      */
     std::vector<int> varid, varid_once;
 
-    enum Par_idx
-    {
+    enum Par_idx {
         pressure,
         temperature,
         ascent,
@@ -176,16 +176,14 @@ private:
 #endif
         n_pars
     };
-    enum Dim_idx
-    {
+    enum Dim_idx {
         time_dim_idx,
         trajectory_dim_idx,
         ensemble_dim_idx,
         n_dims
     };
     // Index for variable ids that are read during initialization
-    enum Par_once_idx
-    {
+    enum Par_once_idx {
         qv,
         qc,
         qr,

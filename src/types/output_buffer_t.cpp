@@ -1,7 +1,7 @@
 #include "include/types/output_buffer_t.h"
 
-void create_MPI_type()
-{
+
+void create_MPI_type() {
     std::vector<MPI_Datatype> data_types(4) = {
         MPI_DOUBLE, MPI_CHAR, MPI_CHAR, MPI_UINT64_T
     };
@@ -33,8 +33,8 @@ void create_MPI_type()
         MPI_Type_free(&tmp)
     );
 }
-void create_MPI_type_max()
-{
+
+void create_MPI_type_max() {
     std::vector<MPI_Datatype> data_types(5) = {
         MPI_UINT64_T, MPI_DOUBLE, MPI_CHAR, MPI_CHAR, MPI_UINT64_T
     };

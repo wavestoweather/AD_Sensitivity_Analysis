@@ -1,8 +1,8 @@
 #include "include/types/model_constants_t.h"
 
+
 model_constants_t::model_constants_t(
-    const std::string &tracking_filename)
-{
+    const std::string &tracking_filename) {
     id = "0";
     ensemble_id = 0;
     traj_id = 0;
@@ -15,34 +15,30 @@ model_constants_t::model_constants_t(
     int track_amount = num_par / 64 + ( num_par%64 != 0 );
     track_param.resize(track_amount);
     track_state = 0;
-    for(auto &t: track_param)
+    for (auto &t: track_param)
         t = 0;
-    if(tracking_filename != "")
-    {
+    if (tracking_filename != "") {
         local_num_comp = 0;
         local_num_par = 0;
         this->load_configuration(tracking_filename);
-    } else
-    {
+    } else {
         local_num_comp = num_comp;
         local_num_par = num_par;
         track_state = -1;
-        for(auto &t: track_param)
+        for (auto &t: track_param)
             t = -1;
     }
-
 }
 
+
 void model_constants_t::register_input(
-    codi::RealReverse::TapeType &tape)
-{
-    for(uint32_t i=0; i<static_cast<int>(Cons_idx::n_items); i++)
-        if(trace_check(i, false))
+    codi::RealReverse::TapeType &tape) {
+    for (uint32_t i=0; i<static_cast<int>(Cons_idx::n_items); i++)
+        if (trace_check(i, false))
             tape.registerInput(this->constants[i]);
 
     uint32_t offset = static_cast<uint32_t>(Cons_idx::n_items);
-    if(local_num_par == num_par)
-    {
+    if (local_num_par == num_par) {
         this->rain.register_input(tape, offset);
         this->cloud.register_input(tape, offset);
 #if defined(RK4ICE)
@@ -51,42 +47,35 @@ void model_constants_t::register_input(
         this->ice.register_input(tape, offset);
         this->snow.register_input(tape, offset);
 #endif
-    } else
-    {
-        for(auto &c: this->rain.constants)
-        {
-            if(trace_check(offset, false))
+    } else {
+        for (auto &c: this->rain.constants) {
+            if (trace_check(offset, false))
                 tape.registerInput(c);
             offset++;
         }
-        for(auto &c: this->cloud.constants)
-        {
-            if(trace_check(offset, false))
+        for (auto &c: this->cloud.constants) {
+            if (trace_check(offset, false))
                 tape.registerInput(c);
             offset++;
         }
 #if defined(RK4ICE)
-        for(auto &c: this->graupel.constants)
-        {
-            if(trace_check(offset, false))
+        for (auto &c: this->graupel.constants) {
+            if (trace_check(offset, false))
                 tape.registerInput(c);
             offset++;
         }
-        for(auto &c: this->hail.constants)
-        {
-            if(trace_check(offset, false))
+        for (auto &c: this->hail.constants) {
+            if (trace_check(offset, false))
                 tape.registerInput(c);
             offset++;
         }
-        for(auto &c: this->ice.constants)
-        {
-            if(trace_check(offset, false))
+        for (auto &c: this->ice.constants) {
+            if (trace_check(offset, false))
                 tape.registerInput(c);
             offset++;
         }
-        for(auto &c: this->snow.constants)
-        {
-            if(trace_check(offset, false))
+        for (auto &c: this->snow.constants) {
+            if (trace_check(offset, false))
                 tape.registerInput(c);
             offset++;
         }
@@ -98,16 +87,14 @@ void model_constants_t::register_input(
 void model_constants_t::get_gradients(
     std::vector<codi::RealReverse> &y_single_new,
     std::vector< std::array<double, num_par > > &y_diff,
-    codi::RealReverse::TapeType &tape) const
-{
-    for(uint32_t ii = 0 ; ii < num_comp ; ii++)
-        if(trace_check(ii, true))
+    codi::RealReverse::TapeType &tape) const {
+    for (uint32_t ii = 0 ; ii < num_comp ; ii++)
+        if (trace_check(ii, true))
             tape.registerOutput(y_single_new[ii]);
 
     tape.setPassive();
-    for(uint32_t ii = 0 ; ii < num_comp ; ii++)
-    {
-        if(!trace_check(ii, true))
+    for (uint32_t ii = 0 ; ii < num_comp ; ii++) {
+        if (!trace_check(ii, true))
             continue;
         y_single_new[ii].setGradient(1.0);
         tape.evaluate();
@@ -118,17 +105,16 @@ void model_constants_t::get_gradients(
     tape.reset();
 }
 
+
 void model_constants_t::get_gradient(
-    std::array<double, num_par> &out_vec) const
-{
-    for(int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
-        if(trace_check(i, false))
+    std::array<double, num_par> &out_vec) const {
+    for (int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
+        if (trace_check(i, false))
             out_vec[i] = this->constants[i].getGradient();
 
 
     uint32_t idx = static_cast<uint32_t>(Cons_idx::n_items);
-    if(local_num_par == num_par)
-    {
+    if (local_num_par == num_par) {
         this->rain.get_gradient(out_vec, idx);
         this->cloud.get_gradient(out_vec, idx);
 #if defined(RK4ICE)
@@ -137,42 +123,35 @@ void model_constants_t::get_gradient(
         this->ice.get_gradient(out_vec, idx);
         this->snow.get_gradient(out_vec, idx);
 #endif
-    } else
-    {
-        for(auto &c: this->rain.constants)
-        {
-            if(trace_check(idx, false))
+    } else {
+        for (auto &c: this->rain.constants) {
+            if (trace_check(idx, false))
                 out_vec[idx] = c.getGradient();
             idx++;
         }
-        for(auto &c: this->cloud.constants)
-        {
-            if(trace_check(idx, false))
+        for (auto &c: this->cloud.constants) {
+            if (trace_check(idx, false))
                 out_vec[idx] = c.getGradient();
             idx++;
         }
 #if defined(RK4ICE)
-        for(auto &c: this->graupel.constants)
-        {
-            if(trace_check(idx, false))
+        for (auto &c: this->graupel.constants) {
+            if (trace_check(idx, false))
                 out_vec[idx] = c.getGradient();
             idx++;
         }
-        for(auto &c: this->hail.constants)
-        {
-            if(trace_check(idx, false))
+        for (auto &c: this->hail.constants) {
+            if (trace_check(idx, false))
                 out_vec[idx] = c.getGradient();
             idx++;
         }
-        for(auto &c: this->ice.constants)
-        {
-            if(trace_check(idx, false))
+        for (auto &c: this->ice.constants) {
+            if (trace_check(idx, false))
                 out_vec[idx] = c.getGradient();
             idx++;
         }
-        for(auto &c: this->snow.constants)
-        {
-            if(trace_check(idx, false))
+        for (auto &c: this->snow.constants) {
+            if (trace_check(idx, false))
                 out_vec[idx] = c.getGradient();
             idx++;
         }
@@ -180,9 +159,9 @@ void model_constants_t::get_gradient(
     }
 }
 
+
 void model_constants_t::put(
-    pt::ptree &ptree) const
-{
+    pt::ptree &ptree) const {
     pt::ptree model_cons;
     model_cons.put("id", id);
     model_cons.put("ensemble_id", ensemble_id);
@@ -208,14 +187,13 @@ void model_constants_t::put(
     model_cons.put("local_num_par", local_num_par);
     model_cons.put("track_state", track_state);
     pt::ptree track_param_tree;
-    for(int i=0; i<track_param.size(); i++)
+    for (uint32_t i=0; i<track_param.size(); i++)
         track_param_tree.put(std::to_string(i), track_param[i]);
     model_cons.add_child("track_param", track_param_tree);
 
-    if(!perturbed_idx.empty())
-    {
+    if (!perturbed_idx.empty()) {
         pt::ptree perturbed;
-        for(uint32_t idx: perturbed_idx)
+        for (uint32_t idx: perturbed_idx)
             perturbed.put(std::to_string(idx), constants[idx]);
         model_cons.add_child("perturbed", perturbed);
     }
@@ -235,149 +213,111 @@ void model_constants_t::put(
     ptree.add_child("model_constants", model_cons);
 }
 
+
 int model_constants_t::from_pt(
-    pt::ptree &ptree)
-{
+    pt::ptree &ptree) {
     int err = 0;
-    for(auto &it: ptree.get_child("model_constants"))
-    {
+    for (auto &it: ptree.get_child("model_constants")) {
         auto first = it.first;
-        if(first == "id")
-        {
+        if (first == "id") {
             id = it.second.get_value<std::string>() + "-" + id;
-        } else if(first == "ensemble_id")
-        {
+        } else if (first == "ensemble_id") {
             ensemble_id = it.second.get_value<std::uint64_t>();
-        } else if(first == "traj_id")
-        {
+        } else if (first == "traj_id") {
             traj_id = it.second.get_value<std::uint64_t>();
-        } else if(first == "n_trajs")
-        {
+        } else if (first == "n_trajs") {
             n_trajs = it.second.get_value<std::uint64_t>();
-        } else if(first == "ens_desc")
-        {
+        } else if (first == "ens_desc") {
             ens_desc = it.second.get_value<std::string>();
-        } else if(first == "t_end_prime")
-        {
+        } else if (first == "t_end_prime") {
             t_end_prime = it.second.get_value<double>();
-        } else if(first == "t_end")
-        {
+        } else if (first == "t_end") {
             t_end = it.second.get_value<double>();
-        } else if(first == "dt_prime")
-        {
+        } else if (first == "dt_prime") {
             dt_prime = it.second.get_value<double>();
-        } else if(first == "dt")
-        {
+        } else if (first == "dt") {
             dt = it.second.get_value<double>();
-        } else if(first == "dt_traject_prime")
-        {
+        } else if (first == "dt_traject_prime") {
             dt_traject_prime = it.second.get_value<double>();
-        } else if(first == "dt_traject")
-        {
+        } else if (first == "dt_traject") {
             dt_traject = it.second.get_value<double>();
-        } else if(first == "num_steps")
-        {
+        } else if (first == "num_steps") {
             num_steps = it.second.get_value<uint64_t>();
-        } else if(first == "num_sub_steps")
-        {
+        } else if (first == "num_sub_steps") {
             num_sub_steps = it.second.get_value<uint64_t>();
-        } else if(first == "dt_half")
-        {
+        } else if (first == "dt_half") {
             dt_half = it.second.get_value<double>();
-        } else if(first == "dt_sixth")
-        {
+        } else if (first == "dt_sixth") {
             dt_sixth = it.second.get_value<double>();
-        } else if(first == "dt_third")
-        {
+        } else if (first == "dt_third") {
             dt_third = it.second.get_value<double>();
-        } else if(first == "n_ensembles")
-        {
+        } else if (first == "n_ensembles") {
             n_ensembles = it.second.get_value<uint64_t>();
-        } else if(first == "num_steps")
-        {
+        } else if (first == "num_steps") {
             num_steps = it.second.get_value<uint64_t>();
-        } else if(first == "done_steps")
-        {
+        } else if (first == "done_steps") {
             done_steps = it.second.get_value<uint64_t>();
-        } else if(first == "track_state")
-        {
+        } else if (first == "track_state") {
             track_state = it.second.get_value<uint64_t>();
-        } else if(first == "track_param")
-        {
-            for(auto &it2: ptree.get_child("model_constants.track_param"))
-            {
+        } else if (first == "track_param") {
+            for (auto &it2: ptree.get_child("model_constants.track_param")) {
                 uint32_t idx = std::stoi(it2.first);
                 track_param[idx] = it2.second.get_value<uint64_t>();
             }
-        } else if(first == "perturbed")
-        {
-            for(auto &it2: ptree.get_child("model_constants.perturbed"))
-            {
+        } else if (first == "perturbed") {
+            for (auto &it2: ptree.get_child("model_constants.perturbed")) {
                 uint32_t idx = std::stoi(it2.first);
                 perturbed_idx.push_back(idx);
                 this->constants[idx] = it2.second.get_value<double>();
             }
         // below from here: perturbed particle models
-        } else if(first == "hail")
-        {
-            for(auto &it2: ptree.get_child("model_constants.hail.perturbed"))
-            {
+        } else if (first == "hail") {
+            for (auto &it2: ptree.get_child("model_constants.hail.perturbed")) {
                 uint32_t idx = std::stoi(it2.first);
                 this->hail.perturbed_idx.push_back(idx);
                 this->hail.constants[idx] = it2.second.get_value<double>();
             }
-        } else if(first == "ice")
-        {
-            for(auto &it2: ptree.get_child("model_constants.ice.perturbed"))
-            {
+        } else if (first == "ice") {
+            for (auto &it2: ptree.get_child("model_constants.ice.perturbed")) {
                 uint32_t idx = std::stoi(it2.first);
                 this->ice.perturbed_idx.push_back(idx);
                 this->ice.constants[idx] = it2.second.get_value<double>();
             }
-        } else if(first == "snow")
-        {
-            for(auto &it2: ptree.get_child("model_constants.snow.perturbed"))
-            {
+        } else if (first == "snow") {
+            for (auto &it2: ptree.get_child("model_constants.snow.perturbed")) {
                 uint32_t idx = std::stoi(it2.first);
                 this->snow.perturbed_idx.push_back(idx);
                 this->snow.constants[idx] = it2.second.get_value<double>();
             }
-        } else if(first == "cloud")
-        {
-            for(auto &it2: ptree.get_child("model_constants.cloud.perturbed"))
-            {
+        } else if (first == "cloud") {
+            for (auto &it2: ptree.get_child("model_constants.cloud.perturbed")) {
                 uint32_t idx = std::stoi(it2.first);
                 this->cloud.perturbed_idx.push_back(idx);
                 this->cloud.constants[idx] = it2.second.get_value<double>();
             }
-        } else if(first == "rain")
-        {
-            for(auto &it2: ptree.get_child("model_constants.rain.perturbed"))
-            {
+        } else if (first == "rain") {
+            for (auto &it2: ptree.get_child("model_constants.rain.perturbed")) {
                 uint32_t idx = std::stoi(it2.first);
                 this->rain.perturbed_idx.push_back(idx);
                 this->rain.constants[idx] = it2.second.get_value<double>();
             }
-        } else if(first == "graupel")
-        {
-            for(auto &it2: ptree.get_child("model_constants.graupel.perturbed"))
-            {
+        } else if (first == "graupel") {
+            for (auto &it2: ptree.get_child("model_constants.graupel.perturbed")) {
                 uint32_t idx = std::stoi(it2.first);
                 this->graupel.perturbed_idx.push_back(idx);
                 this->graupel.constants[idx] = it2.second.get_value<double>();
             }
-        } else
-        {
+        } else {
             err = MODEL_CONS_CHECKPOINT_ERR;
         }
     }
     return err;
 }
 
+
 void model_constants_t::setCoefficients(
     std::vector<codi::RealReverse> & y,
-    reference_quantities_t& ref)
-{
+    reference_quantities_t& ref) {
     codi::RealReverse p_prime = y[p_idx]*ref.pref;
     codi::RealReverse T_prime = y[T_idx]*ref.Tref;
 
@@ -405,10 +345,10 @@ void model_constants_t::setCoefficients(
     this->constants[static_cast<int>(Cons_idx::d_prime)] = this->d_scale;	// Constant coefficient
 }
 
+
 void model_constants_t::setCoefficients(
     codi::RealReverse p_prime,
-    codi::RealReverse T_prime)
-{
+    codi::RealReverse T_prime) {
     codi::RealReverse rho_prime = p_prime /( get_at(this->constants, Cons_idx::R_a) * T_prime );
     codi::RealReverse L_vap_prime = latent_heat_water(T_prime, get_at(this->constants, Cons_idx::M_w));
     codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
@@ -423,28 +363,24 @@ void model_constants_t::setCoefficients(
 
     this->constants[static_cast<int>(Cons_idx::a1_prime)] = this->a1_scale;	// Constant coefficient
     this->constants[static_cast<int>(Cons_idx::a2_prime)] = this->a2_scale;	// Constant coefficient
-
     this->constants[static_cast<int>(Cons_idx::e1_prime)] = this->e1_scale * ( pow(rho_prime, 2.0*this->alpha_r-2.0)/(A_pp + B_pp) );
     this->constants[static_cast<int>(Cons_idx::e2_prime)] = this->e2_scale * ( pow(rho_prime, this->alpha_r*this->epsilonr - (7.0/4.0))/(A_pp + B_pp) );
-
     this->constants[static_cast<int>(Cons_idx::d_prime)] = this->d_scale;	// Constant coefficient
 }
 
+
 void model_constants_t::setup_cloud_autoconversion(
-    particle_model_constants_t &pc)
-{
+    particle_model_constants_t &pc) {
     auto nu = get_at(pc.constants, Particle_cons_idx::nu) + 1.0;
     auto mu = get_at(pc.constants, Particle_cons_idx::mu);
-    if(get_at(pc.constants, Particle_cons_idx::mu) == 1.0)
-    {
+    if (get_at(pc.constants, Particle_cons_idx::mu) == 1.0) {
         this->constants[static_cast<int>(Cons_idx::cloud_k_au)] =
             get_at(this->constants, Cons_idx::kc_autocon)
             / get_at(pc.constants, Particle_cons_idx::max_x) * 0.05
             * (nu+1.0)*(nu+3.0) / pow(nu, 2);
         this->constants[static_cast<int>(Cons_idx::cloud_k_sc)] =
             get_at(this->constants, Cons_idx::kc_autocon) * (nu+1.0)/(nu);
-    } else
-    {
+    } else {
         this->constants[static_cast<int>(Cons_idx::cloud_k_au)] =
             get_at(this->constants, Cons_idx::kc_autocon)
             / get_at(pc.constants, Particle_cons_idx::max_x) * 0.05
@@ -458,10 +394,10 @@ void model_constants_t::setup_cloud_autoconversion(
     }
 }
 
+
 void model_constants_t::setup_model_constants(
     const input_parameters_t &input,
-    const reference_quantities_t &ref_quant)
-{
+    const reference_quantities_t &ref_quant) {
     this->id = std::to_string(input.id);
     // Set constants
     this->constants[static_cast<int>(Cons_idx::q_crit_i)] = q_crit_i;
@@ -554,7 +490,6 @@ void model_constants_t::setup_model_constants(
     this->constants[static_cast<int>(Cons_idx::k_1_accr)] = k_1_accr;
     this->constants[static_cast<int>(Cons_idx::k_r)] = k_r;
 
-
     // Numerics
 #ifdef MET3D
     this->t_end_prime = input.t_end_prime;// + input.start_time;;
@@ -570,7 +505,7 @@ void model_constants_t::setup_model_constants(
     this->dt_traject = this->dt_traject_prime/ref_quant.tref;
     this->num_steps = ceil(this->t_end_prime/this->dt_traject_prime);
     // The trajectories from input files are calculated with 20 s timesteps.
-    this->num_sub_steps = (floor( this->dt_traject_prime/this->dt ) < 1) ? 1 : floor( this->dt_traject_prime/this->dt );
+    this->num_sub_steps = (floor(this->dt_traject_prime/this->dt) < 1) ? 1 : floor(this->dt_traject_prime/this->dt);
 
     // Evaluate the general performance constants
     this->dt_half = this->dt*0.5;
@@ -595,27 +530,23 @@ void model_constants_t::setup_model_constants(
     const double F_acc = 2.0;
     const double lambda_pp = pow(this->nar * this->ar * tgamma(this->br + 1.0) , this->alpha_r);
 #endif
-    for(uint32_t i=0; i<4; i++)
-    {
+    for (uint32_t i=0; i<4; i++) {
         this->constants[static_cast<int>(Cons_idx::a_ccn_1)+i] = a_ccn[i];
         this->constants[static_cast<int>(Cons_idx::b_ccn_1)+i] = b_ccn[i];
         this->constants[static_cast<int>(Cons_idx::c_ccn_1)+i] = c_ccn[i];
         this->constants[static_cast<int>(Cons_idx::d_ccn_1)+i] = d_ccn[i];
     }
 
-    if(nuc_type == 6)
-    {
+    if (nuc_type == 6) {
         this->constants[static_cast<int>(Cons_idx::na_dust)] = na_dust;
         this->constants[static_cast<int>(Cons_idx::na_soot)] = na_soot;
         this->constants[static_cast<int>(Cons_idx::na_orga)] = na_orga;
-    } else if(nuc_type == 7 || nuc_type == 5)
-    {
+    } else if (nuc_type == 7 || nuc_type == 5) {
         // Standard values
         this->constants[static_cast<int>(Cons_idx::na_dust)] = na_dust_2;
         this->constants[static_cast<int>(Cons_idx::na_soot)] = na_soot_2;
         this->constants[static_cast<int>(Cons_idx::na_orga)] = na_orga_2;
-    } else if(nuc_type == 8)
-    {
+    } else if (nuc_type == 8) {
         this->constants[static_cast<int>(Cons_idx::na_dust)] = na_dust_3;
         this->constants[static_cast<int>(Cons_idx::na_soot)] = na_soot_3;
         this->constants[static_cast<int>(Cons_idx::na_orga)] = na_orga_3;
@@ -983,8 +914,7 @@ void model_constants_t::setup_model_constants(
 }
 
 
-void model_constants_t::print()
-{
+void model_constants_t::print() {
 #ifdef SILENT_MODE
     return;
 #endif
@@ -1001,8 +931,7 @@ void model_constants_t::print()
         << "e1_scale = " << this->e1_scale << "\n"
         << "e2_scale = " << this->e2_scale << "\n"
         << "d_scale = " << this->d_scale << "\n";
-    for(auto const &t: table_param)
-    {
+    for (auto const &t: table_param) {
         std::cout << t.first << " = " << get_at(this->constants, t.second) << "\n";
     }
     std::cout << std::endl << std::flush;
@@ -1012,13 +941,10 @@ void model_constants_t::print()
 
 bool model_constants_t::trace_check(
     const int &idx,
-    const bool state_param) const
-{
-    if(state_param)
-    {
+    const bool state_param) const {
+    if (state_param) {
         return (track_state & (1 << idx));
-    } else
-    {
+    } else {
         int i = idx/64;
         return ( track_param[i] & (1 << (idx%64) ) );
     }
@@ -1026,20 +952,16 @@ bool model_constants_t::trace_check(
 
 
 void model_constants_t::load_configuration(
-    const std::string &filename)
-{
+    const std::string &filename) {
     boost::property_tree::ptree config_tree;
     boost::property_tree::read_json(filename, config_tree);
 
     auto it_child = config_tree.find("model_state_variable");
-    if( it_child == config_tree.not_found() )
-    {
+    if ( it_child == config_tree.not_found() ) {
         track_state = -1;
         local_num_comp = num_comp;
-    } else
-    {
-        for(auto &it: config_tree.get_child("model_state_variable"))
-        {
+    } else {
+        for (auto &it: config_tree.get_child("model_state_variable")) {
             uint32_t id = it.second.get_value<std::uint32_t>();
             track_state = track_state | (((uint64_t) 1) << id);
             local_num_comp++;
@@ -1047,15 +969,12 @@ void model_constants_t::load_configuration(
     }
 
     auto it_child2 = config_tree.find("out_params");
-    if( it_child2 == config_tree.not_found() )
-    {
-        for(auto &t: track_param)
+    if ( it_child2 == config_tree.not_found() ) {
+        for (auto &t: track_param)
             t = -1;
         local_num_par = num_par;
-    } else
-    {
-        for(auto &it: config_tree.get_child("out_params"))
-        {
+    } else {
+        for (auto &it: config_tree.get_child("out_params")) {
             std::string id_name = it.second.get_value<std::string>();
             auto it_tmp = std::find(
                 output_grad_idx.begin(),

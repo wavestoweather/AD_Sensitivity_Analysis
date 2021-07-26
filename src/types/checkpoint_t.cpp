@@ -1,7 +1,6 @@
 #include "include/types/checkpoint_t.h"
 
-checkpoint_t::checkpoint_t()
-{
+checkpoint_t::checkpoint_t() {
 
 }
 
@@ -11,8 +10,7 @@ checkpoint_t::checkpoint_t(
     const std::vector<float_t> &y,
     const std::vector<segment_t> &segments,
     const input_parameters_t &input,
-    const double &current_time)
-{
+    const double &current_time) {
     this->create_checkpoint(cc, y, segments, input, current_time);
 }
 
@@ -25,8 +23,7 @@ checkpoint_t::checkpoint_t(
     const double &current_time,
     const uint32_t &id,
     const uint64_t &ens_id,
-    const uint64_t &n_trajs)
-{
+    const uint64_t &n_trajs) {
     auto old_id = cc.ensemble_id;
     cc.ensemble_id = ens_id;
     auto old_tid = cc.traj_id;
@@ -49,11 +46,10 @@ void checkpoint_t::create_checkpoint(
     const std::vector<float_t> &y,
     const std::vector<segment_t> &segments,
     const input_parameters_t &input,
-    const double &current_time)
-{
+    const double &current_time) {
     // First we add the ensemble configuration
     pt::ptree segment_tree;
-    for(auto &s: segments)
+    for (auto &s: segments)
         s.put(segment_tree);
 
     checkpoint.add_child("segments", segment_tree);
@@ -63,8 +59,7 @@ void checkpoint_t::create_checkpoint(
     cc.put(checkpoint);
     // Current status of y
     pt::ptree output_parameters;
-    for(uint32_t i=0; i<num_comp; i++)
-    {
+    for (uint32_t i=0; i<num_comp; i++) {
         output_parameters.put(std::to_string(i), y[i]);
     }
     checkpoint.add_child("Output Parameters", output_parameters);
@@ -76,9 +71,8 @@ int checkpoint_t::load_checkpoint(
     std::vector<float_t> &y,
     std::vector<segment_t> &segments,
     input_parameters_t &input,
-    const reference_quantities_t &ref_quant)
-{
-    if(checkpoint.empty()) return CHECKPOINT_LOAD_ERR;
+    const reference_quantities_t &ref_quant) {
+    if (checkpoint.empty()) return CHECKPOINT_LOAD_ERR;
     // Parse the input parameters
     SUCCESS_OR_DIE(input.from_pt(checkpoint));
     cc.setup_model_constants(input, ref_quant);
@@ -89,21 +83,18 @@ int checkpoint_t::load_checkpoint(
     // in ens_descr
     std::string ens_desc;
     segments.clear();
-    for(auto &it: checkpoint.get_child("segments"))
-    {
+    for (auto &it: checkpoint.get_child("segments")) {
         segment_t segment;
         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
 
-        if(segment.activated)
-        {
+        if (segment.activated) {
             segment.perturb(cc, ref_quant, input, ens_desc);
         }
         segments.push_back(segment);
     }
     cc.ens_desc += ens_desc;
     // input.set_outputfile_id(cc.ensemble_id);
-    for(auto &it: checkpoint.get_child("Output Parameters"))
-    {
+    for (auto &it: checkpoint.get_child("Output Parameters")) {
         y[std::stoi(it.first)] = std::stod(it.second.data());
     }
     return 0;
@@ -116,8 +107,7 @@ int checkpoint_t::load_checkpoint(
     std::vector<segment_t> &segments,
     input_parameters_t &input,
     const reference_quantities_t &ref_quant,
-    output_handle_t &out_handler)
-{
+    output_handle_t &out_handler) {
     int err = this->load_checkpoint(cc, y, segments, input, ref_quant);
     out_handler.flushed_snapshots = cc.done_steps;
     out_handler.traj = cc.traj_id;
@@ -132,8 +122,7 @@ int checkpoint_t::load_checkpoint(
     std::vector<float_t> &y,
     std::vector<segment_t> &segments,
     input_parameters_t &input,
-    const reference_quantities_t &ref_quant)
-{
+    const reference_quantities_t &ref_quant) {
     boost::property_tree::read_json(filename, checkpoint);
     return this->load_checkpoint(cc, y, segments, input, ref_quant);
 }
@@ -145,8 +134,7 @@ void checkpoint_t::write_checkpoint(
     const std::vector<float_t> &y,
     std::vector<segment_t> &segments,
     const input_parameters_t &input,
-    const double &current_time)
-{
+    const double &current_time) {
     this->create_checkpoint(cc, y, segments, input, current_time);
     this->write_checkpoint(filename, cc, segments);
 }
@@ -155,22 +143,19 @@ void checkpoint_t::write_checkpoint(
 void checkpoint_t::write_checkpoint(
     std::string &filename,
     model_constants_t &cc,
-    std::vector<segment_t> &segments)
-{
-    if(checkpoint.empty())
-    {
+    std::vector<segment_t> &segments) {
+    if (checkpoint.empty()) {
         return;
     }
     uint64_t i = 0;
     std::string actual_filename = filename + "/checkpoint_id" + cc.id + "_0000.json";
-    while(exists(actual_filename))
-    {
+    while (exists(actual_filename)) {
         i++;
-        if(i < 10)
+        if (i < 10)
             actual_filename = filename + "/checkpoint_id" + cc.id + "_000" + std::to_string(i) + ".json";
-        else if(i < 100)
+        else if (i < 100)
             actual_filename = filename + "/checkpoint_id" + cc.id + "_00" + std::to_string(i) + ".json";
-        else if(i < 1000)
+        else if (i < 1000)
             actual_filename = filename + "/checkpoint_id" + cc.id + "_0" + std::to_string(i) + ".json";
         else
             actual_filename = filename + "/checkpoint_id" + cc.id + "_" + std::to_string(i) + ".json";
@@ -181,14 +166,13 @@ void checkpoint_t::write_checkpoint(
     outstream.close();
     // deactivate all segments, so we know, another instance is going
     // to process this
-    for(auto &s: segments)
+    for (auto &s: segments)
         s.deactivate(true);
     cc.ensemble_id++;
 }
 
 void checkpoint_t::send_checkpoint(
-    const int send_id)
-{
+    const int send_id) {
     MPI_Request request;
     std::stringstream ss;
     pt::json_parser::write_json(ss, checkpoint);
@@ -205,8 +189,7 @@ void checkpoint_t::send_checkpoint(
     );
 }
 
-bool checkpoint_t::receive_checkpoint()
-{
+bool checkpoint_t::receive_checkpoint() {
     MPI_Status status;
     int count;
     int got_something;
@@ -218,7 +201,7 @@ bool checkpoint_t::receive_checkpoint()
             &got_something,
             &status)
     );
-    if(!got_something) return got_something;
+    if (!got_something) return got_something;
     SUCCESS_OR_DIE(
         MPI_Get_count(
             &status,
@@ -247,13 +230,8 @@ bool checkpoint_t::receive_checkpoint()
     return got_something;
 }
 
-// pt::ptree checkpoint_t::get_checkpoint()
-// {
-//     return checkpoint;
-// }
 
-bool checkpoint_t::checkpoint_available() const
-{
+bool checkpoint_t::checkpoint_available() const {
     return !checkpoint.empty();
 }
 

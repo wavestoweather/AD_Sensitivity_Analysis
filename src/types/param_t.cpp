@@ -1,7 +1,7 @@
 #include "include/types/param_t.h"
 
-param_t::param_t()
-{
+
+param_t::param_t() {
     mean            = std::nan("");
     sigma           = std::nan("");
     sigma_perc      = std::nan("");
@@ -12,53 +12,46 @@ param_t::param_t()
     func_name       = "";
 }
 
+
 param_t::param_t(
-    std::string param_type)
-{
+    std::string param_type) {
     add_type(param_type);
 }
 
+
 void param_t::add_type(
-    std::string param_type)
-{
+    std::string param_type) {
     auto it = table_out_param.find(param_type);
-    if(it != table_out_param.end())
-    {
+    if (it != table_out_param.end()) {
         out_name = static_cast<int>(it->second);
-        if(out_name != static_cast<int>(OutParam::model))
+        if (out_name != static_cast<int>(OutParam::model))
             particle_param = true;
         outparam_name = param_type;
-    } else
-    {
+    } else {
         err = OUTPARAM_CONFIG_ERR;
     }
 }
 
+
 void param_t::add_mean(
-    double m)
-{
+    double m) {
     mean = m;
-    if(!isnan(sigma_perc) && isnan(sigma))
+    if (!isnan(sigma_perc) && isnan(sigma))
         sigma = mean*sigma_perc/100;
 }
 
 
 void param_t::add_name(
     std::string n,
-    model_constants_t &cc)
-{
+    model_constants_t &cc) {
     param_name = n;
-    if(particle_param)
-    {
+    if (particle_param) {
         auto it = table_particle_param.find(n);
-        if(it != table_particle_param.end())
-        {
+        if (it != table_particle_param.end()) {
             name = static_cast<uint32_t>(it->second);
-            if(std::isnan(mean))
-            {
+            if (std::isnan(mean)) {
                 particle_model_constants_t *pt_model;
-                switch(out_name)
-                {
+                switch (out_name) {
                     case static_cast<uint32_t>(OutParam::cloud):
                         pt_model = &(cc.cloud);
                         break;
@@ -80,101 +73,86 @@ void param_t::add_name(
                 }
                 mean = pt_model->constants[name].getValue();
             }
-        } else
-        {
+        } else {
             err = PARAM_CONFIG_ERR;
         }
-    } else
-    {
+    } else {
         auto it = table_param.find(n);
-        if(it != table_param.end())
-        {
+        if (it != table_param.end()) {
             name = static_cast<int>(it->second);
-            if(std::isnan(mean))
+            if (std::isnan(mean))
                 mean = get_at(cc.constants, name).getValue();
-        } else
-        {
+        } else {
             err = PARAM_CONFIG_ERR;
         }
     }
 
-    if(!isnan(sigma) && err != PARAM_CONFIG_ERR)
-    {
+    if (!isnan(sigma) && err != PARAM_CONFIG_ERR) {
         add_sigma(sigma);
-    }
-    else if(!isnan(sigma_perc) && err != PARAM_CONFIG_ERR)
-    {
+    } else if (!isnan(sigma_perc) && err != PARAM_CONFIG_ERR) {
         add_sigma_perc(sigma_perc);
     }
 }
 
+
 void param_t::add_sigma(
-    double s)
-{
+    double s) {
     sigma = s;
-    if(!isnan(mean) && func_name != "")
+    if (!isnan(mean) && func_name != "")
         add_rand_function(func_name);
 }
 
+
 void param_t::add_sigma_perc(
-    double s)
-{
+    double s) {
     sigma_perc = s;
-    if(!isnan(mean))
-    {
+    if (!isnan(mean)) {
         sigma = sigma_perc*mean/100;
-        if(func_name != "")
+        if (func_name != "")
             add_rand_function(func_name);
     }
 }
 
+
 void param_t::add_rand_function(
-    std::string name)
-{
-    if(func_name == "")
+    std::string name) {
+    if (func_name == "")
         func_name = name;
-    if(!isnan(sigma_perc) && isnan(sigma) && !isnan(mean))
+    if (!isnan(sigma_perc) && isnan(sigma) && !isnan(mean))
         sigma = mean*sigma_perc/100;
-    if(!isnan(mean) && !isnan(sigma))
-    {
-        if(func_name == "normal")
-        {
+    if (!isnan(mean) && !isnan(sigma)) {
+        if (func_name == "normal") {
             normal_dis = std::normal_distribution<double>(mean, sigma);
             get_rand = std::bind(normal_dis, rand_generator);
-        } else if(func_name == "uniform")
-        {
+        } else if (func_name == "uniform") {
             uniform_dis = std::uniform_real_distribution<double>(mean-sigma, mean+sigma);
             get_rand = std::bind(uniform_dis, rand_generator);
-        } else
-        {
+        } else {
             err = DISTRIBUTION_CONFIG_ERR;
         }
     }
 }
 
-int param_t::check()
-{
-    if(name == -1)
-    {
+
+int param_t::check() {
+    if (name == -1) {
         std::cerr << "Error in config file:\n"
                     << "You did not specify the parameter to perturb or "
                     << "you have a typo at <name>typo</name>\n";
         err = MISSING_PARAM_CONFIG_ERR;
         return err;
     }
-    if(isnan(sigma) && isnan(sigma_perc))
-    {
+    if (isnan(sigma) && isnan(sigma_perc)) {
         std::cerr << "Error in config file:\n"
                     << "You did not specify the variance for "
                     << "perturbing the parameter.\n";
         err = MISSING_VARIANCE_CONFIG_ERR;
         return err;
     }
-    if(func_name == "")
+    if (func_name == "")
         err = DISTRIBUTION_CONFIG_ERR;
 
-    switch(err)
-    {
+    switch (err) {
         case PARAM_CONFIG_ERR:
             std::cerr << "Error in config file:\n"
                         << "You used a parameter to perturb that does "
@@ -206,14 +184,13 @@ int param_t::check()
 
 
 void param_t::put(
-    pt::ptree &ptree) const
-{
-    if(err != 0)
+    pt::ptree &ptree) const {
+    if (err != 0)
         return;
     pt::ptree param;
     param.put("mean", mean);
     param.put("name", param_name);
-    if(!isnan(sigma))
+    if (!isnan(sigma))
         param.put("sigma", sigma);
     else
         param.put("sigma_perc", sigma_perc);
@@ -223,36 +200,27 @@ void param_t::put(
     ptree.push_back(std::make_pair("", param));
 }
 
-int param_t::from_pt(pt::ptree &ptree, model_constants_t &cc)
-{
+
+int param_t::from_pt(pt::ptree &ptree, model_constants_t &cc) {
     int err = 0;
     add_type(ptree.get<std::string>("type"));
-    if(err != 0)
+    if (err != 0)
         return err;
-    for(auto &it: ptree)
-    {
+    for (auto &it: ptree) {
         auto first = it.first;
-        if(first == "name")
-        {
+        if (first == "name") {
             add_name(it.second.get_value<std::string>(), cc);
-        } else if(first == "sigma_perc")
-        {
+        } else if (first == "sigma_perc") {
             add_sigma_perc(it.second.get_value<double>());
-        } else if(first == "sigma")
-        {
+        } else if (first == "sigma") {
             add_sigma(it.second.get_value<double>());
-        } else if(first == "mean")
-        {
+        } else if (first == "mean") {
             add_mean(it.second.get_value<double>());
-        } else if(first == "type")
-        {
+        } else if (first == "type") {
             // Needs to be done before the for-loop.
-        } else if(first == "rand_func")
-        {
+        } else if (first == "rand_func") {
             add_rand_function(it.second.get_value<std::string>());
-        }
-        else
-        {
+        } else {
             err = PARAM_CONFIG_ERR;
         }
     }
@@ -261,13 +229,10 @@ int param_t::from_pt(pt::ptree &ptree, model_constants_t &cc)
 
 
 void param_t::perturb(
-    model_constants_t &cc) const
-{
-    if(particle_param)
-    {
+    model_constants_t &cc) const {
+    if (particle_param) {
         particle_model_constants_t *pt_model = nullptr;
-        switch(out_name)
-        {
+        switch (out_name) {
             case static_cast<uint32_t>(OutParam::cloud):
                 pt_model = &(cc.cloud);
                 break;
@@ -291,20 +256,17 @@ void param_t::perturb(
         }
         pt_model->constants[name] = get_rand();
         pt_model->perturbed_idx.push_back(name);
-    } else
-    {
+    } else {
         cc.constants[name] = get_rand();
         cc.perturbed_idx.push_back(name);
     }
 }
 
-std::string param_t::get_name() const
-{
-    if(particle_param)
-    {
+
+std::string param_t::get_name() const {
+    if (particle_param) {
         return ( outparam_name + "_" + param_name );
-    } else
-    {
+    } else {
         return param_name;
     }
 }

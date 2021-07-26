@@ -1,16 +1,17 @@
-#ifndef RK4_H
-#define RK4_H
+#pragma once
 
-#include "codi.hpp"
 #include <math.h>
+
+#include <algorithm>
 #include <vector>
 
+#include "codi.hpp"
+
 #include "include/microphysics/constants.h"
+#include "include/microphysics/user_functions.h"
 #include "include/types/model_constants_t.h"
-// #include "include/types/nc_parameters_t.h"
 #include "include/types/reference_quantities_t.h"
 
-#include "user_functions.h"
 
 /** @defgroup rk Runge-Kutta 4 Method
  * This file provides the function for a single step with the
@@ -23,9 +24,8 @@ template<class float_t>
 void set_limits(
     std::vector<float_t> &y,
     const reference_quantities_t& ref,
-    model_constants_t &cc)
-{
-    if(nuc_type > 0)
+    model_constants_t &cc) {
+    if (nuc_type > 0)
         y[Nc_idx] = min(min(max(y[Nc_idx], y[qc_idx]*ref.qref/get_at(cc.cloud.constants, Particle_cons_idx::max_x)),
             y[qc_idx]*ref.qref/get_at(cc.cloud.constants, Particle_cons_idx::min_x)), 5e9);
     y[Nr_idx] = min(max(y[Nr_idx], y[qr_idx]*ref.qref/get_at(cc.rain.constants, Particle_cons_idx::max_x)),
@@ -71,15 +71,14 @@ void RK4_step_2_sb_ice(
     std::vector<codi::RealReverse> &yold,
     const reference_quantities_t& ref,
     model_constants_t& cc,
-    bool fixed)
-{
+    bool fixed) {
 
     // Define temporary variables
     std::vector<codi::RealReverse> k(num_comp);
     std::vector<codi::RealReverse> ytmp(num_comp);
 
     // Reset the result vector with the current state
-    for(int ii = 0 ; ii < num_comp ; ii++)
+    for (int ii = 0 ; ii < num_comp ; ii++)
         ynew[ii] = yold[ii];
 
     //
@@ -87,10 +86,9 @@ void RK4_step_2_sb_ice(
     //
     RHS_SB(k, yold, ref, cc, cc.dt_sixth, fixed); // k = k1
 
-    for(int ii = 0 ; ii < num_comp ; ii++)
-    {
+    for (int ii = 0 ; ii < num_comp ; ii++) {
 #ifdef TRACE_ENV
-        if(trace && ii == T_idx)
+        if (trace && ii == T_idx)
             std::cout << "RK1, yold[T] = " << yold[ii]
                       << "\nk[T] = " << k[ii]
                       << "\nk[T] prime = " << k[ii]*ref.Tref
@@ -114,10 +112,9 @@ void RK4_step_2_sb_ice(
     //
     RHS_SB(k, ytmp, ref, cc, cc.dt_third, fixed); // k = k2
 
-    for(int ii = 0 ; ii < num_comp ; ii++)
-    {
+    for (int ii = 0 ; ii < num_comp ; ii++) {
 #ifdef TRACE_ENV
-        if(trace && ii == T_idx)
+        if (trace && ii == T_idx)
             std::cout << "RK2, yold[T] = " << yold[ii]
                       << "\nk[T] = " << k[ii]
                       << "\nk[T] prime = " << k[ii]*ref.Tref
@@ -141,10 +138,9 @@ void RK4_step_2_sb_ice(
     //
     RHS_SB(k, ytmp, ref, cc, cc.dt_third, fixed); // k = k3
 
-    for(int ii = 0 ; ii < num_comp ; ii++)
-    {
+    for (int ii = 0 ; ii < num_comp ; ii++) {
 #ifdef TRACE_ENV
-        if(trace && ii == T_idx)
+        if (trace && ii == T_idx)
             std::cout << "RK3, yold[T] = " << yold[ii]
                       << "\nk[T] = " << k[ii]
                       << "\nk[T] prime = " << k[ii]*ref.Tref
@@ -168,10 +164,9 @@ void RK4_step_2_sb_ice(
     //
     RHS_SB(k, ytmp, ref, cc, cc.dt_sixth, fixed); // k = k4
 
-    for(int ii = 0 ; ii < num_comp ; ii++)
-    {
+    for (int ii = 0 ; ii < num_comp ; ii++) {
 #ifdef TRACE_ENV
-        if(trace && ii == T_idx)
+        if (trace && ii == T_idx)
             std::cout << "RK4, k[T] = " << k[ii]
                         << "\nk[T] prime = " << k[ii]*ref.Tref
                       << "\ndT Result = " << cc.dt_sixth*k[ii]
@@ -198,5 +193,3 @@ void RK4_step_2_sb_ice(
 }
 
 /** @} */ // end of group rk
-
-#endif

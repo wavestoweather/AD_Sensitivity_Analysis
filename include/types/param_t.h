@@ -1,14 +1,14 @@
 #pragma once
 
-#include <boost/property_tree/ptree.hpp>
 #include <cmath>
 #include <functional>
 #include <random>
 #include <string>
-#include <utility>
 #include <unordered_map>
+#include <utility>
 
-// #include "include/microphysics/constants.h"
+#include <boost/property_tree/ptree.hpp>
+
 #include "include/misc/error.h"
 #include "include/types/model_constants_t.h"
 
@@ -33,16 +33,12 @@ struct param_t{
     enum class OutParam: uint32_t {
         model, cloud, rain, ice, graupel, hail, snow
     };
-    std::unordered_map<std::string, OutParam> const table_out_param = {
-        {"model", OutParam::model},
-        {"cloud", OutParam::cloud}, {"rain", OutParam::rain},
-        {"ice", OutParam::ice}, {"graupel", OutParam::graupel},
-        {"hail", OutParam::hail}, {"snow", OutParam::snow}
+    std::unordered_map<std::string, OutParam> const table_out_param = { {"model", OutParam::model}, {"cloud", OutParam::cloud}, {"rain", OutParam::rain}, {"ice", OutParam::ice}, {"graupel", OutParam::graupel}, {"hail", OutParam::hail}, {"snow", OutParam::snow}
     };
 
     param_t();
 
-    param_t(std::string param_type);
+    explicit param_t(std::string param_type);
 
     void add_type(std::string param_type);
 

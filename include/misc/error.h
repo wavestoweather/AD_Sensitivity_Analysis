@@ -1,5 +1,4 @@
-#ifndef ERROR_H
-#define ERROR_H
+#pragma once
 
 #include <mpi.h>
 #include <stdio.h>
@@ -8,8 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Error codes
 ////////////////////////////////////////////////////////////////////////////////
-enum
-{
+enum {
     SUCCESS = 0,
     // The first roughly hundert codes are reserved for MPI
     MISSING_PARAM_CONFIG_ERR = 101,
@@ -32,16 +30,12 @@ enum
 
 // Credits to http://www.gpi-site.com/ for this function and the name
 #define SUCCESS_OR_DIE(f...)                                                \
-    do                                                                      \
-    {                                                                       \
+    do {                                                                    \
         const int err = f;                                                  \
-        if(err != SUCCESS)                                                  \
-        {                                                                   \
+        if (err != SUCCESS) {                                               \
             std::cout << "Error: " << #f << " [" << __FILE__                \
                 << ":" << __LINE__ << "]: " << err << "\n" << std::flush;   \
             MPI_Abort(MPI_COMM_WORLD, err);                                 \
             exit(EXIT_FAILURE);                                             \
         }                                                                   \
-    } while(0)
-
-#endif
+    } while (0)

@@ -1,16 +1,18 @@
 #pragma once
 
-#include <array>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <cmath>
-#include <fstream>
 #include <mpi.h>
 #include <netcdf.h>
 #include <netcdf_par.h>
+
+#include <array>
+#include <cmath>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include "include/misc/error.h"
 #include "include/types/model_constants_t.h"
@@ -76,8 +78,7 @@ struct output_handle_t{
      */
     int simulation_mode;
 
-    enum Dim_idx
-    {
+    enum Dim_idx {
         out_param_dim,
         ensemble_dim,
         trajectory_dim,
@@ -85,8 +86,7 @@ struct output_handle_t{
         n_dims
     };
 
-    enum Var_idx
-    {
+    enum Var_idx {
         // this should be the same as the *_idx in constants.h
         pressure,
         temperature,
@@ -143,8 +143,7 @@ struct output_handle_t{
     /**
      * Indices within the double buffer
      */
-    enum Buffer_idx
-    {
+    enum Buffer_idx {
         // The first entries are already given via constants.h *_idx
         time_ascent_buf = num_comp,
         lat_buf = num_comp+1,

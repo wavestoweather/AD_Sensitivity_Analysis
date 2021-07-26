@@ -1,17 +1,19 @@
-#include "codi.hpp"
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <gsl/gsl_integration.h>
+#include <gsl/gsl_sf_legendre.h>
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
-#include <iostream>
-#include <fstream>
-#include <cmath>
+#include <stdio.h>
+#include <stdlib.h>
 #include <tgmath.h>
+#include <unistd.h>
+#include <netcdf>
+#include <cmath>
+#include <fstream>
+#include <iostream>
 #include <vector>
-#include <gsl/gsl_integration.h>
-#include <gsl/gsl_sf_legendre.h>
+
+#include "codi.hpp"
 
 #include "include/microphysics/constants.h"
 #include "include/types/checkpoint_t.h"
@@ -20,7 +22,6 @@
 #include "include/types/output_handle_t.h"
 #include "include/types/model_constants_t.h"
 #include "include/types/netcdf_reader_t.h"
-// #include "include/types/output_buffer.h"
 #include "include/types/reference_quantities_t.h"
 #include "include/types/segment_t.h"
 #include "include/types/task_scheduler_t.h"
@@ -30,7 +31,6 @@
 
 #include "include/misc/general.h"
 
-#include <netcdf>
 
 #if defined(RK4) || defined(RK4NOICE) || defined(RK4ICE) || defined(RK4_ONE_MOMENT)
 #include "include/microphysics/rk4.h"
@@ -46,6 +46,7 @@
 
 #include "include/misc/pbar.h"
 
+
 model_constants_t parse_args(
     const int &argc,
     char* const * argv,
@@ -56,8 +57,7 @@ model_constants_t parse_args(
     reference_quantities_t &ref_quant,
     std::vector<segment_t> &segments,
     std::vector<double> &y_init,
-    checkpoint_t &checkpoint)
-{
+    checkpoint_t &checkpoint) {
     SUCCESS_OR_DIE(global_args.parse_arguments(argc, argv, rank, n_processes));
 
     ref_quant.Tref = 273.15;
@@ -71,28 +71,23 @@ model_constants_t parse_args(
     ref_quant.tref = 1.0;
     ref_quant.zref = 1.0;
     ref_quant.Nref = 1.0; 	// DUMMY
-    if(rank == 0)
-    {
+    if (rank == 0) {
         print_reference_quantities(ref_quant);
     }
     input.set_input_from_arguments(global_args);
 
     model_constants_t cc(input.tracking_filename);
 
-    if(global_args.checkpoint_flag && rank == 0)
-    {
+    if (global_args.checkpoint_flag && rank == 0) {
         checkpoint.load_checkpoint(global_args.checkpoint_string, cc,
             y_init, segments, input, ref_quant);
         print_segments(segments);
-    }
-    else
-    {
+    } else {
         cc.setup_model_constants(input, ref_quant);
-        if(global_args.ens_config_flag && rank == 0)
-        {
+        if (global_args.ens_config_flag && rank == 0) {
             load_ens_config(global_args.ens_config_string, cc,
                 segments, input, ref_quant);
-            for(auto &s: segments)
+            for (auto &s: segments)
                 SUCCESS_OR_DIE(s.check());
             print_segments(segments);
         }
@@ -125,10 +120,8 @@ void setup_simulation_base(
     std::vector<double> &y_init,
     std::vector<codi::RealReverse> &y_single_old,
     bool &already_loaded,
-    netcdf_reader_t &netcdf_reader)
-{
-    if(!already_loaded)
-    {
+    netcdf_reader_t &netcdf_reader) {
+    if (!already_loaded) {
         netcdf_reader.init_netcdf(
 #ifdef MET3D
             input.start_time,
@@ -137,25 +130,22 @@ void setup_simulation_base(
             (global_args.checkpoint_flag || already_loaded),
             cc, input.simulation_mode, input.current_time
         );
-    } else
-    {
+    } else {
         netcdf_reader.time_idx = netcdf_reader.start_time_idx;
     }
 #if defined(RK4_ONE_MOMENT)
     cc.setCoefficients(y_init[0] , y_init[1]);
 #endif
-    if(rank == 0 && !already_loaded)
-    {
+    if (rank == 0 && !already_loaded) {
         cc.print();
         input.print_parameters();
     }
 
     // // Set "old" values as temporary holder of values.
-    // for(int ii = 0 ; ii < num_comp ; ii++)
+    // for (int ii = 0 ; ii < num_comp ; ii++)
     //     y_single_old[ii] = y_init[ii];
 
-    if(rank == 0 && !already_loaded)
-    {
+    if (rank == 0 && !already_loaded) {
 #ifdef TRACE_QC
         cc.cloud.print("cloud");
 #endif
@@ -198,8 +188,7 @@ void setup_simulation(
     checkpoint_t &checkpoint,
     output_handle_t &out_handler,
     bool &already_loaded,
-    netcdf_reader_t &netcdf_reader)
-{
+    netcdf_reader_t &netcdf_reader) {
     checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant, out_handler);
     setup_simulation_base(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
@@ -214,8 +203,7 @@ void substep_trace(
     const input_parameters_t &input,
     const reference_quantities_t &ref_quant,
     const std::vector<codi::RealReverse> &y_single_old,
-    const std::vector<codi::RealReverse> &inflow)
-{
+    const std::vector<codi::RealReverse> &inflow) {
 #if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
 #if defined(TRACE_TIME)
 #if defined(MET3D)
@@ -224,17 +212,16 @@ void substep_trace(
     trace = ( ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime)  >= trace_start) && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) <= trace_end) ) ? true : false;
 #endif
 #endif
-    if(trace)
+    if (trace)
         std::cout << cc.id << " timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
 
 #endif
 #if defined(TRACE_SAT)
-    if(trace)
+    if (trace)
         std::cout << "Start qv_prime " << y_single_old[qv_idx]*ref_quant.qref << "\n";
 #endif
 #ifdef TRACE_QR
-    if(trace)
-    {
+    if (trace) {
         std::cout << "Adding qr " << inflow[qr_in_idx]/cc.num_sub_steps*ref_quant.qref
             << ", Nr " << inflow[Nr_in_idx]/cc.num_sub_steps << "\n";
         std::cout << "qr_old " << y_single_old[qr_idx]*ref_quant.qref
@@ -242,8 +229,7 @@ void substep_trace(
     }
 #endif
 #ifdef TRACE_QI
-    if(trace)
-    {
+    if (trace) {
         std::cout << "Adding qi " << inflow[qi_in_idx]/cc.num_sub_steps*ref_quant.qref
             << ", Ni " << inflow[Ni_in_idx]/cc.num_sub_steps << "\n";
         std::cout << "qi_old " << y_single_old[qi_idx]*ref_quant.qref
@@ -251,8 +237,7 @@ void substep_trace(
     }
 #endif
 #ifdef TRACE_QS
-    if(trace)
-    {
+    if (trace) {
         std::cout << "Adding qs " << inflow[qs_in_idx]/cc.num_sub_steps*ref_quant.qref
             << ", Ns " << inflow[Ns_in_idx]/cc.num_sub_steps << "\n";
         std::cout << "qs_old " << y_single_old[qs_idx]*ref_quant.qref
@@ -260,8 +245,7 @@ void substep_trace(
     }
 #endif
 #ifdef TRACE_QG
-    if(trace)
-    {
+    if (trace) {
         std::cout << "Adding qg " << inflow[qg_in_idx]/cc.num_sub_steps*ref_quant.qref
             << ", Ng " << inflow[Ng_in_idx]/cc.num_sub_steps << "\n";
         std::cout << "qg_old " << y_single_old[qg_idx]*ref_quant.qref
@@ -270,8 +254,7 @@ void substep_trace(
 #endif
 
 #if defined TRACE_QV && defined MET3D && defined TURBULENCE
-    if(trace)
-    {
+    if (trace) {
         std::cout << "Adding qv " << inflow[qv_in_idx]/cc.num_sub_steps*ref_quant.qref
             << "\n";
         std::cout << "qv_old " << y_single_old[qv_idx]*ref_quant.qref
@@ -288,30 +271,24 @@ void parameter_check(
     const std::vector<codi::RealReverse> &y_single_old,
     input_parameters_t &input,
     const reference_quantities_t &ref_quant,
-    task_scheduler_t &scheduler)
-{
-    for(auto &s: segments)
-    {
+    task_scheduler_t &scheduler) {
+    for (auto &s: segments) {
         bool perturb = s.perturb_check(
             cc, y_diff, y_single_old, time_old);
-        if(perturb)
-        {
+        if (perturb) {
             // Perturb this instance
-            if(s.n_members == 1)
-            {
+            if (s.n_members == 1) {
                 std::string descr;
                 s.perturb(cc, ref_quant, input, descr);
-            } else // Create a checkpoint for new members
-            {
+            } else {
+                // Create a checkpoint for new members
 #ifdef USE_MPI
                 uint64_t ens_id;
-                if(scheduler.my_rank != 0)
-                {
+                if (scheduler.my_rank != 0) {
                     MPI_Win_lock(MPI_LOCK_SHARED, scheduler.my_rank, 0, scheduler.ens_window);
                     uint64_t result = scheduler.max_ensemble_id;
                     MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
-                    do
-                    {
+                    do {
                         ens_id = result + 1;
                         MPI_Win_lock(MPI_LOCK_EXCLUSIVE, scheduler.my_rank, 0, scheduler.ens_window);
                         scheduler.max_ensemble_id = result;
@@ -326,18 +303,15 @@ void parameter_check(
                             0, // target displ
                             scheduler.ens_window)
                         );
-                    } while(result != scheduler.max_ensemble_id);
-                } else
-                {
+                    } while (result != scheduler.max_ensemble_id);
+                } else {
                     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, scheduler.my_rank, 0, scheduler.ens_window);
                     ens_id = scheduler.max_ensemble_id + 1;
                     scheduler.max_ensemble_id = ens_id;
                     MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
                 }
-                if(ens_id < cc.n_ensembles)
-                {
-                    for(uint32_t i=0; i<s.n_members; ++i)
-                    {
+                if (ens_id < cc.n_ensembles) {
+                    for (uint32_t i=0; i<s.n_members; ++i) {
                         const uint64_t total_members = s.n_members;
                         checkpoint_t checkpoint(
                             cc,
@@ -376,8 +350,7 @@ void parameter_check(
 void finish_last_step(
     std::vector<codi::RealReverse> &y_single_new,
     const reference_quantities_t &ref_quant,
-    const model_constants_t &cc)
-{
+    const model_constants_t &cc) {
     codi::RealReverse T_prime = y_single_new[T_idx]*ref_quant.Tref;
     codi::RealReverse p_prime = y_single_new[p_idx]*ref_quant.pref;
     codi::RealReverse qv_prime = y_single_new[qv_idx]*ref_quant.qref;
@@ -389,7 +362,7 @@ void finish_last_step(
         get_at(cc.constants, Cons_idx::T_sat_low_temp),
         get_at(cc.constants, Cons_idx::p_sat_const_b));
 #ifdef TRACE_ENV
-    if(trace)
+    if (trace)
         std::cout << "before sat ad S " << y_single_new[S_idx]
             << "\nbefore sat ad S calc "
             << convert_qv_to_S(
@@ -403,7 +376,7 @@ void finish_last_step(
                 get_at(cc.constants, Cons_idx::Epsilon)) << "\n";
 #endif
     std::vector<codi::RealReverse> res(7);
-    for(auto& r: res) r = 0;
+    for (auto& r: res) r = 0;
     saturation_adjust(
         T_prime,
         p_prime,
@@ -428,7 +401,7 @@ void finish_last_step(
         get_at(cc.constants, Cons_idx::p_sat_const_b),
         get_at(cc.constants, Cons_idx::Epsilon));
 #ifdef TRACE_ENV
-    if(trace)
+    if (trace)
         std::cout << "sat ad S " << y_single_new[S_idx]
             << "\nsat ad T " << y_single_new[T_idx]*ref_quant.Tref << "\n";
 #endif
@@ -452,11 +425,10 @@ void run_substeps(
     std::vector<segment_t> &segments,
     ProgressBar &pbar,
     task_scheduler_t &scheduler,
-    const uint64_t &progress_index)
-{
+    const uint64_t &progress_index) {
+
     double time_old, time_new;
-    for(uint32_t sub=sub_start; sub<=cc.num_sub_steps; ++sub) // cc.num_sub_steps
-    {
+    for (uint32_t sub=sub_start; sub<=cc.num_sub_steps; ++sub) {
         substep_trace(sub, t, cc, input, ref_quant, y_single_old, inflow);
 
         bool last_step = ( ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + 1))
@@ -487,8 +459,7 @@ void run_substeps(
         y_single_old[qv_idx] += inflow[qv_in_idx]/cc.num_sub_steps;
 #endif
         cc.register_input(tape);
-        if(sub == 1)
-        {
+        if (sub == 1) {
             codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
             codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
             codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
@@ -512,8 +483,7 @@ void run_substeps(
             input.fixed_iteration);
 #endif
 #ifndef IN_SAT_ADJ
-        if(last_step)
-        {
+        if (last_step) {
             finish_last_step(y_single_new, ref_quant, cc);
         }
 #endif
@@ -532,8 +502,7 @@ void run_substeps(
         time_old = time_new;
         y_single_old.swap(y_single_new);
 
-        if(time_new != cc.t_end_prime)
-        {
+        if (time_new != cc.t_end_prime) {
             // Check if parameter shall be perturbed
             parameter_check(segments, cc, time_old, y_diff,
                 y_single_old, input, ref_quant, scheduler);
@@ -541,11 +510,11 @@ void run_substeps(
 
         // While debugging, the bar is not useful.
 #if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR) && !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
-        if(progress_index > 0)
+        if (progress_index > 0)
             pbar.progress(sub + t*cc.num_sub_steps);
 #endif
         // In case that the sub timestep%timestep is not 0
-        if( last_step )
+        if ( last_step )
             break;
     } // End substep
 }
@@ -564,8 +533,7 @@ int run_simulation(
     output_handle_t &out_handler,
     std::vector<segment_t> &segments,
     task_scheduler_t &scheduler,
-    netcdf_reader_t &netcdf_reader)
-{
+    netcdf_reader_t &netcdf_reader) {
 
     int traj_id = -1;
 #ifdef MET3D
@@ -576,17 +544,15 @@ int run_simulation(
     ProgressBar pbar = ProgressBar((cc.num_sub_steps)*cc.num_steps,
         progress_index, "simulation step", std::cout);
     // Loop for timestepping: BEGIN
-    try
-    {
+    try {
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
         uint32_t sub_start = 1;
-        if(global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0)
+        if (global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0)
             sub_start = std::fmod(input.current_time, cc.dt_prime)
                     / (cc.dt_prime/(cc.num_sub_steps));
 
         // Loop over every timestep that is usually fixed to 20 s
-        for(uint32_t t=0; t<cc.num_steps - cc.done_steps; ++t) //
-        {
+        for (uint32_t t=0; t<cc.num_steps - cc.done_steps; ++t) {
             netcdf_reader.read_buffer(cc, ref_quant, y_single_old,
                 inflow, t, global_args.checkpoint_flag, input.start_over_env);
             // Iterate over each substep
@@ -595,7 +561,7 @@ int run_simulation(
                 sub_start, traj_id, ensemble, segments, pbar, scheduler,
                 progress_index);
 #ifdef TRACE_QG
-            if(trace)
+            if (trace)
                 std::cout << "\nSediment total q: " << sediment_q_total
                         << "\nSediment total N: " << sediment_n_total << "\n";
             sediment_n_total = 0;
@@ -605,11 +571,10 @@ int run_simulation(
             checkpoint_t throw_away;
             scheduler.send_task(throw_away, false);
         }
-        if(progress_index > 0)
+        if (progress_index > 0)
             pbar.finish();
-    } catch(netCDF::exceptions::NcException& e)
-    {
-        if(progress_index > 0)
+    } catch(netCDF::exceptions::NcException& e) {
+        if (progress_index > 0)
             pbar.finish();
         std::cout << e.what() << std::endl;
         std::cout << "rank " << rank << ": ABORTING. (sorry)" << std::endl;
@@ -645,8 +610,7 @@ int run_simulation(
  * - velocity in three dimensions
  *
  */
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     int rank;
     int n_processes;
 #ifdef USE_MPI
@@ -682,8 +646,7 @@ int main(int argc, char** argv)
         global_args, ref_quant, segments, y_init, checkpoint);
 
     netcdf_reader_t netcdf_reader(input.write_index);
-    if((input.simulation_mode == grid_sensitivity) || (input.simulation_mode == trajectory_sensitivity))
-    {
+    if ((input.simulation_mode == grid_sensitivity) || (input.simulation_mode == trajectory_sensitivity)) {
         netcdf_reader.set_dims(input.INPUT_FILENAME.c_str(), cc, input.simulation_mode);
     }
     output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
@@ -691,8 +654,7 @@ int main(int argc, char** argv)
             input.snapshot_index, rank, input.simulation_mode);
     task_scheduler_t scheduler(rank, n_processes, input.simulation_mode);
 
-    if((input.simulation_mode == grid_sensitivity) || (input.simulation_mode == trajectory_sensitivity))
-    {   // static scheduling with parallel read and write enabled
+    if ((input.simulation_mode == grid_sensitivity) || (input.simulation_mode == trajectory_sensitivity)) {   // static scheduling with parallel read and write enabled
         setup_simulation_base(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
             already_loaded, netcdf_reader);
@@ -700,23 +662,21 @@ int main(int argc, char** argv)
         scheduler.set_n_ensembles(netcdf_reader.n_ensembles);
         scheduler.set_n_trajectories(netcdf_reader.n_trajectories);
 
-        if(scheduler.receive_task(checkpoint))
-        {
+        if (scheduler.receive_task(checkpoint)) {
             cc.traj_id = scheduler.current_traj;
             cc.ensemble_id = scheduler.current_ens;
 
             netcdf_reader.read_initial_values(y_init, ref_quant, cc,
                 global_args.checkpoint_flag, cc.traj_id, cc.ensemble_id);
             // Set "old" values as temporary holder of values.
-            for(int ii = 0 ; ii < num_comp ; ii++)
+            for (int ii = 0 ; ii < num_comp ; ii++)
                 y_single_old[ii] = y_init[ii];
 
             // run simulation
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,
                 out_handler, segments, scheduler, netcdf_reader));
-            while(scheduler.receive_task(checkpoint))
-            {
+            while (scheduler.receive_task(checkpoint)) {
                 setup_simulation_base(argc, argv, rank, n_processes, input,
                     global_args, ref_quant, segments, cc, y_init, y_single_old,
                     already_loaded, netcdf_reader);
@@ -726,7 +686,7 @@ int main(int argc, char** argv)
                 out_handler.reset(scheduler.current_traj, scheduler.current_ens);
 
                 // Set "old" values as temporary holder of values.
-                for(int ii = 0 ; ii < num_comp ; ii++)
+                for (int ii = 0 ; ii < num_comp ; ii++)
                     y_single_old[ii] = y_init[ii];
 
                 // run simulation
@@ -735,11 +695,9 @@ int main(int argc, char** argv)
                     out_handler, segments, scheduler, netcdf_reader));
             }
         }
-    } else
-    {   // dynamic scheduling with parallel read and write disabled
+    } else {   // dynamic scheduling with parallel read and write disabled
         netcdf_reader.set_dims(input.INPUT_FILENAME.c_str(), cc, input.simulation_mode);
-        if(rank == 0)
-        {
+        if (rank == 0) {
             setup_simulation(argc, argv, rank, n_processes, input,
                 global_args, ref_quant, segments, cc, y_init, y_single_old,
                 checkpoint, out_handler, already_loaded, netcdf_reader);
@@ -748,15 +706,14 @@ int main(int argc, char** argv)
                 global_args.checkpoint_flag, input.traj, input.ensemble);
 
             // Set "old" values as temporary holder of values.
-            for(int ii = 0 ; ii < num_comp ; ii++)
+            for (int ii = 0 ; ii < num_comp ; ii++)
                 y_single_old[ii] = y_init[ii];
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,
                 out_handler, segments, scheduler, netcdf_reader));
         }
 
-        while(scheduler.receive_task(checkpoint))
-        {
+        while (scheduler.receive_task(checkpoint)) {
             setup_simulation(argc, argv, rank, n_processes, input,
                 global_args, ref_quant, segments, cc, y_init, y_single_old,
                 checkpoint, out_handler, already_loaded, netcdf_reader);
@@ -764,7 +721,7 @@ int main(int argc, char** argv)
             netcdf_reader.read_initial_values(y_init, ref_quant, cc,
                 global_args.checkpoint_flag, input.traj, input.ensemble);
             // Set "old" values as temporary holder of values.
-            for(int ii = 0 ; ii < num_comp ; ii++)
+            for (int ii = 0 ; ii < num_comp ; ii++)
                 y_single_old[ii] = y_init[ii];
 
             // run simulation
@@ -780,7 +737,7 @@ int main(int argc, char** argv)
 #ifdef SILENT_MODE
     exit(0);
 #else
-    if(rank == 0)
+    if (rank == 0)
         std::cout << "-------------------FINISHED-------------------\n\n\n";
     exit(0);
 #endif

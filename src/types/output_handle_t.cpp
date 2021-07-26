@@ -1,9 +1,10 @@
 #include "include/types/output_handle_t.h"
 
-output_handle_t::output_handle_t()
-{
+
+output_handle_t::output_handle_t() {
 
 }
+
 
 output_handle_t::output_handle_t(
     const std::string filetype,
@@ -14,8 +15,7 @@ output_handle_t::output_handle_t(
     const uint32_t write_index,
     const uint32_t snapshot_index,
     const int &rank,
-    const int &simulation_mode)
-{
+    const int &simulation_mode) {
     this->simulation_mode = simulation_mode;
     local_num_comp = cc.local_num_comp;
     local_num_par = cc.local_num_par;
@@ -23,6 +23,7 @@ output_handle_t::output_handle_t(
     this->setup(filetype, filename, cc, ref_quant,
         in_filename, write_index, snapshot_index, rank);
 }
+
 
 void output_handle_t::setup(
     const std::string filetype,
@@ -32,8 +33,7 @@ void output_handle_t::setup(
     const std::string in_filename,
     const uint32_t write_index,
     const uint32_t snapshot_index,
-    const int &rank)
-{
+    const int &rank) {
     this->n_trajs_file = cc.max_n_trajs;
     this->traj = cc.traj_id;
     this->ens = cc.ensemble_id;
@@ -49,12 +49,12 @@ void output_handle_t::setup(
     n_snapshots = 0;
     // Allocate memory for the buffer
     // maximum number of snapshots we are going to get
-    total_snapshots = std::ceil( ((float)write_index)/snapshot_index ) + 1;
+    total_snapshots = std::ceil((static_cast<float>(write_index))/snapshot_index) + 1;
     const uint64_t vec_size = total_snapshots; // n_snapshots * num_comp;
     const uint64_t vec_size_grad = num_comp * total_snapshots;
-    for(uint32_t i=0; i<num_comp; i++)
+    for (uint32_t i=0; i<num_comp; i++)
         output_buffer[i].resize(vec_size);
-    for(uint32_t i=Buffer_idx::n_buffer; i<Buffer_idx::n_buffer+num_par; i++)
+    for (uint32_t i=Buffer_idx::n_buffer; i<Buffer_idx::n_buffer+num_par; i++)
         output_buffer[i].resize(vec_size_grad);
 
     output_buffer[Buffer_idx::time_ascent_buf].resize(vec_size);
@@ -62,10 +62,10 @@ void output_handle_t::setup(
     output_buffer[Buffer_idx::lat_buf].resize(vec_size);        // lat
     output_buffer[Buffer_idx::lon_buf].resize(vec_size);        // lon
 
-    for(uint32_t i=0; i<output_buffer_flags.size(); i++)
+    for (uint32_t i=0; i<output_buffer_flags.size(); i++)
         output_buffer_flags[i].resize(vec_size);
 
-    for(uint32_t i=0; i<output_buffer_int.size(); i++)
+    for (uint32_t i=0; i<output_buffer_int.size(); i++)
         output_buffer_int[i].resize(vec_size);
 
     // Unfortunately, it is likely to run into an HDF Error if
@@ -73,8 +73,7 @@ void output_handle_t::setup(
     // amount of attributes for the time dimension.
     // We have to create the file as a single process, close it and
     // open it in parallel again for writing purpose
-    if(rank == 0)
-    {
+    if (rank == 0) {
         SUCCESS_OR_DIE(nc_create(
             (filename + ".nc_wcb").c_str(), // path
             NC_NETCDF4,                     // creation mode
@@ -84,8 +83,7 @@ void output_handle_t::setup(
         // If there is only one model state variable for which we gather
         // sensitivities for, drop that dimension and add that as a scalar.
         // This is useful as long as Met3D does not support this dimension.
-        if (local_num_comp > 1)
-        {
+        if (local_num_comp > 1) {
             SUCCESS_OR_DIE(nc_def_dim(
                 ncid, "Output_Parameter_ID", local_num_comp, &dimid[Dim_idx::out_param_dim])
             );
@@ -139,7 +137,7 @@ void output_handle_t::setup(
         );
 
         // model state
-        for(uint32_t i=0; i<num_comp; ++i)
+        for (uint32_t i=0; i<num_comp; ++i)
             SUCCESS_OR_DIE(
                 nc_def_var(
                     ncid,
@@ -157,15 +155,12 @@ void output_handle_t::setup(
         // gradients
         auto dim_pointer = &dimid[Dim_idx::out_param_dim];
         int n_dims = 4;
-        if (local_num_comp == 1)
-        {
+        if (local_num_comp == 1) {
             dim_pointer = &dimid[Dim_idx::ensemble_dim];
             n_dims = 3;
         }
-        for(uint32_t i=0; i<output_grad_idx.size(); ++i)
-        {
-            if(cc.trace_check(i, false))
-            {
+        for (uint32_t i=0; i<output_grad_idx.size(); ++i) {
+            if (cc.trace_check(i, false)) {
                 SUCCESS_OR_DIE(nc_def_var(
                     ncid,
                     output_grad_idx[i].c_str(),
@@ -267,8 +262,7 @@ void output_handle_t::setup(
         SUCCESS_OR_DIE(nc_inq(in_ncid, NULL, NULL, &n_atts, NULL));
 
         // for every attribute, get the name, type and length, and the values
-        for(int i=0; i<n_atts; i++)
-        {
+        for (int i=0; i<n_atts; i++) {
             char att_name[NC_MAX_NAME];
             SUCCESS_OR_DIE(nc_inq_attname(in_ncid, NC_GLOBAL, i, att_name));
             nc_type att_type;
@@ -288,12 +282,10 @@ void output_handle_t::setup(
         int in_time_id;
         SUCCESS_OR_DIE(nc_inq_varid(in_ncid, "time", &in_time_id));
         SUCCESS_OR_DIE(nc_inq_varnatts(in_ncid, in_time_id, &n_atts));
-        for(int i=0; i<n_atts; i++)
-        {
+        for (int i=0; i<n_atts; i++) {
             char att_name[NC_MAX_NAME];
             SUCCESS_OR_DIE(nc_inq_attname(in_ncid, in_time_id, i, att_name));
-            if(!std::strcmp(att_name, "_FillValue"))
-            {
+            if (!std::strcmp(att_name, "_FillValue")) {
                 continue;
             }
             // nc_type att_type;
@@ -333,8 +325,7 @@ void output_handle_t::setup(
         auto put_att_mass = [&](
             const char *mass_name,
             const char *long_mass_name,
-            auto &varid)
-        {
+            auto &varid) {
             SUCCESS_OR_DIE(nc_put_att_text(
                 ncid,
                 varid,
@@ -375,8 +366,7 @@ void output_handle_t::setup(
         auto put_att_nums = [&](
             const char *name,
             const char *long_name,
-            auto &varid)
-        {
+            auto &varid) {
             SUCCESS_OR_DIE(nc_put_att_text(
                 ncid,
                 varid,
@@ -416,8 +406,7 @@ void output_handle_t::setup(
         auto put_att_mass_sed = [&](
             const char *mass_name,
             const char *long_mass_name,
-            auto &varid)
-        {
+            auto &varid) {
             SUCCESS_OR_DIE(nc_put_att_text(
                 ncid,
                 varid,
@@ -476,8 +465,7 @@ void output_handle_t::setup(
         auto put_att_nums_sed = [&](
             const char *name,
             const char *long_name,
-            auto &varid)
-        {
+            auto &varid) {
             SUCCESS_OR_DIE(nc_put_att_text(
                 ncid,
                 varid,
@@ -518,8 +506,7 @@ void output_handle_t::setup(
         put_att_nums_sed("sedi_outflux_of_hail_number", "sedimentation of hail number", varid[Var_idx::nh_out]);
 
         // all gradients are auxiliary data
-        for(int i=0; i<num_par; i++)
-        {
+        for (int i=0; i<num_par; i++) {
             SUCCESS_OR_DIE(nc_put_att_text(
                 ncid,
                 varid[Var_idx::n_vars + i],
@@ -886,10 +873,9 @@ void output_handle_t::setup(
             "yes")
         );
         // in theory, one could apply compression here
-        // if(!(this->simulation_mode == trajectory_sensitvity_perturbance)
-        //     && !(this->simulation_mode == trajectory_perturbance))
-        // {
-        //     for(auto &id: varid)
+        // if (!(this->simulation_mode == trajectory_sensitvity_perturbance)
+        //     && !(this->simulation_mode == trajectory_perturbance)) {
+        //     for (auto &id: varid)
         //         SUCCESS_OR_DIE(
         //             nc_def_var_deflate(
         //                 ncid,
@@ -911,7 +897,7 @@ void output_handle_t::setup(
 #else
         std::vector<float> time_steps(num_time);
 #endif
-        for(uint32_t i=0; i<num_time; i++)
+        for (uint32_t i=0; i<num_time; i++)
             time_steps[i] = cc.dt*i + cc.start_time; // start + i*dt
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -925,7 +911,7 @@ void output_handle_t::setup(
 
         countp[0] = n_trajs_file;
         std::vector<uint64_t> data(n_trajs_file);
-        for(uint32_t i=0; i<n_trajs_file; i++)
+        for (uint32_t i=0; i<n_trajs_file; i++)
             data[i] = i;
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -939,7 +925,7 @@ void output_handle_t::setup(
 
         countp[0] = num_ens;
         data.resize(num_ens);
-        for(uint32_t i=0; i<num_ens; i++)
+        for (uint32_t i=0; i<num_ens; i++)
             data[i] = i;
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -954,10 +940,8 @@ void output_handle_t::setup(
         countp[0] = local_num_comp;
         data.resize(local_num_comp);
         uint32_t counter = 0;
-        for(uint32_t i=0; i<num_comp; i++)
-        {
-            if(cc.trace_check(i, true))
-            {
+        for (uint32_t i=0; i<num_comp; i++) {
+            if (cc.trace_check(i, true)) {
                 data[counter] = i;
                 counter++;
             }
@@ -1016,7 +1000,7 @@ void output_handle_t::setup(
     );
 
     // model state
-    for(uint32_t i=0; i<num_comp; ++i)
+    for (uint32_t i=0; i<num_comp; ++i)
         SUCCESS_OR_DIE(
             nc_inq_varid(
                 ncid,
@@ -1026,10 +1010,8 @@ void output_handle_t::setup(
         );
 
     // gradients
-    for(uint32_t i=0; i<output_grad_idx.size(); ++i)
-    {
-        if(cc.trace_check(i, false))
-        {
+    for (uint32_t i=0; i<output_grad_idx.size(); ++i) {
+        if (cc.trace_check(i, false)) {
             SUCCESS_OR_DIE(
                 nc_inq_varid(
                     ncid,
@@ -1097,17 +1079,16 @@ void output_handle_t::setup(
         )
     );
 
-    if((this->simulation_mode == trajectory_sensitvity_perturbance)
-        || (this->simulation_mode == trajectory_perturbance))
-    {
+    if ((this->simulation_mode == trajectory_sensitvity_perturbance)
+        || (this->simulation_mode == trajectory_perturbance)) {
         // Make the access independent which is a must due to the dynamic
         // work schedule; This can be expensive though.
-        for(uint32_t i=0; i<Var_idx::n_vars; i++)
+        for (uint32_t i=0; i<Var_idx::n_vars; i++)
             SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_INDEPENDENT));
-        for(uint32_t i=0; i<output_grad_idx.size(); i++)
-            if(cc.trace_check(i+Var_idx::n_vars, false))
+        for (uint32_t i=0; i<output_grad_idx.size(); i++)
+            if (cc.trace_check(i+Var_idx::n_vars, false))
                 SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
-        // for(auto &id: varid)
+        // for (auto &id: varid)
         //     SUCCESS_OR_DIE(nc_var_par_access(ncid, id, NC_INDEPENDENT));
     }
 }
@@ -1115,8 +1096,7 @@ void output_handle_t::setup(
 
 void output_handle_t::reset(
     const uint32_t traj_id,
-    const uint32_t ens_id)
-{
+    const uint32_t ens_id) {
     flushed_snapshots = 0;
     n_snapshots = 0;
     this->traj = traj_id;
@@ -1127,14 +1107,13 @@ void output_handle_t::reset(
 void output_handle_t::buffer_gradient(
     const model_constants_t &cc,
     const std::vector< std::array<double, num_par > >  &y_diff,
-    const uint32_t snapshot_index)
-{
-    for(uint64_t i=0; i<num_comp; i++) // gradient sensitive to output parameter i
-    {
-        if(!cc.trace_check(i, true))
+    const uint32_t snapshot_index) {
+    for (uint64_t i=0; i<num_comp; i++) {
+        // gradient sensitive to output parameter i
+        if (!cc.trace_check(i, true))
             continue;
-        for(uint64_t j=0; j<num_par; j++) // gradient of input parameter j
-            if(cc.trace_check(j, false))
+        for (uint64_t j=0; j<num_par; j++) // gradient of input parameter j
+            if (cc.trace_check(j, false))
                 output_buffer[Buffer_idx::n_buffer+j][i + n_snapshots*num_comp] += y_diff[i][j]/snapshot_index;
     }
 }
@@ -1152,14 +1131,11 @@ void output_handle_t::buffer(
     const uint32_t traj_id,
     const uint32_t ensemble,
     const reference_quantities_t &ref_quant,
-    const uint32_t snapshot_index)
-{
+    const uint32_t snapshot_index) {
 
     // output parameters
-    for(uint64_t i=0; i<num_comp; i++)
-    {
-        switch(i)
-        {
+    for (uint64_t i=0; i<num_comp; i++) {
+        switch (i) {
             case p_idx:
                 output_buffer[i][n_snapshots] =
                     y_single_new[i].getValue() * ref_quant.pref;
@@ -1238,9 +1214,9 @@ void output_handle_t::buffer(
     n_snapshots++;
 }
 
+
 void output_handle_t::flush_buffer(
-    const model_constants_t &cc)
-{
+    const model_constants_t &cc) {
     std::vector<size_t> startp, countp;
     startp.push_back(ens);
     startp.push_back(traj);
@@ -1249,8 +1225,7 @@ void output_handle_t::flush_buffer(
     countp.push_back(1);
     countp.push_back(n_snapshots);
 
-    for(uint64_t i=0; i<num_comp; i++)
-    {
+    for (uint64_t i=0; i<num_comp; i++) {
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,
@@ -1272,8 +1247,7 @@ void output_handle_t::flush_buffer(
         )
     );
     // flags
-    for(uint64_t i=0; i<output_buffer_flags.size(); i++)
-    {
+    for (uint64_t i=0; i<output_buffer_flags.size(); i++) {
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,
@@ -1318,9 +1292,8 @@ void output_handle_t::flush_buffer(
     // gradients
     startp.insert(startp.begin(), 0);
     countp.insert(countp.begin(), local_num_comp);
-    for(uint64_t j=0; j<num_par; j++)
-    {
-        if(cc.trace_check(j, false))
+    for (uint64_t j=0; j<num_par; j++) {
+        if (cc.trace_check(j, false))
             SUCCESS_OR_DIE(
                 nc_put_vara(
                     ncid,
@@ -1334,6 +1307,7 @@ void output_handle_t::flush_buffer(
     flushed_snapshots += n_snapshots;
     n_snapshots = 0;
 }
+
 
 void output_handle_t::process_step(
     const model_constants_t &cc,
@@ -1351,22 +1325,17 @@ void output_handle_t::process_step(
     const uint32_t ensemble,
 #endif
     const bool last_step,
-    const reference_quantities_t &ref_quant)
-{
-    if( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
-        || ( t == cc.num_steps-1 && last_step ) )
-    {
+    const reference_quantities_t &ref_quant) {
+    if ( (0 == (sub + t*cc.num_sub_steps) % snapshot_index)
+        || ( t == cc.num_steps-1 && last_step ) ) {
         this->buffer(cc, netcdf_reader, y_single_new, y_diff, sub, t,
             time_new, traj_id, ensemble, ref_quant, snapshot_index);
-    } else
-    {
+    } else {
         this->buffer_gradient(cc, y_diff, snapshot_index);
     }
 
-    if( (0 == (sub + t*cc.num_sub_steps) % write_index)
-        || ( t == cc.num_steps-1 && last_step ) )
-    {
+    if ( (0 == (sub + t*cc.num_sub_steps) % write_index)
+        || ( t == cc.num_steps-1 && last_step ) ) {
         this->flush_buffer(cc);
     }
 }
-

@@ -1,14 +1,16 @@
 #pragma once
 
+#include <mpi.h>
+
+#include <cmath>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include <boost/iostreams/stream.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <cmath>
-#include <mpi.h>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
 #include "include/misc/error.h"
 #include "include/misc/general.h"
@@ -21,8 +23,7 @@
 
 namespace pt = boost::property_tree;
 
-struct checkpoint_t
-{
+struct checkpoint_t {
   private:
     pt::ptree checkpoint;
 

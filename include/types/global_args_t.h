@@ -1,16 +1,17 @@
 #pragma once
 
-#include <stdlib.h>
-#include <iostream>
-// #include <sys/stat.h>
 #include <getopt.h>
+#include <stdlib.h>
+
+#include <iostream>
+
 #include "include/misc/error.h"
 #include "include/microphysics/constants.h"
 
 /**
  * Helper structure to handle command line arguments.
  */
-struct global_args_t{
+struct global_args_t {
 
     int final_time_flag; /*!< Using a final simulation time? */
     char* final_time_string;

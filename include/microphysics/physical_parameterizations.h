@@ -1,8 +1,9 @@
-#ifndef PHYSICAL_PARAMETERIZATIONS_H
-#define PHYSICAL_PARAMETERIZATIONS_H
+#pragma once
+
+#include <algorithm>
+#include <cmath>
 
 #include <boost/math/special_functions/gamma.hpp>
-#include <cmath>
 #include "codi.hpp"
 
 #include "include/microphysics/constants.h"
@@ -31,12 +32,13 @@
  * @return Value at x
  */
 template <class A>
-inline A polyval2(const double a0,
-		  const double a1,
-		  const double a2,
-		  A x)
-{
-  return ( a0 + x*(a1 + a2*x) );
+inline A polyval2(
+    const double a0,
+    const double a1,
+    const double a2,
+    A x) {
+
+    return (a0 + x*(a1 + a2*x));
 }
 
 
@@ -54,14 +56,15 @@ inline A polyval2(const double a0,
  * @return Value at x
  */
 template <class A>
-inline A polyval4(const double a0,
-		  const double a1,
-		  const double a2,
-		  const double a3,
-		  const double a4,
-		  A x)
-{
-  return ( a0 + x*(a1 + x*(a2 + x*(a3 + x*a4))) );
+inline A polyval4(
+    const double a0,
+    const double a1,
+    const double a2,
+    const double a3,
+    const double a4,
+    A x) {
+
+    return (a0 + x*(a1 + x*(a2 + x*(a3 + x*a4))));
 }
 
 
@@ -80,22 +83,19 @@ inline A polyval4(const double a0,
  * @return Value at x
  */
 template <class A>
-inline A polyval5(const double a0,
-		  const double a1,
-		  const double a2,
-		  const double a3,
-		  const double a4,
-		  const double a5,
-		  A x)
-{
-  return ( a0 + x*(a1 + x*(a2 + x*(a3 + x*(a4 + x*a5)))) );
+inline A polyval5(
+    const double a0,
+    const double a1,
+    const double a2,
+    const double a3,
+    const double a4,
+    const double a5,
+    A x) {
+
+    return (a0 + x*(a1 + x*(a2 + x*(a3 + x*(a4 + x*a5)))));
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Evaluate a polynomial
-// a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4 + a_5*x^5 + a_6*x^6
-// of order 6 using Horner's method
-//
+
 /**
  * Evaluate a polynomial
  * \f[ a_0 + a_1*x + a_2*x^2 + a_3*x^3 + a_4*x^4 + a_5*x^5 + a_6*x^6 \f]
@@ -112,16 +112,17 @@ inline A polyval5(const double a0,
  * @return Value at x
  */
 template <class A>
-inline A polyval6(const double a0,
-		  const double a1,
-		  const double a2,
-		  const double a3,
-		  const double a4,
-		  const double a5,
-		  const double a6,
-		  A x)
-{
-  return ( a0 + x*(a1 + x*(a2 + x*(a3 + x*(a4 + x*(a5 + a6*x))))) );
+inline A polyval6(
+    const double a0,
+    const double a1,
+    const double a2,
+    const double a3,
+    const double a4,
+    const double a5,
+    const double a6,
+    A x) {
+
+    return (a0 + x*(a1 + x*(a2 + x*(a3 + x*(a4 + x*(a5 + a6*x))))));
 }
 
 
@@ -135,12 +136,11 @@ inline A polyval6(const double a0,
  * @return Diffusivity
  */
 template <class A>
-inline A diffusivity(A T,
-		     A p)
-{
+inline A diffusivity(
+    A T,
+    A p) {
 
-  return ( (2.11e-5)*(101325.0/p)*pow(T/273.15 , 1.94) );
-
+    return ((2.11e-5)*(101325.0/p)*pow(T/273.15 , 1.94));
 }
 
 
@@ -153,12 +153,10 @@ inline A diffusivity(A T,
  * @return Thermal conductivity
  */
 template <class A>
-inline A thermal_conductivity_dry_air(A T)
-{
-  // Change temperature to Celsius-scale
-  A T_cel = T - 273.15;
-
-  return ( 418.68*(5.75e-5)*polyval2(1.0, 0.00317, -0.0000021, T_cel) );
+inline A thermal_conductivity_dry_air(A T) {
+    // Change temperature to Celsius-scale
+    A T_cel = T - 273.15;
+    return (418.68*(5.75e-5)*polyval2(1.0, 0.00317, -0.0000021, T_cel));
 }
 
 
@@ -172,15 +170,18 @@ inline A thermal_conductivity_dry_air(A T)
  * @return Thermal conductivity
  */
 template <class A>
-inline A thermal_conductivity_moist_air(A T, A qv, A Epsilon)
-{
-  // Thermal conductivity dry air
-  A Kt = thermal_conductivity_dry_air(T);
+inline A thermal_conductivity_moist_air(
+    A T,
+    A qv,
+    A Epsilon) {
 
-  A Kt_tilde = Kt/418.68;
-  A Kv_tilde = (3.78e-5) + (2.0e-7)*(T - 273.15);
+    // Thermal conductivity dry air
+    A Kt = thermal_conductivity_dry_air(T);
 
-  return ( Kt*( 1.0 - (1.17 - 1.02*(Kt_tilde/Kv_tilde))*(qv/(qv+Epsilon)) ) );
+    A Kt_tilde = Kt/418.68;
+    A Kv_tilde = (3.78e-5) + (2.0e-7)*(T - 273.15);
+
+    return (Kt*(1.0 - (1.17 - 1.02*(Kt_tilde/Kv_tilde))*(qv/(qv+Epsilon))));
 }
 
 
@@ -193,45 +194,40 @@ inline A thermal_conductivity_moist_air(A T, A qv, A Epsilon)
  * @return Density
  */
 template <class A>
-inline A density_water(A T)
-{
+inline A density_water(A T) {
+    // Change to Celsius scale
+    A T_cel = T - 273.15;
+    A F_T;
+    A denom;
+    double a0, a1, a2, a3, a4, a5, a6;
 
-  // Change to Celsius scale
-  A T_cel = T - 273.15;
+    if (273.15 >= T) {
+        // Parameterization from Hare and Sorensen (1987)
+        a0 = 999.86;
+        a1 = 6.69e-2;
+        a2 = -8.486e-3;
+        a3 = 1.518e-4;
+        a4 = -6.9484e-6;
+        a5 = -3.6449e-7;
+        a6 = -7.497e-9;
 
-  A F_T;
-  A denom;
-  double a0, a1, a2, a3, a4, a5, a6;
+        F_T = polyval6(a0, a1, a2, a3, a4, a5, a6, T_cel);
+        denom = 1.0;
 
-  if( 273.15 >= T ){
-    // Parameterization from Hare and Sorensen (1987)
+        } else {
+        // Parameterization from Kell (1975)
 
-    a0 = 999.86;
-    a1 = 6.69e-2;
-    a2 = -8.486e-3;
-    a3 = 1.518e-4;
-    a4 = -6.9484e-6;
-    a5 = -3.6449e-7;
-    a6 = -7.497e-9;
+        a0 = 999.8395;
+        a1 = 16.945176;
+        a2 = -7.9870401e-3;
+        a3 = -46.170461e-6;
+        a4 = 105.56302e-9;
+        a5 = -280.54253e-12;
 
-    F_T = polyval6(a0, a1, a2, a3, a4, a5, a6, T_cel);
-    denom = 1.0;
-
-  }else{
-    // Parameterization from Kell (1975)
-
-    a0 = 999.8395;
-    a1 = 16.945176;
-    a2 = -7.9870401e-3;
-    a3 = -46.170461e-6;
-    a4 = 105.56302e-9;
-    a5 = -280.54253e-12;
-
-    F_T = polyval5(a0, a1, a2, a3, a4, a5, T_cel);
-    denom = 1.0 + (16.87985e-3)*T_cel;
-  }
-
-  return ( F_T/denom );
+        F_T = polyval5(a0, a1, a2, a3, a4, a5, T_cel);
+        denom = 1.0 + (16.87985e-3)*T_cel;
+    }
+    return (F_T/denom );
 }
 
 
@@ -244,11 +240,9 @@ inline A density_water(A T)
  * @return Density
  */
 template <class A>
-inline A density_ice(A T)
-{
-  A T_cel = T - 273.15;
-
-  return polyval2(916.7, -0.175, -0.0005, T_cel);
+inline A density_ice(A T) {
+    A T_cel = T - 273.15;
+    return polyval2(916.7, -0.175, -0.0005, T_cel);
 }
 
 
@@ -262,11 +256,8 @@ inline A density_ice(A T)
  * @return Specific heat capacity
  */
 template <class A>
-inline A specific_heat_dry_air(A T)
-{
-
-  return cp; // 1005.0
-
+inline A specific_heat_dry_air(A T) {
+    return cp; // 1005.0
 }
 
 
@@ -279,11 +270,8 @@ inline A specific_heat_dry_air(A T)
  * @return Specific heat capacity
  */
 template <class A>
-inline A specific_heat_water_vapor(A T)
-{
-
-  return 1884.06;
-
+inline A specific_heat_water_vapor(A T) {
+    return 1884.06;
 }
 
 
@@ -296,26 +284,24 @@ inline A specific_heat_water_vapor(A T)
  * @return Specific heat capacity
  */
 template <class A>
-inline A specific_heat_water(A T)
-{
-  A T_cel = T - 273.15;
-  double a0, a1, a2, a3, a4;
+inline A specific_heat_water(A T) {
+    A T_cel = T - 273.15;
+    double a0, a1, a2, a3, a4;
 
-  if( 273.15 > T ){
-    a0 = 1.000983;
-    a1 = -2.7052e-3;
-    a2 = -2.3235e-5;
-    a3 = 4.3778e-6;
-    a4 = 2.7136e-7;
-  }else{
-    a0 = 0.9979;
-    a1 = 0.0;
-    a2 = 3.1e-6;
-    a3 = 0.0;
-    a4 = 3.8e-9;
-  }
-
-  return ( 4186.8*polyval4(a0, a1, a2, a3, a4, T_cel) );
+    if (273.15 > T) {
+        a0 = 1.000983;
+        a1 = -2.7052e-3;
+        a2 = -2.3235e-5;
+        a3 = 4.3778e-6;
+        a4 = 2.7136e-7;
+    } else {
+        a0 = 0.9979;
+        a1 = 0.0;
+        a2 = 3.1e-6;
+        a3 = 0.0;
+        a4 = 3.8e-9;
+    }
+    return (4186.8*polyval4(a0, a1, a2, a3, a4, T_cel));
 }
 
 
@@ -328,13 +314,9 @@ inline A specific_heat_water(A T)
  * @return Specific heat capacity
  */
 template <class A>
-inline A specific_heat_ice(A T, A M_w)
-{
-
-  A T_frac = T/125.1;
-
-  return ( (-2.0572 + 0.14644*T + 0.06163*T*exp( -T_frac*T_frac ))/M_w );
-
+inline A specific_heat_ice(A T, A M_w) {
+    A T_frac = T/125.1;
+    return ((-2.0572 + 0.14644*T + 0.06163*T*exp(-T_frac*T_frac ))/M_w );
 }
 
 
@@ -348,11 +330,8 @@ inline A specific_heat_ice(A T, A M_w)
  * @return Latent heat
  */
 template <class A>
-inline A latent_heat_water(A T, A M_w)
-{
-
-  return ( ( 56579.0 - 42.212*T + exp( 0.1149*(281.6-T) ) )/M_w );
-
+inline A latent_heat_water(A T, A M_w) {
+    return ((56579.0 - 42.212*T + exp(0.1149*(281.6-T)))/M_w );
 }
 
 
@@ -366,14 +345,10 @@ inline A latent_heat_water(A T, A M_w)
  * @return Latent heat
  */
 template <class A>
-inline A latent_heat_ice(A T, A M_w)
-{
-
-  A T_frac = T/123.75;
-
-  return ( ( polyval2(46782.5, 35.8925, -0.07414, T)
-    + 541.5*exp(-T_frac*T_frac) )/M_w );
-
+inline A latent_heat_ice(A T, A M_w) {
+    A T_frac = T/123.75;
+    return ((polyval2(46782.5, 35.8925, -0.07414, T)
+        + 541.5*exp(-T_frac*T_frac))/M_w );
 }
 
 
@@ -389,11 +364,10 @@ inline A latent_heat_ice(A T, A M_w)
  * @return Latent heat
  */
 template <class A>
-inline A latent_heat_melt(A T, A T_freeze)
-{
-  // Table A1
-  return 4.184e3 * (79.7+0.485*(T-T_freeze)
-    - 2.5e-3*(T-T_freeze)*(T-T_freeze));
+inline A latent_heat_melt(A T, A T_freeze) {
+    // Table A1
+    return 4.184e3 * (79.7+0.485*(T-T_freeze)
+        - 2.5e-3*(T-T_freeze)*(T-T_freeze));
 }
 
 
@@ -409,12 +383,11 @@ inline A latent_heat_melt(A T, A T_freeze)
  * @return Latent heat
  */
 template <class A>
-inline A latent_heat_evap(A T)
-{
-  // Table A1
-  A lh_e0 = 2.5006e6;
-  A gam = 0.167 + 3.67e-4 * T;
-  return lh_e0 * pow(T_freeze/T, gam);
+inline A latent_heat_evap(A T) {
+    // Table A1
+    A lh_e0 = 2.5006e6;
+    A gam = 0.167 + 3.67e-4 * T;
+    return lh_e0 * pow(T_freeze/T, gam);
 }
 
 
@@ -435,59 +408,17 @@ inline A saturation_pressure_water(
     A p_sat_low_temp,
     A p_sat_const_a,
     A T_sat_low_temp,
-    A p_sat_const_b)
-{
+    A p_sat_const_b) {
 #ifdef VANILLA_PRESSURE
-  A Tinv = 1.0/T;
-  A logT = log(T);
-  return ( exp( 54.842763 - 6763.22*Tinv - 4.21*logT + 0.000367*T
-    + tanh(0.0415*(T-218.8))*(53.878 - 1331.22*Tinv - 9.44523*logT + 0.014025*T) ) );
+    A Tinv = 1.0/T;
+    A logT = log(T);
+    return (exp(54.842763 - 6763.22*Tinv - 4.21*logT + 0.000367*T
+        + tanh(0.0415*(T-218.8))*(53.878 - 1331.22*Tinv - 9.44523*logT + 0.014025*T)));
 #else
-  return p_sat_low_temp
-    * exp( p_sat_const_a * (T-T_sat_low_temp) / (T-p_sat_const_b) );
+    return p_sat_low_temp
+        * exp(p_sat_const_a * (T-T_sat_low_temp) / (T-p_sat_const_b));
 #endif
 }
-
-
-/**
- * Calculate the water vapor mixing ratio at saturation = 1 using
- * Dotzek (4.33).
- *
- * @param T Temperature in Kelvin
- * @param p Pressure in Pa
- * @return Mixing ratio at saturation = 1
- */
-// template <class A>
-// inline A water_vapor_sat_ratio_dotzek(
-//     A p,
-//     A T,
-//     model_constants_t &cc)
-// {
-//     A p_sat = saturation_pressure_water(T);
-//     return (get_at(cc.constants, Cons_idx::r_const)
-//         / get_at(cc.constants, Cons_idx::r1_const))
-//         / (p/p_sat + (get_at(cc.constants, Cons_idx::r_const)
-//         / get_at(cc.constants, Cons_idx::r1_const))-1);
-// }
-
-
-/**
- * Calculate the water vapor mixing ratio at saturation = 1.
- *
- * @param T Temperature in Kelvin
- * @param p Pressure in Pa
- * @return Mixing ratio at saturation = 1
- */
-// template <class A>
-// inline A water_vapor_sat_ratio(
-//     A p,
-//     A T,
-//     model_constants_t &cc)
-// {
-//     A p_sat = saturation_pressure_water(T);
-//     return get_at(cc.constants, Cons_idx::Epsilon)*( p_sat/(p - p_sat) );
-// }
-
 
 
 /**
@@ -505,16 +436,16 @@ inline A saturation_pressure_ice(
     A p_sat_low_temp,
     A p_sat_ice_const_a,
     A T_sat_low_temp,
-    A p_sat_ice_const_b)
-{
+    A p_sat_ice_const_b) {
 #ifdef VANILLA_PRESSURE
-    return ( exp( 9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T ) );
+    return (exp(9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T ));
 #else
-    return ( p_sat_low_temp * exp(p_sat_ice_const_a
+    return (p_sat_low_temp * exp(p_sat_ice_const_a
             * (T-T_sat_low_temp)
-        / (T-p_sat_ice_const_b)) );
+        / (T-p_sat_ice_const_b)));
 #endif
 }
+
 
 /**
  * Surface tension of liquid water in \f$ \text{N}/\text{m} \f$.
@@ -525,21 +456,19 @@ inline A saturation_pressure_ice(
  * @return Surface tension
  */
 template <class A>
-inline A surface_tension_water(A T)
-{
-  A T_cel = T - 273.15;
-  double a0, a1, a2, a3, a4, a5, a6;
+inline A surface_tension_water(A T) {
+    A T_cel = T - 273.15;
+    double a0, a1, a2, a3, a4, a5, a6;
 
-  a0 = 75.7901;
-  a1 = -0.139649;
-  a2 = -4.62016e-4;
-  a3 = -2.92323e-5;
-  a4 = 1.29287e-6;
-  a5 = -1.70799e-8;
-  a6 = 7.25066e-11;
+    a0 = 75.7901;
+    a1 = -0.139649;
+    a2 = -4.62016e-4;
+    a3 = -2.92323e-5;
+    a4 = 1.29287e-6;
+    a5 = -1.70799e-8;
+    a6 = 7.25066e-11;
 
-  return ( 0.001*polyval6(a0, a1, a2, a3, a4, a5, a6, T_cel) );
-
+    return (0.001*polyval6(a0, a1, a2, a3, a4, a5, a6, T_cel));
 }
 
 
@@ -555,11 +484,9 @@ inline A surface_tension_water(A T)
 template <class A>
 inline A mean_free_path(
     A &p,
-    A &T)
-{
+    A &T) {
 
-  return ( ( 6.6e-8 )*( T/293.15 )*( 101325.0/p ) );
-
+    return ((6.6e-8 )*(T/293.15 )*(101325.0/p ));
 }
 
 
@@ -577,15 +504,12 @@ inline A compute_pv(
     A p_sat_low_temp,
     A p_sat_const_a,
     A T_sat_low_temp,
-    A p_sat_const_b)
-{
+    A p_sat_const_b) {
 
-  return ( S*saturation_pressure_water(T, p_sat_low_temp, p_sat_const_a,
-    T_sat_low_temp, p_sat_const_b) );
-
+    return (S*saturation_pressure_water(T, p_sat_low_temp, p_sat_const_a,
+        T_sat_low_temp, p_sat_const_b));
 }
 
-// get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b)
 
 /**
  * Partial pressure of dry air in Pa.
@@ -603,12 +527,10 @@ inline A compute_pa(
     A p_sat_low_temp,
     A p_sat_const_a,
     A T_sat_low_temp,
-    A p_sat_const_b)
-{
+    A p_sat_const_b) {
 
-  return (p - compute_pv(T, S, p_sat_low_temp, p_sat_const_a,
-    T_sat_low_temp, p_sat_const_b));
-
+    return (p - compute_pv(T, S, p_sat_low_temp, p_sat_const_a,
+        T_sat_low_temp, p_sat_const_b));
 }
 
 
@@ -629,12 +551,10 @@ inline A compute_rhoa(
     A p_sat_const_a,
     A T_sat_low_temp,
     A p_sat_const_b,
-    A R_a)
-{
+    A R_a) {
 
-  return ( compute_pa( p, T, S, p_sat_low_temp, p_sat_const_a,
-    T_sat_low_temp, p_sat_const_b ) / (R_a*T) );
-
+    return (compute_pa(p, T, S, p_sat_low_temp, p_sat_const_a,
+        T_sat_low_temp, p_sat_const_b ) / (R_a*T));
 }
 
 
@@ -657,18 +577,14 @@ inline A compute_rhoh(
     A T_sat_low_temp,
     A p_sat_const_b,
     A R_a,
-    A R_v)
-{
-    // auto p_sat = p_sat_low_temp*exp(p_sat_const_a*(T-T_sat_low_temp)/(T-p_sat_const_b));
-    // auto p_sat = exp( 9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T );
-    // return ( (p-S*p_sat)/(Ra*T) + S*p_sat/(R_v*T) );
-    return ( compute_pa( p, T, S, p_sat_low_temp, p_sat_const_a,
+    A R_v) {
+
+    return (compute_pa(p, T, S, p_sat_low_temp, p_sat_const_a,
         T_sat_low_temp, p_sat_const_b )
-        / ( R_a*T )
+        / (R_a*T )
         + compute_pv(T, S, p_sat_low_temp, p_sat_const_a,
             T_sat_low_temp, p_sat_const_b)
-        / (R_v*T) );
-
+        / (R_v*T));
 }
 
 /**
@@ -687,12 +603,12 @@ inline A convert_S_to_qv(A p,
     A p_sat_const_a,
     A T_sat_low_temp,
     A p_sat_const_b,
-    A Epsilon)
-{
-    return ( Epsilon*(
+    A Epsilon) {
+
+    return (Epsilon*(
         compute_pv(T, S, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
         / compute_pa(p, T, S, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
-        ) );
+        ));
 }
 
 
@@ -714,11 +630,12 @@ inline A convert_Si_to_qv(A p,
     A p_sat_const_b,
     A Epsilon,
     A p_sat_ice_const_a,
-    A p_sat_ice_const_b)
-{
-  A S = Si * (
-      saturation_pressure_ice(T, p_sat_low_temp, p_sat_ice_const_a, T_sat_low_temp, p_sat_ice_const_b)
-      / saturation_pressure_water(T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b) );
+    A p_sat_ice_const_b) {
+
+    A S = Si * (
+        saturation_pressure_ice(T, p_sat_low_temp, p_sat_ice_const_a, T_sat_low_temp, p_sat_ice_const_b)
+        / saturation_pressure_water(T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
+    );
 
   return convert_S_to_qv(p, T, S, p_sat_low_temp, p_sat_const_a,
     T_sat_low_temp, p_sat_const_b, Epsilon);
@@ -742,10 +659,10 @@ inline A convert_qv_to_S(
     A p_sat_const_a,
     A T_sat_low_temp,
     A p_sat_const_b,
-    A Epsilon)
-{
-  return ( (p*qv)/((Epsilon + qv)
-    * saturation_pressure_water(T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)) );
+    A Epsilon) {
+
+    return ((p*qv)/((Epsilon + qv)
+        * saturation_pressure_water(T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)));
 }
 
 
@@ -764,8 +681,8 @@ inline A particle_mean_mass(
     const A &q,
     const A &n,
     const A &min_x,
-    const A &max_x)
-{
+    const A &max_x) {
+
     return min(max(q/(n+DBL_EPSILON), min_x), max_x);
 }
 
@@ -784,8 +701,8 @@ template <class A>
 inline A particle_diameter(
     const A &x,
     const A &a_geo,
-    const A &b_geo)
-{
+    const A &b_geo) {
+
     return a_geo * pow(x, b_geo);
 }
 
@@ -803,8 +720,8 @@ template <class A>
 inline A particle_velocity(
     const A &x,
     const A &a_vel,
-    const A &b_vel)
-{
+    const A &b_vel) {
+
     return a_vel * pow(x, b_vel);
 }
 
@@ -826,8 +743,8 @@ inline A rain_mue_dm_relation(
     const A &cmu1,
     const A &cmu2,
     const A &cmu3,
-    const A &cmu4)
-{
+    const A &cmu4) {
+
     A delta = cmu2*(D_m-cmu3);
     if (D_m <= cmu3)
         return cmu0*tanh(16.0*delta*delta) + cmu4;
@@ -852,8 +769,8 @@ inline A rain_mue_dm_relation_sb(
     const A &cmu1,
     const A &cmu2,
     const A &cmu3,
-    const A &cmu4)
-{
+    const A &cmu4) {
+
     A delta = D_m-cmu3;
     if (D_m <= cmu3)
         return cmu0*tanh(4.0e-3*delta)*tanh(4.0*delta) + cmu4;
@@ -861,7 +778,6 @@ inline A rain_mue_dm_relation_sb(
 }
 
 
-//dmin_wg_gr_ltab_equi
 /**
  * Calculate the separation diameter for wet growth of supercooled
  * water to ice.
@@ -881,9 +797,6 @@ A wet_growth_diam(
     const A &qi,
     const table_t &table);
 
-////////////////////////////////////////////////////////////////////////////////
-// Variuous functions for collision integrals of SB2006 (Eq. 90, 91, 92, 93)
-
 /**
  * Function for collision integrals of Seifert & Beheng (2006), Eq. 90.
  *
@@ -894,18 +807,19 @@ A wet_growth_diam(
 template <class A = codi::RealReverse>
 inline A coll_delta(
     particle_model_constants_t &pc1,
-    const uint64_t n)
-{
+    const uint64_t n) {
+
     A tmp1 = (2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+get_at(pc1.constants, Particle_cons_idx::nu)+1.0+n)
         / get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp2 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp3 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp4 = (get_at(pc1.constants, Particle_cons_idx::nu)+2.0)/get_at(pc1.constants, Particle_cons_idx::mu);
-    return tgamma( tmp1 )
-        / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), 2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+n)
-        / pow(tgamma( tmp4 ), 2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+n);
+    return tgamma(tmp1)
+        / tgamma(tmp2)
+        * pow(tgamma(tmp3), 2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+n)
+        / pow(tgamma(tmp4), 2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+n);
 }
+
 
 /**
  * Function for collision integrals of Seifert & Beheng (2006), Eq. 90.
@@ -919,8 +833,8 @@ template <class A = codi::RealReverse>
 inline A coll_delta_11(
     particle_model_constants_t &pc1,
     particle_model_constants_t &pc2,
-    const uint64_t n)
-{
+    const uint64_t n) {
+
     return coll_delta<A>(pc1, n);
 }
 
@@ -937,10 +851,11 @@ template <class A = codi::RealReverse>
 inline A coll_delta_22(
     particle_model_constants_t &pc1,
     particle_model_constants_t &pc2,
-    const uint64_t n)
-{
+    const uint64_t n) {
+
     return coll_delta<A>(pc2, n);
 }
+
 
 /**
  * Function for collision integrals of Seifert & Beheng (2006), Eq. 91.
@@ -954,27 +869,28 @@ template <class A = codi::RealReverse>
 inline A coll_delta_12(
     particle_model_constants_t &pc1,
     particle_model_constants_t &pc2,
-    const uint64_t n)
-{
+    const uint64_t n) {
+
     A tmp1 = (get_at(pc1.constants, Particle_cons_idx::b_geo)+get_at(pc1.constants, Particle_cons_idx::nu)+1.0)
         / get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp2 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp3 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp4 = (get_at(pc1.constants, Particle_cons_idx::nu)+2.0)/get_at(pc1.constants, Particle_cons_idx::mu);
-    A res =  2.0 * tgamma( tmp1 )
-        / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), get_at(pc1.constants, Particle_cons_idx::b_geo))
-        / pow(tgamma( tmp4 ), get_at(pc1.constants, Particle_cons_idx::b_geo));
+    A res =  2.0 * tgamma(tmp1)
+        / tgamma(tmp2)
+        * pow(tgamma(tmp3), get_at(pc1.constants, Particle_cons_idx::b_geo))
+        / pow(tgamma(tmp4), get_at(pc1.constants, Particle_cons_idx::b_geo));
     tmp1 = (get_at(pc2.constants, Particle_cons_idx::b_geo)+get_at(pc2.constants, Particle_cons_idx::nu)+1.0+n)
         / get_at(pc2.constants, Particle_cons_idx::mu);
     tmp2 = (get_at(pc2.constants, Particle_cons_idx::nu)+1.0)/get_at(pc2.constants, Particle_cons_idx::mu);
     tmp3 = (get_at(pc2.constants, Particle_cons_idx::nu)+1.0)/get_at(pc2.constants, Particle_cons_idx::mu);
     tmp4 = (get_at(pc2.constants, Particle_cons_idx::nu)+2.0)/get_at(pc2.constants, Particle_cons_idx::mu);
-    return res * tgamma( tmp1 )
-        / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), get_at(pc2.constants, Particle_cons_idx::b_geo)+n)
-        / pow(tgamma( tmp4 ), get_at(pc2.constants, Particle_cons_idx::b_geo)+n);
+    return res * tgamma(tmp1)
+        / tgamma(tmp2)
+        * pow(tgamma(tmp3), get_at(pc2.constants, Particle_cons_idx::b_geo)+n)
+        / pow(tgamma(tmp4), get_at(pc2.constants, Particle_cons_idx::b_geo)+n);
 }
+
 
 /**
  * Function for collision integrals of Seifert & Beheng (2006), Eq. 92.
@@ -986,18 +902,18 @@ inline A coll_delta_12(
 template <class A = codi::RealReverse>
 inline A coll_theta(
     particle_model_constants_t &pc1,
-    const uint64_t n)
-{
+    const uint64_t n) {
+
     A tmp1 = (2.0*get_at(pc1.constants, Particle_cons_idx::b_vel)+2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)
         + get_at(pc1.constants, Particle_cons_idx::nu)+1.0+n)/get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp2 = (2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+get_at(pc1.constants, Particle_cons_idx::nu)+1.0+n)
         / get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp3 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp4 = (get_at(pc1.constants, Particle_cons_idx::nu)+2.0)/get_at(pc1.constants, Particle_cons_idx::mu);
-    return tgamma( tmp1 )
-        / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), 2.0*get_at(pc1.constants, Particle_cons_idx::b_vel))
-        / pow(tgamma( tmp4 ), 2.0*get_at(pc1.constants, Particle_cons_idx::b_vel));
+    return tgamma(tmp1)
+        / tgamma(tmp2)
+        * pow(tgamma(tmp3), 2.0*get_at(pc1.constants, Particle_cons_idx::b_vel))
+        / pow(tgamma(tmp4), 2.0*get_at(pc1.constants, Particle_cons_idx::b_vel));
 }
 
 
@@ -1013,10 +929,11 @@ template <class A = codi::RealReverse>
 inline A coll_theta_11(
     particle_model_constants_t &pc1,
     particle_model_constants_t &pc2,
-    const uint64_t n)
-{
+    const uint64_t n) {
+
     return coll_theta<A>(pc1, n);
 }
+
 
 /**
  * Function for collision integrals of Seifert & Beheng (2006), Eq. 92.
@@ -1030,10 +947,11 @@ template <class A = codi::RealReverse>
 inline A coll_theta_22(
     particle_model_constants_t &pc1,
     particle_model_constants_t &pc2,
-    const uint64_t n)
-{
+    const uint64_t n) {
+
     return coll_theta<A>(pc2, n);
 }
+
 
 /**
  * Function for collision integrals of Seifert & Beheng (2006), Eq. 93.
@@ -1047,28 +965,28 @@ template <class A = codi::RealReverse>
 inline A coll_theta_12(
     particle_model_constants_t &pc1,
     particle_model_constants_t &pc2,
-    const uint64_t n)
-{
+    const uint64_t n) {
+
     A tmp1 = (get_at(pc1.constants, Particle_cons_idx::b_vel)+2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)
         + get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp2 = (2.0*get_at(pc1.constants, Particle_cons_idx::b_geo)+get_at(pc1.constants, Particle_cons_idx::nu)+1.0)
         / get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp3 = (get_at(pc1.constants, Particle_cons_idx::nu)+1.0)/get_at(pc1.constants, Particle_cons_idx::mu);
     A tmp4 = (get_at(pc1.constants, Particle_cons_idx::nu)+2.0)/get_at(pc1.constants, Particle_cons_idx::mu);
-    A res = 2.0 * tgamma( tmp1 )
-        / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), get_at(pc1.constants, Particle_cons_idx::b_vel))
-        / pow(tgamma( tmp4 ), get_at(pc1.constants, Particle_cons_idx::b_vel));
+    A res = 2.0 * tgamma(tmp1)
+        / tgamma(tmp2)
+        * pow(tgamma(tmp3), get_at(pc1.constants, Particle_cons_idx::b_vel))
+        / pow(tgamma(tmp4), get_at(pc1.constants, Particle_cons_idx::b_vel));
     tmp1 = (get_at(pc2.constants, Particle_cons_idx::b_vel)+2.0*get_at(pc2.constants, Particle_cons_idx::b_geo)
         + get_at(pc2.constants, Particle_cons_idx::nu)+1.0+n)/get_at(pc2.constants, Particle_cons_idx::mu);
     tmp2 = (2.0*get_at(pc2.constants, Particle_cons_idx::b_geo)+get_at(pc2.constants, Particle_cons_idx::nu)+1.0+n)
         / get_at(pc2.constants, Particle_cons_idx::mu);
     tmp3 = (get_at(pc2.constants, Particle_cons_idx::nu)+1.0)/get_at(pc2.constants, Particle_cons_idx::mu);
     tmp4 = (get_at(pc2.constants, Particle_cons_idx::nu)+2.0)/get_at(pc2.constants, Particle_cons_idx::mu);
-    return res * tgamma( tmp1 )
-        / tgamma( tmp2 )
-        * pow(tgamma( tmp3 ), get_at(pc2.constants, Particle_cons_idx::b_vel))
-        / pow(tgamma( tmp4 ), get_at(pc2.constants, Particle_cons_idx::b_vel));
+    return res * tgamma(tmp1)
+        / tgamma(tmp2)
+        * pow(tgamma(tmp3), get_at(pc2.constants, Particle_cons_idx::b_vel))
+        / pow(tgamma(tmp4), get_at(pc2.constants, Particle_cons_idx::b_vel));
 }
 
 
@@ -1087,16 +1005,17 @@ inline A coll_theta_12(
  */
 inline codi::RealReverse vent_coeff_a(
     particle_model_constants_t &pc,
-    uint64_t n)
-{
+    uint64_t n) {
+
     return get_at(pc.constants, Particle_cons_idx::a_ven)
-        * tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+n
-        + get_at(pc.constants, Particle_cons_idx::b_geo))/get_at(pc.constants, Particle_cons_idx::mu) )
-        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu) )
-        * pow( tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)
+        * tgamma((get_at(pc.constants, Particle_cons_idx::nu)+n
+        + get_at(pc.constants, Particle_cons_idx::b_geo))/get_at(pc.constants, Particle_cons_idx::mu))
+        / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu))
+        * pow(tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)
         / get_at(pc.constants, Particle_cons_idx::mu)) / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+2.0)
         / get_at(pc.constants, Particle_cons_idx::mu)), get_at(pc.constants, Particle_cons_idx::b_geo)+n-1.0 );
 }
+
 
 /**
  * Calculate the model constant \f$b_f = \overline{b}_{\text{vent},n}\f$ of a particle model that is used
@@ -1112,16 +1031,16 @@ inline codi::RealReverse vent_coeff_a(
  */
 inline codi::RealReverse vent_coeff_b(
     particle_model_constants_t &pc,
-    uint64_t n)
-{
+    uint64_t n) {
+
     const double m_f = 0.5; // From PK, page 541
     return get_at(pc.constants, Particle_cons_idx::b_ven)
-        * tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+n+(m_f+1.0)
+        * tgamma((get_at(pc.constants, Particle_cons_idx::nu)+n+(m_f+1.0)
         * get_at(pc.constants, Particle_cons_idx::b_geo)+m_f
-        * get_at(pc.constants, Particle_cons_idx::b_vel))/get_at(pc.constants, Particle_cons_idx::mu) )
-        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu) )
-        * pow( tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu) )
-        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+2.0)
+        * get_at(pc.constants, Particle_cons_idx::b_vel))/get_at(pc.constants, Particle_cons_idx::mu))
+        / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu))
+        * pow(tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu))
+        / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+2.0)
         / get_at(pc.constants, Particle_cons_idx::mu)), (m_f+1.0) * get_at(pc.constants, Particle_cons_idx::b_geo)
         + m_f*get_at(pc.constants, Particle_cons_idx::b_vel)+n-1.0);
 }
@@ -1137,14 +1056,13 @@ inline codi::RealReverse vent_coeff_b(
  */
 inline codi::RealReverse moment_gamma(
     particle_model_constants_t &pc,
-    uint64_t n)
-{
-    return tgamma( (n+get_at(pc.constants, Particle_cons_idx::nu)+1.0)
-        / get_at(pc.constants, Particle_cons_idx::mu) )
-        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu) )
-        * pow(tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+1.0)
-        / get_at(pc.constants, Particle_cons_idx::mu) )
-        / tgamma( (get_at(pc.constants, Particle_cons_idx::nu)+2.0)/get_at(pc.constants, Particle_cons_idx::mu)), n);
+    uint64_t n) {
+    return tgamma((n+get_at(pc.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(pc.constants, Particle_cons_idx::mu))
+        / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu))
+        * pow(tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(pc.constants, Particle_cons_idx::mu))
+        / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+2.0)/get_at(pc.constants, Particle_cons_idx::mu)), n);
 }
 
 
@@ -1184,10 +1102,4 @@ void init_particle_collection_2(
     particle_model_constants_t &pc2,
     collection_model_constants_t &c);
 
-
-
-
 /** @} */ // end of group parametrizations
-
-
-#endif

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-struct output_buffer_vector_t{
+struct output_buffer_vector_t {
     // for netCDF files and a vector for each column
     // columns: output parameter + gradients + time_afer_ascent + type + flags
     // fast index: record
@@ -21,7 +21,7 @@ struct output_buffer_vector_t{
 
 // Idea: Every new checkpoint gets traj_id = rank + i*n_processes where i is
 // the number of processes checkpoints by the current process
-struct output_max_buffer_t{
+struct output_max_buffer_t {
     // for netCDF files and a vector for each column
     // columns: output parameter + gradients + time_afer_ascent + type + flags
     // fast index: record
@@ -34,7 +34,7 @@ struct output_max_buffer_t{
     std::array<std::vector<uint64_t>, 1400 > output_buffer_int;
 }
 
-struct output_buffer_t{
+struct output_buffer_t {
     // for netCDF files and a vector for each column
     // columns: output parameter + gradients + time_afer_ascent + type + flags
     // fast index: record

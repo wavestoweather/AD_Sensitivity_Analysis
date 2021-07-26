@@ -1,7 +1,7 @@
 #include "include/types/global_args_t.h"
 
-global_args_t::global_args_t()
-{
+
+global_args_t::global_args_t() {
     final_time_flag = 0;
     final_time_string = nullptr;
 
@@ -62,12 +62,12 @@ global_args_t::global_args_t()
     n_ens_string = nullptr;
 }
 
+
 int global_args_t::parse_arguments(
     const int argc,
     char* const * argv,
     const int &rank,
-    const int &n_processes)
-{
+    const int &n_processes) {
     /**
      * String used to parse commandline input.
      */
@@ -75,142 +75,117 @@ int global_args_t::parse_arguments(
     bool need_to_abort = false;
     int opt;
 
-    if(argc < 2)
-    {
+    if (argc < 2) {
         need_to_abort = true;
         display_usage();
-    }else
-    {
+    } else {
         opt = getopt(argc, argv, optString);
 
-        while(-1 != opt)
-        {
-            switch(opt)
-            {
-                case 'f':
-                {
+        while (-1 != opt) {
+            switch (opt) {
+                case 'f': {
                     this->final_time_flag = 1;
                     this->final_time_string = optarg;
                     break;
                 }
-                case 'd':
-                {
+                case 'd': {
                     this->timestep_flag = 1;
                     this->timestep_string = optarg;
                     break;
                 }
-                case 'i':
-                {
+                case 'i': {
                     this->snapshot_index_flag = 1;
                     this->snapshot_index_string = optarg;
                     break;
                 }
-                case 'b':
-                {
+                case 'b': {
                     this->simulation_mode_flag = 1;
                     this->simulation_mode_string = optarg;
                     break;
                 }
-                case 'o':
-                {
+                case 'o': {
                     this->output_flag = 1;
                     this->output_string = optarg;
                     break;
                 }
-                case 'l':
-                {
+                case 'l': {
                     this->input_flag = 1;
                     this->input_file = optarg;
                     break;
                 }
-                case 's':
-                {
+                case 's': {
                     this->tracking_file_flag = 1;
                     this->tracking_file_string = optarg;
                     break;
                 }
-                case 'e':
-                {
+                case 'e': {
                     this->start_over_env_flag = 1;
                     this->start_over_env_string = optarg;
                     break;
                 }
-                case 't':
-                {
+                case 't': {
                     this->fixed_iteration_flag = 1;
                     this->fixed_iteration_string = optarg;
                     break;
                 }
-                case 'a':
-                {
+                case 'a': {
                     this->auto_type_flag = 1;
                     this->auto_type_string = optarg;
                     break;
                 }
-                case 'r':
-                {
+                case 'r': {
                     this->traj_flag = 1;
                     this->traj_string = optarg;
                     break;
                 }
-                case 'w':
-                {
+                case 'w': {
                     this->write_flag = 1;
                     this->write_string = optarg;
                     break;
                 }
-                case 'p':
-                {
+                case 'p': {
                     this->progress_index_flag = 1;
                     this->progress_index_string = optarg;
                     break;
                 }
 #ifdef MET3D
-                case 'n':
-                {
+                case 'n': {
                     this->delay_start_flag = 1;
                     this->delay_start_string = optarg;
                     break;
                 }
 #endif
-                case 'm':
-                {
+                case 'm': {
                     this->ens_config_flag = 1;
                     this->ens_config_string = optarg;
                     break;
                 }
-                case 'c':
-                {
+                case 'c': {
                     this->checkpoint_flag = 1;
                     this->checkpoint_string = optarg;
                     break;
                 }
-                case 'g':
-                {
+                case 'g': {
                     this->time_start_idx_flag = 1;
                     this->time_start_idx_string = optarg;
                     break;
                 }
-                case 'h':
-                {
+                case 'h': {
                     this->folder_name_flag = 1;
                     this->folder_name_string = optarg;
                     break;
                 }
-                case 'k':
-                {
+                case 'k': {
                     this->n_ens_flag = 1;
                     this->n_ens_string = optarg;
                     break;
                 }
-                case '?':
-                {
+                case '?': {
                     need_to_abort = true;
                     display_usage();
                     break;
                 }
-                default:
-                {
+                default: {
                     need_to_abort = true;
                     display_error_on_command_line();
                     display_usage();
@@ -222,14 +197,14 @@ int global_args_t::parse_arguments(
         }
     }
 
-    if(need_to_abort){
+    if (need_to_abort) {
         return ARGUMENT_ERR;
     }
     return SUCCESS;
 }
 
-void global_args_t::display_usage()
-{
+
+void global_args_t::display_usage() {
     std::cout << "\n"
         << "USAGE of the program:\n"
         << "Invoke the program on the command line with\n"
@@ -284,8 +259,8 @@ void global_args_t::display_usage()
         << std::endl;
 }
 
-void global_args_t::display_error_on_command_line()
-{
+
+void global_args_t::display_error_on_command_line() {
     std::cerr << "==> ERROR: An error occured while dealing with the command line arguments!"
         << std::endl;
 }

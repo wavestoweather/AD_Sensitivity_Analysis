@@ -1,9 +1,10 @@
 #pragma once
 
-#include <boost/math/special_functions/gamma.hpp>
 #include <cmath>
-#include "codi.hpp"
 #include <vector>
+
+#include <boost/math/special_functions/gamma.hpp>
+#include "codi.hpp"
 
 /**
  * A lookup table for the lower incomplete gamma function from ICON
@@ -20,7 +21,7 @@
  * during the reconstruction of incgfct-values from the table,
  * the x-value can safely be truncated at the maximum table x-value.
  */
-struct gamma_table_t{
+struct gamma_table_t {
     uint64_t n_bins;    /*!< Number of bins of the lookup table. */
     /**
      * Number of bins of the lookup table with higher resolution if desired.

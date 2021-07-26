@@ -1,8 +1,9 @@
 #pragma once
 
-#include <boost/property_tree/ptree.hpp>
 #include <cmath>
 #include <string>
+
+#include <boost/property_tree/ptree.hpp>
 
 #include "include/misc/error.h"
 #include "include/types/global_args_t.h"
@@ -12,14 +13,14 @@ namespace pt = boost::property_tree;
 /**
  * Structure to collect all input parameters.
  */
-struct input_parameters_t{
+struct input_parameters_t {
 
     // Numerics
     double t_end_prime; /*!< End simulation time in seconds. */
     double dt_prime; /*!< Timestep size in seconds for the simulation. */
     double dt_traject_prime; /*!< Timestep size in seconds of the trajectory in the netCDF file. */
     double dt_traject; /*!< Timestep size of the trajectory in the netCDF file. */
-    long start_time_idx; /*!< Timestep index to start (multiply by dt_traject_prime to get the seconds). */
+    int32_t start_time_idx; /*!< Timestep index to start (multiply by dt_traject_prime to get the seconds). */
 #ifdef MET3D
     double start_time; /*!< start time in seconds relativ to ascend */
 #endif
@@ -53,16 +54,6 @@ struct input_parameters_t{
     int simulation_mode; /*!< Simulation mode. */
 
     input_parameters_t();
-
-    /**
-     * Change the output filename such that it starts with "idx-y-z_"
-     * where x-y are the ids of preceding trajectories and z is the current id
-     *
-     * @params all_ids String of form x-y-z with x,y and z positive ints
-     *                 and z being the current id.
-     */
-    // void set_outputfile_id(
-    //     const uint64_t ensemble_id);
 
     void put(pt::ptree &ptree, const double &time) const;
 

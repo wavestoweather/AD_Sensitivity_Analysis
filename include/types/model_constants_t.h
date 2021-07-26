@@ -1,11 +1,12 @@
 #pragma once
 
 #include <algorithm>
+#include <string>
+#include <vector>
+
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include "codi.hpp"
-#include <string>
-#include <vector>
 
 #include "include/misc/error.h"
 #include "include/types/collection_model_constants_t.h"
@@ -208,7 +209,7 @@ struct model_constants_t{
     int local_num_comp;
     int local_num_par;
 
-    model_constants_t(const std::string &tracking_filename);
+    explicit model_constants_t(const std::string &tracking_filename);
 
     /**
      * Register the model parameters on the tape for codi::RealReverse.

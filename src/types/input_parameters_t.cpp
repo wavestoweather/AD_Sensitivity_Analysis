@@ -1,7 +1,7 @@
 #include "include/types/input_parameters_t.h"
 
-input_parameters_t::input_parameters_t()
-{
+
+input_parameters_t::input_parameters_t() {
     // Numerics
     t_end_prime = 100.0;	// Seconds
     dt_prime = 0.01;		// Seconds
@@ -42,63 +42,18 @@ input_parameters_t::input_parameters_t()
     simulation_mode = trajectory_sensitvity_perturbance;
 }
 
-// void input_parameters_t::set_outputfile_id(
-//     const uint64_t ensemble_id)
-// {
-//     std::string ens_string;
-//     if(ensemble_id == 0)
-//         ens_string += "000";
-//     else
-//         for(int64_t i=ensemble_id; i<1000; i*=10)
-//             ens_string += "0";
-//     std::string id_str = "ensid" + ens_string + std::to_string(ensemble_id) + "_";
-
-//     if(ensemble_id == 0)
-//     {
-//         auto pos = OUTPUT_FILENAME.rfind("/");
-//         if(pos == std::string::npos)
-//         {
-//             OUTPUT_FILENAME.insert(0, id_str);
-//         } else
-//         {
-//             OUTPUT_FILENAME.insert(pos+1, id_str);
-//         }
-//     } else
-//     {
-//         std::string to_replace = "ensid";
-//         auto pos = OUTPUT_FILENAME.rfind(to_replace);
-//         if(pos != std::string::npos)
-//         {
-//             // This *should* always be the correct branch
-//             OUTPUT_FILENAME.replace(pos, to_replace.length()+10, id_str);
-//         } else
-//         {
-//             // If for any weird reason, "ensid" is not part of OUTPUT_FILENAME:
-//             // Add to beginning of the filename. Check for any path characters
-//             auto pos_folder = OUTPUT_FILENAME.rfind("/");
-//             if(pos == std::string::npos)
-//             {
-//                 OUTPUT_FILENAME.insert(0, id_str);
-//             } else
-//             {
-//                 OUTPUT_FILENAME.insert(pos_folder+1, id_str);
-//             }
-//         }
-//     }
-// }
 
 void input_parameters_t::put(
     pt::ptree &ptree,
-    const double &time) const
-{
+    const double &time) const {
     pt::ptree input_params;
     input_params.put<double>("t_end_prime", t_end_prime);
     input_params.put<double>("dt_prime", dt_prime);
     input_params.put<double>("dt_traject_prime", dt_traject_prime);
     input_params.put<double>("dt_traject", dt_traject);
-    input_params.put<long>("start_time_idx", start_time_idx);
+    input_params.put<int32_t>("start_time_idx", start_time_idx);
 #ifdef MET3D
-    if(start_time_idx == -1)
+    if (start_time_idx == -1)
         input_params.put<double>("start_time", start_time);
 #endif
     input_params.put<int>("snapshot_index", snapshot_index);
@@ -120,131 +75,103 @@ void input_parameters_t::put(
     ptree.add_child("input_params", input_params);
 }
 
+
 void input_parameters_t::put(
-    pt::ptree &ptree) const
-{
+    pt::ptree &ptree) const {
     put(ptree, current_time);
 }
 
+
 int input_parameters_t::from_pt(
-    pt::ptree &ptree)
-{
+    pt::ptree &ptree) {
     int err = 0;
-    for(auto &it: ptree.get_child("input_params"))
-    {
+    for (auto &it: ptree.get_child("input_params")) {
         auto first = it.first;
-        if(first == "t_end_prime")
-        {
+        if (first == "t_end_prime") {
             t_end_prime = it.second.get_value<double>();
-        } else if(first == "dt_prime")
-        {
+        } else if (first == "dt_prime") {
             dt_prime = it.second.get_value<double>();
-        } else if(first == "dt_traject_prime")
-        {
+        } else if (first == "dt_traject_prime") {
             dt_traject_prime = it.second.get_value<double>();
-        } else if(first == "dt_traject")
-        {
+        } else if (first == "dt_traject") {
             dt_traject = it.second.get_value<double>();
-        } else if(first == "start_time_idx")
-        {
-            start_time_idx = it.second.get_value<long>();
+        } else if (first == "start_time_idx") {
+            start_time_idx = it.second.get_value<int32_t>();
 #ifdef MET3D
-        } else if(first == "start_time")
-        {
+        } else if (first == "start_time") {
             start_time = it.second.get_value<double>();
 #endif
-        } else if(first == "snapshot_index")
-        {
+        } else if (first == "snapshot_index") {
             snapshot_index = it.second.get_value<int>();
-        } else if(first == "num_sub_steps")
-        {
+        } else if (first == "num_sub_steps") {
             num_sub_steps = it.second.get_value<uint64_t>();
-        } else if(first == "OUTPUT_FILENAME")
-        {
+        } else if (first == "OUTPUT_FILENAME") {
             OUTPUT_FILENAME = it.second.data();
-        } else if(first == "INPUT_FILENAME")
-        {
+        } else if (first == "INPUT_FILENAME") {
             INPUT_FILENAME = it.second.data();
-        // } else if(first == "start_over")
-        // {
-        //     start_over = (it.second.data() == "1"
-        //         || it.second.data() == "true") ? true : false;
-        } else if(first == "start_over_env")
-        {
+        } else if (first == "start_over_env") {
             start_over_env = (it.second.data() == "1"
                 || it.second.data() == "true") ? true : false;
-        } else if(first == "fixed_iteration")
-        {
+        } else if (first == "fixed_iteration") {
             fixed_iteration = (it.second.data() == "1"
                 || it.second.data() == "true") ? true : false;
-        } else if(first == "auto_type")
-        {
+        } else if (first == "auto_type") {
             auto_type = it.second.get_value<uint32_t>();
-        } else if(first == "traj")
-        {
+        } else if (first == "traj") {
             traj = it.second.get_value<uint32_t>();
-        } else if(first == "write_index")
-        {
+        } else if (first == "write_index") {
             write_index = it.second.get_value<uint32_t>();
-        } else if(first == "progress_index")
-        {
+        } else if (first == "progress_index") {
             progress_index = it.second.get_value<uint64_t>();
-        } else if(first == "ensemble")
-        {
+        } else if (first == "ensemble") {
             ensemble = it.second.get_value<uint32_t>();
-        } else if(first == "n_ensembles")
-        {
+        } else if (first == "n_ensembles") {
             n_ensembles = it.second.get_value<uint32_t>();
-        } else if(first == "current_time")
-        {
+        } else if (first == "current_time") {
             current_time = it.second.get_value<double>();
-        } else if(first == "FOLDER_NAME")
-        {
+        } else if (first == "FOLDER_NAME") {
             FOLDER_NAME = it.second.data();
-        } else if(first == "simulation_mode")
-        {
+        } else if (first == "simulation_mode") {
             simulation_mode = it.second.get_value<int>();
-        } else
-        {
+        } else {
             err = INPUT_NAME_CHECKPOINT_ERR;
         }
     }
     return err;
 }
 
+
 void input_parameters_t::set_input_from_arguments(
-    global_args_t &arg)
-{
+    global_args_t &arg) {
     // Final time
-    if(1 == arg.final_time_flag){
+    if (1 == arg.final_time_flag) {
         this->t_end_prime = std::strtod(arg.final_time_string, nullptr);
     }
 
     // Timestep
-    if(1 == arg.timestep_flag){
+    if (1 == arg.timestep_flag) {
         this->dt_prime = std::strtod(arg.timestep_string, nullptr);
     }
 
     // Snapshot index
-    if(1 == arg.snapshot_index_flag){
+    if (1 == arg.snapshot_index_flag) {
         this->snapshot_index = std::stoi(arg.snapshot_index_string);
     }
 
     // Output
-    if(1 == arg.output_flag){
+    if (1 == arg.output_flag) {
         this->OUTPUT_FILENAME = arg.output_string;
     }
 
     // Input
-    if(1 == arg.input_flag){
+    if (1 == arg.input_flag) {
         this->INPUT_FILENAME = arg.input_file;
     }
 
     // Simulation mode
-    if(1 == arg.simulation_mode_flag){
+    if (1 == arg.simulation_mode_flag) {
         this->simulation_mode = std::stoi(arg.simulation_mode_string);
-        switch(this->simulation_mode)
-        {
+        switch (this->simulation_mode) {
             case trajectory_sensitvity_perturbance:
             case trajectory_sensitivity:
             case trajectory_perturbance:
@@ -261,85 +188,84 @@ void input_parameters_t::set_input_from_arguments(
     }
 
     // Starting over mixing ratios and particle numbers
-    // if(1 == arg.start_over_flag){
+    // if (1 == arg.start_over_flag) {
     //     this->start_over = (strcmp(arg.start_over_string, "0"));
     // }
 
     // Check if any tracking configuration is available
-    if(1 == arg.tracking_file_flag){
+    if (1 == arg.tracking_file_flag) {
         this->tracking_filename = arg.tracking_file_string;
     }
 
     // Starting over environment variables (p, T, w)
-    if(1 == arg.start_over_env_flag){
+    if (1 == arg.start_over_env_flag) {
         this->start_over_env = (strcmp(arg.start_over_env_string, "0"));
     }
 
-    if(1 == arg.fixed_iteration_flag){
+    if (1 == arg.fixed_iteration_flag) {
         this->fixed_iteration = (strcmp(arg.fixed_iteration_string, "0"));
     }
 
     // Auto type
-    if(1 == arg.auto_type_flag){
+    if (1 == arg.auto_type_flag) {
         this->auto_type = std::stoi(arg.auto_type_string);
     }
 
     // Trajectory
-    if(1 == arg.traj_flag){
+    if (1 == arg.traj_flag) {
         this->traj = std::stoi(arg.traj_string);
     }
 
     // Write index
-    if(1 == arg.write_flag){
+    if (1 == arg.write_flag) {
         this->write_index = std::stoi(arg.write_string);
     }
 
     // Progressbar index
-    if(1 == arg.progress_index_flag){
+    if (1 == arg.progress_index_flag) {
         this->progress_index = std::stoull(arg.progress_index_string);
     }
 
     // Start time index
-    if(1 == arg.time_start_idx_flag)
-    {
+    if (1 == arg.time_start_idx_flag) {
         this->start_time_idx = std::stol(arg.time_start_idx_string);
     }
 
 #ifdef MET3D
     // Simulation start time
-    if( (1 == arg.delay_start_flag) && (0 == arg.time_start_idx_flag) ){
+    if ( (1 == arg.delay_start_flag) && (0 == arg.time_start_idx_flag) ) {
         this->start_time = std::strtod(arg.delay_start_string, nullptr);
     }
 #endif
 
     // Ensemble configuration file
-    if(1 == arg.ens_config_flag){
+    if (1 == arg.ens_config_flag) {
         this->ENS_CONFIG_FILENAME = arg.ens_config_string;
     }
 
     // Checkpoint file
-    if(1 == arg.checkpoint_flag){
+    if (1 == arg.checkpoint_flag) {
         this->CHECKPOINT_FILENAME = arg.checkpoint_string;
     }
 
     // // ID for this process
-    // if(1 == arg.gnu_id_flag){
+    // if (1 == arg.gnu_id_flag) {
     //     this->id = std::stoi(arg.gnu_id_string);
     // }
 
     // Folder name for new generated checkpoints
-    if(1 == arg.folder_name_flag){
+    if (1 == arg.folder_name_flag) {
         this->FOLDER_NAME = arg.folder_name_string;
     }
 
     // Maximum number of ensembles in the output
-    if(1 == arg.n_ens_flag){
+    if (1 == arg.n_ens_flag) {
         this->n_ensembles = std::stoi(arg.n_ens_string);
     }
 }
 
-void input_parameters_t::print_parameters()
-{
+
+void input_parameters_t::print_parameters() {
 #ifdef SILENT_MODE
     return;
 #endif

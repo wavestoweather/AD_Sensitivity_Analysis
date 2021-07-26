@@ -1,10 +1,12 @@
-#ifndef GENERAL_H
-#define GENERAL_H
+#pragma once
 
-#include "codi.hpp"
 #include <stdio.h>
 #include <sys/stat.h>
+
+#include <string>
 #include <vector>
+
+#include "codi.hpp"
 
 #include "include/microphysics/constants.h"
 #include "include/types/particle_model_constants_t.h"
@@ -64,5 +66,3 @@ inline bool exists(const std::string& name) {
 }
 
 /** @} */ // end of group general
-
-#endif

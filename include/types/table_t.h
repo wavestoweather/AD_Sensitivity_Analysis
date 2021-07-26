@@ -1,8 +1,7 @@
 #pragma once
 
-#include "codi.hpp"
 #include <vector>
-
+#include "codi.hpp"
 
 // A 4D lookup table
 /**
@@ -55,5 +54,4 @@ struct table_t{
         uint64_t j,
         uint64_t k,
         uint64_t l) const;
-
 };

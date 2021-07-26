@@ -2,6 +2,7 @@
 
 #include <mpi.h>
 #include <queue>
+#include <vector>
 
 #include "include/types/checkpoint_t.h"
 
@@ -67,7 +68,7 @@ struct task_scheduler_t{
      * checkpoint for further use.
      * @return True if own queue is where it shall be sent to.
      */
-    bool send_task(checkpoint_t &checkpoint, const bool send_to_self=true);
+    bool send_task(checkpoint_t &checkpoint, const bool send_to_self = true);
 
     /**
      * Checks if any worker is free and send it a new task.
@@ -97,8 +98,8 @@ struct task_scheduler_t{
      */
     void signal_work_avail();
 
-    void set_n_ensembles(const int &n) {n_ensembles = n;};
-    void set_n_trajectories(const int &n) {n_trajectories = n;};
+    void set_n_ensembles(const int &n) {n_ensembles = n;}
+    void set_n_trajectories(const int &n) {n_trajectories = n;}
 
   private:
     bool static_scheduling;

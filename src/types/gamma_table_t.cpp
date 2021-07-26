@@ -1,13 +1,13 @@
 #include "include/types/gamma_table_t.h"
 
-gamma_table_t::gamma_table_t()
-{
+
+gamma_table_t::gamma_table_t() {
 
 }
 
+
 template <class A>
-A gamma_table_t::look_lo(A x) const
-{
+A gamma_table_t::look_lo(A x) const {
     A xt = max(min(x, this->x[this->n_bins-1]), 0.0);
     double tmp = xt.getValue()*this->odx;
     tmp = floor(tmp);
@@ -16,13 +16,13 @@ A gamma_table_t::look_lo(A x) const
     return this->igf[iu] + (this->igf[io] - this->igf[iu]) * this->odx*(xt-this->x[iu]);
 }
 
+
 template <class A>
 A gamma_table_t::look_up(
-    A x) const
-{
+    A x) const {
     A xt = max(min(x, this->x[this->n_bins-1]), 0.0);
     double tmp = xt.getValue()*this->odx;
-    tmp = floor(tmp) ;
+    tmp = floor(tmp);
     uint64_t iu = std::min((uint64_t) tmp, this->n_bins-2);
     uint64_t io = iu + 1;
     A lookup = this->igf[this->n_bins-1] - this->igf[iu]
@@ -30,11 +30,11 @@ A gamma_table_t::look_up(
     return max(lookup, codi::RealReverse(0.0));
 }
 
+
 void gamma_table_t::init_gamma_table(
     const uint64_t &nl,
     const uint64_t &nl_highres,
-    const double &a)
-{
+    const double &a) {
     const double c1 = 36.629433904824623;
     const double c2 = -0.119475603955226;
     const double c3 = 0.339332937820052;
@@ -53,8 +53,7 @@ void gamma_table_t::init_gamma_table(
     x[n_bins-2] = c1 * (1.0-exp(c2*pow(a, c3))) + c4*a;
     dx = x[n_bins-2] / (n_bins-2.0);
     odx = 1.0/dx;
-    for(uint64_t i=0; i<n_bins-2; ++i)
-    {
+    for (uint64_t i=0; i<n_bins-2; ++i) {
         x[i] = (i-1) * dx;
         igf[i] = boost::math::tgamma_lower(a, x[i]);
     }
@@ -65,8 +64,7 @@ void gamma_table_t::init_gamma_table(
     // High resolution (lowest 2% of the x-values)
     dx_highres = x[std::round(0.01*(n_bins-1))] / (n_bins_highres - 1.0);
     odx_highres = 1.0/dx_highres;
-    for(uint64_t i=0; i<n_bins_highres; ++i)
-    {
+    for (uint64_t i=0; i<n_bins_highres; ++i) {
         x_highres[i] = (i-1) * dx_highres;
         igf_highres[i] = boost::math::tgamma_lower(a, x_highres[i]);
     }

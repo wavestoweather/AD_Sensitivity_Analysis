@@ -1,15 +1,14 @@
 #include "include/misc/general.h"
 
-void printy(const double y[])
-{
+void printy(const double y[]) {
 #ifdef SILENT_MODE
     return;
 #endif
-  std::cout << "\n";
-  for(int ii = 0 ; ii < num_comp ; ii++){
-    std::cout << "y[" << std::to_string(ii) << "] = " << y[ii] << "\n";
-  }
-  std::cout << std::endl;
+    std::cout << "\n";
+    for (int ii = 0 ; ii < num_comp ; ii++) {
+        std::cout << "y[" << std::to_string(ii) << "] = " << y[ii] << "\n";
+    }
+    std::cout << std::endl;
 }
 
 /**
@@ -23,14 +22,13 @@ void printy(const double y[])
  * @param a \f$a\f$
  */
 void v1pav2(double y[],
-	    const double v1[],
-	    const double v2[],
-	    const double a)
-{
+    const double v1[],
+    const double v2[],
+    const double a) {
 
-  for(int ii = 0 ; ii < num_comp ; ii++){
-    y[ii] = v1[ii] + a*v2[ii];
-  }
+    for (int ii = 0 ; ii < num_comp ; ii++) {
+        y[ii] = v1[ii] + a*v2[ii];
+    }
 }
 
 /**
@@ -41,8 +39,7 @@ void v1pav2(double y[],
  */
 void print_particle_params(
     particle_model_constants_t &pc,
-    std::string title)
-{
+    std::string title) {
 #ifdef SILENT_MODE
     return;
 #endif
@@ -89,8 +86,7 @@ void print_particle_params(
  *
  * @param ref Struct with reference quantities.
  */
-void print_reference_quantities(reference_quantities_t &ref)
-{
+void print_reference_quantities(reference_quantities_t &ref) {
 #ifdef SILENT_MODE
     return;
 #endif
@@ -109,8 +105,7 @@ void print_reference_quantities(reference_quantities_t &ref)
  *
  * @param segments Vector of segments.
  */
-void print_segments(std::vector<segment_t> &segments)
-{
+void print_segments(std::vector<segment_t> &segments) {
 #ifdef SILENT_MODE
     return;
 #endif
@@ -118,32 +113,30 @@ void print_segments(std::vector<segment_t> &segments)
               << "----------------\n";
     uint32_t i = 1;
     uint32_t total_members = 1;
-    for(auto &segment: segments)
-    {
+    for (auto &segment: segments) {
         std::cout << "----Segment No. " << i << "\n"
                   << "----Number of members: " << segment.n_members << "\n"
                   << "----Number of perturbed parameters: " << segment.params.size() << "\n"
                   << "----Number of segments defined with this configuration: " << segment.n_segments << "\n";
-        if(segment.method != -1)
+        if (segment.method != -1)
             std::cout << "----Method to determine segment start: " << segment.method << "\n";
-        if(segment.value_name != -1)
+        if (segment.value_name != -1)
             std::cout << "----Parameter that has to reach given value for ensemble start: " << segment.value_name << "\n";
-        if(!std::isnan(segment.value))
+        if (!std::isnan(segment.value))
             std::cout << "----Value for parameter to start an ensemble: " << segment.value << "\n";
-        if(segment.out_param != -1)
+        if (segment.out_param != -1)
             std::cout << "----Parameter is a sensitivity to output parameter: " << segment.out_param << "\n";
 
         uint32_t j = 1;
-        for(auto &param: segment.params)
-        {
+        for (auto &param: segment.params) {
             std::cout << "--------Param No. " << j << "\n"
                       << "------------Parameter to perturb: " << param.name << "\n"
                       << "------------Output parameter type: " << param.out_name << "\n"
                       << "------------Mean for normal distribution used in perturbing: " << param.mean << "\n"
                       << "------------Is parameter specific for particle: " << param.particle_param << "\n";
-            if(!isnan(param.sigma))
+            if (!isnan(param.sigma))
                 std::cout << "------------Variance for normal distribution: " << param.sigma << "\n";
-            if(!isnan(param.sigma_perc))
+            if (!isnan(param.sigma_perc))
                 std::cout << "------------Variance in percentage: " << param.sigma_perc << "\n";
 
             j++;
@@ -151,6 +144,5 @@ void print_segments(std::vector<segment_t> &segments)
         total_members *= pow(segment.n_members, segment.n_segments);
         i++;
     }
-
     std::cout << "Total number of trajectories (worst case): " << total_members << "\n\n";
 }
