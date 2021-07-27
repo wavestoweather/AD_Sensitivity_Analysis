@@ -48,7 +48,7 @@ void checkpoint_t::create_checkpoint(
     const double &current_time) {
     // First we add the ensemble configuration
     pt::ptree segment_tree;
-    for (auto &s: segments)
+    for (auto &s : segments)
         s.put(segment_tree);
 
     checkpoint.add_child("segments", segment_tree);
@@ -82,7 +82,7 @@ int checkpoint_t::load_checkpoint(
     // in ens_descr
     std::string ens_desc;
     segments.clear();
-    for (auto &it: checkpoint.get_child("segments")) {
+    for (auto &it : checkpoint.get_child("segments")) {
         segment_t segment;
         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
 
@@ -93,7 +93,7 @@ int checkpoint_t::load_checkpoint(
     }
     cc.ens_desc += ens_desc;
     // input.set_outputfile_id(cc.ensemble_id);
-    for (auto &it: checkpoint.get_child("Output Parameters")) {
+    for (auto &it : checkpoint.get_child("Output Parameters")) {
         y[std::stoi(it.first)] = std::stod(it.second.data());
     }
     return 0;
@@ -165,7 +165,7 @@ void checkpoint_t::write_checkpoint(
     outstream.close();
     // deactivate all segments, so we know, another instance is going
     // to process this
-    for (auto &s: segments)
+    for (auto &s : segments)
         s.deactivate(true);
     cc.ensemble_id++;
 }
@@ -184,8 +184,7 @@ void checkpoint_t::send_checkpoint(
             send_id,
             CHECKPOINT_MESSAGE,
             MPI_COMM_WORLD,
-            &request)
-    );
+            &request));
 }
 
 bool checkpoint_t::receive_checkpoint() {
@@ -198,15 +197,13 @@ bool checkpoint_t::receive_checkpoint() {
             CHECKPOINT_MESSAGE,
             MPI_COMM_WORLD,
             &got_something,
-            &status)
-    );
+            &status));
     if (!got_something) return got_something;
     SUCCESS_OR_DIE(
         MPI_Get_count(
             &status,
             MPI_CHAR,
-            &count)
-    );
+            &count));
     // get source tag
     char *buff = new char[count];
     SUCCESS_OR_DIE(
@@ -217,8 +214,7 @@ bool checkpoint_t::receive_checkpoint() {
             status.MPI_SOURCE,
             CHECKPOINT_MESSAGE,
             MPI_COMM_WORLD,
-            MPI_STATUS_IGNORE)
-    );
+            MPI_STATUS_IGNORE));
     // std::string s(buff, count);
     // delete [] buff;
 

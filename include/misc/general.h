@@ -38,9 +38,19 @@ void printy(const double y[]);
  * @param a \f$a\f$
  */
 void v1pav2(double y[],
-	    const double v1[],
-	    const double v2[],
-	    const double a);
+        const double v1[],
+        const double v2[],
+        const double a);
+
+/**
+ * Print parameters for given particle.
+ *
+ * @param pc Particle constants
+ * @param title Name of particle
+ */
+void print_particle_params(
+    const particle_model_constants_t &pc,
+    const std::string title);
 
 /**
  * Print reference quantities temperature, pressure,
@@ -48,14 +58,14 @@ void v1pav2(double y[],
  *
  * @param ref Struct with reference quantities.
  */
-void print_reference_quantities(reference_quantities_t &ref);
+void print_reference_quantities(const reference_quantities_t &ref);
 
 /**
  * Print segments for ensembles.
  *
  * @param segments Vector of segments.
  */
-void print_segments(std::vector<segment_t> &segments);
+void print_segments(const std::vector<segment_t> &segments);
 
 /**
  * Check if a file exists.
@@ -65,4 +75,4 @@ inline bool exists(const std::string& name) {
   return (stat (name.c_str(), &buffer) == 0);
 }
 
-/** @} */ // end of group general
+/** @} */  // end of group general

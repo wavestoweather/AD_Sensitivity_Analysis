@@ -20,14 +20,9 @@
 #include "include/types/reference_quantities_t.h"
 
 struct output_handle_t{
-    // for txt files
-    std::stringstream out_tmp;
-    std::ofstream outfile;
-    std::ofstream out_diff[num_comp];
-    std::stringstream out_diff_tmp[num_comp];
-    uint64_t n_snapshots; // number of buffered snapshots
+    uint64_t n_snapshots;  // number of buffered snapshots
     uint64_t flushed_snapshots;
-    int ncid; // ID of output file
+    int ncid;  // ID of output file
     int local_num_comp;
     int local_num_par;
 

@@ -33,7 +33,9 @@ struct param_t{
     enum class OutParam: uint32_t {
         model, cloud, rain, ice, graupel, hail, snow
     };
-    std::unordered_map<std::string, OutParam> const table_out_param = { {"model", OutParam::model}, {"cloud", OutParam::cloud}, {"rain", OutParam::rain}, {"ice", OutParam::ice}, {"graupel", OutParam::graupel}, {"hail", OutParam::hail}, {"snow", OutParam::snow}
+    std::unordered_map<std::string, OutParam> const table_out_param = {
+        {"model", OutParam::model}, {"cloud", OutParam::cloud}, {"rain", OutParam::rain}, {"ice", OutParam::ice},
+        {"graupel", OutParam::graupel}, {"hail", OutParam::hail}, {"snow", OutParam::snow}
     };
 
     param_t();

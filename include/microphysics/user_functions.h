@@ -81,10 +81,11 @@ void saturation_adjust(
         for (uint32_t i=0; i < 1; ++i) {
             T_dt0 = get_at(cc.constants, Cons_idx::p_sat_const_a)
                 * (get_at(cc.constants, Cons_idx::T_sat_low_temp)-get_at(cc.constants, Cons_idx::p_sat_const_b))
-                * ( 1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*T_qd0 ) * T_qd0
-                / ( (T_prime-get_at(cc.constants, Cons_idx::p_sat_const_b))*(T_prime-get_at(cc.constants, Cons_idx::p_sat_const_b)) );
-            T = ( Th-get_at(cc.constants, Cons_idx::L_wd)*(T_qd0-T_dt0*T_prime) )
-                / ( get_at(cc.constants, Cons_idx::cp)+get_at(cc.constants, Cons_idx::L_wd)*T_dt0 );
+                * (1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*T_qd0) * T_qd0
+                / ((T_prime-get_at(cc.constants, Cons_idx::p_sat_const_b))
+                    * (T_prime-get_at(cc.constants, Cons_idx::p_sat_const_b)));
+            T = (Th-get_at(cc.constants, Cons_idx::L_wd)*(T_qd0-T_dt0*T_prime))
+                / (get_at(cc.constants, Cons_idx::cp)+get_at(cc.constants, Cons_idx::L_wd)*T_dt0);
             T_qd0 = convert_S_to_qv(p_prime, T, float_t(1),
                 get_at(cc.constants, Cons_idx::p_sat_low_temp),
                 get_at(cc.constants, Cons_idx::p_sat_const_a),
@@ -96,10 +97,11 @@ void saturation_adjust(
         // Get ratio mixing "back"
         T_dt0 = get_at(cc.constants, Cons_idx::p_sat_const_a)
                 * (get_at(cc.constants, Cons_idx::T_sat_low_temp)-get_at(cc.constants, Cons_idx::p_sat_const_b))
-                * ( 1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*T_qd0 ) * T_qd0
-                / ( (T-get_at(cc.constants, Cons_idx::p_sat_const_b))*(T-get_at(cc.constants, Cons_idx::p_sat_const_b)) );
-        float_t T_gn = ( Th - get_at(cc.constants, Cons_idx::L_wd)*(T_qd0-T_dt0*T) )
-            / ( get_at(cc.constants, Cons_idx::cp)+get_at(cc.constants, Cons_idx::L_wd)*T_dt0 );
+                * (1+(get_at(cc.constants, Cons_idx::Epsilon)-1)*T_qd0) * T_qd0
+                / ((T-get_at(cc.constants, Cons_idx::p_sat_const_b))
+                    * (T-get_at(cc.constants, Cons_idx::p_sat_const_b)));
+        float_t T_gn = (Th - get_at(cc.constants, Cons_idx::L_wd)*(T_qd0-T_dt0*T))
+            / (get_at(cc.constants, Cons_idx::cp)+get_at(cc.constants, Cons_idx::L_wd)*T_dt0);
         T_qd0 += T_dt0*(T_gn-T);
 
         qv = T_qd0;
@@ -282,7 +284,7 @@ void ccn_act_seifert(
     double N_ccn = 1260e06;
     double N_max = 3000e06;
     double N_min =  300e02;
-    double S_max = 20.000; // in percentage
+    double S_max = 20.000;  // in percentage
     double k_ccn = 0.308;
     // Parameter for exp decrease of CCN with height
     double z_nccn = 99999;
@@ -292,7 +294,7 @@ void ccn_act_seifert(
 
     // In contrast to Seifert & Beheng, we do not approximate dS/dt via
     // w dS/dz but calculate dS/dt
-    float_t qsat_prime = get_at(cc.constants, Cons_idx::Epsilon)*( psat_prime/(p_prime - psat_prime) );
+    float_t qsat_prime = get_at(cc.constants, Cons_idx::Epsilon)*(psat_prime/(p_prime - psat_prime));
     float_t p_div_T_prime = p_prime / T_prime;
     float_t cpv_prime = specific_heat_water_vapor(T_prime);
     float_t cpa_prime = get_at(cc.constants, Cons_idx::cp);
@@ -322,16 +324,18 @@ void ccn_act_seifert(
         *pow(ref.qref, get_at(cc.constants, Cons_idx::delta2)))/(ref.Tref*cpa_prime);
     // float_t B = ref.tref*nc.QRin;
     float_t C9 = (ref.tref*c_prime)/pow(ref.qref , 2.0/3.0);
-    float_t C12 = ref.tref*get_at(cc.constants, Cons_idx::e1_prime)*pow(ref.qref , get_at(cc.constants, Cons_idx::delta1)-1.0);
-    float_t C13 = ref.tref*get_at(cc.constants, Cons_idx::e2_prime)*pow(ref.qref , get_at(cc.constants, Cons_idx::delta2)-1.0);
+    float_t C12 =
+        ref.tref*get_at(cc.constants, Cons_idx::e1_prime)*pow(ref.qref , get_at(cc.constants, Cons_idx::delta1)-1.0);
+    float_t C13 =
+        ref.tref*get_at(cc.constants, Cons_idx::e2_prime)*pow(ref.qref , get_at(cc.constants, Cons_idx::delta2)-1.0);
     float_t C15 = get_at(cc.constants, Cons_idx::Epsilon)/ref.qref;
     float_t C16 = L_prime/(get_at(cc.constants, Cons_idx::R_v)*ref.Tref);
 
-    float_t dp = -( C1/(1.0 + C2*(qv/(1.0 + qv_prime))) )*( (p*w)/T );
-    float_t dT = ( 1.0/(1.0 + C3*qv + C4*(qc + qr)) )*( -C5*w + C6*qc_third*(S-1.0)
-        + (C7*qr_delta1 + C8*qr_delta2)*min(S-1.0, 0.0) );
-    float_t dS = (S/p)*dp - (S/qv)*( 1.0 - (qv/(C15+qv)) )*( C9*qc_third*(S-1.0)
-        + (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0) ) - C16*(S/(T*T))*dT;
+    float_t dp = -(C1/(1.0 + C2*(qv/(1.0 + qv_prime))))*((p*w)/T);
+    float_t dT = (1.0/(1.0 + C3*qv + C4*(qc + qr)))*(-C5*w + C6*qc_third*(S-1.0)
+        + (C7*qr_delta1 + C8*qr_delta2)*min(S-1.0, 0.0));
+    float_t dS = (S/p)*dp - (S/qv)*(1.0 - (qv/(C15+qv)))*(C9*qc_third*(S-1.0)
+        + (C12*qr_delta1 + C13*qr_delta2)*min(S-1.0, 0.0)) - C16*(S/(T*T))*dT;
     dS = (S/p)*dp - C16*(S/(T*T))*dT;
 #ifdef TRACE_SAT
     if (trace)
@@ -341,16 +345,28 @@ void ccn_act_seifert(
                     << ", Condensation: " << C9*qc_third*(S-1.0)
                     << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
                     << ", First part: " << (S/p)*res[p_idx]
-                    << ", Middle part: " << - (S/qv)*( 1.0 - (qv/(C15+qv)) )
+                    << ", Middle part: " << - (S/qv)*(1.0 - (qv/(C15+qv)))
                     << ", S_percentage: " << S_percentage
                     << ", S: " << S
                     << ", e_d: " << qv_prime * get_at(cc.constants, Cons_idx::R_v) * T_prime
                     << ", qv_prime: " << qv_prime
                     << ", get_at(cc.constants, Cons_idx::R_v): " << get_at(cc.constants, Cons_idx::R_v)
                     << ", T_prime " << T_prime
-                    << ", p_sat: " << saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b))
-                    << ", s_sw = e_d/p_sat - 1: " << qv_prime * get_at(cc.constants, Cons_idx::R_v) * T_prime/saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b))-1
-                    << ", S calculated: " << qv_prime * get_at(cc.constants, Cons_idx::R_v) * T_prime/saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b))
+                    << ", p_sat: " << saturation_pressure_water(
+                        T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                        get_at(cc.constants, Cons_idx::p_sat_const_a),
+                        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                        get_at(cc.constants, Cons_idx::p_sat_const_b))
+                    << ", s_sw = e_d/p_sat - 1: " << qv_prime * get_at(cc.constants, Cons_idx::R_v)
+                        * T_prime/saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                            get_at(cc.constants, Cons_idx::p_sat_const_a),
+                            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                            get_at(cc.constants, Cons_idx::p_sat_const_b))-1
+                    << ", S calculated: " << qv_prime * get_at(cc.constants, Cons_idx::R_v)
+                        * T_prime/saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                            get_at(cc.constants, Cons_idx::p_sat_const_a),
+                            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                            get_at(cc.constants, Cons_idx::p_sat_const_b))
                     << "\n";
 #endif
     // dS can be considered above zero all the time w is above zero (?)
@@ -361,8 +377,8 @@ void ccn_act_seifert(
         if (z_prime <= z_nccn) {
             delta_n = N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0) * dS;
         } else {
-            delta_n = ( N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0) * dS
-                - N_ccn/z_nccn * pow(S_percentage, k_ccn) )
+            delta_n = (N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0) * dS
+                - N_ccn/z_nccn * pow(S_percentage, k_ccn))
                 * exp((z_nccn - z_prime)/z_nccn);
         }
 
@@ -434,13 +450,14 @@ void ice_nuc_hom(
     model_constants_t &cc) {
 
     float_t s_crit = 2.349 - T_prime * (1.0/259.0);
-
-    float_t ma_w = get_at(cc.constants, Cons_idx::M_w)/get_at(cc.constants, Cons_idx::N_avo);      // mass of water molecule [kg)
-    float_t svol = ma_w / get_at(cc.constants, Cons_idx::rho_ice); // specific volume of a water molecule in ice
+    // mass of water molecule [kg)
+    float_t ma_w = get_at(cc.constants, Cons_idx::M_w)/get_at(cc.constants, Cons_idx::N_avo);
+    float_t svol = ma_w / get_at(cc.constants, Cons_idx::rho_ice);  // specific volume of a water molecule in ice
 
     if (S_i > s_crit && T_prime < 235.0 && Ni < get_at(cc.constants, Cons_idx::ni_hom_max)) {
         float_t x_i = particle_mean_mass(qi_prime, Ni,
-            get_at(cc.ice.constants, Particle_cons_idx::min_x_nuc_homo), get_at(cc.ice.constants, Particle_cons_idx::max_x));
+            get_at(cc.ice.constants, Particle_cons_idx::min_x_nuc_homo),
+            get_at(cc.ice.constants, Particle_cons_idx::max_x));
         float_t r_i = pow(x_i/(4.0/3.0*M_PI*get_at(cc.constants, Cons_idx::rho_ice)), 1.0/3.0);
         float_t v_th = sqrt(8.0*get_at(cc.constants, Cons_idx::k_b)*T_prime/(M_PI*ma_w));
         float_t flux = get_at(cc.constants, Cons_idx::alpha_depo) * v_th/4.0;
@@ -464,7 +481,7 @@ void ice_nuc_hom(
         // pre-existing ice crystals included as reduced updraft speed
         float_t ri_dot = bcoeff[0] / (1.0 + bcoeff[1] * r_i);
         float_t R_ik = (4.0*M_PI) / svol * Ni * r_i*r_i * ri_dot;
-        float_t w_pre = max(0.0, (acoeff[1] + acoeff[2] * S_i)/(acoeff[0]*S_i)*R_ik); // KHL06 Eq. 19
+        float_t w_pre = max(0.0, (acoeff[1] + acoeff[2] * S_i)/(acoeff[0]*S_i)*R_ik);  // KHL06 Eq. 19
 
         // homogenous nucleation event
         if (w_prime > w_pre) {
@@ -563,7 +580,8 @@ void ice_activation_hande(
         }
 
         float_t delta_n = max(ndiag - n_inact, 0.0)/cc.dt_prime;
-        float_t delta_q = min(delta_n * get_at(cc.ice.constants, Particle_cons_idx::min_x_nuc_hetero), qv_prime/cc.dt_prime);
+        float_t delta_q =
+            min(delta_n * get_at(cc.ice.constants, Particle_cons_idx::min_x_nuc_hetero), qv_prime/cc.dt_prime);
         delta_n = delta_q/get_at(cc.ice.constants, Particle_cons_idx::min_x_nuc_hetero);
 
         res[qi_idx] += delta_q;
@@ -580,7 +598,8 @@ void ice_activation_hande(
         n_inact += delta_n;
 
         // latent heating and cooling
-        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * delta_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * delta_q
+            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
         // Sublimation, cooling
         if (delta_q < 0.0)
             res[lat_cool_idx] += delta_e;
@@ -623,7 +642,8 @@ void ice_activation_phillips(
                   << "T_nuc " << get_at(cc.constants, Cons_idx::T_nuc) << "\n"
                   << "S_i " << S_i << "\n"
                   << "n_inact " << n_inact << "\n"
-                  << "get_at(cc.constants, Cons_idx::ni_het_max) " << get_at(cc.constants, Cons_idx::ni_het_max) << "\n";
+                  << "get_at(cc.constants, Cons_idx::ni_het_max) "
+                  << get_at(cc.constants, Cons_idx::ni_het_max) << "\n";
 #endif
     if (T_prime < get_at(cc.constants, Cons_idx::T_nuc) && T_prime > 180.0 && S_i > 1.0
         && n_inact < get_at(cc.constants, Cons_idx::ni_het_max)) {
@@ -634,42 +654,42 @@ void ice_activation_phillips(
         std::vector<float_t> infrac(3);
         if (qc_prime > EPSILON) {
             // Immersion freezing at water saturation
-            infrac[0] = ( trunc(x_t)+1.0-x_t ) * afrac_dust[98][tt]
-                + ( x_t-trunc(x_t) ) * afrac_dust[98][tt+1];
-            infrac[1] = ( trunc(x_t)+1.0-x_t ) * afrac_soot[98][tt]
-                + ( x_t-trunc(x_t) ) * afrac_soot[98][tt+1];
-            infrac[2] = ( trunc(x_t)+1.0-x_t ) * afrac_orga[98][tt]
-                + ( x_t-trunc(x_t) ) * afrac_orga[98][tt+1];
+            infrac[0] = (trunc(x_t)+1.0-x_t) * afrac_dust[98][tt]
+                + (x_t-trunc(x_t)) * afrac_dust[98][tt+1];
+            infrac[1] = (trunc(x_t)+1.0-x_t) * afrac_soot[98][tt]
+                + (x_t-trunc(x_t)) * afrac_soot[98][tt+1];
+            infrac[2] = (trunc(x_t)+1.0-x_t) * afrac_orga[98][tt]
+                + (x_t-trunc(x_t)) * afrac_orga[98][tt+1];
         } else {
             // deposition nucleation below water saturation
             // Indices for 2D look-up tables
             float_t x_s = 100.0*(S_i-1.0) / s_sstep;
             x_s = min(x_s, s_smax-1);
-            int ss = std::max(0, static_cast<int>(x_s.getValue()-1) );
+            int ss = std::max(0, static_cast<int>(x_s.getValue()-1));
             float_t S_sr = max(1.0, trunc(x_s));
-            infrac[0] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
+            infrac[0] = (trunc(x_t)+1.0-x_t) * (S_sr+1.0-x_s)
                 * afrac_dust[ss][tt]
-                + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
+                + (x_t-trunc(x_t)) * (S_sr+1.0-x_s)
                 * afrac_dust[ss][tt+1]
-                + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
+                + (x_t-trunc(x_t)+1.0-x_t) * (x_s-S_sr)
                 * afrac_dust[ss+1][tt]
-                + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
+                + (x_t-trunc(x_t)) * (x_s-S_sr)
                 * afrac_dust[ss+1][tt+1];
-            infrac[1] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
+            infrac[1] = (trunc(x_t)+1.0-x_t) * (S_sr+1.0-x_s)
                 * afrac_soot[ss][tt]
-                + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
+                + (x_t-trunc(x_t)) * (S_sr+1.0-x_s)
                 * afrac_dust[ss][tt+1]
-                + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
+                + (x_t-trunc(x_t)+1.0-x_t) * (x_s-S_sr)
                 * afrac_soot[ss+1][tt]
-                + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
+                + (x_t-trunc(x_t)) * (x_s-S_sr)
                 * afrac_soot[ss+1][tt+1];
-            infrac[2] = ( trunc(x_t)+1.0-x_t ) * ( S_sr+1.0-x_s )
+            infrac[2] = (trunc(x_t)+1.0-x_t) * (S_sr+1.0-x_s)
                 * afrac_orga[ss][tt]
-                + ( x_t-trunc(x_t) ) * ( S_sr+1.0-x_s )
+                + (x_t-trunc(x_t)) * (S_sr+1.0-x_s)
                 * afrac_orga[ss][tt+1]
-                + ( x_t-trunc(x_t)+1.0-x_t ) * ( x_s-S_sr )
+                + (x_t-trunc(x_t)+1.0-x_t) * (x_s-S_sr)
                 * afrac_orga[ss+1][tt]
-                + ( x_t-trunc(x_t) ) * ( x_s-S_sr )
+                + (x_t-trunc(x_t)) * (x_s-S_sr)
                 * afrac_dust[ss+1][tt+1];
         }
         float_t ndiag = infrac[0]*get_at(cc.constants, Cons_idx::na_dust)
@@ -759,7 +779,9 @@ void cloud_freeze_hom(
     model_constants_t &cc) {
 
     if (qc_prime > 0.0 && T_c < -30.0) {
-        float_t x_c = particle_mean_mass(qc_prime, Nc, get_at(cc.cloud.constants, Particle_cons_idx::min_x_freezing), get_at(cc.cloud.constants, Particle_cons_idx::max_x));
+        float_t x_c = particle_mean_mass(
+            qc_prime, Nc, get_at(cc.cloud.constants, Particle_cons_idx::min_x_freezing),
+            get_at(cc.cloud.constants, Particle_cons_idx::max_x));
 
         float_t delta_qi;
         float_t delta_ni;
@@ -798,7 +820,8 @@ void cloud_freeze_hom(
         if (trace)
             std::cout << "cloud freeze dqi " << delta_qi << ", dNi " << delta_ni << "\n";
 #endif
-        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * delta_qi / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * delta_qi
+            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
         // Melting, cooling
         if (delta_qi < 0.0)
             res[lat_cool_idx] += delta_e;
@@ -841,9 +864,9 @@ void ice_self_collection(
         // also Straka 1989, page 53
         float_t e_coll = min(pow(10, 0.035*T_c-0.7), 0.2);
         float_t vel_i = particle_velocity(x_i,
-                get_at(cc.ice.constants, Particle_cons_idx::a_vel),
-                get_at(cc.ice.constants, Particle_cons_idx::b_vel)
-            ) * get_at(cc.ice.constants, Particle_cons_idx::rho_v);
+            get_at(cc.ice.constants, Particle_cons_idx::a_vel),
+            get_at(cc.ice.constants, Particle_cons_idx::b_vel))
+            * get_at(cc.ice.constants, Particle_cons_idx::rho_v);
 
         float_t delta_n = M_PI/4.0 * e_coll * get_at(cc.ice.constants, Particle_cons_idx::sc_delta_n)
             * Ni * Ni * D_i * D_i * sqrt(
@@ -935,7 +958,11 @@ void snow_melting(
     model_constants_t &cc) {
 
     if (T_prime > get_at(cc.constants, Cons_idx::T_freeze) && qs_prime > 0.0) {
-        float_t p_sat = saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b));
+        float_t p_sat = saturation_pressure_water(
+            T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_a),
+            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_b));
 
         float_t x_s = particle_mean_mass(qs_prime, Ns, get_at(cc.snow.constants, Particle_cons_idx::min_x_melt),
             get_at(cc.snow.constants, Particle_cons_idx::max_x));
@@ -980,7 +1007,8 @@ void snow_melting(
         if (trace)
             std::cout << "snow melting dqs " << -melt_q << ", dNs " << -melt_n << "\n";
 #endif
-        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q
+            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
         // Melting, cooling
         if (melt_q > 0.0)
             res[lat_cool_idx] -= delta_e;
@@ -1009,7 +1037,11 @@ void graupel_melting(
     model_constants_t &cc) {
 
     if (T_prime > get_at(cc.constants, Cons_idx::T_freeze) && qg_prime > 0.0) {
-        float_t p_sat = saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b));
+        float_t p_sat = saturation_pressure_water(
+            T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_a),
+            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_b));
         float_t x_g = particle_mean_mass(qg_prime, Ng, get_at(cc.graupel.constants, Particle_cons_idx::min_x_melt),
             get_at(cc.graupel.constants, Particle_cons_idx::max_x));
         float_t d_g = particle_diameter(x_g, get_at(cc.graupel.constants, Particle_cons_idx::a_geo),
@@ -1049,7 +1081,8 @@ void graupel_melting(
         if (trace)
             std::cout << "graupel melting dqg " << -melt_q << ", dNg " << -melt_n << "\n";
 #endif
-        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q
+            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
         // Melting, cooling
         if (melt_q > 0.0)
             res[lat_cool_idx] -= delta_e;
@@ -1078,7 +1111,11 @@ void hail_melting(
     model_constants_t &cc) {
 
     if (T_prime > get_at(cc.constants, Cons_idx::T_freeze) && qh_prime > 0.0) {
-        float_t p_sat = saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b));
+        float_t p_sat = saturation_pressure_water(
+            T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_a),
+            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_b));
         float_t x_h = particle_mean_mass(qh_prime, Nh, get_at(cc.hail.constants, Particle_cons_idx::min_x_melt),
             get_at(cc.hail.constants, Particle_cons_idx::max_x));
         float_t d_h = particle_diameter(x_h, get_at(cc.hail.constants, Particle_cons_idx::a_geo),
@@ -1117,7 +1154,8 @@ void hail_melting(
         if (trace)
             std::cout << "hail melting dqh " << -melt_q << ", dNh " << -melt_n << "\n";
     #endif
-        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q
+            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
         // Melting, cooling
         if (melt_q > 0.0)
             res[lat_cool_idx] -= delta_e;
@@ -1339,9 +1377,9 @@ void rain_evaporation_sb(
         float_t D_v = diffusivity(T_prime, p_prime);
         // Equation (A2) of 10.1175/2008JAS2586.1
         float_t g_d = 2*M_PI /
-            ( (get_at(cc.constants, Cons_idx::R_v)*T_prime)/(D_v*p_sat)
+            ((get_at(cc.constants, Cons_idx::R_v)*T_prime)/(D_v*p_sat)
             + (get_at(cc.constants, Cons_idx::L_wd)*get_at(cc.constants, Cons_idx::L_wd))
-            / (get_at(cc.constants, Cons_idx::K_T)*get_at(cc.constants, Cons_idx::R_v)*T_prime*T_prime) );
+            / (get_at(cc.constants, Cons_idx::K_T)*get_at(cc.constants, Cons_idx::R_v)*T_prime*T_prime));
         float_t x_r = particle_mean_mass(qr_prime, Nr, get_at(cc.rain.constants, Particle_cons_idx::min_x_evap),
             get_at(cc.rain.constants, Particle_cons_idx::max_x));
         float_t D_r = particle_diameter(x_r, get_at(cc.rain.constants, Particle_cons_idx::a_geo),
@@ -1353,12 +1391,14 @@ void rain_evaporation_sb(
             mue = get_at(cc.rain.constants, Particle_cons_idx::cmu0)
                 * tanh(pow(4.0*get_at(cc.rain.constants, Particle_cons_idx::cmu2)
                 * (D_r-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
-                    get_at(cc.rain.constants, Particle_cons_idx::cmu5))) + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
+                    get_at(cc.rain.constants, Particle_cons_idx::cmu5)))
+                    + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
         else
             mue = get_at(cc.rain.constants, Particle_cons_idx::cmu1)
                 * tanh(pow(get_at(cc.rain.constants, Particle_cons_idx::cmu2)
                 * (D_r-get_at(cc.rain.constants, Particle_cons_idx::cmu3)),
-                    get_at(cc.rain.constants, Particle_cons_idx::cmu5))) + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
+                    get_at(cc.rain.constants, Particle_cons_idx::cmu5)))
+                    + get_at(cc.rain.constants, Particle_cons_idx::cmu4);
         // Equation A8
         float_t lambda = pow(
             M_PI/6.0*get_at(cc.constants, Cons_idx::rho_w)*(mue+3.0)*(mue+2.0)*(mue+1.0)/x_r, 1.0/3.0);
@@ -1371,7 +1411,8 @@ void rain_evaporation_sb(
             - mue * 0.4856703981E-05)));
         // ventilation factor (A7) with (A5) and (A9)
         // Approximation for terminal fall velocity of raindrops
-        float_t f_v = get_at(cc.constants, Cons_idx::a_v) + get_at(cc.constants, Cons_idx::b_v) * pow(N_Sc, 1.0/3.0) * gamma_approx
+        float_t f_v = get_at(cc.constants, Cons_idx::a_v) + get_at(cc.constants, Cons_idx::b_v) * pow(N_Sc, 1.0/3.0)
+            * gamma_approx
             * sqrt(get_at(cc.constants, Cons_idx::a_prime)/get_at(cc.constants, Cons_idx::kin_visc_air)
                 * get_at(cc.rain.constants, Particle_cons_idx::rho_v)/lambda)
             * (1.0 - 0.5 * (get_at(cc.constants, Cons_idx::b_prime)/get_at(cc.constants, Cons_idx::a_prime))
@@ -1381,8 +1422,7 @@ void rain_evaporation_sb(
                 - 1.0/16.0 * pow(get_at(cc.constants, Cons_idx::b_prime)/get_at(cc.constants, Cons_idx::a_prime), 3.0)
                     * pow(lambda/(3*get_at(cc.constants, Cons_idx::c_prime)+lambda), (mue+2.5))
                 - 5.0/127.0 * pow(get_at(cc.constants, Cons_idx::b_prime)/get_at(cc.constants, Cons_idx::a_prime), 4.0)
-                    * pow(lambda/(4*get_at(cc.constants, Cons_idx::c_prime)+lambda), (mue+2.5))
-            );
+                    * pow(lambda/(4*get_at(cc.constants, Cons_idx::c_prime)+lambda), (mue+2.5)));
         float_t gamma_eva;
         // D_br = 1.1e-3 from ICON
         if (get_at(cc.constants, Cons_idx::rain_gfak) > 0.0)
@@ -1391,7 +1431,7 @@ void rain_evaporation_sb(
             gamma_eva = 1.0;
 
         // Equation A5 with A9
-        float_t delta_qv = g_d * Nr * (mue+1.0) / lambda * f_v * s_sw; // (mue+1.0) / lambda *
+        float_t delta_qv = g_d * Nr * (mue+1.0) / lambda * f_v * s_sw;  // (mue+1.0) / lambda *
 
         delta_qv = max(-delta_qv, 0.0);
         float_t delta_nv = max(gamma_eva * delta_qv/x_r, 0.0);
@@ -1404,7 +1444,8 @@ void rain_evaporation_sb(
 
 #ifdef TRACE_QR
         if (trace)
-            std::cout << "rain evaporation after Seifert (2008) dqr " << -delta_qv << ", dNr " << -delta_nv << "\n";
+            std::cout << "rain evaporation after Seifert (2008) dqr " << -delta_qv
+                      << ", dNr " << -delta_nv << "\n";
 #endif
 #ifdef TRACE_QV
         if (trace)
@@ -1461,8 +1502,8 @@ void sedimentation_explicit(
     float_t &p_prime,
     std::vector<float_t> &res,
     model_constants_t &cc) {
-
-    float_t rhocorr = get_at(cc.rain.constants, Particle_cons_idx::rho_v); // Every other than from cloud should be the same
+    // Every other than from cloud should be the same
+    float_t rhocorr = get_at(cc.rain.constants, Particle_cons_idx::rho_v);
     float_t v_n_sedi = 0.0;
     float_t v_q_sedi = 0.0;
 
@@ -1478,8 +1519,8 @@ void sedimentation_explicit(
         float_t v_nv = v_n_sedi;
         float_t v_qv = v_q_sedi;  // percentage how much trickles down
         // Assuming v_nv, v_qv is negative
-        float_t c_nv = -v_nv * get_at(cc.constants, Cons_idx::inv_z); // times inverse of layer thickness...
-        float_t c_qv = -v_qv * get_at(cc.constants, Cons_idx::inv_z); //
+        float_t c_nv = -v_nv * get_at(cc.constants, Cons_idx::inv_z);  // times inverse of layer thickness...
+        float_t c_qv = -v_qv * get_at(cc.constants, Cons_idx::inv_z);  //
 
         float_t s_nv = 0.0;
         if (c_nv <= 1.0)
@@ -1539,11 +1580,16 @@ void sedimentation_explicit(
         float_t v_q_sedi = 0.0;
 
         if (q > get_at(cc.constants, Cons_idx::q_crit)) {
-            float_t x = particle_mean_mass(q, N, get_at(pc.constants, Particle_cons_idx::min_x_sedimentation), get_at(pc.constants, Particle_cons_idx::max_x));
-            float_t lam = pow(get_at(pc.constants, Particle_cons_idx::lambda)*x, get_at(pc.constants, Particle_cons_idx::b_vel));
+            float_t x = particle_mean_mass(
+                q, N, get_at(pc.constants, Particle_cons_idx::min_x_sedimentation),
+                get_at(pc.constants, Particle_cons_idx::max_x));
+            float_t lam = pow(get_at(pc.constants, Particle_cons_idx::lambda)*x,
+                get_at(pc.constants, Particle_cons_idx::b_vel));
             /////// DT PROBLEM
-            float_t v_n = max(get_at(pc.constants, Particle_cons_idx::alfa_n) * lam, get_at(pc.constants, Particle_cons_idx::vsedi_min)/cc.dt_prime);
-            float_t v_q = max(get_at(pc.constants, Particle_cons_idx::alfa_q) * lam, get_at(pc.constants, Particle_cons_idx::vsedi_min)/cc.dt_prime);
+            float_t v_n = max(get_at(pc.constants, Particle_cons_idx::alfa_n) * lam,
+                get_at(pc.constants, Particle_cons_idx::vsedi_min)/cc.dt_prime);
+            float_t v_q = max(get_at(pc.constants, Particle_cons_idx::alfa_q) * lam,
+                get_at(pc.constants, Particle_cons_idx::vsedi_min)/cc.dt_prime);
 
             v_n = min(v_n, get_at(pc.constants, Particle_cons_idx::vsedi_max)/cc.dt_prime);
             v_q = min(v_q, get_at(pc.constants, Particle_cons_idx::vsedi_max)/cc.dt_prime);
@@ -1569,31 +1615,40 @@ void sedimentation_explicit(
                     << "\nb_vel: " << get_at(pc.constants, Particle_cons_idx::b_vel) << "\n";
 #endif
         }
-
-
         float_t sedi_q = 0;
         float_t sedi_n = 0;
         sedi_icon_core(q, N, v_q_sedi, v_n_sedi, resQ, resN, resQOut, resNOut);
     };
 
     auto sedi_icon_sphere_lwf = [&](
-        ) {
+       ) {
     };
 
     if (qr_prime > get_at(cc.constants, Cons_idx::q_crit)) {
-        float_t x_r = particle_mean_mass(qr_prime, Nr, get_at(cc.rain.constants, Particle_cons_idx::min_x_sedimentation), get_at(cc.rain.constants, Particle_cons_idx::max_x));
-        float_t D_r = particle_diameter(x_r, get_at(cc.rain.constants, Particle_cons_idx::a_geo), get_at(cc.rain.constants, Particle_cons_idx::b_geo));
+        float_t x_r = particle_mean_mass(
+            qr_prime, Nr, get_at(cc.rain.constants, Particle_cons_idx::min_x_sedimentation),
+            get_at(cc.rain.constants, Particle_cons_idx::max_x));
+        float_t D_r = particle_diameter(
+            x_r, get_at(cc.rain.constants, Particle_cons_idx::a_geo),
+            get_at(cc.rain.constants, Particle_cons_idx::b_geo));
         float_t mue = (qc_prime >= get_at(cc.constants, Cons_idx::q_crit))
-            ? (get_at(cc.rain.constants, Particle_cons_idx::nu)+1.0)/get_at(cc.rain.constants, Particle_cons_idx::b_geo) - 1.0
-            : rain_mue_dm_relation(D_r, get_at(cc.rain.constants, Particle_cons_idx::cmu0), get_at(cc.rain.constants, Particle_cons_idx::cmu1),
-                get_at(cc.rain.constants, Particle_cons_idx::cmu2), get_at(cc.rain.constants, Particle_cons_idx::cmu3), get_at(cc.rain.constants, Particle_cons_idx::cmu4));
+            ? (get_at(cc.rain.constants, Particle_cons_idx::nu)+1.0)
+                / get_at(cc.rain.constants, Particle_cons_idx::b_geo) - 1.0
+            : rain_mue_dm_relation(
+                D_r, get_at(cc.rain.constants, Particle_cons_idx::cmu0),
+                get_at(cc.rain.constants, Particle_cons_idx::cmu1),
+                get_at(cc.rain.constants, Particle_cons_idx::cmu2),
+                get_at(cc.rain.constants, Particle_cons_idx::cmu3),
+                get_at(cc.rain.constants, Particle_cons_idx::cmu4));
         // inverse of lambda in Eq. (A10) SB (2008)
-        float_t D_p = D_r * pow((mue+3)*(mue+2)*(mue+1), -1.0/3.0 );
+        float_t D_p = D_r * pow((mue+3)*(mue+2)*(mue+1), -1.0/3.0);
 
         // SB (2008), Eq. (A10)
-        float_t v_nr = get_at(cc.rain.constants, Particle_cons_idx::alpha) - get_at(cc.rain.constants, Particle_cons_idx::beta)
+        float_t v_nr =
+            get_at(cc.rain.constants, Particle_cons_idx::alpha) - get_at(cc.rain.constants, Particle_cons_idx::beta)
             * pow(1.0+get_at(cc.rain.constants, Particle_cons_idx::gamma)*D_p, -mue-1.0);
-        float_t v_qr = get_at(cc.rain.constants, Particle_cons_idx::alpha) - get_at(cc.rain.constants, Particle_cons_idx::beta)
+        float_t v_qr =
+            get_at(cc.rain.constants, Particle_cons_idx::alpha) - get_at(cc.rain.constants, Particle_cons_idx::beta)
             * pow(1.0+get_at(cc.rain.constants, Particle_cons_idx::gamma)*D_p, -mue-4.0);
 
         // Seifert (2008), Eq. A10
@@ -1625,7 +1680,8 @@ void sedimentation_explicit(
 #ifdef TRACE_QI
         if (trace) {
             std::cout << "N before: " << before_n << " and after " << res[Ni_idx] << "\n";
-            std::cout << "sedi icon sphere dqi " << res[qi_idx] - before_q << ", dNi " << res[Ni_idx] - before_n << "\n";
+            std::cout << "sedi icon sphere dqi " << res[qi_idx] - before_q
+                      << ", dNi " << res[Ni_idx] - before_n << "\n";
         }
 #endif
     }
@@ -1639,11 +1695,12 @@ void sedimentation_explicit(
         sedi_icon_sphere(qs_prime, Ns, res[qs_idx], res[Ns_idx], res[qs_out_idx], res[Ns_out_idx], cc.snow);
 #ifdef TRACE_QS
         if (trace)
-            std::cout << "sedi icon sphere dqs " << res[qs_idx] - before_q << ", dNs " << res[Ns_idx] - before_n << "\n";
+            std::cout << "sedi icon sphere dqs " << res[qs_idx] - before_q
+                      << ", dNs " << res[Ns_idx] - before_n << "\n";
 #endif
     }
     // sedi_icon_sphere graupel
-    const bool lprogmelt = false; // true is not implemented
+    const bool lprogmelt = false;  // true is not implemented
     if (qg_prime > 0.0) {
         if (lprogmelt) {
             sedi_icon_sphere_lwf();
@@ -1676,7 +1733,8 @@ void sedimentation_explicit(
             sedi_icon_sphere(qh_prime, Nh, res[qh_idx], res[Nh_idx], res[qh_out_idx], res[Nh_out_idx], cc.hail);
 #ifdef TRACE_QH
             if (trace)
-                std::cout << "sedi icon sphere dqh " << res[qh_idx] - before_q << ", dNh " << res[Nh_idx] - before_n << "\n";
+                std::cout << "sedi icon sphere dqh " << res[qh_idx] - before_q
+                          << ", dNh " << res[Nh_idx] - before_n << "\n";
 #endif
         }
     }
@@ -1715,13 +1773,21 @@ void evaporation(
     if (q1 > 0.0 && T_prime > get_at(cc.constants, Cons_idx::T_freeze)) {
         float_t g_d = 4.0*M_PI / (get_at(cc.constants, Cons_idx::L_wd)*get_at(cc.constants, Cons_idx::L_wd)
             / (get_at(cc.constants, Cons_idx::K_T) * get_at(cc.constants, Cons_idx::R_v)
-            * get_at(cc.constants, Cons_idx::T_freeze)*get_at(cc.constants, Cons_idx::T_freeze)*get_at(cc.constants, Cons_idx::T_freeze))
-            + get_at(cc.constants, Cons_idx::R_v)*get_at(cc.constants, Cons_idx::T_freeze) /(get_at(cc.constants, Cons_idx::D_v) * p_sat));
+            * get_at(cc.constants, Cons_idx::T_freeze)*get_at(cc.constants, Cons_idx::T_freeze)
+            * get_at(cc.constants, Cons_idx::T_freeze))
+            + get_at(cc.constants, Cons_idx::R_v)*get_at(cc.constants, Cons_idx::T_freeze)
+            / (get_at(cc.constants, Cons_idx::D_v) * p_sat));
 
-        float_t x_1 = particle_mean_mass(q1, N1, get_at(pc1.constants, Particle_cons_idx::min_x_evap), get_at(pc1.constants, Particle_cons_idx::max_x));
-        float_t d_1 = particle_diameter(x_1, get_at(pc1.constants, Particle_cons_idx::a_geo), get_at(pc1.constants, Particle_cons_idx::b_geo));
-        float_t v_1 = particle_velocity(x_1, get_at(pc1.constants, Particle_cons_idx::a_vel), get_at(pc1.constants, Particle_cons_idx::b_vel)) * get_at(pc1.constants, Particle_cons_idx::rho_v);
-        float_t f_v = get_at(pc1.constants, Particle_cons_idx::a_f) + get_at(pc1.constants, Particle_cons_idx::b_f) * sqrt(v_1*d_1);
+        float_t x_1 = particle_mean_mass(
+            q1, N1, get_at(pc1.constants, Particle_cons_idx::min_x_evap),
+            get_at(pc1.constants, Particle_cons_idx::max_x));
+        float_t d_1 = particle_diameter(
+            x_1, get_at(pc1.constants, Particle_cons_idx::a_geo), get_at(pc1.constants, Particle_cons_idx::b_geo));
+        float_t v_1 = particle_velocity(
+            x_1, get_at(pc1.constants, Particle_cons_idx::a_vel),
+            get_at(pc1.constants, Particle_cons_idx::b_vel)) * get_at(pc1.constants, Particle_cons_idx::rho_v);
+        float_t f_v = get_at(pc1.constants, Particle_cons_idx::a_f)
+            + get_at(pc1.constants, Particle_cons_idx::b_f) * sqrt(v_1*d_1);
 
         float_t delta_q = g_d * N1 * get_at(pc1.constants, Particle_cons_idx::c_s) * d_1 * f_v * s_sw;
         delta_q = min(q1/cc.dt_prime, max(-delta_q, 0.0));
@@ -1734,7 +1800,9 @@ void evaporation(
 #endif
         resq -= delta_q;
 
-        float_t delta_e = latent_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w)) * delta_q / latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze));
+        float_t delta_e = latent_heat_ice(
+            T_prime, get_at(cc.constants, Cons_idx::M_w)) * delta_q
+            / latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze));
         // Sublimination, cooling
         if (delta_q > 0.0)
             res[lat_cool_idx] -= delta_e;
@@ -1802,8 +1870,6 @@ void vapor_dep_relaxation(
         float_t g_i = 4.0*M_PI / (get_at(cc.constants, Cons_idx::L_ed)*get_at(cc.constants, Cons_idx::L_ed)
             / (get_at(cc.constants, Cons_idx::K_T)*get_at(cc.constants, Cons_idx::R_v)*T_prime*T_prime)
             + get_at(cc.constants, Cons_idx::R_v)*T_prime / (D_vtp*p_sat_ice));
-        // float_t g_i = 4.0*M_PI / (get_at(cc.constants, Cons_idx::L_ed)*get_at(cc.constants, Cons_idx::L_ed) /(get_at(cc.constants, Cons_idx::K_T)*T_prime*e_d/qv_prime) + e_d/qv_prime / (D_vtp*p_sat_ice));
-        // float_t g_i = 4.0*M_PI / (get_at(cc.constants, Cons_idx::L_ed)*get_at(cc.constants, Cons_idx::L_ed) / (get_at(cc.constants, Cons_idx::K_T)*get_at(cc.constants, Cons_idx::R_v)*T_prime*T_prime) - get_at(cc.constants, Cons_idx::L_ed)/(get_at(cc.constants, Cons_idx::K_T)*T_prime) + get_at(cc.constants, Cons_idx::R_v)*T_prime / (D_vtp*p_sat_ice));
 
         auto vapor_deposition = [&](
             float_t &q,
@@ -1813,11 +1879,19 @@ void vapor_dep_relaxation(
             if (q <= 0.0) {
                 dep = 0.0;
             } else {
-                float_t x = particle_mean_mass(q, N, get_at(pc.constants, Particle_cons_idx::min_x_depo), get_at(pc.constants, Particle_cons_idx::max_x));
-                float_t d = particle_diameter(x, get_at(pc.constants, Particle_cons_idx::a_geo), get_at(pc.constants, Particle_cons_idx::b_geo));
-                float_t v = particle_velocity(x, get_at(pc.constants, Particle_cons_idx::a_vel), get_at(pc.constants, Particle_cons_idx::b_vel)) * get_at(pc.constants, Particle_cons_idx::rho_v);
-                float_t f_v = get_at(pc.constants, Particle_cons_idx::a_f) + get_at(pc.constants, Particle_cons_idx::b_f) * sqrt(d*v);
-                f_v = max(f_v, get_at(pc.constants, Particle_cons_idx::a_f)/get_at(pc.constants, Particle_cons_idx::a_ven));
+                float_t x = particle_mean_mass(
+                    q, N, get_at(pc.constants, Particle_cons_idx::min_x_depo),
+                    get_at(pc.constants, Particle_cons_idx::max_x));
+                float_t d = particle_diameter(
+                    x, get_at(pc.constants, Particle_cons_idx::a_geo),
+                    get_at(pc.constants, Particle_cons_idx::b_geo));
+                float_t v = particle_velocity(
+                    x, get_at(pc.constants, Particle_cons_idx::a_vel),
+                    get_at(pc.constants, Particle_cons_idx::b_vel)) * get_at(pc.constants, Particle_cons_idx::rho_v);
+                float_t f_v = get_at(pc.constants, Particle_cons_idx::a_f)
+                    + get_at(pc.constants, Particle_cons_idx::b_f) * sqrt(d*v);
+                f_v = max(f_v,
+                    get_at(pc.constants, Particle_cons_idx::a_f)/get_at(pc.constants, Particle_cons_idx::a_ven));
                 dep = g_i * N * get_at(pc.constants, Particle_cons_idx::c_s) * d * f_v * s_si;
             }
         };
@@ -1847,7 +1921,7 @@ void vapor_dep_relaxation(
         //     p_prime,
         //     T_prime,
         //     S_after);
-        // float_t qvsidiff = p_sat_ice /(get_at(cc.constants, Cons_idx::R_v)*T_prime) - qv_prime; // dt problem?
+        // float_t qvsidiff = p_sat_ice /(get_at(cc.constants, Cons_idx::R_v)*T_prime) - qv_prime;  // dt problem?
         if (abs(qvsidiff) > EPSILON) {
             float_t tau_i_i = 1.0/qvsidiff*dep_ice;
             float_t tau_s_i = 1.0/qvsidiff*dep_snow;
@@ -1938,7 +2012,9 @@ void vapor_dep_relaxation(
             } else {
                 res[sub_idx] += dep_hail;
             }
-            float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * dep_sum / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+            float_t delta_e = latent_heat_melt(
+                T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * dep_sum
+                / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
             // Sublimation, cooling
             if (dep_sum > 0.0)
                 res[lat_cool_idx] -= delta_e;
@@ -1985,13 +2061,25 @@ std::vector<float_t> particle_collection(
     const double &dt_prime) {
 
     float_t e_coll = min(exp(0.09*T_c), 1.0);
-    float_t x_1 = particle_mean_mass(q1, N1, get_at(pc1.constants, Particle_cons_idx::min_x_collection), get_at(pc1.constants, Particle_cons_idx::max_x));
-    float_t d_1 = particle_diameter(x_1, get_at(pc1.constants, Particle_cons_idx::a_geo), get_at(pc1.constants, Particle_cons_idx::b_geo));
-    float_t v_1 = particle_velocity(x_1, get_at(pc1.constants, Particle_cons_idx::a_vel), get_at(pc1.constants, Particle_cons_idx::b_vel)) * get_at(pc1.constants, Particle_cons_idx::rho_v);
+    float_t x_1 = particle_mean_mass(
+        q1, N1, get_at(pc1.constants, Particle_cons_idx::min_x_collection),
+        get_at(pc1.constants, Particle_cons_idx::max_x));
+    float_t d_1 = particle_diameter(
+        x_1, get_at(pc1.constants, Particle_cons_idx::a_geo),
+        get_at(pc1.constants, Particle_cons_idx::b_geo));
+    float_t v_1 = particle_velocity(
+        x_1, get_at(pc1.constants, Particle_cons_idx::a_vel),
+        get_at(pc1.constants, Particle_cons_idx::b_vel)) * get_at(pc1.constants, Particle_cons_idx::rho_v);
 
-    float_t x_2 = particle_mean_mass(q2, N2, get_at(pc2.constants, Particle_cons_idx::min_x_collection), get_at(pc2.constants, Particle_cons_idx::max_x));
-    float_t d_2 = particle_diameter(x_2, get_at(pc2.constants, Particle_cons_idx::a_geo), get_at(pc2.constants, Particle_cons_idx::b_geo));
-    float_t v_2 = particle_velocity(x_2, get_at(pc2.constants, Particle_cons_idx::a_vel), get_at(pc2.constants, Particle_cons_idx::b_vel)) * get_at(pc2.constants, Particle_cons_idx::rho_v);
+    float_t x_2 = particle_mean_mass(
+        q2, N2, get_at(pc2.constants, Particle_cons_idx::min_x_collection),
+        get_at(pc2.constants, Particle_cons_idx::max_x));
+    float_t d_2 = particle_diameter(
+        x_2, get_at(pc2.constants, Particle_cons_idx::a_geo),
+        get_at(pc2.constants, Particle_cons_idx::b_geo));
+    float_t v_2 = particle_velocity(
+        x_2, get_at(pc2.constants, Particle_cons_idx::a_vel),
+        get_at(pc2.constants, Particle_cons_idx::b_vel)) * get_at(pc2.constants, Particle_cons_idx::rho_v);
 
     float_t coll_n = M_PI/4 * N1 * N2 * e_coll
         * (coeffs.delta_n_aa * d_2 * d_2
@@ -2073,15 +2161,20 @@ void particle_particle_collection(
     //// graupel self collection
     if (qg_prime > get_at(cc.constants, Cons_idx::q_crit)) {
         float_t x_g = particle_mean_mass(qg_prime, Ng,
-            get_at(cc.graupel.constants, Particle_cons_idx::min_x_collection), get_at(cc.graupel.constants, Particle_cons_idx::max_x));
+            get_at(cc.graupel.constants, Particle_cons_idx::min_x_collection),
+            get_at(cc.graupel.constants, Particle_cons_idx::max_x));
         float_t d_g = particle_diameter(x_g,
-            get_at(cc.graupel.constants, Particle_cons_idx::a_geo), get_at(cc.graupel.constants, Particle_cons_idx::b_geo));
+            get_at(cc.graupel.constants, Particle_cons_idx::a_geo),
+            get_at(cc.graupel.constants, Particle_cons_idx::b_geo));
         float_t v_g = particle_velocity(x_g,
-            get_at(cc.graupel.constants, Particle_cons_idx::a_vel), get_at(cc.graupel.constants, Particle_cons_idx::b_vel)) * get_at(cc.graupel.constants, Particle_cons_idx::rho_v);
+            get_at(cc.graupel.constants, Particle_cons_idx::a_vel),
+            get_at(cc.graupel.constants, Particle_cons_idx::b_vel))
+            * get_at(cc.graupel.constants, Particle_cons_idx::rho_v);
         float_t delta_n = get_at(cc.graupel.constants, Particle_cons_idx::sc_coll_n)
             * Ng * Ng * d_g * d_g * v_g;
         // sticking efficiency does only distinguish dry and wet
-        delta_n *= (T_prime > get_at(cc.constants, Cons_idx::T_freeze)) ? get_at(cc.constants, Cons_idx::ecoll_gg_wet) : get_at(cc.constants, Cons_idx::ecoll_gg);
+        delta_n *= (T_prime > get_at(cc.constants, Cons_idx::T_freeze))
+            ? get_at(cc.constants, Cons_idx::ecoll_gg_wet) : get_at(cc.constants, Cons_idx::ecoll_gg);
         delta_n = min(delta_n, Ng/cc.dt_prime);
 
         res[Ng_idx] -= delta_n;
@@ -2161,9 +2254,11 @@ void graupel_hail_conv(
     model_constants_t &cc) {
 
     float_t x_g = particle_mean_mass(qg_prime, Ng,
-            get_at(cc.graupel.constants, Particle_cons_idx::min_x_conversion), get_at(cc.graupel.constants, Particle_cons_idx::max_x));
+            get_at(cc.graupel.constants, Particle_cons_idx::min_x_conversion),
+            get_at(cc.graupel.constants, Particle_cons_idx::max_x));
     float_t d_g = particle_diameter(x_g,
-        get_at(cc.graupel.constants, Particle_cons_idx::a_geo), get_at(cc.graupel.constants, Particle_cons_idx::b_geo));
+        get_at(cc.graupel.constants, Particle_cons_idx::a_geo),
+        get_at(cc.graupel.constants, Particle_cons_idx::b_geo));
     float_t Ng_tmp = qg_prime/x_g;
     // supercooled liquid water = rain + cloud water
     float_t qwa_prime = qr_prime + qc_prime;
@@ -2172,15 +2267,22 @@ void graupel_hail_conv(
         float_t d_sep = wet_growth_diam(p_prime, T_prime, qwa_prime,
             qi_prime, cc.ltabdminwgg);
         if (d_sep > 0.0 && d_sep < 10.0*d_g) {
-            float_t xmin = pow(d_sep/get_at(cc.graupel.constants, Particle_cons_idx::a_geo), 1.0/get_at(cc.graupel.constants, Particle_cons_idx::b_geo));
-            float_t lam = pow(get_at(cc.graupel.constants, Particle_cons_idx::g2)/(get_at(cc.graupel.constants, Particle_cons_idx::g1)*x_g), get_at(cc.graupel.constants, Particle_cons_idx::mu));
+            float_t xmin = pow(d_sep/get_at(cc.graupel.constants, Particle_cons_idx::a_geo),
+                1.0/get_at(cc.graupel.constants, Particle_cons_idx::b_geo));
+            float_t lam = pow(get_at(cc.graupel.constants, Particle_cons_idx::g2)
+                / (get_at(cc.graupel.constants, Particle_cons_idx::g1)*x_g),
+                get_at(cc.graupel.constants, Particle_cons_idx::mu));
             xmin = pow(xmin, get_at(cc.graupel.constants, Particle_cons_idx::mu));
-            float_t n_0 = get_at(cc.graupel.constants, Particle_cons_idx::mu) * Ng * pow(lam, get_at(cc.graupel.constants, Particle_cons_idx::nm1))/get_at(cc.graupel.constants, Particle_cons_idx::g1);
+            float_t n_0 = get_at(cc.graupel.constants, Particle_cons_idx::mu) * Ng
+                * pow(lam, get_at(cc.graupel.constants, Particle_cons_idx::nm1))
+                / get_at(cc.graupel.constants, Particle_cons_idx::g1);
             float_t lam_xmin = lam*xmin;
 
-            float_t conv_n = n_0 / (get_at(cc.graupel.constants, Particle_cons_idx::mu) * pow(lam, get_at(cc.graupel.constants, Particle_cons_idx::nm1)))
+            float_t conv_n = n_0 / (get_at(cc.graupel.constants, Particle_cons_idx::mu)
+                * pow(lam, get_at(cc.graupel.constants, Particle_cons_idx::nm1)))
                 * cc.table_g1.look_up(lam_xmin);
-            float_t conv_q = n_0 / (get_at(cc.graupel.constants, Particle_cons_idx::mu) * pow(lam, get_at(cc.graupel.constants, Particle_cons_idx::nm2)))
+            float_t conv_q = n_0 / (get_at(cc.graupel.constants, Particle_cons_idx::mu)
+                * pow(lam, get_at(cc.graupel.constants, Particle_cons_idx::nm2)))
                 * cc.table_g2.look_up(lam_xmin);
 
             conv_n = min(conv_n, Ng/cc.dt_prime);
@@ -2293,10 +2395,18 @@ void riming_cloud_core(
     float_t &rime_rate_nb,
     model_constants_t &cc) {
 
-    float_t x_1 = particle_mean_mass(q1, N1, get_at(pc1.constants, Particle_cons_idx::min_x_riming), get_at(pc1.constants, Particle_cons_idx::max_x));
-    float_t d_1 = particle_diameter(x_1, get_at(pc1.constants, Particle_cons_idx::a_geo), get_at(pc1.constants, Particle_cons_idx::b_geo));
-    float_t x_c = particle_mean_mass(qc_prime, Nc, get_at(cc.cloud.constants, Particle_cons_idx::min_x_riming), get_at(cc.cloud.constants, Particle_cons_idx::max_x));
-    float_t d_c = particle_diameter(x_c, get_at(cc.cloud.constants, Particle_cons_idx::a_geo), get_at(cc.cloud.constants, Particle_cons_idx::b_geo));
+    float_t x_1 = particle_mean_mass(
+        q1, N1, get_at(pc1.constants, Particle_cons_idx::min_x_riming),
+        get_at(pc1.constants, Particle_cons_idx::max_x));
+    float_t d_1 = particle_diameter(
+        x_1, get_at(pc1.constants, Particle_cons_idx::a_geo),
+        get_at(pc1.constants, Particle_cons_idx::b_geo));
+    float_t x_c = particle_mean_mass(
+        qc_prime, Nc, get_at(cc.cloud.constants, Particle_cons_idx::min_x_riming),
+        get_at(cc.cloud.constants, Particle_cons_idx::max_x));
+    float_t d_c = particle_diameter(
+        x_c, get_at(cc.cloud.constants, Particle_cons_idx::a_geo),
+        get_at(cc.cloud.constants, Particle_cons_idx::b_geo));
 
     float_t const1 = get_at(cc.constants, Cons_idx::const0) * get_at(pc1.constants, Particle_cons_idx::ecoll_c);
 
@@ -2307,7 +2417,8 @@ void riming_cloud_core(
         float_t v_1 = particle_velocity(x_1, get_at(pc1.constants, Particle_cons_idx::a_vel),
             get_at(pc1.constants, Particle_cons_idx::b_vel)) * get_at(pc1.constants, Particle_cons_idx::rho_v);
         float_t v_c = particle_velocity(x_c, get_at(cc.cloud.constants, Particle_cons_idx::a_vel),
-            get_at(cc.cloud.constants, Particle_cons_idx::b_vel)) * get_at(cc.cloud.constants, Particle_cons_idx::rho_v);
+            get_at(cc.cloud.constants, Particle_cons_idx::b_vel))
+            * get_at(cc.cloud.constants, Particle_cons_idx::rho_v);
         float_t tmp = const1*(d_c - get_at(cc.cloud.constants, Particle_cons_idx::d_crit_c));
         float_t e_coll = min(get_at(pc1.constants, Particle_cons_idx::ecoll_c)/cc.dt_prime,
             max(tmp, get_at(cc.constants, Cons_idx::ecoll_min)/cc.dt_prime));
@@ -2476,15 +2587,18 @@ void ice_riming(
                 std::cout << "ice riming dqi " << rime_q << "\n";
 #endif
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
-                float_t mult_1 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
-                float_t mult_2 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
+                float_t mult_1 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
+                float_t mult_2 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
                 mult_1 = max(0.0, min(mult_1, 1.0));
                 mult_2 = max(0.0, min(mult_2, 1.0));
                 // Ice N
                 res[Ni_idx] += get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q;
 #ifdef TRACE_QI
                 if (trace)
-                    std::cout << "ice riming with mult dNi " <<  get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q << "\n";
+                    std::cout << "ice riming with mult dNi "
+                              <<  get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q << "\n";
 #endif
             }
         }
@@ -2508,19 +2622,24 @@ void ice_riming(
                 std::cout << "ice rain riming A dqi " << rime_q << "\n";
 #endif
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
-                float_t mult_1 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
-                float_t mult_2 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
+                float_t mult_1 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
+                float_t mult_2 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
                 mult_1 = max(0.0, min(mult_1, 1.0));
                 mult_2 = max(0.0, min(mult_2, 1.0));
                 // Ice N
                 res[Ni_idx] += get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q;
 #ifdef TRACE_QI
                 if (trace)
-                    std::cout << "ice rain rimingwith mult dNi " << get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q << "\n";
+                    std::cout << "ice rain rimingwith mult dNi "
+                              << get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q << "\n";
 #endif
             }
 
-            float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+            float_t delta_e = latent_heat_melt(
+                T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q
+                / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
             // Melting, cooling
             if (rime_q < 0.0)
                 res[lat_cool_idx] += delta_e;
@@ -2534,9 +2653,11 @@ void ice_riming(
         // ice cloud riming
         if (rime_rate_qc > 0.0) {
             float_t x_i = particle_mean_mass(qi_prime, Ni,
-                get_at(cc.ice.constants, Particle_cons_idx::min_x_riming), get_at(cc.ice.constants, Particle_cons_idx::max_x));
+                get_at(cc.ice.constants, Particle_cons_idx::min_x_riming),
+                get_at(cc.ice.constants, Particle_cons_idx::max_x));
             float_t d_i = particle_diameter(x_i,
-                get_at(cc.ice.constants, Particle_cons_idx::a_geo), get_at(cc.ice.constants, Particle_cons_idx::b_geo));
+                get_at(cc.ice.constants, Particle_cons_idx::a_geo),
+                get_at(cc.ice.constants, Particle_cons_idx::b_geo));
 
             float_t rime_q = min(rime_rate_qc, qc_prime/cc.dt_prime);
             float_t rime_n = min(rime_rate_nc, Nc/cc.dt_prime);
@@ -2558,19 +2679,24 @@ void ice_riming(
                 std::cout << "ice cloud riming dqi " << rime_q << "\n";
 #endif
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
-                float_t mult_1 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
-                float_t mult_2 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
+                float_t mult_1 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
+                float_t mult_2 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
                 mult_1 = max(0.0, min(mult_1, 1.0));
                 mult_2 = max(0.0, min(mult_2, 1.0));
                 // Ice N
                 res[Ni_idx] += get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q;
 #ifdef TRACE_QI
                 if (trace)
-                    std::cout << "ice cloud rimingwith mult dNi " << get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q << "\n";
+                    std::cout << "ice cloud rimingwith mult dNi "
+                              << get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q << "\n";
 #endif
             }
 
-            float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+            float_t delta_e = latent_heat_melt(
+                T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q
+                / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
             // Melting, cooling
             if (rime_q < 0.0)
                 res[lat_cool_idx] += delta_e;
@@ -2587,7 +2713,8 @@ void ice_riming(
                 conv_q = min(qi_prime, conv_q);
                 float_t qi_tmp = qi_prime+dt*res[qi_idx];
                 x_i = particle_mean_mass(qi_tmp, Ni,
-                    get_at(cc.ice.constants, Particle_cons_idx::min_x_conversion), get_at(cc.ice.constants, Particle_cons_idx::max_x));
+                    get_at(cc.ice.constants, Particle_cons_idx::min_x_conversion),
+                    get_at(cc.ice.constants, Particle_cons_idx::max_x));
                 float_t tmp = conv_q / max(x_i, get_at(cc.constants, Cons_idx::x_conv));
                 float_t conv_n = min(tmp, Ni/cc.dt_prime);
                 conv_q = conv_n = 0;
@@ -2635,8 +2762,10 @@ void ice_riming(
             float_t mult_q = 0.0;
             float_t mult_n = 0.0;
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
-                float_t mult_1 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
-                float_t mult_2 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
+                float_t mult_1 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
+                float_t mult_2 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
                 mult_1 = max(0.0, min(mult_1, 1.0));
                 mult_2 = max(0.0, min(mult_2, 1.0));
                 mult_n = get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_qr;
@@ -2644,7 +2773,9 @@ void ice_riming(
                 mult_q = min(rime_qr, tmp);
             }
 
-            float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_qi / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+            float_t delta_e = latent_heat_melt(
+                T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_qi
+                / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
             // Melting, cooling
             if (rime_qi > 0.0)
                 res[lat_cool_idx] -= delta_e;
@@ -2657,7 +2788,8 @@ void ice_riming(
                 float_t Nr_tmp = Nr+res[Nr_idx]*dt;
                 float_t x_r = particle_mean_mass(
                     qr_tmp, Nr_tmp,
-                    get_at(cc.rain.constants, Particle_cons_idx::min_x_riming), get_at(cc.rain.constants, Particle_cons_idx::max_x));
+                    get_at(cc.rain.constants, Particle_cons_idx::min_x_riming),
+                    get_at(cc.rain.constants, Particle_cons_idx::max_x));
                 // Ice
                 res[qi_idx] += rime_qi;
                 // Rain
@@ -2674,7 +2806,9 @@ void ice_riming(
                 if (trace)
                     std::cout << "Melting dqi " << rime_qi << ", dNi " << rime_n << "\n";
 #endif
-                delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_qi / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+                delta_e = latent_heat_melt(
+                    T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_qi
+                    / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
                 // Melting, cooling
                 if (rime_qi > 0.0)
                     res[lat_cool_idx] -= delta_e;
@@ -2768,7 +2902,9 @@ void snow_riming(
             if (trace)
                 std::cout << "Snow riming dqs " << rime_q << "\n";
 #endif
-            float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+            float_t delta_e = latent_heat_melt(
+                T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q
+                / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
             // Melting, cooling
             if (rime_q < 0.0)
                 res[lat_cool_idx] += delta_e;
@@ -2777,8 +2913,10 @@ void snow_riming(
                 res[lat_heat_idx] += delta_e;
 
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
-                float_t mult_1 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
-                float_t mult_2 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
+                float_t mult_1 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
+                float_t mult_2 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
                 mult_1 = max(0.0, min(mult_1, 1.0));
                 mult_2 = max(0.0, min(mult_2, 1.0));
                 float_t mult_n = get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q;
@@ -2820,7 +2958,9 @@ void snow_riming(
             if (trace)
                 std::cout << "Snow rain riming dqs " << rime_q << "\n";
 #endif
-            float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+            float_t delta_e = latent_heat_melt(
+                T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q
+                / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
             // Melting, cooling
             if (rime_q < 0.0)
                 res[lat_cool_idx] += delta_e;
@@ -2829,8 +2969,10 @@ void snow_riming(
                 res[lat_heat_idx] += delta_e;
 
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
-                float_t mult_1 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
-                float_t mult_2 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
+                float_t mult_1 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
+                float_t mult_2 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
                 mult_1 = max(0.0, min(mult_1, 1.0));
                 mult_2 = max(0.0, min(mult_2, 1.0));
                 float_t mult_n = get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q;
@@ -2859,9 +3001,11 @@ void snow_riming(
         // snow cloud riming
         if (rime_rate_qc > 0.0) {
             float_t x_s = particle_mean_mass(qs_prime, Ns,
-                get_at(cc.snow.constants, Particle_cons_idx::min_x_riming), get_at(cc.snow.constants, Particle_cons_idx::max_x));
+                get_at(cc.snow.constants, Particle_cons_idx::min_x_riming),
+                get_at(cc.snow.constants, Particle_cons_idx::max_x));
             float_t d_s = particle_diameter(x_s,
-                get_at(cc.snow.constants, Particle_cons_idx::a_geo), get_at(cc.snow.constants, Particle_cons_idx::b_geo));
+                get_at(cc.snow.constants, Particle_cons_idx::a_geo),
+                get_at(cc.snow.constants, Particle_cons_idx::b_geo));
 
             float_t rime_q = min(rime_rate_qc, qc_prime/cc.dt_prime);
             float_t rime_n = min(rime_rate_nc, Nc/cc.dt_prime);
@@ -2882,7 +3026,9 @@ void snow_riming(
             if (trace)
                 std::cout << "snow depos dqs " << rime_q << "\n";
 #endif
-            float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+            float_t delta_e = latent_heat_melt(
+                T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q
+                / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
             // Melting, cooling
             if (rime_q < 0.0)
                 res[lat_cool_idx] += delta_e;
@@ -2892,8 +3038,10 @@ void snow_riming(
 
             float_t mult_q = 0.0;
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
-                float_t mult_1 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
-                float_t mult_2 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
+                float_t mult_1 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
+                float_t mult_2 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
                 mult_1 = max(0.0, min(mult_1, 1.0));
                 mult_2 = max(0.0, min(mult_2, 1.0));
                 float_t mult_n = get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q;
@@ -2924,7 +3072,8 @@ void snow_riming(
                 conv_q = min(qs_prime/cc.dt_prime, conv_q);
 
                 x_s = particle_mean_mass(qs_prime, Ns,
-                    get_at(cc.snow.constants, Particle_cons_idx::min_x_riming), get_at(cc.snow.constants, Particle_cons_idx::max_x));
+                    get_at(cc.snow.constants, Particle_cons_idx::min_x_riming),
+                    get_at(cc.snow.constants, Particle_cons_idx::max_x));
                 float_t tmp = conv_q / max(x_s, get_at(cc.constants, Cons_idx::x_conv));
                 float_t conv_n = min(tmp, Ns/cc.dt_prime);
 
@@ -2970,8 +3119,7 @@ void snow_riming(
                 std::cout << "snow rain riming 2 dqs " << -rime_qs << ", dNs " << -rime_n << "\n";
 #endif
             float_t delta_e = (latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_qr
-                / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w))
-            );
+                / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w)));
             // Melting, cooling
             if (rime_qr < 0.0)
                 res[lat_cool_idx] += delta_e;
@@ -2982,8 +3130,10 @@ void snow_riming(
             float_t mult_q = 0.0;
             float_t mult_n = 0.0;
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
-                float_t mult_1 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
-                float_t mult_2 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
+                float_t mult_1 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
+                float_t mult_2 =
+                    (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
                 mult_1 = max(0.0, min(mult_1, 1.0));
                 mult_2 = max(0.0, min(mult_2, 1.0));
                 mult_n = get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_qr;
@@ -2995,7 +3145,8 @@ void snow_riming(
                 float_t Nr_tmp = Nr+res[Nr_idx]*dt;
                 float_t x_r = particle_mean_mass(
                     qr_tmp, Nr_tmp,
-                    get_at(cc.rain.constants, Particle_cons_idx::min_x_riming), get_at(cc.rain.constants, Particle_cons_idx::max_x));
+                    get_at(cc.rain.constants, Particle_cons_idx::min_x_riming),
+                    get_at(cc.rain.constants, Particle_cons_idx::max_x));
 
                 // Snow
                 res[qs_idx] += rime_qs;
@@ -3034,11 +3185,13 @@ void snow_riming(
                 res[Ng_idx] += rime_n;
 #ifdef TRACE_QI
                 if (trace)
-                    std::cout << "More melting with mult dqi " << mult_q << ", dNi " << mult_n << "\n";
+                    std::cout << "More melting with mult dqi " << mult_q
+                              << ", dNi " << mult_n << "\n";
 #endif
 #ifdef TRACE_QG
                 if (trace)
-                    std::cout << "More melting with mult dqg " << rime_qs + rime_qr - mult_q << ", dNg " << rime_n << "\n";
+                    std::cout << "More melting with mult dqg " << rime_qs + rime_qr - mult_q
+                              << ", dNg " << rime_n << "\n";
 #endif
             }
         }
@@ -3091,8 +3244,10 @@ void particle_cloud_riming(
         && d_c > get_at(cc.cloud.constants, Particle_cons_idx::d_crit_c)) {
         float_t v_1 = particle_velocity(x_1, get_at(pc1.constants, Particle_cons_idx::a_vel),
             get_at(pc1.constants, Particle_cons_idx::b_vel)) * get_at(pc1.constants, Particle_cons_idx::rho_v);
-        float_t v_c = particle_velocity(x_c, get_at(cc.cloud.constants, Particle_cons_idx::a_vel),
-            get_at(cc.cloud.constants, Particle_cons_idx::b_vel)) * get_at(cc.cloud.constants, Particle_cons_idx::rho_v);
+        float_t v_c = particle_velocity(
+            x_c, get_at(cc.cloud.constants, Particle_cons_idx::a_vel),
+            get_at(cc.cloud.constants, Particle_cons_idx::b_vel))
+            * get_at(cc.cloud.constants, Particle_cons_idx::rho_v);
 
         float_t e_coll_n = min(get_at(pc1.constants, Particle_cons_idx::ecoll_c)/cc.dt_prime,
             max(const1*(d_c-get_at(cc.cloud.constants, Particle_cons_idx::d_crit_c)),
@@ -3128,8 +3283,7 @@ void particle_cloud_riming(
                 std::cout << "Particle cloud riming dqc " << -rime_q << ", dNc " << -rime_n << "\n";
 #endif
         float_t delta_e = (latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q
-            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w))
-        );
+            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w)));
         // Sublimination, cooling
         if (rime_q < 0.0)
             res[lat_cool_idx] += delta_e;
@@ -3139,8 +3293,10 @@ void particle_cloud_riming(
 
         // ice multiplication based on Hallet and Mossop
         if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
-            float_t mult_1 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
-            float_t mult_2 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
+            float_t mult_1 =
+                (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
+            float_t mult_2 =
+                (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
             mult_1 = max(0.0, min(mult_1, 1.0));
             mult_2 = max(0.0, min(mult_2, 1.0));
             float_t mult_n = get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q;
@@ -3220,13 +3376,25 @@ void particle_rain_riming(
     model_constants_t &cc) {
 
     if (qr_prime > get_at(cc.constants, Cons_idx::q_crit) && q1 > get_at(cc.constants, Cons_idx::q_crit)) {
-        float_t x_r = particle_mean_mass(qr_prime, Nr, get_at(cc.rain.constants, Particle_cons_idx::min_x_riming), get_at(cc.rain.constants, Particle_cons_idx::max_x));
-        float_t d_r = particle_diameter(x_r, get_at(cc.rain.constants, Particle_cons_idx::a_geo), get_at(cc.rain.constants, Particle_cons_idx::b_geo));
-        float_t x_1 = particle_mean_mass(q1, N1, get_at(pc1.constants, Particle_cons_idx::min_x_riming), get_at(pc1.constants, Particle_cons_idx::max_x));
-        float_t d_1 = particle_diameter(x_1, get_at(pc1.constants, Particle_cons_idx::a_geo), get_at(pc1.constants, Particle_cons_idx::b_geo));
+        float_t x_r = particle_mean_mass(
+            qr_prime, Nr, get_at(cc.rain.constants, Particle_cons_idx::min_x_riming),
+            get_at(cc.rain.constants, Particle_cons_idx::max_x));
+        float_t d_r = particle_diameter(
+            x_r, get_at(cc.rain.constants, Particle_cons_idx::a_geo),
+            get_at(cc.rain.constants, Particle_cons_idx::b_geo));
+        float_t x_1 = particle_mean_mass(
+            q1, N1, get_at(pc1.constants, Particle_cons_idx::min_x_riming),
+            get_at(pc1.constants, Particle_cons_idx::max_x));
+        float_t d_1 = particle_diameter(
+            x_1, get_at(pc1.constants, Particle_cons_idx::a_geo),
+            get_at(pc1.constants, Particle_cons_idx::b_geo));
 
-        float_t v_1 = particle_velocity(x_1, get_at(pc1.constants, Particle_cons_idx::a_vel), get_at(pc1.constants, Particle_cons_idx::b_vel)) * get_at(pc1.constants, Particle_cons_idx::rho_v);
-        float_t v_r = particle_velocity(x_r, get_at(cc.rain.constants, Particle_cons_idx::a_vel), get_at(cc.rain.constants, Particle_cons_idx::b_vel)) * get_at(cc.rain.constants, Particle_cons_idx::rho_v);
+        float_t v_1 = particle_velocity(
+            x_1, get_at(pc1.constants, Particle_cons_idx::a_vel),
+            get_at(pc1.constants, Particle_cons_idx::b_vel)) * get_at(pc1.constants, Particle_cons_idx::rho_v);
+        float_t v_r = particle_velocity(
+            x_r, get_at(cc.rain.constants, Particle_cons_idx::a_vel),
+            get_at(cc.rain.constants, Particle_cons_idx::b_vel)) * get_at(cc.rain.constants, Particle_cons_idx::rho_v);
 
         float_t rime_n = M_PI/4.0 * N1 * Nr
             * (coeffs.delta_n_aa * d_1 * d_1
@@ -3256,8 +3424,7 @@ void particle_rain_riming(
 #endif
         float_t delta_e = (
             latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_q
-            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w))
-        );
+            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w)));
         // Melting, cooling
         if (rime_q < 0.0)
             res[lat_cool_idx] += delta_e;
@@ -3267,8 +3434,10 @@ void particle_rain_riming(
 
         // ice multiplication based on Hallet and Mossop
         if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
-            float_t mult_1 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
-            float_t mult_2 = (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
+            float_t mult_1 =
+                (T_prime - get_at(cc.constants, Cons_idx::T_mult_min))*get_at(cc.constants, Cons_idx::const3);
+            float_t mult_2 =
+                (T_prime - get_at(cc.constants, Cons_idx::T_mult_max))*get_at(cc.constants, Cons_idx::const4);
             mult_1 = max(0.0, min(mult_1, 1.0));
             mult_2 = max(0.0, min(mult_2, 1.0));
             float_t mult_n = get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q;
@@ -3305,7 +3474,9 @@ void particle_rain_riming(
             if (trace)
                 std::cout << "particle rain riming enhancement dqr " << melt_q << ", dNr " << melt_n << "\n";
 #endif
-            float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+            float_t delta_e = latent_heat_melt(
+                T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q
+                / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
             // Melting, cooling
             if (melt_q > 0.0)
                 res[lat_cool_idx] -= delta_e;
@@ -3337,9 +3508,11 @@ void rain_freeze(
     model_constants_t &cc) {
 
     if (T_prime < get_at(cc.constants, Cons_idx::T_freeze)) {
-        float_t xmax_ice = pow(pow(get_at(cc.constants, Cons_idx::D_rainfrz_ig)/get_at(cc.rain.constants, Particle_cons_idx::a_geo),
+        float_t xmax_ice = pow(pow(get_at(cc.constants, Cons_idx::D_rainfrz_ig)
+            / get_at(cc.rain.constants, Particle_cons_idx::a_geo),
             1.0/get_at(cc.rain.constants, Particle_cons_idx::b_geo)), get_at(cc.rain.constants, Particle_cons_idx::mu));
-        float_t xmax_gr  = pow(pow(get_at(cc.constants, Cons_idx::D_rainfrz_gh)/get_at(cc.rain.constants, Particle_cons_idx::a_geo),
+        float_t xmax_gr  = pow(pow(get_at(cc.constants, Cons_idx::D_rainfrz_gh)
+            / get_at(cc.rain.constants, Particle_cons_idx::a_geo),
             1.0/get_at(cc.rain.constants, Particle_cons_idx::b_geo)), get_at(cc.rain.constants, Particle_cons_idx::mu));
         float_t fr_q, fr_n, fr_n_i, fr_q_i, fr_n_g, fr_q_g, fr_n_h,
             fr_q_h, fr_n_tmp, fr_q_tmp;
@@ -3354,7 +3527,8 @@ void rain_freeze(
                 fr_n_tmp = fr_q_tmp = 1.0;
             }
         } else {
-            float_t x_r = particle_mean_mass(qr_prime, Nr, get_at(cc.rain.constants, Particle_cons_idx::min_x_freezing),
+            float_t x_r = particle_mean_mass(qr_prime, Nr,
+                get_at(cc.rain.constants, Particle_cons_idx::min_x_freezing),
                 get_at(cc.rain.constants, Particle_cons_idx::max_x));
 
             if (T_prime < get_at(cc.constants, Cons_idx::T_f)) {
@@ -3387,13 +3561,13 @@ void rain_freeze(
             } else {
                 // heterogeneous freezing
                 float_t j_het = max(get_at(cc.constants, Cons_idx::b_HET) *
-                    ( exp(get_at(cc.constants, Cons_idx::a_HET)
-                        * (get_at(cc.constants, Cons_idx::T_freeze)-T_prime)) - 1.0 ),
+                    (exp(get_at(cc.constants, Cons_idx::a_HET)
+                        * (get_at(cc.constants, Cons_idx::T_freeze)-T_prime)) - 1.0),
                     0.0) / get_at(cc.constants, Cons_idx::rho_w);
 
                 if (j_het >= 1.0e-20/dt) {
                     fr_n = j_het * qr_prime;
-                    fr_q = j_het * qr_prime * x_r * get_at(cc.rain.constants, Particle_cons_idx::c_z); // rain_coeffs
+                    fr_q = j_het * qr_prime * x_r * get_at(cc.rain.constants, Particle_cons_idx::c_z);  // rain_coeffs
                     float_t lam = pow(get_at(cc.rain.constants, Particle_cons_idx::g1)
                         / get_at(cc.rain.constants, Particle_cons_idx::g2) * x_r,
                             -get_at(cc.rain.constants, Particle_cons_idx::mu));
@@ -3427,8 +3601,8 @@ void rain_freeze(
                 if (trace)
                     std::cout << "Hetero j_het: " << j_het
                               << ", val: " << get_at(cc.constants, Cons_idx::b_HET)
-                                * ( exp(get_at(cc.constants, Cons_idx::a_HET)
-                                    * (get_at(cc.constants, Cons_idx::T_freeze)-T_prime)) - 1.0 )
+                                * (exp(get_at(cc.constants, Cons_idx::a_HET)
+                                    * (get_at(cc.constants, Cons_idx::T_freeze)-T_prime)) - 1.0)
                               << "\n";
 #endif
             }
@@ -3449,8 +3623,10 @@ void rain_freeze(
 #if defined(TRACE_QR) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
         if (trace)
             std::cout << "qr_prime <= q_crit_fr " << (qr_prime <= get_at(cc.constants, Cons_idx::q_crit_fr))
-                      << "\nT_prime < get_at(cc.constants, Cons_idx::T_freeze) " << (T_prime < get_at(cc.constants, Cons_idx::T_freeze))
-                      << "\nT_prime < get_at(cc.constants, Cons_idx::T_f) " << (T_prime < get_at(cc.constants, Cons_idx::T_f))
+                      << "\nT_prime < get_at(cc.constants, Cons_idx::T_freeze) "
+                      << (T_prime < get_at(cc.constants, Cons_idx::T_freeze))
+                      << "\nT_prime < get_at(cc.constants, Cons_idx::T_f) "
+                      << (T_prime < get_at(cc.constants, Cons_idx::T_f))
                       << "\nfr_q " << -fr_q
                       << "\nfr_q_i " << fr_q_i
                       << "\nfr_q_tmp " << fr_q_tmp
@@ -3520,10 +3696,12 @@ void ice_melting(
     model_constants_t &cc) {
 
     if (T_prime > get_at(cc.constants, Cons_idx::T_freeze) && qi_prime > 0.0) {
-        float_t x_i = particle_mean_mass(qi_prime, Ni, get_at(cc.ice.constants, Particle_cons_idx::min_x_melt), get_at(cc.ice.constants, Particle_cons_idx::max_x));
+        float_t x_i = particle_mean_mass(
+            qi_prime, Ni, get_at(cc.ice.constants, Particle_cons_idx::min_x_melt),
+            get_at(cc.ice.constants, Particle_cons_idx::max_x));
         // Complete melting
 
-        float_t melt_q = qi_prime / cc.dt_prime; // Instantanuous, hence "/dt"
+        float_t melt_q = qi_prime / cc.dt_prime;  // Instantanuous, hence "/dt"
         float_t melt_n = Ni / cc.dt_prime;
 
         // Ice
@@ -3558,7 +3736,9 @@ void ice_melting(
 #endif
         }
 
-        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
+        float_t delta_e = latent_heat_melt(
+            T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q
+            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
         // Melting, cooling
         if (melt_q > 0.0)
             res[lat_cool_idx] -= delta_e;
@@ -3612,7 +3792,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse depo = y[depo_idx];
     codi::RealReverse sub = y[sub_idx];
 
-    for (auto &r: res) r = 0;
+    for (auto &r : res) r = 0;
 
     // Safety measure: ensure positiveness
     if (0. > qc)
@@ -3670,8 +3850,16 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
     codi::RealReverse z_prime = ref.zref * z;
     // Additional variables such as super saturation
     codi::RealReverse T_c = T_prime - get_at(cc.constants, Cons_idx::T_freeze);
-    codi::RealReverse p_sat = saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b));
-    codi::RealReverse p_sat_ice = saturation_pressure_ice(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_ice_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_ice_const_b));
+    codi::RealReverse p_sat = saturation_pressure_water(
+        T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_a),
+        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_b));
+    codi::RealReverse p_sat_ice = saturation_pressure_ice(
+        T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_ice_const_a),
+        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_ice_const_b));
     codi::RealReverse D_vtp = diffusivity(T_prime, p_prime);
     S = convert_qv_to_S(
         p_prime,
@@ -3682,37 +3870,49 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         get_at(cc.constants, Cons_idx::T_sat_low_temp),
         get_at(cc.constants, Cons_idx::p_sat_const_b),
         get_at(cc.constants, Cons_idx::Epsilon));
-    codi::RealReverse e_d = compute_pv(T_prime, S, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b));
-    // codi::RealReverse e_d = S*saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b));
+    codi::RealReverse e_d = compute_pv(
+        T_prime, S, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_a),
+        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_b));
 
-    // codi::RealReverse e_d = qv_prime * get_at(cc.constants, Cons_idx::R_v) * T_prime; // Could use get_at(cc.constants, Cons_idx::R_v) as well. The difference is minor
-    // codi::RealReverse S_i = (T_prime < get_at(cc.constants, Cons_idx::T_freeze)) ? p_sat/(p_prime-p_sat) * (p_prime - p_sat_ice)/p_sat_ice : codi::RealReverse(1);
-    codi::RealReverse S_i = (T_prime < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverse(1);
-    // codi::RealReverse S_i = (T_prime < get_at(cc.constants, Cons_idx::T_freeze)) ? qv_prime * get_at(cc.constants, Cons_idx::R_v) * T_prime / p_sat_ice : codi::RealReverse(1);
+    codi::RealReverse S_i =
+        (T_prime < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverse(1);
 
     codi::RealReverse s_sw = S - 1.0;   // super saturation over water
-    codi::RealReverse s_si = S_i - 1.0; // super saturation over ice
-#if defined(TRACE_SAT) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QV) || defined(TRACE_QR) || defined(TRACE_QC) || defined(TRACE_QG) || defined(TRACE_QH)
+    codi::RealReverse s_si = S_i - 1.0;  // super saturation over ice
+#if defined(TRACE_SAT) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QV) || defined(TRACE_QR) \
+    || defined(TRACE_QC) || defined(TRACE_QG) || defined(TRACE_QH)
     if (trace) {
-        codi::RealReverse x = particle_mean_mass(qr_prime, Nr, get_at(cc.rain.constants, Particle_cons_idx::min_x_depo), get_at(cc.rain.constants, Particle_cons_idx::max_x));
-        codi::RealReverse q_sat = get_at(cc.constants, Cons_idx::Epsilon)*( p_sat/(p_prime - p_sat) );
+        codi::RealReverse x = particle_mean_mass(
+            qr_prime, Nr, get_at(cc.rain.constants, Particle_cons_idx::min_x_depo),
+            get_at(cc.rain.constants, Particle_cons_idx::max_x));
+        codi::RealReverse q_sat = get_at(cc.constants, Cons_idx::Epsilon)*(p_sat/(p_prime - p_sat));
         codi::RealReverse q_sat_2 = p_sat/(get_at(cc.constants, Cons_idx::R_v)*T_prime);
-        codi::RealReverse p_sat_cosmo = saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b));
-        codi::RealReverse p_sat_ice_old = saturation_pressure_ice(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_ice_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_ice_const_b));
-        codi::RealReverse q_sat_cosmo = get_at(cc.constants, Cons_idx::Epsilon)*( p_sat_cosmo/(p_prime - p_sat_cosmo) );
+        codi::RealReverse p_sat_cosmo = saturation_pressure_water(
+            T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_a),
+            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_b));
+        codi::RealReverse p_sat_ice_old = saturation_pressure_ice(
+            T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_ice_const_a),
+            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_ice_const_b));
+        codi::RealReverse q_sat_cosmo = get_at(cc.constants, Cons_idx::Epsilon)*(p_sat_cosmo/(p_prime - p_sat_cosmo));
         codi::RealReverse q_sat_2_cosmo = p_sat_cosmo/(get_at(cc.constants, Cons_idx::R_v)*T_prime);
         codi::RealReverse S_i_2 = p_sat/(p_prime-p_sat) * (p_prime - p_sat_ice)/p_sat_ice;
         std::cout << "\np_prime: " << p_prime.getValue()
                   << "\np_sat: " << p_sat.getValue()
                   << "\np_sat_ice: " << p_sat_ice.getValue()
                   << "\nS_i: " << S_i.getValue()
-                  << "\nS_i_old: " << ((T_prime < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d/p_sat_ice_old : codi::RealReverse(1))
+                  << "\nS_i_old: "
+                  << ((T_prime < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d/p_sat_ice_old : codi::RealReverse(1))
                   << "\nS_i2: " << S_i_2.getValue()
                   << "\ns_sw: " << s_sw.getValue()
                   << "\ns_si: " << s_si.getValue()
                   << "\nS: " << S.getValue()
                   << "\nT: " << T_prime.getValue()
-                //   << "\nconvert_qv_to_S: " << convert_qv_to_S(p_prime, T_prime, qv_prime, cc)
                   << "\nqv: " << qv_prime.getValue()
                   << "\nqc: " << qc_prime.getValue()
                   << "\nqr: " << qr_prime.getValue()
@@ -3727,29 +3927,46 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                   << "\nNi: " << Ni.getValue()
                   << "\nNg: " << Ng.getValue()
                   << "\nNs: " << Ns.getValue()
-                //   << "\nconvert_S_to_qv: " << convert_S_to_qv(p_prime, T_prime, S, cc)
-                //   << "\nconvert_S_to_qv(S=1): " << convert_S_to_qv(p_prime, T_prime, codi::RealReverse(1), get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b), get_at(cc.constants, Cons_idx::Epsilon))
                   << "\n\n";
     }
 #endif
 
     codi::RealReverse rime_rate_qc, rime_rate_qr, rime_rate_qi, rime_rate_qs;
     codi::RealReverse rime_rate_nc, rime_rate_nr;
-    codi::RealReverse rho_inter = log(compute_rhoh(p_prime, T_prime, S, get_at(cc.constants, Cons_idx::p_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_a), get_at(cc.constants, Cons_idx::T_sat_low_temp), get_at(cc.constants, Cons_idx::p_sat_const_b), get_at(cc.constants, Cons_idx::R_a), get_at(cc.constants, Cons_idx::R_v))/get_at(cc.constants, Cons_idx::rho_0));
-    cc.cloud.constants[static_cast<int>(Particle_cons_idx::rho_v)] = exp(-get_at(cc.constants, Cons_idx::rho_vel_c) * rho_inter);
-    cc.rain.constants[static_cast<int>(Particle_cons_idx::rho_v)] = exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
-    cc.graupel.constants[static_cast<int>(Particle_cons_idx::rho_v)] = exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
-    cc.hail.constants[static_cast<int>(Particle_cons_idx::rho_v)] = exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
-    cc.ice.constants[static_cast<int>(Particle_cons_idx::rho_v)] = exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
-    cc.snow.constants[static_cast<int>(Particle_cons_idx::rho_v)] = exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
-#if defined(TRACE_SAT) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QV) || defined(TRACE_QR) || defined(TRACE_QC) || defined(TRACE_QG) || defined(TRACE_QH)
+    codi::RealReverse rho_inter = log(compute_rhoh(p_prime, T_prime, S,
+        get_at(cc.constants, Cons_idx::p_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_a),
+        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_b),
+        get_at(cc.constants, Cons_idx::R_a),
+        get_at(cc.constants, Cons_idx::R_v)) / get_at(cc.constants, Cons_idx::rho_0));
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+        exp(-get_at(cc.constants, Cons_idx::rho_vel_c) * rho_inter);
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+        exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+        exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+        exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+        exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+        exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
+#if defined(TRACE_SAT) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QV) || \
+    defined(TRACE_QR) || defined(TRACE_QC) || defined(TRACE_QG) || defined(TRACE_QH)
     if (trace)
-        std::cout << "\ncloud.constants[Particle_cons_idx::rho_v]:    " << get_at(cc.cloud.constants, Particle_cons_idx::rho_v)
-                  << "\nrain.constants[Particle_cons_idx::rho_v]:     " << get_at(cc.rain.constants, Particle_cons_idx::rho_v)
-                  << "\ngraupel.constants[Particle_cons_idx::rho_v]:  " << get_at(cc.graupel.constants, Particle_cons_idx::rho_v)
-                  << "\nhail.constants[Particle_cons_idx::rho_v]:     " << get_at(cc.hail.constants, Particle_cons_idx::rho_v)
-                  << "\nice.constants[Particle_cons_idx::rho_v]:      " << get_at(cc.ice.constants, Particle_cons_idx::rho_v)
-                  << "\nsnow.constants[Particle_cons_idx::rho_v]:     " << get_at(cc.snow.constants, Particle_cons_idx::rho_v) << "\n";
+        std::cout << "\ncloud.constants[Particle_cons_idx::rho_v]:    "
+                  << get_at(cc.cloud.constants, Particle_cons_idx::rho_v)
+                  << "\nrain.constants[Particle_cons_idx::rho_v]:     "
+                  << get_at(cc.rain.constants, Particle_cons_idx::rho_v)
+                  << "\ngraupel.constants[Particle_cons_idx::rho_v]:  "
+                  << get_at(cc.graupel.constants, Particle_cons_idx::rho_v)
+                  << "\nhail.constants[Particle_cons_idx::rho_v]:     "
+                  << get_at(cc.hail.constants, Particle_cons_idx::rho_v)
+                  << "\nice.constants[Particle_cons_idx::rho_v]:      "
+                  << get_at(cc.ice.constants, Particle_cons_idx::rho_v)
+                  << "\nsnow.constants[Particle_cons_idx::rho_v]:     "
+                  << get_at(cc.snow.constants, Particle_cons_idx::rho_v) << "\n";
 #endif
     const double EPSILON = 1.0e-20;
 
@@ -3775,7 +3992,7 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
             n_inact, res, cc);
     } else {
         ice_activation_phillips(qc_prime, qv_prime, T_prime,
-             S_i, n_inact, use_prog_in, res, cc); // p_sat_ice,
+             S_i, n_inact, use_prog_in, res, cc);  // p_sat_ice,
     }
 
     // (optional) homogeneous nucleation using KHL06
@@ -3989,11 +4206,13 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
         res[z_idx] = 0;
     } else {
         // Compute nondimensional coefficients
-        codi::RealReverse C1 = (ref.tref*get_at(cc.constants, Cons_idx::gravity_acc)*ref.wref)/(get_at(cc.constants, Cons_idx::R_a)*ref.Tref);
-        codi::RealReverse C2 = ((1.0-get_at(cc.constants, Cons_idx::Epsilon))*ref.qref)/get_at(cc.constants, Cons_idx::Epsilon);
+        codi::RealReverse C1 = (ref.tref*get_at(cc.constants, Cons_idx::gravity_acc)*ref.wref)
+            / (get_at(cc.constants, Cons_idx::R_a)*ref.Tref);
+        codi::RealReverse C2 = ((1.0-get_at(cc.constants, Cons_idx::Epsilon))*ref.qref)
+            / get_at(cc.constants, Cons_idx::Epsilon);
         // Calculate pressure and temperature change in non-prime directly
         // Pressure change from ascent (C1), change in partial pressure from water vapor.
-        res[p_idx] = -( C1/(1.0 + C2*(qv/(1.0 + qv_prime))) )*( (p*w)/T );
+        res[p_idx] = -(C1/(1.0 + C2*(qv/(1.0 + qv_prime))))*((p*w)/T);
         res[T_idx] += (res[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
             + res[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp)
             - get_at(cc.constants, Cons_idx::gravity_acc) * w_prime/get_at(cc.constants, Cons_idx::cp)) / ref.Tref;
@@ -4011,11 +4230,12 @@ void RHS_SB(std::vector<codi::RealReverse> &res,
                   << "\nlat_cool " << res[lat_cool_idx]
                   << "\nlat_heat_air " << res[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                   << "\nlat_cool " << res[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp)
-                  << "\ndT ascent " << - get_at(cc.constants, Cons_idx::gravity_acc) * w_prime / get_at(cc.constants, Cons_idx::cp) << "\n";
+                  << "\ndT ascent " << - get_at(cc.constants, Cons_idx::gravity_acc) * w_prime
+                    / get_at(cc.constants, Cons_idx::cp) << "\n";
         std::cout << "w_prime " << w_prime << "\n"
                   << "z_prime " << z_prime << "\n"
                   << "zref " << ref.zref << "\n";
     }
 #endif
 }
-/** @} */ // end of group ufunc
+/** @} */  // end of group ufunc

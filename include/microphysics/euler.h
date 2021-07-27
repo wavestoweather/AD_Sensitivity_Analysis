@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "codi.hpp"
 
 #include "include/microphysics/constants.h"
@@ -24,7 +26,7 @@ void euler_step(
     const reference_quantities_t &ref,
     model_constants_t &cc) {
 
-    codi::RealReverse k1[num_comp];
+    std::vector<codi::RealReverse> k1(num_comp);
     // Evaluate the RHS
     RHS(k1, yold, num_comp, ref, cc);
 

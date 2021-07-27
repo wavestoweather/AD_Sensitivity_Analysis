@@ -67,10 +67,10 @@ model_constants_t parse_args(
     ref_quant.qref = 1.0e-4;
 #endif
     ref_quant.pref = 1.0e5;
-    ref_quant.wref = 1.; // 10.0
+    ref_quant.wref = 1.;  // 10.0
     ref_quant.tref = 1.0;
     ref_quant.zref = 1.0;
-    ref_quant.Nref = 1.0; 	// DUMMY
+    ref_quant.Nref = 1.0;   // DUMMY
     if (rank == 0) {
         print_reference_quantities(ref_quant);
     }
@@ -87,7 +87,7 @@ model_constants_t parse_args(
         if (global_args.ens_config_flag && rank == 0) {
             load_ens_config(global_args.ens_config_string, cc,
                 segments, input, ref_quant);
-            for (auto &s: segments)
+            for (auto &s : segments)
                 SUCCESS_OR_DIE(s.check());
             print_segments(segments);
         }
@@ -95,11 +95,9 @@ model_constants_t parse_args(
 
     // Communicate amount of ensembles and trajectories
     SUCCESS_OR_DIE(MPI_Bcast(
-        &cc.n_ensembles, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD)
-    );
+        &cc.n_ensembles, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD));
     SUCCESS_OR_DIE(MPI_Bcast(
-        &cc.max_n_trajs, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD)
-    );
+        &cc.max_n_trajs, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD));
 
     auto_type = input.auto_type;
     load_lookup_table(cc.ltabdminwgg);
@@ -128,8 +126,7 @@ void setup_simulation_base(
 #endif
             input.INPUT_FILENAME.c_str(),
             (global_args.checkpoint_flag || already_loaded),
-            cc, input.simulation_mode, input.current_time
-        );
+            cc, input.simulation_mode, input.current_time);
     } else {
         netcdf_reader.time_idx = netcdf_reader.start_time_idx;
     }
@@ -203,12 +200,15 @@ void substep_trace(
     const reference_quantities_t &ref_quant,
     const std::vector<codi::RealReverse> &y_single_old,
     const std::vector<codi::RealReverse> &inflow) {
-#if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
+#if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) \
+    || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
 #if defined(TRACE_TIME)
 #if defined(MET3D)
-    trace = ( ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) + input.start_time >= trace_start) && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) + input.start_time <= trace_end) ) ? true : false;
+    trace = (((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) + input.start_time >= trace_start)
+        && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) + input.start_time <= trace_end)) ? true : false;
 #else
-    trace = ( ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime)  >= trace_start) && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) <= trace_end) ) ? true : false;
+    trace = (((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime)  >= trace_start)
+        && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) <= trace_end)) ? true : false;
 #endif
 #endif
     if (trace)
@@ -271,7 +271,7 @@ void parameter_check(
     input_parameters_t &input,
     const reference_quantities_t &ref_quant,
     task_scheduler_t &scheduler) {
-    for (auto &s: segments) {
+    for (auto &s : segments) {
         bool perturb = s.perturb_check(
             cc, y_diff, y_single_old, time_old);
         if (perturb) {
@@ -294,14 +294,13 @@ void parameter_check(
                         MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
                         SUCCESS_OR_DIE(
                         MPI_Compare_and_swap(
-                            &ens_id, // origin
-                            &scheduler.max_ensemble_id, // compare
-                            &result, // result
-                            MPI_UINT64_T, // datatype
-                            0, // target rank
-                            0, // target displ
-                            scheduler.ens_window)
-                        );
+                            &ens_id,  // origin
+                            &scheduler.max_ensemble_id,  // compare
+                            &result,  // result
+                            MPI_UINT64_T,  // datatype
+                            0,  // target rank
+                            0,  // target displ
+                            scheduler.ens_window));
                     } while (result != scheduler.max_ensemble_id);
                 } else {
                     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, scheduler.my_rank, 0, scheduler.ens_window);
@@ -375,7 +374,7 @@ void finish_last_step(
                 get_at(cc.constants, Cons_idx::Epsilon)) << "\n";
 #endif
     std::vector<codi::RealReverse> res(7);
-    for (auto& r: res) r = 0;
+    for (auto& r : res) r = 0;
     saturation_adjust(
         T_prime,
         p_prime,
@@ -430,8 +429,8 @@ void run_substeps(
     for (uint32_t sub=sub_start; sub <= cc.num_sub_steps; ++sub) {
         substep_trace(sub, t, cc, input, ref_quant, y_single_old, inflow);
 
-        bool last_step = ( ((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + 1))
-            || (sub == cc.num_sub_steps) );
+        bool last_step = (((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + 1))
+            || (sub == cc.num_sub_steps));
 #if defined(RK4_ONE_MOMENT)
         // Set the coefficients from the last timestep and from
         // the input files
@@ -442,7 +441,7 @@ void run_substeps(
         // CODIPACK
         tape.setActive();
 #if defined(FLUX) && !defined(WCB)
-        //	 Add the inflow
+        //     Add the inflow
         y_single_old[qr_idx] += inflow[qr_in_idx]/cc.num_sub_steps;
         y_single_old[Nr_idx] += inflow[Nr_in_idx]/cc.num_sub_steps;
     #if defined(RK4ICE)
@@ -508,14 +507,16 @@ void run_substeps(
         }
 
         // While debugging, the bar is not useful.
-#if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR) && !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
+#if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR)
+#if !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
         if (progress_index > 0)
             pbar.progress(sub + t*cc.num_sub_steps);
 #endif
+#endif
         // In case that the sub timestep%timestep is not 0
-        if ( last_step )
+        if (last_step)
             break;
-    } // End substep
+    }  // End substep
 }
 
 int run_simulation(
@@ -620,8 +621,6 @@ int main(int argc, char** argv) {
     rank = 0;
     n_processes = 1;
 #endif
-    // create_MPI_type();
-
     input_parameters_t input;
     global_args_t global_args;
     std::vector<segment_t> segments;
@@ -653,7 +652,8 @@ int main(int argc, char** argv) {
             input.snapshot_index, rank, input.simulation_mode);
     task_scheduler_t scheduler(rank, n_processes, input.simulation_mode);
 
-    if ((input.simulation_mode == grid_sensitivity) || (input.simulation_mode == trajectory_sensitivity)) {   // static scheduling with parallel read and write enabled
+    if ((input.simulation_mode == grid_sensitivity) || (input.simulation_mode == trajectory_sensitivity)) {
+        // static scheduling with parallel read and write enabled
         setup_simulation_base(argc, argv, rank, n_processes, input,
             global_args, ref_quant, segments, cc, y_init, y_single_old,
             already_loaded, netcdf_reader);

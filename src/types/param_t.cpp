@@ -205,7 +205,7 @@ int param_t::from_pt(pt::ptree &ptree, model_constants_t &cc) {
     add_type(ptree.get<std::string>("type"));
     if (err != 0)
         return err;
-    for (auto &it: ptree) {
+    for (auto &it : ptree) {
         auto first = it.first;
         if (first == "name") {
             add_name(it.second.get_value<std::string>(), cc);
@@ -264,7 +264,7 @@ void param_t::perturb(
 
 std::string param_t::get_name() const {
     if (particle_param) {
-        return ( outparam_name + "_" + param_name );
+        return (outparam_name + "_" + param_name);
     } else {
         return param_name;
     }

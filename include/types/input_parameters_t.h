@@ -14,7 +14,6 @@ namespace pt = boost::property_tree;
  * Structure to collect all input parameters.
  */
 struct input_parameters_t {
-
     // Numerics
     double t_end_prime; /*!< End simulation time in seconds. */
     double dt_prime; /*!< Timestep size in seconds for the simulation. */

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "codi.hpp"
 
 #include "include/microphysics/constants.h"
@@ -59,8 +61,8 @@ void implicit_euler_step(
     codi::RealReverse err_square = 1.0e10;
 
     // Define the temporary variables
-    codi::RealReverse yit[num_comp];
-    codi::RealReverse k[num_comp];
+    std::vector<codi::RealReverse> yit(num_comp);
+    std::vector<codi::RealReverse> k(num_comp);
     int count = 0;
 
     // Evaluate the RHS to get f(yold)
@@ -72,7 +74,7 @@ void implicit_euler_step(
     }
 
 
-    while ( err_square > TOL_square ) {
+    while (err_square > TOL_square) {
         // Safety measure
         if (count > 10000) {
             std::cout << "\nWARNING: Reached the maximal step count for the fixed-point iteration!\n";

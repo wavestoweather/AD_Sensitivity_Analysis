@@ -17,7 +17,6 @@ namespace pt = boost::property_tree;
  * members.
  */
 struct particle_model_constants_t{
-
     std::vector<codi::RealReverse> constants;
     std::vector<uint32_t> perturbed_idx;
 

@@ -51,7 +51,7 @@ int load_ens_config(
     boost::property_tree::read_json(filename, pt);
     std::string ens_desc;
     cc.max_n_trajs = 0;
-    for (auto &it: pt.get_child("segments")) {
+    for (auto &it : pt.get_child("segments")) {
         segment_t segment;
         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
         segments.push_back(segment);
@@ -107,7 +107,7 @@ void create_run_script(
                 script_name = foldername + "/execute_id" + cc.id + "_" + std::to_string(i) + ".sh";
         }
         std::ofstream out(script_name);
-        out << "#!/bin/bash\n" << script << ( (start) ? " &\n" : "\n" );
+        out << "#!/bin/bash\n" << script << ((start) ? " &\n" : "\n");
         out.close();
 
         if (start)
@@ -164,7 +164,7 @@ bool load_lookup_table(
         line_vec = std::vector<std::string> (
             std::istream_iterator<std::string>{stream},
             std::istream_iterator<std::string>());
-        for (auto &val: line_vec) {
+        for (auto &val : line_vec) {
             table.x1[counter] = std::stod(val);
             counter++;
         }
@@ -176,7 +176,7 @@ bool load_lookup_table(
         line_vec = std::vector<std::string> (
             std::istream_iterator<std::string>{stream},
             std::istream_iterator<std::string>());
-        for (auto &val: line_vec) {
+        for (auto &val : line_vec) {
             Tvec_wg_g_loc[counter] = std::stod(val);
             counter++;
         }
@@ -188,7 +188,7 @@ bool load_lookup_table(
         line_vec = std::vector<std::string> (
             std::istream_iterator<std::string>{stream},
             std::istream_iterator<std::string>());
-        for (auto &val: line_vec) {
+        for (auto &val : line_vec) {
             table.x3[counter] = std::stod(val);
             counter++;
         }
@@ -200,7 +200,7 @@ bool load_lookup_table(
         line_vec = std::vector<std::string> (
             std::istream_iterator<std::string>{stream},
             std::istream_iterator<std::string>());
-        for (auto &val: line_vec) {
+        for (auto &val : line_vec) {
             table.x4[counter] = std::stod(val);
             counter++;
         }
@@ -283,4 +283,4 @@ bool load_lookup_table(
     }
 }
 
-/** @} */ // end of group io
+/** @} */  // end of group io

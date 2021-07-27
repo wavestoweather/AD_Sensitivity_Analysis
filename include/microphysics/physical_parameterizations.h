@@ -227,7 +227,7 @@ inline A density_water(A T) {
         F_T = polyval5(a0, a1, a2, a3, a4, a5, T_cel);
         denom = 1.0 + (16.87985e-3)*T_cel;
     }
-    return (F_T/denom );
+    return (F_T/denom);
 }
 
 
@@ -257,7 +257,7 @@ inline A density_ice(A T) {
  */
 template <class A>
 inline A specific_heat_dry_air(A T) {
-    return cp; // 1005.0
+    return cp;  // 1005.0
 }
 
 
@@ -316,7 +316,7 @@ inline A specific_heat_water(A T) {
 template <class A>
 inline A specific_heat_ice(A T, A M_w) {
     A T_frac = T/125.1;
-    return ((-2.0572 + 0.14644*T + 0.06163*T*exp(-T_frac*T_frac ))/M_w );
+    return ((-2.0572 + 0.14644*T + 0.06163*T*exp(-T_frac*T_frac))/M_w);
 }
 
 
@@ -331,7 +331,7 @@ inline A specific_heat_ice(A T, A M_w) {
  */
 template <class A>
 inline A latent_heat_water(A T, A M_w) {
-    return ((56579.0 - 42.212*T + exp(0.1149*(281.6-T)))/M_w );
+    return ((56579.0 - 42.212*T + exp(0.1149*(281.6-T)))/M_w);
 }
 
 
@@ -348,7 +348,7 @@ template <class A>
 inline A latent_heat_ice(A T, A M_w) {
     A T_frac = T/123.75;
     return ((polyval2(46782.5, 35.8925, -0.07414, T)
-        + 541.5*exp(-T_frac*T_frac))/M_w );
+        + 541.5*exp(-T_frac*T_frac))/M_w);
 }
 
 
@@ -438,7 +438,7 @@ inline A saturation_pressure_ice(
     A T_sat_low_temp,
     A p_sat_ice_const_b) {
 #ifdef VANILLA_PRESSURE
-    return (exp(9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T ));
+    return (exp(9.550426 - (5723.265/T) + 3.53068*log(T) - 0.00728332*T));
 #else
     return (p_sat_low_temp * exp(p_sat_ice_const_a
             * (T-T_sat_low_temp)
@@ -486,7 +486,7 @@ inline A mean_free_path(
     A &p,
     A &T) {
 
-    return ((6.6e-8 )*(T/293.15 )*(101325.0/p ));
+    return ((6.6e-8)*(T/293.15)*(101325.0/p));
 }
 
 
@@ -554,7 +554,7 @@ inline A compute_rhoa(
     A R_a) {
 
     return (compute_pa(p, T, S, p_sat_low_temp, p_sat_const_a,
-        T_sat_low_temp, p_sat_const_b ) / (R_a*T));
+        T_sat_low_temp, p_sat_const_b) / (R_a*T));
 }
 
 
@@ -580,8 +580,8 @@ inline A compute_rhoh(
     A R_v) {
 
     return (compute_pa(p, T, S, p_sat_low_temp, p_sat_const_a,
-        T_sat_low_temp, p_sat_const_b )
-        / (R_a*T )
+        T_sat_low_temp, p_sat_const_b)
+        / (R_a*T)
         + compute_pv(T, S, p_sat_low_temp, p_sat_const_a,
             T_sat_low_temp, p_sat_const_b)
         / (R_v*T));
@@ -607,8 +607,7 @@ inline A convert_S_to_qv(A p,
 
     return (Epsilon*(
         compute_pv(T, S, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
-        / compute_pa(p, T, S, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
-        ));
+        / compute_pa(p, T, S, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)));
 }
 
 
@@ -634,8 +633,7 @@ inline A convert_Si_to_qv(A p,
 
     A S = Si * (
         saturation_pressure_ice(T, p_sat_low_temp, p_sat_ice_const_a, T_sat_low_temp, p_sat_ice_const_b)
-        / saturation_pressure_water(T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
-    );
+        / saturation_pressure_water(T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b));
 
   return convert_S_to_qv(p, T, S, p_sat_low_temp, p_sat_const_a,
     T_sat_low_temp, p_sat_const_b, Epsilon);
@@ -1013,7 +1011,7 @@ inline codi::RealReverse vent_coeff_a(
         / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)/get_at(pc.constants, Particle_cons_idx::mu))
         * pow(tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)
         / get_at(pc.constants, Particle_cons_idx::mu)) / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+2.0)
-        / get_at(pc.constants, Particle_cons_idx::mu)), get_at(pc.constants, Particle_cons_idx::b_geo)+n-1.0 );
+        / get_at(pc.constants, Particle_cons_idx::mu)), get_at(pc.constants, Particle_cons_idx::b_geo)+n-1.0);
 }
 
 
@@ -1033,7 +1031,7 @@ inline codi::RealReverse vent_coeff_b(
     particle_model_constants_t &pc,
     uint64_t n) {
 
-    const double m_f = 0.5; // From PK, page 541
+    const double m_f = 0.5;  // From PK, page 541
     return get_at(pc.constants, Particle_cons_idx::b_ven)
         * tgamma((get_at(pc.constants, Particle_cons_idx::nu)+n+(m_f+1.0)
         * get_at(pc.constants, Particle_cons_idx::b_geo)+m_f
@@ -1102,4 +1100,4 @@ void init_particle_collection_2(
     particle_model_constants_t &pc2,
     collection_model_constants_t &c);
 
-/** @} */ // end of group parametrizations
+/** @} */  // end of group parametrizations

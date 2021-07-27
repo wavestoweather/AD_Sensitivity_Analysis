@@ -16,7 +16,6 @@
  * a rank id to send its own tasks to.
  */
 struct task_scheduler_t{
-
     uint64_t current_ens;
     int current_traj;
     /**

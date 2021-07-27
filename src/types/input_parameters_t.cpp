@@ -3,8 +3,8 @@
 
 input_parameters_t::input_parameters_t() {
     // Numerics
-    t_end_prime = 100.0;	// Seconds
-    dt_prime = 0.01;		// Seconds
+    t_end_prime = 100.0;  // Seconds
+    dt_prime = 0.01;  // Seconds
     snapshot_index = 200;
     dt_traject = 20;       // Seconds; fixed from paper
     // Filename for output
@@ -21,7 +21,7 @@ input_parameters_t::input_parameters_t() {
     ENS_CONFIG_FILENAME = "";
     FOLDER_NAME = "";
     // Filename for input
-    INPUT_FILENAME = "/mnt/localscratch/data/project/m2_jgu-tapt/online_trajectories/foehn201305_case/foehn201305_warming.nc";
+    INPUT_FILENAME = "";
     tracking_filename = "";
 
     // start_over = true;
@@ -85,7 +85,7 @@ void input_parameters_t::put(
 int input_parameters_t::from_pt(
     pt::ptree &ptree) {
     int err = 0;
-    for (auto &it: ptree.get_child("input_params")) {
+    for (auto &it : ptree.get_child("input_params")) {
         auto first = it.first;
         if (first == "t_end_prime") {
             t_end_prime = it.second.get_value<double>();
@@ -233,7 +233,7 @@ void input_parameters_t::set_input_from_arguments(
 
 #ifdef MET3D
     // Simulation start time
-    if ( (1 == arg.delay_start_flag) && (0 == arg.time_start_idx_flag) ) {
+    if ((1 == arg.delay_start_flag) && (0 == arg.time_start_idx_flag)) {
         this->start_time = std::strtod(arg.delay_start_string, nullptr);
     }
 #endif
@@ -274,41 +274,43 @@ void input_parameters_t::print_parameters() {
         << "---------------------------\n"
         << "Time to integrate: " << this->t_end_prime << " Seconds\n"
         << "Timestep: " << this->dt_prime << " Seconds\n"
-        << ( ((this->CHECKPOINT_FILENAME == "") && (this->start_time_idx != -1))
+        << (((this->CHECKPOINT_FILENAME == "") && (this->start_time_idx != -1))
         ? "Start time: " + std::to_string(this->start_time_idx * this->dt_traject_prime) + " Seconds\n"
         : "")
 #ifdef MET3D
-        << ( ((this->CHECKPOINT_FILENAME == "") && (this->start_time_idx == -1))
+        << (((this->CHECKPOINT_FILENAME == "") && (this->start_time_idx == -1))
         ? "Start time (relative to ascend): " + std::to_string(this->start_time) + " Seconds\n"
         : "")
 #endif
-        << ( (this->CHECKPOINT_FILENAME != "")
-        ?   "Start time from checkpoint (relative to ascend): " + std::to_string(this->current_time + this->start_time) + "\n"
-        :   "" )
+        << ((this->CHECKPOINT_FILENAME != "")
+        ?   "Start time from checkpoint (relative to ascend): "
+            + std::to_string(this->current_time + this->start_time) + "\n"
+        :   "")
         << "Snapshot index: " << this->snapshot_index << "\n"
         << "Write index: " << this->write_index << "\n"
         << "Progressbar index: " << this->progress_index << "\n"
         << "Name of output file: " << this->OUTPUT_FILENAME << "\n"
         << "Name of input file: " << this->INPUT_FILENAME << "\n"
-        << ( (this->tracking_filename != "")
+        << ((this->tracking_filename != "")
         ? "Tracking specified by file: " + this->tracking_filename + "\n"
         : "")
-        << "Start over pressure, temperature and ascent at each timestep of a trajectory?: " << this->start_over_env << "\n"
+        << "Start over pressure, temperature and ascent at each timestep of a trajectory?: "
+        << this->start_over_env << "\n"
         << "Fix temperature and pressure at each substep?: " << this->fixed_iteration << "\n"
         << "Auto type for rain evaporation (1, 2, 3): " << this->auto_type << "\n"
         << "Trajectory used: " << this->traj << "\n"
         << "Instance id: " << this->id << "\n"
-        << ( (this->ENS_CONFIG_FILENAME != "")
+        << ((this->ENS_CONFIG_FILENAME != "")
         ?   "Ensemble configuration file: " + this->ENS_CONFIG_FILENAME + "\n"
-        :   "" )
-        << ( (this->CHECKPOINT_FILENAME != "")
+        :   "")
+        << ((this->CHECKPOINT_FILENAME != "")
         ?   "Checkpoint file: " + this->CHECKPOINT_FILENAME + "\n"
-        :   "" )
-        << ( (this->FOLDER_NAME != "")
+        :   "")
+        << ((this->FOLDER_NAME != "")
         ? "Folder name for newly generated checkpoints: " + this->FOLDER_NAME + "\n"
         : "")
-        << ( ( (this->simulation_mode == trajectory_sensitvity_perturbance)
-            || (this->simulation_mode == trajectory_perturbance) )
+        << (((this->simulation_mode == trajectory_sensitvity_perturbance)
+            || (this->simulation_mode == trajectory_perturbance))
         ? "Maximum number of ensembles in the output file: " + std::to_string(this->n_ensembles) + "\n"
         : "")
         << "Simulation mode: " << this->simulation_mode << "\n"

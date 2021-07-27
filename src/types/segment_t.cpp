@@ -100,9 +100,9 @@ int segment_t::check() {
         err = N_MEMBERS_CONFIG_ERR;
     else if (n_segments < 0)
         err = N_SEGMENTS_CONFIG_ERR;
-    else if ( value_name == -1
+    else if (value_name == -1
             && method != Method::impact_change
-            && method != Method::repeated_time )
+            && method != Method::repeated_time)
         err = VALUE_NAME_CONFIG_ERR;
     else if (method == -1)
         err = METHOD_CONFIG_ERR;
@@ -225,8 +225,8 @@ bool segment_t::perturb_check(
                 return false;
             }
 
-            if ( signbit(value-current_value) != signbit(value-old_value)
-                || fabs(value-current_value) < fabs(value*tol) ) {
+            if (signbit(value-current_value) != signbit(value-old_value)
+                || fabs(value-current_value) < fabs(value*tol)) {
                 activated = true;
                 return true;
             }
@@ -249,8 +249,8 @@ void segment_t::deactivate(
     if (!activated) return;
     // Perturbing every few timesteps is done indefenitely
     // unless a fixed duration is given at which the ensembles should stop
-    if ( (method != repeated_time && n_segments > 0)
-        || (method == repeated_time && n_segments > 0 && duration != 0 && !keep_repeated) )
+    if ((method != repeated_time && n_segments > 0)
+        || (method == repeated_time && n_segments > 0 && duration != 0 && !keep_repeated))
         n_segments--;
     activated = false;
 }
@@ -274,7 +274,7 @@ void segment_t::perturb(
         }
     }
     // Perturb every param
-    for (auto &p: params) {
+    for (auto &p : params) {
         p.perturb(cc);
         descr += p.get_name() + " ";
     }
@@ -285,7 +285,7 @@ void segment_t::perturb(
 
 void segment_t::put(
     pt::ptree &ptree) const {
-    if ( (err != 0 || n_segments < 1) && !activated)
+    if ((err != 0 || n_segments < 1) && !activated)
         return;
     pt::ptree segment;
     if (!isnan(value)) {
@@ -313,7 +313,7 @@ void segment_t::put(
         segment.put("duration", duration);
     }
     pt::ptree param_tree;
-    for (auto &p: params)
+    for (auto &p : params)
         p.put(param_tree);
     segment.add_child("params", param_tree);
     ptree.push_back(std::make_pair("", segment));
@@ -324,7 +324,7 @@ int segment_t::from_pt(
     pt::ptree &ptree,
     model_constants_t &cc) {
     int err = 0;
-    for (auto &it: ptree) {
+    for (auto &it : ptree) {
         auto first = it.first;
         if (first == "when_value") {
             add_value(it.second.get_value<double>());
@@ -343,7 +343,7 @@ int segment_t::from_pt(
         } else if (first == "duration") {
             add_duration(it.second.get_value<double>());
         } else if (first == "params") {
-            for (auto &param_it: ptree.get_child(first)) {
+            for (auto &param_it : ptree.get_child(first)) {
                 param_t param;
                 err = param.from_pt(param_it.second, cc);
                 add_param(param);

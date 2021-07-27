@@ -12,7 +12,6 @@
  * Helper structure to handle command line arguments.
  */
 struct global_args_t {
-
     int final_time_flag; /*!< Using a final simulation time? */
     char* final_time_string;
 

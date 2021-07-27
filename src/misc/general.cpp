@@ -38,8 +38,8 @@ void v1pav2(double y[],
  * @param title Name of particle
  */
 void print_particle_params(
-    particle_model_constants_t &pc,
-    std::string title) {
+    const particle_model_constants_t &pc,
+    const std::string title) {
 #ifdef SILENT_MODE
     return;
 #endif
@@ -69,7 +69,8 @@ void print_particle_params(
         << "c_s = " << get_at(pc.constants, Particle_cons_idx::c_s) << "\n"
         << "a_f = " << get_at(pc.constants, Particle_cons_idx::a_f) << "\n"
         << "b_f = " << get_at(pc.constants, Particle_cons_idx::b_f) << "\n"
-        << "b_f (COSMO variant) = " << get_at(pc.constants, Particle_cons_idx::b_f) / pow(N_sc, n_f) * sqrt(kin_visc_air) << "\n"
+        << "b_f (COSMO variant) = "
+        << get_at(pc.constants, Particle_cons_idx::b_f) / pow(N_sc, n_f) * sqrt(kin_visc_air) << "\n"
         << "alfa_n = " << get_at(pc.constants, Particle_cons_idx::alfa_n) << "\n"
         << "alfa_q = " << get_at(pc.constants, Particle_cons_idx::alfa_q) << "\n"
         << "lambda = " << get_at(pc.constants, Particle_cons_idx::lambda) << "\n"
@@ -86,12 +87,12 @@ void print_particle_params(
  *
  * @param ref Struct with reference quantities.
  */
-void print_reference_quantities(reference_quantities_t &ref) {
+void print_reference_quantities(const reference_quantities_t &ref) {
 #ifdef SILENT_MODE
     return;
 #endif
   std::cout << "\nReference quantities\n"
-	    << "--------------------\n"
+        << "--------------------\n"
         << "Temperature: " << ref.Tref << " Kelvin\n"
         << "Pressure: " << ref.pref << " Pascal\n"
         << "Mixing-ratio: " << ref.qref << "\n"
@@ -105,7 +106,7 @@ void print_reference_quantities(reference_quantities_t &ref) {
  *
  * @param segments Vector of segments.
  */
-void print_segments(std::vector<segment_t> &segments) {
+void print_segments(const std::vector<segment_t> &segments) {
 #ifdef SILENT_MODE
     return;
 #endif
@@ -113,7 +114,7 @@ void print_segments(std::vector<segment_t> &segments) {
               << "----------------\n";
     uint32_t i = 1;
     uint32_t total_members = 1;
-    for (auto &segment: segments) {
+    for (auto &segment : segments) {
         std::cout << "----Segment No. " << i << "\n"
                   << "----Number of members: " << segment.n_members << "\n"
                   << "----Number of perturbed parameters: " << segment.params.size() << "\n"
@@ -121,14 +122,15 @@ void print_segments(std::vector<segment_t> &segments) {
         if (segment.method != -1)
             std::cout << "----Method to determine segment start: " << segment.method << "\n";
         if (segment.value_name != -1)
-            std::cout << "----Parameter that has to reach given value for ensemble start: " << segment.value_name << "\n";
+            std::cout << "----Parameter that has to reach given value for ensemble start: "
+                      << segment.value_name << "\n";
         if (!std::isnan(segment.value))
             std::cout << "----Value for parameter to start an ensemble: " << segment.value << "\n";
         if (segment.out_param != -1)
             std::cout << "----Parameter is a sensitivity to output parameter: " << segment.out_param << "\n";
 
         uint32_t j = 1;
-        for (auto &param: segment.params) {
+        for (auto &param : segment.params) {
             std::cout << "--------Param No. " << j << "\n"
                       << "------------Parameter to perturb: " << param.name << "\n"
                       << "------------Output parameter type: " << param.out_name << "\n"

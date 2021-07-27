@@ -23,7 +23,6 @@ namespace pt = boost::property_tree;
  * Structure for constants of a model. Includes particle constants as well.
  */
 struct model_constants_t {
-
     /**
      * Initial id of this simulation. Emerging ensembles from this
      * have other ids which are set by reading a checkpoint file.

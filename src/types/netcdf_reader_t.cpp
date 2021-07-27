@@ -7,7 +7,7 @@ netcdf_reader_t::netcdf_reader_t(
     varid.resize(Par_idx::n_pars);
     this->n_timesteps_buffer = buffer_size;
     this->time_buffer_idx = 0;
-    for (auto &b: buffer)
+    for (auto &b : buffer)
         b.resize(this->n_timesteps_buffer);
     already_open = false;
 }
@@ -25,9 +25,7 @@ void netcdf_reader_t::load_vars() {
 #else
             "qc",
 #endif
-            &varid_once[Par_once_idx::qc]
-        )
-    );
+            &varid_once[Par_once_idx::qc]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -36,9 +34,7 @@ void netcdf_reader_t::load_vars() {
 #else
             "qr",
 #endif
-            &varid_once[Par_once_idx::qr]
-        )
-    );
+            &varid_once[Par_once_idx::qr]));
 
 #if defined(RK4ICE)
     SUCCESS_OR_DIE(
@@ -49,9 +45,7 @@ void netcdf_reader_t::load_vars() {
     #else
             "qi",
     #endif
-            &varid_once[Par_once_idx::qi]
-        )
-    );
+            &varid_once[Par_once_idx::qi]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -60,9 +54,7 @@ void netcdf_reader_t::load_vars() {
     #else
             "qs",
     #endif
-            &varid_once[Par_once_idx::qs]
-        )
-    );
+            &varid_once[Par_once_idx::qs]));
 #endif
 #if !defined(WCB) && defined(RK4ICE)
     SUCCESS_OR_DIE(
@@ -73,9 +65,7 @@ void netcdf_reader_t::load_vars() {
     #else
             "qg",
     #endif
-            &varid_once[Par_once_idx::qg]
-        )
-    );
+            &varid_once[Par_once_idx::qg]));
 #endif
 #if defined(RK4ICE) && (defined(WCB2) || defined(MET3D))
 
@@ -83,39 +73,29 @@ void netcdf_reader_t::load_vars() {
         nc_inq_varid(
             ncid,
             "NCGRAUPEL",
-            &varid_once[Par_once_idx::ng]
-        )
-    );
+            &varid_once[Par_once_idx::ng]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NCICE",
-            &varid_once[Par_once_idx::ni]
-        )
-    );
+            &varid_once[Par_once_idx::ni]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NCSNOW",
-            &varid_once[Par_once_idx::ns]
-        )
-    );
+            &varid_once[Par_once_idx::ns]));
 #endif
 #if defined WCB2 || defined MET3D
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NCCLOUD",
-            &varid_once[Par_once_idx::nc]
-        )
-    );
+            &varid_once[Par_once_idx::nc]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NCRAIN",
-            &varid_once[Par_once_idx::nr]
-        )
-    );
+            &varid_once[Par_once_idx::nr]));
 #endif
 
 
@@ -125,242 +105,176 @@ void netcdf_reader_t::load_vars() {
         nc_inq_varid(
             ncid,
             "latitude",
-            &varid[Par_idx::lat]
-        )
-    );
+            &varid[Par_idx::lat]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "longitude",
-            &varid[Par_idx::lon]
-        )
-    );
+            &varid[Par_idx::lon]));
 #else
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "lat",
-            &varid[Par_idx::lat]
-        )
-    );
+            &varid[Par_idx::lat]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "lon",
-            &varid[Par_idx::lon]
-        )
-    );
+            &varid[Par_idx::lon]));
 #endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "z",
-            &varid[Par_idx::height]
-        )
-    );
+            &varid[Par_idx::height]));
 #if defined WCB || defined WCB2
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "z",
-            &varid[Par_idx::height]
-        )
-    );
+            &varid[Par_idx::height]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "P",
-            &varid[Par_idx::pressure]
-        )
-    );
+            &varid[Par_idx::pressure]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "T",
-            &varid[Par_idx::temperature]
-        )
-    );
+            &varid[Par_idx::temperature]));
 #elif defined MET3D
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "time_after_ascent",
-            &varid[Par_idx::time_after_ascent]
-        )
-    );
+            &varid[Par_idx::time_after_ascent]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "pressure",
-            &varid[Par_idx::pressure]
-        )
-    );
+            &varid[Par_idx::pressure]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "T",
-            &varid[Par_idx::temperature]
-        )
-    );
+            &varid[Par_idx::temperature]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "w",
-            &varid[Par_idx::ascent]
-        )
-    );
+            &varid[Par_idx::ascent]));
 #else
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "time_rel",
-            &varid[Par_idx::time_after_ascent]
-        )
-    );
+            &varid[Par_idx::time_after_ascent]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "p",
-            &varid[Par_idx::pressure]
-        )
-    );
+            &varid[Par_idx::pressure]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "t",
-            &varid[Par_idx::temperature]
-        )
-    );
+            &varid[Par_idx::temperature]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "w",
-            &varid[Par_idx::ascent]
-        )
-    );
+            &varid[Par_idx::ascent]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "QIin",
-            &varid[Par_idx::qi_in]
-        )
-    );
+            &varid[Par_idx::qi_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "QSin",
-            &varid[Par_idx::qs_in]
-        )
-    );
+            &varid[Par_idx::qs_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "QRin",
-            &varid[Par_idx::qr_in]
-        )
-    );
+            &varid[Par_idx::qr_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "QGin",
-            &varid[Par_idx::qg_in]
-        )
-    );
+            &varid[Par_idx::qg_in]));
 #endif
 #if defined WCB2 || defined MET3D
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "QI_IN",
-            &varid[Par_idx::qi_in]
-        )
-    );
+            &varid[Par_idx::qi_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "QS_IN",
-            &varid[Par_idx::qs_in]
-        )
-    );
+            &varid[Par_idx::qs_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "QR_IN",
-            &varid[Par_idx::qr_in]
-        )
-    );
+            &varid[Par_idx::qr_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "QG_IN",
-            &varid[Par_idx::qg_in]
-        )
-    );
+            &varid[Par_idx::qg_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NI_IN",
-            &varid[Par_idx::ni_in]
-        )
-    );
+            &varid[Par_idx::ni_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NS_IN",
-            &varid[Par_idx::ns_in]
-        )
-    );
+            &varid[Par_idx::ns_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NR_IN",
-            &varid[Par_idx::nr_in]
-        )
-    );
+            &varid[Par_idx::nr_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "NG_IN",
-            &varid[Par_idx::ng_in]
-        )
-    );
+            &varid[Par_idx::ng_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "conv_400",
-            &varid[Par_idx::conv_400]
-        )
-    );
+            &varid[Par_idx::conv_400]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "conv_600",
-            &varid[Par_idx::conv_600]
-        )
-    );
+            &varid[Par_idx::conv_600]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "slan_400",
-            &varid[Par_idx::slan_400]
-        )
-    );
+            &varid[Par_idx::slan_400]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "slan_600",
-            &varid[Par_idx::slan_600]
-        )
-    );
+            &varid[Par_idx::slan_600]));
 #endif
 #if defined MET3D && defined TURBULENCE
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "Q_TURBULENCE",
-            &varid[Par_idx::q_turb]
-        )
-    );
+            &varid[Par_idx::q_turb]));
 #endif
 }
 
@@ -400,43 +314,41 @@ void netcdf_reader_t::buffer_params(
                 varid[i],
                 startp.data(),
                 countp.data(),
-                buffer[i].data()
-            )
-        );
+                buffer[i].data()));
     }
-    for (auto &v: buffer[Par_idx::pressure]) {
+    for (auto &v : buffer[Par_idx::pressure]) {
         v /= ref_quant.pref;
 #if !defined WCB2 && !defined MET3D
         v *= 100;
 #endif
     }
-    for (auto &v: buffer[Par_idx::temperature])
+    for (auto &v : buffer[Par_idx::temperature])
         v /= ref_quant.Tref;
 #if defined(FLUX) && !defined(WCB)
 
-    for (auto &v: buffer[Par_idx::qr_in])
+    for (auto &v : buffer[Par_idx::qr_in])
         v /= ref_quant.qref;
-    for (auto &v: buffer[Par_idx::nr_in])
+    for (auto &v : buffer[Par_idx::nr_in])
         v /= ref_quant.Nref;
   #if defined(RK4ICE)
-    for (auto &v: buffer[Par_idx::qi_in])
+    for (auto &v : buffer[Par_idx::qi_in])
         v /= ref_quant.qref;
-    for (auto &v: buffer[Par_idx::qs_in])
+    for (auto &v : buffer[Par_idx::qs_in])
         v /= ref_quant.qref;
-    for (auto &v: buffer[Par_idx::qg_in])
+    for (auto &v : buffer[Par_idx::qg_in])
         v /= ref_quant.qref;
-    for (auto &v: buffer[Par_idx::ni_in])
+    for (auto &v : buffer[Par_idx::ni_in])
         v /= ref_quant.Nref;
-    for (auto &v: buffer[Par_idx::ns_in])
+    for (auto &v : buffer[Par_idx::ns_in])
         v /= ref_quant.Nref;
-    for (auto &v: buffer[Par_idx::ng_in])
+    for (auto &v : buffer[Par_idx::ng_in])
         v /= ref_quant.Nref;
   #endif
 #endif
-    for (auto &v: buffer[Par_idx::ascent])
+    for (auto &v : buffer[Par_idx::ascent])
         v /= ref_quant.wref;
 #if defined MET3D && defined TURBULENCE
-    for (auto &v: buffer[Par_idx::q_turb])
+    for (auto &v : buffer[Par_idx::q_turb])
         v /= ref_quant.qref;
 #endif
     time_buffer_idx = 0;
@@ -480,8 +392,7 @@ void netcdf_reader_t::read_buffer(
         } else {
             cc.constants[static_cast<int>(Cons_idx::dw)] = (
                 (buffer[Par_idx::ascent][time_buffer_idx+1] - buffer[Par_idx::ascent][time_buffer_idx])
-                / (cc.dt*cc.num_sub_steps)
-            );
+                / (cc.dt*cc.num_sub_steps));
         }
 #endif
         y_single_old[z_idx] = buffer[Par_idx::height][0];
@@ -525,9 +436,8 @@ void netcdf_reader_t::set_dims(
     model_constants_t &cc,
     const int &simulation_mode) {
     time_buffer_idx = 0;
-    traj_idx = 0;// cc.traj_id; // either the same via input.traj for all or static schedule without perturbance
-    ens_idx = 0;// cc.ensemble_id; // check cc name
-    // num_sub_steps = cc.num_sub_steps;
+    traj_idx = 0;
+    ens_idx = 0;
 
     if (!already_open) {
         if ((simulation_mode == grid_sensitivity) || (simulation_mode == trajectory_sensitivity)) {
@@ -537,17 +447,13 @@ void netcdf_reader_t::set_dims(
                     NC_NOWRITE,
                     MPI_COMM_WORLD,
                     MPI_INFO_NULL,
-                    &ncid
-                )
-            );
+                    &ncid));
         } else {
             SUCCESS_OR_DIE(
                 nc_open(
                     input_file,
                     NC_NOWRITE,
-                    &ncid
-                )
-            );
+                    &ncid));
         }
 
         SUCCESS_OR_DIE(
@@ -560,31 +466,23 @@ void netcdf_reader_t::set_dims(
 #else
                 "id",
 #endif
-                &dimid[Dim_idx::trajectory_dim_idx]
-            )
-        );
+                &dimid[Dim_idx::trajectory_dim_idx]));
         SUCCESS_OR_DIE(
             nc_inq_dimid(
                 ncid,
                 "ensemble",
-                &dimid[Dim_idx::ensemble_dim_idx]
-            )
-        );
+                &dimid[Dim_idx::ensemble_dim_idx]));
     }
     SUCCESS_OR_DIE(
         nc_inq_dimlen(
             ncid,
             dimid[Dim_idx::trajectory_dim_idx],
-            &n_trajectories
-        )
-    );
+            &n_trajectories));
     SUCCESS_OR_DIE(
         nc_inq_dimlen(
             ncid,
             dimid[Dim_idx::ensemble_dim_idx],
-            &n_ensembles
-        )
-    );
+            &n_ensembles));
     if (n_trajectories <= traj_idx) {
         std::cerr << "Number of trajectories in netCDF file: " << n_trajectories << "\n";
         std::cerr << "You asked for trajectory with index " << traj_idx
@@ -602,16 +500,12 @@ void netcdf_reader_t::set_dims(
 #else
                 "time",
 #endif
-                &dimid[Dim_idx::time_dim_idx]
-            )
-        );
+                &dimid[Dim_idx::time_dim_idx]));
         SUCCESS_OR_DIE(
             nc_inq_dimlen(
                 ncid,
                 dimid[Dim_idx::time_dim_idx],
-                &n_timesteps_in
-            )
-        );
+                &n_timesteps_in));
 
         load_vars();
         already_open = true;
@@ -634,9 +528,9 @@ void netcdf_reader_t::init_netcdf(
     countp.push_back(1);
     countp.push_back(1);
 
-    startp.push_back(ens_idx); // ensemble
-    startp.push_back(traj_idx); // trajectory
-    startp.push_back(0); // time
+    startp.push_back(ens_idx);      // ensemble
+    startp.push_back(traj_idx);     // trajectory
+    startp.push_back(0);            // time
     uint64_t start_time_idx = 0;
 
     double rel_start_time;
@@ -645,9 +539,7 @@ void netcdf_reader_t::init_netcdf(
             ncid,
             varid[Par_idx::time_after_ascent],
             startp.data(),
-            &rel_start_time
-        )
-    );
+            &rel_start_time));
     if (!std::isnan(start_time) && !checkpoint_flag) {
         // Calculate the needed index
         start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
@@ -707,66 +599,50 @@ void netcdf_reader_t::read_initial_values(
                 ncid,
                 varid_once[Par_once_idx::qv],
                 startp.data(),
-                &(y_init[qv_idx])
-            )
-        );
+                &(y_init[qv_idx])));
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,
                 varid_once[Par_once_idx::qc],
                 startp.data(),
-                &(y_init[qc_idx])
-            )
-        );
+                &(y_init[qc_idx])));
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,
                 varid_once[Par_once_idx::qr],
                 startp.data(),
-                &(y_init[qr_idx])
-            )
-        );
+                &(y_init[qr_idx])));
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,
                 varid_once[Par_once_idx::qv],
                 startp.data(),
-                &(y_init[qv_idx])
-            )
-        );
+                &(y_init[qv_idx])));
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,
                 varid_once[Par_once_idx::qc],
                 startp.data(),
-                &(y_init[qc_idx])
-            )
-        );
+                &(y_init[qc_idx])));
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,
                 varid_once[Par_once_idx::qr],
                 startp.data(),
-                &(y_init[qr_idx])
-            )
-        );
+                &(y_init[qr_idx])));
 #if defined(RK4ICE)
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,
                 varid_once[Par_once_idx::qi],
                 startp.data(),
-                &(y_init[qi_idx])
-            )
-        );
+                &(y_init[qi_idx])));
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,
                 varid_once[Par_once_idx::qs],
                 startp.data(),
-                &(y_init[qs_idx])
-            )
-        );
+                &(y_init[qs_idx])));
 #endif
 #if !defined(WCB) && defined(RK4ICE)
         SUCCESS_OR_DIE(
@@ -774,15 +650,13 @@ void netcdf_reader_t::read_initial_values(
                 ncid,
                 varid_once[Par_once_idx::qg],
                 startp.data(),
-                &(y_init[qg_idx])
-            )
-        );
+                &(y_init[qg_idx])));
 #elif defined(RK4ICE)
         y_init[qg_idx] = 0;
 #endif
 #if defined(RK4ICE)
-        y_init[qh_idx] = 0.0; // qh. We don't have hail in the trajectoris
-        y_init[Nh_idx] = 0.0; // Nh. We don't have hail in the trajectoris
+        y_init[qh_idx] = 0.0;  // qh. We don't have hail in the trajectoris
+        y_init[Nh_idx] = 0.0;  // Nh. We don't have hail in the trajectoris
 #endif
 
 #if defined(RK4ICE) && (defined(WCB2) || defined(MET3D))
@@ -791,25 +665,19 @@ void netcdf_reader_t::read_initial_values(
                 ncid,
                 varid_once[Par_once_idx::ng],
                 startp.data(),
-                &(y_init[Ng_idx])
-            )
-        );
+                &(y_init[Ng_idx])));
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,
                 varid_once[Par_once_idx::ni],
                 startp.data(),
-                &(y_init[Ni_idx])
-            )
-        );
+                &(y_init[Ni_idx])));
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,
                 varid_once[Par_once_idx::ns],
                 startp.data(),
-                &(y_init[Ns_idx])
-            )
-        );
+                &(y_init[Ns_idx])));
 
         y_init[qi_out_idx] = 0;
         y_init[qs_out_idx] = 0;
@@ -828,31 +696,32 @@ void netcdf_reader_t::read_initial_values(
                 ncid,
                 varid_once[Par_once_idx::nc],
                 startp.data(),
-                &(y_init[Nc_idx])
-            )
-        );
+                &(y_init[Nc_idx])));
         SUCCESS_OR_DIE(
             nc_get_var1(
                 ncid,
                 varid_once[Par_once_idx::nr],
                 startp.data(),
-                &(y_init[Nr_idx])
-            )
-        );
+                &(y_init[Nr_idx])));
 #else
         float_t denom = 0;
-        denom = (get_at(cc.cloud.max_x - cc.cloud.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.cloud.constants, Particle_cons_idx::min_x);
-        y_init[Nc_idx] = y_init[qc_idx] / (denom); // *10e2);  // Nc
-        denom = (get_at(cc.rain.max_x - cc.rain.constants, Particle_cons_idx::min_x)) / 2 + get_at(cc.rain.constants, Particle_cons_idx::min_x);
-        y_init[Nr_idx] = y_init[qr_idx] / (denom); // *10e2);  // Nr
+        denom = (get_at(cc.cloud.max_x - cc.cloud.constants, Particle_cons_idx::min_x))
+            / 2.0 + get_at(cc.cloud.constants, Particle_cons_idx::min_x);
+        y_init[Nc_idx] = y_init[qc_idx] / (denom);  // *10e2);  // Nc
+        denom = (get_at(cc.rain.max_x - cc.rain.constants, Particle_cons_idx::min_x))
+            / 2 + get_at(cc.rain.constants, Particle_cons_idx::min_x);
+        y_init[Nr_idx] = y_init[qr_idx] / (denom);  // *10e2);  // Nr
         denom = get_at(cc.cloud.constants, Particle_cons_idx::min_x) / 2.0;
     #if defined(RK4ICE)
-        denom = (get_at(cc.ice.max_x - cc.ice.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.ice.constants, Particle_cons_idx::min_x);
-        y_init[Ni_idx] = y_init[qi_idx] / (denom); // *10e2); // Ni
-        denom = (get_at(cc.snow.max_x - cc.snow.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.snow.constants, Particle_cons_idx::min_x);
-        y_init[Ns_idx] = y_init[qs_idx] / (denom); // *10e2); // Ns
-        denom = (get_at(cc.graupel.max_x - cc.graupel.constants, Particle_cons_idx::min_x)) / 2.0 + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
-        y_init[Ng_idx] = y_init[qg_idx] / (denom); // *10e2); // Ng
+        denom = (get_at(cc.ice.max_x - cc.ice.constants, Particle_cons_idx::min_x))
+            / 2.0 + get_at(cc.ice.constants, Particle_cons_idx::min_x);
+        y_init[Ni_idx] = y_init[qi_idx] / (denom);  // *10e2);  // Ni
+        denom = (get_at(cc.snow.max_x - cc.snow.constants, Particle_cons_idx::min_x))
+            / 2.0 + get_at(cc.snow.constants, Particle_cons_idx::min_x);
+        y_init[Ns_idx] = y_init[qs_idx] / (denom);  // *10e2);  // Ns
+        denom = (get_at(cc.graupel.max_x - cc.graupel.constants, Particle_cons_idx::min_x))
+            / 2.0 + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
+        y_init[Ng_idx] = y_init[qg_idx] / (denom);  // *10e2);  // Ng
     #endif
 #endif
         // Actually only needed for single moment schemes
@@ -888,9 +757,7 @@ void netcdf_reader_t::read_initial_values(
                 ncid,
                 varid_once[Par_once_idx::time],
                 startp.data(),
-                &(cc.start_time)
-            )
-        );
+                &(cc.start_time)));
 #else
         cc.start_time = 0;
 #endif

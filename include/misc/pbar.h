@@ -123,7 +123,6 @@ class ProgressBar {
     std::ostream* out;
 
     int get_console_width() {
-
         struct winsize win;
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &win);
         // Weird numbers could mean, this is running using a windows

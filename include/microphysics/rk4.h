@@ -84,7 +84,7 @@ void RK4_step_2_sb_ice(
     //
     // Do all computations involving k1
     //
-    RHS_SB(k, yold, ref, cc, cc.dt_sixth, fixed); // k = k1
+    RHS_SB(k, yold, ref, cc, cc.dt_sixth, fixed);  // k = k1
 
     for (int ii = 0 ; ii < num_comp ; ii++) {
 #ifdef TRACE_ENV
@@ -98,8 +98,8 @@ void RK4_step_2_sb_ice(
                       << "\ndT prime Result = " << cc.dt_sixth*k[ii]*ref.Tref
                       << "\n";
 #endif
-        ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k1 for k2
-        ynew[ii] += cc.dt_sixth*k[ii]; // Add k1-part to the result
+        ytmp[ii] = yold[ii] + cc.dt_half*k[ii];  // y_0 + (dt/2)*k1 for k2
+        ynew[ii] += cc.dt_sixth*k[ii];  // Add k1-part to the result
     }
     set_limits(ytmp, ref, cc);
     sediment_q_total += cc.dt_sixth*sediment_q;
@@ -110,7 +110,7 @@ void RK4_step_2_sb_ice(
     //
     // Do all computations involving k2
     //
-    RHS_SB(k, ytmp, ref, cc, cc.dt_third, fixed); // k = k2
+    RHS_SB(k, ytmp, ref, cc, cc.dt_third, fixed);  // k = k2
 
     for (int ii = 0 ; ii < num_comp ; ii++) {
 #ifdef TRACE_ENV
@@ -124,8 +124,8 @@ void RK4_step_2_sb_ice(
                       << "\ndT prime Result = " << cc.dt_third*k[ii]*ref.Tref
                       << "\n";
 #endif
-        ytmp[ii] = yold[ii] + cc.dt_half*k[ii]; // y_0 + (dt/2)*k2 for k3
-        ynew[ii] += cc.dt_third*k[ii]; // Add k2-part to the result
+        ytmp[ii] = yold[ii] + cc.dt_half*k[ii];  // y_0 + (dt/2)*k2 for k3
+        ynew[ii] += cc.dt_third*k[ii];  // Add k2-part to the result
     }
     set_limits(ytmp, ref, cc);
     sediment_q_total += cc.dt_third*sediment_q;
@@ -136,7 +136,7 @@ void RK4_step_2_sb_ice(
     //
     // Do all computations involving k3
     //
-    RHS_SB(k, ytmp, ref, cc, cc.dt_third, fixed); // k = k3
+    RHS_SB(k, ytmp, ref, cc, cc.dt_third, fixed);  // k = k3
 
     for (int ii = 0 ; ii < num_comp ; ii++) {
 #ifdef TRACE_ENV
@@ -150,8 +150,8 @@ void RK4_step_2_sb_ice(
                       << "\ndT prime Result = " << cc.dt_third*k[ii]*ref.Tref
                       << "\n";
 #endif
-        ytmp[ii] = yold[ii] + cc.dt*k[ii]; // y_0 + dt*k3 for k4
-        ynew[ii] += cc.dt_third*k[ii]; // Add k3-part to the result
+        ytmp[ii] = yold[ii] + cc.dt*k[ii];  // y_0 + dt*k3 for k4
+        ynew[ii] += cc.dt_third*k[ii];  // Add k3-part to the result
     }
     set_limits(ytmp, ref, cc);
     sediment_q_total += cc.dt_third*sediment_q;
@@ -162,7 +162,7 @@ void RK4_step_2_sb_ice(
     //
     // Do all computations involving k4
     //
-    RHS_SB(k, ytmp, ref, cc, cc.dt_sixth, fixed); // k = k4
+    RHS_SB(k, ytmp, ref, cc, cc.dt_sixth, fixed);  // k = k4
 
     for (int ii = 0 ; ii < num_comp ; ii++) {
 #ifdef TRACE_ENV
@@ -192,4 +192,4 @@ void RK4_step_2_sb_ice(
                  get_at(cc.constants, Cons_idx::Epsilon));
 }
 
-/** @} */ // end of group rk
+/** @} */  // end of group rk

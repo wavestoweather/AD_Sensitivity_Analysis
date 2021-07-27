@@ -14,7 +14,6 @@
 
 
 struct netcdf_reader_t {
-
     uint64_t n_ensembles;
     uint64_t n_trajectories;
     // double dlon, dlat;
@@ -156,7 +155,7 @@ struct netcdf_reader_t {
         qi_in,
         qs_in,
         qg_in,
-        // qh_in, // there is no dataset yet with hail in it
+        // qh_in,  // there is no dataset yet with hail in it
         ni_in,
         ns_in,
         ng_in,
@@ -166,7 +165,7 @@ struct netcdf_reader_t {
         height,
 #ifdef MET3D
         time_after_ascent,
-        conv_400, // might make trouble type wise
+        conv_400,  // might make trouble type wise
         conv_600,
         slan_400,
         slan_600,
