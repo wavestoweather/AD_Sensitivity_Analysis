@@ -3286,10 +3286,18 @@ class Deriv_dask:
 
         if abs_x:
             mse_df[sens_key] = np.abs(mse_df[sens_key])
+            if "Real Predicted Squared Error" in mse_df:
+                mse_df["Real Predicted Squared Error"] = np.abs(
+                    mse_df["Real Predicted Squared Error"]
+                )
             if log_x:
                 mse_df[sens_key] = log_func(mse_df[sens_key])
                 if inf_val is not None:
                     inf_val = log_func(inf_val)
+                if "Real Predicted Squared Error" in mse_df:
+                    mse_df["Real Predicted Squared Error"] = log_func(
+                        mse_df["Real Predicted Squared Error"]
+                    )
         if abs_y:
             mse_df[error_key] = np.abs(mse_df[error_key])
             if log_y:
@@ -3303,6 +3311,15 @@ class Deriv_dask:
             sign = np.sign(inf_val)
             if inf_val is not None:
                 inf_val = log_func(inf_val) * sign
+            if "Real Predicted Squared Error" in mse_df:
+                sign = np.sign(mse_df["Real Predicted Squared Error"])
+                mse_df["Real Predicted Squared Error"] = log_func(
+                    np.abs(mse_df["Real Predicted Squared Error"])
+                )
+                mse_df["Real Predicted Squared Error"] = mse_df[
+                    "Real Predicted Squared Error"
+                ] - np.min(mse_df["Real Predicted Squared Error"])
+                mse_df["Real Predicted Squared Error"] *= sign
         if not abs_y and log_y:
             sign = np.sign(mse_df[error_key])
             mse_df[error_key] = sign * log_func(np.abs(mse_df[error_key]))
@@ -3421,7 +3438,10 @@ class Deriv_dask:
 
                 if by is None:
                     if inf_val is not None:
-                        df_tmp = df.loc[df[x] != inf_val]
+                        if "Real Predicted Squared Error" in df:
+                            df_tmp = df.loc[df["Real Predicted Squared Error"] != 0]
+                        else:
+                            df_tmp = df.loc[df[x] != inf_val]
                     else:
                         df_tmp = df
                     x = df_tmp[x]
@@ -3438,10 +3458,30 @@ class Deriv_dask:
                             new_kwargs["color"] = color[b]
                         df_tmp = df.loc[df[by] == b]
                         if inf_val is not None:
-                            df_tmp = df_tmp.loc[df_tmp[x] != inf_val]
+                            if "Real Predicted Squared Error" in df_tmp:
+                                df_tmp = df_tmp.loc[
+                                    df_tmp["Real Predicted Squared Error"] != 0
+                                ]
+                                df_tmp = df_tmp.loc[
+                                    df_tmp["Real Predicted Squared Error"] != -np.inf
+                                ]
+                            else:
+                                df_tmp = df_tmp.loc[df_tmp[x] != inf_val]
                         if len(df_tmp[x]) == 1:
                             continue
-                        if ells is None:
+                        if (
+                            inf_val is not None
+                            and "Real Predicted Squared Error" in df_tmp
+                        ):
+                            x_df = df_tmp["Real Predicted Squared Error"]
+                            x_df = x_df.rename("Predicted Squared Error")
+                            if ells is None:
+                                ells = create_ellipse(x_df, df_tmp[y], **new_kwargs)
+                            else:
+                                ells = ells * create_ellipse(
+                                    x_df, df_tmp[y], **new_kwargs
+                                )
+                        elif ells is None:
                             ells = create_ellipse(df_tmp[x], df_tmp[y], **new_kwargs)
                         else:
                             ells = ells * create_ellipse(
@@ -3891,9 +3931,9 @@ class Deriv_dask:
                                 mse_plot = mse_plot * ells_pos
                         elif kind == "paper":
                             # Assuming -80 are the infinity placements
-                            tmp_df_ell = tmp_df.loc[tmp_df[sens_key] > -80]
+                            # tmp_df_ell = tmp_df.loc[tmp_df[sens_key] > -80]
                             ells = correl_conf_ell(
-                                df=tmp_df_ell,
+                                df=tmp_df,
                                 x=sens_key,
                                 y=error_key,
                                 by=by_col,

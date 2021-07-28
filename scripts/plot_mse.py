@@ -1092,6 +1092,8 @@ if __name__ == "__main__":
                         ]
                     ]
                 )
+                print("This does not affect the calculation of the ellipse")
+                df["Real Predicted Squared Error"] = df["Predicted Squared Error"]
                 df["Predicted Squared Error"] = df["Predicted Squared Error"].where(
                     df["Predicted Squared Error"] > args.set_zero, 0.0
                 )
@@ -1113,7 +1115,6 @@ if __name__ == "__main__":
                 hist = False
                 if "correlation_hist" == args.plot_variant:
                     hist = True
-                df = df.loc[df["Predicted Squared Error"] > 1e-200]
                 plot_mse(
                     df=df,
                     out_params=[out_p],
