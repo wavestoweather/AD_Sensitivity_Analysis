@@ -46,6 +46,11 @@ void output_handle_t::setup(
     dimid.resize(Dim_idx::n_dims);
     varid.resize(Var_idx::n_vars + num_par);
 
+    const std::string ending = ".nc_wcb";
+    if (!std::equal(ending.rbegin(), ending.rend(), this->filename.rbegin())) {
+        this->filename += ".nc_wcb";
+    }
+
     flushed_snapshots = 0;
     n_snapshots = 0;
     // Allocate memory for the buffer
@@ -75,7 +80,7 @@ void output_handle_t::setup(
     // open it in parallel again for writing purpose
     if (rank == 0) {
         SUCCESS_OR_DIE(nc_create(
-            (filename + ".nc_wcb").c_str(),  // path
+            filename.c_str(),  // path
             NC_NETCDF4,                     // creation mode
             &ncid));
         // Create dimensions
@@ -849,7 +854,7 @@ void output_handle_t::setup(
         SUCCESS_OR_DIE(ncclose(ncid));
     }
     // Open it again for writing with all processes
-    std::string file_string = filename + ".nc_wcb";
+    std::string file_string = filename;
     SUCCESS_OR_DIE(
         nc_open_par(
             file_string.c_str(),

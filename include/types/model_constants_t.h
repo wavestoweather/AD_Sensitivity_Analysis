@@ -193,6 +193,12 @@ struct model_constants_t {
     // See constants.h for a description of those.
     std::vector<codi::RealReverse> constants;
 
+    /*
+    * Uncertainty for every parameter.
+    * Currently sets everything to 10% of every parameter.
+    */
+    std::array<double, static_cast<uint32_t>(Cons_idx::n_items)> uncertainty;
+
     /**
      * Store any idx from perturbed parameters.
      */

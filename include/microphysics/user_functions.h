@@ -833,7 +833,7 @@ void cloud_freeze_hom(
 
 
 /**
- * Ice-ice collection. Seifert & Beheng (2008), Eq. 61-67
+ * Ice-ice collection. Seifert & Beheng (2006), Eq. 61-67
  *
  * @params qi_prime Ice crystal mixing ratio
  * @params Ni Number of ice crystals
@@ -2370,8 +2370,7 @@ void hail_collision(
 
 
 /**
- * Rate of ice or snow collecting cloud droplets where values are hard
- * coded for *rain* droplets according to COSMO comments.
+ * Rate of ice or snow collecting cloud droplets.
  *
  * @params qc_prime Cloud water mixing ratio
  * @params Nc Number of cloud droplets
@@ -3316,8 +3315,12 @@ void particle_cloud_riming(
 
         // Enhancement of melting
         if (T_prime > get_at(cc.constants, Cons_idx::T_freeze) && enhanced_melting) {
+            // specific heat at 25 degrees Celcius?; latent_heat_melt at 0 degrees Celcius?
+            // At least according to ICON. Weird.
+            float_t tmp_const = specific_heat_water(T_prime)
+                / latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze));
             float_t melt_q = (T_prime-get_at(cc.constants, Cons_idx::T_freeze))
-                * get_at(cc.constants, Cons_idx::const5)*rime_q;
+                * tmp_const*rime_q;
             float_t melt_n = melt_q/x_1;
 
             melt_q = min(q1/cc.dt_prime, melt_q);
@@ -3457,8 +3460,10 @@ void particle_rain_riming(
 
         // Enhancement of melting
         if (T_prime > get_at(cc.constants, Cons_idx::T_freeze) && enhanced_melting) {
+            float_t tmp_const = specific_heat_water(T_prime)
+                / latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze));
             float_t melt_q = (T_prime-get_at(cc.constants, Cons_idx::T_freeze))
-                * get_at(cc.constants, Cons_idx::const5)*rime_q;
+                * tmp_const*rime_q;
             float_t melt_n = melt_q/x_1;
 
             melt_q = min(q1/cc.dt_prime, melt_q);

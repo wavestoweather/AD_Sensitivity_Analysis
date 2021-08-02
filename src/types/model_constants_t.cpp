@@ -110,7 +110,7 @@ void model_constants_t::get_gradient(
     std::array<double, num_par> &out_vec) const {
     for (int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
         if (trace_check(i, false))
-            out_vec[i] = this->constants[i].getGradient();
+            out_vec[i] = this->constants[i].getGradient() * uncertainty[i];
 
 
     uint32_t idx = static_cast<uint32_t>(Cons_idx::n_items);
@@ -927,6 +927,29 @@ void model_constants_t::setup_model_constants(
         - coll_theta_12(this->ice, this->ice, 1)
         + coll_theta_22(this->ice, this->ice, 1);
 #endif
+    // Set the uncertainty of every parameter.
+    // Currently only uses 10% of the value.
+    for(uint32_t i=0; i < static_cast<uint32_t>(Cons_idx::n_items); ++i) {
+        this->uncertainty[i] = this->constants[i].getValue() * 0.1;
+    }
+    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+        this->rain.uncertainty[i] = this->rain.constants[i].getValue() * 0.1;
+    }
+    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+        this->cloud.uncertainty[i] = this->cloud.constants[i].getValue() * 0.1;
+    }
+    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+        this->graupel.uncertainty[i] = this->graupel.constants[i].getValue() * 0.1;
+    }
+    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+        this->hail.uncertainty[i] = this->hail.constants[i].getValue() * 0.1;
+    }
+    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+        this->ice.uncertainty[i] = this->ice.constants[i].getValue() * 0.1;
+    }
+    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+        this->snow.uncertainty[i] = this->snow.constants[i].getValue() * 0.1;
+    }
 }
 
 

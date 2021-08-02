@@ -20,6 +20,12 @@ struct particle_model_constants_t{
     std::vector<codi::RealReverse> constants;
     std::vector<uint32_t> perturbed_idx;
 
+    /*
+    * Uncertainty for every parameter related to cloud water vapor.
+    * Currently sets everything to 10% of every parameter.
+    */
+    std::array<double, static_cast<uint32_t>(Particle_cons_idx::n_items)> uncertainty;
+
     particle_model_constants_t();
 
     /**
