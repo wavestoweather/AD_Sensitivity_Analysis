@@ -124,35 +124,41 @@ void model_constants_t::get_gradient(
         this->snow.get_gradient(out_vec, idx);
 #endif
     } else {
+        uint32_t start_idx = idx;
         for (auto &c : this->rain.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient();
+                out_vec[idx] = c.getGradient() * this->rain.uncertainty[idx-start_idx];
             idx++;
         }
+        start_idx = idx;
         for (auto &c : this->cloud.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient();
+                out_vec[idx] = c.getGradient() * this->cloud.uncertainty[idx-start_idx];
             idx++;
         }
 #if defined(RK4ICE)
+        start_idx = idx;
         for (auto &c : this->graupel.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient();
+                out_vec[idx] = c.getGradient() * this->graupel.uncertainty[idx-start_idx];
             idx++;
         }
+        start_idx = idx;
         for (auto &c : this->hail.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient();
+                out_vec[idx] = c.getGradient() * this->hail.uncertainty[idx-start_idx];
             idx++;
         }
+        start_idx = idx;
         for (auto &c : this->ice.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient();
+                out_vec[idx] = c.getGradient() * this->ice.uncertainty[idx-start_idx];
             idx++;
         }
+        start_idx = idx;
         for (auto &c : this->snow.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient();
+                out_vec[idx] = c.getGradient() * this->snow.uncertainty[idx-start_idx];
             idx++;
         }
 #endif
