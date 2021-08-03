@@ -935,25 +935,25 @@ void model_constants_t::setup_model_constants(
 #endif
     // Set the uncertainty of every parameter.
     // Currently only uses 10% of the value.
-    for(uint32_t i=0; i < static_cast<uint32_t>(Cons_idx::n_items); ++i) {
+    for (uint32_t i=0; i < static_cast<uint32_t>(Cons_idx::n_items); ++i) {
         this->uncertainty[i] = this->constants[i].getValue() * 0.1;
     }
-    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+    for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
         this->rain.uncertainty[i] = this->rain.constants[i].getValue() * 0.1;
     }
-    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+    for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
         this->cloud.uncertainty[i] = this->cloud.constants[i].getValue() * 0.1;
     }
-    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+    for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
         this->graupel.uncertainty[i] = this->graupel.constants[i].getValue() * 0.1;
     }
-    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+    for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
         this->hail.uncertainty[i] = this->hail.constants[i].getValue() * 0.1;
     }
-    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+    for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
         this->ice.uncertainty[i] = this->ice.constants[i].getValue() * 0.1;
     }
-    for(uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
+    for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
         this->snow.uncertainty[i] = this->snow.constants[i].getValue() * 0.1;
     }
 }
