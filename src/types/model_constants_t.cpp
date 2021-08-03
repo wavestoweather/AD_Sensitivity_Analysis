@@ -657,6 +657,8 @@ void model_constants_t::setup_model_constants(
     this->rain.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.333333;
     this->rain.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 114.0137;
     this->rain.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.234370;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
     this->rain.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
 
     // From rainSBBcoeffs

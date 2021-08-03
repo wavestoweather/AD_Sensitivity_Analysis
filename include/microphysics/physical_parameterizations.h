@@ -689,6 +689,7 @@ inline A particle_mean_mass(
  * Get diameter of the particle by calculating
  * \f[ a_{\text{geo}} \cdot x^{b_{\text{geo}}} \f]
  * with \f$x\f4 the particle mass in kg.
+ * Seifert & Beheng; 2006 Eq. (32)
  *
  * @param x Particle mass in kg
  * @param a_geo Coefficient from particle model constant
@@ -708,6 +709,7 @@ inline A particle_diameter(
  * Get particle velocity of the particle by calculating
  * \f[ a_{\text{vel}} \cdot x^{b_{\text{vel}}} \f]
  * with \f$x\f4 the particle mass in kg.
+ * Seifert & Beheng; 2006 Eq. (33)
  *
  * @param x Particle mass in kg
  * @param a_vel Coefficient from particle model constant
