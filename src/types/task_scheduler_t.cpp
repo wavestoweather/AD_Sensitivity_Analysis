@@ -64,8 +64,10 @@ bool task_scheduler_t::send_task(
     bool orig_is_dest = false;
     bool locked = false;
     if (my_rank == 0 || !checkpoint_queue.empty()) {
-        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, work_window);
-        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, free_window);
+        SUCCESS_OR_DIE(
+            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, work_window));
+        SUCCESS_OR_DIE(
+            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, free_window));
         locked = true;
     }
     // Send a task from own queue if some worker is free or
@@ -110,9 +112,10 @@ bool task_scheduler_t::send_task(
 void task_scheduler_t::send_new_task(
     checkpoint_t &checkpoint) {
     if (static_scheduling) return;
-
-    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, work_window);
-    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, free_window);
+    SUCCESS_OR_DIE(
+        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, work_window));
+    SUCCESS_OR_DIE(
+        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, free_window));
     auto it = std::find(free_worker.begin(), free_worker.end(), 1);
     if (it != free_worker.end()) {
         auto idx = std::distance(free_worker.begin(), it);
@@ -143,7 +146,8 @@ void task_scheduler_t::signal_send_task() {
                         // signal to work_idx to send to worker
                         std::int8_t free = 1;
                         if (work_idx > 0)
-                            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, work_idx, 0, free_window);
+                            SUCCESS_OR_DIE(
+                                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, work_idx, 0, free_window));
                         SUCCESS_OR_DIE(
                             MPI_Put(
                                 &free,  // source
@@ -194,8 +198,10 @@ bool task_scheduler_t::receive_task(
         }
         // if all are free, return
         if (my_rank == 0) {
-            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, work_window);
-            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, free_window);
+            SUCCESS_OR_DIE(
+                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, work_window));
+            SUCCESS_OR_DIE(
+                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, free_window));
             free_worker[0] = 1;
             auto it = std::find(free_worker.begin(), free_worker.end(), 0);
             bool no_more_work = true;
@@ -214,7 +220,8 @@ bool task_scheduler_t::receive_task(
                 // We send it to every worker, however broadcast a single
                 // value everytime we are here is not a good idea.
                 for (uint32_t i=1; i < free_worker.size(); ++i) {
-                    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, i, 0, free_window);
+                    SUCCESS_OR_DIE(
+                        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, i, 0, free_window));
                     SUCCESS_OR_DIE(
                     MPI_Put(
                         free_worker.data(),  // source
@@ -234,7 +241,8 @@ bool task_scheduler_t::receive_task(
             MPI_Win_unlock(my_rank, work_window);
             MPI_Win_unlock(my_rank, free_window);
         } else {
-            MPI_Win_lock(MPI_LOCK_SHARED, my_rank, 0, free_window);
+            SUCCESS_OR_DIE(
+                MPI_Win_lock(MPI_LOCK_SHARED, my_rank, 0, free_window));
             if (free_worker[0] == 2) {
                 MPI_Win_unlock(my_rank, free_window);
                 return false;
@@ -247,7 +255,8 @@ bool task_scheduler_t::receive_task(
 
 
 void task_scheduler_t::signal_free() {
-    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, free_window);
+    SUCCESS_OR_DIE(
+        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, free_window));
     std::int8_t free = 1;
     SUCCESS_OR_DIE(
         MPI_Put(
@@ -264,7 +273,8 @@ void task_scheduler_t::signal_free() {
 
 
 void task_scheduler_t::signal_work_avail() {
-    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, work_window);
+    SUCCESS_OR_DIE(
+        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, work_window));
     std::int8_t work = checkpoint_queue.size();
     SUCCESS_OR_DIE(
         MPI_Put(

@@ -285,12 +285,14 @@ void parameter_check(
 #ifdef USE_MPI
                 uint64_t ens_id;
                 if (scheduler.my_rank != 0) {
-                    MPI_Win_lock(MPI_LOCK_SHARED, scheduler.my_rank, 0, scheduler.ens_window);
+                    SUCCESS_OR_DIE(
+                        MPI_Win_lock(MPI_LOCK_SHARED, scheduler.my_rank, 0, scheduler.ens_window));
                     uint64_t result = scheduler.max_ensemble_id;
                     MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
                     do {
                         ens_id = result + 1;
-                        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, scheduler.my_rank, 0, scheduler.ens_window);
+                        SUCCESS_OR_DIE(
+                            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, scheduler.my_rank, 0, scheduler.ens_window));
                         scheduler.max_ensemble_id = result;
                         MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
                         SUCCESS_OR_DIE(
@@ -304,7 +306,8 @@ void parameter_check(
                             scheduler.ens_window));
                     } while (result != scheduler.max_ensemble_id);
                 } else {
-                    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, scheduler.my_rank, 0, scheduler.ens_window);
+                    SUCCESS_OR_DIE(
+                        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, scheduler.my_rank, 0, scheduler.ens_window));
                     ens_id = scheduler.max_ensemble_id + 1;
                     scheduler.max_ensemble_id = ens_id;
                     MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
