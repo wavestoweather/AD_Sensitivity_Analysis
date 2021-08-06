@@ -20,11 +20,14 @@ void particle_model_constants_t::register_input(
 
 void particle_model_constants_t::get_gradient(
     std::array<double, num_par> &out_vec,
-    uint32_t &idx) const {
+    uint32_t &idx,
+    const bool info) const {
 
     const uint32_t start_idx = idx;
     for (auto &c : this->constants) {
         out_vec[idx] = c.getGradient() * uncertainty[idx-start_idx];
+        // if (info && idx-start_idx == static_cast<uint32_t>(Particle_cons_idx::b_vel))
+        //     std::cout << "got gradient: " << out_vec[idx] << "\n";
         idx++;
     }
 }

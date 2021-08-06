@@ -240,7 +240,7 @@ struct model_constants_t {
      * @param out_vec On out: Stores all gradients.
      */
     void get_gradient(
-        std::array<double, num_par> &out_vec) const;
+        std::array<double, num_par> &out_vec, uint32_t ii) const;
 
     /**
      * Put any perturbed parameter to a property tree.
@@ -313,7 +313,7 @@ struct model_constants_t {
      */
     void load_configuration(const std::string &filename);
 
- private:
+//  private:
     /**
      * Used to switch on or off certain trackings.
      */

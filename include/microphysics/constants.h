@@ -159,7 +159,8 @@ const std::vector<std::string> output_par_idx = {"p", "T", "w", "S", "qc", "qr",
 /**
  * Used for header files of gradients.
  */
-const std::vector<std::string> output_grad_idx = {"da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
+const std::vector<std::string> output_grad_idx = {
+    "da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
     "dbeta_r", "ddelta1", "ddelta2", "dzeta", "drain_gfak", "dcloud_k_au",
     "dcloud_k_sc", "dkc_autocon", "dinv_z", "dw",
     "dq_crit_i", "dD_crit_i", "dD_conv_i", "dq_crit_r",
@@ -763,6 +764,7 @@ enum class Cons_idx: uint32_t{
     e1_prime,   /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
     e2_prime,   /*!< Dimensional coefficients used in one-moment warm physics for temperature calculation */
     d_prime,    /*!< Dimensional coefficient used in one-moment warm physics qr calculation for sedimentation*/
+    Nc_prime,   /*!< Number concentration of cloud droplets needed for one-moment scheme */
 
     gamma,      /*!< Exponent used in one-moment warm physics for qc and qr calculation */
     betac,      /*!< Exponent used in one-moment warm physics for qc and qr calculation */
@@ -770,7 +772,6 @@ enum class Cons_idx: uint32_t{
     delta1,     /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
     delta2,     /*!< Exponent used in one-moment warm physics for qv, qr, saturation and temperature calculation */
     zeta,       /*!< Exponents used in one-moment warm physics for qr calculation */
-    Nc_prime,   /*!< Number concentration of cloud droplets needed for one-moment scheme */
 #if defined(RK4ICE) || defined(RK4NOICE)
     rain_gfak,  /*!< Coefficient for gamma evaluation in rain evaporation */
     cloud_k_au, /*!< Coefficient for autoconversion of cloud to rain */
@@ -1071,6 +1072,11 @@ enum class Particle_cons_idx: uint32_t{
     beta, /*!< Coefficient for rain sedimentation. */
     gamma, /*!< Exponent for rain sedimentation. */
     /**
+     * Shape parameter of the generalized \f$\Gamma$\f-distribution.
+     * i.e. used in rain sedimentation as coefficient.
+     */
+    nu,
+    /**
      * Right edge of incomplete gamma function,
      * which had been initialized with \f[\text{nm}_1\f].
      */
@@ -1084,11 +1090,6 @@ enum class Particle_cons_idx: uint32_t{
      * Shape parameter of the generalized \f$\Gamma$\f-distribution.
      */
     mu,
-    /**
-     * Shape parameter of the generalized \f$\Gamma$\f-distribution.
-     * i.e. used in rain sedimentation as coefficient.
-     */
-    nu,
     /**
      * Used for initializing the incomplete
      * gamma function lookup table 1.

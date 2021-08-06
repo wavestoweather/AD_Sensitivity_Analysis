@@ -17,7 +17,7 @@ model_constants_t::model_constants_t(
     track_state = 0;
     for (auto &t : track_param)
         t = 0;
-    if (tracking_filename != "") {
+    if (tracking_filename.compare("") != 0) {
         local_num_comp = 0;
         local_num_par = 0;
         this->load_configuration(tracking_filename);
@@ -99,7 +99,7 @@ void model_constants_t::get_gradients(
         y_single_new[ii].setGradient(1.0);
         tape.evaluate();
 
-        this->get_gradient(y_diff[ii]);
+        this->get_gradient(y_diff[ii], ii);
         tape.clearAdjoints();
     }
     tape.reset();
@@ -107,7 +107,7 @@ void model_constants_t::get_gradients(
 
 
 void model_constants_t::get_gradient(
-    std::array<double, num_par> &out_vec) const {
+    std::array<double, num_par> &out_vec, uint32_t ii) const {
     for (int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
         if (trace_check(i, false))
             out_vec[i] = this->constants[i].getGradient() * uncertainty[i];
@@ -115,7 +115,7 @@ void model_constants_t::get_gradient(
 
     uint32_t idx = static_cast<uint32_t>(Cons_idx::n_items);
     if (local_num_par == num_par) {
-        this->rain.get_gradient(out_vec, idx);
+        this->rain.get_gradient(out_vec, idx, (traj_id == 5 && ii == qc_idx));
         this->cloud.get_gradient(out_vec, idx);
 #if defined(RK4ICE)
         this->graupel.get_gradient(out_vec, idx);
@@ -990,10 +990,10 @@ bool model_constants_t::trace_check(
     const int &idx,
     const bool state_param) const {
     if (state_param) {
-        return (track_state & (1 << idx));
+        return (track_state & (((uint64_t) 1) << idx));
     } else {
-        int i = idx/64;
-        return (track_param[i] & (1 << (idx%64)));
+        uint32_t i = idx/64;
+        return (track_param[i] & (((uint64_t) 1) << (idx%64)));
     }
 }
 

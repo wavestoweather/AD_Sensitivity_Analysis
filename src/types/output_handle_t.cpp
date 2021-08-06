@@ -55,7 +55,7 @@ void output_handle_t::setup(
     n_snapshots = 0;
     // Allocate memory for the buffer
     // maximum number of snapshots we are going to get
-    total_snapshots = std::ceil((static_cast<float>(write_index))/snapshot_index) + 1;
+    total_snapshots = std::ceil((static_cast<float>(write_index))/snapshot_index); // + 1;
     const uint64_t vec_size = total_snapshots;  // n_snapshots * num_comp;
     const uint64_t vec_size_grad = num_comp * total_snapshots;
     for (uint32_t i=0; i < num_comp; i++)
@@ -952,7 +952,7 @@ void output_handle_t::setup(
         for (uint32_t i=0; i < Var_idx::n_vars; i++)
             SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_INDEPENDENT));
         for (uint32_t i=0; i < output_grad_idx.size(); i++)
-            if (cc.trace_check(i+Var_idx::n_vars, false))
+            if (cc.trace_check(i, false))
                 SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
         // for (auto &id : varid)
         //     SUCCESS_OR_DIE(nc_var_par_access(ncid, id, NC_INDEPENDENT));
@@ -964,8 +964,8 @@ void output_handle_t::reset(
     const uint32_t traj_id,
     const uint32_t ens_id) {
 
-    flushed_snapshots = 0;
-    n_snapshots = 0;
+    this->flushed_snapshots = 0;
+    this->n_snapshots = 0;
     this->traj = traj_id;
     this->ens = ens_id;
 }
@@ -975,13 +975,19 @@ void output_handle_t::buffer_gradient(
     const model_constants_t &cc,
     const std::vector< std::array<double, num_par > >  &y_diff,
     const uint32_t snapshot_index) {
+
     for (uint64_t i=0; i < num_comp; i++) {
         // gradient sensitive to output parameter i
         if (!cc.trace_check(i, true))
             continue;
         for (uint64_t j=0; j < num_par; j++)  // gradient of input parameter j
-            if (cc.trace_check(j, false))
-                output_buffer[Buffer_idx::n_buffer+j][i + n_snapshots*num_comp] += y_diff[i][j]/snapshot_index;
+            if (cc.trace_check(j, false)) {
+                if (n_snapshots%snapshot_index == 0) {
+                    output_buffer[Buffer_idx::n_buffer+j][i*total_snapshots + n_snapshots] = y_diff[i][j]/snapshot_index;
+                } else {
+                    output_buffer[Buffer_idx::n_buffer+j][i*total_snapshots + n_snapshots] += y_diff[i][j]/snapshot_index;
+                }
+            }
     }
 }
 
@@ -995,7 +1001,6 @@ void output_handle_t::buffer(
     const uint32_t sub,
     const uint32_t t,
     const double time_new,
-    const uint32_t traj_id,
     const uint32_t ensemble,
     const reference_quantities_t &ref_quant,
     const uint32_t snapshot_index) {
@@ -1146,15 +1151,43 @@ void output_handle_t::flush_buffer(
     // gradients
     startp.insert(startp.begin(), 0);
     countp.insert(countp.begin(), local_num_comp);
-    for (uint64_t j=0; j < num_par; j++) {
-        if (cc.trace_check(j, false))
-            SUCCESS_OR_DIE(
-                nc_put_vara(
-                    ncid,
-                    varid[Var_idx::n_vars + j],
-                    startp.data(),
-                    countp.data(),
-                    output_buffer[Buffer_idx::n_buffer + j].data()));
+    // Use an offset if the number of snapshots does not fit
+    // This is necessary since the slow index is [0] (Output Parameter)
+    // and the fast index is [3] (time), which has gaps now
+    if (countp[3] != total_snapshots) {
+        std::vector<std::ptrdiff_t> stridep, imap;
+        stridep.push_back(1);
+        stridep.push_back(1);
+        stridep.push_back(1);
+        stridep.push_back(1);
+        imap.push_back(total_snapshots);
+        imap.push_back(1);
+        imap.push_back(1);
+        imap.push_back(1);
+
+        for (uint64_t j=0; j < num_par; j++) {
+            if (cc.trace_check(j, false))
+                SUCCESS_OR_DIE(
+                    nc_put_varm(
+                        ncid,
+                        varid[Var_idx::n_vars + j],
+                        startp.data(),
+                        countp.data(),
+                        stridep.data(),
+                        imap.data(),
+                        output_buffer[Buffer_idx::n_buffer + j].data()));
+        }
+    } else {
+        for (uint64_t j=0; j < num_par; j++) {
+            if (cc.trace_check(j, false))
+                SUCCESS_OR_DIE(
+                    nc_put_vara(
+                        ncid,
+                        varid[Var_idx::n_vars + j],
+                        startp.data(),
+                        countp.data(),
+                        output_buffer[Buffer_idx::n_buffer + j].data()));
+        }
     }
     flushed_snapshots += n_snapshots;
     n_snapshots = 0;
@@ -1170,7 +1203,6 @@ void output_handle_t::process_step(
     const uint32_t sub,
     const uint32_t t,
     const double time_new,
-    const uint32_t traj_id,
     const uint32_t write_index,
     const uint32_t snapshot_index,
 #ifdef MET3D
@@ -1182,7 +1214,7 @@ void output_handle_t::process_step(
     if ((0 == (sub + t*cc.num_sub_steps) % snapshot_index)
         || (t == cc.num_steps-1 && last_step)) {
         this->buffer(cc, netcdf_reader, y_single_new, y_diff, sub, t,
-            time_new, traj_id, ensemble, ref_quant, snapshot_index);
+            time_new, ensemble, ref_quant, snapshot_index);
     } else {
         this->buffer_gradient(cc, y_diff, snapshot_index);
     }

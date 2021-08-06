@@ -74,6 +74,7 @@ model_constants_t parse_args(
     if (rank == 0) {
         print_reference_quantities(ref_quant);
     }
+
     input.set_input_from_arguments(global_args);
 
     model_constants_t cc(input.tracking_filename);
@@ -418,7 +419,6 @@ void run_substeps(
     std::vector< std::array<double, num_par > > &y_diff,
     output_handle_t &out_handler,
     const uint32_t &sub_start,
-    const int &traj_id,
     const uint32_t &ensemble,
     std::vector<segment_t> &segments,
     ProgressBar &pbar,
@@ -490,7 +490,7 @@ void run_substeps(
         // Time update
         time_new = (sub + t*cc.num_sub_steps)*cc.dt;
         out_handler.process_step(cc, netcdf_reader, y_single_new, y_diff, sub, t,
-            time_new, traj_id, input.write_index,
+            time_new, input.write_index,
             input.snapshot_index,
 #ifdef MET3D
             ensemble,
@@ -535,7 +535,6 @@ int run_simulation(
     task_scheduler_t &scheduler,
     netcdf_reader_t &netcdf_reader) {
 
-    int traj_id = -1;
 #ifdef MET3D
     uint32_t ensemble;
 #endif
@@ -558,7 +557,7 @@ int run_simulation(
             // Iterate over each substep
             run_substeps(input, ref_quant, t, cc, y_single_old,
                 inflow, tape, y_single_new, netcdf_reader, y_diff, out_handler,
-                sub_start, traj_id, ensemble, segments, pbar, scheduler,
+                sub_start, ensemble, segments, pbar, scheduler,
                 progress_index);
 #ifdef TRACE_QG
             if (trace)
@@ -671,6 +670,7 @@ int main(int argc, char** argv) {
             for (int ii = 0 ; ii < num_comp ; ii++)
                 y_single_old[ii] = y_init[ii];
 
+            out_handler.reset(scheduler.current_traj, scheduler.current_ens);
             // run simulation
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,
@@ -683,7 +683,8 @@ int main(int argc, char** argv) {
                 netcdf_reader.read_initial_values(y_init, ref_quant, cc,
                     global_args.checkpoint_flag, scheduler.current_traj, scheduler.current_ens);
                 out_handler.reset(scheduler.current_traj, scheduler.current_ens);
-
+                cc.traj_id = scheduler.current_traj;
+                cc.ensemble_id = scheduler.current_ens;
                 // Set "old" values as temporary holder of values.
                 for (int ii = 0 ; ii < num_comp ; ii++)
                     y_single_old[ii] = y_init[ii];

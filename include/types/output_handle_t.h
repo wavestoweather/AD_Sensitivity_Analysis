@@ -207,7 +207,6 @@ struct output_handle_t{
         const uint32_t sub,
         const uint32_t t,
         const double time_new,
-        const uint32_t traj_id,
         const uint32_t ensemble,
         const reference_quantities_t &ref_quant,
         const uint32_t snapshot_index);
@@ -233,7 +232,6 @@ struct output_handle_t{
         const uint32_t sub,
         const uint32_t t,
         const double time_new,
-        const uint32_t traj_id,
         const uint32_t write_index,
         const uint32_t snapshot_index,
 #ifdef MET3D
