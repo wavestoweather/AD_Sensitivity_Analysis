@@ -55,7 +55,7 @@ void output_handle_t::setup(
     n_snapshots = 0;
     // Allocate memory for the buffer
     // maximum number of snapshots we are going to get
-    total_snapshots = std::ceil((static_cast<float>(write_index))/snapshot_index); // + 1;
+    total_snapshots = std::ceil((static_cast<float>(write_index))/snapshot_index);
     const uint64_t vec_size = total_snapshots;  // n_snapshots * num_comp;
     const uint64_t vec_size_grad = num_comp * total_snapshots;
     for (uint32_t i=0; i < num_comp; i++)
@@ -983,9 +983,11 @@ void output_handle_t::buffer_gradient(
         for (uint64_t j=0; j < num_par; j++)  // gradient of input parameter j
             if (cc.trace_check(j, false)) {
                 if (n_snapshots%snapshot_index == 0) {
-                    output_buffer[Buffer_idx::n_buffer+j][i*total_snapshots + n_snapshots] = y_diff[i][j]/snapshot_index;
+                    output_buffer[Buffer_idx::n_buffer+j][i*total_snapshots + n_snapshots] =
+                        y_diff[i][j]/snapshot_index;
                 } else {
-                    output_buffer[Buffer_idx::n_buffer+j][i*total_snapshots + n_snapshots] += y_diff[i][j]/snapshot_index;
+                    output_buffer[Buffer_idx::n_buffer+j][i*total_snapshots + n_snapshots] +=
+                        y_diff[i][j]/snapshot_index;
                 }
             }
     }
