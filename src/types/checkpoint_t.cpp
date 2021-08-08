@@ -22,7 +22,8 @@ checkpoint_t::checkpoint_t(
     const double &current_time,
     const uint32_t &id,
     const uint64_t &ens_id,
-    const uint64_t &n_trajs) {
+    const uint64_t &n_trajs,
+    const double duration) {
     auto old_id = cc.ensemble_id;
     cc.ensemble_id = ens_id;
     auto old_tid = cc.traj_id;
@@ -30,13 +31,24 @@ checkpoint_t::checkpoint_t(
     auto old_n = cc.n_trajs;
     cc.n_trajs = n_trajs;
     auto old_desc = cc.ens_desc;
-    cc.ens_desc += "- " + std::to_string(old_id) + ","
-        + std::to_string(old_tid) + " ";
+    auto old_t_end_prime = cc.t_end_prime;
+    cc.t_end_prime -= input.delay_time_store;
+    auto old_num_steps = cc.num_steps;
+    if (duration > 0) {
+        cc.num_steps = duration;
+    } else {
+        cc.num_steps -= input.delay_time_store/cc.dt_prime;
+    }
+
+    // cc.ens_desc += "- " + std::to_string(old_id) + ","
+    //     + std::to_string(old_tid) + " ";
     this->create_checkpoint(cc, y, segments, input, current_time);
     cc.ensemble_id = old_id;
     cc.traj_id = old_tid;
     cc.n_trajs = old_n;
     cc.ens_desc = old_desc;
+    cc.t_end_prime = old_t_end_prime;
+    cc.num_steps = old_num_steps;
 }
 
 template<class float_t>
@@ -77,6 +89,7 @@ int checkpoint_t::load_checkpoint(
     cc.setup_model_constants(input, ref_quant);
     // Parse the model constants
     SUCCESS_OR_DIE(cc.from_pt(checkpoint));
+    // std::cout << "t_end_prime: " << cc.t_end_prime << "\n";
 
     // Parse the segments and store which parameters had been perturbed
     // in ens_descr
@@ -170,12 +183,21 @@ void checkpoint_t::write_checkpoint(
     cc.ensemble_id++;
 }
 
+void checkpoint_t::print_checkpoint() {
+    if (checkpoint.empty()) {
+        return;
+    }
+    pt::write_json(std::cout, checkpoint);
+}
+
 void checkpoint_t::send_checkpoint(
     const int send_id) {
     MPI_Request request;
     std::stringstream ss;
     pt::json_parser::write_json(ss, checkpoint);
     std::string s = ss.str();
+    // std::cout << "send checkpoint to " << send_id
+    //     << " with size " << s.size() << "\n" << s << "\n";
     SUCCESS_OR_DIE(
         MPI_Isend(
             s.c_str(),
@@ -220,7 +242,12 @@ bool checkpoint_t::receive_checkpoint() {
 
     boost::iostreams::stream<boost::iostreams::array_source> stream(
         buff, count);
-    pt::read_json(stream, checkpoint);
+    try {
+        pt::read_json(stream, checkpoint);
+    } catch (...) {
+        std::cout << "receive checkpoint failed: \n"
+        << buff << "\ncount: " << count << "\n";
+    }
     delete [] buff;
     return got_something;
 }
@@ -238,7 +265,8 @@ template checkpoint_t::checkpoint_t<codi::RealReverse>(
     const double&,
     const uint32_t&,
     const uint64_t&,
-    const uint64_t&);
+    const uint64_t&,
+    const double);
 
 template checkpoint_t::checkpoint_t<codi::RealReverse>(
     const model_constants_t&,

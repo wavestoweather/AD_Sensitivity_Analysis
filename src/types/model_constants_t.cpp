@@ -263,6 +263,10 @@ int model_constants_t::from_pt(
             num_steps = it.second.get_value<uint64_t>();
         } else if (first == "done_steps") {
             done_steps = it.second.get_value<uint64_t>();
+        } else if (first == "local_num_comp") {
+            local_num_comp = it.second.get_value<int>();
+        } else if (first == "local_num_par") {
+            local_num_par = it.second.get_value<int>();
         } else if (first == "track_state") {
             track_state = it.second.get_value<uint64_t>();
         } else if (first == "track_param") {
@@ -314,6 +318,8 @@ int model_constants_t::from_pt(
                 this->graupel.constants[idx] = it2.second.get_value<double>();
             }
         } else {
+            std::cout << "Got '" << first << "' from property tree "
+            << "which does not exist in model_constants_t.\n";
             err = MODEL_CONS_CHECKPOINT_ERR;
         }
     }

@@ -59,7 +59,7 @@ typedef bool(*track_func)(const int&, const bool&);
 
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
-#define num_par 56*6+124    /*!< Number of gradients. 56 for each particle + model constants */
+#define num_par (56*6+124)  /*!< Number of gradients. 56 for each particle + model constants */
 
 #endif
 
@@ -109,6 +109,12 @@ typedef bool(*track_func)(const int&, const bool&);
  * The output contains sensitivities.
  */
 #define grid_sensitivity 3
+/**
+ * Input data is a sinlge trajectory. Perturbed ensembles are started according
+ * to the ensemble configuration file.
+ * The output contains sensitivities.
+ */
+#define limited_time_ensembles 4
 
 ////////////////////////////////////////////////////////////////////////////////
 // Random generators

@@ -159,7 +159,8 @@ struct output_handle_t{
         const uint32_t write_index,
         const uint32_t snapshot_index,
         const int &rank,
-        const int &simulation_mode);
+        const int &simulation_mode,
+        const double delay_out_time = 0);
 
     void setup(
         const std::string filetype,
@@ -169,7 +170,8 @@ struct output_handle_t{
         const std::string in_filename,
         const uint32_t write_index,
         const uint32_t snapshot_index,
-        const int &rank);
+        const int &rank,
+        const double delay_out_time = 0);
 
     /**
      * Reset the number of flushed and recorded snapshots and update
@@ -179,7 +181,10 @@ struct output_handle_t{
      * @param traj_id New trajectory id for the output
      * @param ens_id New ensemble id for the output
      */
-    void reset(const uint32_t traj_id, const uint32_t ens_id);
+    void reset(
+        const uint32_t traj_id,
+        const uint32_t ens_id,
+        const uint64_t n_flushed = 0);
 
     /**
      * Buffer the gradients. If snapshot_index > 1, then the average gradient
@@ -239,4 +244,13 @@ struct output_handle_t{
 #endif
         const bool last_step,
         const reference_quantities_t &ref_quant);
+
+    /**
+     * Put the number of flushed snapshots into a property tree.
+     *
+     * @params ptree Property tree, where a tree "model_constants" is being added.
+     */
+    // void put(pt::ptree &ptree) const;
+
+    // int from_pt(pt::ptree &ptree);
 };

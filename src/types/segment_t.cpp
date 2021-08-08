@@ -354,3 +354,10 @@ int segment_t::from_pt(
     }
     return err;
 }
+
+double segment_t::limit_duration() const {
+    if (method == repeated_time) {
+        return value;
+    }
+    return 0;
+}

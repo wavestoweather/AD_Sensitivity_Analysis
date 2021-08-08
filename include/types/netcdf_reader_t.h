@@ -17,7 +17,7 @@ struct netcdf_reader_t {
     uint64_t n_ensembles;
     uint64_t n_trajectories;
     // double dlon, dlat;
-    uint64_t start_time_idx; /*!< The initia start time index. */
+    uint64_t start_time_idx; /*!< The initial start time index. */
     uint64_t time_idx; /*!< Current index to read from netcdf file. */
 
     /**

@@ -413,4 +413,11 @@ struct segment_t {
      * to draw from is given.
      */
     int from_pt(pt::ptree &ptree, model_constants_t &cc);
+
+    /**
+     * Get the number of seconds that the ensenmble shall run.
+     *
+     * @return Time in seconds the ensemble runs.
+     */
+    double limit_duration() const;
 };

@@ -80,6 +80,9 @@ struct global_args_t {
     int n_ens_flag;
     char* n_ens_string;
 
+    int warm_up_flag;
+    char* warm_up_string;
+
     global_args_t();
 
     /**

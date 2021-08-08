@@ -39,14 +39,13 @@ namespace pt = boost::property_tree;
  * Parse an ensemble configuration as an XML-file.
  *
  */
-int load_ens_config(
+void load_ens_config(
     std::string filename,
     model_constants_t &cc,
     std::vector<segment_t> &segments,
     input_parameters_t &input,
     const reference_quantities_t &ref_quant) {
 
-    int err = 0;
     pt::ptree pt;
     boost::property_tree::read_json(filename, pt);
     std::string ens_desc;
@@ -66,7 +65,6 @@ int load_ens_config(
     } else {
         cc.n_ensembles = segments.size() + 1;
     }
-    return err;
 }
 
 /**

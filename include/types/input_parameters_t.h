@@ -45,10 +45,11 @@ struct input_parameters_t {
 
     uint32_t auto_type; /*!< Particle type. */
     uint32_t traj; /*!< Trajectory index to load from the netCDF file. */
-    uint32_t write_index; /*!< Write stringstream every x iterations to disk. */
+    uint32_t write_index; /*!< Write every x iterations to disk. */
     uint64_t progress_index; /*!< Index for updating progressbar. */
     uint32_t ensemble; /*!< Index of ensemble. */
     double current_time; /*!< Time for and from checkpoint files. */
+    double delay_time_store; /*!< Seconds for warm-up of the model. */
 
     int simulation_mode; /*!< Simulation mode. */
 

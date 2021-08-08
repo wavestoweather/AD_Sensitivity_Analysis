@@ -14,14 +14,15 @@ output_handle_t::output_handle_t(
     const uint32_t write_index,
     const uint32_t snapshot_index,
     const int &rank,
-    const int &simulation_mode) {
+    const int &simulation_mode,
+    const double delay_out_time) {
 
     this->simulation_mode = simulation_mode;
     local_num_comp = cc.local_num_comp;
     local_num_par = cc.local_num_par;
 
     this->setup(filetype, filename, cc, ref_quant,
-        in_filename, write_index, snapshot_index, rank);
+        in_filename, write_index, snapshot_index, rank, delay_out_time);
 }
 
 
@@ -33,13 +34,17 @@ void output_handle_t::setup(
     const std::string in_filename,
     const uint32_t write_index,
     const uint32_t snapshot_index,
-    const int &rank) {
+    const int &rank,
+    const double delay_out_time) {
 
     this->n_trajs_file = cc.max_n_trajs;
     this->traj = cc.traj_id;
     this->ens = cc.ensemble_id;
     this->num_ens = cc.n_ensembles;
     this->num_time = cc.num_steps * cc.num_sub_steps;
+    if (delay_out_time > 0) {
+        this->num_time -= delay_out_time / (cc.dt_prime * cc.num_sub_steps)-cc.num_sub_steps;
+    }
 
     this->filetype = filetype;
     this->filename = filename;
@@ -50,6 +55,15 @@ void output_handle_t::setup(
     if (!std::equal(ending.rbegin(), ending.rend(), this->filename.rbegin())) {
         this->filename += ".nc_wcb";
     }
+    if (rank == 0)
+        std::cout << "Creating " << this->filename << " and defining dimensions "
+            << "and attributes. This can take a while for some simulation "
+            << "modes\n";
+
+    if (rank == 0)
+        std::cout << "n_trajs_file: " << this->n_trajs_file
+            << " num_time: " << this->num_time
+            << " vs " <<  delay_out_time / (cc.dt_prime * cc.num_sub_steps) + this->num_time << "\n";
 
     flushed_snapshots = 0;
     n_snapshots = 0;
@@ -802,7 +816,7 @@ void output_handle_t::setup(
         std::vector<float> time_steps(num_time);
 #endif
         for (uint32_t i=0; i < num_time; i++)
-            time_steps[i] = cc.dt*i + cc.start_time;  // start + i*dt
+            time_steps[i] = cc.dt*i + cc.start_time + delay_out_time;  // start + i*dt
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,                       // ncid
@@ -962,9 +976,10 @@ void output_handle_t::setup(
 
 void output_handle_t::reset(
     const uint32_t traj_id,
-    const uint32_t ens_id) {
+    const uint32_t ens_id,
+    const uint64_t n_flushed) {
 
-    this->flushed_snapshots = 0;
+    this->flushed_snapshots = n_flushed;
     this->n_snapshots = 0;
     this->traj = traj_id;
     this->ens = ens_id;
@@ -1099,6 +1114,11 @@ void output_handle_t::flush_buffer(
     countp.push_back(1);
     countp.push_back(n_snapshots);
 
+    std::cout << "flushed_snapshots: " << flushed_snapshots
+        << " n_snapshots: " << n_snapshots
+        << " ens: " << ens
+        << " traj: " << traj << "\n";
+
     for (uint64_t i=0; i < num_comp; i++) {
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -1226,3 +1246,24 @@ void output_handle_t::process_step(
         this->flush_buffer(cc);
     }
 }
+
+// void output_handle_t::put(
+//     pt::ptree &ptree) const {
+//     pt::ptree out_handle;
+//     out_handle.put("flushed_snapshots", flushed_snapshots);
+//     ptree.add_child("output_handle", out_handle);
+// }
+
+// int output_handle_t::from_pt(
+//     pt::ptree &ptree) {
+//     int err = 0;
+//     for (auto &it : ptree.get_child("model_constants")) {
+//         auto first = it.first;
+//         if (first == "flushed_snapshots") {
+//             this->flushed_snapshots = it.second.get_value<uint64_t>();
+//         } else {
+//             err = MODEL_CONS_CHECKPOINT_ERR;
+//         }
+//     }
+//     return err;
+// }

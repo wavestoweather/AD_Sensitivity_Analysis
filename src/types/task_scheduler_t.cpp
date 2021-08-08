@@ -122,6 +122,7 @@ void task_scheduler_t::send_new_task(
         checkpoint.send_checkpoint(idx);
         free_worker[idx] = 0;
     } else {
+        // std::cout << "putting to queue\n";
         checkpoint_queue.push(checkpoint);
         work_available[my_rank]++;
         if (my_rank != 0) {

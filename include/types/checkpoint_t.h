@@ -47,7 +47,8 @@ struct checkpoint_t {
         const double &current_time,
         const uint32_t &id,
         const uint64_t &ens_id,
-        const uint64_t &n_trajs);
+        const uint64_t &n_trajs,
+        const double duration = 0);
 
     template<class float_t>
     void create_checkpoint(
@@ -113,6 +114,8 @@ struct checkpoint_t {
         std::string &filename,
         model_constants_t &cc,
         std::vector<segment_t> &segments);
+
+    void print_checkpoint();
 
     /**
      * Send a checkpoint to the specified process.

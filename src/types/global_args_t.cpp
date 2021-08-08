@@ -60,6 +60,9 @@ global_args_t::global_args_t() {
 
     n_ens_flag = 0;
     n_ens_string = nullptr;
+
+    warm_up_flag = 0;
+    warm_up_string = nullptr;
 }
 
 
@@ -71,7 +74,7 @@ int global_args_t::parse_arguments(
     /**
      * String used to parse commandline input.
      */
-    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g:h:k:?";
+    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g:h:k:u:?";
     bool need_to_abort = false;
     int opt;
 
@@ -180,6 +183,11 @@ int global_args_t::parse_arguments(
                     this->n_ens_string = optarg;
                     break;
                 }
+                case 'u': {
+                    this->warm_up_flag = 1;
+                    this->warm_up_string = optarg;
+                    break;
+                }
                 case '?': {
                     need_to_abort = true;
                     display_usage();
@@ -214,24 +222,28 @@ void global_args_t::display_usage() {
         << "If higher than number of entries from input file, then it stops early\n"
         << "-i: Snapshot index.\n"
         << "-b: Simulation mode. There are different options:\n"
-        << "\t'trajectory_sensitvity_perturbance': (default) \n"
+        << "\t'trajectory_sensitvity_perturbance' (0): (default) \n"
         << "\t\tThe input data is one trajectory. The output includes "
         << "\t\tsensitivities. Ensembles are started given an ensemble "
         << "\t\tconfiguration file. This mode can only process one input "
         << "\t\ttrajectory at a time.\n"
-        << "\t'trajectory_sensitivity': \n"
+        << "\t'trajectory_sensitivity' (1): \n"
         << "\t\tThe input data can consist of multiple trajectories and ensembles.\n"
         << "\t\tThe output contains sensitivities but no perturbances are possible.\n"
         << "\t\tThe flag '-m' is ignored here."
-        << "\t'trajectory_perturbance': \n"
+        << "\t'trajectory_perturbance' (2): \n"
         << "\t\tThe input data is one trajectory. The output does not include "
         << "\t\tsensitivities. Ensembles are started given an ensemble "
         << "\t\tconfiguration file. This mode can only process one input "
         << "\t\ttrajectory at a time.\n"
-        << "\t'grid_sensitivity': \n"
+        << "\t'grid_sensitivity' (3): \n"
         << "\t\tThe input is a grid file. The output consists of a grid of "
         << "\t\toutput parameters and their sensitivities. Perturbances are "
         << "\t\tnot possible, hence the flag '-m' is ignored.\n"
+        << "\t'limited_time_ensembles' (4): \n"
+        << "\t\tInput data is a sinlge trajectory. Perturbed ensembles are "
+        << "\t\tstarted according to the ensemble configuration file."
+        << "\t\tThe output contains sensitivities.\n"
         << "-d: Timestep in seconds for a substep between each new trajectory input.\n"
         << "-o: Name of the output file.\n"
         << "-l: Path and name of input file.\n"
@@ -255,6 +267,7 @@ void global_args_t::display_usage() {
         << "execution scripts from this simulation.\n"
         << "-k: Maximum number of ensembles in the output file. If none given "
         << "then each segment from the configuration file is considered as one ensemble.\n"
+        << "-u: Warm-up time for the model before data is stored.\n"
         << "-?: This help message.\n"
         << std::endl;
 }

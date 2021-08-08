@@ -72,6 +72,8 @@ void input_parameters_t::put(
     input_params.put<double>("current_time", time);
     input_params.put<std::string>("FOLDER_NAME", FOLDER_NAME);
     input_params.put<int>("simulation_mode", simulation_mode);
+    input_params.put<double>("delay_time_store", delay_time_store);
+    // std::cout << "put " << delay_time_store << "\n";
     ptree.add_child("input_params", input_params);
 }
 
@@ -133,6 +135,9 @@ int input_parameters_t::from_pt(
             FOLDER_NAME = it.second.data();
         } else if (first == "simulation_mode") {
             simulation_mode = it.second.get_value<int>();
+        } else if (first == "delay_time_store") {
+            // std::cout << "from put: " << delay_time_store << "\n";
+            delay_time_store = it.second.get_value<double>();
         } else {
             err = INPUT_NAME_CHECKPOINT_ERR;
         }
@@ -175,6 +180,7 @@ void input_parameters_t::set_input_from_arguments(
             case trajectory_sensitvity_perturbance:
             case trajectory_sensitivity:
             case trajectory_perturbance:
+            case limited_time_ensembles:
                 break;
             case grid_sensitivity:
                 std::cout << "Grid based sensitivity analysis is not supported yet\n";
@@ -262,6 +268,11 @@ void input_parameters_t::set_input_from_arguments(
     if (1 == arg.n_ens_flag) {
         this->n_ensembles = std::stoi(arg.n_ens_string);
     }
+
+    // Delay time in seconds before data is stored
+    if (1 == arg.warm_up_flag) {
+        this->delay_time_store = std::strtod(arg.warm_up_string, nullptr);
+    }
 }
 
 
@@ -314,5 +325,6 @@ void input_parameters_t::print_parameters() {
         ? "Maximum number of ensembles in the output file: " + std::to_string(this->n_ensembles) + "\n"
         : "")
         << "Simulation mode: " << this->simulation_mode << "\n"
+        << "Warm-up time: " << this->delay_time_store << "s\n"
         << std::endl << std::flush;
 }
