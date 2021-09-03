@@ -111,10 +111,12 @@ struct netcdf_reader_t {
         model_constants_t &cc,
         const bool &checkpoint_flag);
 
-    double get_lat(const uint32_t &t) const {return buffer[Par_idx::lat][t%n_timesteps_buffer];}
-    double get_lon(const uint32_t &t) const {return buffer[Par_idx::lon][t%n_timesteps_buffer];}
+    double get_lat(const uint32_t &t) const {return buffer[Par_idx::lat][(t)%n_timesteps_buffer];}
+    double get_lon(const uint32_t &t) const {return buffer[Par_idx::lon][(t)%n_timesteps_buffer];}
 #ifdef MET3D
-    double get_relative_time(const uint32_t &t) const {return buffer[Par_idx::time_after_ascent][t%n_timesteps_buffer];}
+    double get_relative_time(const uint32_t &t) const {
+        return buffer[Par_idx::time_after_ascent][(t)%n_timesteps_buffer];
+    }
     bool get_conv_400(const uint32_t &t) const {return (buffer[Par_idx::conv_400][t] > 0.5);}
     bool get_conv_600(const uint32_t &t) const {return (buffer[Par_idx::conv_600][t] > 0.5);}
     bool get_slan_400(const uint32_t &t) const {return (buffer[Par_idx::slan_400][t] > 0.5);}
@@ -132,7 +134,7 @@ struct netcdf_reader_t {
     uint32_t traj_idx; /*!< Index of trajectory to read from. */
     uint32_t ens_idx; /*!< Index of ensemble to read from. */
     bool already_open; /*!< Is the netCDF file already open? */
-    // uint32_t num_sub_steps;
+
     /**
      * ID for dimensions of output file.
      */

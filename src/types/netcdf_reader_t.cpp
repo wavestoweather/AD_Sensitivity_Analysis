@@ -707,21 +707,21 @@ void netcdf_reader_t::read_initial_values(
         float_t denom = 0;
         denom = (get_at(cc.cloud.max_x - cc.cloud.constants, Particle_cons_idx::min_x))
             / 2.0 + get_at(cc.cloud.constants, Particle_cons_idx::min_x);
-        y_init[Nc_idx] = y_init[qc_idx] / (denom);  // *10e2);  // Nc
+        y_init[Nc_idx] = y_init[qc_idx] / (denom);
         denom = (get_at(cc.rain.max_x - cc.rain.constants, Particle_cons_idx::min_x))
             / 2 + get_at(cc.rain.constants, Particle_cons_idx::min_x);
-        y_init[Nr_idx] = y_init[qr_idx] / (denom);  // *10e2);  // Nr
+        y_init[Nr_idx] = y_init[qr_idx] / (denom);
         denom = get_at(cc.cloud.constants, Particle_cons_idx::min_x) / 2.0;
     #if defined(RK4ICE)
         denom = (get_at(cc.ice.max_x - cc.ice.constants, Particle_cons_idx::min_x))
             / 2.0 + get_at(cc.ice.constants, Particle_cons_idx::min_x);
-        y_init[Ni_idx] = y_init[qi_idx] / (denom);  // *10e2);  // Ni
+        y_init[Ni_idx] = y_init[qi_idx] / (denom);
         denom = (get_at(cc.snow.max_x - cc.snow.constants, Particle_cons_idx::min_x))
             / 2.0 + get_at(cc.snow.constants, Particle_cons_idx::min_x);
-        y_init[Ns_idx] = y_init[qs_idx] / (denom);  // *10e2);  // Ns
+        y_init[Ns_idx] = y_init[qs_idx] / (denom);
         denom = (get_at(cc.graupel.max_x - cc.graupel.constants, Particle_cons_idx::min_x))
             / 2.0 + get_at(cc.graupel.constants, Particle_cons_idx::min_x);
-        y_init[Ng_idx] = y_init[qg_idx] / (denom);  // *10e2);  // Ng
+        y_init[Ng_idx] = y_init[qg_idx] / (denom);
     #endif
 #endif
         // Actually only needed for single moment schemes

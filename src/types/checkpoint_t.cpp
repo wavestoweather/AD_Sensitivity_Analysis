@@ -40,8 +40,6 @@ checkpoint_t::checkpoint_t(
         cc.num_steps -= input.delay_time_store/cc.dt_prime;
     }
 
-    // cc.ens_desc += "- " + std::to_string(old_id) + ","
-    //     + std::to_string(old_tid) + " ";
     this->create_checkpoint(cc, y, segments, input, current_time);
     cc.ensemble_id = old_id;
     cc.traj_id = old_tid;
@@ -89,7 +87,6 @@ int checkpoint_t::load_checkpoint(
     cc.setup_model_constants(input, ref_quant);
     // Parse the model constants
     SUCCESS_OR_DIE(cc.from_pt(checkpoint));
-    // std::cout << "t_end_prime: " << cc.t_end_prime << "\n";
 
     // Parse the segments and store which parameters had been perturbed
     // in ens_descr
@@ -105,7 +102,6 @@ int checkpoint_t::load_checkpoint(
         segments.push_back(segment);
     }
     cc.ens_desc += ens_desc;
-    // input.set_outputfile_id(cc.ensemble_id);
     for (auto &it : checkpoint.get_child("Output Parameters")) {
         y[std::stoi(it.first)] = std::stod(it.second.data());
     }

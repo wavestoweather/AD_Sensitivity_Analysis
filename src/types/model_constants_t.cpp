@@ -186,12 +186,14 @@ void model_constants_t::put(
     model_cons.put("dt_traject", dt_traject);
     model_cons.put("num_steps", num_steps);
     model_cons.put("num_sub_steps", num_sub_steps);
+    model_cons.put("done_steps", done_steps);
     model_cons.put("dt_half", dt_half);
     model_cons.put("dt_sixth", dt_sixth);
     model_cons.put("dt_third", dt_third);
     model_cons.put("local_num_comp", local_num_comp);
     model_cons.put("local_num_par", local_num_par);
     model_cons.put("track_state", track_state);
+    model_cons.put("checkpoint_steps", checkpoint_steps);
     pt::ptree track_param_tree;
     for (uint32_t i=0; i < track_param.size(); i++)
         track_param_tree.put(std::to_string(i), track_param[i]);
@@ -215,7 +217,6 @@ void model_constants_t::put(
     // collection coefficients depend completely on particle
     // model constants and can be derived from there. So
     // we skip adding that to the checkpoint.
-
     ptree.add_child("model_constants", model_cons);
 }
 
@@ -251,6 +252,8 @@ int model_constants_t::from_pt(
             num_steps = it.second.get_value<uint64_t>();
         } else if (first == "num_sub_steps") {
             num_sub_steps = it.second.get_value<uint64_t>();
+        } else if (first == "checkpoint_steps") {
+            checkpoint_steps = it.second.get_value<uint64_t>();
         } else if (first == "dt_half") {
             dt_half = it.second.get_value<double>();
         } else if (first == "dt_sixth") {

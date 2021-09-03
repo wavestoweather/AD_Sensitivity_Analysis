@@ -60,17 +60,12 @@ void output_handle_t::setup(
             << "and attributes. This can take a while for some simulation "
             << "modes\n";
 
-    if (rank == 0)
-        std::cout << "n_trajs_file: " << this->n_trajs_file
-            << " num_time: " << this->num_time
-            << " vs " <<  delay_out_time / (cc.dt_prime * cc.num_sub_steps) + this->num_time << "\n";
-
     flushed_snapshots = 0;
     n_snapshots = 0;
     // Allocate memory for the buffer
     // maximum number of snapshots we are going to get
     total_snapshots = std::ceil((static_cast<float>(write_index))/snapshot_index);
-    const uint64_t vec_size = total_snapshots;  // n_snapshots * num_comp;
+    const uint64_t vec_size = total_snapshots;
     const uint64_t vec_size_grad = num_comp * total_snapshots;
     for (uint32_t i=0; i < num_comp; i++)
         output_buffer[i].resize(vec_size);
@@ -94,8 +89,8 @@ void output_handle_t::setup(
     // open it in parallel again for writing purpose
     if (rank == 0) {
         SUCCESS_OR_DIE(nc_create(
-            filename.c_str(),  // path
-            NC_NETCDF4,                     // creation mode
+            filename.c_str(),
+            NC_NETCDF4,
             &ncid));
         // Create dimensions
         // If there is only one model state variable for which we gather
@@ -816,7 +811,7 @@ void output_handle_t::setup(
         std::vector<float> time_steps(num_time);
 #endif
         for (uint32_t i=0; i < num_time; i++)
-            time_steps[i] = cc.dt*i + cc.start_time + delay_out_time;  // start + i*dt
+            time_steps[i] = cc.dt*i + cc.start_time + delay_out_time;
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,                       // ncid
@@ -968,8 +963,6 @@ void output_handle_t::setup(
         for (uint32_t i=0; i < output_grad_idx.size(); i++)
             if (cc.trace_check(i, false))
                 SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
-        // for (auto &id : varid)
-        //     SUCCESS_OR_DIE(nc_var_par_access(ncid, id, NC_INDEPENDENT));
     }
 }
 
@@ -1012,7 +1005,6 @@ void output_handle_t::buffer_gradient(
 void output_handle_t::buffer(
     const model_constants_t &cc,
     const netcdf_reader_t &netcdf_reader,
-    // const nc_parameters_t &nc_params,
     const std::vector<codi::RealReverse> &y_single_new,
     const std::vector< std::array<double, num_par > >  &y_diff,
     const uint32_t sub,
@@ -1114,11 +1106,6 @@ void output_handle_t::flush_buffer(
     countp.push_back(1);
     countp.push_back(n_snapshots);
 
-    std::cout << "flushed_snapshots: " << flushed_snapshots
-        << " n_snapshots: " << n_snapshots
-        << " ens: " << ens
-        << " traj: " << traj << "\n";
-
     for (uint64_t i=0; i < num_comp; i++) {
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -1219,7 +1206,6 @@ void output_handle_t::flush_buffer(
 void output_handle_t::process_step(
     const model_constants_t &cc,
     const netcdf_reader_t &netcdf_reader,
-    // const nc_parameters_t &nc_params,
     const std::vector<codi::RealReverse> &y_single_new,
     const std::vector< std::array<double, num_par > >  &y_diff,
     const uint32_t sub,

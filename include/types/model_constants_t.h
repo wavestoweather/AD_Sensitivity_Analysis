@@ -156,6 +156,10 @@ struct model_constants_t {
     double dt_traject;        /*!< Timestep size of the trajectory from the netCDF file. */
     uint64_t num_steps;       /*!< Number of time steps to read from the netCDF file. */
     uint64_t done_steps;      /*!< Number of time steps already done before loading a checkpoint. */
+    /**
+     * Number of already done steps from the checkpoint. Needed to get the correct index for the netcdf reader.
+     */
+    uint64_t checkpoint_steps;
     double start_time;        /*!< Start time in seconds from the netCDF file. */
 
     /**

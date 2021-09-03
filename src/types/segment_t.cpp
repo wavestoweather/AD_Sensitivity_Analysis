@@ -275,6 +275,7 @@ void segment_t::perturb(
     }
     // Perturb every param
     for (auto &p : params) {
+        p.positive = cc.traj_id%2;
         p.perturb(cc);
         descr += p.get_name() + " ";
     }

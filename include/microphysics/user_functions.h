@@ -228,7 +228,6 @@ void ccn_act_hande(
         if (trace)
             std::cout << "Ascent dqv " << -delta_q << "\n";
 #endif
-
         float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
         // Evaporation
         if (delta_q < 0.0)

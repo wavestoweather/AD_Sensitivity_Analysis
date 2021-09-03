@@ -122,7 +122,6 @@ void task_scheduler_t::send_new_task(
         checkpoint.send_checkpoint(idx);
         free_worker[idx] = 0;
     } else {
-        // std::cout << "putting to queue\n";
         checkpoint_queue.push(checkpoint);
         work_available[my_rank]++;
         if (my_rank != 0) {
@@ -151,13 +150,13 @@ void task_scheduler_t::signal_send_task() {
                                 MPI_Win_lock(MPI_LOCK_EXCLUSIVE, work_idx, 0, free_window));
                         SUCCESS_OR_DIE(
                             MPI_Put(
-                                &free,  // source
-                                1,  // count
-                                MPI_INT8_T,  // datatype
-                                work_idx,  // target
-                                worker,  // displacement in target
-                                1,  // target count
-                                MPI_INT8_T,  // target datatype
+                                &free,          // source
+                                1,              // count
+                                MPI_INT8_T,     // datatype
+                                work_idx,       // target
+                                worker,         // displacement in target
+                                1,              // target count
+                                MPI_INT8_T,     // target datatype
                                 free_window));
                         if (work_idx > 0)
                             MPI_Win_unlock(work_idx, free_window);
@@ -225,13 +224,13 @@ bool task_scheduler_t::receive_task(
                         MPI_Win_lock(MPI_LOCK_EXCLUSIVE, i, 0, free_window));
                     SUCCESS_OR_DIE(
                     MPI_Put(
-                        free_worker.data(),  // source
-                        1,  // count
-                        MPI_INT8_T,  // datatype
-                        i,  // target
-                        0,  // displacement in target
-                        1,  // target count
-                        MPI_INT8_T,  // target datatype
+                        free_worker.data(),     // source
+                        1,                      // count
+                        MPI_INT8_T,             // datatype
+                        i,                      // target
+                        0,                      // displacement in target
+                        1,                      // target count
+                        MPI_INT8_T,             // target datatype
                         free_window));
                     MPI_Win_unlock(i, free_window);
                 }
@@ -261,13 +260,13 @@ void task_scheduler_t::signal_free() {
     std::int8_t free = 1;
     SUCCESS_OR_DIE(
         MPI_Put(
-            &free,  // source
-            1,  // count
-            MPI_INT8_T,  // datatype
-            0,  // target
-            my_rank,  // displacement in target
-            1,  // target count
-            MPI_INT8_T,  // target datatype
+            &free,          // source
+            1,              // count
+            MPI_INT8_T,     // datatype
+            0,              // target
+            my_rank,        // displacement in target
+            1,              // target count
+            MPI_INT8_T,     // target datatype
             free_window));
     MPI_Win_unlock(0, free_window);
 }
@@ -279,13 +278,13 @@ void task_scheduler_t::signal_work_avail() {
     std::int8_t work = checkpoint_queue.size();
     SUCCESS_OR_DIE(
         MPI_Put(
-            &work,  // source
-            1,  // count
-            MPI_INT8_T,  // datatype
-            0,  // target
-            my_rank,  // displacement in target
-            1,  // target count
-            MPI_INT8_T,  // target datatype
+            &work,          // source
+            1,              // count
+            MPI_INT8_T,     // datatype
+            0,              // target
+            my_rank,        // displacement in target
+            1,              // target count
+            MPI_INT8_T,     // target datatype
             work_window));
     MPI_Win_unlock(0, work_window);
 }

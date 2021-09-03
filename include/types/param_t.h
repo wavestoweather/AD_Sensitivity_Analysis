@@ -22,6 +22,7 @@ struct param_t{
     int name;
     int out_name;
     bool particle_param;
+    bool positive;
 
     std::function<double()> get_rand; /*!< distribution used for random number generation. */
     std::normal_distribution<double> normal_dis;

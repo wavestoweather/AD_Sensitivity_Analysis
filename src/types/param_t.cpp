@@ -10,6 +10,7 @@ param_t::param_t() {
     out_name        = -1;
     particle_param  = false;
     func_name       = "";
+    positive        = true;
 }
 
 
@@ -127,8 +128,10 @@ void param_t::add_rand_function(
         } else if (func_name == "uniform") {
             uniform_dis = std::uniform_real_distribution<double>(mean-sigma, mean+sigma);
             get_rand = std::bind(uniform_dis, rand_generator);
+        } else if (func_name == "fixed") {
+            // Nothing to be done here
         } else {
-            err = DISTRIBUTION_CONFIG_ERR;
+        err = DISTRIBUTION_CONFIG_ERR;
         }
     }
 }
@@ -195,7 +198,6 @@ void param_t::put(
         param.put("sigma_perc", sigma_perc);
     param.put("rand_func", func_name);
     param.put("type", outparam_name);
-    // ptree.add_child("params.", param);
     ptree.push_back(std::make_pair("", param));
 }
 
@@ -253,10 +255,26 @@ void param_t::perturb(
             default:
                 std::cout << "Error in perturbing...\n";
         }
-        pt_model->constants[name] = get_rand();
+        if (func_name == "fixed") {
+            if (positive) {
+                pt_model->constants[name] = mean+sigma;
+            } else {
+                pt_model->constants[name] = mean-sigma;
+            }
+        } else {
+            pt_model->constants[name] = get_rand();
+        }
         pt_model->perturbed_idx.push_back(name);
     } else {
-        cc.constants[name] = get_rand();
+        if (func_name == "fixed") {
+            if (positive) {
+                cc.constants[name] = mean+sigma;
+            } else {
+                cc.constants[name] = mean-sigma;
+            }
+        } else {
+            cc.constants[name] = get_rand();
+        }
         cc.perturbed_idx.push_back(name);
     }
 }
