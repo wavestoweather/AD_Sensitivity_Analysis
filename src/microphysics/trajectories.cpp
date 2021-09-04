@@ -654,7 +654,7 @@ int main(int argc, char** argv) {
 
     model_constants_t cc = parse_args(argc, argv, rank, n_processes, input,
         global_args, ref_quant, segments, y_init, checkpoint);
-    std::cout << rank << " netcdf_reader " << input.write_index << "\n";
+
     netcdf_reader_t netcdf_reader(input.write_index);
     if ((input.simulation_mode == grid_sensitivity)
         || (input.simulation_mode == trajectory_sensitivity)
