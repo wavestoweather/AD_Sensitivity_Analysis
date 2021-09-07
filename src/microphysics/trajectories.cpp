@@ -715,7 +715,6 @@ int main(int argc, char** argv) {
     } else if (input.simulation_mode == limited_time_ensembles) {
         // static scheduling with parallel read and write enabled
         // The output is based on the ensemble configuration file.
-
         if (rank == 0) {
             setup_simulation_base(argc, argv, rank, n_processes, input,
                 global_args, ref_quant, cc, y_init, y_single_old,

@@ -191,7 +191,6 @@ void run_substeps(
 
     double time_old, time_new;
     for (uint32_t sub=sub_start; sub <= cc.num_sub_steps; ++sub) {
-
         bool last_step = (((sub+1 + t*cc.num_sub_steps) >= ((t+1)*cc.num_sub_steps + 1))
             || (sub == cc.num_sub_steps));
 #if defined(RK4_ONE_MOMENT)
@@ -379,47 +378,48 @@ int main(int argc, char** argv) {
     task_scheduler_t scheduler(rank, n_processes, input.simulation_mode);
 
     if (rank == 0) {
+        for (int iters=0; iters < 20; iters++) {
+            for (int n_out=num_comp; n_out >= 0; n_out--) {
+                for (int n_in=num_par; n_in >= 0; n_in--) {
+                    // state_param from 0 to Cons_idx::n_items
+                    cc.track_state = 0;
+                    for (auto &tp : cc.track_param) tp = 0;
 
-        for (uint32_t n_out=num_comp; n_out>=0; n_out--) {
-            for (uint32_t n_in=num_par; n_in>=0; n_in--) {
-                // state_param from 0 to Cons_idx::n_items
-                cc.track_state = 0;
-                for (auto &tp: cc.track_param) tp = 0;
+                    for (int no=0; no < n_out; no++) cc.track_state += pow(2, no);
+                    for (int ni=0; ni < n_in; ni++) {
+                        uint32_t idx = ni/64;
+                        cc.track_param[idx] += pow(2, ni - idx*64);
+                    }
 
-                for (uint32_t no=0; no<n_out; no++) cc.track_state += pow(2, no);
-                for (uint32_t ni=0; ni<n_in; ni++) {
-                    uint32_t idx = ni/64;
-                    cc.track_param[idx] += pow(2, ni - idx*64);
+                    setup_simulation_base(argc, argv, rank, n_processes, input,
+                        global_args, ref_quant, cc, y_init, y_single_old,
+                        already_loaded, netcdf_reader);
+
+                    scheduler.set_n_ensembles(netcdf_reader.n_ensembles);
+                    scheduler.set_n_trajectories(netcdf_reader.n_trajectories);
+                    cc.traj_id = scheduler.current_traj;
+                    cc.ensemble_id = scheduler.current_ens;
+                    cc.traj_id = 0;
+                    cc.ensemble_id = 0;
+                    netcdf_reader.read_initial_values(y_init, ref_quant, cc,
+                        global_args.checkpoint_flag, cc.traj_id, cc.ensemble_id);
+                    // Set "old" values as temporary holder of values.
+                    for (int ii = 0 ; ii < num_comp ; ii++)
+                        y_single_old[ii] = y_init[ii];
+
+                    auto t_first = std::chrono::system_clock::now();
+                    // run simulation
+                    SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
+                        global_args, y_single_old, y_diff, y_single_new, inflow,
+                        segments, scheduler, netcdf_reader));
+
+                    auto now = std::chrono::system_clock::now();
+                    double time = ((std::chrono::duration<double>)(now - t_first)).count();
+                    std::cout << cc.num_steps - cc.done_steps << ","
+                        << n_in << ","
+                        << n_out << ","
+                        << time << "\n";
                 }
-
-                setup_simulation_base(argc, argv, rank, n_processes, input,
-                    global_args, ref_quant, cc, y_init, y_single_old,
-                    already_loaded, netcdf_reader);
-
-                scheduler.set_n_ensembles(netcdf_reader.n_ensembles);
-                scheduler.set_n_trajectories(netcdf_reader.n_trajectories);
-                cc.traj_id = scheduler.current_traj;
-                cc.ensemble_id = scheduler.current_ens;
-                cc.traj_id = 0;
-                cc.ensemble_id = 0;
-                netcdf_reader.read_initial_values(y_init, ref_quant, cc,
-                    global_args.checkpoint_flag, cc.traj_id, cc.ensemble_id);
-                // Set "old" values as temporary holder of values.
-                for (int ii = 0 ; ii < num_comp ; ii++)
-                    y_single_old[ii] = y_init[ii];
-
-                auto t_first = std::chrono::system_clock::now();
-                // run simulation
-                SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
-                    global_args, y_single_old, y_diff, y_single_new, inflow,
-                    segments, scheduler, netcdf_reader));
-
-                auto now = std::chrono::system_clock::now();
-                double time = ((std::chrono::duration<double>)(now - t_first)).count();
-                std::cout << cc.num_steps - cc.done_steps << ","
-                    << n_in << ","
-                    << n_out << ","
-                    << time << "\n";
             }
         }
     }
