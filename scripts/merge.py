@@ -89,7 +89,9 @@ if __name__ == "__main__":
     for i in pb.progressbar(range(len(file_list))):
         f = file_list[i]
 
-        ds_tmp = xr.open_dataset(f, decode_times=False)  # .reset_index("trajectory")
+        ds_tmp = xr.open_dataset(
+            f, decode_times=False, engine="netcdf4"
+        )  # .reset_index("trajectory")
         ds_tmp = ds_tmp[columns]
         ds_tmp = ds_tmp.loc[{"Output Parameter": "QV"}]
         ds_tmp["tmp"] = ("trajectory", [i])

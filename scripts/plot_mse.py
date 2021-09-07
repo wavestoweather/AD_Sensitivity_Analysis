@@ -423,6 +423,8 @@ def plot_mse(
         df_tmp = df_tmp.loc[df[sens_key] != 0]
         inf_val = None
 
+    if "NC" in title or "_OUT" in title:
+        title = title.replace("Estimation", "Est.")
     mean_traj.plot_mse(
         out_params=out_params,
         mse_df_=df_tmp,
@@ -469,8 +471,6 @@ def plot_time_evolution(
     height=900,
     logy=False,
     logtwin=False,
-    min_time=None,
-    max_time=None,
 ):
     """
     Plot over time after ascent the model state (left y-axis) and
@@ -523,10 +523,6 @@ def plot_time_evolution(
         If true, use log10 on y-axis
     logtwin : bool
         If true, use log10 on twin-axis
-    min_time : float or None
-        If float: Plot starting with this time relative to the ascent in seconds.
-    max_time : float or None
-        If float: Plot ending with this time relative to the ascent in seconds.
     """
     s = 14
     import matplotlib.ticker as tick
@@ -551,6 +547,7 @@ def plot_time_evolution(
         df = df.loc[df["time_after_ascent"] >= min_x]
     if max_x is not None:
         df = df.loc[df["time_after_ascent"] <= max_x]
+
     # Make time after ascent to minuts
     df["time_after_ascent"] /= 60
     y = "Not Perturbed Value"
@@ -564,21 +561,16 @@ def plot_time_evolution(
         df.replace(-np.inf, min_log_y, inplace=True)
     min_log_twin = np.NaN
     if logtwin:
-        df["Predicted Squared Error"] = np.log10(df["Predicted Squared Error"])
+        df["Predicted Error"] = np.log10(df["Predicted Error"])
         min_log_twin = (
-            np.nanmin(
-                df.loc[df["Predicted Squared Error"] != -np.inf][
-                    "Predicted Squared Error"
-                ]
-            )
-            - 1
+            np.nanmin(df.loc[df["Predicted Error"] != -np.inf]["Predicted Error"]) - 1
         )
         df.replace(-np.inf, min_log_twin, inplace=True)
 
-    df = df.loc[df["Predicted Squared Error"] < np.max(df["Predicted Squared Error"])]
+    df = df.loc[df["Predicted Error"] < np.max(df["Predicted Error"])]
 
-    lower_y = np.min(df["Predicted Squared Error"])
-    upper_y = np.max(df["Predicted Squared Error"])
+    lower_y = np.min(df["Predicted Error"])
+    upper_y = np.max(df["Predicted Error"])
     delta = (upper_y - lower_y) / 12
     lower_y -= delta
     upper_y += delta
@@ -614,7 +606,7 @@ def plot_time_evolution(
     data_types = [parse_word(np.unique(df["Output Parameter"])[0])]
     data_types_2 = [np.unique(df["Output Parameter"])[0]]
     for i, rt in enumerate(np.unique(df["Input Parameter"])):
-        data_types.append(parse_word(rt))
+        data_types.append(parse_word(rt).replace(r"\text", r"\mathrm"))
         cmap_values.append(matplotlib.colors.to_hex(cmap(i + 1)[0:-1]))
         cmap_map[rt] = matplotlib.colors.to_hex(cmap(i + 1)[0:-1])
         data_types_2.append(rt)
@@ -653,7 +645,11 @@ def plot_time_evolution(
                 # Can implement an even fancier format here if needed
                 if logy and tick_val == min_log_y:
                     return "-Infinity"
-                return f"{tick_val:1.2e}"
+                return np.format_float_scientific(
+                    tick_val, precision=0, exp_digits=1
+                ).replace(
+                    ".", ""
+                )  # f"{tick_val:1.0e}"
 
             ax.yaxis.set_major_formatter(tick.FuncFormatter(format_fn))
             ax.tick_params(
@@ -710,7 +706,11 @@ def plot_time_evolution(
                 # Can implement an even fancier format here if needed
                 if logtwin and tick_val == min_log_twin:
                     return "-Infinity"
-                return f"{tick_val:1.2e}"
+                return np.format_float_scientific(
+                    tick_val, precision=0, exp_digits=1
+                ).replace(
+                    ".", ""
+                )  # f"{tick_val:1.0e}"
 
             twinax.yaxis.set_major_formatter(tick.FuncFormatter(format_fn))
             twinax.tick_params(
@@ -732,7 +732,7 @@ def plot_time_evolution(
                     df.loc[df["Input Parameter"] == in_p]
                     .hvplot.scatter(
                         x="time_after_ascent",
-                        y="Predicted Squared Error",
+                        y="Predicted Error",
                         alpha=alpha,
                         legend=False,
                         aspect=aspect,
@@ -752,7 +752,7 @@ def plot_time_evolution(
             else:
                 twin = twin * df.loc[df["Input Parameter"] == in_p].hvplot.scatter(
                     x="time_after_ascent",
-                    y="Predicted Squared Error",
+                    y="Predicted Error",
                     alpha=alpha,
                     legend=False,
                     aspect=aspect,
@@ -810,7 +810,7 @@ def plot_time_evolution(
         df["Input Parameter"] = parse_word(df["Input Parameter"])
         twin = df.hvplot.scatter(
             x="time_after_ascent",
-            y="Predicted Squared Error",
+            y="Predicted Error",
             by="Input Parameter",
             alpha=alpha,
             size=s,
@@ -1054,13 +1054,29 @@ if __name__ == "__main__":
         """,
     )
     args = parser.parse_args()
-    ds = xr.open_dataset(args.data_path, decode_times=False)
+    ds = xr.open_dataset(args.data_path, decode_times=False, engine="netcdf4")
     if len(args.out_parameter) == 0:
         out_params = []
         for out_p in ds["Output Parameter"]:
             out_params.append(out_p.item())
     else:
         out_params = args.out_parameter
+
+    param_title_names = {
+        "QV": "Water Vapor",
+        "QC": "Cloud",
+        "QR": "Rain",
+        "QS": "Snow",
+        "QI": "Ice",
+        "QG": "Graupel",
+        "QH": "Hail",
+        "NCCLOUD": "Cloud",
+        "NCRAIN": "Rain",
+        "NCSNOW": "Snow",
+        "NCICE": "Ice",
+        "NCGRAUPEL": "Graupel",
+        "NCHAIL": "Hail",
+    }
 
     if "correlation" in args.plot_variant or args.plot_variant == "histogram":
         for out_p in out_params:
@@ -1092,8 +1108,6 @@ if __name__ == "__main__":
                         ]
                     ]
                 )
-                print("This does not affect the calculation of the ellipse")
-                df["Real Predicted Squared Error"] = df["Predicted Squared Error"]
                 df["Predicted Squared Error"] = df["Predicted Squared Error"].where(
                     df["Predicted Squared Error"] > args.set_zero, 0.0
                 )
@@ -1105,7 +1119,7 @@ if __name__ == "__main__":
                     backend=args.backend,
                     plot_types=args.plot_types,
                     add_zero_sens=args.add_zero_sens,
-                    title=args.title + " for " + out_p,
+                    title=args.title + " for " + param_title_names[out_p],
                     xlabel=args.xlabel,
                     xlabel2=args.ylabel,
                     width=args.width,
@@ -1123,7 +1137,7 @@ if __name__ == "__main__":
                     plot_types=args.plot_types,
                     add_zero_sens=args.add_zero_sens,
                     confidence=args.confidence,
-                    title=args.title + " for " + out_p,
+                    title=args.title + " for " + param_title_names[out_p],
                     xlabel=args.xlabel,
                     ylabel=args.ylabel,
                     width=args.width,
@@ -1170,7 +1184,7 @@ if __name__ == "__main__":
                 df=df_tmp,
                 backend=args.backend,
                 store_path=args.store_path,
-                title=args.title + " for " + out_p,
+                title=args.title + " for " + param_title_names[out_p],
                 xlabel=args.xlabel,
                 ylabel=args.ylabel + " " + parse_word(out_p),
                 twinlabel=args.twinlabel,

@@ -20,7 +20,7 @@ def load_input_datasets(data_path, smooth_coords=True, verbosity=0):
     for f in file_list:
         if args.verbosity > 1:
             t = timer()
-        ds_tmp = xr.open_dataset(f, decode_times=False)
+        ds_tmp = xr.open_dataset(f, decode_times=False, engine="netcdf4")
         n_trajs = len(np.unique(ds_tmp["trajectory"]))
         ds_tmp["tmp"] = ("trajectory", np.arange(traj_index, traj_index + n_trajs))
         ds_tmp = ds_tmp.set_index(trajectory="tmp")
@@ -134,7 +134,7 @@ def load_perturbed_datasets(data_path, verbosity=0):
         if args.verbosity > 1:
             t = timer()
         f = file_list[i]
-        ds_tmp = xr.open_dataset(f, decode_times=False)
+        ds_tmp = xr.open_dataset(f, decode_times=False, engine="netcdf4")
         # We cut off the sensitivities and take solely the results
         ds_tmp = ds_tmp[columns]
         ds_tmp = ds_tmp.loc[{"Output Parameter": "QV"}]
@@ -194,7 +194,7 @@ def load_ensemble_datasets(data_path, verbosity=0):
         # print(f"Loading {perturbed_param}")
         if perturbed_param == "_notPerturbed":
             return None
-        ds_tmp = xr.open_dataset(f, decode_times=False)
+        ds_tmp = xr.open_dataset(f, decode_times=False, engine="netcdf4")
         ds_tmp["Perturbed_Parameter"] = perturbed_param
         return ds_tmp
 

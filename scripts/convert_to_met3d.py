@@ -416,7 +416,7 @@ def convert_wcb2(f, store_path, fl, ensemble):
     ensemble : int
         ID of ensemble from file.
     """
-    ds = xr.open_dataset(f).to_dataframe().reset_index()
+    ds = xr.open_dataset(f, engine="netcdf4").to_dataframe().reset_index()
 
     ds.rename(
         columns={
@@ -428,7 +428,7 @@ def convert_wcb2(f, store_path, fl, ensemble):
         inplace=True,
     )
     ds["ensemble"] = ensemble  # Number of ensembles
-    ds_2 = xr.open_dataset(f[:-4])
+    ds_2 = xr.open_dataset(f[:-4], engine="netcdf4")
 
     duration = ds_2.attrs["duration_in_sec"]
     pollon = ds_2.attrs["pollon"]

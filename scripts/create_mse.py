@@ -39,13 +39,17 @@ def load_and_append(name_list, filetype="csv"):
                 if filetype == "csv":
                     all_df = d_unnamed(pd.read_csv(name))
                 else:
-                    all_df = xr.open_dataset(name, decode_times=False).to_dataframe()
+                    all_df = xr.open_dataset(
+                        name, decode_times=False, engine="netcdf4"
+                    ).to_dataframe()
             else:
                 if filetype == "csv":
                     all_df = all_df.append(d_unnamed(pd.read_csv(name)))
                 else:
                     all_df = all_df.append(
-                        xr.open_dataset(name, decode_times=False).to_dataframe()
+                        xr.open_dataset(
+                            name, decode_times=False, engine="netcdf4"
+                        ).to_dataframe()
                     )
         except:
             pass

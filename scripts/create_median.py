@@ -250,7 +250,7 @@ def add_attrs(ds, ref_ds_path=None, attrs=None):
     Dataset with added attributes.
     """
     if ref_ds_path is not None:
-        ds_2 = xr.open_dataset(ref_ds_path, decode_times=False)
+        ds_2 = xr.open_dataset(ref_ds_path, decode_times=False, engine="netcdf4")
         duration = ds_2.attrs["duration_in_sec"]
         pollon = ds_2.attrs["pollon"]
         pollat = ds_2.attrs["pollat"]
@@ -572,7 +572,11 @@ def get_percentiles(
             # if iteri >= 5:
             #     continue
             # ds_tmp = xr.open_dataset(f, decode_times=False)
-            ds_tmp = xr.open_dataset(f, decode_times=False).to_dataframe().reset_index()
+            ds_tmp = (
+                xr.open_dataset(f, decode_times=False, engine="netcdf4")
+                .to_dataframe()
+                .reset_index()
+            )
             ds_tmp = ds_tmp[(ds_tmp.time_after_ascent >= -10000)]
 
             if version == "excl other":
@@ -891,7 +895,7 @@ def add_flags(path="/data/project/wcb/netcdf/traj_stats/"):
 
     file_list = np.sort(np.asarray(file_list))
     for f in file_list:
-        with xr.open_dataset(f) as ds:
+        with xr.open_dataset(f, engine="netcdf4") as ds:
             if "conv_400" in f:
                 conv_400 = (
                     ds["P"]
@@ -956,7 +960,7 @@ def get_percentiles_slan_600():
         t_c = timer()
         ds = None
         for f in file_list[i : i + 3]:
-            ds_tmp = xr.open_dataset(f).to_dataframe().reset_index()
+            ds_tmp = xr.open_dataset(f, engine="netcdf4").to_dataframe().reset_index()
             ids = ds_tmp.loc[ds_tmp[fl] == True]["id"]
             ds_tmp = ds_tmp.loc[ds_tmp["id"].isin(ids)]
             if ds is None:
@@ -997,7 +1001,7 @@ def get_percentiles_slan_600():
         for j, f in enumerate(file_list):
             if finished[j]:
                 continue
-            ds_tmp = xr.open_dataset(f).to_dataframe().reset_index()
+            ds_tmp = xr.open_dataset(f, engine="netcdf4").to_dataframe().reset_index()
             # Load only certain timesteps
             ds_tmp = ds_tmp.loc[
                 (ds_tmp.time > (min_time + n * i))
@@ -1128,7 +1132,7 @@ def merge_stuff(
         ds_ens = []
         for f in file_list:
             if ens in f:
-                ds_tmp = xr.open_dataset(f, decode_times=False)
+                ds_tmp = xr.open_dataset(f, decode_times=False, engine="netcdf4")
                 # Unfortunately, we need to make sure the time coordinates
                 # are somewhat similar ie modulo 20
                 # Since we are merging "representatives" the exact time

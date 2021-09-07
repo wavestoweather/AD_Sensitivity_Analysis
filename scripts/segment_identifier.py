@@ -88,7 +88,7 @@ def load_sensitivity(path, out_params, in_params=["da_1"]):
         Dataframe with model state parameters, sensitivities
         and time after ascent.
     """
-    ds = xr.open_dataset(path, decode_times=False)
+    ds = xr.open_dataset(path, decode_times=False, engine="netcdf4")
     ds = ds.loc[{"Output Parameter": out_params}][
         out_params + in_params + ["time_after_ascent"]
     ]
@@ -233,6 +233,7 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
                     ds = xr.open_dataset(
                         load_path,
                         decode_times=False,
+                        engine="netcdf4",
                     )
                     tmp1 = np.asarray(ds[out_p].load())
                     tmp2 = np.asarray(val_only_df[out_p])
@@ -250,6 +251,7 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
                     ds = xr.open_dataset(
                         load_path,
                         decode_times=False,
+                        engine="netcdf4",
                     )
                     tmp1 = np.asarray(ds[out_p].load())
                     tmp2 = np.asarray(val_only_df[out_p])
@@ -265,6 +267,7 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
     return xr.Dataset(
         data_vars={
             "Predicted Squared Error": (list(dim_order), predicted ** 2),
+            "Predicted Error": (list(dim_order), predicted),
             "Mean Squared Error": (list(dim_order), mse),
             "Not Perturbed Value": (
                 ["Output Parameter", "trajectory", "time_after_ascent"],
@@ -325,7 +328,7 @@ def parse_load(
         # ie data2_327.nc
         if verbosity > 1:
             print(f"Loading {data_path}")
-        data = xr.open_dataset(data_path, decode_times=False)
+        data = xr.open_dataset(data_path, decode_times=False, engine="netcdf4")
         data = data.where(data["time_after_ascent"] >= min_time, drop=True)
     else:
         if verbosity > 1:
@@ -3118,7 +3121,7 @@ def create_big_stratified_set(
         # ie data2_327.nc
         if verbosity > 1:
             print(f"Loading {data_path}")
-        data = xr.open_dataset(data_path, decode_times=False)
+        data = xr.open_dataset(data_path, decode_times=False, engine="netcdf4")
         append_data(data)
 
     else:

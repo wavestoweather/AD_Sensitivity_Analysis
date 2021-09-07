@@ -241,7 +241,7 @@ def load_mult_derivates_direc_dic(
             files = sorted(glob(direc + "/" + file_ending))
             df = None
             for f in files:
-                ds = xr.open_dataset(f, decode_times=False)
+                ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")
                 if "Output Parameter" in ds:
                     if df is not None:
                         df = df.append(
@@ -275,7 +275,11 @@ def load_mult_derivates_direc_dic(
                             dim_order=["ensemble", "trajectory", "time"]
                         )
         else:
-            ds = xr.open_dataset(direc + "/" + file_ending, decode_times=False)
+            ds = xr.open_dataset(
+                direc + "/" + file_ending,
+                decode_times=False,
+                engine="netcdf4",
+            )
             if "Output Parameter" in ds:
                 if "Output Parameter" not in ds.dims:
                     ds = ds.expand_dims("Output Parameter")
@@ -313,9 +317,11 @@ def load_mult_derivates_direc_dic(
             file_list = np.sort(np.asarray(file_list))
             for f in file_list:
                 if df is None:
-                    df = xr.open_dataset(f).to_dataframe()
+                    df = xr.open_dataset(f, engine="netcdf4").to_dataframe()
                 else:
-                    df = df.append(xr.open_dataset(f).to_dataframe())  # [columns])
+                    df = df.append(
+                        xr.open_dataset(f, engine="netcdf4").to_dataframe()
+                    )  # [columns])
             # Make id and time columns instead of MultiIndex
             df.reset_index(inplace=True)
     return df

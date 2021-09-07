@@ -104,7 +104,7 @@ def load_data(data_path, traj_type, verbosity=0):
     for f in file_list:
         if verbosity > 0:
             print(f"Loading {f}")
-        ds = xr.open_dataset(f, decode_times=False)
+        ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")
         ds = ds.where(
             ((ds["time_after_ascent"] >= -2800) & (ds["time_after_ascent"] <= 26000)),
             drop=True,

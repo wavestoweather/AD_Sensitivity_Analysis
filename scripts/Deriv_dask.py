@@ -2904,8 +2904,9 @@ class Deriv_dask:
                 perturbed_param = "d" + f.split("/")[-1][0:-7]
                 if perturbed_param not in in_params:
                     continue
-                ds = xr.open_dataset(f, decode_times=False)[out_params]  #
-                # print(f"\n{i}: {np.min(ds.time)}, {np.max(ds.time)}")
+                ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")[
+                    out_params
+                ]
                 ds = ds.sel(time=np.arange(min_x, max_x + 20, 20)).compute()
                 for out_param in out_params:
 
@@ -3229,8 +3230,10 @@ class Deriv_dask:
         linewidth : int
             Width of ellipse.
         inf_val : float or None
-            If float: Mark values at this x-value as negative infinity. The
-            confidence ellipse does not take these values into account.
+            If float: Mark values at this x-value as negative infinity.
+            If mse_df has a column "Real Predicted Squared Error", then
+            those datapoints (x != 0) are used for the confidence ellipse. If the
+            column is not present, then no datapoint at x = inf_val is used.
         kwargs : Dict of args
             Arguments are passed to ellipse, i.e. {"color": "red"}
         """
@@ -3438,10 +3441,7 @@ class Deriv_dask:
 
                 if by is None:
                     if inf_val is not None:
-                        if "Real Predicted Squared Error" in df:
-                            df_tmp = df.loc[df["Real Predicted Squared Error"] != 0]
-                        else:
-                            df_tmp = df.loc[df[x] != inf_val]
+                        df_tmp = df.loc[df[x] != inf_val]
                     else:
                         df_tmp = df
                     x = df_tmp[x]
@@ -3458,30 +3458,10 @@ class Deriv_dask:
                             new_kwargs["color"] = color[b]
                         df_tmp = df.loc[df[by] == b]
                         if inf_val is not None:
-                            if "Real Predicted Squared Error" in df_tmp:
-                                df_tmp = df_tmp.loc[
-                                    df_tmp["Real Predicted Squared Error"] != 0
-                                ]
-                                df_tmp = df_tmp.loc[
-                                    df_tmp["Real Predicted Squared Error"] != -np.inf
-                                ]
-                            else:
-                                df_tmp = df_tmp.loc[df_tmp[x] != inf_val]
+                            df_tmp = df_tmp.loc[df_tmp[x] != inf_val]
                         if len(df_tmp[x]) == 1:
                             continue
-                        if (
-                            inf_val is not None
-                            and "Real Predicted Squared Error" in df_tmp
-                        ):
-                            x_df = df_tmp["Real Predicted Squared Error"]
-                            x_df = x_df.rename("Predicted Squared Error")
-                            if ells is None:
-                                ells = create_ellipse(x_df, df_tmp[y], **new_kwargs)
-                            else:
-                                ells = ells * create_ellipse(
-                                    x_df, df_tmp[y], **new_kwargs
-                                )
-                        elif ells is None:
+                        if ells is None:
                             ells = create_ellipse(df_tmp[x], df_tmp[y], **new_kwargs)
                         else:
                             ells = ells * create_ellipse(
@@ -3495,7 +3475,11 @@ class Deriv_dask:
                     min_x = (
                         np.min(tmp_df[sens_key]) - np.abs(np.min(tmp_df[sens_key])) / 10
                     )
-                    max_x = 2
+                    max_x = np.max(tmp_df[sens_key])
+                    if max_x > 0:
+                        max_x = max_x + 2
+                    else:
+                        max_x = 2
                 else:
                     min_x = (
                         np.min(mse_df[sens_key]) - np.abs(np.min(mse_df[sens_key])) / 7
@@ -3552,7 +3536,7 @@ class Deriv_dask:
                     max_y = 0
                     for key in pos_plot:
                         max_x_tick = np.max(key[sens_key])
-                        min_x_tick = 0
+                        min_x_tick = max_x
                         delta_tick = max_x_tick / (this_x_ticks - 1)
                         max_y = np.max(key["Sensitivity_count"])
 
@@ -3577,7 +3561,7 @@ class Deriv_dask:
                         if np.max(key["Sensitivity_count"]) > max_y:
                             max_y = np.max(key["Sensitivity_count"])
                         max_x_tick = np.min(key[sens_key])
-                        min_x_tick = 0
+                        min_x_tick = max_x
                         delta_tick = max_x_tick / (this_x_ticks - 1)
 
                     neg_x_ticks = [
@@ -3825,10 +3809,12 @@ class Deriv_dask:
                         tick_val = int(np.ceil(inf_val / 10.0)) * 10
                         delta_tick = int(-tick_val / (xticks - 1))
                         tick_val += delta_tick
-                        while tick_val < 0:
+                        stop_crit = max_x - 2
+                        if max_x < 0:
+                            stop_crit = 0
+                        while tick_val < stop_crit:
                             xticks_list.append((tick_val, tick_val))
                             tick_val += delta_tick
-                        xticks_list.append((0, 0))
 
                         mse_plot = (
                             tmp_df.hvplot.scatter(
@@ -3931,9 +3917,9 @@ class Deriv_dask:
                                 mse_plot = mse_plot * ells_pos
                         elif kind == "paper":
                             # Assuming -80 are the infinity placements
-                            # tmp_df_ell = tmp_df.loc[tmp_df[sens_key] > -80]
+                            tmp_df_ell = tmp_df.loc[tmp_df[sens_key] > -80]
                             ells = correl_conf_ell(
-                                df=tmp_df,
+                                df=tmp_df_ell,
                                 x=sens_key,
                                 y=error_key,
                                 by=by_col,
