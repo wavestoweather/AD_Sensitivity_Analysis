@@ -264,7 +264,6 @@ void segment_t::perturb(
     // Sanity check if had been done already
     if (n_segments == 0)
         return;
-
     // Change the number of time steps if a fixed duration is given
     if (duration != 0) {
         if (duration + input.current_time + input.start_time < cc.t_end_prime) {
@@ -281,6 +280,16 @@ void segment_t::perturb(
     }
     // When perturbing is done, deativate
     deactivate();
+}
+
+
+void segment_t::reset_variables(
+    model_constants_t &cc) {
+    n_segments++;
+    // Change the previously perturbed values to the original ones
+    for (auto &p : params) {
+        p.reset(cc);
+    }
 }
 
 

@@ -406,6 +406,8 @@ struct segment_t {
         input_parameters_t &input,
         std::string &descr);
 
+    void reset_variables(model_constants_t &cc);
+
     void put(pt::ptree &ptree) const;
 
     /**

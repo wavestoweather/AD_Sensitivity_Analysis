@@ -280,6 +280,41 @@ void param_t::perturb(
 }
 
 
+void param_t::reset(
+    model_constants_t &cc) const {
+    if (particle_param) {
+        particle_model_constants_t *pt_model = nullptr;
+        switch (out_name) {
+            case static_cast<uint32_t>(OutParam::cloud):
+                pt_model = &(cc.cloud);
+                break;
+            case static_cast<uint32_t>(OutParam::rain):
+                pt_model = &(cc.rain);
+                break;
+            case static_cast<uint32_t>(OutParam::snow):
+                pt_model = &(cc.snow);
+                break;
+            case static_cast<uint32_t>(OutParam::graupel):
+                pt_model = &(cc.graupel);
+                break;
+            case static_cast<uint32_t>(OutParam::hail):
+                pt_model = &(cc.hail);
+                break;
+            case static_cast<uint32_t>(OutParam::ice):
+                pt_model = &(cc.ice);
+                break;
+            default:
+                std::cout << "Error in perturbing...\n";
+        }
+        pt_model->constants[name] = mean;
+        pt_model->perturbed_idx.pop_back();
+    } else {
+        cc.constants[name] = mean;
+        cc.perturbed_idx.pop_back();
+    }
+}
+
+
 std::string param_t::get_name() const {
     if (particle_param) {
         return (outparam_name + "_" + param_name);

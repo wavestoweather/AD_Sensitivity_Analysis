@@ -63,5 +63,7 @@ struct param_t{
 
     void perturb(model_constants_t &cc) const;
 
+    void reset(model_constants_t &cc) const;
+
     std::string get_name() const;
 };

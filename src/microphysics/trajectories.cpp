@@ -314,6 +314,7 @@ void parameter_check(
                     ens_id = scheduler.max_ensemble_id;
                 }
                 if (ens_id < cc.n_ensembles) {
+                    // std::cout << "not perturbed: " << get_at(cc.constants, Cons_idx::a_ccn_1) << "\n";
                     for (uint32_t i=1; i < s.n_members; ++i) {
                         const uint64_t total_members = s.n_members;
                         uint64_t duration = s.limit_duration() / (cc.dt_prime * cc.num_sub_steps);
@@ -322,6 +323,13 @@ void parameter_check(
                                 - (time_old/(cc.dt_prime * cc.num_sub_steps));
                         }
                         cc.checkpoint_steps = abs(time_old)/cc.dt_prime;
+                        // std::cout << "Creating checkpoint " << i << "\n";
+                        if (input.simulation_mode == limited_time_ensembles) {
+                            std::string throw_away = "";
+                            s.activated = true;
+                            s.perturb(cc, ref_quant, input, throw_away);
+                        }
+                        // std::cout << get_at(cc.constants, Cons_idx::a_ccn_1) << "\n";
                         checkpoint_t checkpoint(
                             cc,
                             y_single_old,
@@ -333,6 +341,9 @@ void parameter_check(
                             total_members,
                             duration);
                         scheduler.send_new_task(checkpoint);
+                        if (input.simulation_mode == limited_time_ensembles) {
+                            s.reset_variables(cc);
+                        }
                     }
                 }
 #else
@@ -496,7 +507,8 @@ void run_substeps(
             finish_last_step(y_single_new, ref_quant, cc);
         }
 #endif
-        cc.get_gradients(y_single_new, y_diff, tape);
+        if (cc.traj_id == 0 || input.simulation_mode != limited_time_ensembles)
+            cc.get_gradients(y_single_new, y_diff, tape);
 
         // Time update
         time_new = (sub + t*cc.num_sub_steps)*cc.dt;

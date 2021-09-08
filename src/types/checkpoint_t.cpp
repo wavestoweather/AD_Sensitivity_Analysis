@@ -58,6 +58,7 @@ void checkpoint_t::create_checkpoint(
     const double &current_time) {
     // First we add the ensemble configuration
     pt::ptree segment_tree;
+
     for (auto &s : segments)
         s.put(segment_tree);
 
@@ -97,6 +98,7 @@ int checkpoint_t::load_checkpoint(
         SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
 
         if (segment.activated) {
+            std::cout << cc.traj_id << "load perturb\n";
             segment.perturb(cc, ref_quant, input, ens_desc);
         }
         segments.push_back(segment);

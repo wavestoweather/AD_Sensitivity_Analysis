@@ -28,22 +28,6 @@ if( TARGET )
             target_link_libraries(trajectories ${GSL_LIBRARIES} ${NETCDF_LIBRARIES})
         endif()
     endif()
-
-    if( "${TARGET}" MATCHES "load_test" )
-        add_executable(load_test scratch/load_test.cpp)
-        target_link_libraries(load_test types)
-    endif()
-
-    if( "${TARGET}" MATCHES "netcdf_test" )
-        add_executable(netcdf_test scratch/netcdf_test.cpp)
-        target_link_libraries(netcdf_test types)
-    endif()
-
-    if( "${TARGET}" MATCHES "scan" )
-        add_executable(scan scratch/scan.cpp)
-        target_link_libraries(scan types)
-    endif()
-
     if( "${TARGET}" MATCHES "timing" )
         add_executable(timing ${TYPES_SRCS} microphysics/timing.cpp)
         set_property(TARGET timing PROPERTY CXX_STANDARD 14)

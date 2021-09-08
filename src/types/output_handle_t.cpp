@@ -156,25 +156,53 @@ void output_handle_t::setup(
                     &dimid[Dim_idx::ensemble_dim],
                     &varid[i]));
         // gradients
-        auto dim_pointer = &dimid[Dim_idx::out_param_dim];
-        int n_dims = 4;
-        if (local_num_comp == 1) {
-            dim_pointer = &dimid[Dim_idx::ensemble_dim];
-            n_dims = 3;
-        }
-        for (uint32_t i=0; i < output_grad_idx.size(); ++i) {
-            if (cc.trace_check(i, false)) {
-                SUCCESS_OR_DIE(nc_def_var(
-                    ncid,
-                    output_grad_idx[i].c_str(),
+        if (this->simulation_mode != limited_time_ensembles) {
+            auto dim_pointer = &dimid[Dim_idx::out_param_dim];
+            int n_dims = 4;
+            if (local_num_comp == 1) {
+                dim_pointer = &dimid[Dim_idx::ensemble_dim];
+                n_dims = 3;
+            }
+            for (uint32_t i=0; i < output_grad_idx.size(); ++i) {
+                if (cc.trace_check(i, false)) {
+                    SUCCESS_OR_DIE(nc_def_var(
+                        ncid,
+                        output_grad_idx[i].c_str(),
 #ifdef OUT_DOUBLE
-                    NC_DOUBLE,
+                        NC_DOUBLE,
 #else
-                    NC_FLOAT,
+                        NC_FLOAT,
 #endif
-                    n_dims,
-                    dim_pointer,
-                    &varid[Var_idx::n_vars + i]));
+                        n_dims,
+                        dim_pointer,
+                        &varid[Var_idx::n_vars + i]));
+                }
+            }
+        } else {
+            std::vector<int> dimid_tmp;
+            auto dim_pointer = &dimid[Dim_idx::time_dim];
+            int n_dims = 1;
+            if (local_num_comp > 1) {
+                // std::vector<int> dimid_tmp;
+                dimid_tmp.push_back(dimid[Dim_idx::out_param_dim]);
+                dimid_tmp.push_back(dimid[Dim_idx::time_dim]);
+                dim_pointer = &dimid_tmp[0];
+                n_dims = 2;
+            }
+            for (uint32_t i=0; i < output_grad_idx.size(); ++i) {
+                if (cc.trace_check(i, false)) {
+                    SUCCESS_OR_DIE(nc_def_var(
+                        ncid,
+                        output_grad_idx[i].c_str(),
+#ifdef OUT_DOUBLE
+                        NC_DOUBLE,
+#else
+                        NC_FLOAT,
+#endif
+                        n_dims,
+                        dim_pointer,
+                        &varid[Var_idx::n_vars + i]));
+                }
             }
         }
 
@@ -786,8 +814,8 @@ void output_handle_t::setup(
             strlen("yes"),
             "yes"));
         // in theory, one could apply compression here
-        // if (!(this->simulation_mode == trajectory_sensitvity_perturbance)
-        //     && !(this->simulation_mode == trajectory_perturbance)) {
+        // but this needs HDF5 >=1.10.2
+        // if (this->simulation_mode == limited_time_ensembles) {
         //     for (auto &id : varid)
         //         SUCCESS_OR_DIE(
         //             nc_def_var_deflate(
@@ -1068,8 +1096,8 @@ void output_handle_t::buffer(
                 break;
         }
     }
-
-    buffer_gradient(cc, y_diff, snapshot_index);
+    if (this->simulation_mode != limited_time_ensembles || cc.traj_id == 0)
+        buffer_gradient(cc, y_diff, snapshot_index);
 
     // lat
     output_buffer[Buffer_idx::lat_buf][n_snapshots] =
@@ -1158,44 +1186,83 @@ void output_handle_t::flush_buffer(
             countp.data(),
             output_buffer_int[0].data()));
     // gradients
-    startp.insert(startp.begin(), 0);
-    countp.insert(countp.begin(), local_num_comp);
-    // Use an offset if the number of snapshots does not fit
-    // This is necessary since the slow index is [0] (Output Parameter)
-    // and the fast index is [3] (time), which has gaps now
-    if (countp[3] != total_snapshots) {
-        std::vector<std::ptrdiff_t> stridep, imap;
-        stridep.push_back(1);
-        stridep.push_back(1);
-        stridep.push_back(1);
-        stridep.push_back(1);
-        imap.push_back(total_snapshots);
-        imap.push_back(1);
-        imap.push_back(1);
-        imap.push_back(1);
+    if (this->simulation_mode != limited_time_ensembles) {
+        startp.insert(startp.begin(), 0);
+        countp.insert(countp.begin(), local_num_comp);
+        // Use an offset if the number of snapshots does not fit
+        // This is necessary since the slow index is [0] (Output Parameter)
+        // and the fast index is [3] (time), which has gaps now
+        if (countp[3] != total_snapshots) {
+            std::vector<std::ptrdiff_t> stridep, imap;
+            stridep.push_back(1);
+            stridep.push_back(1);
+            stridep.push_back(1);
+            stridep.push_back(1);
+            imap.push_back(total_snapshots);
+            imap.push_back(1);
+            imap.push_back(1);
+            imap.push_back(1);
 
-        for (uint64_t j=0; j < num_par; j++) {
-            if (cc.trace_check(j, false))
-                SUCCESS_OR_DIE(
-                    nc_put_varm(
-                        ncid,
-                        varid[Var_idx::n_vars + j],
-                        startp.data(),
-                        countp.data(),
-                        stridep.data(),
-                        imap.data(),
-                        output_buffer[Buffer_idx::n_buffer + j].data()));
+            for (uint64_t j=0; j < num_par; j++) {
+                if (cc.trace_check(j, false))
+                    SUCCESS_OR_DIE(
+                        nc_put_varm(
+                            ncid,
+                            varid[Var_idx::n_vars + j],
+                            startp.data(),
+                            countp.data(),
+                            stridep.data(),
+                            imap.data(),
+                            output_buffer[Buffer_idx::n_buffer + j].data()));
+            }
+        } else {
+            for (uint64_t j=0; j < num_par; j++) {
+                if (cc.trace_check(j, false))
+                    SUCCESS_OR_DIE(
+                        nc_put_vara(
+                            ncid,
+                            varid[Var_idx::n_vars + j],
+                            startp.data(),
+                            countp.data(),
+                            output_buffer[Buffer_idx::n_buffer + j].data()));
+            }
         }
-    } else {
-        for (uint64_t j=0; j < num_par; j++) {
-            if (cc.trace_check(j, false))
-                SUCCESS_OR_DIE(
-                    nc_put_vara(
-                        ncid,
-                        varid[Var_idx::n_vars + j],
-                        startp.data(),
-                        countp.data(),
-                        output_buffer[Buffer_idx::n_buffer + j].data()));
+    } else if (cc.traj_id == 0) {
+        std::vector<size_t> startp2, countp2;
+        startp2.push_back(0);
+        startp2.push_back(flushed_snapshots);
+        countp2.push_back(local_num_comp);
+        countp2.push_back(n_snapshots);
+        if (countp[1] != total_snapshots) {
+            std::vector<std::ptrdiff_t> stridep, imap;
+            stridep.push_back(1);
+            stridep.push_back(1);
+            imap.push_back(total_snapshots);
+            imap.push_back(1);
+
+            for (uint64_t j=0; j < num_par; j++) {
+                if (cc.trace_check(j, false))
+                    SUCCESS_OR_DIE(
+                        nc_put_varm(
+                            ncid,
+                            varid[Var_idx::n_vars + j],
+                            startp2.data(),
+                            countp2.data(),
+                            stridep.data(),
+                            imap.data(),
+                            output_buffer[Buffer_idx::n_buffer + j].data()));
+            }
+        } else {
+            for (uint64_t j=0; j < num_par; j++) {
+                if (cc.trace_check(j, false))
+                    SUCCESS_OR_DIE(
+                        nc_put_vara(
+                            ncid,
+                            varid[Var_idx::n_vars + j],
+                            startp2.data(),
+                            countp2.data(),
+                            output_buffer[Buffer_idx::n_buffer + j].data()));
+            }
         }
     }
     flushed_snapshots += n_snapshots;
@@ -1223,7 +1290,7 @@ void output_handle_t::process_step(
         || (t == cc.num_steps-1 && last_step)) {
         this->buffer(cc, netcdf_reader, y_single_new, y_diff, sub, t,
             time_new, ensemble, ref_quant, snapshot_index);
-    } else {
+    } else if (this->simulation_mode != limited_time_ensembles || cc.traj_id == 0) {
         this->buffer_gradient(cc, y_diff, snapshot_index);
     }
 
@@ -1232,24 +1299,3 @@ void output_handle_t::process_step(
         this->flush_buffer(cc);
     }
 }
-
-// void output_handle_t::put(
-//     pt::ptree &ptree) const {
-//     pt::ptree out_handle;
-//     out_handle.put("flushed_snapshots", flushed_snapshots);
-//     ptree.add_child("output_handle", out_handle);
-// }
-
-// int output_handle_t::from_pt(
-//     pt::ptree &ptree) {
-//     int err = 0;
-//     for (auto &it : ptree.get_child("model_constants")) {
-//         auto first = it.first;
-//         if (first == "flushed_snapshots") {
-//             this->flushed_snapshots = it.second.get_value<uint64_t>();
-//         } else {
-//             err = MODEL_CONS_CHECKPOINT_ERR;
-//         }
-//     }
-//     return err;
-// }
