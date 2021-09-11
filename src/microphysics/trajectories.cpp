@@ -186,7 +186,7 @@ void setup_simulation(
     netcdf_reader_t &netcdf_reader) {
     checkpoint.load_checkpoint(cc, y_init, segments, input, ref_quant, out_handler);
     if (cc.checkpoint_steps > 0)
-        netcdf_reader.start_time_idx = cc.checkpoint_steps - 1;
+        netcdf_reader.start_time_idx = netcdf_reader.start_time_idx_original + cc.checkpoint_steps - 1;
     setup_simulation_base(argc, argv, rank, n_processes, input,
             global_args, ref_quant, cc, y_init, y_single_old,
             already_loaded, netcdf_reader);
@@ -314,7 +314,6 @@ void parameter_check(
                     ens_id = scheduler.max_ensemble_id;
                 }
                 if (ens_id < cc.n_ensembles) {
-                    // std::cout << "not perturbed: " << get_at(cc.constants, Cons_idx::a_ccn_1) << "\n";
                     for (uint32_t i=1; i < s.n_members; ++i) {
                         const uint64_t total_members = s.n_members;
                         uint64_t duration = s.limit_duration() / (cc.dt_prime * cc.num_sub_steps);
@@ -323,13 +322,11 @@ void parameter_check(
                                 - (time_old/(cc.dt_prime * cc.num_sub_steps));
                         }
                         cc.checkpoint_steps = abs(time_old)/cc.dt_prime;
-                        // std::cout << "Creating checkpoint " << i << "\n";
                         if (input.simulation_mode == limited_time_ensembles) {
                             std::string throw_away = "";
                             s.activated = true;
                             s.perturb(cc, ref_quant, input, throw_away);
                         }
-                        // std::cout << get_at(cc.constants, Cons_idx::a_ccn_1) << "\n";
                         checkpoint_t checkpoint(
                             cc,
                             y_single_old,
@@ -727,29 +724,9 @@ int main(int argc, char** argv) {
     } else if (input.simulation_mode == limited_time_ensembles) {
         // static scheduling with parallel read and write enabled
         // The output is based on the ensemble configuration file.
-        if (rank == 0) {
-            setup_simulation_base(argc, argv, rank, n_processes, input,
-                global_args, ref_quant, cc, y_init, y_single_old,
-                already_loaded, netcdf_reader);
-            cc.max_n_trajs = segments[0].n_members;
-        } else {
-            input.delay_time_store = 0;
-        }
-        // Communicate to everyone how many trajectories there are
-        SUCCESS_OR_DIE(
-            MPI_Bcast(
-                &cc.max_n_trajs,
-                1,
-                MPI_UNSIGNED_LONG,
-                0,
-                MPI_COMM_WORLD));
-        SUCCESS_OR_DIE(
-            MPI_Bcast(
-                &input.delay_time_store,
-                1,
-                MPI_DOUBLE,
-                0,
-                MPI_COMM_WORLD));
+        setup_simulation_base(argc, argv, rank, n_processes, input,
+            global_args, ref_quant, cc, y_init, y_single_old,
+            already_loaded, netcdf_reader);
 
         output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
             ref_quant, input.INPUT_FILENAME, input.write_index,

@@ -540,6 +540,10 @@ void netcdf_reader_t::init_netcdf(
             varid[Par_idx::time_after_ascent],
             startp.data(),
             &rel_start_time));
+    std::cout << cc.traj_id << " start_time: " << start_time
+        << ", rel_start_time: " << rel_start_time
+        << ", checkpoint?: " << checkpoint_flag
+        << ", current_time: " << current_time << "\n";
     if (!std::isnan(start_time) && !checkpoint_flag) {
         // Calculate the needed index
         start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
@@ -553,6 +557,7 @@ void netcdf_reader_t::init_netcdf(
     time_idx = 1;
     this->start_time_idx = 1;
 #endif
+    this->start_time_idx_original = this->start_time_idx;
 }
 
 

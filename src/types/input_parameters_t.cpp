@@ -40,6 +40,7 @@ input_parameters_t::input_parameters_t() {
     id = 0;
     n_ensembles = 0;
     simulation_mode = trajectory_sensitvity_perturbance;
+    delay_time_store = 0;
 }
 
 
@@ -60,7 +61,6 @@ void input_parameters_t::put(
     input_params.put<uint64_t>("num_sub_steps", num_sub_steps);
     input_params.put<std::string>("OUTPUT_FILENAME", OUTPUT_FILENAME);
     input_params.put<std::string>("INPUT_FILENAME", INPUT_FILENAME);
-    // input_params.put<bool>("start_over", start_over);
     input_params.put<bool>("start_over_env", start_over_env);
     input_params.put<bool>("fixed_iteration", fixed_iteration);
     input_params.put<uint32_t>("auto_type", auto_type);
@@ -73,7 +73,6 @@ void input_parameters_t::put(
     input_params.put<std::string>("FOLDER_NAME", FOLDER_NAME);
     input_params.put<int>("simulation_mode", simulation_mode);
     input_params.put<double>("delay_time_store", delay_time_store);
-    // std::cout << "put " << delay_time_store << "\n";
     ptree.add_child("input_params", input_params);
 }
 
