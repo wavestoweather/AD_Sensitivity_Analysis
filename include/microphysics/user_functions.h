@@ -212,7 +212,8 @@ void ccn_act_hande(
         // The same applies to other cases like this, however dt_prime is
         // a conservative value.
         if (cc.dt_prime > 1) delta_n /= cc.dt_prime;
-        float_t delta_q = min(delta_n * get_at(cc.cloud.constants, Particle_cons_idx::min_x_act), (res[qv_idx] + qv_prime)/cc.dt_prime);
+        float_t delta_q = min(delta_n * get_at(cc.cloud.constants, Particle_cons_idx::min_x_act),
+            (res[qv_idx] + qv_prime)/cc.dt_prime);
         delta_n = max(delta_n, 0.0);
         delta_n = delta_q / get_at(cc.cloud.constants, Particle_cons_idx::min_x_act);
 
@@ -580,7 +581,8 @@ void ice_activation_hande(
 
         float_t delta_n = max(ndiag - n_inact, 0.0)/cc.dt_prime;
         float_t delta_q =
-            max(0, min(delta_n * get_at(cc.ice.constants, Particle_cons_idx::min_x_nuc_hetero), (res[qv_idx] + qv_prime)/cc.dt_prime));
+            max(0, min(delta_n * get_at(cc.ice.constants, Particle_cons_idx::min_x_nuc_hetero),
+            (res[qv_idx] + qv_prime)/cc.dt_prime));
         delta_n = delta_q/get_at(cc.ice.constants, Particle_cons_idx::min_x_nuc_hetero);
 
         res[qi_idx] += delta_q;
@@ -727,7 +729,8 @@ void ice_activation_phillips(
         ndiag = min(ndiag, get_at(cc.constants, Cons_idx::ni_het_max)/cc.dt_prime);
         float_t delta_n = max(ndiag-n_inact, 0.0)/cc.dt_prime;
         float_t delta_q =
-            max(0, min(delta_n*get_at(cc.ice.constants, Particle_cons_idx::min_x_act), (res[qv_idx] + qv_prime)/cc.dt_prime));
+            max(0, min(delta_n*get_at(cc.ice.constants, Particle_cons_idx::min_x_act),
+            (res[qv_idx] + qv_prime)/cc.dt_prime));
 
         delta_n = delta_q/get_at(cc.ice.constants, Particle_cons_idx::min_x_act);
         res[Ni_idx] += delta_n;
@@ -810,7 +813,7 @@ void cloud_freeze_hom(
         res[qc_idx] -= delta_qi;
         res[Nc_idx] -= delta_ni;
 #ifdef TRACE_QC
-        if(trace)
+        if (trace)
             std::cout << "cloud freeze dqc " << -delta_qi << ", dNc " << -delta_ni << "\n";
 #endif
         // The amount of ice crystals should be capped by the maximum size
@@ -882,7 +885,7 @@ void ice_self_collection(
                 * get_at(cc.ice.constants, Particle_cons_idx::s_vel));
 
         delta_q = max(0, min(delta_q, (res[qi_idx] + qi_prime)/cc.dt_prime));
-        delta_n = max(0, min(min( delta_n, delta_q/x_conv_i), (res[Ni_idx] + Ni)/cc.dt_prime));
+        delta_n = max(0, min(min(delta_n, delta_q/x_conv_i), (res[Ni_idx] + Ni)/cc.dt_prime));
 
         res[qi_idx] -= delta_q;
         res[qs_idx] += delta_q;
@@ -1433,7 +1436,7 @@ void rain_evaporation_sb(
             gamma_eva = 1.0;
 
         // Equation A5 with A9
-        float_t delta_qv = g_d * Nr * (mue+1.0) / lambda * f_v * s_sw; // (mue+1.0) / lambda *
+        float_t delta_qv = g_d * Nr * (mue+1.0) / lambda * f_v * s_sw;
         float_t delta_nv = gamma_eva * delta_qv/x_r;
 
         delta_qv = max(-delta_qv, 0.0);
@@ -2737,7 +2740,8 @@ void ice_riming(
         if (rime_rate_qi > 0.0) {
             float_t rime_qi = max(0, min(rime_rate_qi, (res[qi_idx] + qi_prime)/cc.dt_prime));
             float_t rime_qr = max(0, min(rime_rate_qr, (res[qr_idx] + qr_prime)/cc.dt_prime));
-            float_t rime_n = max(0, min(min(rime_rate_nr, (res[Nr_idx] + Nr)/cc.dt_prime), (res[Ni_idx] + Ni)/cc.dt_prime));
+            float_t rime_n = max(0, min(min(rime_rate_nr, (res[Nr_idx] + Nr)/cc.dt_prime),
+                (res[Ni_idx] + Ni)/cc.dt_prime));
 
             // Ice
             res[qi_idx] -= rime_qi;
@@ -3096,7 +3100,8 @@ void snow_riming(
         if (rime_rate_qs > 0.0) {
             float_t rime_qs = max(0, min(rime_rate_qs, (res[qs_idx] + qs_prime)/cc.dt_prime));
             float_t rime_qr = max(0, min(rime_rate_qr, (res[qr_idx] + qr_prime)/cc.dt_prime));
-            float_t rime_n = max(0, min(min(rime_rate_nr, (res[Nr_idx] + Nr)/cc.dt_prime), (res[Ns_idx] + Ns)/cc.dt_prime));
+            float_t rime_n = max(0, min(min(rime_rate_nr,
+                (res[Nr_idx] + Nr)/cc.dt_prime), (res[Ns_idx] + Ns)/cc.dt_prime));
 
             // Snow
             res[qs_idx] -= rime_qs;
