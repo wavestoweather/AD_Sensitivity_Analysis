@@ -1294,7 +1294,8 @@ void output_handle_t::process_step(
         this->buffer_gradient(cc, y_diff, snapshot_index);
     }
 
-    if ((0 == (sub + t*cc.num_sub_steps) % write_index)
+    if (((0 == (sub + t*cc.num_sub_steps) % write_index)
+        && (sub != 0) && (t != 0))
         || (t == cc.num_steps-1 && last_step)) {
         this->flush_buffer(cc);
     }

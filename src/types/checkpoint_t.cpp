@@ -105,7 +105,12 @@ int checkpoint_t::load_checkpoint(
     }
     cc.ens_desc += ens_desc;
     for (auto &it : checkpoint.get_child("Output Parameters")) {
-        y[std::stoi(it.first)] = std::stod(it.second.data());
+        try {
+            y[std::stoi(it.first)] = std::stod(it.second.data());
+        } catch (const std::out_of_range& e) {
+            // out_of_range means underflow with some libraries
+            y[std::stoi(it.first)] = 0;
+        }
     }
     return 0;
 }

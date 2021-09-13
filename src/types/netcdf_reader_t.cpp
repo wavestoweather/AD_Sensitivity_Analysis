@@ -489,8 +489,10 @@ void netcdf_reader_t::set_dims(
                     << " which does not exist. ABORTING.\n";
         SUCCESS_OR_DIE(NC_TRAJ_IDX_ERR);
     }
-    cc.n_ensembles = n_ensembles;
-    cc.max_n_trajs = n_trajectories;
+    if (simulation_mode != limited_time_ensembles) {
+        cc.n_ensembles = n_ensembles;
+        cc.max_n_trajs = n_trajectories;
+    }
     if (!already_open) {
         SUCCESS_OR_DIE(
             nc_inq_dimid(
@@ -540,10 +542,6 @@ void netcdf_reader_t::init_netcdf(
             varid[Par_idx::time_after_ascent],
             startp.data(),
             &rel_start_time));
-    std::cout << cc.traj_id << " start_time: " << start_time
-        << ", rel_start_time: " << rel_start_time
-        << ", checkpoint?: " << checkpoint_flag
-        << ", current_time: " << current_time << "\n";
     if (!std::isnan(start_time) && !checkpoint_flag) {
         // Calculate the needed index
         start_time_idx = (start_time-rel_start_time)/cc.dt_traject;

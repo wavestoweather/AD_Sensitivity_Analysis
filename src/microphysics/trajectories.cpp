@@ -91,6 +91,10 @@ model_constants_t parse_args(
             for (auto &s : segments)
                 SUCCESS_OR_DIE(s.check());
             print_segments(segments);
+            if (input.simulation_mode == limited_time_ensembles) {
+                cc.n_ensembles = 1;
+                cc.max_n_trajs = segments[0].n_members;
+            }
         }
     }
 
@@ -569,7 +573,8 @@ int run_simulation(
     try {
         codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
         uint32_t sub_start = 1;
-        if (global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0)
+        if (global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0
+            && !std::isnan(input.current_time))
             sub_start = std::fmod(input.current_time, cc.dt_prime)
                     / (cc.dt_prime/(cc.num_sub_steps));
         // Loop over every timestep that is usually fixed to 20 s
@@ -732,6 +737,7 @@ int main(int argc, char** argv) {
             ref_quant, input.INPUT_FILENAME, input.write_index,
             input.snapshot_index, rank, input.simulation_mode,
             input.delay_time_store);
+
         if (rank == 0) {
             scheduler.set_n_ensembles(1);
             scheduler.set_n_trajectories(segments[0].n_members);
@@ -771,6 +777,8 @@ int main(int argc, char** argv) {
                 / (cc.dt_prime * cc.num_sub_steps);
             out_handler.reset(scheduler.current_traj, scheduler.current_ens, out_timestep);
 
+            // std::cout << rank << " - traj " << scheduler.current_traj
+            //     << " a_ccn_1: " << get_at(cc.constants, Cons_idx::a_ccn_1) << "\n";
             // run simulation
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,

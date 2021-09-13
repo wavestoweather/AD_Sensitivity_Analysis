@@ -58,6 +58,7 @@ class ProgressBar {
     void progress(
         const uint64_t t) {
         if (t%update_every != 0 && t != end_step) return;
+        if (t == 0) return;
         auto now = std::chrono::system_clock::now();
         double dt_total = ((std::chrono::duration<double>)(now - t_first)).count();
         // Get total time string
