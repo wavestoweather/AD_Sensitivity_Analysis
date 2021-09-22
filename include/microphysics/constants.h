@@ -167,7 +167,8 @@ const std::vector<std::string> output_par_idx = {"p", "T", "w", "S", "qc", "qr",
  */
 const std::vector<std::string> output_grad_idx = {
     "da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
-    "dbeta_r", "ddelta1", "ddelta2", "dzeta", "drain_gfak", "dcloud_k_au",
+    "dbeta_r", "ddelta1", "ddelta2", "dzeta",
+    "drain_gfak", "dcloud_k_au",
     "dcloud_k_sc", "dkc_autocon", "dinv_z", "dw",
     "dq_crit_i", "dD_crit_i", "dD_conv_i", "dq_crit_r",
     "dD_crit_r", "dq_crit_fr", "dD_coll_c", "dq_crit",
@@ -860,8 +861,8 @@ enum class Cons_idx: uint32_t{
      * melting (used in riming).
      */
     const5,
-    D_rainfrz_gh,
     D_rainfrz_ig,
+    D_rainfrz_gh,
     dv0,
     p_sat_melt,
     cp,
@@ -912,10 +913,12 @@ enum class Cons_idx: uint32_t{
  * Mapping of json configuration names to parameters in a model_constants_t
  */
 std::unordered_map<std::string, Cons_idx> const table_param = {
-    {"a_1", Cons_idx::a1_prime}, {"a_2", Cons_idx::a2_prime}, {"e_1", Cons_idx::e1_prime},
-    {"e_2", Cons_idx::e2_prime}, {"d", Cons_idx::d_prime}, {"N_c", Cons_idx::Nc_prime},
+    {"a_1", Cons_idx::a1_prime}, {"a_2", Cons_idx::a2_prime},
+    {"e_1", Cons_idx::e1_prime}, {"e_2", Cons_idx::e2_prime},
+    {"d", Cons_idx::d_prime}, {"N_c", Cons_idx::Nc_prime},
     {"gamma", Cons_idx::gamma}, {"beta_c", Cons_idx::betac}, {"beta_r", Cons_idx::betar},
     {"delta1", Cons_idx::delta1}, {"delta2", Cons_idx::delta2}, {"zeta", Cons_idx::zeta},
+#if defined(RK4ICE) || defined(RK4NOICE)
     {"rain_gfak", Cons_idx::rain_gfak}, {"cloud_k_au", Cons_idx::cloud_k_au},
     {"cloud_k_sc", Cons_idx::cloud_k_sc}, {"kc_autocon", Cons_idx::kc_autocon},
     {"inv_z", Cons_idx::inv_z}, {"dw", Cons_idx::dw}, {"q_crit_i", Cons_idx::q_crit_i},
@@ -953,11 +956,12 @@ std::unordered_map<std::string, Cons_idx> const table_param = {
     {"T_sat_low_temp", Cons_idx::T_sat_low_temp}, {"alpha_depo", Cons_idx::alpha_depo},
     {"r_0", Cons_idx::r_0}, {"k_1_conv", Cons_idx::k_1_conv}, {"k_2_conv", Cons_idx::k_2_conv},
     {"k_1_accr", Cons_idx::k_1_accr}, {"k_r", Cons_idx::k_r},
-#if defined(RK4ICE) || defined(RK4NOICE)
-    {"a_ccn_1", Cons_idx::a_ccn_1}, {"a_ccn_2", Cons_idx::a_ccn_2}, {"a_ccn_3", Cons_idx::a_ccn_3},
-    {"a_ccn_4", Cons_idx::a_ccn_4}, {"b_ccn_1", Cons_idx::b_ccn_1}, {"b_ccn_2", Cons_idx::b_ccn_2},
-    {"b_ccn_3", Cons_idx::b_ccn_3}, {"b_ccn_4", Cons_idx::b_ccn_4}, {"c_ccn_1", Cons_idx::c_ccn_1},
-    {"c_ccn_2", Cons_idx::c_ccn_2}, {"c_ccn_3", Cons_idx::c_ccn_3}, {"c_ccn_4", Cons_idx::c_ccn_4},
+    {"a_ccn_1", Cons_idx::a_ccn_1}, {"a_ccn_2", Cons_idx::a_ccn_2},
+    {"a_ccn_3", Cons_idx::a_ccn_3}, {"a_ccn_4", Cons_idx::a_ccn_4},
+    {"b_ccn_1", Cons_idx::b_ccn_1}, {"b_ccn_2", Cons_idx::b_ccn_2},
+    {"b_ccn_3", Cons_idx::b_ccn_3}, {"b_ccn_4", Cons_idx::b_ccn_4},
+    {"c_ccn_1", Cons_idx::c_ccn_1}, {"c_ccn_2", Cons_idx::c_ccn_2},
+    {"c_ccn_3", Cons_idx::c_ccn_3}, {"c_ccn_4", Cons_idx::c_ccn_4},
     {"d_ccn_1", Cons_idx::d_ccn_1}, {"d_ccn_2", Cons_idx::d_ccn_2},
     {"d_ccn_3", Cons_idx::d_ccn_3}, {"d_ccn_4", Cons_idx::d_ccn_4}
 #endif

@@ -1037,8 +1037,6 @@ void output_handle_t::buffer(
     const std::vector< std::array<double, num_par > >  &y_diff,
     const uint32_t sub,
     const uint32_t t,
-    const double time_new,
-    const uint32_t ensemble,
     const reference_quantities_t &ref_quant,
     const uint32_t snapshot_index) {
 
@@ -1277,19 +1275,15 @@ void output_handle_t::process_step(
     const std::vector< std::array<double, num_par > >  &y_diff,
     const uint32_t sub,
     const uint32_t t,
-    const double time_new,
     const uint32_t write_index,
     const uint32_t snapshot_index,
-#ifdef MET3D
-    const uint32_t ensemble,
-#endif
     const bool last_step,
     const reference_quantities_t &ref_quant) {
 
     if ((0 == (sub + t*cc.num_sub_steps) % snapshot_index)
         || (t == cc.num_steps-1 && last_step)) {
         this->buffer(cc, netcdf_reader, y_single_new, y_diff, sub, t,
-            time_new, ensemble, ref_quant, snapshot_index);
+            ref_quant, snapshot_index);
     } else if (this->simulation_mode != limited_time_ensembles || cc.traj_id == 0) {
         this->buffer_gradient(cc, y_diff, snapshot_index);
     }

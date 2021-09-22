@@ -21,6 +21,15 @@ void netcdf_reader_t::load_vars() {
         nc_inq_varid(
             ncid,
 #if defined WCB || defined WCB2 || defined MET3D
+            "QV",
+#else
+            "qv",
+#endif
+            &varid_once[Par_once_idx::qv]));
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+#if defined WCB || defined WCB2 || defined MET3D
             "QC",
 #else
             "qc",
@@ -425,9 +434,9 @@ void netcdf_reader_t::read_buffer(
 #endif
     }
 
-    if ((step == 0 && !checkpoint_flag)) {
-        read_initial_values(y_single_old, ref_quant, cc, checkpoint_flag);
-    }
+    // if ((step == 0 && !checkpoint_flag)) {
+    //     read_initial_values(y_single_old, ref_quant, cc, checkpoint_flag);
+    // }
 }
 
 

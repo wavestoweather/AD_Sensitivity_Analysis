@@ -402,7 +402,6 @@ def plot_mse(
                 if in_p in in_params_grouping[g]:
                     tmp_dic[in_p] = g
                     break
-
         df_tmp["Group"] = df_tmp.apply(
             lambda row: tmp_dic[row["Input Parameter"]], axis=1
         )
@@ -571,9 +570,14 @@ def plot_time_evolution(
 
     lower_y = np.min(df["Predicted Error"])
     upper_y = np.max(df["Predicted Error"])
+
     delta = (upper_y - lower_y) / 12
+    if upper_y == 0:
+        upper_y += 4 * delta
+        delta = (upper_y - lower_y) / 12
+    else:
+        upper_y += delta
     lower_y -= delta
-    upper_y += delta
 
     lower_y2 = np.min(df[y])
     upper_y2 = np.max(df[y])
@@ -763,6 +767,7 @@ def plot_time_evolution(
                         cmap=cmap_map,
                     ),
                 )
+
         legend_overlay = hv.NdOverlay(
             {
                 data_types[i]: hv.Scatter((np.NaN, np.NaN)).opts(
@@ -1064,18 +1069,29 @@ if __name__ == "__main__":
 
     param_title_names = {
         "QV": "Water Vapor",
-        "QC": "Cloud",
-        "QR": "Rain",
-        "QS": "Snow",
-        "QI": "Ice",
-        "QG": "Graupel",
-        "QH": "Hail",
-        "NCCLOUD": "Cloud",
-        "NCRAIN": "Rain",
-        "NCSNOW": "Snow",
-        "NCICE": "Ice",
-        "NCGRAUPEL": "Graupel",
-        "NCHAIL": "Hail",
+        "QC": "Cloud Mass",
+        "QR": "Rain Mass",
+        "QS": "Snow Mass",
+        "QI": "Ice Mass",
+        "QG": "Graupel Mass",
+        "QH": "Hail Mass",
+        "NCCLOUD": "Cloud Number",
+        "NCRAIN": "Rain Number",
+        "NCSNOW": "Snow Number",
+        "NCICE": "Ice Number",
+        "NCGRAUPEL": "Graupel Number",
+        "NCHAIL": "Hail Number",
+        "pressure": "Pressure",
+        "QR_OUT": "QR_OUT",
+        "QS_OUT": "QS_OUT",
+        "QI_OUT": "QI_OUT",
+        "QG_OUT": "QG_OUT",
+        "QH_OUT": "QH_OUT",
+        "NR_OUT": "NR_OUT",
+        "NS_OUT": "NS_OUT",
+        "NI_OUT": "NI_OUT",
+        "NG_OUT": "NG_OUT",
+        "NH_OUT": "NH_OUT",
     }
 
     if "correlation" in args.plot_variant or args.plot_variant == "histogram":
@@ -1086,6 +1102,13 @@ if __name__ == "__main__":
                 .reset_index()
             )
             df = df.loc[df["Output Parameter"] == out_p]
+
+            if len(args.in_parameter) == 0:
+                in_params = list(np.unique(df["Input Parameter"]))
+            else:
+                in_params = args.in_parameter
+            df = df.loc[df["Input Parameter"].isin(in_params)]
+
             if (
                 np.min(df["Predicted Squared Error"]) == 0
                 and np.max(df["Predicted Squared Error"]) == 0
@@ -1119,7 +1142,7 @@ if __name__ == "__main__":
                     backend=args.backend,
                     plot_types=args.plot_types,
                     add_zero_sens=args.add_zero_sens,
-                    title=args.title + " for " + param_title_names[out_p],
+                    title=args.title + r" for " + param_title_names[out_p],
                     xlabel=args.xlabel,
                     xlabel2=args.ylabel,
                     width=args.width,
@@ -1137,7 +1160,7 @@ if __name__ == "__main__":
                     plot_types=args.plot_types,
                     add_zero_sens=args.add_zero_sens,
                     confidence=args.confidence,
-                    title=args.title + " for " + param_title_names[out_p],
+                    title=args.title + r" for " + param_title_names[out_p],
                     xlabel=args.xlabel,
                     ylabel=args.ylabel,
                     width=args.width,
@@ -1165,13 +1188,16 @@ if __name__ == "__main__":
             df_tmp = df.loc[df["Output Parameter"] == out_p]
             df_mean_tmp = df_mean.loc[df_mean["Output Parameter"] == out_p]
             if len(args.in_parameter) == 0:
-                in_params = np.unique(
-                    df_mean_tmp.nlargest(
-                        args.n_model_params, "Predicted Squared Error"
-                    )["Input Parameter"]
+                in_params = list(
+                    np.unique(
+                        df_mean_tmp.nlargest(
+                            args.n_model_params, "Predicted Squared Error"
+                        )["Input Parameter"]
+                    )
                 )
             else:
                 in_params = args.in_parameter
+
             df_tmp = df_tmp.loc[df_tmp["Input Parameter"].isin(in_params)]
             if (
                 np.min(df_tmp["Predicted Squared Error"]) == 0

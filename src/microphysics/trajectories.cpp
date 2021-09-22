@@ -495,6 +495,7 @@ void run_substeps(
                 get_at(cc.constants, Cons_idx::p_sat_const_b),
                 get_at(cc.constants, Cons_idx::Epsilon));
         }
+//////////////// Add any different scheme and model here
 #if defined(RK4) || defined(RK4_ONE_MOMENT) || defined(OTHER)
         // Not implemented
 #elif defined(RK4NOICE)
@@ -512,16 +513,13 @@ void run_substeps(
             cc.get_gradients(y_single_new, y_diff, tape);
 
         // Time update
-        time_new = (sub + t*cc.num_sub_steps)*cc.dt;
+        time_new = (sub + (t+cc.done_steps)*cc.num_sub_steps)*cc.dt;
         if (time_new >= delay_out_time) {
             // TODO(mahieron): what if delay_out_time is not a multiple of dt_prime?
             out_handler.process_step(cc, netcdf_reader, y_single_new, y_diff,
                 sub, t,
-                time_new-delay_out_time, input.write_index,
+                input.write_index,
                 input.snapshot_index,
-#ifdef MET3D
-                ensemble,
-#endif
                 last_step, ref_quant);
         }
         // Interchange old and new for next step
@@ -560,7 +558,8 @@ int run_simulation(
     std::vector<segment_t> &segments,
     task_scheduler_t &scheduler,
     netcdf_reader_t &netcdf_reader,
-    const double delay_out_time = 0) {
+    const double delay_out_time = 0,
+    const uint32_t start_step = 0) {
 
 #ifdef MET3D
     uint32_t ensemble;
@@ -578,7 +577,9 @@ int run_simulation(
             sub_start = std::fmod(input.current_time, cc.dt_prime)
                     / (cc.dt_prime/(cc.num_sub_steps));
         // Loop over every timestep that is usually fixed to 20 s
-        for (uint32_t t=0; t < cc.num_steps - cc.done_steps; ++t) {
+        for (uint32_t t=start_step; t < cc.num_steps - cc.done_steps; ++t) {
+            // if (t == 0)
+            //     std::cout << "checkpoint: " << global_args.checkpoint_flag << "\n";
             netcdf_reader.read_buffer(cc, ref_quant, y_single_old,
                 inflow, t, global_args.checkpoint_flag, input.start_over_env);
             // Iterate over each substep
@@ -705,7 +706,9 @@ int main(int argc, char** argv) {
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,
                 out_handler, segments, scheduler, netcdf_reader));
+
             while (scheduler.receive_task(checkpoint)) {
+                break;
                 global_args.checkpoint_flag = true;
                 setup_simulation_base(argc, argv, rank, n_processes, input,
                     global_args, ref_quant, cc, y_init, y_single_old,
@@ -777,12 +780,27 @@ int main(int argc, char** argv) {
                 / (cc.dt_prime * cc.num_sub_steps);
             out_handler.reset(scheduler.current_traj, scheduler.current_ens, out_timestep);
 
-            // std::cout << rank << " - traj " << scheduler.current_traj
-            //     << " a_ccn_1: " << get_at(cc.constants, Cons_idx::a_ccn_1) << "\n";
+            // buffer the initial values for this trajectory
+            // -> one step is already done this way
+            out_handler.buffer(
+                cc,
+                netcdf_reader,
+                y_single_old,
+                y_diff,
+                0,
+                0,
+                ref_quant,
+                input.snapshot_index);
+            // out_handler.process_step(cc, netcdf_reader, y_single_old, y_diff,
+            //     0, 0, input.write_index,
+            //     input.snapshot_index,
+            //     false, ref_quant);
+            // cc.done_steps++;
+
             // run simulation
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,
-                out_handler, segments, scheduler, netcdf_reader));
+                out_handler, segments, scheduler, netcdf_reader, 0, 1));
         }
     } else {   // dynamic scheduling with parallel read and write disabled
         output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,

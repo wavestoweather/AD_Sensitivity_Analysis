@@ -192,12 +192,14 @@ def load_data(
             and "WCB_flag" not in col
             and "dp2h" not in col
             and "Q_TURBULENCE" not in col
+            and "type" not in col
         ):
             cols_final.append(col)
 
     cols_final_sim = cols_final.copy()
     cols_final_sim.append("QH")
     cols_final_sim.append("QH_OUT")
+    print(cols_final)
     file_list = []
     for f in os.listdir(data_sim_path):
         file_list.append(os.path.join(data_sim_path, f))
@@ -205,10 +207,15 @@ def load_data(
     df_sim = None
     min_x = None
     max_x = None
+    print(file_list)
+    print("cosmo:")
+    print(file_list_cosmo)
     for f in file_list:
         if verbosity > 0:
             print(f"Loading {f}")
         ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")[cols_final_sim]
+
+        ds = ds.loc[{"trajectory": ds["trajectory"][0]}]
         if df_sim is not None:
             df_sim = df_sim.append(ds.to_dataframe())
         else:
@@ -224,7 +231,8 @@ def load_data(
         if verbosity > 0:
             print(f"Loading {f}")
         ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")[cols_final]
-        ds = ds.where(ds["trajectory"] == ds["trajectory"][traj])
+        ds = ds.loc[{"trajectory": ds["trajectory"][0]}]
+        # ds = ds.where(ds["trajectory"] == ds["trajectory"][traj])
         ds = ds.where(
             ((ds["time_after_ascent"] >= min_x) & (ds["time_after_ascent"] <= max_x)),
             drop=True,

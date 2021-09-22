@@ -89,21 +89,21 @@ template codi::RealReverse wet_growth_diam<codi::RealReverse>(
  */
 void setup_bulk_sedi(
     particle_model_constants_t &pc) {
-    get_at(pc.constants, Particle_cons_idx::alfa_n) =
+    pc.constants[static_cast<int>(Particle_cons_idx::alfa_n)] =
         get_at(pc.constants, Particle_cons_idx::a_vel)
         * tgamma((get_at(pc.constants, Particle_cons_idx::nu)
         + get_at(pc.constants, Particle_cons_idx::b_vel)+1.0)
         / get_at(pc.constants, Particle_cons_idx::mu))
         / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)
         / get_at(pc.constants, Particle_cons_idx::mu));
-    get_at(pc.constants, Particle_cons_idx::alfa_q) =
+    pc.constants[static_cast<int>(Particle_cons_idx::alfa_q)] =
         get_at(pc.constants, Particle_cons_idx::a_vel)
         * tgamma((get_at(pc.constants, Particle_cons_idx::nu)
         + get_at(pc.constants, Particle_cons_idx::b_vel)+2.0)
         / get_at(pc.constants, Particle_cons_idx::mu))
         / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+2.0)
         / get_at(pc.constants, Particle_cons_idx::mu));
-    get_at(pc.constants, Particle_cons_idx::lambda) =
+    pc.constants[static_cast<int>(Particle_cons_idx::lambda)] =
         tgamma((get_at(pc.constants, Particle_cons_idx::nu)+1.0)
         / get_at(pc.constants, Particle_cons_idx::mu))
         / tgamma((get_at(pc.constants, Particle_cons_idx::nu)+2.0)

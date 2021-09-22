@@ -22,6 +22,8 @@ try:
         in_params_dic,
         physical_params,
         in_params_grouping,
+        param_id_map,
+        in_params_notation_mapping,
     )
 except:
     from scripts.latexify import (
@@ -30,6 +32,8 @@ except:
         in_params_dic,
         physical_params,
         in_params_grouping,
+        param_id_map,
+        in_params_notation_mapping,
     )
 
 
@@ -69,7 +73,9 @@ def rolling_window(a, window):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
-def load_sensitivity(path, out_params, in_params=["da_1"]):
+def load_sensitivity(
+    path, out_params, param_names, in_params=["da_1"], par_dim_name="Output Parameter"
+):
     """
     Load the sensitivities from the unperturbed trajectory.
 
@@ -82,6 +88,8 @@ def load_sensitivity(path, out_params, in_params=["da_1"]):
         List of output parameters to get sensitivities for.
     in_params: List of string
         List of input parameters for the sensitivies.
+    par_dim_name: String
+        Name of the dimension for the output parameter.
     Returns
     -------
     xarray.DataFrame
@@ -89,15 +97,15 @@ def load_sensitivity(path, out_params, in_params=["da_1"]):
         and time after ascent.
     """
     ds = xr.open_dataset(path, decode_times=False, engine="netcdf4")
-    ds = ds.loc[{"Output Parameter": out_params}][
-        out_params + in_params + ["time_after_ascent"]
+    ds = ds.loc[{par_dim_name: out_params}][
+        param_names + in_params + ["time_after_ascent"]
     ]
     for in_p in in_params:
-        ds[in_p] = ds[in_p] * (in_params_numeric_value_dic[in_p] * 0.1)
+        ds[in_p] = ds[in_p]  # * (in_params_numeric_value_dic[in_p] * 0.1)
     return ds
 
 
-def load_unperturbed(path, out_params):
+def load_unperturbed(path, out_params, par_dim_name="Output Parameter"):
     """
     Load the unperturbed trajectory output parameters.
     Should not be necessary since load_sensitivity() already
@@ -116,11 +124,19 @@ def load_unperturbed(path, out_params):
     xarray.DataFrame
         Dataframe with model state parameters and time after ascent.
     """
-    ds = load_sensitivity(path, out_params)
+    ds = load_sensitivity(path, out_params, par_dim_name)
     return ds[out_params + ["time_after_ascent"]]
 
 
-def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosity=0):
+def load_dataset(
+    path,
+    out_params,
+    in_params,
+    traj_list,
+    traj_offset=0,
+    verbosity=0,
+    par_dim_name="Output Parameter",
+):
     """
     Load all trajectory data and store the MSE for each ensemble
     and parameter as a result.
@@ -137,7 +153,7 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
         is assumed and instead only a single trajectory as source for
         this ensemble is assumed. This is usually the case for quantile
         trajectories.
-    out_params: List of string
+    out_params: List of string or int
         List of output parameters to get MSE for.
     in_params: List of string
         List of input parameters to get MSE for.
@@ -165,6 +181,9 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
     n_timesteps = 0
     time_after_ascent = None
     one_iteration = False
+    param_names = []
+    for i in range(len(out_params)):
+        param_names.append(param_id_map[out_params[i]])
 
     for traj_idx, traj in enumerate(traj_list):
         if os.path.isfile(path + traj):
@@ -184,12 +203,20 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
                 not_perturbed_path = path + "traj" + str(traj) + "/_notPerturbed.nc_wcb"
             if not os.path.isfile(not_perturbed_path):
                 not_perturbed_path = path + "_notPerturbed.nc_wcb"
+            if not os.path.isfile(not_perturbed_path):
+                not_perturbed_path = path + in_params[0][1::] + ".nc_wcb"
 
-            val_df = load_sensitivity(not_perturbed_path, out_params, in_params)
-            val_array = val_df.loc[{"Output Parameter": out_params[0]}][out_params[0]]
+            val_df = load_sensitivity(
+                not_perturbed_path, out_params, param_names, in_params, par_dim_name
+            )
+            val_array = val_df.loc[{par_dim_name: out_params[0], "trajectory": 0}][
+                param_names[0]
+            ]
             n_timesteps = len(val_array["time"])
             time_after_ascent = np.asarray(
-                val_df.loc[{"Output Parameter": out_params[0]}]["time_after_ascent"]
+                val_df.loc[{par_dim_name: out_params[0], "trajectory": 0}][
+                    "time_after_ascent"
+                ]
             ).flatten()
         if one_iteration:
             break
@@ -213,14 +240,21 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
             not_perturbed_path = path + "traj" + str(traj) + "/_notPerturbed.nc_wcb"
         if not os.path.isfile(not_perturbed_path):
             not_perturbed_path = path + "_notPerturbed.nc_wcb"
+        if not os.path.isfile(not_perturbed_path):
+            not_perturbed_path = path + in_params[0][1::] + ".nc_wcb"
 
         if verbosity > 1:
             print(f"Loading from {not_perturbed_path} for index {traj_idx}")
-        val_df = load_sensitivity(not_perturbed_path, out_params, in_params)
-        val_only_df = val_df.loc[{"Output Parameter": out_params[0]}][out_params]
+        val_df = load_sensitivity(
+            not_perturbed_path, out_params, param_names, in_params, par_dim_name
+        )
+        val_only_df = val_df.loc[{par_dim_name: out_params[0], "trajectory": 0}][
+            param_names
+        ]
         for out_idx, out_p in enumerate(out_params):
-            val_array = val_only_df[out_p]
-            sens_df = val_df.loc[{"Output Parameter": out_p}][in_params]
+            out_p_name = param_names[out_idx]
+            val_array = val_only_df[out_p_name]
+            sens_df = val_df.loc[{par_dim_name: out_p}][in_params]
             not_perturbed[out_idx, traj_idx - idx_offset, :] = np.asarray(
                 val_array
             ).flatten()
@@ -235,8 +269,9 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
                         decode_times=False,
                         engine="netcdf4",
                     )
-                    tmp1 = np.asarray(ds[out_p].load())
-                    tmp2 = np.asarray(val_only_df[out_p])
+                    ds = ds.loc[{"trajectory": ds["trajectory"][1::]}]
+                    tmp1 = np.asarray(ds[out_p_name].load())
+                    tmp2 = np.asarray(val_only_df[out_p_name])
                     mse[out_idx, in_idx, traj_idx - idx_offset, :] = np.nanmean(
                         (tmp1 - tmp2) ** 2, axis=1
                     ).flatten()
@@ -253,8 +288,9 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
                         decode_times=False,
                         engine="netcdf4",
                     )
-                    tmp1 = np.asarray(ds[out_p].load())
-                    tmp2 = np.asarray(val_only_df[out_p])
+                    ds = ds.loc[{"trajectory": ds["trajectory"][1::]}]
+                    tmp1 = np.asarray(ds[out_p_name].load())
+                    tmp2 = np.asarray(val_only_df[out_p_name])
                     mse[out_idx, in_idx, traj_idx - idx_offset, :] = np.nanmean(
                         (tmp1 - tmp2) ** 2, axis=1
                     ).flatten()
@@ -275,7 +311,7 @@ def load_dataset(path, out_params, in_params, traj_list, traj_offset=0, verbosit
             ),
         },
         coords={
-            "Output Parameter": out_params,
+            "Output Parameter": param_names,
             "Input Parameter": in_params,
             "trajectory": trajectories,
             "time_after_ascent": time_after_ascent,
@@ -350,7 +386,6 @@ def parse_load(
                     traj_list = traj_dirs
                 if verbosity > 1:
                     print(f"Loading from {path} with {n_trajs} trajectories")
-                # try:
 
                 tmp = load_dataset(
                     path=path,
@@ -359,10 +394,9 @@ def parse_load(
                     traj_list=traj_list,
                     traj_offset=traj_offset,
                     verbosity=verbosity,
+                    par_dim_name="Output_Parameter_ID",
                 )
-                # except:
-                # print(f"Loading      {path} failed.")
-                # tmp = None
+
                 if tmp is None:
                     continue
 
@@ -2592,9 +2626,7 @@ def create_dataset_pretrained(
         load_data = True
     else:
         load_data = False
-    print(max_features_list)
-    print(in_params)
-    print(seg_thresholds)
+
     dims_forest = (len(max_features_list), 1, 1 + len(in_params), len(seg_thresholds))
     if predict_train:
         input_param_coords = ["All Input Parameters Train Set"] + in_params
@@ -3458,9 +3490,43 @@ if __name__ == "__main__":
         help="""
         You can define a subset of input parameters that shall be used.
         This is useful if the ensemble simulation was not run with
-        perturbing all  268 parameters but only a few.
-        If none are given, i.e. this parameter is not used, all 268 ensemble
+        perturbing all parameters but only a few.
+        If none are given, i.e. this parameter is not used, all ensemble
         simulations will be loaded.
+        """,
+    )
+    parser.add_argument(
+        "--out_params",
+        nargs="+",
+        default=[
+            "QC",
+            "QR",
+            "QV",
+            "NCCLOUD",
+            "NCRAIN",
+            "QI",
+            "NCICE",
+            "QS",
+            "NCSNOW",
+            "QG",
+            "NCGRAUPEL",
+            "QH",
+            "NCHAIL",
+            "QI_OUT",
+            "QS_OUT",
+            "QR_OUT",
+            "QG_OUT",
+            "QH_OUT",
+            "NI_OUT",
+            "NS_OUT",
+            "NR_OUT",
+            "NG_OUT",
+            "NH_OUT",
+        ],
+        type=str,
+        help="""
+        You can define a subset of output parameters
+        (aka model state variables or prognostic variables) that shall be used.
         """,
     )
 
@@ -3477,42 +3543,28 @@ if __name__ == "__main__":
             store_name = args.store_name + ".nc"
         else:
             store_name = args.store_name
-
-    out_params = [
-        "QV",
-        "QC",
-        "QR",
-        "QG",
-        "QH",
-        "QI",
-        "QS",
-        "NCCLOUD",
-        "NCRAIN",
-        "NCGRAUPEL",
-        "NCHAIL",
-        "NCICE",
-        "NCSNOW",
-        "QR_OUT",
-        "QG_OUT",
-        "QH_OUT",
-        "QI_OUT",
-        "QS_OUT",
-        "NR_OUT",
-        "NG_OUT",
-        "NH_OUT",
-        "NI_OUT",
-        "NS_OUT",
-    ]
+    out_params = args.out_params
+    if len(out_params) == 0:
+        out_params = np.arange(len(param_id_map))
+    elif not out_params[0].isdigit():
+        for i in range(len(out_params)):
+            out_params[i] = param_id_map.index(out_params[i])
+    else:
+        for i in range(len(out_params)):
+            out_params[i] = int(out_params[i])
 
     all_params_list = args.in_params
     if len(all_params_list) == 0:
-        for key in in_params_grouping:
-            if key == "1-moment":
+        in_params = np.sort(list(in_params_notation_mapping.keys()))
+        for in_p in in_params:
+            if (
+                "Not tracked" in in_params_notation_mapping[in_p][0]
+                or "Not used" in in_params_notation_mapping[in_p][0]
+                or "one-moment warm physics" in in_params_notation_mapping[in_p][0]
+            ):
+                # or in_p in physical_params):
                 continue
-            all_params_list.extend(in_params_grouping[key])
-        for e in physical_params:
-            if e in all_params_list:
-                all_params_list.remove(e)
+            all_params_list.append(in_p)
 
     if args.create_trainset:
         store_appended_data = "./"
