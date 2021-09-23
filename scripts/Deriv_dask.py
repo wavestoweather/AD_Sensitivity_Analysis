@@ -3255,7 +3255,7 @@ class Deriv_dask:
         import holoviews as hv
 
         dsshade.dynamic = False
-        if kind == "paper":
+        if kind == "paper" or kind == "single_plot":
             fontscale = width / 350  # 500
         else:
             fontscale = width / 2200
@@ -3376,6 +3376,124 @@ class Deriv_dask:
                         .opts(aspect=aspect, fontscale=fontscale)
                         .options(xlabel=xlabel, ylabel=ylabel)
                     )
+                else:
+                    if log_x:
+                        min_x = (
+                            np.min(mse_df[sens_key])
+                            - np.abs(np.min(mse_df[sens_key])) / 10
+                        )
+                        max_x = np.max(mse_df[sens_key])
+                        if max_x > 0:
+                            max_x = max_x + 2
+                        else:
+                            max_x = 2
+                    else:
+                        delta_x = np.max(mse_df[sens_key]) - np.min(mse_df[sens_key])
+                        min_x = np.min(mse_df[sens_key]) - delta_x / 10
+                        max_x = np.max(mse_df[sens_key]) + delta_x / 10
+                    if not plot_types:
+                        cmap = plt.get_cmap("tab10")
+                        colors = {}
+                        cmap_values = []
+                        for i, rt in enumerate(np.unique(mse_df["Ratio Type"])):
+                            colors[rt] = matplotlib.colors.to_hex(cmap(i)[0:-1])
+                            cmap_values.append(colors[rt])
+                        by_col = "Ratio Type"
+                    else:
+                        cmap_values = []
+                        colors = {}
+                        for group in np.unique(mse_df["Group"]):
+                            colors[group] = self.cmap_types[group]
+                            cmap_values.append(self.cmap_types[group])
+                        by_col = "Group"
+
+                    def format_tick(v, pos, max_tick):
+                        if pos:
+                            upper = v - max_tick
+                            return f"1e{upper:2.1f}"
+                        else:
+                            upper = max_tick - v
+                            return f"-1e{upper:2.1f}"
+
+                    this_x_ticks = int(np.floor(xticks / 2))
+                    all_plots = None
+                    legend = False
+                    legend = "top_left"
+                    opts_dic = {"fontscale": fontscale}
+                    opts_dic2 = {"fontscale": fontscale}
+
+                    min_y = mse_df[error_key].min()
+                    max_y = mse_df[error_key].max()
+                    delta_y = (max_y - min_y) / 20
+                    min_y -= delta_y
+                    max_y += delta_y
+                    if inf_val is not None:
+                        xticks_list = [(inf_val, "-Infinity")]
+                        tick_val = int(np.ceil(inf_val / 10.0)) * 10
+                        delta_tick = int(-tick_val / (xticks - 1))
+                        tick_val += delta_tick
+                        stop_crit = max_x - 2
+                        if max_x < 0:
+                            stop_crit = 0
+                        while tick_val < stop_crit:
+                            xticks_list.append((tick_val, tick_val))
+                            tick_val += delta_tick
+
+                        mse_plot = (
+                            mse_df.hvplot.scatter(
+                                x=sens_key,
+                                y=error_key,
+                                by=by_col,
+                                datashade=False,
+                                alpha=alpha,
+                                legend=legend,
+                                title=title,
+                                grid=True,
+                                xlim=(min_x, max_x),
+                                ylim=(min_y, max_y),
+                                color=cmap_values,
+                                width=width,
+                                height=height,
+                            )
+                            .opts(opts.Scatter(**scatter_kwargs))  # s=scatter_size
+                            .opts(**opts_dic2)
+                            .options(
+                                ylabel=ylabel,
+                                xlabel=xlabel,
+                                xticks=xticks_list,
+                                width=width,
+                                height=height,
+                            )
+                        )
+                        # Save space by removing legend title
+                        mse_plot.get_dimension(by_col).label = ""
+                    else:
+                        mse_plot = (
+                            mse_df.hvplot.scatter(
+                                x=sens_key,
+                                y=error_key,
+                                by=by_col,
+                                datashade=False,
+                                alpha=alpha,
+                                legend=legend,
+                                title=title,
+                                grid=True,
+                                xlim=(min_x, max_x),
+                                ylim=(min_y, max_y),
+                                color=cmap_values,
+                                width=width,
+                                height=height,
+                            )
+                            .opts(opts.Scatter(**scatter_kwargs))  # s=scatter_size
+                            .opts(**opts_dic2)
+                            .options(
+                                ylabel=ylabel,
+                                xlabel=xlabel,
+                                width=width,
+                                height=height,
+                            )
+                        )
+                    mse_plot = mse_plot.opts(opts.Layout(**layout_kwargs))
 
         all_opts = dict(
             title=title, hspace=0.05, shared_axes=False, fontscale=fontscale

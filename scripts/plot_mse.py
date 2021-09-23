@@ -339,6 +339,7 @@ def plot_mse(
     width=900,
     height=900,
     hist=True,
+    plot_kind="paper",
 ):
     """
     Plot the dataframe which should hold parameters with their sensitivity
@@ -380,15 +381,21 @@ def plot_mse(
         Height of plot in pixels.
     hist : bool
         Plot histogram around the plot.
+    plot_kind : string
+        "paper" for single plots, "single_plot" for a plot with
+        multiple output parameters at once.
     """
 
     in_params = np.unique(df["Input Parameter"])
 
     datashade = False
-    alpha = 1  # 0.5
+
+    if plot_kind == "single_plot":
+        alpha = 0.5
+    else:
+        alpha = 1
     s = 12
     f_limits = (-2, 2)
-    plot_kind = "paper"
 
     error_key = "Mean Squared Error"
     sens_key = "Predicted Squared Error"
@@ -893,7 +900,8 @@ if __name__ == "__main__":
         default=[],
         help="""
         Output parameter to plot for. Default plots all that are available
-        in the dataframe.
+        in the dataframe in a separate plot. If you want a plot with all
+        datapoints in one plot, use "all_at_once".
         """,
     )
     parser.add_argument(
@@ -1095,78 +1103,129 @@ if __name__ == "__main__":
     }
 
     if "correlation" in args.plot_variant or args.plot_variant == "histogram":
-        for out_p in out_params:
-            df = (
-                ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-                .to_dataframe()
-                .reset_index()
+        if out_params[0] == "all_at_once":
+            all_df = None
+            out_params = []
+            for out_p in ds["Output Parameter"]:
+                out_params.append(out_p.item())
+            for out_p in out_params:
+                df = (
+                    ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+                    .to_dataframe()
+                    .reset_index()
+                )
+                df = df.loc[df["Output Parameter"] == out_p]
+
+                if len(args.in_parameter) == 0:
+                    in_params = list(np.unique(df["Input Parameter"]))
+                else:
+                    in_params = args.in_parameter
+                df = df.loc[df["Input Parameter"].isin(in_params)]
+
+                if (
+                    np.min(df["Predicted Squared Error"]) == 0
+                    and np.max(df["Predicted Squared Error"]) == 0
+                ):
+                    # nothing to see here; Usually applies to
+                    # variables with no contents
+                    continue
+                if all_df is None:
+                    all_df = df
+                else:
+                    all_df = all_df.append(df)
+
+            hist = False
+            if "correlation_hist" == args.plot_variant:
+                hist = True
+            plot_mse(
+                df=all_df,
+                out_params=out_params,
+                store_path=args.store_path,
+                backend=args.backend,
+                plot_types=args.plot_types,
+                add_zero_sens=args.add_zero_sens,
+                confidence=args.confidence,
+                title=args.title,
+                xlabel=args.xlabel,
+                ylabel=args.ylabel,
+                width=args.width,
+                height=args.height,
+                hist=hist,
+                plot_kind="single_plot",
             )
-            df = df.loc[df["Output Parameter"] == out_p]
+        else:
+            for out_p in out_params:
+                df = (
+                    ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+                    .to_dataframe()
+                    .reset_index()
+                )
+                df = df.loc[df["Output Parameter"] == out_p]
 
-            if len(args.in_parameter) == 0:
-                in_params = list(np.unique(df["Input Parameter"]))
-            else:
-                in_params = args.in_parameter
-            df = df.loc[df["Input Parameter"].isin(in_params)]
+                if len(args.in_parameter) == 0:
+                    in_params = list(np.unique(df["Input Parameter"]))
+                else:
+                    in_params = args.in_parameter
+                df = df.loc[df["Input Parameter"].isin(in_params)]
 
-            if (
-                np.min(df["Predicted Squared Error"]) == 0
-                and np.max(df["Predicted Squared Error"]) == 0
-            ):
-                # nothing to see here; Usually applies to
-                # variables with no contents
-                continue
-            print(f"Plotting for {out_p}")
-            if args.set_zero is not None:
-                print("Replacing following parameters and values with zero:")
-                print(
-                    df.loc[
-                        (df["Predicted Squared Error"] <= args.set_zero)
-                        & (df["Predicted Squared Error"] != 0)
-                    ][
-                        [
-                            "Input Parameter",
-                            "Predicted Squared Error",
-                            "Mean Squared Error",
+                if (
+                    np.min(df["Predicted Squared Error"]) == 0
+                    and np.max(df["Predicted Squared Error"]) == 0
+                ):
+                    # nothing to see here; Usually applies to
+                    # variables with no contents
+                    continue
+                print(f"Plotting for {out_p}")
+                if args.set_zero is not None:
+                    print("Replacing following parameters and values with zero:")
+                    print(
+                        df.loc[
+                            (df["Predicted Squared Error"] <= args.set_zero)
+                            & (df["Predicted Squared Error"] != 0)
+                        ][
+                            [
+                                "Input Parameter",
+                                "Predicted Squared Error",
+                                "Mean Squared Error",
+                            ]
                         ]
-                    ]
-                )
-                df["Predicted Squared Error"] = df["Predicted Squared Error"].where(
-                    df["Predicted Squared Error"] > args.set_zero, 0.0
-                )
-            if args.plot_variant == "histogram":
-                plot_histogram(
-                    df=df,
-                    out_params=[out_p],
-                    store_path=args.store_path,
-                    backend=args.backend,
-                    plot_types=args.plot_types,
-                    add_zero_sens=args.add_zero_sens,
-                    title=args.title + r" for " + param_title_names[out_p],
-                    xlabel=args.xlabel,
-                    xlabel2=args.ylabel,
-                    width=args.width,
-                    height=args.height,
-                )
-            else:
-                hist = False
-                if "correlation_hist" == args.plot_variant:
-                    hist = True
-                plot_mse(
-                    df=df,
-                    out_params=[out_p],
-                    store_path=args.store_path,
-                    backend=args.backend,
-                    plot_types=args.plot_types,
-                    add_zero_sens=args.add_zero_sens,
-                    confidence=args.confidence,
-                    title=args.title + r" for " + param_title_names[out_p],
-                    xlabel=args.xlabel,
-                    ylabel=args.ylabel,
-                    width=args.width,
-                    height=args.height,
-                    hist=hist,
-                )
+                    )
+                    df["Predicted Squared Error"] = df["Predicted Squared Error"].where(
+                        df["Predicted Squared Error"] > args.set_zero, 0.0
+                    )
+                if args.plot_variant == "histogram":
+                    plot_histogram(
+                        df=df,
+                        out_params=[out_p],
+                        store_path=args.store_path,
+                        backend=args.backend,
+                        plot_types=args.plot_types,
+                        add_zero_sens=args.add_zero_sens,
+                        title=args.title + r" for " + param_title_names[out_p],
+                        xlabel=args.xlabel,
+                        xlabel2=args.ylabel,
+                        width=args.width,
+                        height=args.height,
+                    )
+                else:
+                    hist = False
+                    if "correlation_hist" == args.plot_variant:
+                        hist = True
+                    plot_mse(
+                        df=df,
+                        out_params=[out_p],
+                        store_path=args.store_path,
+                        backend=args.backend,
+                        plot_types=args.plot_types,
+                        add_zero_sens=args.add_zero_sens,
+                        confidence=args.confidence,
+                        title=args.title + r" for " + param_title_names[out_p],
+                        xlabel=args.xlabel,
+                        ylabel=args.ylabel,
+                        width=args.width,
+                        height=args.height,
+                        hist=hist,
+                    )
     elif args.plot_variant == "time_plot":
         if args.traj < 0:
             df = ds.mean(dim=["trajectory"], skipna=True).to_dataframe().reset_index()
