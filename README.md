@@ -97,8 +97,7 @@ python segment_identifier.py \
     --data_path ../data/vladiana_ensembles/ \
     --verbosity 3 \
     --store_appended_data ../data/vladiana_ensembles_postprocess/predictions.nc \
-    --only_append \
-    --out_params QC QR QV NCCLOUD NCRAIN QI NCICE QS NCSNOW QG NCGRAUPEL QH NCHAIL QI_OUT QR_OUT QH_OUT QG_OUT QS_OUT NI_OUT NS_OUT NR_OUT NG_OUT NH_OUT
+    --only_append
 ```
 Now you can visualize the results, for example a comparison of the simulated
 rain mass density with the gradients:
@@ -139,7 +138,7 @@ python plot_mse.py \
     --out_parameter QS
 ```
 Plots that show the correlation between AD-estimated and ensemble-estimated
-devation can be generated with:
+devation for all model state variables at once can be generated with:
 ```
 python plot_mse.py \
     --data_path ../data/vladiana_ensembles_postprocess/predictions.nc \
@@ -147,15 +146,33 @@ python plot_mse.py \
     --plot_types \
     --backend bokeh \
     --store_path ../pics/correlation \
-    --confidence 0.90 \
     --xlabel AD-Estimated\ Log\ MSD \
     --ylabel Ensemble-Estimated\ Log\ MSD \
-    --title \(a\)\ Ensemble\ vs\ AD\ Estimation \
+    --title Ensemble\ vs\ AD\ Estimation \
     --width 900 \
     --height 900 \
     --plot_variant correlation \
-    --set_zero 1e-200
+    --out_parameter all_at_once
 ```
+or only for water vapor mass density:
+```
+python plot_mse.py \
+	--data_path /data/project/wcb/netcdf/vladiana_keyparams_errors/tmp_less.nc \
+	--add_zero_sens \
+	--plot_types \
+	--backend bokeh \
+	--store_path ../pics/correlation \
+	--confidence 0.90 \
+	--xlabel AD-Estimated\ Log\ MSD \
+	--ylabel Ensemble-Estimated\ Log\ MSD \
+	--title Ens.\ vs\ AD\ Est. \
+	--width 900 \
+	--height 900 \
+	--plot_variant correlation \
+	--out_parameter QV
+```
+You can generate the plot for other model state variables by exchanging `QV`
+with `QS` (snow mass density), `QR` (rain mass density), etc..
 
 `sensitivity_example.sh` is used to run a simulation for comparing the results to the original data.
 These can be visualized in folder `scripts`:
@@ -167,6 +184,7 @@ python plot_simulation_example.py \
     --height 900 \
     --traj 0 \
     --verbosity 3 \
+    --store_path ../pics/comparison \
     --backend bokeh
 ```
 
@@ -186,7 +204,7 @@ python plot_cosmo.py \
 ```
 This creates a file `data/all_conv.h5` which may be used for additional plots
 that can be generated faster.
-You can exchange
+You can then exchange
 ```
 --store_data ../data/all_conv.h5
 ```
