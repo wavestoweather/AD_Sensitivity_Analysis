@@ -20,8 +20,7 @@
 
 void print_params(
     nc_parameters_t &nc_params,
-    const int &traj_id)
-{
+    const int &traj_id) {
 #ifdef MET3D
     std::cout << "p\t\tT\t\tw\t\tw2\t\tqc\t\tqr\t\tqv\t\tqi\t\tqs\t\tqg\t\tlat\t\tlon"
               << "\t\t\ttraj_id\t\ttime\t\ttime_after_ascent\t\ttype\n"
@@ -42,19 +41,18 @@ void print_params(
 }
 
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     std::cout << "~+~+~+~+~Starting Load Tests~+~+~+~+~\n";
     nc_parameters_t nc_params;
     reference_quantities_t ref_quant;
 
     ref_quant.Tref = 273.15;
-    ref_quant.pref = 1.0e5; // 1.0e3
-    ref_quant.qref = 1.0e-4; // 1.0e-4
-    ref_quant.wref = 1.; // 10.0
+    ref_quant.pref = 1.0e5;  // 1.0e3
+    ref_quant.qref = 1.0e-4;  // 1.0e-4
+    ref_quant.wref = 1.;  // 10.0
     ref_quant.tref = 1.0;
 
-    ref_quant.Nref = 1.0; 	// DUMMY
+    ref_quant.Nref = 1.0;   // DUMMY
     const uint32_t traj = 0;
     const char* file = argv[1];
     // Some datafiles I used for testing
@@ -64,13 +62,13 @@ int main(int argc, char** argv)
     model_constants_t cc;
     std::vector<segment_t> segments;
     SUCCESS_OR_DIE(load_ens_config(file_config, cc, segments));
-    for(auto &s: segments)
+    for (auto &s : segments)
         SUCCESS_OR_DIE(s.check());
     print_segments(segments);
 
     std::vector<double> y(num_comp);
     // Populate y with some numbers
-    for(uint32_t i=0; i<num_comp; ++i)
+    for (uint32_t i=0; i<num_comp; ++i)
         y[i] = file[i%std::strlen(file)];
 
     input_parameters_t input;
@@ -81,7 +79,7 @@ int main(int argc, char** argv)
     // and load it again
     SUCCESS_OR_DIE(load_checkpoint("tmp_checkpoint_0.json",
         cc, y, segments, input, ref_quant));
-    for(auto &s: segments)
+    for (auto &s : segments)
         SUCCESS_OR_DIE(s.check());
 
     // Perturb parameters for one segment
@@ -99,12 +97,11 @@ int main(int argc, char** argv)
     SUCCESS_OR_DIE(load_checkpoint("tmp_checkpoint_perturbed_0.json",
         cc, y, segments, input, ref_quant));
 
-    for(auto &s: segments)
+    for (auto &s : segments)
         SUCCESS_OR_DIE(s.check());
 
     int traj_id;
-    try
-    {
+    try {
         int dimid, ncid;
         size_t lenp, n_timesteps;
         // Get the amount of trajectories
@@ -128,8 +125,7 @@ int main(int argc, char** argv)
 
         std::cout << "Number of trajectories in netCDF file: " << lenp << "\n";
         std::cout << "Number of timesteps: " << n_timesteps << "\n";
-        if(lenp <= 0)
-        {
+        if (lenp <= 0) {
             std::cout << "You asked for trajectory with index " << 0
                       << " which does not exist. ABORTING.\n";
             return 1;
@@ -141,19 +137,16 @@ int main(int argc, char** argv)
         // Read global attributes
         std::cout << "Global attributes:\n";
         auto attributes = datafile.getAtts();
-        for(auto & name_attr: attributes)
-        {
+        for (auto & name_attr: attributes) {
             auto attribute = name_attr.second;
             netCDF::NcType type = attribute.getType();
-            if(type.getName() == "double")
-            {
+            if (type.getName() == "double") {
                 std::vector<float> values(1);
                 attribute.getValues(values.data());
                 std::cout << attribute.getName() << "\n\t"
                             << "type: " << type.getName() << "\n\t"
                             << "values: " << values[0] << "\n";
-            } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
-            {
+            } else if (type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int") {
                 std::vector<int> values(1);
                 attribute.getValues(values.data());
                 std::cout << attribute.getName() << "\n\t"
@@ -165,29 +158,24 @@ int main(int argc, char** argv)
         // Read attributes from each column
         std::cout << "Non global attributes:\n";
         auto vars = datafile.getVars();
-        for(auto & name_var: vars)
-        {
+        for (auto & name_var: vars) {
             auto var = name_var.second;
             auto name = name_var.first;
             std::cout << name << "\n";
             auto attributes = var.getAtts();
-            for(auto & name_attr: attributes)
-            {
+            for (auto & name_attr: attributes) {
                 std::cout << "\t";
                 auto attribute = name_attr.second;
                 netCDF::NcType type = attribute.getType();
-                if(type.getName() == "double" || type.getName() == "float")
-                {
+                if (type.getName() == "double" || type.getName() == "float") {
                     std::vector<double> values(1);
                     attribute.getValues(values.data());
                     std::cout << attribute.getName() << "=" << values[0] << "\n";
-                } else if(type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int")
-                {
+                } else if (type.getName() == "int64" || type.getName() == "int32" || type.getName() == "int") {
                     std::vector<int> values(1);
                     attribute.getValues(values.data());
                     std::cout << attribute.getName() << "=" << values[0] << "\n";
-                } else if(type.getName() == "char")
-                {
+                } else if (type.getName() == "char") {
                     std::string values;
                     attribute.getValues(values);
                     std::cout << attribute.getName() << "=" << values << "\n";
@@ -214,8 +202,8 @@ int main(int argc, char** argv)
         startp.push_back(0);
         countp.push_back(1);
 #endif
-        startp.push_back(0); // start row, trajectory id or for wcb time
-        startp.push_back(0); // start column, time or for wcb trajectory
+        startp.push_back(0);  // start row, trajectory id or for wcb time
+        startp.push_back(0);  // start column, time or for wcb trajectory
         countp.push_back(1);
         countp.push_back(1);
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
@@ -239,8 +227,7 @@ int main(int argc, char** argv)
         load_nc_parameters(nc_params, startp, countp, ref_quant, 1);
         std::cout << "Trajectory 0 at t=1\n";
         print_params(nc_params, traj_id);
-        if(lenp > 1)
-        {
+        if (lenp > 1) {
             traj_id = ids[1];
 #ifdef MET3D
             startp[1] = 1;
@@ -264,8 +251,7 @@ int main(int argc, char** argv)
             std::cout << "Trajectory 1 at t=2\n";
             print_params(nc_params, traj_id);
         }
-    } catch(netCDF::exceptions::NcException& e)
-    {
+    } catch(netCDF::exceptions::NcException& e) {
         std::cout << e.what() << std::endl;
         std::cout << "ABORTING." << std::endl;
         return 1;

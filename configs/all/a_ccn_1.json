@@ -4,7 +4,7 @@
             "when_method": "repeated_time",
             "duration": 1800,
             "when_value": 1800,
-            "amount": 16,
+            "amount": 65,
             "params": [
                 {
                     "name": "a_ccn_1",

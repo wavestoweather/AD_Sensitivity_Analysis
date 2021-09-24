@@ -3,8 +3,11 @@ cd ..
 # Set to the number of threads or CPUs in case you want to run ensemble simulations
 NTASKS=4
 
-# Environmental conditions
-SCALING_FACTOR="1.0"
+# trajectory_sensitvity_perturbance 0
+# trajectory_sensitivity 1
+# trajectory_perturbance 2
+# grid_sensitivity 3
+SIMULATION_MODE="1"
 AUTO_TYPE="3"
 # Relative to ascend
 START_TIME="-1000"
@@ -43,7 +46,8 @@ if [ ! -d "$NEW_CHECKPOINTS" ]
         rm "${NEW_CHECKPOINTS}"*.sh
     fi
 
-for FILENAME in "no_exclusions_conv_400_median"
+# for FILENAME in "no_exclusions_conv_400_median"
+for FILENAME in "conv_400_0_traj_t000000_p001_met3d"
 do
     if [[ "$FILENAME" == *"conv_"* ]]
     then
@@ -51,8 +55,8 @@ do
         PROGRESSBAR="20"
         # End time in seconds for the simulation. Should be lower than
         # the maximum time of the netcdf-file
-        TARGET_TIME_AFTER_START="26000" # Minus Start_time
-        TARGET_TIME_AFTER_START="5400"
+        TARGET_TIME_AFTER_START="10000" # Minus Start_time
+        # TARGET_TIME_AFTER_START="3600"
     else
         # Update the progressbar after that many simulation steps
         PROGRESSBAR="5"
@@ -60,8 +64,11 @@ do
         # the maximum time of the netcdf-file
         TARGET_TIME_AFTER_START="83000" # Minus Start_time
     fi
-    PROGRESSBAR="0"
-    INPUT_FILENAME="/data/project/wcb/netcdf/vladiana_met_stats/${FILENAME}.nc_wcb"
+    PROGRESSBAR="500"
+    # TARGET_TIME_AFTER_START="140"
+    # INPUT_FILENAME="/data/project/wcb/netcdf/vladiana_met_stats/${FILENAME}.nc_wcb"
+    INPUT_FILENAME="/data/project/wcb/netcdf/vladiana_met_updated/${FILENAME}.nc_wcb"
+
 
     echo "###################################"
     echo "Running for ${INPUT_FILENAME}"
@@ -77,14 +84,23 @@ do
         rm "${OUTPUT_PATH}"*.nc_wcb
     fi
 
+    # valgrind build/bin/./trajectories -w ${WRITE_INDEX} -a ${AUTO_TYPE} \
+    # -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME_AFTER_START} -d ${TIMESTEP} \
+    # -i ${SNAPSHOT_INDEX} -b ${SIMULATION_MODE} \
+    # -o ${OUTPUT_PATH}"wcb${TARGET_TIME_AFTER_START}_traj0_MAP_t000000_p001" \
+    # -e ${START_OVER_ENVIRONMENT} \
+    # -p ${PROGRESSBAR} \
+    # -n ${START_TIME} \
+    # -l ${INPUT_FILENAME} -r 0 -g 0
+
     mpirun -n ${NTASKS} build/bin/./trajectories -w ${WRITE_INDEX} -a ${AUTO_TYPE} \
-    -t ${FIXED_ITERATION} -s ${START_OVER} -f ${TARGET_TIME_AFTER_START} -d ${TIMESTEP} \
-    -i ${SNAPSHOT_INDEX} -b ${SCALING_FACTOR} \
+    -t ${FIXED_ITERATION} -f ${TARGET_TIME_AFTER_START} -d ${TIMESTEP} \
+    -i ${SNAPSHOT_INDEX} -b ${SIMULATION_MODE} \
     -o ${OUTPUT_PATH}"wcb${TARGET_TIME_AFTER_START}_traj0_MAP_t000000_p001" \
     -e ${START_OVER_ENVIRONMENT} \
     -p ${PROGRESSBAR} \
     -n ${START_TIME} \
-    -l ${INPUT_FILENAME} -r 0 -g 0 \
-    -m ${ENSEMBLE_CONFIG} \
-    -h ${NEW_CHECKPOINTS}
+    -l ${INPUT_FILENAME} -r 0  #\
+    # -m ${ENSEMBLE_CONFIG} \
+    # -h ${NEW_CHECKPOINTS}
 done

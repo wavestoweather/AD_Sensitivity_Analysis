@@ -1,46 +1,49 @@
-AD with ICON and Processing Results
-===================================
+Algorithmic Differentiation as Sensitivity Analysis in Cloud Microphysics
+=========================================================================
 
-Here are various scripts to plot and process data from [netCDF](https://www.unidata.ucar.edu/software/netcdf/) files and my implementation of two moment scheme (similar to [ICON](https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html)) with [AD using CoDiPack](https://github.com/scicompkl/codipack). For the C++ code we follow the
+Microphysical processes in convective clouds have an impact on radiation in climate models, precipitation and dynamical features. These processes are usually parameterized, i.e. in numerical weather prediction (NWP) models, due to the small scale in which those processes operate and the lack of understanding of some. Understanding the impact of uncertainties in parametrization to uncertainty in cloud responses is crucial for tuning such models. In addition, parameter values can depend on discretization details such as the grid interval, time resolution and other choices made by modeling physical processes. Typical sensitivity analysis investigate few model parameters selected by experts and perturb those based on (joint) proposal distributions that may be refined by experts. In this paper we propose algorithmic differentiation (AD) as a tool to detect the magnitude and time step at which a model state parameter is sensitive to any of hundreds of model parameters. We implement a two-moment scheme and identify the 20 most important parameters to each hydrometeor and validate those parameters by comparing perturbed ensembles and the resulting divergence with predicted deviations. Finally, we use the output of AD for detecting the time step at which perturbing a parameter is necessary with a random forest and a precision and recall of about 75% for each model parameter and hydrometeor.
+
+This repository consists of an implementation of a two-moment scheme (similar to [ICON](https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html)) with [AD using CoDiPack](https://github.com/scicompkl/codipack) where environment and intial variables are read from [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) files. Python scripts are used for post-processing and data analysis. For the C++ code we follow the
 [doxygen standard](http://www.doxygen.nl/manual/docblocks.html). \
 We recommend an [anaconda](https://www.anaconda.com/) environment for which you may
-use `requirements_conda.txt` and then `requirements_pip.txt` with pip.
+use `requirements_conda.txt`. Either way, `requirements_pip.txt` with pip is needed
+as well to create a documentation.
+
 
 
 Contents
 ---------
 
-- **scripts:** Python scripts to plot stuff and read files for a quick glance or to create parquet files from simulation output.
-- **src:** C++ code. The two moment scheme is under "microphysics".
-- **include:** Header files.
-- **doc:** Documentation. Go in this folder and type `make html` to create a HTML documentation (recommended) and `make latexpdf` to create a pdf documentation with Latex.
-- ***.ipynb:** Jupyter Notebooks to get started. See below for more explanation.
+- **scripts:** Python scripts for plots and training a random forest.
+- **src:** C++ code.
+- **include:** Header files for the C++ code.
+- **docs:** Documentation. Go in this folder and type `make html` to create a HTML documentation (recommended) or `make latexpdf` to create a pdf documentation with Latex.
+- **exe_scripts:** Bash scripts to compile and run the simulation.
+- **configs:** Configuration files for running ensembles during simulation.
+- **data:** Example NetCDF files with environment variables and initial datapoints. Output data can be stored here.
+- **pics:** Default folder to save plots.
 
 
-Python Prerequisites for Post-Processing
-----------------------------------------
+Python Prerequisites for Post-Processing and Plotting
+------------------------------------------------------
 - [Python3](https://www.python.org/) (Tested with v3.7.6)
 - [pandas](https://pandas.pydata.org/) (Tested with v1.0.1)
 - [DASK](https://dask.org/) (Tested with v2.16.0)
 - [progressbar2](https://pypi.org/project/progressbar2/) (Tested with v3.37.1)
 - [seaborn](https://seaborn.pydata.org/) (Tested with v0.10.0)
 - [scipy](https://www.scipy.org/) (Tested with v1.4.1)
-- [netCDF4](https://unidata.github.io/netcdf4-python/netCDF4/index.html) (Tested with v1.5.3)
+- [scikit-learn](https://scikit-learn.org/stable/index.html) (Tested with v0.24.1)
+- [scikit-multilearn](http://scikit.ml/) (Tested with v0.2.0)
+- [netCDF4 for Python](https://unidata.github.io/netcdf4-python/netCDF4/index.html) (Tested with v1.5.3)
 - [pillow, formerly known as PIL](https://pillow.readthedocs.io/en/stable/) (Tested with v7.0.0)
 - [xarray, formerly known as xray](http://xarray.pydata.org/en/stable/) (Tested with v0.15.0)
-- [fastparquet](https://github.com/dask/fastparquet) (Tested with v0.3.3)
-- [python-snappy](http://google.github.io/snappy/) (Tested with v0.5.4)
-
-
-Python Prerequisites for Plotting
-----------------------------------------
-- [Iris](https://github.com/SciTools/iris) (Install from conda-forge; Tested with v2.4.0)
+- [joblib](https://joblib.readthedocs.io/en/latest/) (Tested with v0.16.0)
+- [numpy](https://numpy.org/) (Tested with v1.19.1)
 - [holoviews](http://holoviews.org/) (Tested with v1.13.2)
 - [hvplot](https://hvplot.holoviz.org/) (Tested with v0.5.2)
 - [datashader](https://datashader.org/index.html) (Tested with v0.10.0)
 - [matplotlib](https://matplotlib.org/) (Tested with v3.1.3)
-- [geoviews](https://geoviews.org/) (Install via `conda install -c pyviz geoviews`; Tested with v1.8.1)
-- [GEOS](https://github.com/libgeos/geos) (Tested with v3.7.1)
+- [bokeh](https://bokeh.org/) (Tested with v2.0.2)
 - [cartopy](https://scitools.org.uk/cartopy/docs/latest/) (Tested with v0.17.0)
 
 
@@ -57,67 +60,149 @@ Docs Prerequisites
 C++ Prerequisites
 -----------------
 - [GCC](https://gcc.gnu.org/) (Tested with v6.3.0)
+- [OpenMPI](https://www.open-mpi.org/) (Tested with v2.0.2)
 - [GSL](https://www.gnu.org/software/gsl/) (Tested with v2.3)
 - [NetCDF C++](https://github.com/Unidata/netcdf-cxx4/releases) (Tested with v4.7.3)
-- [Boost](https://www.boost.org/) (Tested with v1.3.4)
+- [HDF5](https://www.hdfgroup.org/solutions/hdf5/) (Tested with v1.8.22; problems may occur with v1.12 or above)
+- [Boost](https://www.boost.org/) (Tested with v1.6.2)
 - [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/) (Tested with v1.8.0)
-
-
-Optional Prerequisites
-----------------------
-- [GNU Parallel](https://www.gnu.org/software/parallel/) (Executing multiple processes with ease; Tested with v20161222)
-- [JupyterLab](https://jupyter.org/) (Working with Python and Plotting but in an easier way; Tested with v1.2.6)
-- JupyterLab extension for geoviews: `jupyter labextension install @pyviz/jupyterlab_pyviz`
+- [CMake](https://cmake.org/) (v3.7.2 or above; tested with v3.15.0)
 
 
 Compiling code
 ---------------
-You can alter the Makefile to your choice. \
-The variable `SEASON` can be set to
-`SPRING`, `SUMMER`, `AUTUMN`, `WINTER` and `SPRING95` and sets variables used
-in Hande et al. nucleation (not used by default, so you can ignore it). \
-With `FLUX` the microphysics takes incoming particles from above into account (default: on).
-Leave it empty, if you do not want to use it. \
-`SOURCE` is used to toggle different input files (default is `WCB2`; just leave it with that).
-`SAT_CALC` is set in `SOURCE` as well to calculate the saturation at every step using `qv*Rv*T/p_sat`
-with `Rv` the gas constant for water vapor and `p_sat` the
-saturation vapor pressure over a flat surface of liquid water (see `physical_parametrizations.h`).
-If it is not on, then saturation of 1 is assumed. \
-Variable `TIMESTEPPER` can be used to set the method to use (default: Runge Kutta)
-and the microphysical process (default: one moment scheme for warm clouds).
+In order to compile the code, create a folder `build` and in this folder type
+```
+cmake ..-DCMAKE_BUILD_TYPE=release
+make -j4
+```
+You may change the number for `make` to the number of cores available.
+In case the CMake does not find a specific library, you can specify them like this:
+```
+cmake .. -DNETCDF_INCLUDE_DIR=<path/to/netcdf/include/> -DCODIPACK_INCLUDEDIR=<path/to/codipack/include/> -DCMAKE_BUILD_TYPE=release
+```
+You may change the target for timing the microphysics with `-DTARGET=timing` if you wish to check the penalty cost of executing AD at every time step for varying amounts of model state variables and model parameters.
 
-To compile the code, simply type
-```
-make release
-```
-and your binary is under `build/apps/src/microphysics/trajectories` or you
-type
-```
-make scan
-```
-to create a binary for test cases that scan different microphysical processes
-under `build/apps/src/scratch/scan`.
 
 Running a simulation
 ---------------------
-You can use `./execute.sh` to compile the code, execute your simulation and do post-processing
-to make the data ready for analysis and to plot the simulation results.
-All necessary commandline parameters are explained there.
+We provide three bash scripts to execute the code in `exe_scripts`. You may change the value of variable
+`NTASKS` to the number of cores available in the script if available.
+`perturbed_ensembles.sh` generates the data for estimating the correlation between AD-estimated deviations and
+ensemble-estimated deviations. The data is stored under `data/vladiana_ensembles/`.
+It runs perturbed ensembles every 30 minutes with a single parameter being perturbed for each member.
+For postprocessing, you have to execute the following command in `scripts`:
+```
+python segment_identifier.py \
+    --data_path ../data/vladiana_ensembles/ \
+    --verbosity 3 \
+    --store_appended_data ../data/vladiana_ensembles_postprocess/predictions.nc \
+    --only_append \
+    --out_params QC QR QV NCCLOUD NCRAIN QI NCICE QS NCSNOW QG NCGRAUPEL QH NCHAIL QI_OUT QR_OUT QH_OUT QG_OUT QS_OUT NI_OUT NS_OUT NR_OUT NG_OUT NH_OUT
+```
+Now you can visualize the results, for example a comparison of the simulated
+rain mass density with the gradients:
+```
+python plot_mse.py \
+    --data_path ../data/vladiana_ensembles_postprocess/predictions.nc \
+    --backend matplotlib \
+    --store_path ../pics/qr_AD_example \
+    --xlabel Time\ After\ Ascent\ Begins\ [min] \
+    --ylabel "" \
+    --title Results\ of\ AD\ Over\ Time \
+    --width 1600 \
+    --height 900 \
+    --plot_variant time_plot \
+    --traj 1 \
+    --twinlabel Predicted\ Deviation \
+    --n_model_params 5 \
+    --max_time 7500 \
+    --out_parameter QR
+```
+Or for snow:
+```
+python plot_mse.py \
+    --data_path ../data/vladiana_ensembles_postprocess/predictions.nc \
+    --backend matplotlib \
+    --store_path ../pics/qs_AD_example \
+    --xlabel Time\ After\ Ascent\ Begins\ [min] \
+    --ylabel "" \
+    --title Results\ of\ AD\ Over\ Time \
+    --width 1600 \
+    --height 900 \
+    --plot_variant time_plot \
+    --traj 1 \
+    --twinlabel Predicted\ Deviation \
+    --n_model_params 1 \
+    --max_time 7500 \
+    --min_time 2500 \
+    --out_parameter QS
+```
+Plots that show the correlation between AD-estimated and ensemble-estimated
+devation can be generated with:
+```
+python plot_mse.py \
+    --data_path ../data/vladiana_ensembles_postprocess/predictions.nc \
+    --add_zero_sens \
+    --plot_types \
+    --backend bokeh \
+    --store_path ../pics/correlation \
+    --confidence 0.90 \
+    --xlabel AD-Estimated\ Log\ MSD \
+    --ylabel Ensemble-Estimated\ Log\ MSD \
+    --title \(a\)\ Ensemble\ vs\ AD\ Estimation \
+    --width 900 \
+    --height 900 \
+    --plot_variant correlation \
+    --set_zero 1e-200
+```
 
-Using Jupyter Notebooks
------------------------
-- **Plot_physics.ipynb:** Plot single microphysical processes with a given range
-of input parameters. Helpful if you want to see "what happens" and for debugging.
-- **Plot_sensitivities.ipynb:** Use this as a starting point to plot results
-from a simulation and to plot the sensitivities.
-- **Plot_simulation.ipynb:** Plot the data from netcdf files to get an idea, what's inside.
-Or you just use [Panoply](https://www.giss.nasa.gov/tools/panoply/) if you want something more elaborate. We also approve [Met.3D](https://met3d.wavestoweather.de/met-3d.html) for visualization and work towards as much compatibility as possible.
+`sensitivity_example.sh` is used to run a simulation for comparing the results to the original data.
+These can be visualized in folder `scripts`:
+```
+python plot_simulation_example.py \
+    --data_cosmo_path ../data/vladiana_input/ \
+    --data_sim_path ../data/comparison/ \
+    --width 1200 \
+    --height 900 \
+    --traj 0 \
+    --verbosity 3 \
+    --backend bokeh
+```
+
+`timing.sh` generates a comma separated output on the terminal with the run time for a
+simulation and the number of tracked parameters and model state variables. Be aware
+that you have to have compiled the program with target `timing` first!
+
+At last you can plot all input data, which may take a while the first time, with
+```
+python plot_cosmo.py \
+    --pollon 160 \
+    --pollat 51 \
+    --traj_type conv \
+    --store_path ../pics/cosmo_ \
+    --verbosity 3 \
+    --store_data ../data/all_conv.h5
+```
+This creates a file `data/all_conv.h5` which may be used for additional plots
+that can be generated faster.
+You can exchange
+```
+--store_data ../data/all_conv.h5
+```
+with
+```
+--data_path ../data/all_conv.h5
+```
+
 
 Adding New Physics
 ------------------
 Any user-defined functions and processes are under `include/microphysics/user_functions.h`.
-Just add your microphysics there and solve the ODE. A simple example is `RHS(..)` that
-you may copy and use for your own `my_physics(..)`.
+Just add your microphysics there to solve the ODE. We use one function to solve the
+right-hand side of the ODE, called `RHS_SB`, that calls all necessary functions
+to process the microphysics. One may create a similar function that uses different
+microphysics.
 The datatype `codi::RealReverse` is from CODIPACK and can mostly
 be handled like `double`. \
 Next you may open `include/microphysics/rk4.h` and either copy `RK4_step(..)` as
@@ -131,7 +216,7 @@ or simply add pragmas around the function calls like that:
 #endif
 ```
 where `MY_MICROPHYSICS` is a name you give to make use of your own function during
-compile time (set `TIMESTEPPER=-DMY_MICROPHYSICS` in the Makefile).
+compile time (set `TIMESTEPPER=-DMY_MICROPHYSICS` in CMake).
 Note, you only need to create your own `RK4_step(..)` if the given arguments are
 not sufficient for your own needs! \
 At last, go to `src/microphysics/trajectories.cpp` and search for:
@@ -141,45 +226,24 @@ At last, go to `src/microphysics/trajectories.cpp` and search for:
 Add pragmas as before to make use of your timestepper method. If you already
 added pragmas in `rk4.h`, it is sufficient to change:
 ```C++
-#if defined(RK4)
+#elif defined(RK4ICE)
 ```
 to
 ```C++
-#if defined RK4 || defined MY_MICROPHYSICS
+#elif defined(RK4) || defined(MY_MICROPHYSICS)
 ```
 Otherwise you need to add additional lines of code, such as:
 ```C++
-#if defined(MY_MICROPHYSICS)
+#elif defined(MY_MICROPHYSICS)
     my_RK4_step(..);
-#elif defined(RK4)
+#elif defined(RK4ICE)
 ```
-You can store your model constants and add new ones in the struct
-`model_constants_t`, which is located in `include/microphysics/types.h`.
-Make sure to use the type `codi::RealReverse` if you want to get
-gradients/sensitivites for this parameter. You can set some standard values there
-or, in case you need more sophisticated calculations or if you want to change
-them during simulation, use `setup_model_constants(..)` in
-`include/microphysics/physical_parametrizations.h` and change it to your needs.
-Decorate your version with pragmas as explained before.
-
-Getting Gradients for New Physics
----------------------------------
-You successfully added parameters to `model_constants_t` and set them up.
-Go to `include/microphysics/gradient_handle.h`. The `register_everything(..)`
-registers all input parameters on a tape. Add
-```C++
-tape.registerInput(parameter);
-```
-for every parameter in your model that is stored in a `model_constants_t`. \
-In `get_gradients(..)`, add
-```C++
-y_diff[ii][idx] == cc.parameter.getGradient();
-```
-for every parameter in your model with `idx` a running variable for the parameters. \
-In `include/microphysics/constants.h` add with your own pragmas the number
-of sensitivities your looking for with `num_par` and add the number of output
-parameters with `num_comp`. You also need to add indizes of all the output
-parameters. \
-Change the contents of `output_par_idx` and `output_grad_idx` to your output
-parameters and input parameters. These vectors are used to write the headers
-of your output files.
+If you are using new model parameters, then you have to add them to the enum
+`Cons_idx` or if you need model parameters specific to certain
+hydrometeors, you have to add them to the enum `Particle_cons_idx` located
+in `include/microphysics/constants.h`. The same file has to maps `table_particle_param`
+for hydrometeor specific parameters and `table_param` for all other parameters
+to map the parameters to a name used for the output.
+If your parameters depend on others, you may add such functions to the class
+`model_constants_t` which should be called by `setup_model_constants(..)`.
+To avoid any confusion, you might want to decorate your version with pragmas.
