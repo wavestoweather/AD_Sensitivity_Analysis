@@ -99,7 +99,7 @@ python segment_identifier.py \
     --store_appended_data ../data/vladiana_ensembles_postprocess/predictions.nc \
     --only_append
 ```
-Now you can visualize the results, for example a comparison of the simulated
+You may now delete the files in `data/vladiana_ensembles/` since we do not need them anymore. You can visualize the results, for example a comparison of the simulated
 rain mass density with the gradients:
 ```
 python plot_mse.py \
@@ -200,7 +200,8 @@ python plot_cosmo.py \
     --traj_type conv \
     --store_path ../pics/cosmo_ \
     --verbosity 3 \
-    --store_data ../data/all_conv.h5
+    --store_data ../data/all_conv.h5 \
+    --data_path ../data/vladiana_complete/
 ```
 This creates a file `data/all_conv.h5` which may be used for additional plots
 that can be generated faster.
