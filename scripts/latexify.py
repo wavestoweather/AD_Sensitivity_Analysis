@@ -44,6 +44,7 @@ physical_params = [
     "dEpsilon",
     "drho_ice",
     "dT_freeze",
+    "dT_f",
     "drho_w",
     "dM_w",
     "dM_a",
@@ -55,6 +56,8 @@ physical_params = [
     "dp_sat_const_a",
     "dp_sat_const_b",
     "dp_sat_ice_const_a",
+    "dp_sat_ice_const_b",
+    "drain_gfak",
     "dp_sat_low_temp",
     "dcloud_nm1",
     "dcloud_nm2",
@@ -381,7 +384,7 @@ mappings = {
     "dk_1_accr": r"$ \partial k_{\text{accr}, 1} $",
     "dk_1_conv": r"$ \partial k_{\text{conv}, 1} $",
     "dk_2_conv": r"$ \partial k_{\text{conv}, 2} $",
-    "dkc_autocon": r"$ \partial k_{c, \text{autocon}} $",  # TODOs!
+    "dkc_autocon": r"$ \partial k_{c, \text{autocon}} $",
     "dna_dust": r"$ \partial n_{\text{dust}} $",
     "dna_orga": r"$ \partial n_{\text{orga}} $",
     "dna_soot": r"$ \partial n_{\text{soot}} $",
@@ -2513,11 +2516,31 @@ in_params_notation_mapping = {
         "",
         "",
     ],
-    "dzeta": ["Exponents used in one-moment warm physics for qr calculation", "", ""],
-    "drain_gfak": ["Coefficient for gamma evaluation in rain evaporation", "", ""],
-    "dcloud_k_au": ["Coefficient for autoconversion of cloud to rain", "", ""],
-    "dcloud_k_sc": ["Coefficient for autoconversion of cloud to rain", "", ""],
-    "dkc_autocon": ["Kernel for autoconversion", "", ""],
+    "dzeta": [
+        "Exponents used in one-moment warm physics for qr calculation",
+        "",
+        "",
+    ],
+    "drain_gfak": [
+        "Coefficient for gamma evaluation in rain evaporation",
+        "",
+        "",
+    ],
+    "dcloud_k_au": [
+        "Coefficient for autoconversion of cloud to rain",
+        r"$ \frac{k_{cc}}{20x^\ast} \frac{(\nu_c+2)(\nu_c+4)}{(\nu_c+1)^2} $",
+        r"\citeA{seifert_two-moment_2006}",
+    ],
+    "dcloud_k_sc": [
+        "Coefficient for autoconversion of cloud to rain",
+        r"$ k_{cc} \frac{\nu+2}{\nu+1} $",
+        r"\citeA{seifert_two-moment_2006}",
+    ],
+    "dkc_autocon": [
+        "Kernel for autoconversion",
+        r"$ k_{cc} $",
+        r"\citeA{seifert_two-moment_2006}",
+    ],
     "dinv_z": [
         "Inverse of air parcel size (height) used in explicit sedimentation",
         "-",
@@ -2535,9 +2558,9 @@ in_params_notation_mapping = {
         r"\citeA{seifert_two-moment_2006}",
     ],
     "dD_conv_i": [
-        "Mean size of ice particles to determine the number of conversed ice particles in ice selfcollection",
-        "-",
-        "-",
+        "Minimum mean size of ice particles to determine the number of final ice particles in ice selfcollection",
+        r"Similar to $ \overline{x}_{i, \text{min}} $ but only for ice self collection",
+        r"\citeA{seifert_two-moment_2006}",
     ],
     "dq_crit_r": [
         "Threshold (mass density) for ice rain riming and snow rain riming",
@@ -2570,7 +2593,11 @@ in_params_notation_mapping = {
         r"$ \overline{D}_i $",
         r"\citeA{seifert_two-moment_2006}",
     ],
-    "dx_conv": ["Minimum mean mass for conversion of ice or snow to graupel", "-", "-"],
+    "dx_conv": [
+        "Minimum mean mass for conversion of ice or snow to graupel",
+        "-",
+        "-",
+    ],
     "dparcel_height": [
         "Height of the trajectory package. Not tracked",
         "-",
@@ -2583,8 +2610,8 @@ in_params_notation_mapping = {
     ],  # not tracked!
     "dT_nuc": [
         "Upper temperature threshold for heterogeneous ice nucleation",
-        "-",
-        "-",
+        "268.15 K",
+        "\citeA{}",  # Meyers et al. 1992
     ],
     "dT_freeze": [
         "Threshold for freezing of water",
@@ -2611,8 +2638,16 @@ in_params_notation_mapping = {
         r"$ \rho_0 $",
         r"\citeA{seifert_two-moment_2006}",
     ],
-    "drho_vel": ["Exponent for density correction", "-", "-"],
-    "drho_vel_c": ["Exponent for density correction of cloud droplets", "-", "-"],
+    "drho_vel": [
+        "Exponent for density correction",
+        r"Not a variable but a constant $ 0.5 $ in Eq. (28)",
+        r"\citeA{seifert_two-moment_2006}",
+    ],
+    "drho_vel_c": [
+        "Exponent for density correction of cloud droplets",
+        r"Not a variable but a constant $ 0.5 $ in Eq. (28)",
+        r"\citeA{seifert_two-moment_2006}",
+    ],
     "drho_ice": [
         r"Density of ice in $ \text{kg}/\text{m}^3 $",
         r"$ \rho_\epsilon $",
@@ -2718,37 +2753,37 @@ in_params_notation_mapping = {
         "Coefficient for splintering during Hallet-Mossop ice multiplication",
         r"$ F_\text{splint} $",
         r"\citeA{seifert_two-moment_2006}",
-    ],  # check that; no formula in seifert
+    ],
     "dT_mult_min": [
         "Coefficient used in Hallet-Mossop ice multiplication",
-        "",
-        "",
-    ],  # need to check library for that
+        r"$ T_{\text{splint}, \text{min}} $",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
+    ],
     "dT_mult_max": [
         "Coefficient used in Hallet-Mossop ice multiplication",
-        "",
-        "",
-    ],  # need to check library for that
+        r"$ T_{\text{splint}, \text{max}} $",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
+    ],
     "dT_mult_opt": [
         "Coefficient used in Hallet-Mossop ice multiplication. Not tracked",
-        "",
-        "",
+        r"$ T_{\text{splint}, \text{opt}} $",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
     ],  # not tracked! (used to calculate const3, const4)
     "dconst0": [
         "Coefficient used in riming processes",
         r"$ (\overline{D}_{c,1} - \overline{D}_{c, 0})^{-1} $",
-        r"\citeA{seifert_two-moment_2006}",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
     ],
     "dconst3": [
         "Coefficient used in riming processes for breaking up particles",
-        "",
-        "",
-    ],  # Beheng 1982; need to check library
+        r"$( T_{\text{splint}, \text{opt}} - T_{\text{splint}, \text{min}})^{-1}$",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
+    ],
     "dconst4": [
         "Coefficient used in riming processes for breaking up particles",
-        "",
-        "",
-    ],  # Beheng 1982; need to check library
+        r"$( T_{\text{splint}, \text{opt}} - T_{\text{splint}, \text{max}})^{-1}$",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
+    ],
     "dconst5": [
         "Coefficient used for conversion of snow or ice to graupel during riming",
         r"$ \alpha_\circ \frac{\rho_q}{\rho_\epsilon} $",
@@ -2964,31 +2999,35 @@ in_params_notation_mapping = {
         "",
     ],  # not used!
     "dp_sat_const_a": [
-        "Parameter for saturation adjustment. Constant saturated water vapor pressure",
+        r"Parameter for saturation $ S $ adjustment.",
         "",
         "",
     ],
     "dp_sat_ice_const_a": [
         "Parameter for saturation adjustment. Constant saturated ice pressure",
         "",
-        "",
+        "-",
     ],
     "dp_sat_const_b": [
         "Parameter for saturation adjustment. Constant saturated water vapor pressure",
         "",
-        "",
+        "-",
     ],
     "dp_sat_ice_const_b": [
         "Parameter for saturation adjustment. Constant saturated ice pressure",
         "",
-        "",
+        "-",
     ],
     "dp_sat_low_temp": [
         r"Parameter for saturation adjustment. Saturated water vapor pressure at $T = 233 $K",
         "",
+        "-",
+    ],
+    "dT_sat_low_temp": [
+        "Parameter for saturation adjustment",
+        "",
         "",
     ],
-    "dT_sat_low_temp": ["Parameter for saturation adjustment", "", ""],
     "dalpha_depo": [
         "Depostion coefficient for homogeneous ice nucleation",
         r"$ \alpha $",
