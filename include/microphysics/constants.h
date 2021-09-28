@@ -493,6 +493,9 @@ enum class Cons_idx: uint32_t{
     c_ccn_1, c_ccn_2, c_ccn_3, c_ccn_4,
     d_ccn_1, d_ccn_2, d_ccn_3, d_ccn_4,
 #endif
+#if defined(B_EIGHT)
+    hande_ccn_fac,
+#endif
     n_items
 };
 
@@ -550,7 +553,10 @@ std::unordered_map<std::string, Cons_idx> const table_param = {
     {"c_ccn_1", Cons_idx::c_ccn_1}, {"c_ccn_2", Cons_idx::c_ccn_2},
     {"c_ccn_3", Cons_idx::c_ccn_3}, {"c_ccn_4", Cons_idx::c_ccn_4},
     {"d_ccn_1", Cons_idx::d_ccn_1}, {"d_ccn_2", Cons_idx::d_ccn_2},
-    {"d_ccn_3", Cons_idx::d_ccn_3}, {"d_ccn_4", Cons_idx::d_ccn_4}
+    {"d_ccn_3", Cons_idx::d_ccn_3}, {"d_ccn_4", Cons_idx::d_ccn_4},
+#endif
+#if defined(B_EIGHT)
+    {"hande_ccn_fac", Cons_idx::hande_ccn_fac}
 #endif
 };
 
@@ -1127,11 +1133,11 @@ const double ni_het_max = 500.0e3;
 const double ni_hom_max = 5000.0e3;
 
 /**
- * Cons_idxeters for deposition formula (2) of Hande et al.
+ * Parameters for deposition formula (2) of Hande et al.
  */
 const double a_dep = 0.27626;
 /**
- * Cons_idxeters for deposition formula (2) of Hande et al.
+ * Parameters for deposition formula (2) of Hande et al.
  */
 const double b_dep = 6.21;
 /**
@@ -1139,7 +1145,7 @@ const double b_dep = 6.21;
  */
 const double c_dep = -1.3107;
 /**
- * Cons_idxeters for deposition formula (2) of Hande et al.
+ * Parameters for deposition formula (2) of Hande et al.
  */
 const double d_dep = 0.26789;
 
@@ -1316,12 +1322,12 @@ const uint32_t t_tstep = 2;
 const uint32_t s_sstep = 1;
 
 /**
- * Cons_idxeter for saturation adjustment
+ * Parameter for saturation adjustment
  */
 const double r_const = 287.04;
 
 /**
- * Cons_idxeter for saturation adjustment
+ * Parameter for saturation adjustment
  */
 const double r1_const = 461.5;
 
@@ -1338,36 +1344,39 @@ const double cv = 718.66;
 const bool always_sat_adj = true;
 
 /**
- * Cons_idxeter for saturation adjustment. Constant saturated water vapor pressure
+ * Parameter for saturation adjustment. Constant saturated water vapor pressure
  */
 const double p_sat_const_a = 17.2693882;
 
 /**
- * Cons_idxeter for saturation adjustment. Constant saturated ice pressure
+ * Parameter for saturation adjustment. Constant saturated ice pressure
  */
 const double p_sat_ice_const_a = 21.8745584;
 
 /**
- * Cons_idxeter for saturation adjustment. Constant saturated water vapor pressure
+ * Parameter for saturation adjustment. Constant saturated water vapor pressure
  */
 const double p_sat_const_b = 35.86;
 
 /**
- * Cons_idxeter for saturation adjustment. Constant saturated ice pressure
+ * Parameter for saturation adjustment. Constant saturated ice pressure
  */
 const double p_sat_ice_const_b = 7.66;
 
 /**
- * Cons_idxeter for saturation adjustment. Saturated water vapor pressure at T = 233K
+ * Parameter for saturation adjustment. Saturated water vapor pressure at T = 233K
  */
 const double p_sat_low_temp = 610.78;
 
 /**
- * Cons_idxeter for saturation adjustment.
+ * Parameter for saturation adjustment.
  */
 const double T_sat_low_temp = 273.15;
 
-
+/**
+ * Parameter for scaling Hande CCN activation in general.
+ */
+const double hande_ccn_fac = 1.0;
 
 const std::vector<std::vector<double> > afrac_dust = {
     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,

@@ -601,6 +601,9 @@ void model_constants_t<float_t>::setup_model_constants(
     this->constants[static_cast<int>(Cons_idx::k_1_accr)] = k_1_accr;
     this->constants[static_cast<int>(Cons_idx::k_r)] = k_r;
 
+#if defined(B_EIGHT)
+    this->constants[static_cast<int>(Cons_idx::hande_ccn_fac)] = hande_ccn_fac;
+#endif
     // Numerics
 #ifdef MET3D
     this->t_end_prime = input.t_end_prime;  // + input.start_time;;

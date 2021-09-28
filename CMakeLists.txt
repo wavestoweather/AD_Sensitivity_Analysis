@@ -131,6 +131,14 @@ if (COMPRESS_OUTPUT)
     message("~~~ Make sure you build NetCDF with HDF5 v1.10.2 or above.${ColourReset}")
 endif()
 
+# Different parameterization for collaboration with B8
+if(B_EIGHT)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DB_EIGHT")
+    message("${BoldYellow}~~~ Using different CCN activation for ${ColourReset}")
+    message("${BoldYellow}~~~ collaboration with B8: ${ColourReset}")
+    message("${BoldYellow}~~~ Role of uncertainty in ice microphysical processes in warm conveyor belts ${ColourReset}")
+endif()
+
 # Add tracing flags
 if (TRACE_QV)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_QV")

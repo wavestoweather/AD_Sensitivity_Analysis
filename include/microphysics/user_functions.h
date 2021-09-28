@@ -170,6 +170,78 @@ void saturation_adjust(
     }
 }
 
+#if defined(B_EIGHT)
+/**
+ * CCN activation similar to Hande et al 2016.
+ * https://doi.org/10.5194/acp-16-12059-2016
+ * Adjusted by AKM to fit NAWDEX FAAM PCASPobservations
+ * Reimplemented in C++ by MH
+ *
+ * @params p_prime Pressure [Pa]
+ * @params w_prime Ascend velocity [m s^-1]
+ * @params T_prime Temperature [K]
+ * @params qv_prime Water vapor mixing ratio
+ * @params qc_prime Cloud water mixing ratio
+ * @params Nc Number of cloud droplets
+ * @params EPSILON Small value that qc needs to exceed
+ * @params res Vector to store the changes
+ * @params cc Model constants
+ */
+template<class float_t>
+void ccn_act_hande_akm(
+    float_t &p_prime,
+    float_t &w_prime,
+    float_t &T_prime,
+    float_t &qv_prime,
+    float_t &qc_prime,
+    float_t &Nc,
+    const double &EPSILON,
+    std::vector<float_t> &res,
+    model_constants_t &cc) {
+    // non maritime case
+    if (qc_prime > EPSILON && w_prime > 0.0 && T_prime >= (T_freeze - 38)) {
+        float_t bcoeff = get_at(cc.constants, Cons_idx::b_ccn_1)
+            * exp(-get_at(cc.constants, Cons_idx::b_ccn_2) * p_prime + get_at(cc.constants, Cons_idx::b_ccn_3));
+        float_t ccoeff = get_at(cc.constants, Cons_idx::c_ccn_1)
+            * exp(-get_at(cc.constants, Cons_idx::c_ccn_2) * p_prime + get_at(cc.constants, Cons_idx::c_ccn_3));
+
+        float_t Na;
+        if (p_prime < 80000) {
+            Na = 250 * exp((p_prime/100-800)/150) + 7*exp((p_prime/100-800)/400);
+        } else {
+            Na = 257;
+        }
+
+        // concentration of ccn
+        float_t delta_n = get_at(cc.constants, Cons_idx::hande_ccn_fac) * (
+            Na * (1/(1+exp(-bcoeff*log(w_prime)-ccoeff))) * 1e6);
+        delta_n = max(max(delta_n, 10.0e-6) - Nc, 0);
+        if (cc.dt_prime > 1) delta_n /= cc.dt_prime;
+        float_t delta_q = min(delta_n * get_at(cc.cloud.constants, Particle_cons_idx::min_x_act),
+            (res[qv_idx] + qv_prime)/cc.dt_prime);
+        delta_n = delta_q / get_at(cc.cloud.constants, Particle_cons_idx::min_x_act);
+
+        res[Nc_idx] += delta_n;
+        res[qc_idx] += delta_q;
+        res[qv_idx] -= delta_q;
+#ifdef TRACE_QC
+        if (trace)
+            std::cout << "traj: " << cc.traj_id << " Ascent dqc " << delta_q << ", dNc " << delta_n
+                << ", nuc_n " << nuc_n << ", Nc " << Nc << ", rest " << 10.0e-6 << "\n";
+#endif
+#ifdef TRACE_QV
+        if (trace)
+            std::cout << "traj: " << cc.traj_id << " Ascent dqv " << -delta_q << "\n";
+#endif
+        float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
+        // Evaporation
+        if (delta_q < 0.0)
+            res[lat_cool_idx] += delta_e;
+        else
+            res[lat_heat_idx] += delta_e;
+    }
+}
+#else
 
 /**
  * CCN activation after Hande et al 2016.
@@ -250,7 +322,7 @@ void ccn_act_hande(
             res[lat_heat_idx] += delta_e;
     }
 }
-
+#endif
 
 /**
  * CCN activation after Seifert & Beheng (2006):
@@ -4102,9 +4174,13 @@ void RHS_SB(std::vector<float_t> &res,
     if (nuc_type == 0) {
         // Not implemented
     } else if (nuc_type < 6) {
-        // Hande et al 2015
+#if defined(B_EIGHT)
+        ccn_act_hande_akm(p_prime, w_prime, T_prime, qv_prime, qc_prime, Nc,
+            EPSILON, res, cc);
+#else
         ccn_act_hande(p_prime, w_prime, T_prime, qv_prime, qc_prime, Nc,
             EPSILON, res, cc);
+#endif
 
     } else if (nuc_type == 6) {
         // Not implemented
