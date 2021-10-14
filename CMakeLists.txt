@@ -104,15 +104,6 @@ endif()
 set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: None debug release" FORCE)
 
 set(CMAKE_CXX_FLAGS_SIM "-DRK4ICE -DAUTUMN -DFLUX -DMET3D -DSB_CONV -DSB_SHAPE")
-if( NPROCS MATCHES "^[0-9]+$")
-    message("~~~ Using NPROCS=${NPROCS} (used with GNU parallel and not MPI!)")
-else()
-    message(WARNING "
-    ~~~ A target number of processes has not been set.
-    ~~~ Defaults to NPROCS=4. This is only important when
-    ~~~ using GNU parallel instead of MPI.")
-    set(NPROCS "4")
-endif()
 
 # Set flags used in all build types
 # set(CMAKE_CXX_FLAGS "-pipe ${CXX_STANDARD} ${CXX_WARNING_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SIM} -DNPROCS=${NPROCS} -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf")
@@ -128,6 +119,17 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}" CACHE STRING
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}" CACHE STRING
   "Flags used by compiler during debug builds")
+
+if (SILENT_MODE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSILENT_MODE")
+  message("${BoldYellow}~~~ Using silent mode. Suppress prints where possible.${ColourReset}")
+endif()
+
+if (COMPRESS_OUTPUT)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOMPRESS_OUTPUT")
+    message("${BoldYellow}~~~ Using compression (level 9) on all output columns.")
+    message("~~~ Make sure you build NetCDF with HDF5 v1.10.2 or above.${ColourReset}")
+endif()
 
 # Add tracing flags
 if (TRACE_QV)
@@ -170,6 +172,14 @@ if (TRACE_SAT)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_SAT")
     message("${BoldYellow}~~~ Tracing saturation adjustment${ColourReset}")
 endif()
+if (TRACE_COMM)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_COMM")
+    message("${BoldYellow}~~~ Tracing MPI communication${ColourReset}")
+endif()
+if (TRACE_WRITE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_WRITE")
+    message("${BoldYellow}~~~ Tracing writing output${ColourReset}")
+endif()
 
 message(STATUS "Searching for necessary libraries")
 
@@ -178,13 +188,18 @@ include_directories (${AD_SIM_HOME})
 message("~~~ MPI")
 find_package(MPI)
 if( MPI_CXX_FOUND )
-    message("~~~ Found MPI. Ensemble simulations are now going to use MPI.")
-    # message("~~~ No checkpoints will be generated during simulation.")
-    # message("~~~ Future versions may allow to generate checkpoints nonetheless")
+    message("~~~ Found MPI.")
     include_directories(${MPI_CXX_INCLUDE_PATH})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MPI")
 else()
-    message("${BoldYellow}~~~ Using GNU parallel as fallback for ensemble simulations.${ColourReset}")
+    message(FATAL_ERROR
+"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CMake was not able to find your MPI installation.
+Please define MPI_HOME pointing to your installation. If this does not
+work, take a look at https://cmake.org/cmake/help/latest/module/FindMPI.html.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+")
 endif()
 
 message("~~~ BOOST")
@@ -237,3 +252,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" CACHE STRING
     "Flags used by the compiler during all build types")
 
 add_subdirectory(src)
+

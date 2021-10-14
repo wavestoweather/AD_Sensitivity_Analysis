@@ -100,6 +100,10 @@ struct task_scheduler_t{
     void set_n_ensembles(const int &n) {n_ensembles = n;}
     void set_n_trajectories(const int &n) {n_trajectories = n;}
 
+    int get_n_ensembles() const {return n_ensembles;}
+    int get_n_trajectories() const {return n_trajectories;}
+    int get_n_processes() const {return n_processes;}
+
  private:
     bool static_scheduling;
     uint64_t n_ensembles;

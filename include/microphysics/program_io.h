@@ -39,9 +39,10 @@ namespace pt = boost::property_tree;
  * Parse an ensemble configuration as an XML-file.
  *
  */
+template<class float_t>
 void load_ens_config(
     std::string filename,
-    model_constants_t &cc,
+    model_constants_t<float_t> &cc,
     std::vector<segment_t> &segments,
     input_parameters_t &input,
     const reference_quantities_t &ref_quant) {
@@ -67,54 +68,6 @@ void load_ens_config(
     }
 }
 
-/**
- * Create a bash script that executes this very same program by loading
- * a checkpoint file
- * (gnuparallel) starting n processes
- * (slurm) submitting it as a slurm job with n processes
- */
-void create_run_script(
-    const std::string &foldername,
-    const std::string &checkpoint_file,
-    const model_constants_t &cc,
-    const uint32_t n_processes,
-    const std::string which = "gnuparallel",
-    const bool start = false) {
-
-    if (which == "gnuparallel") {
-        uint32_t j = n_processes - 1;
-        if (j > NPROCS)
-            j = NPROCS;
-        std::string script = "parallel -u -j " + std::to_string(j)
-            + " --no-notice --delay .2 ${AD_SIM_HOME}/build/apps/src/microphysics/./trajectories "
-            "-c " + checkpoint_file + " -g {1} ::: {0.."
-            + std::to_string(n_processes-2) + "}";
-
-        // Save as a script
-        std::string script_name = foldername + "/execute_id" + cc.id + "_0000.sh";
-        uint32_t i = 0;
-        while (exists(script_name)) {
-            i++;
-            if (i < 10)
-                script_name = foldername + "/execute_id" + cc.id + "_000" + std::to_string(i) + ".sh";
-            else if (i < 100)
-                script_name = foldername + "/execute_id" + cc.id + "_00" + std::to_string(i) + ".sh";
-            else if (i < 1000)
-                script_name = foldername + "/execute_id" + cc.id + "_0" + std::to_string(i) + ".sh";
-            else
-                script_name = foldername + "/execute_id" + cc.id + "_" + std::to_string(i) + ".sh";
-        }
-        std::ofstream out(script_name);
-        out << "#!/bin/bash\n" << script << ((start) ? " &\n" : "\n");
-        out.close();
-
-        if (start)
-            std::system(("./" + script_name).c_str());
-
-    } else if (which == "slurm") {
-    }
-}
-
 
 /**
  * Based on
@@ -126,8 +79,9 @@ void create_run_script(
  * @param filename Path to the data file.
  * @param ndT Number of equidistant table vectors.
  */
+template<class float_t>
 bool load_lookup_table(
-    table_t &table,
+    table_t<float_t> &table,
     std::string filename = "dmin_wetgrowth_lookup.dat",
     uint32_t ndT = 61) {
     // T may be nonequidistant

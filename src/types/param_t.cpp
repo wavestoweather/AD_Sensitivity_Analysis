@@ -42,16 +42,17 @@ void param_t::add_mean(
 }
 
 
-void param_t::add_name(
+template<class float_t>
+int param_t::add_name(
     std::string n,
-    model_constants_t &cc) {
+    model_constants_t<float_t> &cc) {
     param_name = n;
     if (particle_param) {
         auto it = table_particle_param.find(n);
         if (it != table_particle_param.end()) {
             name = static_cast<uint32_t>(it->second);
             if (std::isnan(mean)) {
-                particle_model_constants_t *pt_model;
+                particle_model_constants_t<float_t> *pt_model;
                 switch (out_name) {
                     case static_cast<uint32_t>(OutParam::cloud):
                         pt_model = &(cc.cloud);
@@ -71,6 +72,8 @@ void param_t::add_name(
                     case static_cast<uint32_t>(OutParam::ice):
                         pt_model = &(cc.ice);
                         break;
+                    default:
+                        return PARAM_ADD_NAME_ERR;
                 }
                 mean = pt_model->constants[name].getValue();
             }
@@ -93,6 +96,7 @@ void param_t::add_name(
     } else if (!isnan(sigma_perc) && err != PARAM_CONFIG_ERR) {
         add_sigma_perc(sigma_perc);
     }
+    return SUCCESS;
 }
 
 
@@ -202,15 +206,17 @@ void param_t::put(
 }
 
 
-int param_t::from_pt(pt::ptree &ptree, model_constants_t &cc) {
-    int err = 0;
+template<class float_t>
+int param_t::from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc) {
+    int err = SUCCESS;
     add_type(ptree.get<std::string>("type"));
     if (err != 0)
         return err;
     for (auto &it : ptree) {
         auto first = it.first;
         if (first == "name") {
-            add_name(it.second.get_value<std::string>(), cc);
+            err = add_name(it.second.get_value<std::string>(), cc);
+            if (err != SUCCESS) return err;
         } else if (first == "sigma_perc") {
             add_sigma_perc(it.second.get_value<double>());
         } else if (first == "sigma") {
@@ -229,10 +235,11 @@ int param_t::from_pt(pt::ptree &ptree, model_constants_t &cc) {
 }
 
 
+template<class float_t>
 void param_t::perturb(
-    model_constants_t &cc) const {
+    model_constants_t<float_t> &cc) const {
     if (particle_param) {
-        particle_model_constants_t *pt_model = nullptr;
+        particle_model_constants_t<float_t> *pt_model = nullptr;
         switch (out_name) {
             case static_cast<uint32_t>(OutParam::cloud):
                 pt_model = &(cc.cloud);
@@ -280,10 +287,11 @@ void param_t::perturb(
 }
 
 
+template<class float_t>
 void param_t::reset(
-    model_constants_t &cc) const {
+    model_constants_t<float_t> &cc) const {
     if (particle_param) {
-        particle_model_constants_t *pt_model = nullptr;
+        particle_model_constants_t<float_t> *pt_model = nullptr;
         switch (out_name) {
             case static_cast<uint32_t>(OutParam::cloud):
                 pt_model = &(cc.cloud);
@@ -322,3 +330,27 @@ std::string param_t::get_name() const {
         return param_name;
     }
 }
+
+template int param_t::add_name<codi::RealReverse>(
+    std::string, model_constants_t<codi::RealReverse>&);
+
+template int param_t::add_name<codi::RealForwardVec<num_par_init> >(
+    std::string, model_constants_t<codi::RealForwardVec<num_par_init> >&);
+
+template int param_t::from_pt<codi::RealReverse>(
+    pt::ptree&, model_constants_t<codi::RealReverse>&);
+
+template int param_t::from_pt<codi::RealForwardVec<num_par_init> >(
+    pt::ptree&, model_constants_t<codi::RealForwardVec<num_par_init> >&);
+
+template void param_t::perturb<codi::RealReverse>(
+    model_constants_t<codi::RealReverse>&) const;
+
+template void param_t::perturb<codi::RealForwardVec<num_par_init> >(
+    model_constants_t<codi::RealForwardVec<num_par_init> >&) const;
+
+template void param_t::reset<codi::RealReverse>(
+    model_constants_t<codi::RealReverse>&) const;
+
+template void param_t::reset<codi::RealForwardVec<num_par_init> >(
+    model_constants_t<codi::RealForwardVec<num_par_init> >&) const;

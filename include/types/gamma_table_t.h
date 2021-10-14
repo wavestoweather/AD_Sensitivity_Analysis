@@ -6,6 +6,8 @@
 #include <boost/math/special_functions/gamma.hpp>
 #include "codi.hpp"
 
+#include "include/microphysics/constants.h"
+
 /**
  * A lookup table for the lower incomplete gamma function from ICON
  * mo_2mom_mcrph_util.f90 at incgfct_lower_lookupcreate:

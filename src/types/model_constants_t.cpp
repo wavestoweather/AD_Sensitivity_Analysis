@@ -1,8 +1,9 @@
 #include "include/types/model_constants_t.h"
 
-
-model_constants_t::model_constants_t(
-    const std::string &tracking_filename) {
+template<class float_t>
+model_constants_t<float_t>::model_constants_t(
+    const std::string &tracking_filename,
+    const bool &track_initial_cond) {
     id = "0";
     ensemble_id = 0;
     traj_id = 0;
@@ -10,8 +11,8 @@ model_constants_t::model_constants_t(
     n_ensembles = 1;
     ens_desc = "root ";
     done_steps = 0;
-    constants.resize(static_cast<int>(Cons_idx::n_items));
     std::fill(constants.begin(), constants.end(), 0);
+    std::fill(initial_conditions.begin(), initial_conditions.end(), 0);
     int track_amount = num_par / 64 + (num_par%64 != 0);
     track_param.resize(track_amount);
     track_state = 0;
@@ -20,19 +21,54 @@ model_constants_t::model_constants_t(
     if (tracking_filename.compare("") != 0) {
         local_num_comp = 0;
         local_num_par = 0;
+        local_ic_par = 0;
         this->load_configuration(tracking_filename);
     } else {
         local_num_comp = num_comp;
         local_num_par = num_par;
         track_state = -1;
+
+        if ( track_initial_cond ) {
+            track_ic = -1;
+            local_ic_par = static_cast<uint32_t>(Init_cons_idx::n_items);
+            // Tracking initial conditions and model parameters is not
+            // possible. Hence we set local_num_par.
+            local_num_par = local_ic_par;
+        } else {
+            track_ic = 0;
+            local_ic_par = 0;
+        }
         for (auto &t : track_param)
             t = -1;
     }
 }
 
 
-void model_constants_t::register_input(
-    codi::RealReverse::TapeType &tape) {
+template<>
+void model_constants_t<codi::RealForwardVec<num_par_init> >::register_input() {
+    for (uint32_t i=0; i<static_cast<int>(Init_cons_idx::n_items); i++)
+        if (trace_check(i, 2))
+            this->initial_conditions[i].gradient()[i] = 1;
+}
+
+
+template<>
+void model_constants_t<codi::RealReverse>::register_input() {
+    // Nothing to do for the backward mode
+}
+
+
+template<>
+void model_constants_t<codi::RealForwardVec<num_par_init> >::register_input(
+    codi::RealReverse::Tape &tape) {
+    // Nothing to do for the forward mode
+}
+
+
+template<>
+void model_constants_t<codi::RealReverse>::register_input(
+    codi::RealReverse::Tape &tape) {
+
     for (uint32_t i=0; i<static_cast<int>(Cons_idx::n_items); i++)
         if (trace_check(i, false))
             tape.registerInput(this->constants[i]);
@@ -84,34 +120,31 @@ void model_constants_t::register_input(
 }
 
 
-void model_constants_t::get_gradients(
-    std::vector<codi::RealReverse> &y_single_new,
-    std::vector< std::array<double, num_par > > &y_diff,
-    codi::RealReverse::TapeType &tape) const {
-    for (uint32_t ii = 0 ; ii < num_comp ; ii++)
-        if (trace_check(ii, true))
-            tape.registerOutput(y_single_new[ii]);
+template<>
+void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradient(
+    std::array<double, num_par> &out_vec,
+    std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
+    uint32_t ii) const {
 
-    tape.setPassive();
-    for (uint32_t ii = 0 ; ii < num_comp ; ii++) {
-        if (!trace_check(ii, true))
-            continue;
-        y_single_new[ii].setGradient(1.0);
-        tape.evaluate();
-
-        this->get_gradient(y_diff[ii], ii);
-        tape.clearAdjoints();
+    uint32_t offset = out_vec.size() - static_cast<int>(Init_cons_idx::n_items);
+    for (int i=0; i<static_cast<int>(Init_cons_idx::n_items); ++i) {
+        if (trace_check(i, 2)) {
+            out_vec[i + offset] = y_single_new[ii].getGradient()[i]
+                * uncertainty[i + static_cast<uint32_t>(Cons_idx::n_items)];
+        }
     }
-    tape.reset();
 }
 
 
-void model_constants_t::get_gradient(
-    std::array<double, num_par> &out_vec, uint32_t ii) const {
+template<>
+void model_constants_t<codi::RealReverse>::get_gradient(
+    std::array<double, num_par> &out_vec,
+    std::vector<codi::RealReverse> &y_single_new,
+    uint32_t ii) const {
+
     for (int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
         if (trace_check(i, false))
             out_vec[i] = this->constants[i].getGradient() * uncertainty[i];
-
 
     uint32_t idx = static_cast<uint32_t>(Cons_idx::n_items);
     if (local_num_par == num_par) {
@@ -166,7 +199,62 @@ void model_constants_t::get_gradient(
 }
 
 
-void model_constants_t::put(
+template<>
+void model_constants_t<codi::RealReverse>::get_gradients(
+    std::vector<codi::RealReverse> &y_single_new,
+    std::vector< std::array<double, num_par > > &y_diff) const {
+
+    // Nothing to do here
+}
+
+
+template<>
+void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradients(
+    std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
+    std::vector< std::array<double, num_par > > &y_diff) const {
+
+    for (uint32_t ii = 0 ; ii < num_comp ; ii++) {
+        if (trace_check(ii, true)) {
+            this->get_gradient(y_diff[ii], y_single_new, ii);
+        }
+    }
+}
+
+
+template<>
+void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradients(
+    std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
+    std::vector< std::array<double, num_par > > &y_diff,
+    codi::RealReverse::Tape &tape) const {
+    // Nothing to do here in the forward mode
+}
+
+
+template<>
+void model_constants_t<codi::RealReverse>::get_gradients(
+    std::vector<codi::RealReverse> &y_single_new,
+    std::vector< std::array<double, num_par > > &y_diff,
+    codi::RealReverse::Tape &tape) const {
+    for (uint32_t ii = 0 ; ii < num_comp ; ii++)
+        if (trace_check(ii, true))
+            tape.registerOutput(y_single_new[ii]);
+
+    tape.setPassive();
+    for (uint32_t ii = 0 ; ii < num_comp ; ii++) {
+        if (!trace_check(ii, true))
+            continue;
+        y_single_new[ii].setGradient(1.0);
+        tape.evaluate();
+
+        this->get_gradient(y_diff[ii], y_single_new, ii);
+        tape.clearAdjoints();
+    }
+    tape.reset();
+}
+
+
+template<class float_t>
+void model_constants_t<float_t>::put(
     pt::ptree &ptree) const {
     pt::ptree model_cons;
     model_cons.put("id", id);
@@ -202,7 +290,7 @@ void model_constants_t::put(
     if (!perturbed_idx.empty()) {
         pt::ptree perturbed;
         for (uint32_t idx : perturbed_idx)
-            perturbed.put(std::to_string(idx), constants[idx]);
+            perturbed.put(std::to_string(idx), constants[idx].getValue());
         model_cons.add_child("perturbed", perturbed);
     }
 
@@ -221,7 +309,8 @@ void model_constants_t::put(
 }
 
 
-int model_constants_t::from_pt(
+template<class float_t>
+int model_constants_t<float_t>::from_pt(
     pt::ptree &ptree) {
     int err = 0;
     for (auto &it : ptree.get_child("model_constants")) {
@@ -329,25 +418,26 @@ int model_constants_t::from_pt(
     return err;
 }
 
-
-void model_constants_t::setCoefficients(
+#if defined(RK4_ONE_MOMENT)
+template<class float_t>
+void model_constants_t<float_t>::setCoefficients(
     std::vector<codi::RealReverse> & y,
     reference_quantities_t& ref) {
-    codi::RealReverse p_prime = y[p_idx]*ref.pref;
-    codi::RealReverse T_prime = y[T_idx]*ref.Tref;
+    float_t p_prime = y[p_idx]*ref.pref;
+    float_t T_prime = y[T_idx]*ref.Tref;
 
-    codi::RealReverse rho_prime = p_prime /(get_at(this->constants, Cons_idx::R_a) * T_prime);
-    codi::RealReverse L_vap_prime = latent_heat_water(T_prime, get_at(this->constants, Cons_idx::M_w));
-    codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
-    codi::RealReverse psat_prime = saturation_pressure_water(
+    float_t rho_prime = p_prime /(get_at(this->constants, Cons_idx::R_a) * T_prime);
+    float_t L_vap_prime = latent_heat_water(T_prime, get_at(this->constants, Cons_idx::M_w));
+    float_t Ka_prime = thermal_conductivity_dry_air(T_prime);
+    float_t psat_prime = saturation_pressure_water(
         T_prime,
         get_at(this->constants, Cons_idx::p_sat_low_temp),
         get_at(this->constants, Cons_idx::p_sat_const_a),
         get_at(this->constants, Cons_idx::T_sat_low_temp),
         get_at(this->constants, Cons_idx::p_sat_const_b));
-    codi::RealReverse A_pp = (L_vap_prime/(Ka_prime*T_prime))
+    float_t A_pp = (L_vap_prime/(Ka_prime*T_prime))
         * ((L_vap_prime/(get_at(this->constants, Cons_idx::R_v)*T_prime)) - 1.0);
-    codi::RealReverse B_pp = (get_at(this->constants, Cons_idx::R_v)*T_prime)/((2.21/p_prime)*psat_prime);
+    float_t B_pp = (get_at(this->constants, Cons_idx::R_v)*T_prime)/((2.21/p_prime)*psat_prime);
 
 
     this->constants[static_cast<int>(Cons_idx::e1_prime)] = this->e1_scale
@@ -361,21 +451,22 @@ void model_constants_t::setCoefficients(
 }
 
 
-void model_constants_t::setCoefficients(
-    codi::RealReverse p_prime,
-    codi::RealReverse T_prime) {
-    codi::RealReverse rho_prime = p_prime /(get_at(this->constants, Cons_idx::R_a) * T_prime);
-    codi::RealReverse L_vap_prime = latent_heat_water(T_prime, get_at(this->constants, Cons_idx::M_w));
-    codi::RealReverse Ka_prime = thermal_conductivity_dry_air(T_prime);
-    codi::RealReverse psat_prime = saturation_pressure_water(
+template<class float_t>
+void model_constants_t<float_t>::setCoefficients(
+    float_t p_prime,
+    float_t T_prime) {
+    float_t rho_prime = p_prime /(get_at(this->constants, Cons_idx::R_a) * T_prime);
+    float_t L_vap_prime = latent_heat_water(T_prime, get_at(this->constants, Cons_idx::M_w));
+    float_t Ka_prime = thermal_conductivity_dry_air(T_prime);
+    float_t psat_prime = saturation_pressure_water(
         T_prime,
         get_at(this->constants, Cons_idx::p_sat_low_temp),
         get_at(this->constants, Cons_idx::p_sat_const_a),
         get_at(this->constants, Cons_idx::T_sat_low_temp),
         get_at(this->constants, Cons_idx::p_sat_const_b));
-    codi::RealReverse A_pp =
+    float_t A_pp =
         (L_vap_prime/(Ka_prime*T_prime))*((L_vap_prime/(get_at(this->constants, Cons_idx::R_v)*T_prime)) - 1.0);
-    codi::RealReverse B_pp = (get_at(this->constants, Cons_idx::R_v)*T_prime)/((2.21/p_prime)*psat_prime);
+    float_t B_pp = (get_at(this->constants, Cons_idx::R_v)*T_prime)/((2.21/p_prime)*psat_prime);
 
     this->constants[static_cast<int>(Cons_idx::a1_prime)] = this->a1_scale;  // Constant coefficient
     this->constants[static_cast<int>(Cons_idx::a2_prime)] = this->a2_scale;  // Constant coefficient
@@ -385,10 +476,11 @@ void model_constants_t::setCoefficients(
         this->e2_scale * (pow(rho_prime, this->alpha_r*this->epsilonr - (7.0/4.0))/(A_pp + B_pp));
     this->constants[static_cast<int>(Cons_idx::d_prime)] = this->d_scale;  // Constant coefficient
 }
+#endif
 
-
-void model_constants_t::setup_cloud_autoconversion(
-    particle_model_constants_t &pc) {
+template<class float_t>
+void model_constants_t<float_t>::setup_cloud_autoconversion(
+    particle_model_constants_t<float_t> &pc) {
     auto nu = get_at(pc.constants, Particle_cons_idx::nu) + 1.0;
     auto mu = get_at(pc.constants, Particle_cons_idx::mu);
     if (get_at(pc.constants, Particle_cons_idx::mu) == 1.0) {
@@ -413,7 +505,8 @@ void model_constants_t::setup_cloud_autoconversion(
 }
 
 
-void model_constants_t::setup_model_constants(
+template<class float_t>
+void model_constants_t<float_t>::setup_model_constants(
     const input_parameters_t &input,
     const reference_quantities_t &ref_quant) {
     this->id = std::to_string(input.id);
@@ -743,7 +836,7 @@ void model_constants_t::setup_model_constants(
     this->graupel.constants[static_cast<int>(Particle_cons_idx::nm2)] =
         (get_at(this->graupel.constants, Particle_cons_idx::nu)+2.0)
         / get_at(this->graupel.constants, Particle_cons_idx::mu);
-    codi::RealReverse a =
+    float_t a =
         (get_at(this->graupel.constants, Particle_cons_idx::nu)+1.0)
         / get_at(this->graupel.constants, Particle_cons_idx::mu);
     this->table_g1.init_gamma_table(
@@ -967,10 +1060,15 @@ void model_constants_t::setup_model_constants(
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
         this->snow.uncertainty[i] = this->snow.constants[i].getValue() * 0.1;
     }
+    for (uint32_t i=0; i < static_cast<uint32_t>(Init_cons_idx::n_items); ++i) {
+        this->uncertainty[i + static_cast<uint32_t>(Cons_idx::n_items)] =
+            this->initial_conditions[i].getValue() * 0.1;
+    }
 }
 
 
-void model_constants_t::print() {
+template<class float_t>
+void model_constants_t<float_t>::print() {
 #ifdef SILENT_MODE
     return;
 #endif
@@ -994,20 +1092,23 @@ void model_constants_t::print() {
 }
 
 
-
-bool model_constants_t::trace_check(
+template<class float_t>
+bool model_constants_t<float_t>::trace_check(
     const int &idx,
-    const bool state_param) const {
-    if (state_param) {
+    const int state_param) const {
+    if (state_param == 1) {
         return (track_state & (((uint64_t) 1) << idx));
-    } else {
+    } else if (state_param == 0) {
         uint32_t i = idx/64;
         return (track_param[i] & (((uint64_t) 1) << (idx%64)));
+    } else {
+        return (track_ic & (((uint64_t) 1) << idx));
     }
 }
 
 
-void model_constants_t::load_configuration(
+template<class float_t>
+void model_constants_t<float_t>::load_configuration(
     const std::string &filename) {
     boost::property_tree::ptree config_tree;
     boost::property_tree::read_json(filename, config_tree);
@@ -1017,6 +1118,8 @@ void model_constants_t::load_configuration(
         track_state = -1;
         local_num_comp = num_comp;
     } else {
+        local_num_comp = 0;
+        track_state = 0;
         for (auto &it : config_tree.get_child("model_state_variable")) {
             uint32_t id = it.second.get_value<std::uint32_t>();
             track_state = track_state | (((uint64_t) 1) << id);
@@ -1030,6 +1133,8 @@ void model_constants_t::load_configuration(
             t = -1;
         local_num_par = num_par;
     } else {
+        local_num_par = 0;
+        for (auto &t : track_param) t = 0;
         for (auto &it : config_tree.get_child("out_params")) {
             std::string id_name = it.second.get_value<std::string>();
             auto it_tmp = std::find(
@@ -1042,4 +1147,27 @@ void model_constants_t::load_configuration(
             local_num_par++;
         }
     }
+
+    auto it_child3 = config_tree.find("initial_condition");
+    if (it_child3 == config_tree.not_found()) {
+        track_ic = -1;
+        local_ic_par = static_cast<uint32_t>(Init_cons_idx::n_items);
+    } else {
+        track_ic = 0;
+        local_ic_par = 0;
+        for (auto &it : config_tree.get_child("initial_condition")) {
+            std::string id_name = it.second.get_value<std::string>();
+            auto it_tmp = std::find(
+                init_grad_idx.begin(),
+                init_grad_idx.end(),
+                id_name);
+            int id = std::distance(init_grad_idx.begin(), it_tmp);
+            track_ic = track_ic | (((uint64_t) 1) << id);
+            local_ic_par++;
+        }
+    }
 }
+
+
+template class model_constants_t<codi::RealReverse>;
+template class model_constants_t<codi::RealForwardVec<num_par_init> >;

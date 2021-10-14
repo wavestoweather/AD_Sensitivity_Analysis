@@ -25,6 +25,10 @@ struct output_handle_t{
     int ncid;  // ID of output file
     int local_num_comp;
     int local_num_par;
+    int local_ic_par;
+    // Tracking either initial conditions or model parameters.
+    // Both at the same time is not possible (or rather would take too long)
+    bool track_ic;
 
     std::string filetype;
     // for netCDF files and a vector for each column
@@ -33,9 +37,9 @@ struct output_handle_t{
     // each array = one column
     // slow index: num_comp
 #ifdef OUT_DOUBLE
-    std::array<std::vector<double>, num_comp+num_par+4 > output_buffer;
+    std::array<std::vector<double>, num_comp+num_par+4+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
 #else
-    std::array<std::vector<float>, num_comp+num_par+4 > output_buffer;
+    std::array<std::vector<float>, num_comp+num_par+4+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
 #endif
     std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
     // std::array<std::vector<std::string>, 1 > output_buffer_str;
@@ -150,22 +154,25 @@ struct output_handle_t{
 
     output_handle_t();
 
+    template<class float_t>
     output_handle_t(
         const std::string filetype,
         const std::string filename,
-        const model_constants_t &cc,
+        const model_constants_t<float_t> &cc,
         const reference_quantities_t &ref_quant,
         const std::string in_filename,
         const uint32_t write_index,
         const uint32_t snapshot_index,
         const int &rank,
         const int &simulation_mode,
+        const bool &initial_cond,
         const double delay_out_time = 0);
 
+    template<class float_t>
     void setup(
         const std::string filetype,
         const std::string filename,
-        const model_constants_t &cc,
+        const model_constants_t<float_t> &cc,
         const reference_quantities_t &ref_quant,
         const std::string in_filename,
         const uint32_t write_index,
@@ -194,9 +201,10 @@ struct output_handle_t{
      * @param y_diff
      * @param snpashot_index
      */
+    template<class float_t>
     void buffer_gradient(
-        const model_constants_t &cc,
-        const std::vector< std::array<double, num_par > >  &y_diff,
+        const model_constants_t<float_t> &cc,
+        const std::vector< std::array<double, num_par > > &y_diff,
         const uint32_t snapshot_index);
 
     /**
@@ -205,10 +213,11 @@ struct output_handle_t{
      *
      *
      */
-    void buffer(const model_constants_t &cc,
+    template<class float_t>
+    void buffer(const model_constants_t<float_t> &cc,
         const netcdf_reader_t &netcdf_reader,
-        const std::vector<codi::RealReverse> &y_single_new,
-        const std::vector< std::array<double, num_par > >  &y_diff,
+        const std::vector<float_t> &y_single_new,
+        const std::vector< std::array<double, num_par > > &y_diff,
         const uint32_t sub,
         const uint32_t t,
         const reference_quantities_t &ref_quant,
@@ -219,7 +228,8 @@ struct output_handle_t{
      *
      * @param cc
      */
-    void flush_buffer(const model_constants_t &cc);
+    template<class float_t>
+    void flush_buffer(const model_constants_t<float_t> &cc);
 
     /**
      * Buffer the current data  (model state and gradients) and
@@ -227,24 +237,16 @@ struct output_handle_t{
      *
      * @param cc
      */
+    template<class float_t>
     void process_step(
-        const model_constants_t &cc,
+        const model_constants_t<float_t> &cc,
         const netcdf_reader_t &netcdf_reader,
-        const std::vector<codi::RealReverse> &y_single_new,
-        const std::vector< std::array<double, num_par > >  &y_diff,
+        const std::vector<float_t> &y_single_new,
+        const std::vector< std::array<double, num_par > > &y_diff,
         const uint32_t sub,
         const uint32_t t,
         const uint32_t write_index,
         const uint32_t snapshot_index,
         const bool last_step,
         const reference_quantities_t &ref_quant);
-
-    /**
-     * Put the number of flushed snapshots into a property tree.
-     *
-     * @params ptree Property tree, where a tree "model_constants" is being added.
-     */
-    // void put(pt::ptree &ptree) const;
-
-    // int from_pt(pt::ptree &ptree);
 };

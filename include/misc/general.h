@@ -48,8 +48,9 @@ void v1pav2(double y[],
  * @param pc Particle constants
  * @param title Name of particle
  */
+template<class float_t>
 void print_particle_params(
-    const particle_model_constants_t &pc,
+    const particle_model_constants_t<float_t> &pc,
     const std::string title);
 
 /**

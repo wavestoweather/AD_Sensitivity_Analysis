@@ -72,5 +72,8 @@ void gamma_table_t::init_gamma_table(
 template codi::RealReverse gamma_table_t::look_lo<codi::RealReverse>(codi::RealReverse) const;
 template codi::RealReverse gamma_table_t::look_up<codi::RealReverse>(codi::RealReverse) const;
 
-// template double gamma_table_t::look_lo<double>(double) const;
-// template double gamma_table_t::look_up<double>(double) const;
+template codi::RealForwardVec<num_par_init> gamma_table_t::look_lo<codi::RealForwardVec<num_par_init> >(
+    codi::RealForwardVec<num_par_init>) const;
+template codi::RealForwardVec<num_par_init> gamma_table_t::look_up<codi::RealForwardVec<num_par_init> >(
+    codi::RealForwardVec<num_par_init>) const;
+

@@ -7,6 +7,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include "include/misc/error.h"
+#include "include/microphysics/constants.h"
 #include "include/types/input_parameters_t.h"
 #include "include/types/model_constants_t.h"
 #include "include/types/param_t.h"
@@ -386,10 +387,11 @@ struct segment_t {
      * Check if perturbing is necessary.
      *
      */
+    template<class float_t>
     bool perturb_check(
-        const model_constants_t &cc,
+        const model_constants_t<float_t> &cc,
         const std::vector< std::array<double, num_par > > &gradients,
-        const std::vector<codi::RealReverse> &y,
+        const std::vector<float_t> &y,
         const double timestep);
 
     /**
@@ -401,12 +403,15 @@ struct segment_t {
      */
     void deactivate(const bool keep_repeated = false);
 
-    void perturb(model_constants_t &cc,
+    template<class float_t>
+    void perturb(
+        model_constants_t<float_t> &cc,
         const reference_quantities_t &ref_quant,
         input_parameters_t &input,
         std::string &descr);
 
-    void reset_variables(model_constants_t &cc);
+    template<class float_t>
+    void reset_variables(model_constants_t<float_t> &cc);
 
     void put(pt::ptree &ptree) const;
 
@@ -414,7 +419,8 @@ struct segment_t {
      * Used to read from a checkpoint file where the mean for the gaussians
      * to draw from is given.
      */
-    int from_pt(pt::ptree &ptree, model_constants_t &cc);
+    template<class float_t>
+    int from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc);
 
     /**
      * Get the number of seconds that the ensenmble shall run.

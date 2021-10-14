@@ -5,7 +5,7 @@ checkpoint_t::checkpoint_t() {
 
 template<class float_t>
 checkpoint_t::checkpoint_t(
-    const model_constants_t &cc,
+    const model_constants_t<float_t> &cc,
     const std::vector<float_t> &y,
     const std::vector<segment_t> &segments,
     const input_parameters_t &input,
@@ -15,7 +15,7 @@ checkpoint_t::checkpoint_t(
 
 template<class float_t>
 checkpoint_t::checkpoint_t(
-    model_constants_t &cc,
+    model_constants_t<float_t> &cc,
     const std::vector<float_t> &y,
     const std::vector<segment_t> &segments,
     const input_parameters_t &input,
@@ -51,7 +51,7 @@ checkpoint_t::checkpoint_t(
 
 template<class float_t>
 void checkpoint_t::create_checkpoint(
-    const model_constants_t &cc,
+    const model_constants_t<float_t> &cc,
     const std::vector<float_t> &y,
     const std::vector<segment_t> &segments,
     const input_parameters_t &input,
@@ -70,15 +70,15 @@ void checkpoint_t::create_checkpoint(
     // Current status of y
     pt::ptree output_parameters;
     for (uint32_t i=0; i < num_comp; i++) {
-        output_parameters.put(std::to_string(i), y[i]);
+        output_parameters.put(std::to_string(i), y[i].getValue());
     }
     checkpoint.add_child("Output Parameters", output_parameters);
 }
 
 template<class float_t>
 int checkpoint_t::load_checkpoint(
-    model_constants_t &cc,
-    std::vector<float_t> &y,
+    model_constants_t<float_t> &cc,
+    std::vector<double> &y,
     std::vector<segment_t> &segments,
     input_parameters_t &input,
     const reference_quantities_t &ref_quant) {
@@ -117,8 +117,8 @@ int checkpoint_t::load_checkpoint(
 
 template<class float_t>
 int checkpoint_t::load_checkpoint(
-    model_constants_t &cc,
-    std::vector<float_t> &y,
+    model_constants_t<float_t> &cc,
+    std::vector<double> &y,
     std::vector<segment_t> &segments,
     input_parameters_t &input,
     const reference_quantities_t &ref_quant,
@@ -133,8 +133,8 @@ int checkpoint_t::load_checkpoint(
 template<class float_t>
 int checkpoint_t::load_checkpoint(
     const std::string &filename,
-    model_constants_t &cc,
-    std::vector<float_t> &y,
+    model_constants_t<float_t> &cc,
+    std::vector<double> &y,
     std::vector<segment_t> &segments,
     input_parameters_t &input,
     const reference_quantities_t &ref_quant) {
@@ -145,7 +145,7 @@ int checkpoint_t::load_checkpoint(
 template<class float_t>
 void checkpoint_t::write_checkpoint(
     std::string &filename,
-    model_constants_t &cc,
+    model_constants_t<float_t> &cc,
     const std::vector<float_t> &y,
     std::vector<segment_t> &segments,
     const input_parameters_t &input,
@@ -154,10 +154,10 @@ void checkpoint_t::write_checkpoint(
     this->write_checkpoint(filename, cc, segments);
 }
 
-
+template<class float_t>
 void checkpoint_t::write_checkpoint(
     std::string &filename,
-    model_constants_t &cc,
+    model_constants_t<float_t> &cc,
     std::vector<segment_t> &segments) {
     if (checkpoint.empty()) {
         return;
@@ -261,7 +261,7 @@ bool checkpoint_t::checkpoint_available() const {
 }
 
 template checkpoint_t::checkpoint_t<codi::RealReverse>(
-    model_constants_t&,
+    model_constants_t<codi::RealReverse>&,
     const std::vector<codi::RealReverse>&,
     const std::vector<segment_t>&,
     const input_parameters_t&,
@@ -271,47 +271,103 @@ template checkpoint_t::checkpoint_t<codi::RealReverse>(
     const uint64_t&,
     const double);
 
+    template checkpoint_t::checkpoint_t<codi::RealForwardVec<num_par_init> >(
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const std::vector<codi::RealForwardVec<num_par_init> >&,
+    const std::vector<segment_t>&,
+    const input_parameters_t&,
+    const double&,
+    const uint32_t&,
+    const uint64_t&,
+    const uint64_t&,
+    const double);
+
 template checkpoint_t::checkpoint_t<codi::RealReverse>(
-    const model_constants_t&,
+    const model_constants_t<codi::RealReverse>&,
     const std::vector<codi::RealReverse>&,
+    const std::vector<segment_t>&,
+    const input_parameters_t&,
+    const double&);
+
+template checkpoint_t::checkpoint_t<codi::RealForwardVec<num_par_init> >(
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const std::vector<codi::RealForwardVec<num_par_init> >&,
     const std::vector<segment_t>&,
     const input_parameters_t&,
     const double&);
 
 template void checkpoint_t::create_checkpoint<codi::RealReverse>(
-    const model_constants_t&,
+    const model_constants_t<codi::RealReverse>&,
     const std::vector<codi::RealReverse>&,
     const std::vector<segment_t>&,
     const input_parameters_t&,
     const double&);
 
-template int checkpoint_t::load_checkpoint<double>(
+template void checkpoint_t::create_checkpoint<codi::RealForwardVec<num_par_init> >(
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const std::vector<codi::RealForwardVec<num_par_init> >&,
+    const std::vector<segment_t>&,
+    const input_parameters_t&,
+    const double&);
+
+template void checkpoint_t::write_checkpoint<codi::RealReverse>(
+    std::string&,
+    model_constants_t<codi::RealReverse>&,
+    const std::vector<codi::RealReverse>&,
+    std::vector<segment_t>&,
+    const input_parameters_t&,
+    const double&);
+
+template void checkpoint_t::write_checkpoint<codi::RealForwardVec<num_par_init> >(
+    std::string&,
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const std::vector<codi::RealForwardVec<num_par_init> >&,
+    std::vector<segment_t>&,
+    const input_parameters_t&,
+    const double&);
+
+template int checkpoint_t::load_checkpoint<codi::RealReverse>(
     const std::string&,
-    model_constants_t&,
+    model_constants_t<codi::RealReverse>&,
     std::vector<double>&,
     std::vector<segment_t>&,
     input_parameters_t&,
     const reference_quantities_t&);
 
-template int checkpoint_t::load_checkpoint<double>(
-    model_constants_t&,
+template int checkpoint_t::load_checkpoint<codi::RealReverse>(
+    model_constants_t<codi::RealReverse>&,
     std::vector<double>&,
     std::vector<segment_t>&,
     input_parameters_t&,
     const reference_quantities_t&,
     output_handle_t&);
 
-template int checkpoint_t::load_checkpoint<double>(
-    model_constants_t&,
+template int checkpoint_t::load_checkpoint<codi::RealReverse>(
+    model_constants_t<codi::RealReverse>&,
     std::vector<double>&,
     std::vector<segment_t>&,
     input_parameters_t&,
     const reference_quantities_t&);
 
-template void checkpoint_t::write_checkpoint<codi::RealReverse>(
-    std::string&,
-    model_constants_t&,
-    const std::vector<codi::RealReverse>&,
+template int checkpoint_t::load_checkpoint<codi::RealForwardVec<num_par_init> >(
+    const std::string&,
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    std::vector<double>&,
     std::vector<segment_t>&,
-    const input_parameters_t&,
-    const double&);
+    input_parameters_t&,
+    const reference_quantities_t&);
+
+template int checkpoint_t::load_checkpoint<codi::RealForwardVec<num_par_init> >(
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    std::vector<double>&,
+    std::vector<segment_t>&,
+    input_parameters_t&,
+    const reference_quantities_t&,
+    output_handle_t&);
+
+template int checkpoint_t::load_checkpoint<codi::RealForwardVec<num_par_init> >(
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    std::vector<double>&,
+    std::vector<segment_t>&,
+    input_parameters_t&,
+    const reference_quantities_t&);

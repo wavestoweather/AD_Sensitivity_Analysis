@@ -12,7 +12,6 @@
 #include "include/types/model_constants_t.h"
 #include "include/types/reference_quantities_t.h"
 
-
 struct netcdf_reader_t {
     uint64_t n_ensembles;
     uint64_t n_trajectories;
@@ -42,11 +41,12 @@ struct netcdf_reader_t {
      * @param checkpoint_flag If true: do not update model state
      * @param start_over_env If true: update environment/thermodynamics
      */
+    template<class float_t>
     void read_buffer(
-        model_constants_t &cc,
+        model_constants_t<float_t> &cc,
         const reference_quantities_t &ref_quant,
-        std::vector<codi::RealReverse> &y_single_old,
-        std::vector<codi::RealReverse> &inflows,
+        std::vector<float_t> &y_single_old,
+        std::vector<float_t> &inflows,
         const uint32_t &step,
         const bool &checkpoint_flag,
         const bool &start_over_env);
@@ -59,9 +59,10 @@ struct netcdf_reader_t {
      * @param cc Model constants with number of ensembles and trajectories on return
      * @param simulation_mode The simulation mode defined on the command line
      */
+    template<class float_t>
     void set_dims(
         const char *input_file,
-        model_constants_t &cc,
+        model_constants_t<float_t> &cc,
         const int &simulation_mode);
 
     /**
@@ -78,20 +79,22 @@ struct netcdf_reader_t {
     * @param current_time Time in seconds from a checkpoint
     * @return Errorcode (0=no errors; 1=simulation breaking error)
     */
+    template<class float_t>
     void init_netcdf(
 #ifdef MET3D
         double &start_time,
 #endif
         const char *input_file,
         const bool &checkpoint_flag,
-        model_constants_t &cc,
+        model_constants_t<float_t> &cc,
         const int &simulation_mode,
         const double current_time);
 
+    template<class float_t>
     void read_initial_values(
         std::vector<double> &y_init,
         const reference_quantities_t &ref_quant,
-        model_constants_t &cc,
+        model_constants_t<float_t> &cc,
         const bool &checkpoint_flag,
         const uint64_t &traj_id,
         const uint64_t &ens_id);
@@ -107,21 +110,36 @@ struct netcdf_reader_t {
      */
     template<class float_t>
     void read_initial_values(
-        std::vector<float_t> &y_init,
+        std::vector<double> &y_init,
         const reference_quantities_t &ref_quant,
-        model_constants_t &cc,
+        model_constants_t<float_t> &cc,
         const bool &checkpoint_flag);
 
-    double get_lat(const uint32_t &t) const {return buffer[Par_idx::lat][(t)%n_timesteps_buffer];}
-    double get_lon(const uint32_t &t) const {return buffer[Par_idx::lon][(t)%n_timesteps_buffer];}
+    double get_lat(const uint32_t &t, const uint32_t &sub) const {
+        return buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]
+            + sub*(
+                buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+1]
+                - buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]);
+    }
+    double get_lon(const uint32_t &t, const uint32_t &sub) const {
+        return buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]
+            + sub*(
+                buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+1]
+                - buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]);
+        }
 #ifdef MET3D
     double get_relative_time(const uint32_t &t) const {
-        return buffer[Par_idx::time_after_ascent][(t)%n_timesteps_buffer];
+        return buffer[Par_idx::time_after_ascent][t%buffer[Par_idx::time_after_ascent].size()];
     }
-    bool get_conv_400(const uint32_t &t) const {return (buffer[Par_idx::conv_400][t] > 0.5);}
-    bool get_conv_600(const uint32_t &t) const {return (buffer[Par_idx::conv_600][t] > 0.5);}
-    bool get_slan_400(const uint32_t &t) const {return (buffer[Par_idx::slan_400][t] > 0.5);}
-    bool get_slan_600(const uint32_t &t) const {return (buffer[Par_idx::slan_600][t] > 0.5);}
+    bool get_conv_400(const uint32_t &t) const {return (buffer[Par_idx::conv_400][
+        t%buffer[Par_idx::conv_400].size()] > 0.5);}
+    bool get_conv_600(const uint32_t &t) const {return (buffer[Par_idx::conv_600][
+        t%buffer[Par_idx::conv_600].size()] > 0.5);}
+    bool get_slan_400(const uint32_t &t) const {return (buffer[Par_idx::slan_400][
+        t%buffer[Par_idx::slan_400].size()] > 0.5);}
+    bool get_slan_600(const uint32_t &t) const {return (buffer[Par_idx::slan_600][
+        t%buffer[Par_idx::slan_600].size()] > 0.5);}
+
 
 #endif
 

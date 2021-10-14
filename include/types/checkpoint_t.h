@@ -32,7 +32,7 @@ struct checkpoint_t {
 
     template<class float_t>
     checkpoint_t(
-        const model_constants_t &cc,
+        const model_constants_t<float_t> &cc,
         const std::vector<float_t> &y,
         const std::vector<segment_t> &segments,
         const input_parameters_t &input,
@@ -40,7 +40,7 @@ struct checkpoint_t {
 
     template<class float_t>
     checkpoint_t(
-        model_constants_t &cc,
+        model_constants_t<float_t> &cc,
         const std::vector<float_t> &y,
         const std::vector<segment_t> &segments,
         const input_parameters_t &input,
@@ -52,7 +52,7 @@ struct checkpoint_t {
 
     template<class float_t>
     void create_checkpoint(
-        const model_constants_t &cc,
+        const model_constants_t<float_t> &cc,
         const std::vector<float_t> &y,
         const std::vector<segment_t> &segments,
         const input_parameters_t &input,
@@ -66,8 +66,8 @@ struct checkpoint_t {
     template<class float_t>
     int load_checkpoint(
         const std::string &filename,
-        model_constants_t &cc,
-        std::vector<float_t> &y,
+        model_constants_t<float_t> &cc,
+        std::vector<double> &y,
         std::vector<segment_t> &segments,
         input_parameters_t &input,
         const reference_quantities_t &ref_quant);
@@ -77,8 +77,8 @@ struct checkpoint_t {
      */
     template<class float_t>
     int load_checkpoint(
-        model_constants_t &cc,
-        std::vector<float_t> &y,
+        model_constants_t<float_t> &cc,
+        std::vector<double> &y,
         std::vector<segment_t> &segments,
         input_parameters_t &input,
         const reference_quantities_t &ref_quant);
@@ -88,8 +88,8 @@ struct checkpoint_t {
      */
     template<class float_t>
     int load_checkpoint(
-        model_constants_t &cc,
-        std::vector<float_t> &y,
+        model_constants_t<float_t> &cc,
+        std::vector<double> &y,
         std::vector<segment_t> &segments,
         input_parameters_t &input,
         const reference_quantities_t &ref_quant,
@@ -101,7 +101,7 @@ struct checkpoint_t {
     template<class float_t>
     void write_checkpoint(
         std::string &filename,
-        model_constants_t &cc,
+        model_constants_t<float_t> &cc,
         const std::vector<float_t> &y,
         std::vector<segment_t> &segments,
         const input_parameters_t &input,
@@ -110,9 +110,10 @@ struct checkpoint_t {
      * Write checkpoint to disk as a json file. A property tree must have been
      * created before or nothing will be written.
      */
+    template<class float_t>
     void write_checkpoint(
         std::string &filename,
-        model_constants_t &cc,
+        model_constants_t<float_t> &cc,
         std::vector<segment_t> &segments);
 
     void print_checkpoint();

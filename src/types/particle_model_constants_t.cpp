@@ -1,15 +1,17 @@
 #include "include/types/particle_model_constants_t.h"
 
 
-particle_model_constants_t::particle_model_constants_t() {
+template<class float_t>
+particle_model_constants_t<float_t>::particle_model_constants_t() {
     constants.resize(static_cast<int>(Particle_cons_idx::n_items));
     // This makes debugging easier, so pleaase leave it.
     std::fill(constants.begin(), constants.end(), 0);
 }
 
 
-void particle_model_constants_t::register_input(
-    codi::RealReverse::TapeType &tape,
+template<>
+void particle_model_constants_t<codi::RealReverse>::register_input(
+    codi::RealReverse::Tape &tape,
     uint32_t &idx) {
     for (auto &c : this->constants) {
         tape.registerInput(c);
@@ -18,7 +20,17 @@ void particle_model_constants_t::register_input(
 }
 
 
-void particle_model_constants_t::get_gradient(
+template<>
+void particle_model_constants_t<codi::RealForwardVec<num_par_init> >::register_input(
+    codi::RealReverse::Tape &tape,
+    uint32_t &idx) {
+
+    // Nothing to be done for forward mode.
+}
+
+
+template<>
+void particle_model_constants_t<codi::RealReverse>::get_gradient(
     std::array<double, num_par> &out_vec,
     uint32_t &idx,
     const bool info) const {
@@ -31,7 +43,18 @@ void particle_model_constants_t::get_gradient(
 }
 
 
-void particle_model_constants_t::put(
+template<>
+void particle_model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradient(
+    std::array<double, num_par> &out_vec,
+    uint32_t &idx,
+    const bool info) const {
+
+    // Nothing to be done for forward mode
+}
+
+
+template<class float_t>
+void particle_model_constants_t<float_t>::put(
     pt::ptree &ptree,
     const std::string &type_name) const {
     if (perturbed_idx.empty())
@@ -40,7 +63,7 @@ void particle_model_constants_t::put(
     pt::ptree perturbed;
 
     for (uint32_t idx : perturbed_idx) {
-        perturbed.put(std::to_string(idx), constants[idx]);
+        perturbed.put(std::to_string(idx), constants[idx].getValue());
     }
     pt::ptree perturbed_vals;
     perturbed_vals.add_child("perturbed", perturbed);
@@ -48,7 +71,8 @@ void particle_model_constants_t::put(
 }
 
 
-int particle_model_constants_t::from_pt(
+template<class float_t>
+int particle_model_constants_t<float_t>::from_pt(
     pt::ptree &ptree) {
     int err = 0;
     for (auto &it : ptree.get_child("perturbed")) {
@@ -60,7 +84,8 @@ int particle_model_constants_t::from_pt(
 }
 
 
-void particle_model_constants_t::print(
+template<class float_t>
+void particle_model_constants_t<float_t>::print(
     const std::string &title) {
 #ifdef SILENT_MODE
     return;
@@ -72,3 +97,7 @@ void particle_model_constants_t::print(
     }
     std::cout << std::endl << std::flush;
 }
+
+
+template class particle_model_constants_t<codi::RealReverse>;
+template class particle_model_constants_t<codi::RealForwardVec<num_par_init> >;

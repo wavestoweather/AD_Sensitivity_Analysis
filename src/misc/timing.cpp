@@ -178,7 +178,7 @@ void run_substeps(
     model_constants_t &cc,
     std::vector<codi::RealReverse> &y_single_old,
     std::vector<codi::RealReverse> &inflow,
-    codi::RealReverse::TapeType &tape,
+    codi::RealReverse::Tape &tape,
     std::vector<codi::RealReverse> &y_single_new,
     netcdf_reader_t &netcdf_reader,
     std::vector< std::array<double, num_par > > &y_diff,
@@ -278,7 +278,7 @@ int run_simulation(
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
     // Loop for timestepping: BEGIN
     try {
-        codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
+        codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
         uint32_t sub_start = 1;
         if (global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0)
             sub_start = std::fmod(input.current_time, cc.dt_prime)

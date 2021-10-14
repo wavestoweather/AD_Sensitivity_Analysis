@@ -150,10 +150,11 @@ int segment_t::check() {
 }
 
 
+template<class float_t>
 bool segment_t::perturb_check(
-    const model_constants_t &cc,
+    const model_constants_t<float_t> &cc,
     const std::vector< std::array<double, num_par > > &gradients,
-    const std::vector<codi::RealReverse> &y,
+    const std::vector<float_t> &y,
     const double timestep) {
     if (n_segments == 0)
         return false;
@@ -256,8 +257,9 @@ void segment_t::deactivate(
 }
 
 
+template<class float_t>
 void segment_t::perturb(
-    model_constants_t &cc,
+    model_constants_t<float_t> &cc,
     const reference_quantities_t &ref_quant,
     input_parameters_t &input,
     std::string &descr) {
@@ -283,8 +285,9 @@ void segment_t::perturb(
 }
 
 
+template<class float_t>
 void segment_t::reset_variables(
-    model_constants_t &cc) {
+    model_constants_t<float_t> &cc) {
     n_segments++;
     // Change the previously perturbed values to the original ones
     for (auto &p : params) {
@@ -330,9 +333,10 @@ void segment_t::put(
 }
 
 
+template<class float_t>
 int segment_t::from_pt(
     pt::ptree &ptree,
-    model_constants_t &cc) {
+    model_constants_t<float_t> &cc) {
     int err = 0;
     for (auto &it : ptree) {
         auto first = it.first;
@@ -371,3 +375,39 @@ double segment_t::limit_duration() const {
     }
     return 0;
 }
+
+template bool segment_t::perturb_check<codi::RealReverse>(
+    const model_constants_t<codi::RealReverse>&,
+    const std::vector< std::array<double, num_par > >&,
+    const std::vector<codi::RealReverse>&,
+    const double);
+
+template bool segment_t::perturb_check<codi::RealForwardVec<num_par_init> >(
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const std::vector< std::array<double, num_par > >&,
+    const std::vector<codi::RealForwardVec<num_par_init> >&,
+    const double);
+
+template void segment_t::perturb<codi::RealReverse>(
+    model_constants_t<codi::RealReverse>&,
+    const reference_quantities_t&,
+    input_parameters_t&,
+    std::string&);
+
+template void segment_t::perturb<codi::RealForwardVec<num_par_init> >(
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const reference_quantities_t&,
+    input_parameters_t&,
+    std::string&);
+
+template void segment_t::reset_variables<codi::RealReverse>(
+    model_constants_t<codi::RealReverse>&);
+
+template void segment_t::reset_variables<codi::RealForwardVec<num_par_init> >(
+    model_constants_t<codi::RealForwardVec<num_par_init> >&);
+
+template int segment_t::from_pt<codi::RealReverse>(
+    pt::ptree&, model_constants_t<codi::RealReverse>&);
+
+template int segment_t::from_pt<codi::RealForwardVec<num_par_init> >(
+    pt::ptree&, model_constants_t<codi::RealForwardVec<num_par_init> >&);
