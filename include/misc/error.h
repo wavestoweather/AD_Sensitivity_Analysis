@@ -25,7 +25,8 @@ enum {
     DISTRIBUTION_CONFIG_ERR = 113,
     ARGUMENT_ERR = 114,
     NC_ERR = 115,
-    CHECKPOINT_LOAD_ERR = 116
+    CHECKPOINT_LOAD_ERR = 116,
+    PARAM_ADD_NAME_ERR = 117
 };
 
 // Credits to http://www.gpi-site.com/ for this function and the name
@@ -33,7 +34,7 @@ enum {
     do {                                                                    \
         const int err = f;                                                  \
         if (err != SUCCESS) {                                               \
-            std::cout << "Error: " << #f << " [" << __FILE__                \
+            std::cerr << "Error: " << #f << " [" << __FILE__                \
                 << ":" << __LINE__ << "]: " << err << "\n" << std::flush;   \
             MPI_Abort(MPI_COMM_WORLD, err);                                 \
             exit(EXIT_FAILURE);                                             \

@@ -47,7 +47,8 @@ struct param_t{
 
     void add_mean(double m);
 
-    void add_name(std::string n, model_constants_t &cc);
+    template<class float_t>
+    int add_name(std::string n, model_constants_t<float_t> &cc);
 
     void add_sigma(double s);
 
@@ -59,11 +60,14 @@ struct param_t{
 
     void put(pt::ptree &ptree) const;
 
-    int from_pt(pt::ptree &ptree, model_constants_t &cc);
+    template<class float_t>
+    int from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc);
 
-    void perturb(model_constants_t &cc) const;
+    template<class float_t>
+    void perturb(model_constants_t<float_t> &cc) const;
 
-    void reset(model_constants_t &cc) const;
+    template<class float_t>
+    void reset(model_constants_t<float_t> &cc) const;
 
     std::string get_name() const;
 };

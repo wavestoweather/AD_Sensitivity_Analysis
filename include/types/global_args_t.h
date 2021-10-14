@@ -83,6 +83,9 @@ struct global_args_t {
     int warm_up_flag;
     char* warm_up_string;
 
+    int track_ic_flag;
+    char* track_ic_string;
+
     global_args_t();
 
     /**

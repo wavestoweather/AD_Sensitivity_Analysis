@@ -22,6 +22,7 @@ namespace pt = boost::property_tree;
 /**
  * Structure for constants of a model. Includes particle constants as well.
  */
+template<class float_t>
 struct model_constants_t {
     /**
      * Initial id of this simulation. Emerging ensembles from this
@@ -70,80 +71,80 @@ struct model_constants_t {
     /**
      * Model constants for hail.
      */
-    particle_model_constants_t hail;
+    particle_model_constants_t<float_t> hail;
     /**
      * Model constants for ice.
      */
-    particle_model_constants_t ice;
+    particle_model_constants_t<float_t> ice;
     /**
      * Model constants for snow.
      */
-    particle_model_constants_t snow;
+    particle_model_constants_t<float_t> snow;
     /**
      * Model constants for cloud.
      */
-    particle_model_constants_t cloud;
+    particle_model_constants_t<float_t> cloud;
     /**
      * Model constants for rain.
      */
-    particle_model_constants_t rain;
+    particle_model_constants_t<float_t> rain;
     /**
      * Model constants for graupel.
      */
-    particle_model_constants_t graupel;
+    particle_model_constants_t<float_t> graupel;
 
     /**
      * Snow - cloud droplet riming.
      */
-    collection_model_constants_t coeffs_scr;
+    collection_model_constants_t<float_t> coeffs_scr;
     /**
      * Snow - rain droplet riming.
      */
-    collection_model_constants_t coeffs_srr;
+    collection_model_constants_t<float_t> coeffs_srr;
     /**
      * Ice - rain droplet riming.
      */
-    collection_model_constants_t coeffs_irr;
+    collection_model_constants_t<float_t> coeffs_irr;
     /**
      * Ice - cloud droplet riming.
      */
-    collection_model_constants_t coeffs_icr;
+    collection_model_constants_t<float_t> coeffs_icr;
     /**
      * Hail - rain droplet riming.
      */
-    collection_model_constants_t coeffs_hrr;
+    collection_model_constants_t<float_t> coeffs_hrr;
     /**
      * Graupel - rain droplet riming.
      */
-    collection_model_constants_t coeffs_grr;
+    collection_model_constants_t<float_t> coeffs_grr;
     /**
      * Hail - cloud droplet riming.
      */
-    collection_model_constants_t coeffs_hcr;
+    collection_model_constants_t<float_t> coeffs_hcr;
     /**
      * Graupel - cloud droplet riming.
      */
-    collection_model_constants_t coeffs_gcr;
+    collection_model_constants_t<float_t> coeffs_gcr;
     /**
      * Snow - ice collection.
      */
-    collection_model_constants_t coeffs_sic;
+    collection_model_constants_t<float_t> coeffs_sic;
     /**
      * Hail - ice collection.
      */
-    collection_model_constants_t coeffs_hic;
+    collection_model_constants_t<float_t> coeffs_hic;
     /**
      * Graupel - ice collection.
      */
-    collection_model_constants_t coeffs_gic;
+    collection_model_constants_t<float_t> coeffs_gic;
     /**
      * Hail - snow collection.
      */
-    collection_model_constants_t coeffs_hsc;
+    collection_model_constants_t<float_t> coeffs_hsc;
     /**
      * Graupel - snow collection.
      */
-    collection_model_constants_t coeffs_gsc;
+    collection_model_constants_t<float_t> coeffs_gsc;
 
     //
     // Technical constants
@@ -174,11 +175,11 @@ struct model_constants_t {
     double dt_sixth;  /*!< dt/6 */
     double dt_third;  /*!< dt/3 */
 
-    codi::RealReverse a1_scale; /*!< Performance constants warm cloud */
-    codi::RealReverse a2_scale; /*!< Performance constants warm cloud */
-    codi::RealReverse e1_scale; /*!< Performance constants warm cloud */
-    codi::RealReverse e2_scale; /*!< Performance constants warm cloud */
-    codi::RealReverse d_scale;  /*!< Performance constants warm cloud */
+    float_t a1_scale; /*!< Performance constants warm cloud */
+    float_t a2_scale; /*!< Performance constants warm cloud */
+    float_t e1_scale; /*!< Performance constants warm cloud */
+    float_t e2_scale; /*!< Performance constants warm cloud */
+    float_t d_scale;  /*!< Performance constants warm cloud */
 
     /// Parameters used in warm physics
     const double nar = 0.22;      /*!< Constants for the IFS model. */
@@ -195,13 +196,16 @@ struct model_constants_t {
     const double epsilonr = 0.5*dr + 2.5 - nbr;   /*!< Constants for the IFS model. */
 
     // See constants.h for a description of those.
-    std::vector<codi::RealReverse> constants;
+    std::array<float_t, static_cast<int>(Cons_idx::n_items)> constants;
 
     /*
     * Uncertainty for every parameter.
     * Currently sets everything to 10% of every parameter.
     */
-    std::array<double, static_cast<uint32_t>(Cons_idx::n_items)> uncertainty;
+    std::array<double, static_cast<uint32_t>(Cons_idx::n_items)
+        + static_cast<uint32_t>(Init_cons_idx::n_items)> uncertainty;
+    // std::array<float_t, static_cast<uint32_t>(Init_cons_idx::n_items)> initial_conditions;
+    std::array<codi::RealForwardVec<num_par_init>, static_cast<uint32_t>(Init_cons_idx::n_items)> initial_conditions;
 
     /**
      * Store any idx from perturbed parameters.
@@ -212,13 +216,23 @@ struct model_constants_t {
      * Structure to hold the new equidistant lookup table for
      * graupel wetgrowth diameter
      */
-    table_t ltabdminwgg;
+    table_t<float_t> ltabdminwgg;
     gamma_table_t table_g1, table_g2, table_r1, table_r2, table_r3;
 
     int local_num_comp;
     int local_num_par;
+    int local_ic_par;
 
-    explicit model_constants_t(const std::string &tracking_filename);
+    explicit model_constants_t(
+        const std::string &tracking_filename,
+        const bool &track_initial_cond);
+
+    /**
+     * Register the model parameters for initial conditions using
+     * the forward mode.
+     *
+     */
+    void register_input();
 
     /**
      * Register the model parameters on the tape for codi::RealReverse.
@@ -226,25 +240,35 @@ struct model_constants_t {
      * @param tape Tape where the parameters should be registered on.
      */
     void register_input(
-        codi::RealReverse::TapeType &tape);
+        codi::RealReverse::Tape &tape);
+
+    /**
+     * Evaluate the gradients in forward mode. Used to track initial
+     * conditions.
+     */
+    void get_gradients(
+        std::vector<float_t> &y_single_new,
+        std::vector< std::array<double, num_par > > &y_diff) const;
 
     /**
      * Register output on tape, evaluate it, get all gradients and
      * reset the tape.
      */
     void get_gradients(
-        std::vector<codi::RealReverse> &y_single_new,
+        std::vector<float_t> &y_single_new,
         std::vector< std::array<double, num_par > > &y_diff,
-        codi::RealReverse::TapeType &tape) const;
+        codi::RealReverse::Tape &tape) const;
 
     /**
      * Get the gradients of all its members. You need to register them on a
-     * tape before to get meaningful values.
+     * tape before to get meaningful values  in the backward mode.
      *
      * @param out_vec On out: Stores all gradients.
      */
     void get_gradient(
-        std::array<double, num_par> &out_vec, uint32_t ii) const;
+        std::array<double, num_par> &out_vec,
+        std::vector<float_t> &y_single_new,
+        uint32_t ii) const;
 
     /**
      * Put any perturbed parameter to a property tree.
@@ -258,6 +282,7 @@ struct model_constants_t {
 
     int from_pt(pt::ptree &ptree);
 
+#if defined(RK4_ONE_MOMENT)
     /**
      * Set the constants for the cloud model from given environmental conditions.
      *
@@ -266,7 +291,7 @@ struct model_constants_t {
      * @param ref Pointer to reference quantities to transform between units
      */
     void setCoefficients(
-        std::vector<codi::RealReverse> & y,
+        std::vector<float_t> & y,
         reference_quantities_t& ref);
 
     /**
@@ -277,15 +302,16 @@ struct model_constants_t {
      * @param cc Pointer to constants from the model. On out: modified constants
      */
     void setCoefficients(
-        codi::RealReverse p_prime,
-        codi::RealReverse T_prime);
+        float_t p_prime,
+        float_t T_prime);
+#endif
 
     /**
      * Setup the cloud autoconversion parameters.
      *
      * @param pc Model constants for a certain particle type.
      */
-    void setup_cloud_autoconversion(particle_model_constants_t &pc);
+    void setup_cloud_autoconversion(particle_model_constants_t<float_t> &pc);
 
     /**
      * Setup model constants and gamma tables.
@@ -308,7 +334,7 @@ struct model_constants_t {
      *              to check.
      * @param state_param If true: idx is a model state variable
      */
-    bool trace_check(const int &idx, const bool state_param) const;
+    bool trace_check(const int &idx, const int state_param) const;
 
     /**
      * Define which data shall be written by loading a configuration file.
@@ -322,5 +348,6 @@ struct model_constants_t {
      * Used to switch on or off certain trackings.
      */
     uint64_t track_state;
+    uint64_t track_ic;
     std::vector<uint64_t> track_param;
 };

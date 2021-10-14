@@ -5,31 +5,37 @@ output_handle_t::output_handle_t() {
 }
 
 
+template<class float_t>
 output_handle_t::output_handle_t(
     const std::string filetype,
     const std::string filename,
-    const model_constants_t &cc,
+    const model_constants_t<float_t> &cc,
     const reference_quantities_t &ref_quant,
     const std::string in_filename,
     const uint32_t write_index,
     const uint32_t snapshot_index,
     const int &rank,
     const int &simulation_mode,
+    const bool &initial_cond,
     const double delay_out_time) {
 
     this->simulation_mode = simulation_mode;
     local_num_comp = cc.local_num_comp;
     local_num_par = cc.local_num_par;
+    local_ic_par = cc.local_ic_par;
+    this->track_ic = initial_cond;
 
     this->setup(filetype, filename, cc, ref_quant,
-        in_filename, write_index, snapshot_index, rank, delay_out_time);
+        in_filename, write_index, snapshot_index,
+        rank, delay_out_time);
 }
 
 
+template<class float_t>
 void output_handle_t::setup(
     const std::string filetype,
     const std::string filename,
-    const model_constants_t &cc,
+    const model_constants_t<float_t> &cc,
     const reference_quantities_t &ref_quant,
     const std::string in_filename,
     const uint32_t write_index,
@@ -49,11 +55,18 @@ void output_handle_t::setup(
     this->filetype = filetype;
     this->filename = filename;
     dimid.resize(Dim_idx::n_dims);
-    varid.resize(Var_idx::n_vars + num_par);
+    if (track_ic) {
+        varid.resize(Var_idx::n_vars + num_par_init);
+    } else {
+        varid.resize(Var_idx::n_vars + num_par);
+    }
 
     const std::string ending = ".nc_wcb";
+    const std::string ending2 = ".nc";
     if (!std::equal(ending.rbegin(), ending.rend(), this->filename.rbegin())) {
-        this->filename += ".nc_wcb";
+        if (!std::equal(ending2.rbegin(), ending2.rend(), this->filename.rbegin())) {
+            this->filename += ".nc";
+        }
     }
     if (rank == 0)
         std::cout << "Creating " << this->filename << " and defining dimensions "
@@ -66,15 +79,25 @@ void output_handle_t::setup(
     // maximum number of snapshots we are going to get
     total_snapshots = std::ceil((static_cast<float>(write_index))/snapshot_index);
     const uint64_t vec_size = total_snapshots;
-    const uint64_t vec_size_grad = num_comp * total_snapshots;
+    const uint64_t vec_size_grad = local_num_comp * total_snapshots;
+    // model state
     for (uint32_t i=0; i < num_comp; i++)
         output_buffer[i].resize(vec_size);
-    for (uint32_t i=Buffer_idx::n_buffer; i < Buffer_idx::n_buffer+num_par; i++)
-        output_buffer[i].resize(vec_size_grad);
-
     output_buffer[Buffer_idx::time_ascent_buf].resize(vec_size);
-    output_buffer[Buffer_idx::lat_buf].resize(vec_size);        // lat
-    output_buffer[Buffer_idx::lon_buf].resize(vec_size);        // lon
+    output_buffer[Buffer_idx::lat_buf].resize(vec_size);
+    output_buffer[Buffer_idx::lon_buf].resize(vec_size);
+    if (!track_ic) {
+        // gradients
+        for (uint32_t i=Buffer_idx::n_buffer; i < Buffer_idx::n_buffer+num_par; i++)
+            if (cc.trace_check(i-Buffer_idx::n_buffer, false))
+                output_buffer[i].resize(vec_size_grad);
+    } else {
+        // the initial condition sensitivities are stored here
+        for (uint32_t i=Buffer_idx::n_buffer;
+            i < Buffer_idx::n_buffer+num_par_init; i++)
+            if (cc.trace_check(i-Buffer_idx::n_buffer, 2))
+                output_buffer[i].resize(vec_size_grad);
+    }
 
     for (uint32_t i=0; i < output_buffer_flags.size(); i++)
         output_buffer_flags[i].resize(vec_size);
@@ -163,21 +186,41 @@ void output_handle_t::setup(
                 dim_pointer = &dimid[Dim_idx::ensemble_dim];
                 n_dims = 3;
             }
-            for (uint32_t i=0; i < output_grad_idx.size(); ++i) {
-                if (cc.trace_check(i, false)) {
-                    SUCCESS_OR_DIE(nc_def_var(
-                        ncid,
-                        output_grad_idx[i].c_str(),
+            if (track_ic) {
+                // initial condition sensitivity
+                for (uint32_t i=0; i < num_par_init; ++i) {
+                    if (cc.trace_check(i, 2)) {
+                        SUCCESS_OR_DIE(nc_def_var(
+                            ncid,
+                            init_grad_idx[i].c_str(),
 #ifdef OUT_DOUBLE
-                        NC_DOUBLE,
+                            NC_DOUBLE,
 #else
-                        NC_FLOAT,
+                            NC_FLOAT,
 #endif
-                        n_dims,
-                        dim_pointer,
-                        &varid[Var_idx::n_vars + i]));
+                            n_dims,
+                            dim_pointer,
+                            &varid[Var_idx::n_vars + i]));
+                    }
+                }
+            } else {
+                for (uint32_t i=0; i < num_par; ++i) {
+                    if (cc.trace_check(i, false)) {
+                        SUCCESS_OR_DIE(nc_def_var(
+                            ncid,
+                            output_grad_idx[i].c_str(),
+#ifdef OUT_DOUBLE
+                            NC_DOUBLE,
+#else
+                            NC_FLOAT,
+#endif
+                            n_dims,
+                            dim_pointer,
+                            &varid[Var_idx::n_vars + i]));
+                    }
                 }
             }
+
         } else {
             std::vector<int> dimid_tmp;
             auto dim_pointer = &dimid[Dim_idx::time_dim];
@@ -189,19 +232,38 @@ void output_handle_t::setup(
                 dim_pointer = &dimid_tmp[0];
                 n_dims = 2;
             }
-            for (uint32_t i=0; i < output_grad_idx.size(); ++i) {
-                if (cc.trace_check(i, false)) {
-                    SUCCESS_OR_DIE(nc_def_var(
-                        ncid,
-                        output_grad_idx[i].c_str(),
+            if (!track_ic) {
+                for (uint32_t i=0; i < num_par; ++i) {
+                    if (cc.trace_check(i, false)) {
+                        SUCCESS_OR_DIE(nc_def_var(
+                            ncid,
+                            output_grad_idx[i].c_str(),
 #ifdef OUT_DOUBLE
-                        NC_DOUBLE,
+                            NC_DOUBLE,
 #else
-                        NC_FLOAT,
+                            NC_FLOAT,
 #endif
-                        n_dims,
-                        dim_pointer,
-                        &varid[Var_idx::n_vars + i]));
+                            n_dims,
+                            dim_pointer,
+                            &varid[Var_idx::n_vars + i]));
+                    }
+                }
+            } else {
+                // initial condition sensitivity
+                for (uint32_t i=0; i < num_par_init; ++i) {
+                    if (cc.trace_check(i, 2)) {
+                        SUCCESS_OR_DIE(nc_def_var(
+                            ncid,
+                            init_grad_idx[i].c_str(),
+#ifdef OUT_DOUBLE
+                            NC_DOUBLE,
+#else
+                            NC_FLOAT,
+#endif
+                            n_dims,
+                            dim_pointer,
+                            &varid[Var_idx::n_vars + i]));
+                    }
                 }
             }
         }
@@ -498,14 +560,30 @@ void output_handle_t::setup(
         put_att_nums_sed("sedi_outflux_of_graupel_number", "sedimentation of graupel number", varid[Var_idx::ng_out]);
         put_att_nums_sed("sedi_outflux_of_hail_number", "sedimentation of hail number", varid[Var_idx::nh_out]);
 
-        // all gradients are auxiliary data
-        for (int i=0; i < num_par; i++) {
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid[Var_idx::n_vars + i],
-                "auxiliary_data",
-                strlen("yes"),
-                "yes"));
+        if (!track_ic) {
+            // all gradients are auxiliary data
+            for (int i=0; i < num_par; i++) {
+                if (cc.trace_check(i, false)) {
+                    SUCCESS_OR_DIE(nc_put_att_text(
+                        ncid,
+                        varid[Var_idx::n_vars + i],
+                        "auxiliary_data",
+                        strlen("yes"),
+                        "yes"));
+                }
+            }
+        } else {
+            // initial condition gradients
+            for (int i=0; i < num_par_init; i++) {
+                if (cc.trace_check(i, 2)) {
+                    SUCCESS_OR_DIE(nc_put_att_text(
+                        ncid,
+                        varid[Var_idx::n_vars + i],
+                        "auxiliary_data",
+                        strlen("yes"),
+                        "yes"));
+                }
+            }
         }
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
@@ -815,19 +893,20 @@ void output_handle_t::setup(
             "yes"));
         // in theory, one could apply compression here
         // but this needs HDF5 >=1.10.2
-        // if (this->simulation_mode == limited_time_ensembles) {
-        //     for (auto &id : varid)
-        //         SUCCESS_OR_DIE(
-        //             nc_def_var_deflate(
-        //                 ncid,
-        //                 id,
-        //                 1,  // shuffle
-        //                 1,  // deflate
-        //                 9 // max compression
-        //            )
-        //        );
-        // }
-
+#ifdef COMPRESS_OUTPUT
+        if (this->simulation_mode == limited_time_ensembles
+            || this->simulation_mode == trajectory_sensitivity
+            || this->simulation_mode == grid_sensitivity) {
+            for (auto &id : varid)
+                SUCCESS_OR_DIE(
+                    nc_def_var_deflate(
+                        ncid,
+                        id,
+                        1,  // shuffle
+                        1,  // deflate
+                        9));  // max compression
+        }
+#endif
         SUCCESS_OR_DIE(nc_enddef(ncid));
         // Write dimensions here
         std::vector<size_t> startp, countp;
@@ -929,18 +1008,29 @@ void output_handle_t::setup(
                 ncid,
                 output_par_idx[i].c_str(),
                 &varid[i]));
-
-    // gradients
-    for (uint32_t i=0; i < output_grad_idx.size(); ++i) {
-        if (cc.trace_check(i, false)) {
-            SUCCESS_OR_DIE(
-                nc_inq_varid(
-                    ncid,
-                    output_grad_idx[i].c_str(),
-                    &varid[Var_idx::n_vars + i]));
+    if (!track_ic) {
+        // gradients
+        for (uint32_t i=0; i < num_par; ++i) {
+            if (cc.trace_check(i, false)) {
+                SUCCESS_OR_DIE(
+                    nc_inq_varid(
+                        ncid,
+                        output_grad_idx[i].c_str(),
+                        &varid[Var_idx::n_vars + i]));
+            }
+        }
+    } else {
+        // initial conditions
+        for (uint32_t i=0; i < num_par_init; ++i) {
+            if (cc.trace_check(i, 2)) {
+                SUCCESS_OR_DIE(
+                    nc_inq_varid(
+                        ncid,
+                        init_grad_idx[i].c_str(),
+                        &varid[Var_idx::n_vars + i]));
+            }
         }
     }
-
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -988,9 +1078,15 @@ void output_handle_t::setup(
         // work schedule; This can be expensive though.
         for (uint32_t i=0; i < Var_idx::n_vars; i++)
             SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_INDEPENDENT));
-        for (uint32_t i=0; i < output_grad_idx.size(); i++)
-            if (cc.trace_check(i, false))
-                SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
+        if (!track_ic) {
+            for (uint32_t i=0; i < num_par; i++)
+                if (cc.trace_check(i, false))
+                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
+        } else {
+            for (uint32_t i=0; i < num_par_init; i++)
+                if (cc.trace_check(i, 2))
+                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
+        }
     }
 }
 
@@ -1007,33 +1103,50 @@ void output_handle_t::reset(
 }
 
 
+template<class float_t>
 void output_handle_t::buffer_gradient(
-    const model_constants_t &cc,
+    const model_constants_t<float_t> &cc,
     const std::vector< std::array<double, num_par > >  &y_diff,
     const uint32_t snapshot_index) {
 
+    uint64_t comp_idx = 0;
     for (uint64_t i=0; i < num_comp; i++) {
         // gradient sensitive to output parameter i
         if (!cc.trace_check(i, true))
             continue;
-        for (uint64_t j=0; j < num_par; j++)  // gradient of input parameter j
-            if (cc.trace_check(j, false)) {
-                if (n_snapshots%snapshot_index == 0) {
-                    output_buffer[Buffer_idx::n_buffer+j][i*total_snapshots + n_snapshots] =
-                        y_diff[i][j]/snapshot_index;
-                } else {
-                    output_buffer[Buffer_idx::n_buffer+j][i*total_snapshots + n_snapshots] +=
-                        y_diff[i][j]/snapshot_index;
+        if (!track_ic) {
+            for (uint64_t j=0; j < num_par; j++)  // gradient of input parameter j
+                if (cc.trace_check(j, false)) {
+                    if (n_snapshots%snapshot_index == 0) {
+                        output_buffer[Buffer_idx::n_buffer+j][comp_idx*total_snapshots + n_snapshots] =
+                            y_diff[i][j]/snapshot_index;
+                    } else {
+                        output_buffer[Buffer_idx::n_buffer+j][comp_idx*total_snapshots + n_snapshots] +=
+                            y_diff[i][j]/snapshot_index;
+                    }
                 }
-            }
+        } else {
+            for (uint64_t j=0; j < num_par_init; j++)  // gradient of initial condition j
+                if (cc.trace_check(j, 2)) {
+                    if (n_snapshots%snapshot_index == 0) {
+                        output_buffer[Buffer_idx::n_buffer+j][comp_idx*total_snapshots + n_snapshots] =
+                            y_diff[i][j]/snapshot_index;
+                    } else {
+                        output_buffer[Buffer_idx::n_buffer+j][comp_idx*total_snapshots + n_snapshots] +=
+                            y_diff[i][j]/snapshot_index;
+                    }
+                }
+        }
+        comp_idx++;
     }
 }
 
 
+template<class float_t>
 void output_handle_t::buffer(
-    const model_constants_t &cc,
+    const model_constants_t<float_t> &cc,
     const netcdf_reader_t &netcdf_reader,
-    const std::vector<codi::RealReverse> &y_single_new,
+    const std::vector<float_t> &y_single_new,
     const std::vector< std::array<double, num_par > >  &y_diff,
     const uint32_t sub,
     const uint32_t t,
@@ -1096,14 +1209,11 @@ void output_handle_t::buffer(
     }
     if (this->simulation_mode != limited_time_ensembles || cc.traj_id == 0)
         buffer_gradient(cc, y_diff, snapshot_index);
-
     // lat
-    output_buffer[Buffer_idx::lat_buf][n_snapshots] =
-        (netcdf_reader.get_lat(t) + sub*(netcdf_reader.get_lat(t+1)-netcdf_reader.get_lat(t)));
+    output_buffer[Buffer_idx::lat_buf][n_snapshots] = netcdf_reader.get_lat(t, sub);
 
     // lon
-    output_buffer[Buffer_idx::lon_buf][n_snapshots] =
-        (netcdf_reader.get_lon(t) + sub*(netcdf_reader.get_lon(t+1)-netcdf_reader.get_lon(t)));
+    output_buffer[Buffer_idx::lon_buf][n_snapshots] = netcdf_reader.get_lon(t, sub);
 
 #ifdef MET3D
     // time after ascent
@@ -1122,8 +1232,9 @@ void output_handle_t::buffer(
 }
 
 
+template<class float_t>
 void output_handle_t::flush_buffer(
-    const model_constants_t &cc) {
+    const model_constants_t<float_t> &cc) {
     std::vector<size_t> startp, countp;
     startp.push_back(ens);
     startp.push_back(traj);
@@ -1185,12 +1296,15 @@ void output_handle_t::flush_buffer(
             output_buffer_int[0].data()));
     // gradients
     if (this->simulation_mode != limited_time_ensembles) {
-        startp.insert(startp.begin(), 0);
-        countp.insert(countp.begin(), local_num_comp);
+        if (local_num_comp > 1) {
+            startp.insert(startp.begin(), 0);
+            countp.insert(countp.begin(), local_num_comp);
+        }
+
         // Use an offset if the number of snapshots does not fit
         // This is necessary since the slow index is [0] (Output Parameter)
         // and the fast index is [3] (time), which has gaps now
-        if (countp[3] != total_snapshots) {
+        if (local_num_comp > 1 && countp[3] != total_snapshots) {
             std::vector<std::ptrdiff_t> stridep, imap;
             stridep.push_back(1);
             stridep.push_back(1);
@@ -1201,28 +1315,62 @@ void output_handle_t::flush_buffer(
             imap.push_back(1);
             imap.push_back(1);
 
-            for (uint64_t j=0; j < num_par; j++) {
-                if (cc.trace_check(j, false))
-                    SUCCESS_OR_DIE(
-                        nc_put_varm(
-                            ncid,
-                            varid[Var_idx::n_vars + j],
-                            startp.data(),
-                            countp.data(),
-                            stridep.data(),
-                            imap.data(),
-                            output_buffer[Buffer_idx::n_buffer + j].data()));
+            if (!track_ic) {
+                for (uint64_t j=0; j < num_par; j++) {
+                    if (cc.trace_check(j, false)) {
+                        SUCCESS_OR_DIE(
+                            nc_put_varm(
+                                ncid,
+                                varid[Var_idx::n_vars + j],
+                                startp.data(),
+                                countp.data(),
+                                stridep.data(),
+                                imap.data(),
+                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                    }
+                }
+            } else {
+                // initial conditions sensitivity
+                for (uint64_t j=0; j < num_par_init; j++) {
+                    if (cc.trace_check(j, 2)) {
+                        SUCCESS_OR_DIE(
+                            nc_put_varm(
+                                ncid,
+                                varid[Var_idx::n_vars + j],
+                                startp.data(),
+                                countp.data(),
+                                stridep.data(),
+                                imap.data(),
+                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                    }
+                }
             }
         } else {
-            for (uint64_t j=0; j < num_par; j++) {
-                if (cc.trace_check(j, false))
-                    SUCCESS_OR_DIE(
-                        nc_put_vara(
-                            ncid,
-                            varid[Var_idx::n_vars + j],
-                            startp.data(),
-                            countp.data(),
-                            output_buffer[Buffer_idx::n_buffer + j].data()));
+            if (!track_ic) {
+                for (uint64_t j=0; j < num_par; j++) {
+                    if (cc.trace_check(j, false)) {
+                        SUCCESS_OR_DIE(
+                            nc_put_vara(
+                                ncid,
+                                varid[Var_idx::n_vars + j],
+                                startp.data(),
+                                countp.data(),
+                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                    }
+                }
+            } else {
+                // initial conditions
+                for (uint64_t j=0; j < num_par_init; j++) {
+                    if (cc.trace_check(j, 2)) {
+                        SUCCESS_OR_DIE(
+                            nc_put_vara(
+                                ncid,
+                                varid[Var_idx::n_vars + j],
+                                startp.data(),
+                                countp.data(),
+                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                    }
+                }
             }
         }
     } else if (cc.traj_id == 0) {
@@ -1238,28 +1386,58 @@ void output_handle_t::flush_buffer(
             imap.push_back(total_snapshots);
             imap.push_back(1);
 
-            for (uint64_t j=0; j < num_par; j++) {
-                if (cc.trace_check(j, false))
-                    SUCCESS_OR_DIE(
-                        nc_put_varm(
-                            ncid,
-                            varid[Var_idx::n_vars + j],
-                            startp2.data(),
-                            countp2.data(),
-                            stridep.data(),
-                            imap.data(),
-                            output_buffer[Buffer_idx::n_buffer + j].data()));
+            if (!track_ic) {
+                for (uint64_t j=0; j < num_par; j++) {
+                    if (cc.trace_check(j, false))
+                        SUCCESS_OR_DIE(
+                            nc_put_varm(
+                                ncid,
+                                varid[Var_idx::n_vars + j],
+                                startp2.data(),
+                                countp2.data(),
+                                stridep.data(),
+                                imap.data(),
+                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                }
+            } else {
+                // initial conditions
+                for (uint64_t j=0; j < num_par_init; j++) {
+                    if (cc.trace_check(j, 2))
+                        SUCCESS_OR_DIE(
+                            nc_put_varm(
+                                ncid,
+                                varid[Var_idx::n_vars + j],
+                                startp2.data(),
+                                countp2.data(),
+                                stridep.data(),
+                                imap.data(),
+                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                }
             }
         } else {
-            for (uint64_t j=0; j < num_par; j++) {
-                if (cc.trace_check(j, false))
-                    SUCCESS_OR_DIE(
-                        nc_put_vara(
-                            ncid,
-                            varid[Var_idx::n_vars + j],
-                            startp2.data(),
-                            countp2.data(),
-                            output_buffer[Buffer_idx::n_buffer + j].data()));
+            if (!track_ic) {
+                for (uint64_t j=0; j < num_par; j++) {
+                    if (cc.trace_check(j, false))
+                        SUCCESS_OR_DIE(
+                            nc_put_vara(
+                                ncid,
+                                varid[Var_idx::n_vars + j],
+                                startp2.data(),
+                                countp2.data(),
+                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                }
+            } else {
+                // initial conditions
+                for (uint64_t j=0; j < num_par_init; j++) {
+                    if (cc.trace_check(j, 2))
+                        SUCCESS_OR_DIE(
+                            nc_put_vara(
+                                ncid,
+                                varid[Var_idx::n_vars + j],
+                                startp2.data(),
+                                countp2.data(),
+                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                }
             }
         }
     }
@@ -1268,10 +1446,11 @@ void output_handle_t::flush_buffer(
 }
 
 
+template<class float_t>
 void output_handle_t::process_step(
-    const model_constants_t &cc,
+    const model_constants_t<float_t> &cc,
     const netcdf_reader_t &netcdf_reader,
-    const std::vector<codi::RealReverse> &y_single_new,
+    const std::vector<float_t> &y_single_new,
     const std::vector< std::array<double, num_par > >  &y_diff,
     const uint32_t sub,
     const uint32_t t,
@@ -1294,3 +1473,111 @@ void output_handle_t::process_step(
         this->flush_buffer(cc);
     }
 }
+
+template output_handle_t::output_handle_t<codi::RealReverse>(
+    const std::string,
+    const std::string,
+    const model_constants_t<codi::RealReverse>&,
+    const reference_quantities_t&,
+    const std::string,
+    const uint32_t,
+    const uint32_t ,
+    const int&,
+    const int&,
+    const bool&,
+    const double);
+
+template output_handle_t::output_handle_t<codi::RealForwardVec<num_par_init> >(
+    const std::string,
+    const std::string,
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const reference_quantities_t&,
+    const std::string,
+    const uint32_t,
+    const uint32_t,
+    const int&,
+    const int&,
+    const bool&,
+    const double);
+
+template void output_handle_t::setup<codi::RealReverse>(
+    const std::string,
+    const std::string,
+    const model_constants_t<codi::RealReverse>&,
+    const reference_quantities_t&,
+    const std::string,
+    const uint32_t,
+    const uint32_t,
+    const int&,
+    const double);
+
+template void output_handle_t::setup<codi::RealForwardVec<num_par_init> >(
+    const std::string,
+    const std::string,
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const reference_quantities_t&,
+    const std::string,
+    const uint32_t,
+    const uint32_t,
+    const int&,
+    const double);
+
+template void output_handle_t::buffer_gradient<codi::RealReverse>(
+    const model_constants_t<codi::RealReverse>&,
+    const std::vector< std::array<double, num_par > >&,
+    const uint32_t);
+
+template void output_handle_t::buffer_gradient<codi::RealForwardVec<num_par_init> >(
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const std::vector< std::array<double, num_par > >&,
+    const uint32_t);
+
+template void output_handle_t::buffer<codi::RealReverse>(
+    const model_constants_t<codi::RealReverse>&,
+    const netcdf_reader_t&,
+    const std::vector<codi::RealReverse>&,
+    const std::vector< std::array<double, num_par > >&,
+    const uint32_t,
+    const uint32_t,
+    const reference_quantities_t&,
+    const uint32_t);
+
+template void output_handle_t::buffer<codi::RealForwardVec<num_par_init> >(
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const netcdf_reader_t&,
+    const std::vector<codi::RealForwardVec<num_par_init> >&,
+    const std::vector< std::array<double, num_par > >&,
+    const uint32_t,
+    const uint32_t,
+    const reference_quantities_t&,
+    const uint32_t);
+
+template void output_handle_t::flush_buffer<codi::RealReverse>(
+    const model_constants_t<codi::RealReverse>&);
+
+template void output_handle_t::flush_buffer<codi::RealForwardVec<num_par_init> >(
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&);
+
+template void output_handle_t::process_step<codi::RealReverse>(
+    const model_constants_t<codi::RealReverse>&,
+    const netcdf_reader_t&,
+    const std::vector<codi::RealReverse>&,
+    const std::vector< std::array<double, num_par > >&,
+    const uint32_t,
+    const uint32_t,
+    const uint32_t,
+    const uint32_t,
+    const bool,
+    const reference_quantities_t&);
+
+template void output_handle_t::process_step<codi::RealForwardVec<num_par_init> >(
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const netcdf_reader_t&,
+    const std::vector<codi::RealForwardVec<num_par_init> >&,
+    const std::vector< std::array<double, num_par > >&,
+    const uint32_t,
+    const uint32_t,
+    const uint32_t,
+    const uint32_t,
+    const bool,
+    const reference_quantities_t&);

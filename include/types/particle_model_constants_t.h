@@ -16,8 +16,9 @@ namespace pt = boost::property_tree;
  * Has getter and register functions for codi::RealReverse for its
  * members.
  */
+template<class float_t>
 struct particle_model_constants_t{
-    std::vector<codi::RealReverse> constants;
+    std::vector<float_t> constants;
     std::vector<uint32_t> perturbed_idx;
 
     /*
@@ -34,7 +35,7 @@ struct particle_model_constants_t{
      * @param tape Tape where the parameters should be registered on.
      */
     void register_input(
-        codi::RealReverse::TapeType &tape,
+        codi::RealReverse::Tape &tape,
         uint32_t &id);
 
     /**

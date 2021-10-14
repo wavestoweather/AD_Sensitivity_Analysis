@@ -272,6 +272,11 @@ void input_parameters_t::set_input_from_arguments(
     if (1 == arg.warm_up_flag) {
         this->delay_time_store = std::strtod(arg.warm_up_string, nullptr);
     }
+
+    // Track sensitivity to initial conditions instead of model parameters
+    if (1 == arg.track_ic_flag) {
+        this->track_initial_cond =  (strcmp(arg.track_ic_string, "0"));
+    }
 }
 
 
@@ -322,6 +327,9 @@ void input_parameters_t::print_parameters() {
         << (((this->simulation_mode == trajectory_sensitvity_perturbance)
             || (this->simulation_mode == trajectory_perturbance))
         ? "Maximum number of ensembles in the output file: " + std::to_string(this->n_ensembles) + "\n"
+        : "")
+        << ((this->track_initial_cond)
+        ? "Tracking sensitivity to initial conditions instead of model parameters\n"
         : "")
         << "Simulation mode: " << this->simulation_mode << "\n"
         << "Warm-up time: " << this->delay_time_store << "s\n"

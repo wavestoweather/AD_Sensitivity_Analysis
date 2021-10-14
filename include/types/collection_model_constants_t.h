@@ -8,20 +8,21 @@
  * It is stored within a struct model_constants_t for different collisions
  * such as hail and ice collection or ice and rain riming.
  */
+template<class float_t>
 struct collection_model_constants_t{
-    codi::RealReverse delta_n_aa;
-    codi::RealReverse delta_n_ab;
-    codi::RealReverse delta_n_bb;
-    codi::RealReverse delta_q_aa;
-    codi::RealReverse delta_q_ab;
-    codi::RealReverse delta_q_bb;
-    codi::RealReverse delta_q_ba;
+    float_t delta_n_aa;
+    float_t delta_n_ab;
+    float_t delta_n_bb;
+    float_t delta_q_aa;
+    float_t delta_q_ab;
+    float_t delta_q_bb;
+    float_t delta_q_ba;
 
-    codi::RealReverse theta_n_aa;
-    codi::RealReverse theta_n_ab;
-    codi::RealReverse theta_n_bb;
-    codi::RealReverse theta_q_aa;
-    codi::RealReverse theta_q_ab;
-    codi::RealReverse theta_q_bb;
-    codi::RealReverse theta_q_ba;
+    float_t theta_n_aa;
+    float_t theta_n_ab;
+    float_t theta_n_bb;
+    float_t theta_q_aa;
+    float_t theta_q_ab;
+    float_t theta_q_bb;
+    float_t theta_q_ba;
 };

@@ -42,6 +42,7 @@ struct input_parameters_t {
     // bool start_over; /*!< Start over at new timestep of trajectory? */
     bool start_over_env; /*!< Start over environment variables at new timestep of trajectory? */
     bool fixed_iteration; /*!< Fix temperature and pressure at every iteration? */
+    bool track_initial_cond; /*!< Track sensitivity to initial coniditions instead of model parameters. */
 
     uint32_t auto_type; /*!< Particle type. */
     uint32_t traj; /*!< Trajectory index to load from the netCDF file. */

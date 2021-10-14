@@ -24,7 +24,7 @@ template<class float_t>
 void set_limits(
     std::vector<float_t> &y,
     const reference_quantities_t& ref,
-    model_constants_t &cc) {
+    model_constants_t<float_t> &cc) {
     if (nuc_type > 0)
         y[Nc_idx] = min(min(max(y[Nc_idx], y[qc_idx]*ref.qref/get_at(cc.cloud.constants, Particle_cons_idx::max_x)),
             y[qc_idx]*ref.qref/get_at(cc.cloud.constants, Particle_cons_idx::min_x)), 5e9);
@@ -66,16 +66,17 @@ void set_limits(
  * @param cc Pointer to constants from the model
  * @param fixed If True: Do not change pressure, temperature and ascent (w)
  */
+template<class float_t>
 void RK4_step_2_sb_ice(
-    std::vector<codi::RealReverse> &ynew,
-    std::vector<codi::RealReverse> &yold,
+    std::vector<float_t> &ynew,
+    std::vector<float_t> &yold,
     const reference_quantities_t& ref,
-    model_constants_t& cc,
+    model_constants_t<float_t>& cc,
     bool fixed) {
 
     // Define temporary variables
-    std::vector<codi::RealReverse> k(num_comp);
-    std::vector<codi::RealReverse> ytmp(num_comp);
+    std::vector<float_t> k(num_comp);
+    std::vector<float_t> ytmp(num_comp);
 
     // Reset the result vector with the current state
     for (int ii = 0 ; ii < num_comp ; ii++)
@@ -181,15 +182,15 @@ void RK4_step_2_sb_ice(
     sediment_n_total += cc.dt_sixth*sediment_n;
     sediment_n = 0;
     // Explicit calculation of saturation
-    codi::RealReverse T_prime = ynew[T_idx]*ref.Tref;
-    codi::RealReverse p_prime = ynew[p_idx]*ref.pref;
-    codi::RealReverse qv_prime = ynew[qv_idx]*ref.qref;
+    float_t T_prime = ynew[T_idx]*ref.Tref;
+    float_t p_prime = ynew[p_idx]*ref.pref;
+    float_t qv_prime = ynew[qv_idx]*ref.qref;
     ynew[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime,
                 get_at(cc.constants, Cons_idx::p_sat_low_temp),
                 get_at(cc.constants, Cons_idx::p_sat_const_a),
                 get_at(cc.constants, Cons_idx::T_sat_low_temp),
                 get_at(cc.constants, Cons_idx::p_sat_const_b),
-                 get_at(cc.constants, Cons_idx::Epsilon));
+                get_at(cc.constants, Cons_idx::Epsilon));
 }
 
 /** @} */  // end of group rk

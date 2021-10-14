@@ -63,6 +63,9 @@ global_args_t::global_args_t() {
 
     warm_up_flag = 0;
     warm_up_string = nullptr;
+
+    track_ic_flag = 0;
+    track_ic_string = nullptr;
 }
 
 
@@ -74,7 +77,7 @@ int global_args_t::parse_arguments(
     /**
      * String used to parse commandline input.
      */
-    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g:h:k:u:?";
+    static const char *optString = "w:f:d:e:i:b:o:l:s:t:a:r:p:n:m:c:g:h:k:u:x:?";
     bool need_to_abort = false;
     int opt;
 
@@ -188,6 +191,11 @@ int global_args_t::parse_arguments(
                     this->warm_up_string = optarg;
                     break;
                 }
+                case 'x': {
+                    this->track_ic_flag = 1;
+                    this->track_ic_string = optarg;
+                    break;
+                }
                 case '?': {
                     need_to_abort = true;
                     display_usage();
@@ -268,6 +276,7 @@ void global_args_t::display_usage() {
         << "-k: Maximum number of ensembles in the output file. If none given "
         << "then each segment from the configuration file is considered as one ensemble.\n"
         << "-u: Warm-up time for the model before data is stored.\n"
+        << "-x: Track sensitivity to initial conditions instead of model parameters\n"
         << "-?: This help message.\n"
         << std::endl;
 }

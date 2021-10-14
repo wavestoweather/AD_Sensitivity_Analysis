@@ -7,8 +7,13 @@ netcdf_reader_t::netcdf_reader_t(
     varid.resize(Par_idx::n_pars);
     this->n_timesteps_buffer = buffer_size;
     this->time_buffer_idx = 0;
-    for (auto &b : buffer)
-        b.resize(this->n_timesteps_buffer);
+    for (uint32_t i=0; i < buffer.size(); i++) {
+        if (i == Par_idx::ascent || i == Par_idx::lat || i == Par_idx::lon) {
+            buffer[i].resize(this->n_timesteps_buffer+1);
+        } else {
+            buffer[i].resize(this->n_timesteps_buffer);
+        }
+    }
     already_open = false;
 }
 
@@ -291,16 +296,22 @@ void netcdf_reader_t::load_vars() {
 void netcdf_reader_t::buffer_params(
     const reference_quantities_t &ref_quant) {
     // check amount of timesteps left to read
+    // We need to reset n_timesteps_buffer in case it had been reduced
+    // for another trajecotry or grid point that the process has
+    // finished before
+    n_timesteps_buffer = buffer[0].size();
     if (time_idx + n_timesteps_buffer > n_timesteps_in) {
         n_timesteps_buffer = n_timesteps_in - time_idx;
     }
 
-    std::vector<size_t> startp, countp;
+    std::vector<size_t> startp, countp, countp2;
 #if defined WCB || defined WCB2
     startp.push_back(time_idx);
     startp.push_back(traj_idx);
     countp.push_back(n_timesteps_buffer);
     countp.push_back(1);
+    countp2.push_back(n_timesteps_buffer + (time_idx + n_timesteps_buffer < n_timesteps_in));
+    countp2.push_back(1);
 #elif defined MET3D
     startp.push_back(ens_idx);
     startp.push_back(traj_idx);
@@ -309,22 +320,39 @@ void netcdf_reader_t::buffer_params(
     countp.push_back(1);
     countp.push_back(1);
     countp.push_back(n_timesteps_buffer);
+
+    countp2.push_back(1);
+    countp2.push_back(1);
+    countp2.push_back(n_timesteps_buffer + (time_idx + n_timesteps_buffer < n_timesteps_in));
 #else
     startp.push_back(traj_idx);
     startp.push_back(time_idx);
     countp.push_back(1);
     countp.push_back(n_timesteps_buffer);
+    countp2.push_back(1);
+    countp2.push_back(n_timesteps_buffer + (time_idx + n_timesteps_buffer < n_timesteps_in));
 #endif
 
     for (int i=0; i < Par_idx::n_pars; i++) {
-        SUCCESS_OR_DIE(
-            nc_get_vara(
-                ncid,
-                varid[i],
-                startp.data(),
-                countp.data(),
-                buffer[i].data()));
+        if (i == Par_idx::ascent || i == Par_idx::lat || i == Par_idx::lon) {
+            SUCCESS_OR_DIE(
+                nc_get_vara(
+                    ncid,
+                    varid[i],
+                    startp.data(),
+                    countp2.data(),
+                    buffer[i].data()));
+        } else {
+            SUCCESS_OR_DIE(
+                nc_get_vara(
+                    ncid,
+                    varid[i],
+                    startp.data(),
+                    countp.data(),
+                    buffer[i].data()));
+        }
     }
+
     for (auto &v : buffer[Par_idx::pressure]) {
         v /= ref_quant.pref;
 #if !defined WCB2 && !defined MET3D
@@ -364,19 +392,21 @@ void netcdf_reader_t::buffer_params(
 }
 
 
+template<class float_t>
 void netcdf_reader_t::read_buffer(
-    model_constants_t &cc,
+    model_constants_t<float_t> &cc,
     const reference_quantities_t &ref_quant,
-    std::vector<codi::RealReverse> &y_single_old,
-    std::vector<codi::RealReverse> &inflows,
+    std::vector<float_t> &y_single_old,
+    std::vector<float_t> &inflows,
     const uint32_t &step,
     const bool &checkpoint_flag,
     const bool &start_over_env) {
     time_buffer_idx += step+start_time_idx-time_idx;
     time_idx = step+start_time_idx;
     // check if buffer needs to be reloaded
-    if (time_buffer_idx >= n_timesteps_buffer-1) {
+    if (time_buffer_idx >= n_timesteps_buffer) {
         buffer_params(ref_quant);
+        time_buffer_idx = 0;
     }
     // Reset outflow
     y_single_old[qi_out_idx] = 0;
@@ -440,9 +470,10 @@ void netcdf_reader_t::read_buffer(
 }
 
 
+template<class float_t>
 void netcdf_reader_t::set_dims(
     const char *input_file,
-    model_constants_t &cc,
+    model_constants_t<float_t> &cc,
     const int &simulation_mode) {
     time_buffer_idx = 0;
     traj_idx = 0;
@@ -524,13 +555,14 @@ void netcdf_reader_t::set_dims(
 }
 
 
+template<class float_t>
 void netcdf_reader_t::init_netcdf(
 #ifdef MET3D
     double &start_time,
 #endif
     const char *input_file,
     const bool &checkpoint_flag,
-    model_constants_t &cc,
+    model_constants_t<float_t> &cc,
     const int &simulation_mode,
     const double current_time) {
     std::vector<size_t> startp, countp;
@@ -568,10 +600,11 @@ void netcdf_reader_t::init_netcdf(
 }
 
 
+template<class float_t>
 void netcdf_reader_t::read_initial_values(
     std::vector<double> &y_init,
     const reference_quantities_t &ref_quant,
-    model_constants_t &cc,
+    model_constants_t<float_t> &cc,
     const bool &checkpoint_flag,
     const uint64_t &traj_id,
     const uint64_t &ens_id) {
@@ -583,12 +616,12 @@ void netcdf_reader_t::read_initial_values(
 
 template<class float_t>
 void netcdf_reader_t::read_initial_values(
-    std::vector<float_t> &y_init,
+    std::vector<double> &y_init,
     const reference_quantities_t &ref_quant,
-    model_constants_t &cc,
+    model_constants_t<float_t> &cc,
     const bool &checkpoint_flag) {
-    buffer_params(ref_quant);
 
+    buffer_params(ref_quant);
     std::vector<size_t> startp;
 
     if (!checkpoint_flag) {
@@ -780,3 +813,79 @@ void netcdf_reader_t::read_initial_values(
 #endif
     }
 }
+
+template void netcdf_reader_t::read_buffer<codi::RealReverse>(
+    model_constants_t<codi::RealReverse>&,
+    const reference_quantities_t&,
+    std::vector<codi::RealReverse>&,
+    std::vector<codi::RealReverse>&,
+    const uint32_t&,
+    const bool&,
+    const bool&);
+
+template void netcdf_reader_t::read_buffer<codi::RealForwardVec<num_par_init> >(
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const reference_quantities_t&,
+    std::vector<codi::RealForwardVec<num_par_init> >&,
+    std::vector<codi::RealForwardVec<num_par_init> >&,
+    const uint32_t&,
+    const bool&,
+    const bool&);
+
+template void netcdf_reader_t::set_dims<codi::RealReverse>(
+    const char*,
+    model_constants_t<codi::RealReverse>&,
+    const int&);
+
+template void netcdf_reader_t::set_dims<codi::RealForwardVec<num_par_init> >(
+    const char*,
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const int&);
+
+template void netcdf_reader_t::init_netcdf<codi::RealReverse>(
+#ifdef MET3D
+    double&,
+#endif
+    const char*,
+    const bool&,
+    model_constants_t<codi::RealReverse>&,
+    const int&,
+    const double);
+
+template void netcdf_reader_t::init_netcdf<codi::RealForwardVec<num_par_init> >(
+#ifdef MET3D
+    double&,
+#endif
+    const char*,
+    const bool&,
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const int&,
+    const double);
+
+template void netcdf_reader_t::read_initial_values<codi::RealReverse>(
+    std::vector<double>&,
+    const reference_quantities_t&,
+    model_constants_t<codi::RealReverse>&,
+    const bool&,
+    const uint64_t&,
+    const uint64_t&);
+
+template void netcdf_reader_t::read_initial_values<codi::RealForwardVec<num_par_init> >(
+    std::vector<double>&,
+    const reference_quantities_t&,
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const bool&,
+    const uint64_t&,
+    const uint64_t&);
+
+template void netcdf_reader_t::read_initial_values<codi::RealReverse>(
+    std::vector<double>&,
+    const reference_quantities_t&,
+    model_constants_t<codi::RealReverse>&,
+    const bool&);
+
+template void netcdf_reader_t::read_initial_values<codi::RealForwardVec<num_par_init> >(
+    std::vector<double>&,
+    const reference_quantities_t&,
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const bool&);
