@@ -43,7 +43,7 @@ struct output_handle_t{
 #endif
     std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
     // std::array<std::vector<std::string>, 1 > output_buffer_str;
-    std::array<std::vector<uint64_t>, 1 > output_buffer_int;
+    std::array<std::vector<uint64_t>, 2 > output_buffer_int;
     /**
      * ID for dimensions of output file.
      */
@@ -134,6 +134,7 @@ struct output_handle_t{
         slan_400,
         slan_600,
         step,
+        phase,
 
         // We do not clutter the gradient values here
         // The index is given by n_vars + i

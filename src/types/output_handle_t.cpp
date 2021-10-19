@@ -178,6 +178,7 @@ void output_handle_t::setup(
                     3,
                     &dimid[Dim_idx::ensemble_dim],
                     &varid[i]));
+
         // gradients
         if (this->simulation_mode != limited_time_ensembles) {
             auto dim_pointer = &dimid[Dim_idx::out_param_dim];
@@ -336,6 +337,15 @@ void output_handle_t::setup(
             3,
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::step]));
+
+        // Phase of the trajectory
+        SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "phase",
+            NC_UINT64,
+            3,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::phase]));
 
         // Add attributes; read attributes from in_filename first
         int in_ncid;
@@ -891,6 +901,30 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "long_name",
+            strlen("phase"),
+            "phase"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "standard_name",
+            strlen("phase"),
+            "phase"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "description",
+            strlen("0: warm phase, 1: mixed phase, 2: ice phase, 3: neutral phase"),
+            "0: warm phase, 1: mixed phase, 2: ice phase, 3: neutral phase"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
         // in theory, one could apply compression here
         // but this needs HDF5 >=1.10.2
 #ifdef COMPRESS_OUTPUT
@@ -1071,6 +1105,11 @@ void output_handle_t::setup(
             ncid,
             "step",
             &varid[Var_idx::step]));
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "phase",
+            &varid[Var_idx::phase]));
 
     if ((this->simulation_mode == trajectory_sensitvity_perturbance)
         || (this->simulation_mode == trajectory_perturbance)) {
@@ -1228,6 +1267,21 @@ void output_handle_t::buffer(
     // simulation step
     output_buffer_int[0][n_snapshots] = sub + t*cc.num_sub_steps;
 
+    // phase, 0: warm phase, 1: mixed phase, 2: ice phase,
+    // 3: only water vapor or nothing at all
+    uint64_t current_phase = 3;
+    if (y_single_new[qi_idx] > 0 || y_single_new[qs_idx] > 0
+        || y_single_new[qh_idx] > 0 || y_single_new[qg_idx] > 0
+        || y_single_new[Ni_idx] > 0 || y_single_new[Ns_idx] > 0
+        || y_single_new[Nh_idx] > 0 || y_single_new[Ng_idx] > 0) {
+        current_phase = 2;
+    }
+    if (y_single_new[qc_idx] > 0 || y_single_new[qr_idx] > 0
+        || y_single_new[Nc_idx] > 0 || y_single_new[Nr_idx] > 0) {
+        current_phase = (current_phase == 2) ? 1 : 0;
+    }
+    output_buffer_int[1][n_snapshots] = current_phase;
+
     n_snapshots++;
 }
 
@@ -1294,6 +1348,15 @@ void output_handle_t::flush_buffer(
             startp.data(),
             countp.data(),
             output_buffer_int[0].data()));
+
+    // phase
+    SUCCESS_OR_DIE(
+        nc_put_vara(
+            ncid,
+            varid[Var_idx::phase],
+            startp.data(),
+            countp.data(),
+            output_buffer_int[1].data()));
     // gradients
     if (this->simulation_mode != limited_time_ensembles) {
         if (local_num_comp > 1) {
