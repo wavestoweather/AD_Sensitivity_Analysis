@@ -602,6 +602,15 @@ void model_constants_t<float_t>::setup_model_constants(
     this->constants[static_cast<int>(Cons_idx::k_r)] = k_r;
 
 #if defined(B_EIGHT)
+    this->constants[static_cast<int>(Cons_idx::p_ccn)] = p_ccn;
+    this->constants[static_cast<int>(Cons_idx::h_ccn_1)] = h_ccn_1;
+    this->constants[static_cast<int>(Cons_idx::h_ccn_2)] = h_ccn_2;
+    this->constants[static_cast<int>(Cons_idx::h_ccn_3)] = h_ccn_3;
+    this->constants[static_cast<int>(Cons_idx::g_ccn_1)] = g_ccn_1;
+    this->constants[static_cast<int>(Cons_idx::g_ccn_2)] = g_ccn_2;
+    this->constants[static_cast<int>(Cons_idx::g_ccn_3)] = g_ccn_3;
+    this->constants[static_cast<int>(Cons_idx::i_ccn_1)] = i_ccn_1;
+    this->constants[static_cast<int>(Cons_idx::i_ccn_2)] = i_ccn_2;
     this->constants[static_cast<int>(Cons_idx::hande_ccn_fac)] = hande_ccn_fac;
 #endif
     // Numerics

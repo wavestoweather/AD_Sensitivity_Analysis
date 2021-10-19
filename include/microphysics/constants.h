@@ -59,7 +59,11 @@ typedef bool(*track_func)(const int&, const bool&);
 
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
-#define num_par (56*6+124+18)  /*!< Number of gradients. 56 for each particle + model constants + initial conditions */
+#if defined(B_EIGHT)
+#define num_par (56*6+124+18)
+#else
+#define num_par (56*6+134+18)  /*!< Number of gradients. 56 for each particle + model constants + initial conditions */
+#endif
 
 #endif
 
@@ -202,6 +206,11 @@ const std::vector<std::string> output_grad_idx = {
     "db_ccn_1", "db_ccn_2", "db_ccn_3", "db_ccn_4",
     "dc_ccn_1", "dc_ccn_2", "dc_ccn_3", "dc_ccn_4",
     "dd_ccn_1", "dd_ccn_2", "dd_ccn_3", "dd_ccn_4",
+#if defined(B_EIGHT)
+    "dp_ccn", "dh_ccn_1", "dh_ccn_2", "dh_ccn_3",
+    "dg_ccn_1", "dg_ccn_2", "dg_ccn_3",
+    "di_ccn_1", "di_ccn_2", "dhande_ccn_fac",
+#endif
     // Rain
     "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_min_x_act",
     "drain_min_x_nuc_homo", "drain_min_x_nuc_hetero", "drain_min_x_melt",
@@ -494,6 +503,10 @@ enum class Cons_idx: uint32_t{
     d_ccn_1, d_ccn_2, d_ccn_3, d_ccn_4,
 #endif
 #if defined(B_EIGHT)
+    p_ccn,
+    h_ccn_1, h_ccn_2, h_ccn_3,
+    g_ccn_1, g_ccn_2, g_ccn_3,
+    i_ccn_1, i_ccn_2,
     hande_ccn_fac,
 #endif
     n_items
@@ -556,7 +569,11 @@ std::unordered_map<std::string, Cons_idx> const table_param = {
     {"d_ccn_3", Cons_idx::d_ccn_3}, {"d_ccn_4", Cons_idx::d_ccn_4},
 #endif
 #if defined(B_EIGHT)
-    {"hande_ccn_fac", Cons_idx::hande_ccn_fac}
+    {"p_ccn", Cons_idx::p_ccn}, {"h_ccn_1", Cons_idx::h_ccn_1},
+    {"h_ccn_2", Cons_idx::h_ccn_2}, {"h_ccn_3", Cons_idx::h_ccn_3},
+    {"g_ccn_1", Cons_idx::g_ccn_1}, {"g_ccn_2", Cons_idx::g_ccn_2},
+    {"g_ccn_3", Cons_idx::g_ccn_3}, {"i_ccn_1", Cons_idx::i_ccn_1},
+    {"i_ccn_2", Cons_idx::i_ccn_2}, {"hande_ccn_fac", Cons_idx::hande_ccn_fac}
 #endif
 };
 
@@ -783,6 +800,61 @@ extern double sediment_q;
 extern double sediment_n;
 extern double sediment_q_total;
 extern double sediment_n_total;
+
+/**
+ * Threshold used during CCN activation from A. Miltenberger.
+ * Determines how the number of nuclei is calculated.
+ *
+ */
+const double p_ccn = 80000;
+
+/**
+ * Coefficient used during CCN activation from A. Miltenberger.
+ */
+const double h_ccn_1 = 250;
+
+/**
+ * Coefficient used during CCN activation from A. Miltenberger.
+ */
+const double h_ccn_2 = 7;
+
+/**
+ * Used during CCN activation from A. Miltenberger.
+ * The number of nuclei that can be activated.
+ */
+const double h_ccn_3 = 257;
+
+/**
+ * Exponent used during CCN activation from A. Miltenberger.
+ */
+const double g_ccn_1 = 800;
+
+/**
+ * Exponent used during CCN activation from A. Miltenberger.
+ */
+const double g_ccn_2 = 150;
+
+/**
+ * Exponent used during CCN activation from A. Miltenberger.
+ */
+const double g_ccn_3 = 400;
+
+/**
+ * Coefficient for the number of CCNs used during CCN activation from
+ * A. Miltenberger.
+ */
+const double i_ccn_1 = 1e6;
+
+/**
+ * Minimum number of CCNs used during CCN activation from
+ * A. Miltenberger.
+ */
+const double i_ccn_2 = 10.0e-6;
+
+/**
+ * Parameter for scaling Hande CCN activation in general.
+ */
+const double hande_ccn_fac = 1.0;
 
 /**
  * Universal gas constant, unit: J/(mol*K)
@@ -1372,11 +1444,6 @@ const double p_sat_low_temp = 610.78;
  * Parameter for saturation adjustment.
  */
 const double T_sat_low_temp = 273.15;
-
-/**
- * Parameter for scaling Hande CCN activation in general.
- */
-const double hande_ccn_fac = 1.0;
 
 const std::vector<std::vector<double> > afrac_dust = {
     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,

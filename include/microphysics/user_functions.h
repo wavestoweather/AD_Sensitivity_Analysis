@@ -197,7 +197,7 @@ void ccn_act_hande_akm(
     float_t &Nc,
     const double &EPSILON,
     std::vector<float_t> &res,
-    model_constants_t &cc) {
+    model_constants_t<float_t> &cc) {
     // non maritime case
     if (qc_prime > EPSILON && w_prime > 0.0 && T_prime >= (T_freeze - 38)) {
         float_t bcoeff = get_at(cc.constants, Cons_idx::b_ccn_1)
@@ -206,16 +206,20 @@ void ccn_act_hande_akm(
             * exp(-get_at(cc.constants, Cons_idx::c_ccn_2) * p_prime + get_at(cc.constants, Cons_idx::c_ccn_3));
 
         float_t Na;
-        if (p_prime < 80000) {
-            Na = 250 * exp((p_prime/100-800)/150) + 7*exp((p_prime/100-800)/400);
+        // The formulation is for hPa, hence dividing by 100.
+        if (p_prime < get_at(cc.constants, Cons_idx::p_ccn)) {
+            Na = get_at(cc.constants, Cons_idx::h_ccn_1)
+                * exp((p_prime/100-get_at(cc.constants, Cons_idx::g_ccn_1))/get_at(cc.constants, Cons_idx::g_ccn_2))
+                    + get_at(cc.constants, Cons_idx::h_ccn_2)
+                * exp((p_prime/100-get_at(cc.constants, Cons_idx::g_ccn_1))/get_at(cc.constants, Cons_idx::g_ccn_3));
         } else {
-            Na = 257;
+            Na = get_at(cc.constants, Cons_idx::h_ccn_3);
         }
 
         // concentration of ccn
         float_t delta_n = get_at(cc.constants, Cons_idx::hande_ccn_fac) * (
-            Na * (1/(1+exp(-bcoeff*log(w_prime)-ccoeff))) * 1e6);
-        delta_n = max(max(delta_n, 10.0e-6) - Nc, 0);
+            Na * (1/(1+exp(-bcoeff*log(w_prime)-ccoeff))) * get_at(cc.constants, Cons_idx::i_ccn_1));
+        delta_n = max(max(delta_n, get_at(cc.constants, Cons_idx::i_ccn_2)) - Nc, 0);
         if (cc.dt_prime > 1) delta_n /= cc.dt_prime;
         float_t delta_q = min(delta_n * get_at(cc.cloud.constants, Particle_cons_idx::min_x_act),
             (res[qv_idx] + qv_prime)/cc.dt_prime);
@@ -227,7 +231,7 @@ void ccn_act_hande_akm(
 #ifdef TRACE_QC
         if (trace)
             std::cout << "traj: " << cc.traj_id << " Ascent dqc " << delta_q << ", dNc " << delta_n
-                << ", nuc_n " << nuc_n << ", Nc " << Nc << ", rest " << 10.0e-6 << "\n";
+                << ", nuc_n " << nuc_n << ", Nc " << Nc << ", rest " << get_at(cc.constants, Cons_idx::i_ccn_2) << "\n";
 #endif
 #ifdef TRACE_QV
         if (trace)
