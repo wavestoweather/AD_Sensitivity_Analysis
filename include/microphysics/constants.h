@@ -801,6 +801,576 @@ extern double sediment_n;
 extern double sediment_q_total;
 extern double sediment_n_total;
 
+/////// Various parameters for hydrometeors
+#ifdef SB_SHAPE
+/**
+ *
+ */
+const double cloud_nu = 1;
+
+/**
+ *
+ */
+const double cloud_mu = 1;
+#else
+/**
+ *
+ */
+const double cloud_nu = 0;
+
+/**
+ *
+ */
+const double cloud_mu = 1.0/3.0;
+#endif
+
+/**
+ *
+ */
+const double cloud_max_x = 2.6e-10;
+
+/**
+ *
+ */
+const double cloud_min_x = 4.2e-15;
+
+/**
+ *
+ */
+const double cloud_a_geo = 1.24e-1;
+
+/**
+ *
+ */
+const double cloud_b_geo = 1.0/3.0;
+
+/**
+ *
+ */
+const double cloud_a_vel = 3.75e5;
+
+/**
+ *
+ */
+const double cloud_b_vel = 2.0/3.0;
+
+/**
+ *
+ */
+const double cloud_a_ven = 0.78;
+
+/**
+ *
+ */
+const double cloud_b_ven = 0.308;
+
+/**
+ *
+ */
+const double cloud_cap = 2;
+
+/**
+ *
+ */
+const double cloud_vsedi_max = 1;
+
+/**
+ *
+ */
+const double cloud_vsedi_min = 0;
+
+/**
+ *
+ */
+const double cloud_q_crit_c = 1.0e-6;
+
+/**
+ *
+ */
+const double cloud_d_crit_c = 1.0e-5;
+
+#ifdef SB_SHAPE
+/**
+ *
+ */
+const double rain_nu = -2.0/3.0;
+#else
+/**
+ *
+ */
+const double rain_nu = 0;
+
+
+#endif
+/**
+ *
+ */
+const double rain_mu = 1.0/3.0;
+
+/**
+ *
+ */
+const double rain_max_x = 3.0e-6;
+
+/**
+ *
+ */
+const double rain_min_x = 2.6e-10;
+
+/**
+ *
+ */
+const double rain_a_geo = 1.24e-1;
+
+/**
+ *
+ */
+const double rain_b_geo = 1.0/3.0;
+
+/**
+ *
+ */
+const double rain_a_vel = 114.0137;
+
+/**
+ *
+ */
+const double rain_b_vel = 0.23437;
+
+/**
+ *
+ */
+const double rain_a_ven = 0.78;
+
+/**
+ *
+ */
+const double rain_b_ven = 0.308;
+
+/**
+ *
+ */
+const double rain_cap = 2;
+
+/**
+ *
+ */
+const double rain_vsedi_max = 20;
+
+/**
+ *
+ */
+const double rain_vsedi_min = 0.1;
+
+/**
+ *
+ */
+const double rain_alpha = {};  // 9.292
+
+/**
+ *
+ */
+const double rain_beta = {};  // 9.623
+
+/**
+ *
+ */
+const double rain_gamma = {};  // 6.222e2
+
+/**
+ *
+ */
+const double rain_cmu0 = {};  // 6.0
+
+/**
+ *
+ */
+const double rain_cmu1 = {};  // 30
+
+/**
+ *
+ */
+const double rain_cmu2 = {};  // 1000
+
+/**
+ *
+ */
+const double rain_cmu3 = {};  // 1.1e-3
+
+/**
+ *
+ */
+const double rain_cmu4 = {};  // 1
+
+/**
+ *
+ */
+const double rain_cmu5 = {};  // 2
+
+/**
+ *
+ */
+const double rain_rain_gfak = {};  // 1
+
+/**
+ *
+ */
+const double graupel_nu = 1;
+
+/**
+ *
+ */
+const double graupel_mu = 1.0/3.0;
+
+/**
+ *
+ */
+const double graupel_max_x = 5.3e-4;
+
+/**
+ *
+ */
+const double graupel_min_x = 4.19e-9;
+
+/**
+ *
+ */
+const double graupel_a_geo = 1.42e-1;
+
+/**
+ *
+ */
+const double graupel_b_geo = 0.314;
+
+/**
+ *
+ */
+const double graupel_a_vel = 86.89371;
+
+/**
+ *
+ */
+const double graupel_b_vel = 0.268325;
+
+/**
+ *
+ */
+const double graupel_a_ven = 0.78;
+
+/**
+ *
+ */
+const double graupel_b_ven = 0.308;
+
+/**
+ *
+ */
+const double graupel_cap = 2;
+
+/**
+ *
+ */
+const double graupel_vsedi_max = 30;
+
+/**
+ *
+ */
+const double graupel_vsedi_min = 0.1;
+
+/**
+ *
+ */
+const double graupel_q_crit_c = 1.0e-6;
+
+/**
+ *
+ */
+const double graupel_d_crit_c = 100.0e-6;
+
+/**
+ *
+ */
+const double graupel_s_vel = 0;
+
+/**
+ *
+ */
+const double graupel_ecoll_c = 1;
+
+/**
+ *
+ */
+const double hail_nu = 1;
+
+/**
+ *
+ */
+const double hail_mu = 1.0/3.0;
+
+/**
+ *
+ */
+const double hail_max_x = 5.4e-4;
+
+/**
+ *
+ */
+const double hail_min_x = 2.6e-9;
+
+/**
+ *
+ */
+const double hail_a_geo = 0.1366;
+
+/**
+ *
+ */
+const double hail_b_geo = 1.0/3.0;
+
+/**
+ *
+ */
+const double hail_a_vel = 39.3;
+
+/**
+ *
+ */
+const double hail_b_vel = 1.0/6.0;
+
+/**
+ *
+ */
+const double hail_a_ven = 0.78;
+
+/**
+ *
+ */
+const double hail_b_ven = 0.308;
+
+/**
+ *
+ */
+const double hail_cap = 2;
+
+/**
+ *
+ */
+const double hail_vsedi_max = 30;
+
+/**
+ *
+ */
+const double hail_vsedi_min = 0.1;
+
+/**
+ *
+ */
+const double hail_q_crit_c = 1.0e-6;
+
+/**
+ *
+ */
+const double hail_d_crit_c = 100.0e-6;
+
+/**
+ *
+ */
+const double hail_s_vel = 0;
+
+/**
+ *
+ */
+const double hail_ecoll_c = 1;
+
+#ifdef SB_SHAPE
+/**
+ *
+ */
+const double ice_nu = 1;
+#else
+/**
+ *
+ */
+const double ice_nu = 0;
+#endif
+/**
+ *
+ */
+const double ice_mu = 1.0/3.0;
+
+/**
+ *
+ */
+const double ice_max_x = 1.0e-5;
+
+/**
+ *
+ */
+const double ice_min_x = 1.0e-12;
+
+/**
+ *
+ */
+const double ice_a_geo = 0.835;
+
+/**
+ *
+ */
+const double ice_b_geo = 0.39;
+
+/**
+ *
+ */
+const double ice_a_vel = 27.7;
+
+/**
+ *
+ */
+const double ice_b_vel = 0.21579;
+
+/**
+ *
+ */
+const double ice_a_ven = 0.78;
+
+/**
+ *
+ */
+const double ice_b_ven = 0.308;
+
+/**
+ *
+ */
+const double ice_cap = 2;
+
+/**
+ *
+ */
+const double ice_vsedi_max = 3;
+
+/**
+ *
+ */
+const double ice_vsedi_min = 0;
+
+/**
+ *
+ */
+const double ice_q_crit_c = 1.0e-5;
+
+/**
+ *
+ */
+const double ice_d_crit_c = 150.0e-6;
+
+/**
+ *
+ */
+const double ice_s_vel = 0.05;
+
+/**
+ *
+ */
+const double ice_ecoll_c = 0.8;
+
+#ifdef SB_SHAPE
+/**
+ *
+ */
+const double snow_nu = 1;
+
+/**
+ *
+ */
+const double snow_mu = 1.0/3.0;
+#else
+/**
+ *
+ */
+const double snow_nu = 0;
+
+/**
+ *
+ */
+const double snow_mu = 0.5;
+#endif
+
+/**
+ *
+ */
+const double snow_max_x = 2.0e-5;
+
+/**
+ *
+ */
+const double snow_min_x = 1.0e-10;
+
+/**
+ *
+ */
+const double snow_a_geo = 2.4;
+
+/**
+ *
+ */
+const double snow_b_geo = 0.455;
+
+/**
+ *
+ */
+const double snow_a_vel = 8.8;
+
+/**
+ *
+ */
+const double snow_b_vel = 0.15;
+
+/**
+ *
+ */
+const double snow_a_ven = 0.78;
+
+/**
+ *
+ */
+const double snow_b_ven = 0.308;
+
+/**
+ *
+ */
+const double snow_cap = 2;
+
+/**
+ *
+ */
+const double snow_vsedi_max = 3;
+
+/**
+ *
+ */
+const double snow_vsedi_min = 0.1;
+
+/**
+ *
+ */
+const double snow_q_crit_c = 1.0e-5;
+
+/**
+ *
+ */
+const double snow_d_crit_c = 150.0e-6;
+
+/**
+ *
+ */
+const double snow_s_vel = 0.25;
+
+/**
+ *
+ */
+const double snow_ecoll_c = 0.8;
+/////// More parameters
+
 /**
  * Threshold used during CCN activation from A. Miltenberger.
  * Determines how the number of nuclei is calculated.
@@ -936,7 +1506,7 @@ const double q_crit_fr = 1.0e-6;
 /**
  * Default threshold (ratio mass) is 1e-4 g/m^3
  */
-const double q_crit = 1.0e-7;
+const double q_crit = 1.0e-9;
 
 /**
  * Threshold (diameter) for conversion snow to graupel, ice to graupel

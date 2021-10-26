@@ -3411,7 +3411,7 @@ void particle_cloud_riming(
     model_constants_t<float_t> &cc) {
 
     float_t const1 = get_at(cc.constants, Cons_idx::const0)
-        * get_at(pc1.constants, Particle_cons_idx::sc_coll_n);
+        * get_at(pc1.constants, Particle_cons_idx::ecoll_c);
     float_t x_c = particle_mean_mass(qc_prime, Nc, get_at(cc.cloud.constants, Particle_cons_idx::min_x_riming),
         get_at(cc.cloud.constants, Particle_cons_idx::max_x));
     float_t d_c = particle_diameter(x_c, get_at(cc.cloud.constants, Particle_cons_idx::a_geo),
