@@ -136,7 +136,7 @@ void setup_simulation_base(
 #endif
             input.INPUT_FILENAME.c_str(),
             (global_args.checkpoint_flag || already_loaded),
-            cc, input.simulation_mode, input.current_time);
+            cc, input.simulation_mode, input.current_time, ref_quant);
         if (rank != 0)
             already_loaded = true;
     } else {
@@ -906,11 +906,6 @@ void limited_time_ensembe_simulation(
             0,
             ref_quant,
             input.snapshot_index);
-        // out_handler.process_step(cc, netcdf_reader, y_single_old, y_diff,
-        //     0, 0, input.write_index,
-        //     input.snapshot_index,
-        //     false, ref_quant);
-        // cc.done_steps++;
 
         // run simulation
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,

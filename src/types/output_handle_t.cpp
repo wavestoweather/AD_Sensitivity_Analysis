@@ -280,6 +280,7 @@ void output_handle_t::setup(
             3,
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::time_ascent]));
+#if !defined B_EIGHT
         SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "conv_400",
@@ -308,6 +309,7 @@ void output_handle_t::setup(
             3,
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::slan_600]));
+#endif
         SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "lat",
@@ -811,6 +813,7 @@ void output_handle_t::setup(
             "units",
             strlen("degrees"),
             "degrees"));
+#if !defined B_EIGHT
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::conv_400],
@@ -883,6 +886,7 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+#endif
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::step],
@@ -1070,6 +1074,7 @@ void output_handle_t::setup(
             ncid,
             "time_after_ascent",
             &varid[Var_idx::time_ascent]));
+#if !defined(B_EIGHT)
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -1090,6 +1095,7 @@ void output_handle_t::setup(
             ncid,
             "slan_600",
             &varid[Var_idx::slan_600]));
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -1259,10 +1265,12 @@ void output_handle_t::buffer(
     output_buffer[Buffer_idx::time_ascent_buf][n_snapshots] =
         netcdf_reader.get_relative_time(t) + sub*cc.dt;
     // flags
+#if !defined(B_EIGHT)
     output_buffer_flags[0][n_snapshots] = netcdf_reader.get_conv_400(t);
     output_buffer_flags[1][n_snapshots] = netcdf_reader.get_conv_600(t);
     output_buffer_flags[2][n_snapshots] = netcdf_reader.get_slan_400(t);
     output_buffer_flags[3][n_snapshots] = netcdf_reader.get_slan_600(t);
+#endif
 #endif
     // simulation step
     output_buffer_int[0][n_snapshots] = sub + t*cc.num_sub_steps;
@@ -1316,6 +1324,7 @@ void output_handle_t::flush_buffer(
             output_buffer[Buffer_idx::time_ascent_buf].data()));
     // flags
     for (uint64_t i=0; i < output_buffer_flags.size(); i++) {
+#if !defined B_EIGHT
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,
@@ -1323,6 +1332,7 @@ void output_handle_t::flush_buffer(
                 startp.data(),
                 countp.data(),
                 output_buffer_flags[i].data()));
+#endif
     }
     // lat
     SUCCESS_OR_DIE(

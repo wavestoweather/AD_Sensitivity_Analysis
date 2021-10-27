@@ -6,17 +6,8 @@ input_parameters_t::input_parameters_t() {
     t_end_prime = 100.0;  // Seconds
     dt_prime = 0.01;  // Seconds
     snapshot_index = 200;
-    dt_traject = 20;       // Seconds; fixed from paper
     // Filename for output
-#if defined(RK4)
-    OUTPUT_FILENAME = "data/id0_rain_OUTPUT.txt";
-#endif
-#if defined(RK4NOICE)
-    OUTPUT_FILENAME = "data/id0_sb_OUTPUT.txt";
-#endif
-#if defined(RK4ICE)
-    OUTPUT_FILENAME = "data/id0_sb_ice_OUTPUT.txt";
-#endif
+    OUTPUT_FILENAME = "data/output.nc";
     CHECKPOINT_FILENAME = "";
     ENS_CONFIG_FILENAME = "";
     FOLDER_NAME = "";
@@ -50,8 +41,6 @@ void input_parameters_t::put(
     pt::ptree input_params;
     input_params.put<double>("t_end_prime", t_end_prime);
     input_params.put<double>("dt_prime", dt_prime);
-    input_params.put<double>("dt_traject_prime", dt_traject_prime);
-    input_params.put<double>("dt_traject", dt_traject);
     input_params.put<int32_t>("start_time_idx", start_time_idx);
 #ifdef MET3D
     if (start_time_idx == -1)
@@ -92,10 +81,6 @@ int input_parameters_t::from_pt(
             t_end_prime = it.second.get_value<double>();
         } else if (first == "dt_prime") {
             dt_prime = it.second.get_value<double>();
-        } else if (first == "dt_traject_prime") {
-            dt_traject_prime = it.second.get_value<double>();
-        } else if (first == "dt_traject") {
-            dt_traject = it.second.get_value<double>();
         } else if (first == "start_time_idx") {
             start_time_idx = it.second.get_value<int32_t>();
 #ifdef MET3D
@@ -290,7 +275,7 @@ void input_parameters_t::print_parameters() {
         << "Time to integrate: " << this->t_end_prime << " Seconds\n"
         << "Timestep: " << this->dt_prime << " Seconds\n"
         << (((this->CHECKPOINT_FILENAME == "") && (this->start_time_idx != -1))
-        ? "Start time: " + std::to_string(this->start_time_idx * this->dt_traject_prime) + " Seconds\n"
+        ? "Start time index: " + std::to_string(this->start_time_idx) + "\n"
         : "")
 #ifdef MET3D
         << (((this->CHECKPOINT_FILENAME == "") && (this->start_time_idx == -1))

@@ -41,7 +41,11 @@ struct output_handle_t{
 #else
     std::array<std::vector<float>, num_comp+num_par+4+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
 #endif
+#if !defined B_EIGHT
     std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
+#else
+    std::array<std::vector<unsigned char>, 0 > output_buffer_flags;
+#endif
     // std::array<std::vector<std::string>, 1 > output_buffer_str;
     std::array<std::vector<uint64_t>, 2 > output_buffer_int;
     /**
@@ -129,10 +133,12 @@ struct output_handle_t{
         time_ascent,
         lat,
         lon,
+#if !defined(B_EIGHT)
         conv_400,
         conv_600,
         slan_400,
         slan_600,
+#endif
         step,
         phase,
 

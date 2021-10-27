@@ -78,9 +78,18 @@ typedef bool(*track_func)(const int&, const bool&);
 #define Ns_in_idx 5         /*!< Snow input index for another vector */
 #define Nr_in_idx 6         /*!< Rain input index for another vector */
 #define Ng_in_idx 7         /*!< Graupel input index for another vector */
-#if defined MET3D && defined TURBULENCE
+#if defined B_EIGHT && !defined(TURBULENCE)
+#define qh_in_idx 8         /*!< Hail input index for another vector */
+#define Nh_in_idx 9         /*!< Hail input index for another vector */
+#define num_inflows 10       /*!< Number of parameters for inflowing stuff */
+#elif defined(MET3D) && defined(TURBULENCE) && !defined(B_EIGHT)
 #define qv_in_idx 8         /*!< Vapor input index for another vector */
 #define num_inflows 9       /*!< Number of parameters for inflowing stuff */
+#elif defined(MET3D) && defined(TURBULENCE) && defined(B_EIGHT)
+#define qh_in_idx 8         /*!< Hail input index for another vector */
+#define Nh_in_idx 9         /*!< Hail input index for another vector */
+#define qv_in_idx 10         /*!< Vapor input index for another vector */
+#define num_inflows 11       /*!< Number of parameters for inflowing stuff */
 #else
 #define num_inflows 8       /*!< Number of parameters for inflowing stuff */
 #endif

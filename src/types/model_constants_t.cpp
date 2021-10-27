@@ -614,27 +614,15 @@ void model_constants_t<float_t>::setup_model_constants(
     this->constants[static_cast<int>(Cons_idx::hande_ccn_fac)] = hande_ccn_fac;
 #endif
     // Numerics
-#ifdef MET3D
-    this->t_end_prime = input.t_end_prime;  // + input.start_time;;
-#else
     this->t_end_prime = input.t_end_prime;
-#endif
-
     this->t_end = this->t_end_prime/ref_quant.tref;
     // Time of the substeps
     this->dt = input.dt_prime/ref_quant.tref;
     this->dt_prime = input.dt_prime;
-    this->dt_traject_prime = 20.0;
-    this->dt_traject = this->dt_traject_prime/ref_quant.tref;
-    this->num_steps = ceil(this->t_end_prime/this->dt_traject_prime);
-    // The trajectories from input files are calculated with 20 s timesteps.
-    this->num_sub_steps = (floor(this->dt_traject_prime/this->dt) < 1) ? 1 : floor(this->dt_traject_prime/this->dt);
-
     // Evaluate the general performance constants
     this->dt_half = this->dt*0.5;
     this->dt_third = this->dt/3.0;
     this->dt_sixth = this->dt/6.0;
-
     // Accomodation coefficient
     this->alpha_d = 1.0;
 
@@ -675,9 +663,6 @@ void model_constants_t<float_t>::setup_model_constants(
         this->constants[static_cast<int>(Cons_idx::na_soot)] = na_soot_3;
         this->constants[static_cast<int>(Cons_idx::na_orga)] = na_orga_3;
     }
-
-    // Inflow from above
-    // this->B_prime = 0.0;  //1.0e-7;
 
     // // Exponents of the cloud model
     // // COSMO
@@ -1056,6 +1041,17 @@ void model_constants_t<float_t>::setup_model_constants(
     }
 }
 
+
+template<class float_t>
+void model_constants_t<float_t>::set_dt(
+    const double dt_prime,
+    const reference_quantities_t &ref_quant) {
+    this->dt_traject_prime = dt_prime;
+    this->dt_traject = this->dt_traject_prime/ref_quant.tref;
+    this->num_steps = ceil(this->t_end_prime/this->dt_traject_prime);
+    // The trajectories from input files are calculated with dt_traject_prime s timesteps.
+    this->num_sub_steps = (floor(this->dt_traject_prime/this->dt) < 1) ? 1 : floor(this->dt_traject_prime/this->dt);
+    }
 
 template<class float_t>
 void model_constants_t<float_t>::print() {

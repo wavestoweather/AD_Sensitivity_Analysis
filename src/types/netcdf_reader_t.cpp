@@ -9,7 +9,11 @@ netcdf_reader_t::netcdf_reader_t(
     this->time_buffer_idx = 0;
     for (uint32_t i=0; i < buffer.size(); i++) {
         if (i == Par_idx::ascent || i == Par_idx::lat || i == Par_idx::lon) {
+#if defined B_EIGHT
+            buffer[i].resize(this->n_timesteps_buffer+21);
+#else
             buffer[i].resize(this->n_timesteps_buffer+1);
+#endif
         } else {
             buffer[i].resize(this->n_timesteps_buffer);
         }
@@ -25,7 +29,7 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined WCB || defined WCB2 || defined MET3D
+#if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
             "QV",
 #else
             "qv",
@@ -34,7 +38,7 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined WCB || defined WCB2 || defined MET3D
+#if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
             "QC",
 #else
             "qc",
@@ -43,7 +47,7 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined WCB || defined WCB2 || defined MET3D
+#if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
             "QR",
 #else
             "qr",
@@ -54,7 +58,7 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined WCB || defined WCB2 || defined MET3D
+    #if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
             "QI",
     #else
             "qi",
@@ -63,7 +67,7 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined WCB || defined WCB2 || defined MET3D
+    #if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
             "QS",
     #else
             "qs",
@@ -74,194 +78,230 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined WCB || defined WCB2 || defined MET3D
+    #if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
             "QG",
     #else
             "qg",
     #endif
             &varid_once[Par_once_idx::qg]));
 #endif
+
+#if defined(B_EIGHT) && defined(RK4ICE)
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "QH",
+            &varid_once[Par_once_idx::qh]));
+#endif
+
 #if defined(RK4ICE) && (defined(WCB2) || defined(MET3D))
 
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined(B_EIGHT)
+            "QNG",
+    #else
             "NCGRAUPEL",
+    #endif
             &varid_once[Par_once_idx::ng]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined(B_EIGHT)
+            "QNI",
+    #else
             "NCICE",
+    #endif
             &varid_once[Par_once_idx::ni]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined(B_EIGHT)
+            "QNS",
+    #else
             "NCSNOW",
+    #endif
             &varid_once[Par_once_idx::ns]));
 #endif
-#if defined WCB2 || defined MET3D
+
+#if defined(B_EIGHT) && defined(RK4ICE)
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+            "QNH",
+            &varid_once[Par_once_idx::nh]));
+#endif
+
+#if defined WCB2 || defined MET3D || defined B_EIGHT
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+    #if defined(B_EIGHT)
+            "QNC",
+    #else
             "NCCLOUD",
+    #endif
             &varid_once[Par_once_idx::nc]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined(B_EIGHT)
+            "QNR",
+    #else
             "NCRAIN",
+    #endif
             &varid_once[Par_once_idx::nr]));
 #endif
 
-
-    ////////////////////////////////////////////
-#ifdef WCB2
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+            "z",
+            &varid[Par_idx::height]));
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+#if defined(WCB2)
             "latitude",
-            &varid[Par_idx::lat]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "longitude",
-            &varid[Par_idx::lon]));
 #else
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
             "lat",
+#endif
             &varid[Par_idx::lat]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "lon",
-            &varid[Par_idx::lon]));
-#endif
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "z",
-            &varid[Par_idx::height]));
-#if defined WCB || defined WCB2
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "z",
-            &varid[Par_idx::height]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "P",
-            &varid[Par_idx::pressure]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "T",
-            &varid[Par_idx::temperature]));
-#elif defined MET3D
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "time_after_ascent",
-            &varid[Par_idx::time_after_ascent]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "pressure",
-            &varid[Par_idx::pressure]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "T",
-            &varid[Par_idx::temperature]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "w",
-            &varid[Par_idx::ascent]));
+#if defined(WCB2)
+            "longitude",
 #else
+            "lon",
+#endif
+            &varid[Par_idx::lon]));
+
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+#if defined(B_EIGHT)
+            "time_after_asc_start",
+#elif defined(MET_3D)
+            "time_after_ascent",
+#else
             "time_rel",
+#endif
             &varid[Par_idx::time_after_ascent]));
+
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+#if defined(MET3D)
+            "pressure",
+#elif defined WCB || defined WCB2
+            "P",
+#else
             "p",
+#endif
             &varid[Par_idx::pressure]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+#if defined MET3D || defined B_EIGHT || defined WCB || defined WCB2
+            "T",
+#else
             "t",
+#endif
             &varid[Par_idx::temperature]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "w",
             &varid[Par_idx::ascent]));
+
+#if defined WCB2 || defined MET3D || defined B_EIGHT
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "QIin",
-            &varid[Par_idx::qi_in]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "QSin",
-            &varid[Par_idx::qs_in]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "QRin",
-            &varid[Par_idx::qr_in]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "QGin",
-            &varid[Par_idx::qg_in]));
-#endif
-#if defined WCB2 || defined MET3D
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
+    #if defined B_EIGHT
+            "QI_in",
+    #else
             "QI_IN",
+    #endif
             &varid[Par_idx::qi_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined B_EIGHT
+            "QS_in",
+    #else
             "QS_IN",
+    #endif
             &varid[Par_idx::qs_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined B_EIGHT
+            "QR_in",
+    #else
             "QR_IN",
+    #endif
             &varid[Par_idx::qr_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined B_EIGHT
+            "QG_in",
+    #else
             "QG_IN",
+    #endif
             &varid[Par_idx::qg_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined B_EIGHT
+            "QNI_in",
+    #else
             "NI_IN",
+    #endif
             &varid[Par_idx::ni_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined B_EIGHT
+            "QNS_in",
+    #else
             "NS_IN",
+    #endif
             &varid[Par_idx::ns_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined B_EIGHT
+            "QNR_in",
+    #else
             "NR_IN",
+    #endif
             &varid[Par_idx::nr_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
+    #if defined B_EIGHT
+            "QNG_in",
+    #else
             "NG_IN",
+    #endif
             &varid[Par_idx::ng_in]));
+    #if defined(B_EIGHT)
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "QH_in",
+            &varid[Par_idx::qh_in]));
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "QNH_in",
+            &varid[Par_idx::nh_in]));
+    #endif
+    #if !defined(B_EIGHT)
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -282,6 +322,7 @@ void netcdf_reader_t::load_vars() {
             ncid,
             "slan_600",
             &varid[Par_idx::slan_600]));
+    #endif
 #endif
 #if defined MET3D && defined TURBULENCE
     SUCCESS_OR_DIE(
@@ -324,6 +365,15 @@ void netcdf_reader_t::buffer_params(
     countp2.push_back(1);
     countp2.push_back(1);
     countp2.push_back(n_timesteps_buffer + (time_idx + n_timesteps_buffer < n_timesteps_in));
+#elif defined B_EIGHT
+    startp.push_back(time_idx);
+    startp.push_back(traj_idx);
+
+    countp.push_back(n_timesteps_buffer);
+    countp.push_back(1);
+
+    countp2.push_back(n_timesteps_buffer + (time_idx + n_timesteps_buffer < n_timesteps_in));
+    countp2.push_back(1);
 #else
     startp.push_back(traj_idx);
     startp.push_back(time_idx);
@@ -404,7 +454,11 @@ void netcdf_reader_t::read_buffer(
     time_buffer_idx += step+start_time_idx-time_idx;
     time_idx = step+start_time_idx;
     // check if buffer needs to be reloaded
+#if defined B_EIGHT
+    if (time_buffer_idx + 20 >= n_timesteps_buffer) {
+#else
     if (time_buffer_idx >= n_timesteps_buffer) {
+#endif
         buffer_params(ref_quant);
         time_buffer_idx = 0;
     }
@@ -422,51 +476,170 @@ void netcdf_reader_t::read_buffer(
 
     // Set values from a given trajectory
     if ((step == 0 && !checkpoint_flag) || start_over_env) {
-        y_single_old[p_idx] = buffer[Par_idx::pressure][time_buffer_idx];
-        y_single_old[T_idx] = buffer[Par_idx::temperature][time_buffer_idx];
-#if defined(RK4ICE) || defined(RK4NOICE)
-        y_single_old[w_idx] = buffer[Par_idx::ascent][time_buffer_idx];
-        if (time_idx == n_timesteps_in) {
-            cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
-        } else {
-            cc.constants[static_cast<int>(Cons_idx::dw)] = (
-                (buffer[Par_idx::ascent][time_buffer_idx+1] - buffer[Par_idx::ascent][time_buffer_idx])
-                / (cc.dt*cc.num_sub_steps));
+        uint32_t i = 0;
+        while (time_idx+i <= n_timesteps_in && std::isnan(buffer[Par_idx::pressure][time_buffer_idx+i])) {
+            i++;
+            if (i == 11) {
+                std::cerr  << "Error at trajectory index " << traj_idx
+                    << " and time index " << time_idx << ".\n"
+                    << "At leat one trajectory has more than 10 "
+                    << "consecutive time steps with NaNs in it. Check "
+                    << "your dataset! Aborting now.\n";
+                SUCCESS_OR_DIE(INPUT_NAN_ERR);
+            }
         }
-#endif
-        y_single_old[z_idx] = buffer[Par_idx::height][0];
-        // set inflow
-#if defined(FLUX) && !defined(WCB)
-        inflows[qr_in_idx] =  buffer[Par_idx::qr_in][time_buffer_idx];
-        inflows[Nr_in_idx] =  buffer[Par_idx::nr_in][time_buffer_idx];
-    #if defined(RK4ICE)
-        inflows[qi_in_idx] =  buffer[Par_idx::qi_in][time_buffer_idx];
-        inflows[Ni_in_idx] =  buffer[Par_idx::ni_in][time_buffer_idx];
-        inflows[qs_in_idx] =  buffer[Par_idx::qs_in][time_buffer_idx];
-        inflows[Ns_in_idx] =  buffer[Par_idx::ns_in][time_buffer_idx];
-        inflows[qg_in_idx] =  buffer[Par_idx::qg_in][time_buffer_idx];
-        inflows[Ng_in_idx] =  buffer[Par_idx::ng_in][time_buffer_idx];
-    #endif
-#else
-        inflows[qr_in_idx] = 0;
-        inflows[nr_in_idx] = 0;
-    #if defined(RK4ICE)
-        inflows[qi_in_idx] = 0;
-        inflows[qs_in_idx] = 0;
-        inflows[qg_in_idx] = 0;
-        inflows[ni_in_idx] = 0;
-        inflows[ns_in_idx] = 0;
-        inflows[ng_in_idx] = 0;
+        if (i > 0 && std::isnan(buffer[Par_idx::pressure][time_buffer_idx+i])) {
+            // The last couple of time steps are only NaN. Instead of aborting, we simply
+            // reuse the old data, but now without any influx of course.
+            // We also stop any ascent
+            inflows[qr_in_idx] = 0;
+            inflows[Nr_in_idx] = 0;
+#if defined(RK4ICE)
+            inflows[qi_in_idx] = 0;
+            inflows[qs_in_idx] = 0;
+            inflows[qg_in_idx] = 0;
+            inflows[Ni_in_idx] = 0;
+            inflows[Ns_in_idx] = 0;
+            inflows[Ng_in_idx] = 0;
+    #if defined(B_EIGHT)
+            inflows[qh_in_idx] = 0;
+            inflows[Nh_in_idx] = 0;
     #endif
 #endif
 #if defined MET3D && defined TURBULENCE
-        inflows[qv_in_idx] = buffer[Par_idx::turbulence][time_buffer_idx];
+            inflows[qv_in_idx] = 0;
 #endif
-    }
+            y_single_old[w_idx] = 0;
+            cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
+        } else if (i > 0) {
+            y_single_old[p_idx] += (buffer[Par_idx::pressure][time_buffer_idx+i] - y_single_old[p_idx]) / (i+1);
+            // If the dataset isn't broken, then I can just reuse the found i.
+            // A check at the end of the function will be done in case the
+            // given dataset is broken.
+            y_single_old[T_idx] += (buffer[Par_idx::temperature][time_buffer_idx+i] - y_single_old[T_idx]) / (i+1);
+#if defined(RK4ICE) || defined(RK4NOICE)
+            y_single_old[w_idx] += (buffer[Par_idx::ascent][time_buffer_idx+i] - y_single_old[w_idx]) / (i+1);
+            // No need to change dw here. It has been calculated for the case i == 0 or during initialization.
+#endif
+            y_single_old[z_idx] += (buffer[Par_idx::height][time_buffer_idx+i] - y_single_old[z_idx]) / (i+1);
+            // set inflow
+#if defined(FLUX) && !defined(WCB)
+            inflows[qr_in_idx] =  (buffer[Par_idx::qr_in][time_buffer_idx+i] - inflows[qr_in_idx]) / (i+1);
+            inflows[Nr_in_idx] =  (buffer[Par_idx::nr_in][time_buffer_idx+i] - inflows[Nr_in_idx]) / (i+1);
+    #if defined(RK4ICE)
+            inflows[qi_in_idx] =  (buffer[Par_idx::qi_in][time_buffer_idx+i] - inflows[qi_in_idx]) / (i+1);
+            inflows[Ni_in_idx] =  (buffer[Par_idx::ni_in][time_buffer_idx+i] - inflows[Ni_in_idx]) / (i+1);
+            inflows[qs_in_idx] =  (buffer[Par_idx::qs_in][time_buffer_idx+i] - inflows[qs_in_idx]) / (i+1);
+            inflows[Ns_in_idx] =  (buffer[Par_idx::ns_in][time_buffer_idx+i] - inflows[Ns_in_idx]) / (i+1);
+            inflows[qg_in_idx] =  (buffer[Par_idx::qg_in][time_buffer_idx+i] - inflows[qg_in_idx]) / (i+1);
+            inflows[Ng_in_idx] =  (buffer[Par_idx::ng_in][time_buffer_idx+i] - inflows[Ng_in_idx]) / (i+1);
+        #if defined(B_EIGHT)
+            inflows[qh_in_idx] =  (buffer[Par_idx::qh_in][time_buffer_idx+i] - inflows[qh_in_idx]) / (i+1);
+            inflows[Nh_in_idx] =  (buffer[Par_idx::nh_in][time_buffer_idx+i] - inflows[Nh_in_idx]) / (i+1);
+        #endif
+    #endif
+#else
+            inflows[qr_in_idx] = 0;
+            inflows[Nr_in_idx] = 0;
+    #if defined(RK4ICE)
+            inflows[qi_in_idx] = 0;
+            inflows[qs_in_idx] = 0;
+            inflows[qg_in_idx] = 0;
+            inflows[Ni_in_idx] = 0;
+            inflows[Ns_in_idx] = 0;
+            inflows[Ng_in_idx] = 0;
+        #if defined(B_EIGHT)
+            inflows[qh_in_idx] = 0;
+            inflows[Nh_in_idx] = 0;
+        #endif
+    #endif
+#endif
+#if defined MET3D && defined TURBULENCE
+            inflows[qv_in_idx] = (buffer[Par_idx::turbulence][time_buffer_idx+i] - inflows[qv_in_idx]) / (i+1);
+#endif
 
-    // if ((step == 0 && !checkpoint_flag)) {
-    //     read_initial_values(y_single_old, ref_quant, cc, checkpoint_flag);
-    // }
+        } else {
+            y_single_old[p_idx] = buffer[Par_idx::pressure][time_buffer_idx];
+            y_single_old[T_idx] = buffer[Par_idx::temperature][time_buffer_idx];
+#if defined(RK4ICE) || defined(RK4NOICE)
+            y_single_old[w_idx] = buffer[Par_idx::ascent][time_buffer_idx];
+
+            if (time_idx == n_timesteps_in) {
+                cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
+            } else {
+                // Here we need to find the next valid w value again
+                uint32_t j = 1;
+                while (time_idx+j <= n_timesteps_in && j < 11
+                    && std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j])) {
+                    j++;
+                }
+                if (j == 11 || std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j])) {
+                    cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
+                } else {
+                    cc.constants[static_cast<int>(Cons_idx::dw)] = (
+                        (buffer[Par_idx::ascent][time_buffer_idx+j] - buffer[Par_idx::ascent][time_buffer_idx])
+                        / (cc.dt*cc.num_sub_steps*j));
+                }
+            }
+#endif
+            y_single_old[z_idx] = buffer[Par_idx::height][time_buffer_idx];
+            // set inflow
+#if defined(FLUX) && !defined(WCB)
+            inflows[qr_in_idx] =  buffer[Par_idx::qr_in][time_buffer_idx];
+            inflows[Nr_in_idx] =  buffer[Par_idx::nr_in][time_buffer_idx];
+    #if defined(RK4ICE)
+            inflows[qi_in_idx] =  buffer[Par_idx::qi_in][time_buffer_idx];
+            inflows[Ni_in_idx] =  buffer[Par_idx::ni_in][time_buffer_idx];
+            inflows[qs_in_idx] =  buffer[Par_idx::qs_in][time_buffer_idx];
+            inflows[Ns_in_idx] =  buffer[Par_idx::ns_in][time_buffer_idx];
+            inflows[qg_in_idx] =  buffer[Par_idx::qg_in][time_buffer_idx];
+            inflows[Ng_in_idx] =  buffer[Par_idx::ng_in][time_buffer_idx];
+        #if defined(B_EIGHT)
+            inflows[qh_in_idx] =  buffer[Par_idx::qh_in][time_buffer_idx];
+            inflows[Nh_in_idx] =  buffer[Par_idx::nh_in][time_buffer_idx];
+        #endif
+    #endif
+#else
+            inflows[qr_in_idx] = 0;
+            inflows[Nr_in_idx] = 0;
+    #if defined(RK4ICE)
+            inflows[qi_in_idx] = 0;
+            inflows[qs_in_idx] = 0;
+            inflows[qg_in_idx] = 0;
+            inflows[Ni_in_idx] = 0;
+            inflows[Ns_in_idx] = 0;
+            inflows[Ng_in_idx] = 0;
+        #if defined(B_EIGHT)
+            inflows[qh_in_idx] = 0;
+            inflows[Nh_in_idx] = 0;
+        #endif
+    #endif
+#endif
+#if defined MET3D && defined TURBULENCE
+            inflows[qv_in_idx] = buffer[Par_idx::turbulence][time_buffer_idx];
+#endif
+        }
+        for (auto &v : inflows) {
+            if (std::isnan(v)) {
+                std::cerr  << "Error at trajectory index " << traj_idx
+                    << " and time index " << time_idx << ".\n"
+                    << "At leat one trajectory has more than 10 "
+                    << "consecutive time steps with NaNs in it. Check "
+                    << "your dataset! Aborting now.\n";
+                SUCCESS_OR_DIE(INPUT_NAN_ERR);
+            }
+        }
+        for (auto &v : y_single_old) {
+            if (std::isnan(v)) {
+                std::cerr  << "Error at trajectory index " << traj_idx
+                    << " and time index " << time_idx << ".\n"
+                    << "At leat one trajectory has more than 10 "
+                    << "consecutive time steps with NaNs in it. Check "
+                    << "your dataset! Aborting now.\n";
+                SUCCESS_OR_DIE(INPUT_NAN_ERR);
+            }
+        }
+    }
 }
 
 
@@ -501,28 +674,32 @@ void netcdf_reader_t::set_dims(
                 ncid,
 #ifdef WCB
                 "ntra",
-#elif defined MET3D
+#elif defined(MET3D) || defined(B_EIGHT)
                 "trajectory",
 #else
                 "id",
 #endif
                 &dimid[Dim_idx::trajectory_dim_idx]));
+#if !defined(B_EIGHT)
         SUCCESS_OR_DIE(
             nc_inq_dimid(
                 ncid,
                 "ensemble",
                 &dimid[Dim_idx::ensemble_dim_idx]));
+#endif
     }
     SUCCESS_OR_DIE(
         nc_inq_dimlen(
             ncid,
             dimid[Dim_idx::trajectory_dim_idx],
             &n_trajectories));
+#if !defined(B_EIGHT)
     SUCCESS_OR_DIE(
         nc_inq_dimlen(
             ncid,
             dimid[Dim_idx::ensemble_dim_idx],
             &n_ensembles));
+#endif
     if (n_trajectories <= traj_idx) {
         std::cerr << "Number of trajectories in netCDF file: " << n_trajectories << "\n";
         std::cerr << "You asked for trajectory with index " << traj_idx
@@ -530,7 +707,11 @@ void netcdf_reader_t::set_dims(
         SUCCESS_OR_DIE(NC_TRAJ_IDX_ERR);
     }
     if (simulation_mode != limited_time_ensembles) {
+#if defined B_EIGHT
+        cc.n_ensembles = 0;
+#else
         cc.n_ensembles = n_ensembles;
+#endif
         cc.max_n_trajs = n_trajectories;
     }
     if (!already_open) {
@@ -564,9 +745,10 @@ void netcdf_reader_t::init_netcdf(
     const bool &checkpoint_flag,
     model_constants_t<float_t> &cc,
     const int &simulation_mode,
-    const double current_time) {
+    const double current_time,
+    const reference_quantities_t &ref_quant) {
     std::vector<size_t> startp, countp;
-#ifdef MET3D
+#if defined(MET3D) && !defined(B_EIGHT)
     countp.push_back(1);
     countp.push_back(1);
     countp.push_back(1);
@@ -583,6 +765,18 @@ void netcdf_reader_t::init_netcdf(
             varid[Par_idx::time_after_ascent],
             startp.data(),
             &rel_start_time));
+    std::vector<double> time(2);
+    countp[2] = 2;
+    SUCCESS_OR_DIE(
+        nc_get_vara(
+            ncid,
+            varid[Par_idx::time],
+            startp.data(),
+            countp.data()
+            time.data()));
+
+    cc.set_dt(time[1]-time[0], ref_quant);
+
     if (!std::isnan(start_time) && !checkpoint_flag) {
         // Calculate the needed index
         start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
@@ -592,7 +786,74 @@ void netcdf_reader_t::init_netcdf(
     }
     time_idx = start_time_idx;
     this->start_time_idx = start_time_idx;
+#elif defined(B_EIGHT)
+    countp.push_back(10);
+    countp.push_back(1);
+
+    startp.push_back(0);            // time
+    startp.push_back(traj_idx);     // trajectory
+
+    uint64_t start_time_idx = 0;
+
+    std::vector<double> rel_start_time(10);
+    SUCCESS_OR_DIE(
+        nc_get_vara(
+            ncid,
+            varid[Par_idx::time_after_ascent],
+            startp.data(),
+            countp.data(),
+            rel_start_time.data()));
+    std::vector<double> time(2);
+    countp[0] = 2;
+    SUCCESS_OR_DIE(
+        nc_get_vara(
+            ncid,
+            varid[Par_once_idx::time],
+            startp.data(),
+            countp.data(),
+            time.data()));
+
+    cc.set_dt(time[1]-time[0], ref_quant);
+
+    bool all_nan = true;
+    for (uint32_t i=0; i < rel_start_time.size(); i++) {
+        if (std::isnan(rel_start_time[i])) continue;
+        if (!std::isnan(start_time) && !checkpoint_flag) {
+        // Calculate the needed index
+        start_time_idx = i + (start_time-rel_start_time[i])/cc.dt_traject;
+        } else if (checkpoint_flag && !std::isnan(start_time)) {
+            // Calculate the needed index
+            start_time_idx = i + ceil(start_time-rel_start_time[i] + current_time)/cc.dt_traject;
+        }
+        all_nan = false;
+    }
+    if (all_nan) {
+        std::cerr << "Error at trajectory index " << traj_idx << ".\n"
+            << "The first 10 values of the column 'time_after_asc_start' are "
+            << "NaN. Check your dataset. Aborting.\n";
+        SUCCESS_OR_DIE(NC_TRAJ_IDX_ERR);
+    }
+    // Check if the index begins with non-NaN values to get started properly
+    startp[0] = start_time_idx;
+    SUCCESS_OR_DIE(
+        nc_get_vara(
+            ncid,
+            varid[Par_idx::pressure],  // In case the time is always non-NaN
+            startp.data(),
+            countp.data(),
+            rel_start_time.data()));
+    for (uint32_t i=0; i < rel_start_time.size(); i++) {
+        if (std::isnan(rel_start_time[i])) {
+            start_time_idx++;
+            continue;
+        } else {
+            break;
+        }
+    }
+    time_idx = start_time_idx;
+    this->start_time_idx = start_time_idx;
 #else
+    cc.set_dt(20);
     time_idx = 1;
     this->start_time_idx = 1;
 #endif
@@ -625,7 +886,10 @@ void netcdf_reader_t::read_initial_values(
     std::vector<size_t> startp;
 
     if (!checkpoint_flag) {
-#if defined MET3D
+#if defined B_EIGHT
+        startp.push_back(time_idx);
+        startp.push_back(traj_idx);
+#elif defined MET3D
         startp.push_back(ens_idx);
         startp.push_back(traj_idx);
         startp.push_back(time_idx);
@@ -700,8 +964,23 @@ void netcdf_reader_t::read_initial_values(
         y_init[qg_idx] = 0;
 #endif
 #if defined(RK4ICE)
+    #if defined(B_EIGHT)
+        SUCCESS_OR_DIE(
+            nc_get_var1(
+                ncid,
+                varid_once[Par_once_idx::qh],
+                startp.data(),
+                &(y_init[qh_idx])));
+        SUCCESS_OR_DIE(
+            nc_get_var1(
+                ncid,
+                varid_once[Par_once_idx::nh],
+                startp.data(),
+                &(y_init[Nh_idx])));
+    #else
         y_init[qh_idx] = 0.0;  // qh. We don't have hail in the trajectoris
         y_init[Nh_idx] = 0.0;  // Nh. We don't have hail in the trajectoris
+    #endif
 #endif
 
 #if defined(RK4ICE) && (defined(WCB2) || defined(MET3D))
@@ -788,13 +1067,30 @@ void netcdf_reader_t::read_initial_values(
         y_init[Nh_idx]      /= ref_quant.Nref;
         y_init[z_idx] = buffer[Par_idx::height][0];
 #if defined(RK4ICE) || defined(RK4NOICE) || defined(MET3D)
+    #if defined(B_EIGHT)
+        uint32_t j = 1;
+        while (j < 11 && std::isnan(buffer[Par_idx::ascent][j])) {
+            j++;
+        }
+        if (j == 11) {
+            std::cerr  << "Error at trajectory index " << traj_idx
+                << " and time index " << time_idx << ".\n"
+                << "At leat one trajectory has more than 10 "
+                << "consecutive time steps with NaNs in 'w'. Check "
+                << "your dataset! Aborting now.\n";
+            SUCCESS_OR_DIE(NC_TRAJ_IDX_ERR);
+        }
+        double dw = (buffer[Par_idx::ascent][j] - buffer[Par_idx::ascent][0]);
+        cc.constants[static_cast<int>(Cons_idx::dw)] = dw / (cc.dt*cc.num_sub_steps*j);
+    #else
         double dw = buffer[Par_idx::ascent][1] - buffer[Par_idx::ascent][0];
         cc.constants[static_cast<int>(Cons_idx::dw)] = dw / (cc.dt*cc.num_sub_steps);
+    #endif
         y_init[n_inact_idx] = 0;
         y_init[depo_idx] = 0;
         y_init[sub_idx] = 0;
 #endif
-#ifdef MET3D
+#if defined(MET3D) || defined(B_EIGHT)
         // Get the time coordinates
         startp[3] = time_idx;
         SUCCESS_OR_DIE(
@@ -813,6 +1109,63 @@ void netcdf_reader_t::read_initial_values(
 #endif
     }
 }
+
+
+double netcdf_reader_t::get_lat(
+    const uint32_t &t,
+    const uint32_t &sub) const {
+    double latitude = buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]
+        + (
+            buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+1]
+            - buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]) / sub;
+    if (!std::isnan(latitude)) return latitude;
+    uint32_t j = 2;
+    while (j < 11 && std::isnan(buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+j])) {
+        j++;
+    }
+    if (j == 11) {
+        std::cerr  << "Error at trajectory index " << traj_idx
+                    << " and time index " << t << ".\n"
+                    << "At leat one trajectory has more than 10 "
+                    << "consecutive time steps with NaNs in 'latitude'. Check "
+                    << "your dataset! Aborting now.\n";
+                SUCCESS_OR_DIE(INPUT_NAN_ERR);
+    }
+    return buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]
+        + (
+            buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+j]
+            - buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]) / (sub*j);
+}
+
+
+double netcdf_reader_t::get_lon(
+    const uint32_t &t,
+    const uint32_t &sub) const {
+    double longitude = buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]
+        + (
+            buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+1]
+            - buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]) / sub;
+
+    if (!std::isnan(longitude)) return longitude;
+    uint32_t j = 2;
+    while (j < 11 && std::isnan(buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+j])) {
+        j++;
+    }
+    if (j == 11) {
+        std::cerr  << "Error at trajectory index " << traj_idx
+                    << " and time index " << t << ".\n"
+                    << "At leat one trajectory has more than 10 "
+                    << "consecutive time steps with NaNs in 'longitude'. Check "
+                    << "your dataset! Aborting now.\n";
+                SUCCESS_OR_DIE(INPUT_NAN_ERR);
+    }
+    return buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]
+        + (
+            buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+j]
+            - buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]) / (sub*j);
+}
+
+
 
 template void netcdf_reader_t::read_buffer<codi::RealReverse>(
     model_constants_t<codi::RealReverse>&,
@@ -850,7 +1203,8 @@ template void netcdf_reader_t::init_netcdf<codi::RealReverse>(
     const bool&,
     model_constants_t<codi::RealReverse>&,
     const int&,
-    const double);
+    const double,
+    const reference_quantities_t &);
 
 template void netcdf_reader_t::init_netcdf<codi::RealForwardVec<num_par_init> >(
 #ifdef MET3D
@@ -860,7 +1214,8 @@ template void netcdf_reader_t::init_netcdf<codi::RealForwardVec<num_par_init> >(
     const bool&,
     model_constants_t<codi::RealForwardVec<num_par_init> >&,
     const int&,
-    const double);
+    const double,
+    const reference_quantities_t &);
 
 template void netcdf_reader_t::read_initial_values<codi::RealReverse>(
     std::vector<double>&,
