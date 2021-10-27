@@ -1371,7 +1371,7 @@ void auto_conversion_sb(
     model_constants_t<float_t> &cc) {
 
     const double EPSILON = 1.0e-25;
-    // autoconversionSB
+
     if (qc_prime > get_at(cc.constants, Cons_idx::q_crit)) {
         float_t x_c = particle_mean_mass(
             qc_prime, Nc, get_at(cc.cloud.constants, Particle_cons_idx::min_x_conversion),
@@ -1408,7 +1408,7 @@ void auto_conversion_sb(
 #endif
     }
 
-    // accretionSB
+    // accretion
     if (qc_prime > 0.0 && qr_prime > 0.0) {
         float_t tau = std::min(std::max(1.0-qc_prime/
                                 (qc_prime+qr_prime+EPSILON), EPSILON), 1.0);
@@ -1460,8 +1460,9 @@ void rain_self_collection_sb(
         float_t sc = 4.33 * Nr * qr_prime * get_at(cc.rain.constants, Particle_cons_idx::rho_v);
         // Breakup Seifert (2008), Eq. A13
         float_t breakup = 0.0;
-        if (D_r > 0.30e-3)
-            breakup = sc * (1.0e+3 * (D_r - 1.10e-3) + 1.0);
+        if (D_r > get_at(cc.constants, Cons_idx::D_br_threshold))
+            breakup = sc * (get_at(cc.constants, Cons_idx::k_br)
+                * (D_r - get_at(cc.constants, Cons_idx::D_br)) + get_at(cc.constants, Cons_idx::c_br));
         float_t tmp = (res[Nr_idx] + Nr)/cc.dt_prime;
         res[Nr_idx] -= std::min(tmp, sc-breakup);
 #ifdef TRACE_QR
@@ -1601,6 +1602,19 @@ void rain_evaporation_sb(
 /**
  * Sedimentation after Seifert and Beheng (2006, 2008). This function
  * processes rain, snow, ice, hail and graupel sedimentation at once.
+ * The main difference in sedi_icon_core to ICON and COSMO here is that we do not
+ * approximate the fall velocity based on the cell above the current one.
+ * We simply don't have that information in a simulation along trajectories.
+ *
+ * Furthermore the improved scheme in sedi_icon_box_core originally
+ * uses the information of each flux in all boxes above the current one.
+ * This information isn't available as well.
+ *
+ * In short: Only sedimentation from the current box is calculated here.
+ * Sedimentation that may come from further above is not used here.
+ *
+ * See http://www.cosmo-model.org/content/model/documentation/core/docu_sedi_twomom.pdf
+ * for more details.
  *
  * @params T_prime Temperature [K]
  * @params S Saturation
@@ -1654,34 +1668,44 @@ void sedimentation_explicit(
         float_t v_nv = v_n_sedi;
         float_t v_qv = v_q_sedi;  // percentage how much trickles down
         // Assuming v_nv, v_qv is negative
-        float_t c_nv = -v_nv * get_at(cc.constants, Cons_idx::inv_z);  // times inverse of layer thickness...
-        float_t c_qv = -v_qv * get_at(cc.constants, Cons_idx::inv_z);  //
-
-        float_t s_nv = 0.0;
-        if (c_nv <= 1.0)
-            s_nv = v_nv*N*get_at(cc.constants, Cons_idx::inv_z);
-        else
-            s_nv = N*get_at(cc.constants, Cons_idx::inv_z);
-
-        float_t s_qv = 0.0;
-        if (c_qv <= 1.0)
-            s_qv = v_qv*q*get_at(cc.constants, Cons_idx::inv_z);
-        else
-            s_nv = q*get_at(cc.constants, Cons_idx::inv_z);
-
-        s_nv = abs(s_nv);
-        s_qv = abs(s_qv);
+        float_t z = 1/get_at(cc.constants, Cons_idx::inv_z);
+        // Courant number; is it going to leave the box?
+        float_t c_nv = -v_nv * get_at(cc.constants, Cons_idx::inv_z);
+        float_t c_qv = -v_qv * get_at(cc.constants, Cons_idx::inv_z);
+        // Can't loose more than there is in the box, hence the min().
+        float_t flux_nv = N * z * std::min(c_nv, 1);
+        // This would be a good place to get the influx from cells above.
+        // In case a grid based version will be implemented.
+        // We could also make a guess of the following form
+        // int32_t i = 1;
+        // while (c_nv > 1) {
+        //     c_nv--;
+        //     i++;
+        //     // we reduce N, assuming there is less above the current cell
+        //     s_nv += N * pow(2, -i) * z * std::min(c_nv, 1);
+        // }
+        // But we already have added sedimentation from above in the main
+        // function, so this might be an overestimation.
+        float_t flux_qv = q * z * std::min(c_qv, 1);
+        // Same as above: Grid based implementations would have to add
+        // calculations of layers above here.
+        // A grid based implementation would need to get the net
+        // of in and output here and store the flux for other
+        // cells. We can skip this here and directly add, how much
+        // is gone.
+        flux_nv = abs(flux_nv);
+        flux_qv = abs(flux_qv);
+        // Avoid negative values
         float_t s_tmp = (resN + N)/cc.dt_prime;
-        s_nv = std::min(s_tmp, s_nv);
+        flux_nv = std::min(s_tmp, flux_nv);
         s_tmp = (resQ + q)/cc.dt_prime;
-        s_qv = std::min(s_tmp, s_qv);
+        flux_qv = std::min(s_tmp, flux_qv);
 
         // abs is used for paranoia reasons and should never be needed
-        resN -= abs(s_nv);
-        resQ -= abs(s_qv);
-        resQOut -= abs(s_qv);
-        resNOut -= abs(s_nv);
-        // precrate = -abs(s_sq);
+        resN -= abs(flux_nv);
+        resQ -= abs(flux_qv);
+        resQOut -= abs(flux_qv);
+        resNOut -= abs(flux_nv);
 #ifdef TRACE_SEDI
         if (trace)
             std::cout << "traj: " << cc.traj_id << " \nWtihin sedi_icon_core\n"
@@ -1730,7 +1754,6 @@ void sedimentation_explicit(
             v_n = std::min(v_n, tmp);
             tmp = get_at(pc.constants, Particle_cons_idx::vsedi_max)/cc.dt_prime;
             v_q = std::min(v_q, tmp);
-            /////// DT PROBLEM SOLVED
             v_n *= rhocorr;
             v_q *= rhocorr;
 

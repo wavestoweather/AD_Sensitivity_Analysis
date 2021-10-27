@@ -509,6 +509,7 @@ enum class Cons_idx: uint32_t{
     i_ccn_1, i_ccn_2,
     hande_ccn_fac,
 #endif
+    D_br_threshold, k_br, D_br, c_br,
     n_items
 };
 
@@ -573,8 +574,10 @@ std::unordered_map<std::string, Cons_idx> const table_param = {
     {"h_ccn_2", Cons_idx::h_ccn_2}, {"h_ccn_3", Cons_idx::h_ccn_3},
     {"g_ccn_1", Cons_idx::g_ccn_1}, {"g_ccn_2", Cons_idx::g_ccn_2},
     {"g_ccn_3", Cons_idx::g_ccn_3}, {"i_ccn_1", Cons_idx::i_ccn_1},
-    {"i_ccn_2", Cons_idx::i_ccn_2}, {"hande_ccn_fac", Cons_idx::hande_ccn_fac}
+    {"i_ccn_2", Cons_idx::i_ccn_2}, {"hande_ccn_fac", Cons_idx::hande_ccn_fac},
 #endif
+    {"D_br_threshold", Cons_idx::D_br_threshold}, {"k_br", Cons_idx::k_br},
+    {"D_br", Cons_idx::D_br}, {"c_br", Cons_idx::c_br}
 };
 
 enum class Particle_cons_idx: uint32_t{
@@ -965,52 +968,87 @@ const double rain_vsedi_min = 0.1;
 /**
  *
  */
-const double rain_alpha = {};  // 9.292
+const double rain_alpha = 9.292;
 
 /**
  *
  */
-const double rain_beta = {};  // 9.623
+const double rain_beta = 9.623;
 
 /**
  *
  */
-const double rain_gamma = {};  // 6.222e2
+const double rain_gamma = 6.222e2;
 
 /**
- *
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * 0
+ * 6 (default)
+ * 11 for increased evaporation
+ * 19 (Milbrandt & Yau, 2005)
  */
-const double rain_cmu0 = {};  // 6.0
+const double rain_cmu0 = 6;
 
 /**
- *
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * 0
+ * 30 (default)
+ * 30 for increased evaporation
+ * 19 (Milbrandt & Yau, 2005)
  */
-const double rain_cmu1 = {};  // 30
+const double rain_cmu1 = 30;
 
 /**
- *
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * 1
+ * 1000 (default)
+ * 1000 for increased evaporation
+ * 600 (Milbrandt & Yau, 2005)
  */
-const double rain_cmu2 = {};  // 1000
+const double rain_cmu2 = 1000;
 
 /**
- *
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * 1
+ * 1.1e-3 (default)
+ * 1.1e-3 for increased evaporation
+ * 1.8e-3 (Milbrandt & Yau, 2005)
  */
-const double rain_cmu3 = {};  // 1.1e-3
+const double rain_cmu3 = 1.1e-3;
 
 /**
- *
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * (nu+1)/b_geo - 1
+ * 1 (default)
+ * 4 for increased evaporation
+ * 17 (Milbrandt & Yau, 2005)
  */
-const double rain_cmu4 = {};  // 1
+const double rain_cmu4 = 1;
 
 /**
- *
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * 1
+ * 2 (default)
+ * 2 for increased evaporation
+ * 1 (Milbrandt & Yau, 2005)
  */
-const double rain_cmu5 = {};  // 2
+const double rain_cmu5 = 2;
 
 /**
- *
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * -1
+ * 1 (default)
+ * 0.5 for increased evaporation
+ * -1 (Milbrandt & Yau, 2005)
  */
-const double rain_rain_gfak = {};  // 1
+const double rain_rain_gfak = 1;
 
 /**
  *
@@ -1370,6 +1408,26 @@ const double snow_s_vel = 0.25;
  */
 const double snow_ecoll_c = 0.8;
 /////// More parameters
+
+/**
+ * Factor for raindrop breakup.
+ */
+const double k_br = 1000;
+
+/**
+ * Threshold at which raindrops break up during self collection.
+ */
+const double D_br_threshold = 0.3e-3;
+
+/**
+ * Factor for raindrop breakup.
+ */
+const double D_br = 1.1e-3;
+
+/**
+ * Factor for raindrop breakup.
+ */
+const double c_br = 1;
 
 /**
  * Threshold used during CCN activation from A. Miltenberger.
