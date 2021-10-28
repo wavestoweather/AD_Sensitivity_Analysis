@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <tgmath.h>
 #include <unistd.h>
-#include <netcdf>
+#include <netcdf.h>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -673,44 +673,38 @@ int run_simulation(
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
     ProgressBar pbar = ProgressBar((cc.num_sub_steps)*cc.num_steps,
         progress_index, "simulation step", std::cout);
-    try {
-        uint32_t sub_start = 1;
-        if (global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0
-            && !std::isnan(input.current_time))
-            sub_start = std::fmod(input.current_time, cc.dt_prime)
-                    / (cc.dt_prime/(cc.num_sub_steps));
-        if (input.track_initial_cond) cc.register_input();
 
-        // Loop over every timestep that is usually fixed to 20 s
-        for (uint32_t t=start_step; t < cc.num_steps - cc.done_steps; ++t) {
-            netcdf_reader.read_buffer(cc, ref_quant, y_single_old,
-                inflow, t, global_args.checkpoint_flag, input.start_over_env);
+    uint32_t sub_start = 1;
+    if (global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0
+        && !std::isnan(input.current_time))
+        sub_start = std::fmod(input.current_time, cc.dt_prime)
+                / (cc.dt_prime/(cc.num_sub_steps));
+    if (input.track_initial_cond) cc.register_input();
 
-            // Iterate over each substep
-            run_substeps(input, ref_quant, t, cc, y_single_old,
-                inflow, y_single_new, netcdf_reader, y_diff, out_handler,
-                sub_start, ensemble, segments, pbar, scheduler,
-                progress_index, delay_out_time);
+    // Loop over every timestep that is usually fixed to 20 s
+    for (uint32_t t=start_step; t < cc.num_steps - cc.done_steps; ++t) {
+        netcdf_reader.read_buffer(cc, ref_quant, y_single_old,
+            inflow, t, global_args.checkpoint_flag, input.start_over_env);
+
+        // Iterate over each substep
+        run_substeps(input, ref_quant, t, cc, y_single_old,
+            inflow, y_single_new, netcdf_reader, y_diff, out_handler,
+            sub_start, ensemble, segments, pbar, scheduler,
+            progress_index, delay_out_time);
 #ifdef TRACE_QG
-            if (trace)
-                std::cout << "\nSediment total q: " << sediment_q_total
-                        << "\nSediment total N: " << sediment_n_total << "\n" << std::flush;
-            sediment_n_total = 0;
-            sediment_q_total = 0;
+        if (trace)
+            std::cout << "\nSediment total q: " << sediment_q_total
+                    << "\nSediment total N: " << sediment_n_total << "\n" << std::flush;
+        sediment_n_total = 0;
+        sediment_q_total = 0;
 #endif
-            sub_start = 1;
-            checkpoint_t throw_away;
-            scheduler.send_task(throw_away, false);
-        }
-        if (progress_index > 0)
-            pbar.finish();
-    } catch(netCDF::exceptions::NcException& e) {
-        if (progress_index > 0)
-            pbar.finish();
-        std::cout << e.what() << std::endl;
-        std::cout << "rank " << rank << ": ABORTING. (sorry)" << std::endl;
-        return 1;
+        sub_start = 1;
+        checkpoint_t throw_away;
+        scheduler.send_task(throw_away, false);
     }
+    if (progress_index > 0)
+        pbar.finish();
+
     return 0;
 }
 

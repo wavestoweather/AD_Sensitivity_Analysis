@@ -153,7 +153,8 @@ const double trace_end = 3500;
 /**
  * Used for header files of output parameters.
  */
-const std::vector<std::string> output_par_idx = {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr"};
+const std::vector<std::string> output_par_idx = {
+    "p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr"};
 
 /**
  * Used for header files of gradients.

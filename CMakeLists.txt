@@ -196,7 +196,6 @@ include_directories (${AD_SIM_HOME})
 message("~~~ MPI")
 find_package(MPI)
 if( MPI_CXX_FOUND )
-    message("~~~ Found MPI.")
     include_directories(${MPI_CXX_INCLUDE_PATH})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MPI")
 else()
@@ -214,25 +213,20 @@ message("~~~ BOOST")
 find_package(Boost 1.62 REQUIRED)
 
 message("~~~ NetCDF")
-set(NETCDF_CXX "Yes")
+set(NETCDF "Yes")
 find_package(NetCDF)
 if( NetCDF_FOUND )
     include_directories (${NETCDF_INCLUDE_DIR})
+    message(STATUS "Found NetCDF include: ${NETCDF_INCLUDE_DIR}")
 else()
-    if( NETCDF_INCLUDE_DIR )
-        message(STATUS "Defaulting to NetCDF Include directory = ${NETCDF_INCLUDE_DIR}")
-        include_directories (${NETCDF_INCLUDE_DIR})
-        set(NETCDF_LIBRARIES "netcdf -lnetcdf_c++4")
-    else()
-        message(FATAL_ERROR
+    message(FATAL_ERROR
 "
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CMake was not able to find your NetCDF installation (maybe it wasn't build using CMake).
 Please define NETCDF_INCLUDE_DIR pointing to your installation. Make sure
-that -lnetcdf and -lnetcdf_c++4 can be used by your compiler.
+that -lnetcdf can be used by your compiler.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ")
-    endif()
 endif()
 
 message("~~~ CoDiPack")
