@@ -62,7 +62,7 @@ C++ Prerequisites
 - [GCC](https://gcc.gnu.org/) (Tested with v6.3.0)
 - [OpenMPI](https://www.open-mpi.org/) (Tested with v2.0.2)
 - [GSL](https://www.gnu.org/software/gsl/) (Tested with v2.3)
-- [NetCDF C++](https://github.com/Unidata/netcdf-cxx4/releases) (Tested with v4.7.3)
+- [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) (Tested with v4.7.3)
 - [HDF5](https://www.hdfgroup.org/solutions/hdf5/) (Tested with v1.8.22; problems may occur with v1.12 or above)
 - [Boost](https://www.boost.org/) (Tested with v1.6.2)
 - [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/) (Tested with v1.8.0)
