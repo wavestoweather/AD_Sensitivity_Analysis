@@ -9,7 +9,7 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 ")
 endif("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
-project(trajectories LANGUAGES CXX)
+project(trajectories LANGUAGES CXX C)
 
 if(NOT WIN32)
     string(ASCII 27 Esc)
@@ -212,6 +212,23 @@ endif()
 message("~~~ BOOST")
 find_package(Boost 1.62 REQUIRED)
 
+# message("~~~ zlib")
+find_package(ZLIB REQUIRED PATHS ${HDF5_DIR})
+message(STATUS "Found zlib include: ${ZLIB_INCLUDE_DIR}")
+include_directories (${ZLIB_INCLUDE_DIR})
+if( "${ZLIB_LIBRARIES}" STREQUAL "" )
+    # Hack if for some reason this is still empty
+    string(REPLACE "include" "lib" ZLIB_LIBRARIES ${ZLIB_INCLUDE_DIR})
+    set(ZLIB_LIBRARIES "${ZLIB_LIBRARIES}/libaec.a;${ZLIB_LIBRARIES}/libsz.a;${ZLIB_LIBRARIES}/libz.a")
+endif()
+
+message("~~~ CURL")
+find_package(CURL REQUIRED)
+
+message("~~~ PnetCDF")
+find_package(PnetCDF)
+include_directories (${PNETCDF_INCLUDE_DIR})
+
 message("~~~ NetCDF")
 set(NETCDF "Yes")
 find_package(NetCDF)
@@ -227,6 +244,17 @@ Please define NETCDF_INCLUDE_DIR pointing to your installation. Make sure
 that -lnetcdf can be used by your compiler.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ")
+endif()
+
+message("~~~ HDF5")
+find_package(HDF5 REQUIRED PATHS ${HDF5_DIR})
+include_directories (${HDF5_INCLUDE_DIR})
+message(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIR}")
+message(STATUS "HDF5 Version: ${HDF5_VERSION}")
+if( "${HDF5_LIBRARIES}" STREQUAL "" )
+    # Hack if for some reason this is still empty
+    string(REPLACE "include" "lib" HDF5_LIBRARIES ${HDF5_INCLUDE_DIR})
+    set(HDF5_LIBRARIES "${HDF5_LIBRARIES}/libz.a;${HDF5_LIBRARIES}/libsz.a;${HDF5_LIBRARIES}/libhdf5_tools.a;${HDF5_LIBRARIES}/libhdf5_hl.a;${HDF5_LIBRARIES}/libhdf5.a")
 endif()
 
 message("~~~ CoDiPack")
@@ -246,6 +274,7 @@ endif()
 message("~~~ GSL")
 find_package(GSL REQUIRED)
 include_directories (${GSL_INCLUDE_DIR})
+# message(STATUS "~~~~~~~~~~~~~~~${GSL_LIBRARIES}")
 
 include_directories(${AD_SIM_HOME})
 
