@@ -40,9 +40,12 @@ struct netcdf_reader_t {
      * @param step Current iteration step
      * @param checkpoint_flag If true: do not update model state
      * @param start_over_env If true: update environment/thermodynamics
+     *
+     * @returns SUCCESS or with #def TRUSTED_DATA INPUT_NAN_ERR, otherwise
+     *          throws an error.
      */
     template<class float_t>
-    void read_buffer(
+    int read_buffer(
         model_constants_t<float_t> &cc,
         const reference_quantities_t &ref_quant,
         std::vector<float_t> &y_single_old,
@@ -224,6 +227,7 @@ struct netcdf_reader_t {
         time,
         n_pars_once
     };
+
     std::array<std::vector<double>, Par_idx::n_pars > buffer;
 
     /**

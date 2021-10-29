@@ -1051,6 +1051,10 @@ void model_constants_t<float_t>::set_dt(
     this->num_steps = ceil(this->t_end_prime/this->dt_traject_prime);
     // The trajectories from input files are calculated with dt_traject_prime s timesteps.
     this->num_sub_steps = (floor(this->dt_traject_prime/this->dt) < 1) ? 1 : floor(this->dt_traject_prime/this->dt);
+    // std::cout << "set_dt with dt_prime " << dt_prime << "\n"
+    //     << "dt_traject " << this->dt_traject << "\n"
+    //     << "t_end_prime " << this->t_end_prime << "\n"
+    //     << "dt_traject_prime " <<  this->dt_traject_prime << "\n";
     }
 
 template<class float_t>

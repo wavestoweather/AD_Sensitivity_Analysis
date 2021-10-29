@@ -111,6 +111,12 @@ void output_handle_t::setup(
     // We have to create the file as a single process, close it and
     // open it in parallel again for writing purpose
     if (rank == 0) {
+#ifdef DEVELOP
+        std::cout << "Using local_num_comp " << local_num_comp << "\n"
+            << "num_ens " << num_ens << "\n"
+            << "n_trajs_file " << n_trajs_file << "\n"
+            << "num_time " << num_time << "\n" << std::flush;
+#endif
         SUCCESS_OR_DIE(nc_create(
             filename.c_str(),
             NC_NETCDF4,
@@ -348,11 +354,15 @@ void output_handle_t::setup(
             3,
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::phase]));
-
+#ifdef DEVELOP
+        std::cout << "attempt to open " << in_filename << "\n";
+#endif
         // Add attributes; read attributes from in_filename first
         int in_ncid;
         SUCCESS_OR_DIE(nc_open(in_filename.c_str(), NC_NOWRITE, &in_ncid));
-
+#ifdef DEVELOP
+        std::cout << "opened\n" << std::flush;
+#endif
         // get amount of attributes
         int n_atts;
         SUCCESS_OR_DIE(nc_inq(in_ncid, NULL, NULL, &n_atts, NULL));
@@ -930,7 +940,7 @@ void output_handle_t::setup(
             strlen("yes"),
             "yes"));
         // in theory, one could apply compression here
-        // but this needs HDF5 >=1.10.2
+        // but this needs HDF5 >=1.10.2 and Lustre
 #ifdef COMPRESS_OUTPUT
         if (this->simulation_mode == limited_time_ensembles
             || this->simulation_mode == trajectory_sensitivity
@@ -945,7 +955,13 @@ void output_handle_t::setup(
                         9));  // max compression
         }
 #endif
+#ifdef DEVELOP
+        std::cout << "all done; attempt to close\n" << std::flush;
+#endif
         SUCCESS_OR_DIE(nc_enddef(ncid));
+#ifdef DEVELOP
+        std::cout << "closed\n" << std::flush;
+#endif
         // Write dimensions here
         std::vector<size_t> startp, countp;
         startp.push_back(0);
@@ -957,6 +973,9 @@ void output_handle_t::setup(
 #endif
         for (uint32_t i=0; i < num_time; i++)
             time_steps[i] = cc.dt*i + cc.start_time + delay_out_time;
+#ifdef DEVELOP
+        std::cout << "attempt to write\n" << std::flush;
+#endif
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,                       // ncid
@@ -964,7 +983,9 @@ void output_handle_t::setup(
                 startp.data(),              // startp
                 countp.data(),              // countp
                 time_steps.data()));        // op
-
+#ifdef DEVELOP
+        std::cout << "done time_steps\n" << std::flush;
+#endif
         countp[0] = n_trajs_file;
         std::vector<uint64_t> data(n_trajs_file);
         for (uint32_t i=0; i < n_trajs_file; i++)
@@ -976,7 +997,9 @@ void output_handle_t::setup(
                 startp.data(),
                 countp.data(),
                 data.data()));
-
+#ifdef DEVELOP
+        std::cout << "done n_trajs; starting with num_ens " << num_ens << "\n" << std::flush;
+#endif
         countp[0] = num_ens;
         data.resize(num_ens);
         for (uint32_t i=0; i < num_ens; i++)
@@ -988,7 +1011,9 @@ void output_handle_t::setup(
                 startp.data(),
                 countp.data(),
                 data.data()));
-
+#ifdef DEVELOP
+        std::cout << "out_param\n" << std::flush;
+#endif
         countp[0] = local_num_comp;
         data.resize(local_num_comp);
         uint32_t counter = 0;
@@ -1005,10 +1030,19 @@ void output_handle_t::setup(
                 startp.data(),
                 countp.data(),
                 data.data()));
+#ifdef DEVELOP
+        std::cout << "out_param done\n" << std::flush;
+#endif
         SUCCESS_OR_DIE(ncclose(ncid));
+#ifdef DEVELOP
+        std::cout << "closed\n" << std::flush;
+#endif
     }
     // Open it again for writing with all processes
     std::string file_string = filename;
+#ifdef DEVELOP
+        std::cout << "attempt to open " << filename << "\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_open_par(
             file_string.c_str(),
@@ -1016,7 +1050,9 @@ void output_handle_t::setup(
             MPI_COMM_WORLD,
             MPI_INFO_NULL,
             &ncid));
-
+#ifdef DEVELOP
+        std::cout << "get varids\n" << std::flush;
+#endif
     // gather all necessary variable ids
     SUCCESS_OR_DIE(
         nc_inq_varid(
@@ -1038,7 +1074,9 @@ void output_handle_t::setup(
             ncid,
             "time",
             &varid[Var_idx::time]));
-
+#ifdef DEVELOP
+        std::cout << "get model varids\n" << std::flush;
+#endif
     // model state
     for (uint32_t i=0; i < num_comp; ++i)
         SUCCESS_OR_DIE(
@@ -1046,6 +1084,9 @@ void output_handle_t::setup(
                 ncid,
                 output_par_idx[i].c_str(),
                 &varid[i]));
+#ifdef DEVELOP
+        std::cout << "get track varids\n" << std::flush;
+#endif
     if (!track_ic) {
         // gradients
         for (uint32_t i=0; i < num_par; ++i) {
@@ -1069,12 +1110,18 @@ void output_handle_t::setup(
             }
         }
     }
+#ifdef DEVELOP
+        std::cout << "get more time\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "time_after_ascent",
             &varid[Var_idx::time_ascent]));
 #if !defined(B_EIGHT)
+#ifdef DEVELOP
+        std::cout << "get conv\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -1096,21 +1143,33 @@ void output_handle_t::setup(
             "slan_600",
             &varid[Var_idx::slan_600]));
 #endif
+#ifdef DEVELOP
+        std::cout << "get lat\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "lat",
             &varid[Var_idx::lat]));
+#ifdef DEVELOP
+        std::cout << "get lon\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "lon",
             &varid[Var_idx::lon]));
+#ifdef DEVELOP
+        std::cout << "get step\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "step",
             &varid[Var_idx::step]));
+#ifdef DEVELOP
+        std::cout << "get phase\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -1119,6 +1178,9 @@ void output_handle_t::setup(
 
     if ((this->simulation_mode == trajectory_sensitvity_perturbance)
         || (this->simulation_mode == trajectory_perturbance)) {
+#ifdef DEVELOP
+        std::cout << "different accesses\n" << std::flush;
+#endif
         // Make the access independent which is a must due to the dynamic
         // work schedule; This can be expensive though.
         for (uint32_t i=0; i < Var_idx::n_vars; i++)
@@ -1133,6 +1195,9 @@ void output_handle_t::setup(
                     SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
         }
     }
+#ifdef DEVELOP
+        std::cout << "done\n" << std::flush;
+#endif
 }
 
 
