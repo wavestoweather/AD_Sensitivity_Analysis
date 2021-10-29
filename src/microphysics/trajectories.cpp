@@ -714,7 +714,6 @@ int run_simulation(
     for (uint32_t t=start_step; t < cc.num_steps - cc.done_steps; ++t) {
         if (netcdf_reader.read_buffer(cc, ref_quant, y_single_old,
             inflow, t, global_args.checkpoint_flag, input.start_over_env) != SUCCESS) {
-            std::cout << "breaking after " << t << "\n";
             // If the input file consists of (multiple) NaNs, we do not
             // need a simulation.
             break;
@@ -788,25 +787,12 @@ void only_sensitivity_simulation(
     std::cout << "rank " << rank << ", n_ens: " << netcdf_reader.n_ensembles
         << ", n_trajs: " << netcdf_reader.n_trajectories << "\n";
 #endif
-
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
     int sims_for_r0 = netcdf_reader.n_ensembles*netcdf_reader.n_trajectories/n_processes
         + (netcdf_reader.n_ensembles*netcdf_reader.n_trajectories)%n_processes;
-    // if ()
+
     ProgressBar pbar = ProgressBar(cc.num_sub_steps*cc.num_steps*sims_for_r0,
         progress_index, "simulation step", std::cout);
-    // if (rank == 0)
-    //     std::cout << "num_sub_steps: " << cc.num_sub_steps << "\n"
-    //         << "num_steps: " << cc.num_steps << "\n"
-    //         << "n_ensembles: " << netcdf_reader.n_ensembles << "\n"
-    //         << "n_trajectories: " << netcdf_reader.n_trajectories << "\n"
-    //         << "n_processes: " << n_processes << "\n"
-    //         << "total steps: " << cc.num_sub_steps*cc.num_steps*
-    //             (netcdf_reader.n_ensembles*netcdf_reader.n_trajectories/n_processes) << "\n"
-    //         << "scheduler.get_n_ensembles(): " << scheduler.get_n_ensembles() << "\n"
-    //         << "scheduler.get_n_trajectories(): " << scheduler.get_n_trajectories() << "\n"
-    //         << "cc.num_sub_steps*cc.num_steps*sims_for_r0: " << cc.num_sub_steps*cc.num_steps*sims_for_r0 << "\n"
-    //         << "progress_index: " << progress_index << "\n";
 
     if (scheduler.receive_task(checkpoint)) {
         cc.traj_id = scheduler.current_traj;
@@ -826,17 +812,15 @@ void only_sensitivity_simulation(
 #endif
         out_handler.reset(scheduler.current_traj, scheduler.current_ens);
         int sim_counter = 1;
-        // int max_sims = (scheduler.get_n_ensembles()*scheduler.get_n_trajectories() + scheduler.get_n_processes()-1)
-        //     / scheduler.get_n_processes();
-        // if (rank == 0)
-        //         std::cout << "Simulation " << sim_counter << " of " << max_sims << "\n";
+
         // run simulation
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow,
             out_handler, segments, scheduler, netcdf_reader, pbar, input.delay_time_store, 0, false));
 
         while (scheduler.receive_task(checkpoint)) {
-            pbar.set_current_step(sim_counter*cc.num_sub_steps*cc.num_steps);
+            pbar.set_current_step(sim_counter*cc.num_sub_steps*cc.num_steps-1);
+            pbar.progress();
             sim_counter++;
             global_args.checkpoint_flag = true;
             setup_simulation_base(argc, argv, rank, n_processes, input,
@@ -859,8 +843,6 @@ void only_sensitivity_simulation(
             std::cout << "rank " << rank << ", init pressure: "
                 << y_init[p_idx]*ref_quant.pref << "\n";
 #endif
-            // if (rank == 0)
-            //     std::cout << "Simulation " << sim_counter << " of " << max_sims << "\n";
             // run simulation
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,

@@ -44,7 +44,7 @@ class ProgressBar {
     }
     void finish() {
         if (update_every == 0) return;
-        current_step = end_step;
+        current_step = end_step-1;
         progress();
         *out << "\n" << std::flush;
     }
@@ -66,9 +66,9 @@ class ProgressBar {
 #if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR)
 #if !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
         current_step++;
-        std::cout << "update_every " << update_every
-            << "\ncurrent_step " << current_step
-            << "\nend_step " << end_step << "\n";
+        // std::cout << "update_every " << update_every
+        //     << "\ncurrent_step " << current_step
+        //     << "\nend_step " << end_step << "\n";
         if (update_every == 0) return;
         if (current_step%update_every != 0 && current_step != end_step) return;
         if (current_step == 0) return;

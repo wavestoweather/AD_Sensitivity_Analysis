@@ -793,7 +793,6 @@ void netcdf_reader_t::init_netcdf(
     startp.push_back(traj_idx);     // trajectory
     startp.push_back(0);            // time
     uint64_t start_time_idx = 0;
-    float rel_start_time;
     double rel_start_time;
 
     SUCCESS_OR_DIE(
