@@ -447,6 +447,17 @@ void output_handle_t::setup(
                 "standard_name",
                 strlen(mass_name),
                 mass_name));
+            SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+                NC_DOUBLE,
+#else
+                NC_FLOAT,
+#endif
+                1,
+                &FILLVALUE));
         };
         put_att_mass("water_vapor_mass_density", "water vapor mass density", varid[Var_idx::qv]);
         put_att_mass("cloud_droplet_mass_density", "cloud droplet mass density", varid[Var_idx::qc]);
@@ -484,6 +495,17 @@ void output_handle_t::setup(
                 "standard_name",
                 strlen(name),
                 name));
+            SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+                NC_DOUBLE,
+#else
+                NC_FLOAT,
+#endif
+                1,
+                &FILLVALUE));
         };
         put_att_nums("cloud_droplet_number_density", "cloud droplet number density", varid[Var_idx::ncloud]);
         put_att_nums("rain_droplet_number_density", "rain droplet number density", varid[Var_idx::nrain]);
@@ -520,6 +542,17 @@ void output_handle_t::setup(
                 "standard_name",
                 strlen(mass_name),
                 mass_name));
+            SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+                NC_DOUBLE,
+#else
+                NC_FLOAT,
+#endif
+                1,
+                &FILLVALUE));
         };
         put_att_mass_sed(
             "sedi_outflux_of_rain_droplet_mass",
@@ -574,6 +607,17 @@ void output_handle_t::setup(
                 "standard_name",
                 strlen(att_val_2),
                 att_val_2));
+            SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+                NC_DOUBLE,
+#else
+                NC_FLOAT,
+#endif
+                1,
+                &FILLVALUE));
         };
         put_att_nums_sed("sedi_outflux_of_rain_droplet_number", "sedimentation of rain droplet number",
             varid[Var_idx::nr_out]);
@@ -592,6 +636,17 @@ void output_handle_t::setup(
                         "auxiliary_data",
                         strlen("yes"),
                         "yes"));
+                    SUCCESS_OR_DIE(nc_put_att(
+                        ncid,
+                        varid[Var_idx::n_vars + i],
+                        _FillValue,
+#ifdef OUT_DOUBLE
+                        NC_DOUBLE,
+#else
+                        NC_FLOAT,
+#endif
+                        1,
+                        &FILLVALUE));
                 }
             }
         } else {
@@ -604,6 +659,17 @@ void output_handle_t::setup(
                         "auxiliary_data",
                         strlen("yes"),
                         "yes"));
+                    SUCCESS_OR_DIE(nc_put_att(
+                        ncid,
+                        varid[Var_idx::n_vars + i],
+                        _FillValue,
+#ifdef OUT_DOUBLE
+                        NC_DOUBLE,
+#else
+                        NC_FLOAT,
+#endif
+                        1,
+                        &FILLVALUE));
                 }
             }
         }
@@ -637,6 +703,17 @@ void output_handle_t::setup(
             "axis",
             strlen("Z"),
             "Z"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::pressure],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::temperature],
@@ -661,6 +738,17 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::temperature],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::ascent],
@@ -685,6 +773,17 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::ascent],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::sat],
@@ -709,6 +808,17 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::sat],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::height],
@@ -733,36 +843,102 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::height],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::inactive],
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::inactive],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::dep],
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::dep],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::sub],
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::sub],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::lat_heat],
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lat_heat],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::lat_cool],
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lat_cool],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::time_ascent],
@@ -787,12 +963,24 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::time_ascent],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::lat],
             "long_name",
             strlen("rotated latitude"),
             "rotated latitude"));
+
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::lat],
@@ -805,6 +993,17 @@ void output_handle_t::setup(
             "units",
             strlen("degrees"),
             "degrees"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lat],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::lon],
@@ -823,6 +1022,17 @@ void output_handle_t::setup(
             "units",
             strlen("degrees"),
             "degrees"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lon],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
 #if !defined B_EIGHT
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
@@ -915,6 +1125,14 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        const uint64_t FILLINT = 0;
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::step],
+            _FillValue,
+            NC_UINT64,
+            1,
+            &FILLINT));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::phase],
@@ -939,6 +1157,13 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::phase],
+            _FillValue,
+            NC_UINT64,
+            1,
+            &FILLINT));
         // in theory, one could apply compression here
         // but this needs HDF5 >=1.10.2 and Lustre
 #ifdef COMPRESS_OUTPUT

@@ -203,6 +203,10 @@ if (DEVELOP)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDEVELOP")
     message("${BoldYellow}~~~ Printing output for development${ColourReset}")
 endif()
+if (TRACE_READER)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_READER")
+    message("${BoldYellow}~~~ Printing output for netcdf_reader_t${ColourReset}")
+endif()
 
 message(STATUS "Searching for necessary libraries")
 

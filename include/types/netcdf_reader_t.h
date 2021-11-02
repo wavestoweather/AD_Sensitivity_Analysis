@@ -137,6 +137,7 @@ struct netcdf_reader_t {
 #endif
 
 #endif
+    uint32_t get_traj_idx() const {return traj_idx;}
 
  private:
     std::vector<int> startp, countp;

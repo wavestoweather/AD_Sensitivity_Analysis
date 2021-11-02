@@ -381,18 +381,6 @@ void netcdf_reader_t::buffer_params(
     countp2.push_back(1);
     countp2.push_back(1);
     countp2.push_back(n_timesteps_buffer + additional_buffer);
-#elif defined B_EIGHT
-    startp.push_back(time_idx);
-    startp.push_back(traj_idx);
-
-    countp.push_back(n_timesteps_buffer);
-    countp.push_back(1);
-    int additional_buffer = n_timesteps_in - (time_idx + n_timesteps_buffer);
-    if (additional_buffer < 0) additional_buffer = 0;
-    if (additional_buffer > 10) additional_buffer = 10;
-
-    countp2.push_back(n_timesteps_buffer + additional_buffer);
-    countp2.push_back(1);
 #else
     startp.push_back(traj_idx);
     startp.push_back(time_idx);
@@ -453,6 +441,12 @@ void netcdf_reader_t::buffer_params(
         v /= ref_quant.Nref;
     for (auto &v : buffer[Par_idx::ng_in])
         v /= ref_quant.Nref;
+    #if defined B_EIGHT
+    for (auto &v : buffer[Par_idx::nh_in])
+        v /= ref_quant.Nref;
+    for (auto &v : buffer[Par_idx::qh_in])
+        v /= ref_quant.qref;
+    #endif
   #endif
 #endif
     for (auto &v : buffer[Par_idx::ascent])
@@ -826,11 +820,11 @@ void netcdf_reader_t::init_netcdf(
     time_idx = start_time_idx;
     this->start_time_idx = start_time_idx;
 #elif defined(B_EIGHT)
-    countp.push_back(10);
     countp.push_back(1);
+    countp.push_back(10);
 
-    startp.push_back(0);            // time
     startp.push_back(traj_idx);     // trajectory
+    startp.push_back(0);            // time
 
     uint64_t start_time_idx = 0;
 
@@ -932,8 +926,8 @@ void netcdf_reader_t::read_initial_values(
 
     if (!checkpoint_flag) {
 #if defined B_EIGHT
-        startp.push_back(time_idx);
         startp.push_back(traj_idx);
+        startp.push_back(time_idx);
 #elif defined MET3D
         startp.push_back(ens_idx);
         startp.push_back(traj_idx);

@@ -817,22 +817,22 @@ extern double sediment_n_total;
 /////// Various parameters for hydrometeors
 #ifdef SB_SHAPE
 /**
- *
+ * Shape parameter of the generalized \f$\Gamma$\f-distribution.
  */
 const double cloud_nu = 1;
 
 /**
- *
+ * Shape parameter of the generalized \f$\Gamma$\f-distribution.
  */
 const double cloud_mu = 1;
 #else
 /**
- *
+ * Shape parameter of the generalized \f$\Gamma$\f-distribution.
  */
 const double cloud_nu = 0;
 
 /**
- *
+ * Shape parameter of the generalized \f$\Gamma$\f-distribution.
  */
 const double cloud_mu = 1.0/3.0;
 #endif

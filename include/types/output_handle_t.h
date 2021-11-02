@@ -7,6 +7,7 @@
 #include <array>
 #include <cmath>
 #include <fstream>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -29,6 +30,11 @@ struct output_handle_t{
     // Tracking either initial conditions or model parameters.
     // Both at the same time is not possible (or rather would take too long)
     bool track_ic;
+#ifdef OUT_DOUBLE
+    const double FILLVALUE = std::numeric_limits<double>::quiet_NaN();
+#else
+    const float FILLVALUE = std::numeric_limits<float>::quiet_NaN();
+#endif
 
     std::string filetype;
     // for netCDF files and a vector for each column

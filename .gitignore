@@ -16,3 +16,5 @@ docs/api/*
 docs/doxyoutput/*
 .ipynb*
 .ipynb_checkpoints/*
+*.sh
+exe_scripts/test_script.sh

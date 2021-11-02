@@ -716,14 +716,15 @@ int run_simulation(
             inflow, t, global_args.checkpoint_flag, input.start_over_env) != SUCCESS) {
             // If the input file consists of (multiple) NaNs, we do not
             // need a simulation.
+            out_handler.flush_buffer(cc);
             break;
         }
-
         // Iterate over each substep
         run_substeps(input, ref_quant, t, cc, y_single_old,
             inflow, y_single_new, netcdf_reader, y_diff, out_handler,
             sub_start, ensemble, segments, pbar, scheduler,
             delay_out_time);
+
 #ifdef TRACE_QG
         if (trace)
             std::cout << "\nSediment total q: " << sediment_q_total
