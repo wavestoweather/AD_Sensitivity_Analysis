@@ -36,6 +36,7 @@ class ProgressBar {
         // Description width with spaces, additional characters and some additional space
         desc_width = description.length() + unit.length()*2 + 16 + 40 + 14;
         t_first = std::chrono::system_clock::now();
+        current_step = 0;
     }
 
     void reset() {
