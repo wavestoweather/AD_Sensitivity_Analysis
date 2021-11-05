@@ -14,11 +14,11 @@ black:
   script:
     - black --check scripts/
   allow_failure: false
+  tags:
+    - style
 
 lint:
   stage: Static Analysis CPP
-  only:
-    - tags
   script:
     - cpplint --linelength=120 --quiet --counting=toplevel --filter=-readability/fn_size,-legal/copyright,-runtime/references --recursive --exclude=src/scratch/*.cpp --exclude=build/* .
   tags:
@@ -27,8 +27,6 @@ lint:
 
 build:
   stage: build
-  only:
-    - tags
   artifacts:
     untracked: true
   script:
@@ -39,8 +37,6 @@ build:
 
 test:
   stage: test
-  only:
-    - tags
   dependencies:
     - build
   script:
