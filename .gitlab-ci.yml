@@ -30,8 +30,7 @@ build:
   artifacts:
     untracked: true
   script:
-    - cd exe_scripts
-    - ./make_script_docker.sh
+    - mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=release -DTARGET=simulation  -DTRUSTED_DATA:BOOL=ON -DB_EIGHT:BOOL=ON && make -j4
   tags:
     - make
 
@@ -40,7 +39,6 @@ test:
   dependencies:
     - build
   script:
-    - cd exe_scripts
-    - ./docker_test.sh
+    - cd exe_scripts && bash docker_test.sh
   tags:
     - test
