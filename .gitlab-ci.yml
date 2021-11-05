@@ -1,4 +1,4 @@
-image: "python:3.7.6"
+image: "ad_sensitivities/collab_b8:2.0"
 
 variables:
   GIT_SSL_NO_VERIFY: "true"
