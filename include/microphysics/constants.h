@@ -838,12 +838,12 @@ const double cloud_mu = 1.0/3.0;
 #endif
 
 /**
- *
+ * Maximum size of cloud droplet.
  */
 const double cloud_max_x = 2.6e-10;
 
 /**
- *
+ * Minimum size of cloud droplet.
  */
 const double cloud_min_x = 4.2e-15;
 
