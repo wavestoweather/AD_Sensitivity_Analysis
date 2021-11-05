@@ -1,4 +1,4 @@
-image: "mahieronymus/ad_sensitivities:2.0"
+image: "mahieronymus/ad_sensitivity:2.0"
 
 variables:
   GIT_SSL_NO_VERIFY: "true"
