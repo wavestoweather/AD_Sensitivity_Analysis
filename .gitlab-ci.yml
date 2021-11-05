@@ -14,28 +14,44 @@ stages:
 
 black:
   stage: Static Analysis Python
+  only:
+    - tags
   script:
     - black --check scripts/
+  tags:
+    - style
   allow_failure: false
 
 lint:
   stage: Static Analysis CPP
+  only:
+    - tags
   script:
     - cpplint --linelength=120 --quiet --counting=toplevel --filter=-readability/fn_size,-legal/copyright,-runtime/references --recursive --exclude=src/scratch/*.cpp --exclude=build/* .
+  tags:
+    - style
   allow_failure: false
 
 build:
   stage: build
+  only:
+    - tags
   artifacts:
     untracked: true
   script:
     - cd exe_scripts
     - ./make_script_docker.sh
+  tags:
+    - make
 
 test:
   stage: test
+  only:
+    - tags
   dependencies:
     - build
   script:
     - cd exe_scripts
     - ./docker_test.sh
+  tags:
+    - test
