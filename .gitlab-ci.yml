@@ -1,8 +1,5 @@
 image: "mahieronymus/ad_sensitivity:2.0"
 
-variables:
-  GIT_SSL_NO_VERIFY: "true"
-
 stages:
  - Static Analysis Python
  - Static Analysis CPP
@@ -33,6 +30,7 @@ build:
     - cd exe_scripts && ./make_script_docker.sh
   tags:
     - make
+  allow_failure: false
 
 test:
   stage: test
@@ -42,3 +40,4 @@ test:
     - cd exe_scripts && ./docker_test.sh
   tags:
     - test
+  allow_failure: false
