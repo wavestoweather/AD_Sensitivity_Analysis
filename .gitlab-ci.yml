@@ -11,12 +11,8 @@ stages:
 
 black:
   stage: Static Analysis Python
-  only:
-    - tags
   script:
     - black --check scripts/
-  tags:
-    - style
   allow_failure: false
 
 lint:
