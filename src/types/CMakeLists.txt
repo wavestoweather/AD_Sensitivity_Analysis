@@ -9,6 +9,3 @@ set(TYPES_SRCS
     param_t.cpp
     segment_t.cpp
     PARENT_SCOPE)
-
-# add_library(types ${TYPES_SRCS})
-# target_link_libraries(sub3 sub1 sub2)

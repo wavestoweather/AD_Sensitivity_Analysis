@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
-#include <netcdf>
+#include <netcdf.h>
 
 #include <cmath>
 #include <fstream>

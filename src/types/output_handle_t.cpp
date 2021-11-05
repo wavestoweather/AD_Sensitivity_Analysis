@@ -111,6 +111,12 @@ void output_handle_t::setup(
     // We have to create the file as a single process, close it and
     // open it in parallel again for writing purpose
     if (rank == 0) {
+#ifdef DEVELOP
+        std::cout << "Using local_num_comp " << local_num_comp << "\n"
+            << "num_ens " << num_ens << "\n"
+            << "n_trajs_file " << n_trajs_file << "\n"
+            << "num_time " << num_time << "\n" << std::flush;
+#endif
         SUCCESS_OR_DIE(nc_create(
             filename.c_str(),
             NC_NETCDF4,
@@ -178,6 +184,7 @@ void output_handle_t::setup(
                     3,
                     &dimid[Dim_idx::ensemble_dim],
                     &varid[i]));
+
         // gradients
         if (this->simulation_mode != limited_time_ensembles) {
             auto dim_pointer = &dimid[Dim_idx::out_param_dim];
@@ -279,6 +286,7 @@ void output_handle_t::setup(
             3,
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::time_ascent]));
+#if !defined B_EIGHT
         SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "conv_400",
@@ -307,6 +315,7 @@ void output_handle_t::setup(
             3,
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::slan_600]));
+#endif
         SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "lat",
@@ -337,10 +346,23 @@ void output_handle_t::setup(
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::step]));
 
+        // Phase of the trajectory
+        SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "phase",
+            NC_UINT64,
+            3,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::phase]));
+#ifdef DEVELOP
+        std::cout << "attempt to open " << in_filename << "\n";
+#endif
         // Add attributes; read attributes from in_filename first
         int in_ncid;
         SUCCESS_OR_DIE(nc_open(in_filename.c_str(), NC_NOWRITE, &in_ncid));
-
+#ifdef DEVELOP
+        std::cout << "opened\n" << std::flush;
+#endif
         // get amount of attributes
         int n_atts;
         SUCCESS_OR_DIE(nc_inq(in_ncid, NULL, NULL, &n_atts, NULL));
@@ -425,6 +447,17 @@ void output_handle_t::setup(
                 "standard_name",
                 strlen(mass_name),
                 mass_name));
+            SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+                NC_DOUBLE,
+#else
+                NC_FLOAT,
+#endif
+                1,
+                &FILLVALUE));
         };
         put_att_mass("water_vapor_mass_density", "water vapor mass density", varid[Var_idx::qv]);
         put_att_mass("cloud_droplet_mass_density", "cloud droplet mass density", varid[Var_idx::qc]);
@@ -462,6 +495,17 @@ void output_handle_t::setup(
                 "standard_name",
                 strlen(name),
                 name));
+            SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+                NC_DOUBLE,
+#else
+                NC_FLOAT,
+#endif
+                1,
+                &FILLVALUE));
         };
         put_att_nums("cloud_droplet_number_density", "cloud droplet number density", varid[Var_idx::ncloud]);
         put_att_nums("rain_droplet_number_density", "rain droplet number density", varid[Var_idx::nrain]);
@@ -498,6 +542,17 @@ void output_handle_t::setup(
                 "standard_name",
                 strlen(mass_name),
                 mass_name));
+            SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+                NC_DOUBLE,
+#else
+                NC_FLOAT,
+#endif
+                1,
+                &FILLVALUE));
         };
         put_att_mass_sed(
             "sedi_outflux_of_rain_droplet_mass",
@@ -552,6 +607,17 @@ void output_handle_t::setup(
                 "standard_name",
                 strlen(att_val_2),
                 att_val_2));
+            SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+                NC_DOUBLE,
+#else
+                NC_FLOAT,
+#endif
+                1,
+                &FILLVALUE));
         };
         put_att_nums_sed("sedi_outflux_of_rain_droplet_number", "sedimentation of rain droplet number",
             varid[Var_idx::nr_out]);
@@ -570,6 +636,17 @@ void output_handle_t::setup(
                         "auxiliary_data",
                         strlen("yes"),
                         "yes"));
+                    SUCCESS_OR_DIE(nc_put_att(
+                        ncid,
+                        varid[Var_idx::n_vars + i],
+                        _FillValue,
+#ifdef OUT_DOUBLE
+                        NC_DOUBLE,
+#else
+                        NC_FLOAT,
+#endif
+                        1,
+                        &FILLVALUE));
                 }
             }
         } else {
@@ -582,6 +659,17 @@ void output_handle_t::setup(
                         "auxiliary_data",
                         strlen("yes"),
                         "yes"));
+                    SUCCESS_OR_DIE(nc_put_att(
+                        ncid,
+                        varid[Var_idx::n_vars + i],
+                        _FillValue,
+#ifdef OUT_DOUBLE
+                        NC_DOUBLE,
+#else
+                        NC_FLOAT,
+#endif
+                        1,
+                        &FILLVALUE));
                 }
             }
         }
@@ -615,6 +703,17 @@ void output_handle_t::setup(
             "axis",
             strlen("Z"),
             "Z"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::pressure],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::temperature],
@@ -639,6 +738,17 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::temperature],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::ascent],
@@ -663,6 +773,17 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::ascent],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::sat],
@@ -687,6 +808,17 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::sat],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::height],
@@ -711,36 +843,102 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::height],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::inactive],
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::inactive],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::dep],
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::dep],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::sub],
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::sub],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::lat_heat],
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lat_heat],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::lat_cool],
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lat_cool],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::time_ascent],
@@ -765,12 +963,24 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::time_ascent],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::lat],
             "long_name",
             strlen("rotated latitude"),
             "rotated latitude"));
+
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::lat],
@@ -783,6 +993,17 @@ void output_handle_t::setup(
             "units",
             strlen("degrees"),
             "degrees"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lat],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::lon],
@@ -801,6 +1022,18 @@ void output_handle_t::setup(
             "units",
             strlen("degrees"),
             "degrees"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lon],
+            _FillValue,
+#ifdef OUT_DOUBLE
+            NC_DOUBLE,
+#else
+            NC_FLOAT,
+#endif
+            1,
+            &FILLVALUE));
+#if !defined B_EIGHT
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::conv_400],
@@ -873,6 +1106,7 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+#endif
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::step],
@@ -891,8 +1125,47 @@ void output_handle_t::setup(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
+        const uint64_t FILLINT = 0;
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::step],
+            _FillValue,
+            NC_UINT64,
+            1,
+            &FILLINT));
+        SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "long_name",
+            strlen("phase"),
+            "phase"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "standard_name",
+            strlen("phase"),
+            "phase"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "description",
+            strlen("0: warm phase, 1: mixed phase, 2: ice phase, 3: neutral phase"),
+            "0: warm phase, 1: mixed phase, 2: ice phase, 3: neutral phase"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+        SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::phase],
+            _FillValue,
+            NC_UINT64,
+            1,
+            &FILLINT));
         // in theory, one could apply compression here
-        // but this needs HDF5 >=1.10.2
+        // but this needs HDF5 >=1.10.2 and Lustre
 #ifdef COMPRESS_OUTPUT
         if (this->simulation_mode == limited_time_ensembles
             || this->simulation_mode == trajectory_sensitivity
@@ -907,7 +1180,13 @@ void output_handle_t::setup(
                         9));  // max compression
         }
 #endif
+#ifdef DEVELOP
+        std::cout << "all done; attempt to close\n" << std::flush;
+#endif
         SUCCESS_OR_DIE(nc_enddef(ncid));
+#ifdef DEVELOP
+        std::cout << "closed\n" << std::flush;
+#endif
         // Write dimensions here
         std::vector<size_t> startp, countp;
         startp.push_back(0);
@@ -919,6 +1198,9 @@ void output_handle_t::setup(
 #endif
         for (uint32_t i=0; i < num_time; i++)
             time_steps[i] = cc.dt*i + cc.start_time + delay_out_time;
+#ifdef DEVELOP
+        std::cout << "attempt to write\n" << std::flush;
+#endif
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,                       // ncid
@@ -926,7 +1208,9 @@ void output_handle_t::setup(
                 startp.data(),              // startp
                 countp.data(),              // countp
                 time_steps.data()));        // op
-
+#ifdef DEVELOP
+        std::cout << "done time_steps\n" << std::flush;
+#endif
         countp[0] = n_trajs_file;
         std::vector<uint64_t> data(n_trajs_file);
         for (uint32_t i=0; i < n_trajs_file; i++)
@@ -938,7 +1222,9 @@ void output_handle_t::setup(
                 startp.data(),
                 countp.data(),
                 data.data()));
-
+#ifdef DEVELOP
+        std::cout << "done n_trajs; starting with num_ens " << num_ens << "\n" << std::flush;
+#endif
         countp[0] = num_ens;
         data.resize(num_ens);
         for (uint32_t i=0; i < num_ens; i++)
@@ -950,7 +1236,9 @@ void output_handle_t::setup(
                 startp.data(),
                 countp.data(),
                 data.data()));
-
+#ifdef DEVELOP
+        std::cout << "out_param\n" << std::flush;
+#endif
         countp[0] = local_num_comp;
         data.resize(local_num_comp);
         uint32_t counter = 0;
@@ -967,10 +1255,19 @@ void output_handle_t::setup(
                 startp.data(),
                 countp.data(),
                 data.data()));
+#ifdef DEVELOP
+        std::cout << "out_param done\n" << std::flush;
+#endif
         SUCCESS_OR_DIE(ncclose(ncid));
+#ifdef DEVELOP
+        std::cout << "closed\n" << std::flush;
+#endif
     }
     // Open it again for writing with all processes
     std::string file_string = filename;
+#ifdef DEVELOP
+        std::cout << "attempt to open " << filename << "\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_open_par(
             file_string.c_str(),
@@ -978,7 +1275,9 @@ void output_handle_t::setup(
             MPI_COMM_WORLD,
             MPI_INFO_NULL,
             &ncid));
-
+#ifdef DEVELOP
+        std::cout << "get varids\n" << std::flush;
+#endif
     // gather all necessary variable ids
     SUCCESS_OR_DIE(
         nc_inq_varid(
@@ -1000,7 +1299,9 @@ void output_handle_t::setup(
             ncid,
             "time",
             &varid[Var_idx::time]));
-
+#ifdef DEVELOP
+        std::cout << "get model varids\n" << std::flush;
+#endif
     // model state
     for (uint32_t i=0; i < num_comp; ++i)
         SUCCESS_OR_DIE(
@@ -1008,6 +1309,9 @@ void output_handle_t::setup(
                 ncid,
                 output_par_idx[i].c_str(),
                 &varid[i]));
+#ifdef DEVELOP
+        std::cout << "get track varids\n" << std::flush;
+#endif
     if (!track_ic) {
         // gradients
         for (uint32_t i=0; i < num_par; ++i) {
@@ -1031,11 +1335,18 @@ void output_handle_t::setup(
             }
         }
     }
+#ifdef DEVELOP
+        std::cout << "get more time\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "time_after_ascent",
             &varid[Var_idx::time_ascent]));
+#if !defined(B_EIGHT)
+#ifdef DEVELOP
+        std::cout << "get conv\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -1056,24 +1367,45 @@ void output_handle_t::setup(
             ncid,
             "slan_600",
             &varid[Var_idx::slan_600]));
+#endif
+#ifdef DEVELOP
+        std::cout << "get lat\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "lat",
             &varid[Var_idx::lat]));
+#ifdef DEVELOP
+        std::cout << "get lon\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "lon",
             &varid[Var_idx::lon]));
+#ifdef DEVELOP
+        std::cout << "get step\n" << std::flush;
+#endif
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
             "step",
             &varid[Var_idx::step]));
+#ifdef DEVELOP
+        std::cout << "get phase\n" << std::flush;
+#endif
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "phase",
+            &varid[Var_idx::phase]));
 
     if ((this->simulation_mode == trajectory_sensitvity_perturbance)
         || (this->simulation_mode == trajectory_perturbance)) {
+#ifdef DEVELOP
+        std::cout << "different accesses\n" << std::flush;
+#endif
         // Make the access independent which is a must due to the dynamic
         // work schedule; This can be expensive though.
         for (uint32_t i=0; i < Var_idx::n_vars; i++)
@@ -1088,6 +1420,9 @@ void output_handle_t::setup(
                     SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
         }
     }
+#ifdef DEVELOP
+        std::cout << "done\n" << std::flush;
+#endif
 }
 
 
@@ -1220,13 +1555,30 @@ void output_handle_t::buffer(
     output_buffer[Buffer_idx::time_ascent_buf][n_snapshots] =
         netcdf_reader.get_relative_time(t) + sub*cc.dt;
     // flags
+#if !defined(B_EIGHT)
     output_buffer_flags[0][n_snapshots] = netcdf_reader.get_conv_400(t);
     output_buffer_flags[1][n_snapshots] = netcdf_reader.get_conv_600(t);
     output_buffer_flags[2][n_snapshots] = netcdf_reader.get_slan_400(t);
     output_buffer_flags[3][n_snapshots] = netcdf_reader.get_slan_600(t);
 #endif
+#endif
     // simulation step
     output_buffer_int[0][n_snapshots] = sub + t*cc.num_sub_steps;
+
+    // phase, 0: warm phase, 1: mixed phase, 2: ice phase,
+    // 3: only water vapor or nothing at all
+    uint64_t current_phase = 3;
+    if (y_single_new[qi_idx] > 0 || y_single_new[qs_idx] > 0
+        || y_single_new[qh_idx] > 0 || y_single_new[qg_idx] > 0
+        || y_single_new[Ni_idx] > 0 || y_single_new[Ns_idx] > 0
+        || y_single_new[Nh_idx] > 0 || y_single_new[Ng_idx] > 0) {
+        current_phase = 2;
+    }
+    if (y_single_new[qc_idx] > 0 || y_single_new[qr_idx] > 0
+        || y_single_new[Nc_idx] > 0 || y_single_new[Nr_idx] > 0) {
+        current_phase = (current_phase == 2) ? 1 : 0;
+    }
+    output_buffer_int[1][n_snapshots] = current_phase;
 
     n_snapshots++;
 }
@@ -1262,6 +1614,7 @@ void output_handle_t::flush_buffer(
             output_buffer[Buffer_idx::time_ascent_buf].data()));
     // flags
     for (uint64_t i=0; i < output_buffer_flags.size(); i++) {
+#if !defined B_EIGHT
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,
@@ -1269,6 +1622,7 @@ void output_handle_t::flush_buffer(
                 startp.data(),
                 countp.data(),
                 output_buffer_flags[i].data()));
+#endif
     }
     // lat
     SUCCESS_OR_DIE(
@@ -1294,6 +1648,15 @@ void output_handle_t::flush_buffer(
             startp.data(),
             countp.data(),
             output_buffer_int[0].data()));
+
+    // phase
+    SUCCESS_OR_DIE(
+        nc_put_vara(
+            ncid,
+            varid[Var_idx::phase],
+            startp.data(),
+            countp.data(),
+            output_buffer_int[1].data()));
     // gradients
     if (this->simulation_mode != limited_time_ensembles) {
         if (local_num_comp > 1) {

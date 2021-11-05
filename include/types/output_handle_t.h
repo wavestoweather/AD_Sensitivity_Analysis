@@ -7,6 +7,7 @@
 #include <array>
 #include <cmath>
 #include <fstream>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -29,6 +30,11 @@ struct output_handle_t{
     // Tracking either initial conditions or model parameters.
     // Both at the same time is not possible (or rather would take too long)
     bool track_ic;
+#ifdef OUT_DOUBLE
+    const double FILLVALUE = std::numeric_limits<double>::quiet_NaN();
+#else
+    const float FILLVALUE = std::numeric_limits<float>::quiet_NaN();
+#endif
 
     std::string filetype;
     // for netCDF files and a vector for each column
@@ -41,9 +47,13 @@ struct output_handle_t{
 #else
     std::array<std::vector<float>, num_comp+num_par+4+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
 #endif
+#if !defined B_EIGHT
     std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
+#else
+    std::array<std::vector<unsigned char>, 0 > output_buffer_flags;
+#endif
     // std::array<std::vector<std::string>, 1 > output_buffer_str;
-    std::array<std::vector<uint64_t>, 1 > output_buffer_int;
+    std::array<std::vector<uint64_t>, 2 > output_buffer_int;
     /**
      * ID for dimensions of output file.
      */
@@ -129,11 +139,14 @@ struct output_handle_t{
         time_ascent,
         lat,
         lon,
+#if !defined(B_EIGHT)
         conv_400,
         conv_600,
         slan_400,
         slan_600,
+#endif
         step,
+        phase,
 
         // We do not clutter the gradient values here
         // The index is given by n_vars + i

@@ -9,7 +9,7 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 ")
 endif("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
-project(trajectories LANGUAGES CXX)
+project(trajectories LANGUAGES CXX C)
 
 if(NOT WIN32)
     string(ASCII 27 Esc)
@@ -131,6 +131,25 @@ if (COMPRESS_OUTPUT)
     message("~~~ Make sure you build NetCDF with HDF5 v1.10.2 or above.${ColourReset}")
 endif()
 
+# Different parameterization for collaboration with B8
+if(B_EIGHT)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DB_EIGHT")
+    message("${BoldYellow}~~~ Using different CCN activation for ${ColourReset}")
+    message("${BoldYellow}~~~ collaboration with B8: ${ColourReset}")
+    message("${BoldYellow}~~~ Role of uncertainty in ice microphysical processes in warm conveyor belts ${ColourReset}")
+endif()
+
+if (TRUSTED_DATA)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRUSTED_DATA")
+    message("${BoldYellow}~~~ Trusting the dataset.${ColourReset}")
+    message("${BoldYellow}~~~ This way the program just stops simulations for every trajectory ${ColourReset}")
+    message("${BoldYellow}~~~ with more than 10 consecutive NaNs for every input column ${ColourReset}")
+    message("${BoldYellow}~~~ except longitude, latitude and time. ${ColourReset}")
+    message("${BoldYellow}~~~ Without this option, the program assumes the dataset is broken ${ColourReset}")
+    message("${BoldYellow}~~~ and terminates directly, giving information which ${ColourReset}")
+    message("${BoldYellow}~~~ trajectory and time index starts with consecutive NaNs. ${ColourReset}")
+endif()
+
 # Add tracing flags
 if (TRACE_QV)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_QV")
@@ -180,6 +199,14 @@ if (TRACE_WRITE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_WRITE")
     message("${BoldYellow}~~~ Tracing writing output${ColourReset}")
 endif()
+if (DEVELOP)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDEVELOP")
+    message("${BoldYellow}~~~ Printing output for development${ColourReset}")
+endif()
+if (TRACE_READER)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_READER")
+    message("${BoldYellow}~~~ Printing output for netcdf_reader_t${ColourReset}")
+endif()
 
 message(STATUS "Searching for necessary libraries")
 
@@ -188,7 +215,6 @@ include_directories (${AD_SIM_HOME})
 message("~~~ MPI")
 find_package(MPI)
 if( MPI_CXX_FOUND )
-    message("~~~ Found MPI.")
     include_directories(${MPI_CXX_INCLUDE_PATH})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MPI")
 else()
@@ -205,26 +231,63 @@ endif()
 message("~~~ BOOST")
 find_package(Boost 1.62 REQUIRED)
 
+message("~~~ zlib")
+message(STATUS "Make sure this is the same zlib library that is used by HDF5")
+find_package(ZLIB PATHS ${HDF5_DIR})
+message(STATUS "Found zlib include: ${ZLIB_INCLUDE_DIR}")
+include_directories (${ZLIB_INCLUDE_DIR})
+if( "${ZLIB_LIBRARIES}" STREQUAL "" )
+    # Hack if for some reason this is still empty
+    string(REPLACE "include" "lib" ZLIB_LIBRARIES ${ZLIB_INCLUDE_DIR})
+    set(ZLIB_LIBRARIES "${ZLIB_LIBRARIES}/libaec.a;${ZLIB_LIBRARIES}/libsz.a;${ZLIB_LIBRARIES}/libz.a")
+endif()
+
+message("~~~ Zip")
+find_library(Zip_LIBRARIES NAMES zip)
+if( "${Zip_LIBRARIES}" STREQUAL "Zip_LIBRARIES-NOTFOUND" )
+    message(STATUS "Zip not found. Make sure that HDF5 does not need Zip.")
+    set(Zip_LIBRARIES "")
+    set(AEC_LIBRARIES "")
+else()
+    message(STATUS "Found Zip: ${Zip_LIBRARIES}")
+    message("~~~ AEC")
+    find_library(AEC_LIBRARIES NAMES aec)
+    message(STATUS "Found AEC: ${AEC_LIBRARIES}")
+endif()
+
+message("~~~ CURL")
+find_package(CURL REQUIRED)
+
+message("~~~ PnetCDF")
+find_package(PnetCDF)
+include_directories (${PNETCDF_INCLUDE_DIR})
+
 message("~~~ NetCDF")
-set(NETCDF_CXX "Yes")
+set(NETCDF "Yes")
 find_package(NetCDF)
 if( NetCDF_FOUND )
     include_directories (${NETCDF_INCLUDE_DIR})
+    message(STATUS "Found NetCDF include: ${NETCDF_INCLUDE_DIR}")
 else()
-    if( NETCDF_INCLUDE_DIR )
-        message(STATUS "Defaulting to NetCDF Include directory = ${NETCDF_INCLUDE_DIR}")
-        include_directories (${NETCDF_INCLUDE_DIR})
-        set(NETCDF_LIBRARIES "netcdf -lnetcdf_c++4")
-    else()
-        message(FATAL_ERROR
+    message(FATAL_ERROR
 "
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CMake was not able to find your NetCDF installation (maybe it wasn't build using CMake).
 Please define NETCDF_INCLUDE_DIR pointing to your installation. Make sure
-that -lnetcdf and -lnetcdf_c++4 can be used by your compiler.
+that -lnetcdf can be used by your compiler.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ")
-    endif()
+endif()
+
+message("~~~ HDF5")
+find_package(HDF5 REQUIRED PATHS ${HDF5_DIR})
+include_directories (${HDF5_INCLUDE_DIR})
+message(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIR}")
+message(STATUS "HDF5 Version: ${HDF5_VERSION}")
+if( "${HDF5_LIBRARIES}" STREQUAL "" )
+    # Hack if for some reason this is still empty
+    string(REPLACE "include" "lib" HDF5_LIBRARIES ${HDF5_INCLUDE_DIR})
+    set(HDF5_LIBRARIES "${HDF5_LIBRARIES}/libhdf5_tools.a;${HDF5_LIBRARIES}/libhdf5_hl.a;${HDF5_LIBRARIES}/libhdf5.a")
 endif()
 
 message("~~~ CoDiPack")
@@ -244,6 +307,7 @@ endif()
 message("~~~ GSL")
 find_package(GSL REQUIRED)
 include_directories (${GSL_INCLUDE_DIR})
+# message(STATUS "~~~~~~~~~~~~~~~${GSL_LIBRARIES}")
 
 include_directories(${AD_SIM_HOME})
 

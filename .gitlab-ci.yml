@@ -1,25 +1,44 @@
-image: "python:3.7.6"
+image: "mahieronymus/ad_sensitivity:2.0"
 
 variables:
   GIT_SSL_NO_VERIFY: "true"
 
-before_script:
-  - python3 --version
-  - pip3 install black
-  - pip3 install cpplint
-
 stages:
  - Static Analysis Python
  - Static Analysis CPP
+ - build
+ - test
 
 black:
   stage: Static Analysis Python
   script:
     - black --check scripts/
   allow_failure: false
+  tags:
+    - style
 
 lint:
   stage: Static Analysis CPP
   script:
     - cpplint --linelength=120 --quiet --counting=toplevel --filter=-readability/fn_size,-legal/copyright,-runtime/references --recursive --exclude=src/scratch/*.cpp --exclude=build/* .
+  tags:
+    - style
   allow_failure: false
+
+build:
+  stage: build
+  artifacts:
+    untracked: true
+  script:
+    - cd exe_scripts && ./make_script_docker.sh
+  tags:
+    - make
+
+test:
+  stage: test
+  dependencies:
+    - build
+  script:
+    - cd exe_scripts && ./docker_test.sh
+  tags:
+    - test

@@ -17,8 +17,6 @@ struct input_parameters_t {
     // Numerics
     double t_end_prime; /*!< End simulation time in seconds. */
     double dt_prime; /*!< Timestep size in seconds for the simulation. */
-    double dt_traject_prime; /*!< Timestep size in seconds of the trajectory in the netCDF file. */
-    double dt_traject; /*!< Timestep size of the trajectory in the netCDF file. */
     int32_t start_time_idx; /*!< Timestep index to start (multiply by dt_traject_prime to get the seconds). */
 #ifdef MET3D
     double start_time; /*!< start time in seconds relativ to ascend */

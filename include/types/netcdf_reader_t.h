@@ -40,9 +40,12 @@ struct netcdf_reader_t {
      * @param step Current iteration step
      * @param checkpoint_flag If true: do not update model state
      * @param start_over_env If true: update environment/thermodynamics
+     *
+     * @returns SUCCESS or with #def TRUSTED_DATA INPUT_NAN_ERR, otherwise
+     *          throws an error.
      */
     template<class float_t>
-    void read_buffer(
+    int read_buffer(
         model_constants_t<float_t> &cc,
         const reference_quantities_t &ref_quant,
         std::vector<float_t> &y_single_old,
@@ -88,7 +91,8 @@ struct netcdf_reader_t {
         const bool &checkpoint_flag,
         model_constants_t<float_t> &cc,
         const int &simulation_mode,
-        const double current_time);
+        const double current_time,
+        const reference_quantities_t &ref_quant);
 
     template<class float_t>
     void read_initial_values(
@@ -115,22 +119,13 @@ struct netcdf_reader_t {
         model_constants_t<float_t> &cc,
         const bool &checkpoint_flag);
 
-    double get_lat(const uint32_t &t, const uint32_t &sub) const {
-        return buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]
-            + sub*(
-                buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+1]
-                - buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]);
-    }
-    double get_lon(const uint32_t &t, const uint32_t &sub) const {
-        return buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]
-            + sub*(
-                buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+1]
-                - buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]);
-        }
-#ifdef MET3D
+    double get_lat(const uint32_t &t, const uint32_t &sub) const;
+    double get_lon(const uint32_t &t, const uint32_t &sub) const;
+#if defined(MET3D) || defined(B_EIGHT)
     double get_relative_time(const uint32_t &t) const {
         return buffer[Par_idx::time_after_ascent][t%buffer[Par_idx::time_after_ascent].size()];
     }
+#if !defined(B_EIGHT)
     bool get_conv_400(const uint32_t &t) const {return (buffer[Par_idx::conv_400][
         t%buffer[Par_idx::conv_400].size()] > 0.5);}
     bool get_conv_600(const uint32_t &t) const {return (buffer[Par_idx::conv_600][
@@ -139,9 +134,10 @@ struct netcdf_reader_t {
         t%buffer[Par_idx::slan_400].size()] > 0.5);}
     bool get_slan_600(const uint32_t &t) const {return (buffer[Par_idx::slan_600][
         t%buffer[Par_idx::slan_600].size()] > 0.5);}
-
+#endif
 
 #endif
+    uint32_t get_traj_idx() const {return traj_idx;}
 
  private:
     std::vector<int> startp, countp;
@@ -176,11 +172,15 @@ struct netcdf_reader_t {
         qi_in,
         qs_in,
         qg_in,
-        // qh_in,  // there is no dataset yet with hail in it
+    #if defined(B_EIGHT)
+        qh_in,
+    #endif
         ni_in,
         ns_in,
         ng_in,
-        // nh_in,
+    #if defined(B_EIGHT)
+        nh_in,
+    #endif
     #endif
 #endif
         height,
@@ -199,7 +199,9 @@ struct netcdf_reader_t {
     enum Dim_idx {
         time_dim_idx,
         trajectory_dim_idx,
+#if !defined(B_EIGHT)
         ensemble_dim_idx,
+#endif
         n_dims
     };
     // Index for variable ids that are read during initialization
@@ -207,17 +209,26 @@ struct netcdf_reader_t {
         qv,
         qc,
         qr,
+#if defined(RK4ICE)
         qi,
         qs,
         qg,
+    #if defined(B_EIGHT)
+        qh,
+    #endif
         nc,
         nr,
         ni,
         ns,
         ng,
+    #if defined(B_EIGHT)
+        nh,
+    #endif
+#endif
         time,
         n_pars_once
     };
+
     std::array<std::vector<double>, Par_idx::n_pars > buffer;
 
     /**

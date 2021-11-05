@@ -20,6 +20,7 @@ class ProgressBar {
         unit = "Hz";
         out = nullptr;
         desc_width = description.length();
+        current_step = 0;
     }
     ProgressBar(
         const uint64_t end_step_,
@@ -35,6 +36,7 @@ class ProgressBar {
         // Description width with spaces, additional characters and some additional space
         desc_width = description.length() + unit.length()*2 + 16 + 40 + 14;
         t_first = std::chrono::system_clock::now();
+        current_step = 0;
     }
 
     void reset() {
@@ -42,7 +44,9 @@ class ProgressBar {
         desc_width = description.length() + unit.length()*2 + 16 + 40 + 14;
     }
     void finish() {
-        progress(end_step);
+        if (update_every == 0) return;
+        current_step = end_step-1;
+        progress();
         *out << "\n" << std::flush;
     }
     void set_steps(const uint64_t end_step_,
@@ -55,10 +59,20 @@ class ProgressBar {
         std::ostream& out_) {
         out = &out_;
     }
-    void progress(
-        const uint64_t t) {
-        if (t%update_every != 0 && t != end_step) return;
-        if (t == 0) return;
+    void set_current_step(const uint64_t current_step_) {
+        current_step = current_step_;
+    }
+    void progress() {
+        // While debugging, the bar is not useful.
+#if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR)
+#if !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
+        current_step++;
+        // std::cout << "update_every " << update_every
+        //     << "\ncurrent_step " << current_step
+        //     << "\nend_step " << end_step << "\n";
+        if (update_every == 0) return;
+        if (current_step%update_every != 0 && current_step != end_step) return;
+        if (current_step == 0) return;
         auto now = std::chrono::system_clock::now();
         double dt_total = ((std::chrono::duration<double>)(now - t_first)).count();
         // Get total time string
@@ -71,10 +85,10 @@ class ProgressBar {
         time = time + std::to_string(static_cast<int>(dt_total)%60) + "s ";
         int window_width = get_console_width();
         // Get average amount of steps per second
-        uint64_t dt_step = round(t/dt_total);
+        uint64_t dt_step = round(current_step/dt_total);
         std::stringstream right_side;
         right_side << std::fixed << std::setprecision(3) << description
-                   << ": " << t << "/"
+                   << ": " << current_step << "/"
                    << end_step_string << time << "(";
         if (dt_step > 1e6) {
             right_side << dt_step/1e6 << "MHz)";
@@ -87,7 +101,7 @@ class ProgressBar {
         if (right_string.length()+1 > desc_width) desc_width = right_string.length();
         // Get the progressbar
         int bar_width_max = window_width-desc_width-1;
-        double current_box = static_cast<double>(t)/static_cast<double>(end_step) * bar_width_max;
+        double current_box = static_cast<double>(current_step)/static_cast<double>(end_step) * bar_width_max;
         int n_full = current_box;
         std::string bar;
         for (int i=0; i < n_full; i++) bar += bars[8];
@@ -101,7 +115,7 @@ class ProgressBar {
         for (int i=0; i < bar_width_max-bar_width; i++) bar += bars[0];
         bar += right_pad;
         // Get estimated remaining time "Rem. xxmin xxs"
-        uint64_t rem_time = (end_step - t)/dt_step;
+        uint64_t rem_time = (end_step - current_step)/dt_step;
         std::string rem_string = " Rem. ";
         if (rem_time >= 3600)
             rem_string = rem_string + std::to_string(static_cast<int>(rem_time/3600)) + "h ";
@@ -109,6 +123,8 @@ class ProgressBar {
             rem_string = rem_string + std::to_string(static_cast<int>(rem_time%3600/60)) + "min ";
         rem_string = rem_string + std::to_string(static_cast<int>(rem_time%60)) + "s";
         *out << bar << right_string << rem_string << "    \r" << std::flush;
+#endif
+#endif
     }
 
  private:
@@ -122,6 +138,7 @@ class ProgressBar {
     std::string unit;
     uint64_t desc_width;
     std::ostream* out;
+    uint64_t current_step;
 
     int get_console_width() {
         struct winsize win;

@@ -601,28 +601,28 @@ void model_constants_t<float_t>::setup_model_constants(
     this->constants[static_cast<int>(Cons_idx::k_1_accr)] = k_1_accr;
     this->constants[static_cast<int>(Cons_idx::k_r)] = k_r;
 
-    // Numerics
-#ifdef MET3D
-    this->t_end_prime = input.t_end_prime;  // + input.start_time;;
-#else
-    this->t_end_prime = input.t_end_prime;
+#if defined(B_EIGHT)
+    this->constants[static_cast<int>(Cons_idx::p_ccn)] = p_ccn;
+    this->constants[static_cast<int>(Cons_idx::h_ccn_1)] = h_ccn_1;
+    this->constants[static_cast<int>(Cons_idx::h_ccn_2)] = h_ccn_2;
+    this->constants[static_cast<int>(Cons_idx::h_ccn_3)] = h_ccn_3;
+    this->constants[static_cast<int>(Cons_idx::g_ccn_1)] = g_ccn_1;
+    this->constants[static_cast<int>(Cons_idx::g_ccn_2)] = g_ccn_2;
+    this->constants[static_cast<int>(Cons_idx::g_ccn_3)] = g_ccn_3;
+    this->constants[static_cast<int>(Cons_idx::i_ccn_1)] = i_ccn_1;
+    this->constants[static_cast<int>(Cons_idx::i_ccn_2)] = i_ccn_2;
+    this->constants[static_cast<int>(Cons_idx::hande_ccn_fac)] = hande_ccn_fac;
 #endif
-
+    // Numerics
+    this->t_end_prime = input.t_end_prime;
     this->t_end = this->t_end_prime/ref_quant.tref;
     // Time of the substeps
     this->dt = input.dt_prime/ref_quant.tref;
     this->dt_prime = input.dt_prime;
-    this->dt_traject_prime = 20.0;
-    this->dt_traject = this->dt_traject_prime/ref_quant.tref;
-    this->num_steps = ceil(this->t_end_prime/this->dt_traject_prime);
-    // The trajectories from input files are calculated with 20 s timesteps.
-    this->num_sub_steps = (floor(this->dt_traject_prime/this->dt) < 1) ? 1 : floor(this->dt_traject_prime/this->dt);
-
     // Evaluate the general performance constants
     this->dt_half = this->dt*0.5;
     this->dt_third = this->dt/3.0;
     this->dt_sixth = this->dt/6.0;
-
     // Accomodation coefficient
     this->alpha_d = 1.0;
 
@@ -664,9 +664,6 @@ void model_constants_t<float_t>::setup_model_constants(
         this->constants[static_cast<int>(Cons_idx::na_orga)] = na_orga_3;
     }
 
-    // Inflow from above
-    // this->B_prime = 0.0;  //1.0e-7;
-
     // // Exponents of the cloud model
     // // COSMO
     this->constants[static_cast<int>(Cons_idx::gamma)] = 1.0;
@@ -691,38 +688,33 @@ void model_constants_t<float_t>::setup_model_constants(
     // ==================================================
     // Cosmo5 although nue1nue1 would be okay too, I guess
     //// Cloud
-#ifdef SB_SHAPE
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::nu)] = 1;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::mu)] = 1;
-#else
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::nu)] = 0;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0;
-#endif
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::max_x)] = 2.6e-10;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 4.2e-15;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 1.24e-1;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.333333;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 3.75e5;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.666667;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 1.0;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.0;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = 1.0e-6;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = 1.0e-5;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::nu)] = cloud_nu;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::mu)] = cloud_mu;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::max_x)] = cloud_max_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = cloud_min_x;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::a_geo)] = cloud_a_geo;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::b_geo)] = cloud_b_geo;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::a_vel)] = cloud_a_vel;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::b_vel)] = cloud_b_vel;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::a_ven)] = cloud_a_ven;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::b_ven)] = cloud_b_ven;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::cap)] = cloud_cap;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = cloud_vsedi_max;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = cloud_vsedi_min;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = cloud_q_crit_c;
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = cloud_d_crit_c;
     this->cloud.constants[static_cast<int>(Particle_cons_idx::c_s)] = 1.0
         / get_at(this->cloud.constants, Particle_cons_idx::cap);
     this->cloud.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->cloud, 1);
@@ -735,45 +727,40 @@ void model_constants_t<float_t>::setup_model_constants(
     setup_bulk_sedi(this->cloud);
 
     //// Rain
-#ifdef SB_SHAPE
-    this->rain.constants[static_cast<int>(Particle_cons_idx::nu)] = -2.0/3.0;  // SB: -2/3 COSMO: 0.0
-#else
-     this->rain.constants[static_cast<int>(Particle_cons_idx::nu)] = 0;  // SB: -2/3 COSMO: 0.0
-#endif
-    this->rain.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0;  // SB: 1/3 COMSO: 1.0/3.0
-    this->rain.constants[static_cast<int>(Particle_cons_idx::max_x)] = 3.0e-6;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 2.6e-10;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 1.24e-1;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.333333;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 114.0137;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.234370;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::nu)] = rain_nu;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::mu)] = rain_mu;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::max_x)] = rain_max_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = rain_min_x;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::a_geo)] = rain_a_geo;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::b_geo)] = rain_b_geo;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::a_vel)] = rain_a_vel;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::b_vel)] = rain_b_vel;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::a_ven)] = rain_a_ven;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::b_ven)] = rain_b_ven;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::cap)] = rain_cap;
 
-    // From rainSBBcoeffs
-    this->rain.constants[static_cast<int>(Particle_cons_idx::alpha)] = 9.292;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::beta)] = 9.623;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::gamma)] = 6.222e2;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu0)] = 6.0;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu1)] = 3.0e1;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu2)] = 1.0e3;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu3)] = 1.1e-3;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu4)] = 1.0;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu5)] = 2.0;
-    this->constants[static_cast<int>(Cons_idx::rain_gfak)] = 1.0;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::alpha)] = rain_alpha;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::beta)] = rain_beta;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::gamma)] = rain_gamma;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu0)] = rain_cmu0;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu1)] = rain_cmu1;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu2)] = rain_cmu2;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu3)] = rain_cmu3;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu4)] = rain_cmu4;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::cmu5)] = rain_cmu5;
+    this->constants[static_cast<int>(Cons_idx::rain_gfak)] = rain_rain_gfak;
 
     this->rain.constants[static_cast<int>(Particle_cons_idx::nm1)] =
         (get_at(this->rain.constants, Particle_cons_idx::nu)+1.0)/get_at(this->rain.constants, Particle_cons_idx::mu);
@@ -781,8 +768,8 @@ void model_constants_t<float_t>::setup_model_constants(
         (get_at(this->rain.constants, Particle_cons_idx::nu)+2.0)/get_at(this->rain.constants, Particle_cons_idx::mu);
     this->rain.constants[static_cast<int>(Particle_cons_idx::nm3)] =
         (get_at(this->rain.constants, Particle_cons_idx::nu)+3.0)/get_at(this->rain.constants, Particle_cons_idx::mu);
-    this->rain.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 20.0;
-    this->rain.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.1;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = rain_vsedi_max;
+    this->rain.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = rain_vsedi_min;
     this->table_r1.init_gamma_table(n_lookup, n_lookup_hr_dummy,
         get_at(this->rain.constants, Particle_cons_idx::nm1).getValue());
     this->table_r2.init_gamma_table(n_lookup, n_lookup_hr_dummy,
@@ -801,34 +788,34 @@ void model_constants_t<float_t>::setup_model_constants(
     setup_bulk_sedi(this->rain);
 
     //// Graupel
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::nu)] = 1.0;  // SB
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0;  // SB
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::max_x)] = 5.0e-4;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 1.0e-9;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 1.42e-1;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.314;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 86.89371;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.268325;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 30.0;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.1;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = 100.0e-6;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = 1.0e-6;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::s_vel)] = 0.0;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::nu)] = graupel_nu;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::mu)] = graupel_mu;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::max_x)] = graupel_max_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = graupel_min_x;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::a_geo)] = graupel_a_geo;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::b_geo)] = graupel_b_geo;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::a_vel)] = graupel_a_vel;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::b_vel)] = graupel_b_vel;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::a_ven)] = graupel_a_ven;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::b_ven)] = graupel_b_ven;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::cap)] = graupel_cap;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = graupel_vsedi_max;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = graupel_vsedi_min;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = graupel_d_crit_c;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = graupel_q_crit_c;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::s_vel)] = graupel_s_vel;
 
     this->graupel.constants[static_cast<int>(Particle_cons_idx::nm1)] =
         (get_at(this->graupel.constants, Particle_cons_idx::nu)+1.0)
@@ -849,7 +836,7 @@ void model_constants_t<float_t>::setup_model_constants(
     this->graupel.constants[static_cast<int>(Particle_cons_idx::g2)] = this->table_g2.igf[this->table_g2.n_bins-1];
     this->graupel.constants[static_cast<int>(Particle_cons_idx::c_s)] =
         1.0 / get_at(this->graupel.constants, Particle_cons_idx::cap);
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = 1.0;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = graupel_ecoll_c;
     this->graupel.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->graupel, 1);
     this->graupel.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->graupel, 1)
         * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
@@ -858,38 +845,37 @@ void model_constants_t<float_t>::setup_model_constants(
     setup_bulk_sedi(this->graupel);
 
     //// Hail
-    this->hail.constants[static_cast<int>(Particle_cons_idx::nu)] = 1.0;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::max_x)] = 5.0e-4;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 2.6e-9;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 0.1366;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 1.0/3.0;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 39.3;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.166667;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 30.0;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.1;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::sc_coll_n)] = 1.0;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = 100.0e-6;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = 1.0e-6;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::s_vel)] = 0.0;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::nu)] = hail_nu;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::mu)] = hail_mu;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::max_x)] = hail_max_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = hail_min_x;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::a_geo)] = hail_a_geo;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::b_geo)] = hail_b_geo;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::a_vel)] = hail_a_vel;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::b_vel)] = hail_b_vel;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::a_ven)] = hail_a_ven;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::b_ven)] = hail_b_ven;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::cap)] = hail_cap;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = hail_vsedi_max;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = hail_vsedi_min;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = hail_d_crit_c;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = hail_q_crit_c;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::s_vel)] = hail_s_vel;
     this->hail.constants[static_cast<int>(Particle_cons_idx::c_s)] =
         1.0 / get_at(this->hail.constants, Particle_cons_idx::cap);
-    this->hail.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = 1.0;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = hail_ecoll_c;
     this->hail.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->hail, 1);
     this->hail.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->hail, 1)
         * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
@@ -898,42 +884,37 @@ void model_constants_t<float_t>::setup_model_constants(
     setup_bulk_sedi(this->hail);
 
     //// Ice
-#ifdef SB_SHAPE
-    this->ice.constants[static_cast<int>(Particle_cons_idx::nu)] = 1.0;
-#else
-    this->ice.constants[static_cast<int>(Particle_cons_idx::nu)] = 0.0;  // COSMO 0.0, SB: 1.0
-#endif
-    this->ice.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::max_x)] = 1.0e-5;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 1.0e-12;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 0.835;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.39;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 2.77e1;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.21579;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 3.0;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.0;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::sc_coll_n)] = 0.8;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = 150.0e-6;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = 1.0e-5;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::s_vel)] = 0.05;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::nu)] = ice_nu;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::mu)] = ice_mu;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::max_x)] = ice_max_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = ice_min_x;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::a_geo)] = ice_a_geo;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::b_geo)] = ice_b_geo;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::a_vel)] = ice_a_vel;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::b_vel)] = ice_b_vel;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::a_ven)] = ice_a_ven;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::b_ven)] = ice_b_ven;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::cap)] = ice_cap;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = ice_vsedi_max;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = ice_vsedi_min;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = ice_d_crit_c;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = ice_q_crit_c;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::s_vel)] = ice_s_vel;
     this->ice.constants[static_cast<int>(Particle_cons_idx::c_s)] =
         1.0 / get_at(this->ice.constants, Particle_cons_idx::cap);
-    this->ice.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = 0.80;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = ice_ecoll_c;
     this->ice.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->ice, 1);
     this->ice.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->ice, 1)
         * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
@@ -942,43 +923,37 @@ void model_constants_t<float_t>::setup_model_constants(
     setup_bulk_sedi(this->ice);
 
     //// Snow
-#ifdef SB_SHAPE
-    this->snow.constants[static_cast<int>(Particle_cons_idx::nu)] = 1.0;  // COSMO: 0.0, SB 1.0
-    this->snow.constants[static_cast<int>(Particle_cons_idx::mu)] = 1.0/3.0;  // COSMO 0.5, SB: 1.0/3.0
-#else
-    this->snow.constants[static_cast<int>(Particle_cons_idx::nu)] = 0.0;  // COSMO: 0.0, SB 1.0
-    this->snow.constants[static_cast<int>(Particle_cons_idx::mu)] = 0.5;  // COSMO 0.5, SB: 1.0/3.0
-#endif
-    this->snow.constants[static_cast<int>(Particle_cons_idx::max_x)] = 2.0e-5;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = 1.0e-10;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::a_geo)] = 2.4;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::b_geo)] = 0.455;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::a_vel)] = 8.8;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::b_vel)] = 0.15;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::a_ven)] = 0.78;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::b_ven)] = 0.308;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::cap)] = 2.0;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = 3.0;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = 0.1;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::sc_coll_n)] = 0.8;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = 150.0e-6;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = 1.0e-5;
-    this->snow.constants[static_cast<int>(Particle_cons_idx::s_vel)] = 0.25;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::nu)] = snow_nu;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::mu)] = snow_mu;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::max_x)] = snow_max_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_act)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_homo)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_nuc_hetero)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_melt)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_evap)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_freezing)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_depo)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_collision)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_collection)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_conversion)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_sedimentation)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::min_x_riming)] = snow_min_x;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::a_geo)] = snow_a_geo;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::b_geo)] = snow_b_geo;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::a_vel)] = snow_a_vel;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::b_vel)] = snow_b_vel;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::a_ven)] = snow_a_ven;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::b_ven)] = snow_b_ven;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::cap)] = snow_cap;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = snow_vsedi_max;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = snow_vsedi_min;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = snow_d_crit_c;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = snow_q_crit_c;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::s_vel)] = snow_s_vel;
     this->snow.constants[static_cast<int>(Particle_cons_idx::c_s)] =
         1.0 / get_at(this->snow.constants, Particle_cons_idx::cap);
-    this->snow.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = 0.80;
+    this->snow.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = snow_ecoll_c;
     this->snow.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->snow, 1);
     this->snow.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->snow, 1)
         * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
@@ -1066,6 +1041,21 @@ void model_constants_t<float_t>::setup_model_constants(
     }
 }
 
+
+template<class float_t>
+void model_constants_t<float_t>::set_dt(
+    const double dt_prime,
+    const reference_quantities_t &ref_quant) {
+    this->dt_traject_prime = dt_prime;
+    this->dt_traject = this->dt_traject_prime/ref_quant.tref;
+    this->num_steps = ceil(this->t_end_prime/this->dt_traject_prime);
+    // The trajectories from input files are calculated with dt_traject_prime s timesteps.
+    this->num_sub_steps = (floor(this->dt_traject_prime/this->dt) < 1) ? 1 : floor(this->dt_traject_prime/this->dt);
+    // std::cout << "set_dt with dt_prime " << dt_prime << "\n"
+    //     << "dt_traject " << this->dt_traject << "\n"
+    //     << "t_end_prime " << this->t_end_prime << "\n"
+    //     << "dt_traject_prime " <<  this->dt_traject_prime << "\n";
+    }
 
 template<class float_t>
 void model_constants_t<float_t>::print() {

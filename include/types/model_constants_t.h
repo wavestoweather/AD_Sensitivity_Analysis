@@ -321,6 +321,11 @@ struct model_constants_t {
         const reference_quantities_t &ref_quant);
 
     /**
+     * Set time step from input netcdf file.
+     */
+    void set_dt(const double dt_prime, const reference_quantities_t &ref_quant);
+
+    /**
      * Print all parameters that are being tracked with algorithmic
      * differentiation.
      */

@@ -3,7 +3,7 @@ cd ..
 AD_SIM_HOME=$(pwd)
 
 # Set to the number of threads or CPUs in case you want to run ensemble simulations
-NTASKS=1
+NTASKS=4
 
 # The simulation mode determines how multiple processes are used
 # ensembles at different time steps and sensitvity analysis 0
@@ -38,7 +38,10 @@ for FILENAME in "conv_400_0_traj_t000000_p001_met3d" "conv_400_10_traj_t000600_p
 do
 
     INPUT_FILENAME="${AD_SIM_HOME}data/vladiana_input/${FILENAME}.nc_wcb"
-    TARGET_TIME_AFTER_START=25000
+    INPUT_FILENAME="/data/project/wcb/netcdf/vladiana_met_updated_comparison/${FILENAME}.nc_wcb"
+    TARGET_TIME_AFTER_START=$(ncdump -h $INPUT_FILENAME | grep -m 1 "time = " | sed 's/[^0-9]//g' )
+    TARGET_TIME_AFTER_START=$(($TARGET_TIME_AFTER_START * 20 - 20))
+    # TARGET_TIME_AFTER_START=25000
 
     echo "###################################"
     echo "Running for ${INPUT_FILENAME} until ${TARGET_TIME_AFTER_START}"
@@ -64,4 +67,5 @@ do
     -r "0" \
     -l ${INPUT_FILENAME} \
     -s ${TRACK_FILE}
+    break
 done

@@ -62,18 +62,19 @@ C++ Prerequisites
 - [GCC](https://gcc.gnu.org/) (Tested with v6.3.0)
 - [OpenMPI](https://www.open-mpi.org/) (Tested with v2.0.2)
 - [GSL](https://www.gnu.org/software/gsl/) (Tested with v2.3)
-- [NetCDF C++](https://github.com/Unidata/netcdf-cxx4/releases) (Tested with v4.7.3)
-- [HDF5](https://www.hdfgroup.org/solutions/hdf5/) (Tested with v1.8.22; problems may occur with v1.12 or above)
+- [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) (Tested with v4.8.1)
+- [HDF5](https://www.hdfgroup.org/solutions/hdf5/) (Tested with v1.12.1; problems may occur with versions below v1.12)
 - [Boost](https://www.boost.org/) (Tested with v1.6.2)
 - [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/) (Tested with v1.8.0)
 - [CMake](https://cmake.org/) (v3.7.2 or above; tested with v3.15.0)
+- [(optional) PnetCDF](https://parallel-netcdf.github.io/) (tested with v1.12.2; only if you want to use classic NetCDF-files)
 
 
 Compiling code
 ---------------
 In order to compile the code, create a folder `build` and in this folder type
 ```
-cmake ..-DCMAKE_BUILD_TYPE=release
+cmake .. -DCMAKE_BUILD_TYPE=release
 make -j4
 ```
 You may change the number for `make` to the number of cores available.
@@ -82,7 +83,14 @@ In case the CMake does not find a specific library, you can specify them like th
 cmake .. -DNETCDF_INCLUDE_DIR=<path/to/netcdf/include/> -DCODIPACK_INCLUDEDIR=<path/to/codipack/include/> -DCMAKE_BUILD_TYPE=release
 ```
 You may change the target for timing the microphysics with `-DTARGET=timing` if you wish to check the penalty cost of executing AD at every time step for varying amounts of model state variables and model parameters.
-
+If you trust your dataset to always have latitude, longitude and time values, you can use
+```
+cmake .. -DCMAKE_BUILD_TYPE=release -DTRUSTED_DATA:BOOL=ON
+```
+This way the program just stops simulations for every trajectory with more than 10
+consecutive NaNs for every other input column. Without this option, the program
+assumes the dataset is broken and terminates directly, giving information which
+trajectory and time index starts with consecutive NaNs.
 
 Running a simulation
 ---------------------

@@ -59,7 +59,11 @@ typedef bool(*track_func)(const int&, const bool&);
 
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
-#define num_par (56*6+124+18)  /*!< Number of gradients. 56 for each particle + model constants + initial conditions */
+#if defined(B_EIGHT)
+#define num_par (56*6+124+18)
+#else
+#define num_par (56*6+134+18)  /*!< Number of gradients. 56 for each particle + model constants + initial conditions */
+#endif
 
 #endif
 
@@ -74,9 +78,18 @@ typedef bool(*track_func)(const int&, const bool&);
 #define Ns_in_idx 5         /*!< Snow input index for another vector */
 #define Nr_in_idx 6         /*!< Rain input index for another vector */
 #define Ng_in_idx 7         /*!< Graupel input index for another vector */
-#if defined MET3D && defined TURBULENCE
+#if defined B_EIGHT && !defined(TURBULENCE)
+#define qh_in_idx 8         /*!< Hail input index for another vector */
+#define Nh_in_idx 9         /*!< Hail input index for another vector */
+#define num_inflows 10       /*!< Number of parameters for inflowing stuff */
+#elif defined(MET3D) && defined(TURBULENCE) && !defined(B_EIGHT)
 #define qv_in_idx 8         /*!< Vapor input index for another vector */
 #define num_inflows 9       /*!< Number of parameters for inflowing stuff */
+#elif defined(MET3D) && defined(TURBULENCE) && defined(B_EIGHT)
+#define qh_in_idx 8         /*!< Hail input index for another vector */
+#define Nh_in_idx 9         /*!< Hail input index for another vector */
+#define qv_in_idx 10         /*!< Vapor input index for another vector */
+#define num_inflows 11       /*!< Number of parameters for inflowing stuff */
 #else
 #define num_inflows 8       /*!< Number of parameters for inflowing stuff */
 #endif
@@ -140,7 +153,8 @@ const double trace_end = 3500;
 /**
  * Used for header files of output parameters.
  */
-const std::vector<std::string> output_par_idx = {"p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr"};
+const std::vector<std::string> output_par_idx = {
+    "p", "T", "w", "S", "qc", "qr", "qv", "Nc", "Nr"};
 
 /**
  * Used for header files of gradients.
@@ -202,6 +216,11 @@ const std::vector<std::string> output_grad_idx = {
     "db_ccn_1", "db_ccn_2", "db_ccn_3", "db_ccn_4",
     "dc_ccn_1", "dc_ccn_2", "dc_ccn_3", "dc_ccn_4",
     "dd_ccn_1", "dd_ccn_2", "dd_ccn_3", "dd_ccn_4",
+#if defined(B_EIGHT)
+    "dp_ccn", "dh_ccn_1", "dh_ccn_2", "dh_ccn_3",
+    "dg_ccn_1", "dg_ccn_2", "dg_ccn_3",
+    "di_ccn_1", "di_ccn_2", "dhande_ccn_fac",
+#endif
     // Rain
     "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_min_x_act",
     "drain_min_x_nuc_homo", "drain_min_x_nuc_hetero", "drain_min_x_melt",
@@ -493,6 +512,14 @@ enum class Cons_idx: uint32_t{
     c_ccn_1, c_ccn_2, c_ccn_3, c_ccn_4,
     d_ccn_1, d_ccn_2, d_ccn_3, d_ccn_4,
 #endif
+#if defined(B_EIGHT)
+    p_ccn,
+    h_ccn_1, h_ccn_2, h_ccn_3,
+    g_ccn_1, g_ccn_2, g_ccn_3,
+    i_ccn_1, i_ccn_2,
+    hande_ccn_fac,
+#endif
+    D_br_threshold, k_br, D_br, c_br,
     n_items
 };
 
@@ -550,8 +577,17 @@ std::unordered_map<std::string, Cons_idx> const table_param = {
     {"c_ccn_1", Cons_idx::c_ccn_1}, {"c_ccn_2", Cons_idx::c_ccn_2},
     {"c_ccn_3", Cons_idx::c_ccn_3}, {"c_ccn_4", Cons_idx::c_ccn_4},
     {"d_ccn_1", Cons_idx::d_ccn_1}, {"d_ccn_2", Cons_idx::d_ccn_2},
-    {"d_ccn_3", Cons_idx::d_ccn_3}, {"d_ccn_4", Cons_idx::d_ccn_4}
+    {"d_ccn_3", Cons_idx::d_ccn_3}, {"d_ccn_4", Cons_idx::d_ccn_4},
 #endif
+#if defined(B_EIGHT)
+    {"p_ccn", Cons_idx::p_ccn}, {"h_ccn_1", Cons_idx::h_ccn_1},
+    {"h_ccn_2", Cons_idx::h_ccn_2}, {"h_ccn_3", Cons_idx::h_ccn_3},
+    {"g_ccn_1", Cons_idx::g_ccn_1}, {"g_ccn_2", Cons_idx::g_ccn_2},
+    {"g_ccn_3", Cons_idx::g_ccn_3}, {"i_ccn_1", Cons_idx::i_ccn_1},
+    {"i_ccn_2", Cons_idx::i_ccn_2}, {"hande_ccn_fac", Cons_idx::hande_ccn_fac},
+#endif
+    {"D_br_threshold", Cons_idx::D_br_threshold}, {"k_br", Cons_idx::k_br},
+    {"D_br", Cons_idx::D_br}, {"c_br", Cons_idx::c_br}
 };
 
 enum class Particle_cons_idx: uint32_t{
@@ -778,6 +814,686 @@ extern double sediment_n;
 extern double sediment_q_total;
 extern double sediment_n_total;
 
+/////// Various parameters for hydrometeors
+#ifdef SB_SHAPE
+/**
+ * Shape parameter of the generalized \f$\Gamma$\f-distribution.
+ */
+const double cloud_nu = 1;
+
+/**
+ * Shape parameter of the generalized \f$\Gamma$\f-distribution.
+ */
+const double cloud_mu = 1;
+#else
+/**
+ * Shape parameter of the generalized \f$\Gamma$\f-distribution.
+ */
+const double cloud_nu = 0;
+
+/**
+ * Shape parameter of the generalized \f$\Gamma$\f-distribution.
+ */
+const double cloud_mu = 1.0/3.0;
+#endif
+
+/**
+ * Maximum size of cloud droplet.
+ */
+const double cloud_max_x = 2.6e-10;
+
+/**
+ * Minimum size of cloud droplet.
+ */
+const double cloud_min_x = 4.2e-15;
+
+/**
+ *
+ */
+const double cloud_a_geo = 1.24e-1;
+
+/**
+ *
+ */
+const double cloud_b_geo = 1.0/3.0;
+
+/**
+ *
+ */
+const double cloud_a_vel = 3.75e5;
+
+/**
+ *
+ */
+const double cloud_b_vel = 2.0/3.0;
+
+/**
+ *
+ */
+const double cloud_a_ven = 0.78;
+
+/**
+ *
+ */
+const double cloud_b_ven = 0.308;
+
+/**
+ *
+ */
+const double cloud_cap = 2;
+
+/**
+ *
+ */
+const double cloud_vsedi_max = 1;
+
+/**
+ *
+ */
+const double cloud_vsedi_min = 0;
+
+/**
+ *
+ */
+const double cloud_q_crit_c = 1.0e-6;
+
+/**
+ *
+ */
+const double cloud_d_crit_c = 1.0e-5;
+
+#ifdef SB_SHAPE
+/**
+ *
+ */
+const double rain_nu = -2.0/3.0;
+#else
+/**
+ *
+ */
+const double rain_nu = 0;
+
+
+#endif
+/**
+ *
+ */
+const double rain_mu = 1.0/3.0;
+
+/**
+ *
+ */
+const double rain_max_x = 3.0e-6;
+
+/**
+ *
+ */
+const double rain_min_x = 2.6e-10;
+
+/**
+ *
+ */
+const double rain_a_geo = 1.24e-1;
+
+/**
+ *
+ */
+const double rain_b_geo = 1.0/3.0;
+
+/**
+ *
+ */
+const double rain_a_vel = 114.0137;
+
+/**
+ *
+ */
+const double rain_b_vel = 0.23437;
+
+/**
+ *
+ */
+const double rain_a_ven = 0.78;
+
+/**
+ *
+ */
+const double rain_b_ven = 0.308;
+
+/**
+ *
+ */
+const double rain_cap = 2;
+
+/**
+ *
+ */
+const double rain_vsedi_max = 20;
+
+/**
+ *
+ */
+const double rain_vsedi_min = 0.1;
+
+/**
+ *
+ */
+const double rain_alpha = 9.292;
+
+/**
+ *
+ */
+const double rain_beta = 9.623;
+
+/**
+ *
+ */
+const double rain_gamma = 6.222e2;
+
+/**
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * 0
+ * 6 (default)
+ * 11 for increased evaporation
+ * 19 (Milbrandt & Yau, 2005)
+ */
+const double rain_cmu0 = 6;
+
+/**
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * 0
+ * 30 (default)
+ * 30 for increased evaporation
+ * 19 (Milbrandt & Yau, 2005)
+ */
+const double rain_cmu1 = 30;
+
+/**
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * 1
+ * 1000 (default)
+ * 1000 for increased evaporation
+ * 600 (Milbrandt & Yau, 2005)
+ */
+const double rain_cmu2 = 1000;
+
+/**
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * 1
+ * 1.1e-3 (default)
+ * 1.1e-3 for increased evaporation
+ * 1.8e-3 (Milbrandt & Yau, 2005)
+ */
+const double rain_cmu3 = 1.1e-3;
+
+/**
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * (nu+1)/b_geo - 1
+ * 1 (default)
+ * 4 for increased evaporation
+ * 17 (Milbrandt & Yau, 2005)
+ */
+const double rain_cmu4 = 1;
+
+/**
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * 1
+ * 2 (default)
+ * 2 for increased evaporation
+ * 1 (Milbrandt & Yau, 2005)
+ */
+const double rain_cmu5 = 2;
+
+/**
+ * Depends on mue-D-relation of raindrops.
+ * Possible values are
+ * -1
+ * 1 (default)
+ * 0.5 for increased evaporation
+ * -1 (Milbrandt & Yau, 2005)
+ */
+const double rain_rain_gfak = 1;
+
+/**
+ *
+ */
+const double graupel_nu = 1;
+
+/**
+ *
+ */
+const double graupel_mu = 1.0/3.0;
+
+/**
+ *
+ */
+const double graupel_max_x = 5.3e-4;
+
+/**
+ *
+ */
+const double graupel_min_x = 4.19e-9;
+
+/**
+ *
+ */
+const double graupel_a_geo = 1.42e-1;
+
+/**
+ *
+ */
+const double graupel_b_geo = 0.314;
+
+/**
+ *
+ */
+const double graupel_a_vel = 86.89371;
+
+/**
+ *
+ */
+const double graupel_b_vel = 0.268325;
+
+/**
+ *
+ */
+const double graupel_a_ven = 0.78;
+
+/**
+ *
+ */
+const double graupel_b_ven = 0.308;
+
+/**
+ *
+ */
+const double graupel_cap = 2;
+
+/**
+ *
+ */
+const double graupel_vsedi_max = 30;
+
+/**
+ *
+ */
+const double graupel_vsedi_min = 0.1;
+
+/**
+ *
+ */
+const double graupel_q_crit_c = 1.0e-6;
+
+/**
+ *
+ */
+const double graupel_d_crit_c = 100.0e-6;
+
+/**
+ *
+ */
+const double graupel_s_vel = 0;
+
+/**
+ *
+ */
+const double graupel_ecoll_c = 1;
+
+/**
+ *
+ */
+const double hail_nu = 1;
+
+/**
+ *
+ */
+const double hail_mu = 1.0/3.0;
+
+/**
+ *
+ */
+const double hail_max_x = 5.4e-4;
+
+/**
+ *
+ */
+const double hail_min_x = 2.6e-9;
+
+/**
+ *
+ */
+const double hail_a_geo = 0.1366;
+
+/**
+ *
+ */
+const double hail_b_geo = 1.0/3.0;
+
+/**
+ *
+ */
+const double hail_a_vel = 39.3;
+
+/**
+ *
+ */
+const double hail_b_vel = 1.0/6.0;
+
+/**
+ *
+ */
+const double hail_a_ven = 0.78;
+
+/**
+ *
+ */
+const double hail_b_ven = 0.308;
+
+/**
+ *
+ */
+const double hail_cap = 2;
+
+/**
+ *
+ */
+const double hail_vsedi_max = 30;
+
+/**
+ *
+ */
+const double hail_vsedi_min = 0.1;
+
+/**
+ *
+ */
+const double hail_q_crit_c = 1.0e-6;
+
+/**
+ *
+ */
+const double hail_d_crit_c = 100.0e-6;
+
+/**
+ *
+ */
+const double hail_s_vel = 0;
+
+/**
+ *
+ */
+const double hail_ecoll_c = 1;
+
+#ifdef SB_SHAPE
+/**
+ *
+ */
+const double ice_nu = 1;
+#else
+/**
+ *
+ */
+const double ice_nu = 0;
+#endif
+/**
+ *
+ */
+const double ice_mu = 1.0/3.0;
+
+/**
+ *
+ */
+const double ice_max_x = 1.0e-5;
+
+/**
+ *
+ */
+const double ice_min_x = 1.0e-12;
+
+/**
+ *
+ */
+const double ice_a_geo = 0.835;
+
+/**
+ *
+ */
+const double ice_b_geo = 0.39;
+
+/**
+ *
+ */
+const double ice_a_vel = 27.7;
+
+/**
+ *
+ */
+const double ice_b_vel = 0.21579;
+
+/**
+ *
+ */
+const double ice_a_ven = 0.78;
+
+/**
+ *
+ */
+const double ice_b_ven = 0.308;
+
+/**
+ *
+ */
+const double ice_cap = 2;
+
+/**
+ *
+ */
+const double ice_vsedi_max = 3;
+
+/**
+ *
+ */
+const double ice_vsedi_min = 0;
+
+/**
+ *
+ */
+const double ice_q_crit_c = 1.0e-5;
+
+/**
+ *
+ */
+const double ice_d_crit_c = 150.0e-6;
+
+/**
+ *
+ */
+const double ice_s_vel = 0.05;
+
+/**
+ *
+ */
+const double ice_ecoll_c = 0.8;
+
+#ifdef SB_SHAPE
+/**
+ *
+ */
+const double snow_nu = 1;
+
+/**
+ *
+ */
+const double snow_mu = 1.0/3.0;
+#else
+/**
+ *
+ */
+const double snow_nu = 0;
+
+/**
+ *
+ */
+const double snow_mu = 0.5;
+#endif
+
+/**
+ *
+ */
+const double snow_max_x = 2.0e-5;
+
+/**
+ *
+ */
+const double snow_min_x = 1.0e-10;
+
+/**
+ *
+ */
+const double snow_a_geo = 2.4;
+
+/**
+ *
+ */
+const double snow_b_geo = 0.455;
+
+/**
+ *
+ */
+const double snow_a_vel = 8.8;
+
+/**
+ *
+ */
+const double snow_b_vel = 0.15;
+
+/**
+ *
+ */
+const double snow_a_ven = 0.78;
+
+/**
+ *
+ */
+const double snow_b_ven = 0.308;
+
+/**
+ *
+ */
+const double snow_cap = 2;
+
+/**
+ *
+ */
+const double snow_vsedi_max = 3;
+
+/**
+ *
+ */
+const double snow_vsedi_min = 0.1;
+
+/**
+ *
+ */
+const double snow_q_crit_c = 1.0e-5;
+
+/**
+ *
+ */
+const double snow_d_crit_c = 150.0e-6;
+
+/**
+ *
+ */
+const double snow_s_vel = 0.25;
+
+/**
+ *
+ */
+const double snow_ecoll_c = 0.8;
+/////// More parameters
+
+/**
+ * Factor for raindrop breakup.
+ */
+const double k_br = 1000;
+
+/**
+ * Threshold at which raindrops break up during self collection.
+ */
+const double D_br_threshold = 0.3e-3;
+
+/**
+ * Factor for raindrop breakup.
+ */
+const double D_br = 1.1e-3;
+
+/**
+ * Factor for raindrop breakup.
+ */
+const double c_br = 1;
+
+/**
+ * Threshold used during CCN activation from A. Miltenberger.
+ * Determines how the number of nuclei is calculated.
+ *
+ */
+const double p_ccn = 80000;
+
+/**
+ * Coefficient used during CCN activation from A. Miltenberger.
+ */
+const double h_ccn_1 = 250;
+
+/**
+ * Coefficient used during CCN activation from A. Miltenberger.
+ */
+const double h_ccn_2 = 7;
+
+/**
+ * Used during CCN activation from A. Miltenberger.
+ * The number of nuclei that can be activated.
+ */
+const double h_ccn_3 = 257;
+
+/**
+ * Exponent used during CCN activation from A. Miltenberger.
+ */
+const double g_ccn_1 = 800;
+
+/**
+ * Exponent used during CCN activation from A. Miltenberger.
+ */
+const double g_ccn_2 = 150;
+
+/**
+ * Exponent used during CCN activation from A. Miltenberger.
+ */
+const double g_ccn_3 = 400;
+
+/**
+ * Coefficient for the number of CCNs used during CCN activation from
+ * A. Miltenberger.
+ */
+const double i_ccn_1 = 1e6;
+
+/**
+ * Minimum number of CCNs used during CCN activation from
+ * A. Miltenberger.
+ */
+const double i_ccn_2 = 10.0e-6;
+
+/**
+ * Parameter for scaling Hande CCN activation in general.
+ */
+const double hande_ccn_fac = 1.0;
+
 /**
  * Universal gas constant, unit: J/(mol*K)
  * Source: http://physics.nist.gov/cuu/Constants/
@@ -858,7 +1574,7 @@ const double q_crit_fr = 1.0e-6;
 /**
  * Default threshold (ratio mass) is 1e-4 g/m^3
  */
-const double q_crit = 1.0e-7;
+const double q_crit = 1.0e-9;
 
 /**
  * Threshold (diameter) for conversion snow to graupel, ice to graupel
@@ -1127,11 +1843,11 @@ const double ni_het_max = 500.0e3;
 const double ni_hom_max = 5000.0e3;
 
 /**
- * Cons_idxeters for deposition formula (2) of Hande et al.
+ * Parameters for deposition formula (2) of Hande et al.
  */
 const double a_dep = 0.27626;
 /**
- * Cons_idxeters for deposition formula (2) of Hande et al.
+ * Parameters for deposition formula (2) of Hande et al.
  */
 const double b_dep = 6.21;
 /**
@@ -1139,7 +1855,7 @@ const double b_dep = 6.21;
  */
 const double c_dep = -1.3107;
 /**
- * Cons_idxeters for deposition formula (2) of Hande et al.
+ * Parameters for deposition formula (2) of Hande et al.
  */
 const double d_dep = 0.26789;
 
@@ -1316,12 +2032,12 @@ const uint32_t t_tstep = 2;
 const uint32_t s_sstep = 1;
 
 /**
- * Cons_idxeter for saturation adjustment
+ * Parameter for saturation adjustment
  */
 const double r_const = 287.04;
 
 /**
- * Cons_idxeter for saturation adjustment
+ * Parameter for saturation adjustment
  */
 const double r1_const = 461.5;
 
@@ -1338,36 +2054,34 @@ const double cv = 718.66;
 const bool always_sat_adj = true;
 
 /**
- * Cons_idxeter for saturation adjustment. Constant saturated water vapor pressure
+ * Parameter for saturation adjustment. Constant saturated water vapor pressure
  */
 const double p_sat_const_a = 17.2693882;
 
 /**
- * Cons_idxeter for saturation adjustment. Constant saturated ice pressure
+ * Parameter for saturation adjustment. Constant saturated ice pressure
  */
 const double p_sat_ice_const_a = 21.8745584;
 
 /**
- * Cons_idxeter for saturation adjustment. Constant saturated water vapor pressure
+ * Parameter for saturation adjustment. Constant saturated water vapor pressure
  */
 const double p_sat_const_b = 35.86;
 
 /**
- * Cons_idxeter for saturation adjustment. Constant saturated ice pressure
+ * Parameter for saturation adjustment. Constant saturated ice pressure
  */
 const double p_sat_ice_const_b = 7.66;
 
 /**
- * Cons_idxeter for saturation adjustment. Saturated water vapor pressure at T = 233K
+ * Parameter for saturation adjustment. Saturated water vapor pressure at T = 233K
  */
 const double p_sat_low_temp = 610.78;
 
 /**
- * Cons_idxeter for saturation adjustment.
+ * Parameter for saturation adjustment.
  */
 const double T_sat_low_temp = 273.15;
-
-
 
 const std::vector<std::vector<double> > afrac_dust = {
     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
