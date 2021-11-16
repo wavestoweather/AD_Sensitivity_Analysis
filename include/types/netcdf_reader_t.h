@@ -149,6 +149,7 @@ struct netcdf_reader_t {
     uint32_t traj_idx; /*!< Index of trajectory to read from. */
     uint32_t ens_idx; /*!< Index of ensemble to read from. */
     bool already_open; /*!< Is the netCDF file already open? */
+    uint32_t n_subs; /*!< Time step size of model from file / size of this model . */
 
     /**
      * ID for dimensions of output file.

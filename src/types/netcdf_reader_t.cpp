@@ -1163,6 +1163,7 @@ void netcdf_reader_t::read_initial_values(
 #else
         y_init[w_idx] = buffer[Par_idx::ascent][0];
 #endif
+        n_subs = cc.num_sub_steps;
     }
 }
 
@@ -1171,9 +1172,9 @@ double netcdf_reader_t::get_lat(
     const uint32_t &t,
     const uint32_t &sub) const {
     double latitude = buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]
-        + (
+        + sub * (
             buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+1]
-            - buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]) / sub;
+            - buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]) / n_subs;
     if (!std::isnan(latitude)) return latitude;
     uint32_t j = 2;
     while (j < 11 && std::isnan(buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+j])) {
@@ -1192,9 +1193,9 @@ double netcdf_reader_t::get_lat(
 #endif
     }
     return buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]
-        + (
+        + sub * (
             buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+j]
-            - buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]) / (sub*j);
+            - buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]) / (n_subs*j);
 }
 
 
@@ -1202,9 +1203,9 @@ double netcdf_reader_t::get_lon(
     const uint32_t &t,
     const uint32_t &sub) const {
     double longitude = buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]
-        + (
+        + sub * (
             buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+1]
-            - buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]) / sub;
+            - buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]) / n_subs;
 
     if (!std::isnan(longitude)) return longitude;
     uint32_t j = 2;
@@ -1224,9 +1225,9 @@ double netcdf_reader_t::get_lon(
 #endif
     }
     return buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]
-        + (
+        + sub * (
             buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+j]
-            - buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]) / (sub*j);
+            - buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]) / (n_subs*j);
 }
 
 
