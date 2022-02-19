@@ -228,8 +228,9 @@ work, take a look at https://cmake.org/cmake/help/latest/module/FindMPI.html.
 ")
 endif()
 
-# message("~~~ BOOST")
-# find_package(Boost 1.62 REQUIRED)
+message("~~~ BOOST")
+find_package(Boost 1.62 REQUIRED)
+
 message("~~~ NLohmann/JSON")
 find_package(nlohmann_json 3.9.1 REQUIRED)
 # message(STATUS "${nlohmann_json::nlohmann_json}")
@@ -238,7 +239,7 @@ find_package(nlohmann_json 3.9.1 REQUIRED)
 
 message("~~~ zlib")
 message(STATUS "Make sure this is the same zlib library that is used by HDF5")
-find_package(ZLIB) 
+find_package(ZLIB)
 # Hack if for some reason it is not found in the usual directories
 if( NOT ${ZLIB_FOUND} )
     message(WARNING "Did not find zlib. Looking at different directories now.")
@@ -305,11 +306,11 @@ message("~~~ HDF5")
 # local machine and my docker container.
 # set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 set(HDF5_HINT ${HDF5_DIR})
-find_package(HDF5)  
+find_package(HDF5)
 # Hack if for some reason it is not found in the usual directories
 if (NOT ${HDF5_FOUND} )
     message(WARNING "Could not find HDF5. Looking at other directories.")
-    find_package(HDF5 REQUIRED PATHS ${HDF5_DIR}) 
+    find_package(HDF5 REQUIRED PATHS ${HDF5_DIR})
     include_directories (${HDF5_INCLUDE_DIR})
     message(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIR}")
     if( "${HDF5_LIBRARIES}" STREQUAL "" )
