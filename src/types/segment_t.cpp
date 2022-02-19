@@ -296,7 +296,7 @@ void segment_t::reset_variables(
 }
 
 void to_json(
-    nlohmann::json& j, 
+    nlohmann::json& j,
     const segment_t& s) {
     if ((s.err != 0 || s.n_segments < 1) && !s.activated)
         return;
@@ -330,27 +330,27 @@ void to_json(
 
 template<class float_t>
 void segment_t::from_json(
-    const nlohmann::json& j, 
+    const nlohmann::json& j,
     model_constants_t<float_t> &cc) {
-  
+
     for (auto &it : j.items()) {
         auto first = it.key();
         if (first == "when_value") {
             this->add_value(static_cast<double>(it.value()));
         } else if (first == "when_name") {
-            this->add_value_name(static_cast<std::string>(it.value())); // it.second.get_value<std::string>());
+            this->add_value_name(static_cast<std::string>(it.value()));
         } else if (first == "amount") {
-            this->add_amount(static_cast<uint32_t>(it.value())); // it.second.get_value<uint32_t>());
+            this->add_amount(static_cast<uint32_t>(it.value()));
         } else if (first == "when_method") {
-            this->add_method(static_cast<std::string>(it.value())); // it.second.get_value<std::string>());
+            this->add_method(static_cast<std::string>(it.value()));
         } else if (first == "when_counter") {
-            this->add_counter(static_cast<uint32_t>(it.value())); // it.second.get_value<uint32_t>());
+            this->add_counter(static_cast<uint32_t>(it.value()));
         } else if (first == "when_sens") {
-            this->add_out_param(static_cast<std::string>(it.value())); // it.second.get_value<std::string>());
+            this->add_out_param(static_cast<std::string>(it.value()));
         } else if (first == "activated") {
-            this->activated = static_cast<bool>(it.value()); // it.second.get_value<bool>();
+            this->activated = static_cast<bool>(it.value());
         } else if (first == "duration") {
-            this->add_duration(static_cast<double>(it.value())); // it.second.get_value<double>());
+            this->add_duration(static_cast<double>(it.value()));
         } else if (first == "params") {
             this->params.clear();
             // this->params = j["params"].get<std::vector<param_t> >();;
@@ -360,7 +360,7 @@ void segment_t::from_json(
                 SUCCESS_OR_DIE(p.from_json(p_config, cc));
                 this->params.push_back(p);
             }
-            // for (auto &param : this->params) SUCCESS_OR_DIE(param.check_name(cc)); 
+            // for (auto &param : this->params) SUCCESS_OR_DIE(param.check_name(cc));
         } else {
             SUCCESS_OR_DIE(SEGMENTS_CHECKPOINT_ERR);
         }
@@ -484,9 +484,9 @@ template void segment_t::reset_variables<codi::RealForwardVec<num_par_init> >(
 // template int segment_t::from_pt<codi::RealForwardVec<num_par_init> >(
 //     pt::ptree&, model_constants_t<codi::RealForwardVec<num_par_init> >&);
 template void segment_t::from_json<codi::RealReverse>(
-    const nlohmann::json&, 
+    const nlohmann::json&,
     model_constants_t<codi::RealReverse>&);
 
 template void segment_t::from_json<codi::RealForwardVec<num_par_init> >(
-    const nlohmann::json&, 
+    const nlohmann::json&,
     model_constants_t<codi::RealForwardVec<num_par_init> >&);

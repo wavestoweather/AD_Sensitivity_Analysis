@@ -1,7 +1,7 @@
 #pragma once
 
 #include <algorithm>
-#include <fstream> 
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -378,8 +378,6 @@ struct model_constants_t {
     std::vector<uint64_t> track_param;
 
     int from_json(const nlohmann::json &j);
-
-
 };
 
 template<class float_t>

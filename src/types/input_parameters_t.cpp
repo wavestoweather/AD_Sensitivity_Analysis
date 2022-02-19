@@ -37,7 +37,7 @@ input_parameters_t::input_parameters_t() {
 }
 
 
-void input_parameters_t::to_json( 
+void input_parameters_t::to_json(
     nlohmann::json& j,
     const double &time) const {
     j["t_end_prime"] = this->t_end_prime;

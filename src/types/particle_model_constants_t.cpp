@@ -124,7 +124,7 @@ void to_json(
     const particle_model_constants_t<float_t>& p) {
     if (p.perturbed_idx.empty())
         return;
-    
+
     std::map<uint32_t, double> perturbed;
     for (uint32_t idx : p.perturbed_idx) {
         perturbed[idx] = p.constants[idx].getValue();

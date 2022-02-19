@@ -54,7 +54,7 @@ void load_ens_config(
     std::string ens_desc;
     cc.max_n_trajs = 0;
     if (config.find("segments") != config.end()) {
-        for (const auto &s_config: config["segments"]) {
+        for (const auto &s_config : config["segments"]) {
             segment_t s;
             s.from_json(s_config, cc);
             segments.push_back(s);

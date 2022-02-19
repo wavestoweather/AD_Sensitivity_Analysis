@@ -189,9 +189,9 @@ int param_t::check() {
 }
 
 void to_json(
-    nlohmann::json& j, 
+    nlohmann::json& j,
     const param_t& p) {
-    if (p.err != 0) 
+    if (p.err != 0)
         return;
     j["mean"] = p.mean;
     j["name"] = p.param_name;
@@ -201,7 +201,6 @@ void to_json(
         j["sigma_perc"] = p.sigma_perc;
     j["rand_func"] = p.func_name;
     j["type"] = p.outparam_name;
-
 }
 
 
@@ -244,7 +243,6 @@ int param_t::from_json(
     }
     return SUCCESS;
 }
-
 
 template<class float_t>
 int param_t::check_name(

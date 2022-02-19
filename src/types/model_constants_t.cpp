@@ -256,8 +256,7 @@ void model_constants_t<codi::RealReverse>::get_gradients(
 template<class float_t>
 void to_json(
     nlohmann::json& j,
-    const model_constants_t<float_t>& cc)
-{
+    const model_constants_t<float_t>& cc) {
     j["id"] = cc.id;
     j["ensemble_id"] = cc.ensemble_id;
     j["traj_id"] = cc.traj_id;
@@ -294,8 +293,8 @@ void to_json(
     }
     j["hail"] = cc.hail;
     j["ice"] = cc.ice;
-    j["snow"] = cc.snow; 
-    j["cloud"] = cc.cloud; 
+    j["snow"] = cc.snow;
+    j["cloud"] = cc.cloud;
     j["rain"] = cc.rain;
     j["graupel"] = cc.graupel;
     // collection coefficients depend completely on particle

@@ -60,7 +60,7 @@ void checkpoint_t::create_checkpoint(
     const double &current_time) {
     // First we add the ensemble configuration
     // pt::ptree segment_tree;
-    // for (auto &s : segments) 
+    // for (auto &s : segments)
     //     s.put(segment_tree);
 
 
@@ -88,7 +88,7 @@ void checkpoint_t::create_checkpoint(
 
     std::map<uint32_t, double> param_map;
     for (uint32_t i=0; i < num_comp; i++) {
-        param_map[i] = y[i].getValue(); 
+        param_map[i] = y[i].getValue();
     }
     checkpoint["Output Parameters"] = param_map;
 }
@@ -130,7 +130,7 @@ int checkpoint_t::load_checkpoint(
     }
     // segments = checkpoint["segments"];
     // for (auto &s : segments) {
-    //     for (auto &param : s.params) SUCCESS_OR_DIE(param.check_name(cc)); 
+    //     for (auto &param : s.params) SUCCESS_OR_DIE(param.check_name(cc));
     // }
 
     cc.ens_desc += ens_desc;

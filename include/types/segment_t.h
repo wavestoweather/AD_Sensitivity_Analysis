@@ -422,7 +422,7 @@ struct segment_t {
      * Used to read from a checkpoint file.
      */
     template<class float_t>
-    void from_json(const nlohmann::json& j, model_constants_t<float_t> &cc); 
+    void from_json(const nlohmann::json& j, model_constants_t<float_t> &cc);
 
     /**
      * Used to read from a checkpoint file where the mean for the gaussians
