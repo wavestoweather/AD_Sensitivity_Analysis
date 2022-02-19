@@ -19,6 +19,7 @@ netcdf_reader_t::netcdf_reader_t(
         }
     }
     already_open = false;
+    start_time_idx_given = false;
 }
 
 
@@ -413,12 +414,8 @@ void netcdf_reader_t::buffer_params(
                     buffer[i].data()));
         }
     }
-
     for (auto &v : buffer[Par_idx::pressure]) {
-        v /= ref_quant.pref;
-#if !defined WCB2 && !defined MET3D
-        v *= 100;
-#endif
+        v *= pascal_conv/ref_quant.pref;
     }
     for (auto &v : buffer[Par_idx::temperature])
         v /= ref_quant.Tref;
@@ -654,6 +651,10 @@ int netcdf_reader_t::read_buffer(
                     << "your dataset! Aborting now.\n";
                 SUCCESS_OR_DIE(INPUT_NAN_ERR);
 #endif
+            } else {
+                // some datasets set inflows as outflows from a box above
+                // which can result in a negative value...
+                v = std::abs(v);
             }
         }
         for (auto &v : y_single_old) {
@@ -762,6 +763,24 @@ void netcdf_reader_t::set_dims(
 
         load_vars();
         already_open = true;
+        // Check if the data is stored as hPa or Pa and change pref in
+        // reference quantities accordingly.
+        size_t att_len;
+        if (0 == nc_inq_att(ncid, varid[Par_idx::pressure], "units", NULL, &att_len)) {
+            char att_val[att_len+1];
+            SUCCESS_OR_DIE(nc_get_att(
+                ncid, varid[Par_idx::pressure], "units", att_val));
+            att_val[att_len] = '\0';
+            if (std::strcmp(att_val, "hPa") == 0) {
+                pascal_conv = 100;
+            } else if (std::strcmp(att_val, "Pa") == 0) {
+                pascal_conv = 1;
+            } else {
+                pascal_conv = 1;  // default
+            }
+        } else {
+            pascal_conv = 1;  // default
+        }
     }
 }
 
@@ -804,13 +823,15 @@ void netcdf_reader_t::init_netcdf(
     SUCCESS_OR_DIE(
         nc_get_vara_double(
             ncid,
-            dimid[Dim_idx::time_dim_idx],
+            varid_once[Par_once_idx::time],
             startp2.data(),
             countp2.data(),
             time.data()));
     cc.set_dt(time[1]-time[0], ref_quant);
 
-    if (!std::isnan(start_time) && !checkpoint_flag) {
+    if (this->start_time_idx_given) {
+        start_time_idx = this->start_time_idx;
+    } else if (!std::isnan(start_time) && !checkpoint_flag) {
         // Calculate the needed index
         start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
     } else if (checkpoint_flag && !std::isnan(start_time)) {
@@ -827,7 +848,9 @@ void netcdf_reader_t::init_netcdf(
     startp.push_back(0);            // time
 
     uint64_t start_time_idx = 0;
-
+    if (this->start_time_idx_given) {
+        start_time_idx = this->start_time_idx;
+    }
     std::vector<double> rel_start_time(10);
     SUCCESS_OR_DIE(
         nc_get_vara_double(
@@ -857,8 +880,8 @@ void netcdf_reader_t::init_netcdf(
     for (uint32_t i=0; i < rel_start_time.size(); i++) {
         if (std::isnan(rel_start_time[i])) continue;
         if (!std::isnan(start_time) && !checkpoint_flag) {
-        // Calculate the needed index
-        start_time_idx = i + (start_time-rel_start_time[i])/cc.dt_traject;
+            // Calculate the needed index
+            start_time_idx = i + (start_time-rel_start_time[i])/cc.dt_traject;
         } else if (checkpoint_flag && !std::isnan(start_time)) {
             // Calculate the needed index
             start_time_idx = i + ceil(start_time-rel_start_time[i] + current_time)/cc.dt_traject;
@@ -873,7 +896,7 @@ void netcdf_reader_t::init_netcdf(
         SUCCESS_OR_DIE(NC_TRAJ_IDX_ERR);
     }
     // Check if the index begins with non-NaN values to get started properly
-    startp[0] = start_time_idx;
+    startp[1] = start_time_idx;
     SUCCESS_OR_DIE(
         nc_get_vara_double(
             ncid,
@@ -884,6 +907,7 @@ void netcdf_reader_t::init_netcdf(
     for (uint32_t i=0; i < rel_start_time.size(); i++) {
         if (std::isnan(rel_start_time[i])) {
             start_time_idx++;
+            cc.num_steps--;
             continue;
         } else {
             break;
@@ -895,8 +919,20 @@ void netcdf_reader_t::init_netcdf(
     cc.set_dt(20);
     time_idx = 1;
     this->start_time_idx = 1;
+    cc.start_time = 0;
 #endif
     this->start_time_idx_original = this->start_time_idx;
+
+#if defined(MET3D) || defined(B_EIGHT)
+    std::vector<size_t> startp3;
+    startp3.push_back(time_idx);
+    SUCCESS_OR_DIE(
+        nc_get_var1_double(
+            ncid,
+            varid_once[Par_once_idx::time],
+            startp3.data(),
+            &(cc.start_time)));
+#endif
 }
 
 
@@ -923,21 +959,24 @@ void netcdf_reader_t::read_initial_values(
 
     buffer_params(ref_quant);
     std::vector<size_t> startp;
-
+#ifdef TRACE_COMM
+    std::cout << "read_initial_values checkpoint: " << checkpoint_flag
+        << ", traj_idx: " << traj_idx << ", cc.traj_id: " << cc.traj_id << "\n";
+#endif
     if (!checkpoint_flag) {
 #if defined B_EIGHT
         startp.push_back(traj_idx);
-        startp.push_back(time_idx);
+        startp.push_back(start_time_idx);
 #elif defined MET3D
         startp.push_back(ens_idx);
         startp.push_back(traj_idx);
-        startp.push_back(time_idx);
+        startp.push_back(start_time_idx);
 #elif defined WCB || WCB2
-        startp.push_back(time_idx);
+        startp.push_back(start_time_idx);
         startp.push_back(traj_idx);
 #else
         startp.push_back(traj_idx);
-        startp.push_back(time_idx);
+        startp.push_back(start_time_idx);
 #endif
         y_init[T_idx] = buffer[Par_idx::temperature][0];
         y_init[p_idx] = buffer[Par_idx::pressure][0];
@@ -1135,25 +1174,6 @@ void netcdf_reader_t::read_initial_values(
         y_init[n_inact_idx] = 0;
         y_init[depo_idx] = 0;
         y_init[sub_idx] = 0;
-#endif
-#if defined(MET3D) || defined(B_EIGHT)
-        // Get the time coordinates
-        startp[0] = time_idx;
-#ifdef DEVELOP
-        std::cout << "Get time coordinate\n" << std::flush;
-        std::cout << "store in " << cc.start_time << "\n" << std::flush;
-        std::cout << "startp: ";
-        for (auto &v : startp) std::cout << v << ", ";
-        std::cout << "\n" << std::flush;
-#endif
-        SUCCESS_OR_DIE(
-            nc_get_var1_double(
-                ncid,
-                varid_once[Par_once_idx::time],
-                startp.data(),
-                &(cc.start_time)));
-#else
-        cc.start_time = 0;
 #endif
 #ifdef DEVELOP
         std::cout << "Got time coordinate\n" << std::flush;

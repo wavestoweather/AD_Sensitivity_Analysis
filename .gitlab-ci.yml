@@ -1,4 +1,4 @@
-image: "mahieronymus/ad_sensitivity:2.0"
+image: "mahieronymus/ad_sensitivity:2.02"
 
 stages:
  - Static Analysis Python
@@ -38,6 +38,7 @@ test:
     - build
   script:
     - cd exe_scripts && ./docker_test.sh
+    - cd ../scripts && python3 test_output.py --input ../data/test_files_simulated/ --test_nan_dims --verbosity 3
   tags:
     - test
   allow_failure: false

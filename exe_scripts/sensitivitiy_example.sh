@@ -37,8 +37,7 @@ TRACK_FILE="configs/qr_config_all.json"
 for FILENAME in "conv_400_0_traj_t000000_p001_met3d" "conv_400_10_traj_t000600_p001_met3d" "conv_600_20_traj_t001200_p001_met3d" "conv_600_40_traj_t002400_p001_met3d"
 do
 
-    INPUT_FILENAME="${AD_SIM_HOME}data/vladiana_input/${FILENAME}.nc_wcb"
-    INPUT_FILENAME="/data/project/wcb/netcdf/vladiana_met_updated_comparison/${FILENAME}.nc_wcb"
+    INPUT_FILENAME="${AD_SIM_HOME}/data/vladiana_input/${FILENAME}.nc_wcb"
     TARGET_TIME_AFTER_START=$(ncdump -h $INPUT_FILENAME | grep -m 1 "time = " | sed 's/[^0-9]//g' )
     TARGET_TIME_AFTER_START=$(($TARGET_TIME_AFTER_START * 20 - 20))
     # TARGET_TIME_AFTER_START=25000

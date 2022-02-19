@@ -254,161 +254,134 @@ void model_constants_t<codi::RealReverse>::get_gradients(
 
 
 template<class float_t>
-void model_constants_t<float_t>::put(
-    pt::ptree &ptree) const {
-    pt::ptree model_cons;
-    model_cons.put("id", id);
-    model_cons.put("ensemble_id", ensemble_id);
-    model_cons.put("traj_id", traj_id);
-    model_cons.put("n_trajs", n_trajs);
-    model_cons.put("ens_desc", ens_desc);
-    model_cons.put("num_steps", num_steps);
-    model_cons.put("n_ensembles", n_ensembles);
+void to_json(
+    nlohmann::json& j,
+    const model_constants_t<float_t>& cc)
+{
+    j["id"] = cc.id;
+    j["ensemble_id"] = cc.ensemble_id;
+    j["traj_id"] = cc.traj_id;
+    j["n_trajs"] = cc.n_trajs;
+    j["ens_desc"] = cc.ens_desc;
+    j["num_steps"] = cc.num_steps;
+    j["n_ensembles"] = cc.n_ensembles;
 
     // technical parameters
-    model_cons.put("t_end_prime", t_end_prime);
-    model_cons.put("t_end", t_end);
-    model_cons.put("dt_prime", dt_prime);
-    model_cons.put("dt", dt);
-    model_cons.put("dt_traject_prime", dt_traject_prime);
-    model_cons.put("dt_traject", dt_traject);
-    model_cons.put("num_steps", num_steps);
-    model_cons.put("num_sub_steps", num_sub_steps);
-    model_cons.put("done_steps", done_steps);
-    model_cons.put("dt_half", dt_half);
-    model_cons.put("dt_sixth", dt_sixth);
-    model_cons.put("dt_third", dt_third);
-    model_cons.put("local_num_comp", local_num_comp);
-    model_cons.put("local_num_par", local_num_par);
-    model_cons.put("track_state", track_state);
-    model_cons.put("checkpoint_steps", checkpoint_steps);
-    pt::ptree track_param_tree;
-    for (uint32_t i=0; i < track_param.size(); i++)
-        track_param_tree.put(std::to_string(i), track_param[i]);
-    model_cons.add_child("track_param", track_param_tree);
+    j["t_end_prime"] = cc.t_end_prime;
+    j["t_end"] = cc.t_end;
+    j["dt_prime"] = cc.dt_prime;
+    j["dt"] = cc.dt;
+    j["dt_traject_prime"] = cc.dt_traject_prime;
+    j["dt_traject"] = cc.dt_traject;
+    j["num_steps"] = cc.num_steps;
+    j["num_sub_steps"] = cc.num_sub_steps;
+    j["done_steps"] = cc.done_steps;
+    j["dt_half"] = cc.dt_half;
+    j["dt_sixth"] = cc.dt_sixth;
+    j["dt_third"] = cc.dt_third;
+    j["local_num_comp"] = cc.local_num_comp;
+    j["local_num_par"] = cc.local_num_par;
+    j["track_state"] = cc.track_state;
+    j["checkpoint_steps"] = cc.checkpoint_steps;
+    j["track_param"] = cc.track_param;
 
-    if (!perturbed_idx.empty()) {
-        pt::ptree perturbed;
-        for (uint32_t idx : perturbed_idx)
-            perturbed.put(std::to_string(idx), constants[idx].getValue());
-        model_cons.add_child("perturbed", perturbed);
+    if (!cc.perturbed_idx.empty()) {
+        std::map<uint32_t, double> perturbed;
+        for (uint32_t idx : cc.perturbed_idx) {
+            perturbed[idx] = cc.constants[idx].getValue();
+        }
+        j["perturbed"] = perturbed;
     }
-
-    // particle_model_constants
-    hail.put(model_cons, "hail");
-    ice.put(model_cons, "ice");
-    snow.put(model_cons, "snow");
-    cloud.put(model_cons, "cloud");
-    rain.put(model_cons, "rain");
-    graupel.put(model_cons, "graupel");
-
+    j["hail"] = cc.hail;
+    j["ice"] = cc.ice;
+    j["snow"] = cc.snow; 
+    j["cloud"] = cc.cloud; 
+    j["rain"] = cc.rain;
+    j["graupel"] = cc.graupel;
     // collection coefficients depend completely on particle
     // model constants and can be derived from there. So
     // we skip adding that to the checkpoint.
-    ptree.add_child("model_constants", model_cons);
 }
 
 
 template<class float_t>
-int model_constants_t<float_t>::from_pt(
-    pt::ptree &ptree) {
+int model_constants_t<float_t>::from_json(
+    const nlohmann::json &j) {
     int err = 0;
-    for (auto &it : ptree.get_child("model_constants")) {
-        auto first = it.first;
+    for (auto &it : j.items()) {
+        auto first = it.key();
         if (first == "id") {
-            id = it.second.get_value<std::string>() + "-" + id;
+            std::string new_id;
+            j.at(first).get_to(new_id);
+            this->id = new_id + "-" + id;
         } else if (first == "ensemble_id") {
-            ensemble_id = it.second.get_value<std::uint64_t>();
+            j.at(first).get_to(this->ensemble_id);
         } else if (first == "traj_id") {
-            traj_id = it.second.get_value<std::uint64_t>();
+            j.at(first).get_to(this->traj_id);
         } else if (first == "n_trajs") {
-            n_trajs = it.second.get_value<std::uint64_t>();
+            j.at(first).get_to(this->n_trajs);
         } else if (first == "ens_desc") {
-            ens_desc = it.second.get_value<std::string>();
+            j.at(first).get_to(this->ens_desc);
         } else if (first == "t_end_prime") {
-            t_end_prime = it.second.get_value<double>();
+            j.at(first).get_to(this->t_end_prime);
         } else if (first == "t_end") {
-            t_end = it.second.get_value<double>();
+            j.at(first).get_to(this->t_end);
         } else if (first == "dt_prime") {
-            dt_prime = it.second.get_value<double>();
+            j.at(first).get_to(this->dt_prime);
         } else if (first == "dt") {
-            dt = it.second.get_value<double>();
+            j.at(first).get_to(this->dt);
         } else if (first == "dt_traject_prime") {
-            dt_traject_prime = it.second.get_value<double>();
+            j.at(first).get_to(this->dt_traject_prime);
         } else if (first == "dt_traject") {
-            dt_traject = it.second.get_value<double>();
+            j.at(first).get_to(this->dt_traject);
         } else if (first == "num_steps") {
-            num_steps = it.second.get_value<uint64_t>();
+            j.at(first).get_to(this->num_steps);
         } else if (first == "num_sub_steps") {
-            num_sub_steps = it.second.get_value<uint64_t>();
+            j.at(first).get_to(this->num_sub_steps);
         } else if (first == "checkpoint_steps") {
-            checkpoint_steps = it.second.get_value<uint64_t>();
+            j.at(first).get_to(this->checkpoint_steps);
         } else if (first == "dt_half") {
-            dt_half = it.second.get_value<double>();
+            j.at(first).get_to(this->dt_half);
         } else if (first == "dt_sixth") {
-            dt_sixth = it.second.get_value<double>();
+            j.at(first).get_to(this->dt_sixth);
         } else if (first == "dt_third") {
-            dt_third = it.second.get_value<double>();
+            j.at(first).get_to(this->dt_third);
         } else if (first == "n_ensembles") {
-            n_ensembles = it.second.get_value<uint64_t>();
+            j.at(first).get_to(this->n_ensembles);
         } else if (first == "num_steps") {
-            num_steps = it.second.get_value<uint64_t>();
+            j.at(first).get_to(this->num_steps);
         } else if (first == "done_steps") {
-            done_steps = it.second.get_value<uint64_t>();
+            j.at(first).get_to(this->done_steps);
         } else if (first == "local_num_comp") {
-            local_num_comp = it.second.get_value<int>();
+            j.at(first).get_to(this->local_num_comp);
         } else if (first == "local_num_par") {
-            local_num_par = it.second.get_value<int>();
+            j.at(first).get_to(this->local_num_par);
         } else if (first == "track_state") {
-            track_state = it.second.get_value<uint64_t>();
+            j.at(first).get_to(this->track_state);
         } else if (first == "track_param") {
-            for (auto &it2 : ptree.get_child("model_constants.track_param")) {
-                uint32_t idx = std::stoi(it2.first);
-                track_param[idx] = it2.second.get_value<uint64_t>();
-            }
+            this->track_param.clear();
+            j.at(first).get_to(this->track_param);
         } else if (first == "perturbed") {
-            for (auto &it2 : ptree.get_child("model_constants.perturbed")) {
-                uint32_t idx = std::stoi(it2.first);
-                perturbed_idx.push_back(idx);
-                this->constants[idx] = it2.second.get_value<double>();
+            this->perturbed_idx.clear();
+            std::map<uint32_t, double> perturbed;
+            j.at(first).get_to(perturbed);
+            for (auto const &p : perturbed) {
+                this->perturbed_idx.push_back(p.first);
+                this->constants[p.first] = p.second;
             }
         // below from here: perturbed particle models
         } else if (first == "hail") {
-            for (auto &it2 : ptree.get_child("model_constants.hail.perturbed")) {
-                uint32_t idx = std::stoi(it2.first);
-                this->hail.perturbed_idx.push_back(idx);
-                this->hail.constants[idx] = it2.second.get_value<double>();
-            }
+            err = this->hail.from_json(j.at(first));
         } else if (first == "ice") {
-            for (auto &it2 : ptree.get_child("model_constants.ice.perturbed")) {
-                uint32_t idx = std::stoi(it2.first);
-                this->ice.perturbed_idx.push_back(idx);
-                this->ice.constants[idx] = it2.second.get_value<double>();
-            }
+            err = this->ice.from_json(j.at(first));
         } else if (first == "snow") {
-            for (auto &it2 : ptree.get_child("model_constants.snow.perturbed")) {
-                uint32_t idx = std::stoi(it2.first);
-                this->snow.perturbed_idx.push_back(idx);
-                this->snow.constants[idx] = it2.second.get_value<double>();
-            }
+            err = this->snow.from_json(j.at(first));
         } else if (first == "cloud") {
-            for (auto &it2 : ptree.get_child("model_constants.cloud.perturbed")) {
-                uint32_t idx = std::stoi(it2.first);
-                this->cloud.perturbed_idx.push_back(idx);
-                this->cloud.constants[idx] = it2.second.get_value<double>();
-            }
+            err = this->cloud.from_json(j.at(first));
         } else if (first == "rain") {
-            for (auto &it2 : ptree.get_child("model_constants.rain.perturbed")) {
-                uint32_t idx = std::stoi(it2.first);
-                this->rain.perturbed_idx.push_back(idx);
-                this->rain.constants[idx] = it2.second.get_value<double>();
-            }
+            err = this->rain.from_json(j.at(first));
         } else if (first == "graupel") {
-            for (auto &it2 : ptree.get_child("model_constants.graupel.perturbed")) {
-                uint32_t idx = std::stoi(it2.first);
-                this->graupel.perturbed_idx.push_back(idx);
-                this->graupel.constants[idx] = it2.second.get_value<double>();
-            }
+            err = this->graupel.from_json(j.at(first));
         } else {
             std::cout << "Got '" << first << "' from property tree "
             << "which does not exist in model_constants_t.\n";
@@ -417,6 +390,172 @@ int model_constants_t<float_t>::from_pt(
     }
     return err;
 }
+
+
+// template<class float_t>
+// void model_constants_t<float_t>::put(
+//     pt::ptree &ptree) const {
+//     pt::ptree model_cons;
+//     model_cons.put("id", id);
+//     model_cons.put("ensemble_id", ensemble_id);
+//     model_cons.put("traj_id", traj_id);
+//     model_cons.put("n_trajs", n_trajs);
+//     model_cons.put("ens_desc", ens_desc);
+//     model_cons.put("num_steps", num_steps);
+//     model_cons.put("n_ensembles", n_ensembles);
+
+//     // technical parameters
+//     model_cons.put("t_end_prime", t_end_prime);
+//     model_cons.put("t_end", t_end);
+//     model_cons.put("dt_prime", dt_prime);
+//     model_cons.put("dt", dt);
+//     model_cons.put("dt_traject_prime", dt_traject_prime);
+//     model_cons.put("dt_traject", dt_traject);
+//     model_cons.put("num_steps", num_steps);
+//     model_cons.put("num_sub_steps", num_sub_steps);
+//     model_cons.put("done_steps", done_steps);
+//     model_cons.put("dt_half", dt_half);
+//     model_cons.put("dt_sixth", dt_sixth);
+//     model_cons.put("dt_third", dt_third);
+//     model_cons.put("local_num_comp", local_num_comp);
+//     model_cons.put("local_num_par", local_num_par);
+//     model_cons.put("track_state", track_state);
+//     model_cons.put("checkpoint_steps", checkpoint_steps);
+//     pt::ptree track_param_tree;
+//     for (uint32_t i=0; i < track_param.size(); i++)
+//         track_param_tree.put(std::to_string(i), track_param[i]);
+//     model_cons.add_child("track_param", track_param_tree);
+
+//     if (!perturbed_idx.empty()) {
+//         pt::ptree perturbed;
+//         for (uint32_t idx : perturbed_idx)
+//             perturbed.put(std::to_string(idx), constants[idx].getValue());
+//         model_cons.add_child("perturbed", perturbed);
+//     }
+
+//     // particle_model_constants
+//     hail.put(model_cons, "hail");
+//     ice.put(model_cons, "ice");
+//     snow.put(model_cons, "snow");
+//     cloud.put(model_cons, "cloud");
+//     rain.put(model_cons, "rain");
+//     graupel.put(model_cons, "graupel");
+
+//     // collection coefficients depend completely on particle
+//     // model constants and can be derived from there. So
+//     // we skip adding that to the checkpoint.
+//     ptree.add_child("model_constants", model_cons);
+// }
+
+
+// template<class float_t>
+// int model_constants_t<float_t>::from_pt(
+//     pt::ptree &ptree) {
+//     int err = 0;
+//     for (auto &it : ptree.get_child("model_constants")) {
+//         auto first = it.first;
+//         if (first == "id") {
+//             id = it.second.get_value<std::string>() + "-" + id;
+//         } else if (first == "ensemble_id") {
+//             ensemble_id = it.second.get_value<std::uint64_t>();
+//         } else if (first == "traj_id") {
+//             traj_id = it.second.get_value<std::uint64_t>();
+//         } else if (first == "n_trajs") {
+//             n_trajs = it.second.get_value<std::uint64_t>();
+//         } else if (first == "ens_desc") {
+//             ens_desc = it.second.get_value<std::string>();
+//         } else if (first == "t_end_prime") {
+//             t_end_prime = it.second.get_value<double>();
+//         } else if (first == "t_end") {
+//             t_end = it.second.get_value<double>();
+//         } else if (first == "dt_prime") {
+//             dt_prime = it.second.get_value<double>();
+//         } else if (first == "dt") {
+//             dt = it.second.get_value<double>();
+//         } else if (first == "dt_traject_prime") {
+//             dt_traject_prime = it.second.get_value<double>();
+//         } else if (first == "dt_traject") {
+//             dt_traject = it.second.get_value<double>();
+//         } else if (first == "num_steps") {
+//             num_steps = it.second.get_value<uint64_t>();
+//         } else if (first == "num_sub_steps") {
+//             num_sub_steps = it.second.get_value<uint64_t>();
+//         } else if (first == "checkpoint_steps") {
+//             checkpoint_steps = it.second.get_value<uint64_t>();
+//         } else if (first == "dt_half") {
+//             dt_half = it.second.get_value<double>();
+//         } else if (first == "dt_sixth") {
+//             dt_sixth = it.second.get_value<double>();
+//         } else if (first == "dt_third") {
+//             dt_third = it.second.get_value<double>();
+//         } else if (first == "n_ensembles") {
+//             n_ensembles = it.second.get_value<uint64_t>();
+//         } else if (first == "num_steps") {
+//             num_steps = it.second.get_value<uint64_t>();
+//         } else if (first == "done_steps") {
+//             done_steps = it.second.get_value<uint64_t>();
+//         } else if (first == "local_num_comp") {
+//             local_num_comp = it.second.get_value<int>();
+//         } else if (first == "local_num_par") {
+//             local_num_par = it.second.get_value<int>();
+//         } else if (first == "track_state") {
+//             track_state = it.second.get_value<uint64_t>();
+//         } else if (first == "track_param") {
+//             for (auto &it2 : ptree.get_child("model_constants.track_param")) {
+//                 uint32_t idx = std::stoi(it2.first);
+//                 track_param[idx] = it2.second.get_value<uint64_t>();
+//             }
+//         } else if (first == "perturbed") {
+//             for (auto &it2 : ptree.get_child("model_constants.perturbed")) {
+//                 uint32_t idx = std::stoi(it2.first);
+//                 perturbed_idx.push_back(idx);
+//                 this->constants[idx] = it2.second.get_value<double>();
+//             }
+//         // below from here: perturbed particle models
+//         } else if (first == "hail") {
+//             for (auto &it2 : ptree.get_child("model_constants.hail.perturbed")) {
+//                 uint32_t idx = std::stoi(it2.first);
+//                 this->hail.perturbed_idx.push_back(idx);
+//                 this->hail.constants[idx] = it2.second.get_value<double>();
+//             }
+//         } else if (first == "ice") {
+//             for (auto &it2 : ptree.get_child("model_constants.ice.perturbed")) {
+//                 uint32_t idx = std::stoi(it2.first);
+//                 this->ice.perturbed_idx.push_back(idx);
+//                 this->ice.constants[idx] = it2.second.get_value<double>();
+//             }
+//         } else if (first == "snow") {
+//             for (auto &it2 : ptree.get_child("model_constants.snow.perturbed")) {
+//                 uint32_t idx = std::stoi(it2.first);
+//                 this->snow.perturbed_idx.push_back(idx);
+//                 this->snow.constants[idx] = it2.second.get_value<double>();
+//             }
+//         } else if (first == "cloud") {
+//             for (auto &it2 : ptree.get_child("model_constants.cloud.perturbed")) {
+//                 uint32_t idx = std::stoi(it2.first);
+//                 this->cloud.perturbed_idx.push_back(idx);
+//                 this->cloud.constants[idx] = it2.second.get_value<double>();
+//             }
+//         } else if (first == "rain") {
+//             for (auto &it2 : ptree.get_child("model_constants.rain.perturbed")) {
+//                 uint32_t idx = std::stoi(it2.first);
+//                 this->rain.perturbed_idx.push_back(idx);
+//                 this->rain.constants[idx] = it2.second.get_value<double>();
+//             }
+//         } else if (first == "graupel") {
+//             for (auto &it2 : ptree.get_child("model_constants.graupel.perturbed")) {
+//                 uint32_t idx = std::stoi(it2.first);
+//                 this->graupel.perturbed_idx.push_back(idx);
+//                 this->graupel.constants[idx] = it2.second.get_value<double>();
+//             }
+//         } else {
+//             std::cout << "Got '" << first << "' from property tree "
+//             << "which does not exist in model_constants_t.\n";
+//             err = MODEL_CONS_CHECKPOINT_ERR;
+//         }
+//     }
+//     return err;
+// }
 
 #if defined(RK4_ONE_MOMENT)
 template<class float_t>
@@ -427,7 +566,7 @@ void model_constants_t<float_t>::setCoefficients(
     float_t T_prime = y[T_idx]*ref.Tref;
 
     float_t rho_prime = p_prime /(get_at(this->constants, Cons_idx::R_a) * T_prime);
-    float_t L_vap_prime = latent_heat_water(T_prime, get_at(this->constants, Cons_idx::M_w));
+    float_t L_vap_prime = latent_heat_water_supercooled(T_prime, get_at(this->constants, Cons_idx::M_w));
     float_t Ka_prime = thermal_conductivity_dry_air(T_prime);
     float_t psat_prime = saturation_pressure_water(
         T_prime,
@@ -456,7 +595,7 @@ void model_constants_t<float_t>::setCoefficients(
     float_t p_prime,
     float_t T_prime) {
     float_t rho_prime = p_prime /(get_at(this->constants, Cons_idx::R_a) * T_prime);
-    float_t L_vap_prime = latent_heat_water(T_prime, get_at(this->constants, Cons_idx::M_w));
+    float_t L_vap_prime = latent_heat_water_supercooled(T_prime, get_at(this->constants, Cons_idx::M_w));
     float_t Ka_prime = thermal_conductivity_dry_air(T_prime);
     float_t psat_prime = saturation_pressure_water(
         T_prime,
@@ -523,7 +662,6 @@ void model_constants_t<float_t>::setup_model_constants(
     this->constants[static_cast<int>(Cons_idx::D_conv_ig)] = D_conv_ig;
     this->constants[static_cast<int>(Cons_idx::x_conv)] = x_conv;
     this->constants[static_cast<int>(Cons_idx::parcel_height)] = parcel_height;
-    this->constants[static_cast<int>(Cons_idx::inv_z)] = 1.0/parcel_height;
     this->constants[static_cast<int>(Cons_idx::alpha_spacefilling)] = alpha_spacefilling;
     this->constants[static_cast<int>(Cons_idx::T_nuc)] = T_nuc;
     this->constants[static_cast<int>(Cons_idx::T_freeze)] = T_freeze;
@@ -626,13 +764,8 @@ void model_constants_t<float_t>::setup_model_constants(
     // Accomodation coefficient
     this->alpha_d = 1.0;
 
-    // // Performance constants for warm cloud; COSMO
+    // Performance constants for warm cloud; COSMO
     this->a1_scale = 1.0e-3;
-    this->a2_scale = 1.72 / pow(get_at(this->constants, Cons_idx::R_a) , 7./8.);
-    this->e1_scale = 1.0 / sqrt(get_at(this->constants, Cons_idx::R_a));
-    this->e2_scale = 9.1 / pow(get_at(this->constants, Cons_idx::R_a) , 11./16.);
-    this->d_scale = (130.0*tgamma(4.5))
-        / (6.0*(1.0e3)*pow(M_PI*(8.0e6)*get_at(this->constants, Cons_idx::R_a) , 1.0/8.0));
 
     // Performance constants for warm cloud; IFS
     // The file constants.h also defines some constants as nar, ...
@@ -640,7 +773,7 @@ void model_constants_t<float_t>::setup_model_constants(
     const double Nc = 50;  // 50 over ocean; 300 over land
     const double F_aut = 1.5;
     const double F_acc = 2.0;
-    const double lambda_pp = pow(this->nar * this->ar * tgamma(this->br + 1.0) , this->alpha_r);
+    // const double lambda_pp = pow(this->nar * this->ar * tgamma(this->br + 1.0) , this->alpha_r);
 #endif
     for (uint32_t i=0; i < 4; i++) {
         this->constants[static_cast<int>(Cons_idx::a_ccn_1)+i] = a_ccn[i];
@@ -673,20 +806,6 @@ void model_constants_t<float_t>::setup_model_constants(
     this->constants[static_cast<int>(Cons_idx::delta2)] = 11./16.;
     this->constants[static_cast<int>(Cons_idx::zeta)] = 9./8.;
 #if defined(RK4ICE) || defined(RK4NOICE)
-    // Exponents of the cloud model
-    // IFS
-    // get_at(this->constants, Particle_cons_idx::gamma) = 2.47;
-    // get_at(this->constants, Cons_idx::betac) = 1.15;
-    // get_at(this->constants, Cons_idx::betar) = 1.15;
-    // get_at(this->constants, Cons_idx::delta1) = 2.0/(this->br + 1.0 - this->nbr);
-    // get_at(this->constants, Cons_idx::delta2) = (0.5*this->dr + 2.5 - this->nbr)/(this->br + 1.0 - this->nbr);
-    // get_at(this->constants, Cons_idx::zeta) = 1.0;
-
-    // ==================================================
-    // Set rain constants
-    // See init_2mom_scheme_once in mo_2mom_mcrph_main.f90
-    // ==================================================
-    // Cosmo5 although nue1nue1 would be okay too, I guess
     //// Cloud
     this->cloud.constants[static_cast<int>(Particle_cons_idx::nu)] = cloud_nu;
     this->cloud.constants[static_cast<int>(Particle_cons_idx::mu)] = cloud_mu;
@@ -715,16 +834,6 @@ void model_constants_t<float_t>::setup_model_constants(
     this->cloud.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = cloud_vsedi_min;
     this->cloud.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = cloud_q_crit_c;
     this->cloud.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = cloud_d_crit_c;
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::c_s)] = 1.0
-        / get_at(this->cloud.constants, Particle_cons_idx::cap);
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->cloud, 1);
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->cloud, 1)
-        * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
-        / sqrt(get_at(this->constants, Cons_idx::kin_visc_air));
-    this->cloud.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(this->cloud, 2);
-
-    this->setup_cloud_autoconversion(this->cloud);
-    setup_bulk_sedi(this->cloud);
 
     //// Rain
     this->rain.constants[static_cast<int>(Particle_cons_idx::nu)] = rain_nu;
@@ -762,30 +871,8 @@ void model_constants_t<float_t>::setup_model_constants(
     this->rain.constants[static_cast<int>(Particle_cons_idx::cmu5)] = rain_cmu5;
     this->constants[static_cast<int>(Cons_idx::rain_gfak)] = rain_rain_gfak;
 
-    this->rain.constants[static_cast<int>(Particle_cons_idx::nm1)] =
-        (get_at(this->rain.constants, Particle_cons_idx::nu)+1.0)/get_at(this->rain.constants, Particle_cons_idx::mu);
-    this->rain.constants[static_cast<int>(Particle_cons_idx::nm2)] =
-        (get_at(this->rain.constants, Particle_cons_idx::nu)+2.0)/get_at(this->rain.constants, Particle_cons_idx::mu);
-    this->rain.constants[static_cast<int>(Particle_cons_idx::nm3)] =
-        (get_at(this->rain.constants, Particle_cons_idx::nu)+3.0)/get_at(this->rain.constants, Particle_cons_idx::mu);
     this->rain.constants[static_cast<int>(Particle_cons_idx::vsedi_max)] = rain_vsedi_max;
     this->rain.constants[static_cast<int>(Particle_cons_idx::vsedi_min)] = rain_vsedi_min;
-    this->table_r1.init_gamma_table(n_lookup, n_lookup_hr_dummy,
-        get_at(this->rain.constants, Particle_cons_idx::nm1).getValue());
-    this->table_r2.init_gamma_table(n_lookup, n_lookup_hr_dummy,
-        get_at(this->rain.constants, Particle_cons_idx::nm2).getValue());
-    this->table_r3.init_gamma_table(n_lookup, n_lookup_hr_dummy,
-        get_at(this->rain.constants, Particle_cons_idx::nm3).getValue());
-    this->rain.constants[static_cast<int>(Particle_cons_idx::g1)] = this->table_r1.igf[this->table_r1.n_bins-1];
-    this->rain.constants[static_cast<int>(Particle_cons_idx::g2)] = this->table_r2.igf[this->table_r2.n_bins-1];
-    this->rain.constants[static_cast<int>(Particle_cons_idx::c_s)] =
-        1.0 / get_at(this->rain.constants, Particle_cons_idx::cap);
-    this->rain.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->rain, 1);
-    this->rain.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->rain, 1)
-        * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
-        / sqrt(get_at(this->constants, Cons_idx::kin_visc_air));
-    this->rain.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(this->rain, 2);
-    setup_bulk_sedi(this->rain);
 
     //// Graupel
     this->graupel.constants[static_cast<int>(Particle_cons_idx::nu)] = graupel_nu;
@@ -817,33 +904,6 @@ void model_constants_t<float_t>::setup_model_constants(
     this->graupel.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = graupel_q_crit_c;
     this->graupel.constants[static_cast<int>(Particle_cons_idx::s_vel)] = graupel_s_vel;
 
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::nm1)] =
-        (get_at(this->graupel.constants, Particle_cons_idx::nu)+1.0)
-        / get_at(this->graupel.constants, Particle_cons_idx::mu);
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::nm2)] =
-        (get_at(this->graupel.constants, Particle_cons_idx::nu)+2.0)
-        / get_at(this->graupel.constants, Particle_cons_idx::mu);
-    float_t a =
-        (get_at(this->graupel.constants, Particle_cons_idx::nu)+1.0)
-        / get_at(this->graupel.constants, Particle_cons_idx::mu);
-    this->table_g1.init_gamma_table(
-        n_lookup, n_lookup_hr_dummy, get_at(this->graupel.constants, Particle_cons_idx::nm1).getValue());
-    a = (get_at(this->graupel.constants, Particle_cons_idx::nu)+2.0)
-        / get_at(this->graupel.constants, Particle_cons_idx::mu);
-    this->table_g2.init_gamma_table(
-        n_lookup, n_lookup_hr_dummy, get_at(this->graupel.constants, Particle_cons_idx::nm2).getValue());
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::g1)] = this->table_g1.igf[this->table_g1.n_bins-1];
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::g2)] = this->table_g2.igf[this->table_g2.n_bins-1];
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::c_s)] =
-        1.0 / get_at(this->graupel.constants, Particle_cons_idx::cap);
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = graupel_ecoll_c;
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->graupel, 1);
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->graupel, 1)
-        * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
-        / sqrt(get_at(this->constants, Cons_idx::kin_visc_air));
-    this->graupel.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(this->graupel, 2);
-    setup_bulk_sedi(this->graupel);
-
     //// Hail
     this->hail.constants[static_cast<int>(Particle_cons_idx::nu)] = hail_nu;
     this->hail.constants[static_cast<int>(Particle_cons_idx::mu)] = hail_mu;
@@ -873,15 +933,6 @@ void model_constants_t<float_t>::setup_model_constants(
     this->hail.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = hail_d_crit_c;
     this->hail.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = hail_q_crit_c;
     this->hail.constants[static_cast<int>(Particle_cons_idx::s_vel)] = hail_s_vel;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::c_s)] =
-        1.0 / get_at(this->hail.constants, Particle_cons_idx::cap);
-    this->hail.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = hail_ecoll_c;
-    this->hail.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->hail, 1);
-    this->hail.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->hail, 1)
-        * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
-        / sqrt(get_at(this->constants, Cons_idx::kin_visc_air));
-    this->hail.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(this->hail, 2);
-    setup_bulk_sedi(this->hail);
 
     //// Ice
     this->ice.constants[static_cast<int>(Particle_cons_idx::nu)] = ice_nu;
@@ -912,15 +963,6 @@ void model_constants_t<float_t>::setup_model_constants(
     this->ice.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = ice_d_crit_c;
     this->ice.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = ice_q_crit_c;
     this->ice.constants[static_cast<int>(Particle_cons_idx::s_vel)] = ice_s_vel;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::c_s)] =
-        1.0 / get_at(this->ice.constants, Particle_cons_idx::cap);
-    this->ice.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = ice_ecoll_c;
-    this->ice.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->ice, 1);
-    this->ice.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->ice, 1)
-        * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
-        / sqrt(get_at(this->constants, Cons_idx::kin_visc_air));
-    this->ice.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(this->ice, 2);
-    setup_bulk_sedi(this->ice);
 
     //// Snow
     this->snow.constants[static_cast<int>(Particle_cons_idx::nu)] = snow_nu;
@@ -951,6 +993,111 @@ void model_constants_t<float_t>::setup_model_constants(
     this->snow.constants[static_cast<int>(Particle_cons_idx::d_crit_c)] = snow_d_crit_c;
     this->snow.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = snow_q_crit_c;
     this->snow.constants[static_cast<int>(Particle_cons_idx::s_vel)] = snow_s_vel;
+#endif
+    setup_dependent_model_constants(ref_quant);
+    // Set the uncertainty of every parameter.
+    // Currently only uses 10% of the value.
+    set_uncertainty();
+}
+
+
+template<class float_t>
+void model_constants_t<float_t>::setup_dependent_model_constants(
+    const reference_quantities_t &ref_quant) {
+    this->constants[static_cast<int>(Cons_idx::inv_z)] = 1.0/parcel_height;
+    // Performance constants for warm cloud; COSMO
+    this->a2_scale = 1.72 / pow(get_at(this->constants, Cons_idx::R_a) , 7./8.);
+    this->e1_scale = 1.0 / sqrt(get_at(this->constants, Cons_idx::R_a));
+    this->e2_scale = 9.1 / pow(get_at(this->constants, Cons_idx::R_a) , 11./16.);
+    this->d_scale = (130.0*tgamma(4.5))
+        / (6.0*(1.0e3)*pow(M_PI*(8.0e6)*get_at(this->constants, Cons_idx::R_a) , 1.0/8.0));
+#ifndef MET3D
+    // Performance constants for warm cloud; IFS
+    const double lambda_pp = pow(this->nar * this->ar * tgamma(this->br + 1.0) , this->alpha_r);
+#endif
+#if defined(RK4ICE) || defined(RK4NOICE)
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::c_s)] = 1.0
+        / get_at(this->cloud.constants, Particle_cons_idx::cap);
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->cloud, 1);
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->cloud, 1)
+        * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
+        / sqrt(get_at(this->constants, Cons_idx::kin_visc_air));
+    this->cloud.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(this->cloud, 2);
+
+    this->setup_cloud_autoconversion(this->cloud);
+    setup_bulk_sedi(this->cloud);
+
+    this->rain.constants[static_cast<int>(Particle_cons_idx::nm1)] =
+        (get_at(this->rain.constants, Particle_cons_idx::nu)+1.0)/get_at(this->rain.constants, Particle_cons_idx::mu);
+    this->rain.constants[static_cast<int>(Particle_cons_idx::nm2)] =
+        (get_at(this->rain.constants, Particle_cons_idx::nu)+2.0)/get_at(this->rain.constants, Particle_cons_idx::mu);
+    this->rain.constants[static_cast<int>(Particle_cons_idx::nm3)] =
+        (get_at(this->rain.constants, Particle_cons_idx::nu)+3.0)/get_at(this->rain.constants, Particle_cons_idx::mu);
+
+    this->table_r1.init_gamma_table(n_lookup, n_lookup_hr_dummy,
+        get_at(this->rain.constants, Particle_cons_idx::nm1).getValue());
+    this->table_r2.init_gamma_table(n_lookup, n_lookup_hr_dummy,
+        get_at(this->rain.constants, Particle_cons_idx::nm2).getValue());
+    this->table_r3.init_gamma_table(n_lookup, n_lookup_hr_dummy,
+        get_at(this->rain.constants, Particle_cons_idx::nm3).getValue());
+    this->rain.constants[static_cast<int>(Particle_cons_idx::g1)] = this->table_r1.igf[this->table_r1.n_bins-1];
+    this->rain.constants[static_cast<int>(Particle_cons_idx::g2)] = this->table_r2.igf[this->table_r2.n_bins-1];
+    this->rain.constants[static_cast<int>(Particle_cons_idx::c_s)] =
+        1.0 / get_at(this->rain.constants, Particle_cons_idx::cap);
+    this->rain.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->rain, 1);
+    this->rain.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->rain, 1)
+        * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
+        / sqrt(get_at(this->constants, Cons_idx::kin_visc_air));
+    this->rain.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(this->rain, 2);
+    setup_bulk_sedi(this->rain);
+
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::nm1)] =
+        (get_at(this->graupel.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(this->graupel.constants, Particle_cons_idx::mu);
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::nm2)] =
+        (get_at(this->graupel.constants, Particle_cons_idx::nu)+2.0)
+        / get_at(this->graupel.constants, Particle_cons_idx::mu);
+    float_t a =
+        (get_at(this->graupel.constants, Particle_cons_idx::nu)+1.0)
+        / get_at(this->graupel.constants, Particle_cons_idx::mu);
+    this->table_g1.init_gamma_table(
+        n_lookup, n_lookup_hr_dummy, get_at(this->graupel.constants, Particle_cons_idx::nm1).getValue());
+    a = (get_at(this->graupel.constants, Particle_cons_idx::nu)+2.0)
+        / get_at(this->graupel.constants, Particle_cons_idx::mu);
+    this->table_g2.init_gamma_table(
+        n_lookup, n_lookup_hr_dummy, get_at(this->graupel.constants, Particle_cons_idx::nm2).getValue());
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::g1)] = this->table_g1.igf[this->table_g1.n_bins-1];
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::g2)] = this->table_g2.igf[this->table_g2.n_bins-1];
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::c_s)] =
+        1.0 / get_at(this->graupel.constants, Particle_cons_idx::cap);
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = graupel_ecoll_c;
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->graupel, 1);
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->graupel, 1)
+        * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
+        / sqrt(get_at(this->constants, Cons_idx::kin_visc_air));
+    this->graupel.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(this->graupel, 2);
+    setup_bulk_sedi(this->graupel);
+
+    this->hail.constants[static_cast<int>(Particle_cons_idx::c_s)] =
+        1.0 / get_at(this->hail.constants, Particle_cons_idx::cap);
+    this->hail.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = hail_ecoll_c;
+    this->hail.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->hail, 1);
+    this->hail.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->hail, 1)
+        * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
+        / sqrt(get_at(this->constants, Cons_idx::kin_visc_air));
+    this->hail.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(this->hail, 2);
+    setup_bulk_sedi(this->hail);
+
+    this->ice.constants[static_cast<int>(Particle_cons_idx::c_s)] =
+        1.0 / get_at(this->ice.constants, Particle_cons_idx::cap);
+    this->ice.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = ice_ecoll_c;
+    this->ice.constants[static_cast<int>(Particle_cons_idx::a_f)] = vent_coeff_a(this->ice, 1);
+    this->ice.constants[static_cast<int>(Particle_cons_idx::b_f)] = vent_coeff_b(this->ice, 1)
+        * pow(get_at(this->constants, Cons_idx::N_sc), get_at(this->constants, Cons_idx::n_f))
+        / sqrt(get_at(this->constants, Cons_idx::kin_visc_air));
+    this->ice.constants[static_cast<int>(Particle_cons_idx::c_z)] = moment_gamma(this->ice, 2);
+    setup_bulk_sedi(this->ice);
+
     this->snow.constants[static_cast<int>(Particle_cons_idx::c_s)] =
         1.0 / get_at(this->snow.constants, Particle_cons_idx::cap);
     this->snow.constants[static_cast<int>(Particle_cons_idx::ecoll_c)] = snow_ecoll_c;
@@ -1012,8 +1159,11 @@ void model_constants_t<float_t>::setup_model_constants(
         - coll_theta_12(this->ice, this->ice, 1)
         + coll_theta_22(this->ice, this->ice, 1);
 #endif
-    // Set the uncertainty of every parameter.
-    // Currently only uses 10% of the value.
+}
+
+
+template<class float_t>
+void model_constants_t<float_t>::set_uncertainty() {
     for (uint32_t i=0; i < static_cast<uint32_t>(Cons_idx::n_items); ++i) {
         this->uncertainty[i] = this->constants[i].getValue() * 0.1;
     }
@@ -1051,10 +1201,6 @@ void model_constants_t<float_t>::set_dt(
     this->num_steps = ceil(this->t_end_prime/this->dt_traject_prime);
     // The trajectories from input files are calculated with dt_traject_prime s timesteps.
     this->num_sub_steps = (floor(this->dt_traject_prime/this->dt) < 1) ? 1 : floor(this->dt_traject_prime/this->dt);
-    // std::cout << "set_dt with dt_prime " << dt_prime << "\n"
-    //     << "dt_traject " << this->dt_traject << "\n"
-    //     << "t_end_prime " << this->t_end_prime << "\n"
-    //     << "dt_traject_prime " <<  this->dt_traject_prime << "\n";
     }
 
 template<class float_t>
@@ -1100,33 +1246,26 @@ bool model_constants_t<float_t>::trace_check(
 template<class float_t>
 void model_constants_t<float_t>::load_configuration(
     const std::string &filename) {
-    boost::property_tree::ptree config_tree;
-    boost::property_tree::read_json(filename, config_tree);
+    nlohmann::json config;
+    std::ifstream ifstr(filename);
+    ifstr >> config;
 
-    auto it_child = config_tree.find("model_state_variable");
-    if (it_child == config_tree.not_found()) {
-        track_state = -1;
-        local_num_comp = num_comp;
-    } else {
+    if (config.find("model_state_variable") != config.end()) {
         local_num_comp = 0;
         track_state = 0;
-        for (auto &it : config_tree.get_child("model_state_variable")) {
-            uint32_t id = it.second.get_value<std::uint32_t>();
+        for (const uint32_t &id : config["model_state_variable"]) {
             track_state = track_state | (((uint64_t) 1) << id);
             local_num_comp++;
         }
+    } else {
+        track_state = -1;
+        local_num_comp = num_comp;
     }
 
-    auto it_child2 = config_tree.find("out_params");
-    if (it_child2 == config_tree.not_found()) {
-        for (auto &t : track_param)
-            t = -1;
-        local_num_par = num_par;
-    } else {
+    if (config.find("out_params") != config.end()) {
         local_num_par = 0;
         for (auto &t : track_param) t = 0;
-        for (auto &it : config_tree.get_child("out_params")) {
-            std::string id_name = it.second.get_value<std::string>();
+        for (const std::string &id_name : config["out_params"]) {
             auto it_tmp = std::find(
                 output_grad_idx.begin(),
                 output_grad_idx.end(),
@@ -1136,17 +1275,16 @@ void model_constants_t<float_t>::load_configuration(
             track_param[idx] = track_param[idx] | (((uint64_t) 1) << (id%64));
             local_num_par++;
         }
+    } else {
+        for (auto &t : track_param)
+            t = -1;
+        local_num_par = num_par;
     }
 
-    auto it_child3 = config_tree.find("initial_condition");
-    if (it_child3 == config_tree.not_found()) {
-        track_ic = -1;
-        local_ic_par = static_cast<uint32_t>(Init_cons_idx::n_items);
-    } else {
+    if (config.find("initial_condition") != config.end()) {
         track_ic = 0;
         local_ic_par = 0;
-        for (auto &it : config_tree.get_child("initial_condition")) {
-            std::string id_name = it.second.get_value<std::string>();
+        for (const std::string &id_name : config["initial_condition"]) {
             auto it_tmp = std::find(
                 init_grad_idx.begin(),
                 init_grad_idx.end(),
@@ -1155,9 +1293,136 @@ void model_constants_t<float_t>::load_configuration(
             track_ic = track_ic | (((uint64_t) 1) << id);
             local_ic_par++;
         }
+    } else {
+        track_ic = -1;
+        local_ic_par = static_cast<uint32_t>(Init_cons_idx::n_items);
     }
+
+    // boost::property_tree::ptree config_tree;
+    // boost::property_tree::read_json(filename, config_tree);
+
+    // auto it_child = config_tree.find("model_state_variable");
+    // if (it_child == config_tree.not_found()) {
+    //     track_state = -1;
+    //     local_num_comp = num_comp;
+    // } else {
+    //     local_num_comp = 0;
+    //     track_state = 0;
+    //     for (auto &it : config_tree.get_child("model_state_variable")) {
+    //         uint32_t id = it.second.get_value<std::uint32_t>();
+    //         track_state = track_state | (((uint64_t) 1) << id);
+    //         local_num_comp++;
+    //     }
+    // }
+
+    // auto it_child2 = config_tree.find("out_params");
+    // if (it_child2 == config_tree.not_found()) {
+    //     for (auto &t : track_param)
+    //         t = -1;
+    //     local_num_par = num_par;
+    // } else {
+    //     local_num_par = 0;
+    //     for (auto &t : track_param) t = 0;
+    //     for (auto &it : config_tree.get_child("out_params")) {
+    //         std::string id_name = it.second.get_value<std::string>();
+    //         auto it_tmp = std::find(
+    //             output_grad_idx.begin(),
+    //             output_grad_idx.end(),
+    //             id_name);
+    //         int id = std::distance(output_grad_idx.begin(), it_tmp);
+    //         uint32_t idx = id/64;
+    //         track_param[idx] = track_param[idx] | (((uint64_t) 1) << (id%64));
+    //         local_num_par++;
+    //     }
+    // }
+
+    // auto it_child3 = config_tree.find("initial_condition");
+    // if (it_child3 == config_tree.not_found()) {
+    //     track_ic = -1;
+    //     local_ic_par = static_cast<uint32_t>(Init_cons_idx::n_items);
+    // } else {
+    //     track_ic = 0;
+    //     local_ic_par = 0;
+    //     for (auto &it : config_tree.get_child("initial_condition")) {
+    //         std::string id_name = it.second.get_value<std::string>();
+    //         auto it_tmp = std::find(
+    //             init_grad_idx.begin(),
+    //             init_grad_idx.end(),
+    //             id_name);
+    //         int id = std::distance(init_grad_idx.begin(), it_tmp);
+    //         track_ic = track_ic | (((uint64_t) 1) << id);
+    //         local_ic_par++;
+    //     }
+    // }
 }
+
+
+// template<class float_t>
+// void model_constants_t<float_t>::load_configuration(
+//     const std::string &filename) {
+//     boost::property_tree::ptree config_tree;
+//     boost::property_tree::read_json(filename, config_tree);
+
+//     auto it_child = config_tree.find("model_state_variable");
+//     if (it_child == config_tree.not_found()) {
+//         track_state = -1;
+//         local_num_comp = num_comp;
+//     } else {
+//         local_num_comp = 0;
+//         track_state = 0;
+//         for (auto &it : config_tree.get_child("model_state_variable")) {
+//             uint32_t id = it.second.get_value<std::uint32_t>();
+//             track_state = track_state | (((uint64_t) 1) << id);
+//             local_num_comp++;
+//         }
+//     }
+
+//     auto it_child2 = config_tree.find("out_params");
+//     if (it_child2 == config_tree.not_found()) {
+//         for (auto &t : track_param)
+//             t = -1;
+//         local_num_par = num_par;
+//     } else {
+//         local_num_par = 0;
+//         for (auto &t : track_param) t = 0;
+//         for (auto &it : config_tree.get_child("out_params")) {
+//             std::string id_name = it.second.get_value<std::string>();
+//             auto it_tmp = std::find(
+//                 output_grad_idx.begin(),
+//                 output_grad_idx.end(),
+//                 id_name);
+//             int id = std::distance(output_grad_idx.begin(), it_tmp);
+//             uint32_t idx = id/64;
+//             track_param[idx] = track_param[idx] | (((uint64_t) 1) << (id%64));
+//             local_num_par++;
+//         }
+//     }
+
+//     auto it_child3 = config_tree.find("initial_condition");
+//     if (it_child3 == config_tree.not_found()) {
+//         track_ic = -1;
+//         local_ic_par = static_cast<uint32_t>(Init_cons_idx::n_items);
+//     } else {
+//         track_ic = 0;
+//         local_ic_par = 0;
+//         for (auto &it : config_tree.get_child("initial_condition")) {
+//             std::string id_name = it.second.get_value<std::string>();
+//             auto it_tmp = std::find(
+//                 init_grad_idx.begin(),
+//                 init_grad_idx.end(),
+//                 id_name);
+//             int id = std::distance(init_grad_idx.begin(), it_tmp);
+//             track_ic = track_ic | (((uint64_t) 1) << id);
+//             local_ic_par++;
+//         }
+//     }
+// }
 
 
 template class model_constants_t<codi::RealReverse>;
 template class model_constants_t<codi::RealForwardVec<num_par_init> >;
+
+template void to_json<codi::RealReverse>(
+    nlohmann::json&, const model_constants_t<codi::RealReverse>&);
+template void to_json<codi::RealForwardVec<num_par_init> >(
+    nlohmann::json&, const model_constants_t<codi::RealForwardVec<num_par_init> >&);

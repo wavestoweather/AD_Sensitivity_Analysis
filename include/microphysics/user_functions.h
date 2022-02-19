@@ -42,6 +42,181 @@ codi::RealForwardVec<num_par_init> trunc(codi::RealForwardVec<num_par_init> x) {
 
 
 /**
+ * Temperature and water vapor contents are adjusted. Heat capacity is calculated using
+ * dry air (errors should be rather small).
+ * Total density is calculated using moist air
+ *
+ * @params T_prime Current temperature [K]
+ * @params p_prime Current pressure [Pa]
+ * @params p_sat Pressure at saturation [Pa]
+ * @params qv_prime Current water vapor mixing ratio
+ * @params qc_prime Current cloud water mixing ratio
+ * @params res Vector to store the changes at qv_idx, qc_idx and T_idx
+ */
+template<class float_t>
+void saturation_adjust(
+    const float_t &T_prime,
+    const float_t &p_prime,
+    const float_t &p_sat,
+    const float_t &qv_prime,
+    const float_t &qc_prime,
+    std::vector<float_t> &res,
+    const model_constants_t<float_t> &cc) {
+    float_t S = convert_qv_to_S(
+        p_prime,
+        T_prime,
+        qv_prime,
+        get_at(cc.constants, Cons_idx::p_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_a),
+        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_b),
+        get_at(cc.constants, Cons_idx::Epsilon));
+    if (S < 1 && qc_prime <= 0) return;  // Nothing to evaporate.
+    float_t q_total = qv_prime + qc_prime;
+
+    float_t lat_heat_vapor = latent_heat_water(
+        T_prime,
+        get_at(cc.constants, Cons_idx::L_wd),
+        get_at(cc.constants, Cons_idx::cv),
+        get_at(cc.constants, Cons_idx::cp),
+        get_at(cc.constants, Cons_idx::T_freeze),
+        get_at(cc.constants, Cons_idx::R_v),
+        get_at(cc.constants, Cons_idx::R_a));
+    float_t T_test = T_prime - lat_heat_vapor * qc_prime;
+
+    float_t rho_total = compute_rhoh(
+        p_prime, T_prime, S,
+        get_at(cc.constants, Cons_idx::p_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_a),
+        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_b),
+        get_at(cc.constants, Cons_idx::R_a),
+        get_at(cc.constants, Cons_idx::R_v));
+    float_t p_vapor_sat = compute_pv(
+        T_test,
+        float_t(1),
+        get_at(cc.constants, Cons_idx::p_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_a),
+        get_at(cc.constants, Cons_idx::T_sat_low_temp),
+        get_at(cc.constants, Cons_idx::p_sat_const_b));
+    float_t q_test = p_vapor_sat
+        / (rho_total * get_at(cc.constants, Cons_idx::R_v) * T_test);
+
+    // not saturated, even if all qc evaporates?
+    if (q_total <= q_test) {
+#ifdef IN_SAT_ADJ
+        res[qv_idx] += (res[qc_idx] + qc_prime)/cc.dt_prime;
+        res[qc_idx] -= (res[qc_idx] + qc_prime)/cc.dt_prime;
+        res[T_idx] -= lat_heat_vapor * (res[qc_idx] + qc_prime)/cc.dt_prime;
+#if defined(TRACE_ENV) || defined(TRACE_QV) || defined(TRACE_QC)
+        if (trace)
+            std::cout << "traj: " << cc.traj_id << " saturation_adjust (in, new) dT "
+                << -lat_heat_vapor * (res[qc_idx] + qc_prime)/cc.dt_prime << ", "
+                << "dqv: " << (res[qc_idx] + qc_prime)/cc.dt_prime << ", "
+                << "dqc: " << -(res[qc_idx] + qc_prime)/cc.dt_prime << ", "
+                << "T_prime: " << T_prime << ", "
+                << "qv_prime: " << qv_prime << ", "
+                << "qc_prime: " << qc_prime
+                << "\n";
+#endif
+#else
+        res[qv_idx] = q_total - qv_prime;
+        res[qc_idx] = -qc_prime;
+        res[T_idx] = T_test - T_prime;
+#if defined(TRACE_ENV) || defined(TRACE_QV) || defined(TRACE_QC)
+        if (trace)
+            std::cout << "traj: " << cc.traj_id << " saturation_adjust (out, new) dT "
+                << T_test - T_prime << ", "
+                << "dqv: " << q_total - qv_prime << ", "
+                << "dqc: " << -qc_prime << ", "
+                << "T_prime: " << T_prime << ", "
+                << "qv_prime: " << qv_prime << ", "
+                << "qc_prime: " << qc_prime
+                << "\n";
+#endif
+#endif
+
+    } else {
+        const int maxiter = 10;
+        const float_t tolerance = 1e-3;
+        // Newton: let (a) be the difference in temperature before and after
+        // evaporating cloud droplets and (b) be the difference in temperature
+        // from latent heat by evaporating cloud mass. Then f = (a) - (b)
+        // shall be zero with no change in the next Newton step.
+        float_t T_new = T_prime;
+        float_t T_old;
+        float_t q_new, dq_new_dT, f, df_dT;
+        float_t p_sat_const = get_at(cc.constants, Cons_idx::p_sat_const_a)
+            * (get_at(cc.constants, Cons_idx::T_freeze) - get_at(cc.constants, Cons_idx::p_sat_const_b));
+        int i = 0;
+        do {
+            i++;
+            T_old = T_new;
+            q_new = p_vapor_sat / (rho_total * get_at(cc.constants, Cons_idx::R_v) * T_new);
+            dq_new_dT =  p_sat_const
+                / std::pow(T_new - get_at(cc.constants, Cons_idx::p_sat_const_b), 2)
+                - 1/T_new * q_new;
+            f = T_new - T_prime + lat_heat_vapor * (q_new - qv_prime);
+            df_dT = 1 + lat_heat_vapor * dq_new_dT;
+            T_new = T_new - f/df_dT;
+        } while ((std::abs(T_new - T_old) > tolerance) && (i < maxiter));
+#ifdef IN_SAT_ADJ
+        float_t delta_q = p_vapor_sat / (rho_total * get_at(cc.constants, Cons_idx::R_v) * T_new);
+        float_t delta_qc = std::max(qc_prime + qv_prime - delta_q, 1.0e-20) - qc_prime;
+        if (delta_qc > 0) {
+            // cloud droplets evaporate
+            delta_qc = std::min(delta_qc, (res[qc_idx]+qc_prime)/cc.dt_prime);
+        } else {
+            // water vapor gets cloud droplets
+            delta_qc = -std::min(-delta_qc, (res[qv_idx]+qv_prime)/cc.dt_prime);
+        }
+        float_t delta_T = lat_heat_vapor * delta_qc - T_prime;
+        res[qc_idx] -= delta_qc;
+        res[qv_idx] += delta_qc;
+        res[T_idx] += delta_T;
+#if defined(TRACE_ENV) || defined(TRACE_QV) || defined(TRACE_QC)
+        if (trace)
+            std::cout << "traj: " << cc.traj_id << " saturation_adjust (in, new, after Newton) dT "
+                << delta_T << ", "
+                << "dqv: " << delta_qc << ", "
+                << "dqc: " << -delta_qc << ", "
+                << "T_prime: " << T_prime << ", "
+                << "qv_prime: " << qv_prime << ", "
+                << "qc_prime: " << qc_prime
+                << "\n";
+#endif
+#else
+        res[T_idx] = T_new - T_prime;
+        p_vapor_sat = compute_pv(
+            T_new,
+            float_t(1),
+            get_at(cc.constants, Cons_idx::p_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_a),
+            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_b));
+        float_t delta_q = p_vapor_sat / (rho_total * get_at(cc.constants, Cons_idx::R_v) * T_new);
+        // I'm paranoid and this case should be in the other branch
+        // of the if-clause.
+        delta_q = (delta_q > q_total) ? q_total : delta_q;
+        res[qc_idx] = std::max(q_total - delta_q, 1.0e-20) - qc_prime;
+        res[qv_idx] = delta_q - qv_prime;
+#if defined(TRACE_ENV) || defined(TRACE_QV) || defined(TRACE_QC)
+        if (trace)
+            std::cout << "traj: " << cc.traj_id << " saturation_adjust (out, new, after Newton) dT "
+                << res[T_idx] << ", "
+                << "dqv: " << res[qv_idx] << ", "
+                << "dqc: " << res[qc_idx] << ", "
+                << "T_prime: " << T_prime << ", "
+                << "qv_prime: " << qv_prime << ", "
+                << "qc_prime: " << qc_prime
+                << "\n";
+#endif
+#endif
+    }
+}
+
+
+/**
  * Saturation adjustment that also adjusts temperature (no explicit calculation
  * of latent heating/cooling; temperature change is given directly!).
  *
@@ -53,7 +228,7 @@ codi::RealForwardVec<num_par_init> trunc(codi::RealForwardVec<num_par_init> x) {
  * @params res Vector to store the changes at qv_idx, qc_idx and T_idx
  */
 template<class float_t>
-void saturation_adjust(
+void saturation_adjust_legacy(
     const float_t &T_prime,
     const float_t &p_prime,
     const float_t &p_sat,
@@ -74,6 +249,7 @@ void saturation_adjust(
         get_at(cc.constants, Cons_idx::T_sat_low_temp),
         get_at(cc.constants, Cons_idx::p_sat_const_b),
         get_at(cc.constants, Cons_idx::Epsilon)) - qv;
+
     if (delta_q < 0) {
         // Handle over saturation
         // Adjust temperature
@@ -170,6 +346,7 @@ void saturation_adjust(
     }
 }
 
+
 #if defined(B_EIGHT)
 /**
  * CCN activation similar to Hande et al 2016.
@@ -231,7 +408,7 @@ void ccn_act_hande_akm(
 #ifdef TRACE_QC
         if (trace)
             std::cout << "traj: " << cc.traj_id << " Ascent dqc " << delta_q << ", dNc " << delta_n
-                << ", nuc_n " << nuc_n << ", Nc " << Nc << ", rest " << get_at(cc.constants, Cons_idx::i_ccn_2) << "\n";
+                << ", Nc " << Nc << ", rest " << get_at(cc.constants, Cons_idx::i_ccn_2) << "\n";
 #endif
 #ifdef TRACE_QV
         if (trace)
@@ -389,7 +566,7 @@ void ccn_act_seifert(
     float_t cpa_prime = get_at(cc.constants, Cons_idx::cp);
     float_t cpl_prime = specific_heat_water(T_prime);
     float_t rhow_prime = density_water(T_prime);
-    float_t L_prime = latent_heat_water(T_prime, get_at(cc.constants, Cons_idx::M_w));
+    float_t L_prime = latent_heat_water_supercooled(T_prime, get_at(cc.constants, Cons_idx::M_w));
     float_t H_prime =
         1.0/(((L_prime/(get_at(cc.constants, Cons_idx::R_v)*T_prime)) - 1.0)
         *(L_prime/(thermal_conductivity_dry_air(T_prime)*T_prime))

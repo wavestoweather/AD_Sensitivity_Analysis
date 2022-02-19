@@ -3,7 +3,7 @@ cd ..
 AD_SIM_HOME=$(pwd)
 
 # Set to the number of threads or CPUs in case you want to run ensemble simulations
-NTASKS=4
+NTASKS=2
 
 # The simulation mode determines how multiple processes are used
 # ensembles at different time steps and sensitvity analysis 0
@@ -59,8 +59,8 @@ do
         echo "###################################"
         echo "Running for ${INPUT_FILENAME} while perturbing ${SUFF}"
         echo ""
-
-        mpirun -n ${NTASKS} build/bin/./trajectories \
+        # optional in case of problems occur: mpirun --mca osc pt2pt
+        mpirun --mca osc pt2pt -n ${NTASKS} build/bin/./trajectories \
         -w ${WRITE_INDEX} \
         -a ${AUTO_TYPE} \
         -t ${FIXED_ITERATION} \
@@ -76,5 +76,7 @@ do
         -r 0 \
         -m ${ENSEMBLE_CONFIG} \
         -u ${WARM_UP}
+        break
     done
+    break
 done

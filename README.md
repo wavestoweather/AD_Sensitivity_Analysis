@@ -74,23 +74,22 @@ Compiling code
 ---------------
 In order to compile the code, create a folder `build` and in this folder type
 ```
-cmake .. -DCMAKE_BUILD_TYPE=release
+cmake .. -DCMAKE_BUILD_TYPE=release -DTRUSTED_DATA:BOOL=ON
 make -j4
 ```
+With the option `TRUSTED_DATA` the program just stops simulations for every trajectory with more than 10
+consecutive NaNs for every other input column. Without this option, the program
+assumes the dataset is broken and terminates directly, giving information which
+trajectory and time index starts with consecutive NaNs.
+
 You may change the number for `make` to the number of cores available.
 In case the CMake does not find a specific library, you can specify them like this:
 ```
 cmake .. -DNETCDF_INCLUDE_DIR=<path/to/netcdf/include/> -DCODIPACK_INCLUDEDIR=<path/to/codipack/include/> -DCMAKE_BUILD_TYPE=release
 ```
 You may change the target for timing the microphysics with `-DTARGET=timing` if you wish to check the penalty cost of executing AD at every time step for varying amounts of model state variables and model parameters.
-If you trust your dataset to always have latitude, longitude and time values, you can use
-```
-cmake .. -DCMAKE_BUILD_TYPE=release -DTRUSTED_DATA:BOOL=ON
-```
-This way the program just stops simulations for every trajectory with more than 10
-consecutive NaNs for every other input column. Without this option, the program
-assumes the dataset is broken and terminates directly, giving information which
-trajectory and time index starts with consecutive NaNs.
+
+You can add `-DCOMPRESS_OUTPUT:BOOL=ON` to write compressed output with zlib. You need for this HDF5 v1.10.2 or higher and a parallel filesystem, i.e., Lustre.
 
 Running a simulation
 ---------------------

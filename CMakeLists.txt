@@ -106,7 +106,6 @@ set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of buil
 set(CMAKE_CXX_FLAGS_SIM "-DRK4ICE -DAUTUMN -DFLUX -DMET3D -DSB_CONV -DSB_SHAPE")
 
 # Set flags used in all build types
-# set(CMAKE_CXX_FLAGS "-pipe ${CXX_STANDARD} ${CXX_WARNING_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SIM} -DNPROCS=${NPROCS} -lgsl -lgslcblas -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize -lnetcdf_c++4 -lnetcdf")
 set(CMAKE_CXX_FLAGS "-pipe ${CXX_STANDARD} ${CXX_WARNING_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SIM} -DNPROCS=${NPROCS} -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize")
 string(REGEX REPLACE "[ ]+" " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
@@ -217,6 +216,7 @@ find_package(MPI)
 if( MPI_CXX_FOUND )
     include_directories(${MPI_CXX_INCLUDE_PATH})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MPI")
+    set(targets "${MPI_CXX_LIBRARIES}")
 else()
     message(FATAL_ERROR
 "
@@ -228,19 +228,33 @@ work, take a look at https://cmake.org/cmake/help/latest/module/FindMPI.html.
 ")
 endif()
 
-message("~~~ BOOST")
-find_package(Boost 1.62 REQUIRED)
+# message("~~~ BOOST")
+# find_package(Boost 1.62 REQUIRED)
+message("~~~ NLohmann/JSON")
+find_package(nlohmann_json 3.9.1 REQUIRED)
+# message(STATUS "${nlohmann_json::nlohmann_json}")
+
+# set(targets "${targets};${nlohmann_json_LIBRARIES}")
 
 message("~~~ zlib")
 message(STATUS "Make sure this is the same zlib library that is used by HDF5")
-find_package(ZLIB PATHS ${HDF5_DIR})
-message(STATUS "Found zlib include: ${ZLIB_INCLUDE_DIR}")
-include_directories (${ZLIB_INCLUDE_DIR})
-if( "${ZLIB_LIBRARIES}" STREQUAL "" )
-    # Hack if for some reason this is still empty
-    string(REPLACE "include" "lib" ZLIB_LIBRARIES ${ZLIB_INCLUDE_DIR})
-    set(ZLIB_LIBRARIES "${ZLIB_LIBRARIES}/libaec.a;${ZLIB_LIBRARIES}/libsz.a;${ZLIB_LIBRARIES}/libz.a")
+find_package(ZLIB) 
+# Hack if for some reason it is not found in the usual directories
+if( NOT ${ZLIB_FOUND} )
+    message(WARNING "Did not find zlib. Looking at different directories now.")
+    find_package(ZLIB PATHS ${HDF5_DIR})
+    if( "${ZLIB_INCLUDE_DIR}" STREQUAL "" )
+        message(ERROR "Did not find zlib!")
+    endif()
+    message(STATUS "Found zlib include: ${ZLIB_INCLUDE_DIR}")
+    include_directories (${ZLIB_INCLUDE_DIR})
+    if( "${ZLIB_LIBRARIES}" STREQUAL "" )
+        # Hack if for some reason this is still empty
+        string(REPLACE "include" "lib" ZLIB_LIBRARIES ${ZLIB_INCLUDE_DIR})
+        set(ZLIB_LIBRARIES "${ZLIB_LIBRARIES}/libaec.a;${ZLIB_LIBRARIES}/libsz.a;${ZLIB_LIBRARIES}/libz.a")
+    endif()
 endif()
+set(targets "${targets};${ZLIB_LIBRARIES}")
 
 message("~~~ Zip")
 find_library(Zip_LIBRARIES NAMES zip)
@@ -253,21 +267,27 @@ else()
     message("~~~ AEC")
     find_library(AEC_LIBRARIES NAMES aec)
     message(STATUS "Found AEC: ${AEC_LIBRARIES}")
+    set(targets "${targets};${Zip_LIBRARIES} ${AEC_LIBRARIES}")
 endif()
 
 message("~~~ CURL")
 find_package(CURL REQUIRED)
+set(targets "${targets};${CURL_LIBRARIES}")
 
 message("~~~ PnetCDF")
 find_package(PnetCDF)
 include_directories (${PNETCDF_INCLUDE_DIR})
+if( PnetCDF_FOUND )
+    set(targets "${targets};${PNETCDF_LIBRARIES}")
+endif()
 
 message("~~~ NetCDF")
 set(NETCDF "Yes")
 find_package(NetCDF)
 if( NetCDF_FOUND )
     include_directories (${NETCDF_INCLUDE_DIR})
-    message(STATUS "Found NetCDF include: ${NETCDF_INCLUDE_DIR}")
+    # message(STATUS "Found NetCDF include: ${NETCDF_INCLUDE_DIR}")
+    set(targets "${targets};${NETCDF_LIBRARIES}")
 else()
     message(FATAL_ERROR
 "
@@ -280,15 +300,33 @@ that -lnetcdf can be used by your compiler.
 endif()
 
 message("~~~ HDF5")
-find_package(HDF5 REQUIRED PATHS ${HDF5_DIR})
-include_directories (${HDF5_INCLUDE_DIR})
-message(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIR}")
-message(STATUS "HDF5 Version: ${HDF5_VERSION}")
-if( "${HDF5_LIBRARIES}" STREQUAL "" )
-    # Hack if for some reason this is still empty
-    string(REPLACE "include" "lib" HDF5_LIBRARIES ${HDF5_INCLUDE_DIR})
-    set(HDF5_LIBRARIES "${HDF5_LIBRARIES}/libhdf5_tools.a;${HDF5_LIBRARIES}/libhdf5_hl.a;${HDF5_LIBRARIES}/libhdf5.a")
+# I usually prefer the Config mode for CMake to look for HDF5 but for our supercomputer
+# I have to use the module mode, whereas I want to use Config mode for my
+# local machine and my docker container.
+# set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
+set(HDF5_HINT ${HDF5_DIR})
+find_package(HDF5)  
+# Hack if for some reason it is not found in the usual directories
+if (NOT ${HDF5_FOUND} )
+    message(WARNING "Could not find HDF5. Looking at other directories.")
+    find_package(HDF5 REQUIRED PATHS ${HDF5_DIR}) 
+    include_directories (${HDF5_INCLUDE_DIR})
+    message(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIR}")
+    if( "${HDF5_LIBRARIES}" STREQUAL "" )
+        # Hack if for some reason this is still empty
+        string(REPLACE "include" "lib" HDF5_LIBRARIES ${HDF5_INCLUDE_DIR})
+        set(HDF5_LIBRARIES "${HDF5_LIBRARIES}/libhdf5_hl.a;${HDF5_LIBRARIES}/libhdf5.a")
+    endif()
+else()
+    # Add high level library that are hard to find with CMake for some reason
+    string(REPLACE "include" "lib" HDF5_HL_LIBRARIES ${HDF5_INCLUDE_DIR})
+    set(HDF5_HL_LIBRARIES "${HDF5_HL_LIBRARIES}/libhdf5_hl.a;${HDF5_HL_LIBRARIES}/libhdf5.a")
+    set(targets "${targets};${HDF5_HL_LIBRARIES}")
 endif()
+message(STATUS "HDF5 Version: ${HDF5_VERSION}")
+
+set(targets "${targets};${HDF5_LIBRARIES}")
+message(STATUS "${HDF5_HL_LIBRARIES}")
 
 message("~~~ CoDiPack")
 find_package(CoDiPack)
@@ -307,13 +345,15 @@ endif()
 message("~~~ GSL")
 find_package(GSL REQUIRED)
 include_directories (${GSL_INCLUDE_DIR})
-# message(STATUS "~~~~~~~~~~~~~~~${GSL_LIBRARIES}")
+set(targets "${targets};${GSL_LIBRARIES}")
 
 include_directories(${AD_SIM_HOME})
 
 message(STATUS "Adding executable and linking")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" CACHE STRING
     "Flags used by the compiler during all build types")
+
+set(targets "${targets};${CMAKE_DL_LIBS}")
 
 add_subdirectory(src)
 

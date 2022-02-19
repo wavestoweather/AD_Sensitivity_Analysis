@@ -76,6 +76,8 @@ struct task_scheduler_t{
      */
     void send_new_task(checkpoint_t &checkpoint);
 
+    bool all_free();
+
     /**
      * Busy waiting until a new task is available and returns true.
      * If all processes are waiting, then no more work is available
@@ -106,6 +108,7 @@ struct task_scheduler_t{
 
  private:
     bool static_scheduling;
+    bool signal_sent;
     uint64_t n_ensembles;
     uint64_t n_trajectories;
     uint64_t n_processes;

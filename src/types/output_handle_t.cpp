@@ -58,8 +58,9 @@ void output_handle_t::setup(
     if (track_ic) {
         varid.resize(Var_idx::n_vars + num_par_init);
     } else {
-        varid.resize(Var_idx::n_vars + num_par);
+        varid.resize(Var_idx::n_vars + num_par-num_par_init);
     }
+
 
     const std::string ending = ".nc_wcb";
     const std::string ending2 = ".nc";
@@ -88,7 +89,7 @@ void output_handle_t::setup(
     output_buffer[Buffer_idx::lon_buf].resize(vec_size);
     if (!track_ic) {
         // gradients
-        for (uint32_t i=Buffer_idx::n_buffer; i < Buffer_idx::n_buffer+num_par; i++)
+        for (uint32_t i=Buffer_idx::n_buffer; i < Buffer_idx::n_buffer+num_par-num_par_init; i++)
             if (cc.trace_check(i-Buffer_idx::n_buffer, false))
                 output_buffer[i].resize(vec_size_grad);
     } else {
@@ -211,7 +212,7 @@ void output_handle_t::setup(
                     }
                 }
             } else {
-                for (uint32_t i=0; i < num_par; ++i) {
+                for (uint32_t i=0; i < num_par-num_par_init; ++i) {
                     if (cc.trace_check(i, false)) {
                         SUCCESS_OR_DIE(nc_def_var(
                             ncid,
@@ -240,7 +241,7 @@ void output_handle_t::setup(
                 n_dims = 2;
             }
             if (!track_ic) {
-                for (uint32_t i=0; i < num_par; ++i) {
+                for (uint32_t i=0; i < num_par-num_par_init; ++i) {
                     if (cc.trace_check(i, false)) {
                         SUCCESS_OR_DIE(nc_def_var(
                             ncid,
@@ -628,7 +629,7 @@ void output_handle_t::setup(
 
         if (!track_ic) {
             // all gradients are auxiliary data
-            for (int i=0; i < num_par; i++) {
+            for (int i=0; i < num_par-num_par_init; i++) {
                 if (cc.trace_check(i, false)) {
                     SUCCESS_OR_DIE(nc_put_att_text(
                         ncid,
@@ -1166,18 +1167,70 @@ void output_handle_t::setup(
             &FILLINT));
         // in theory, one could apply compression here
         // but this needs HDF5 >=1.10.2 and Lustre
+        // Needs netcdf-c >= 4.7.4
+        // All variables must be written in collective mode
+        // Perturbed simulations do not work with compression enabled!
 #ifdef COMPRESS_OUTPUT
         if (this->simulation_mode == limited_time_ensembles
             || this->simulation_mode == trajectory_sensitivity
             || this->simulation_mode == grid_sensitivity) {
-            for (auto &id : varid)
-                SUCCESS_OR_DIE(
-                    nc_def_var_deflate(
-                        ncid,
-                        id,
-                        1,  // shuffle
-                        1,  // deflate
-                        9));  // max compression
+            for (uint32_t i=0; i < Var_idx::n_vars; ++i) {
+                // This could be a version for szip
+                // if (local_num_comp > 8 || i != static_cast<int>(Var_idx::out_param))
+                //     SUCCESS_OR_DIE(
+                //         nc_def_var_szip(
+                //             ncid,
+                //             varid[i],
+                //             H5_SZIP_NN_OPTION_MASK,
+                //             8));  // pixels per block
+                // This does not work on scalars; we need to filter those out
+                if (local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param))
+                    // zlib version
+                    SUCCESS_OR_DIE(
+                        nc_def_var_deflate(
+                            ncid,
+                            varid[i],
+                            1,  // shuffle
+                            1,  // deflate
+                            9));  // max compression
+            }
+            if (!track_ic) {
+                // gradients
+                for (uint32_t i=0; i < num_par-num_par_init; ++i) {
+                    if (cc.trace_check(i, false))
+                        // SUCCESS_OR_DIE(
+                        //     nc_def_var_szip(
+                        //         ncid,
+                        //         varid[Var_idx::n_vars + i],
+                        //         H5_SZIP_NN_OPTION_MASK,
+                        //         8));
+                        SUCCESS_OR_DIE(
+                            nc_def_var_deflate(
+                                ncid,
+                                varid[Var_idx::n_vars + i],
+                                1,  // shuffle
+                                1,  // deflate
+                                9));  // max compression
+                }
+            } else {
+                // initial conditions
+                for (uint32_t i=0; i < num_par_init; ++i) {
+                    if (cc.trace_check(i, 2))
+                        // SUCCESS_OR_DIE(
+                        //     nc_def_var_szip(
+                        //         ncid,
+                        //         varid[Var_idx::n_vars + i],
+                        //         H5_SZIP_NN_OPTION_MASK,
+                        //         8));
+                        SUCCESS_OR_DIE(
+                            nc_def_var_deflate(
+                                ncid,
+                                varid[Var_idx::n_vars + i],
+                                1,  // shuffle
+                                1,  // deflate
+                                9));  // max compression
+                }
+            }
         }
 #endif
 #ifdef DEVELOP
@@ -1314,7 +1367,7 @@ void output_handle_t::setup(
 #endif
     if (!track_ic) {
         // gradients
-        for (uint32_t i=0; i < num_par; ++i) {
+        for (uint32_t i=0; i < num_par-num_par_init; ++i) {
             if (cc.trace_check(i, false)) {
                 SUCCESS_OR_DIE(
                     nc_inq_varid(
@@ -1411,7 +1464,7 @@ void output_handle_t::setup(
         for (uint32_t i=0; i < Var_idx::n_vars; i++)
             SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_INDEPENDENT));
         if (!track_ic) {
-            for (uint32_t i=0; i < num_par; i++)
+            for (uint32_t i=0; i < num_par-num_par_init; i++)
                 if (cc.trace_check(i, false))
                     SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
         } else {
@@ -1420,8 +1473,30 @@ void output_handle_t::setup(
                     SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
         }
     }
+#ifdef COMPRESS_OUTPUT
+    // We need to explicitly tell that we want to collectively write the data
+    if ((this->simulation_mode != trajectory_sensitvity_perturbance)
+        && (this->simulation_mode != trajectory_perturbance)) {
 #ifdef DEVELOP
-        std::cout << "done\n" << std::flush;
+        std::cout << "different accesses\n" << std::flush;
+#endif
+        // Make the access independent which is a must due to the dynamic
+        // work schedule; This can be expensive though.
+        for (uint32_t i=0; i < Var_idx::n_vars; i++)
+            SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_COLLECTIVE));
+        if (!track_ic) {
+            for (uint32_t i=0; i < num_par-num_par_init; i++)
+                if (cc.trace_check(i, false))
+                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_COLLECTIVE));
+        } else {
+            for (uint32_t i=0; i < num_par_init; i++)
+                if (cc.trace_check(i, 2))
+                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_COLLECTIVE));
+        }
+    }
+#endif
+#ifdef DEVELOP
+    std::cout << "done\n" << std::flush;
 #endif
 }
 
@@ -1450,7 +1525,7 @@ void output_handle_t::buffer_gradient(
         if (!cc.trace_check(i, true))
             continue;
         if (!track_ic) {
-            for (uint64_t j=0; j < num_par; j++)  // gradient of input parameter j
+            for (uint64_t j=0; j < num_par-num_par_init; j++)  // gradient of input parameter j
                 if (cc.trace_check(j, false)) {
                     if (n_snapshots%snapshot_index == 0) {
                         output_buffer[Buffer_idx::n_buffer+j][comp_idx*total_snapshots + n_snapshots] =
@@ -1586,15 +1661,24 @@ void output_handle_t::buffer(
 
 template<class float_t>
 void output_handle_t::flush_buffer(
-    const model_constants_t<float_t> &cc) {
+    const model_constants_t<float_t> &cc,
+    const bool no_flush) {
     std::vector<size_t> startp, countp;
-    startp.push_back(ens);
-    startp.push_back(traj);
-    startp.push_back(flushed_snapshots);
-    countp.push_back(1);
-    countp.push_back(1);
-    countp.push_back(n_snapshots);
-
+    if (no_flush) {
+        startp.push_back(0);
+        startp.push_back(0);
+        startp.push_back(0);
+        countp.push_back(0);
+        countp.push_back(0);
+        countp.push_back(0);
+    } else {
+        startp.push_back(ens);
+        startp.push_back(traj);
+        startp.push_back(flushed_snapshots);
+        countp.push_back(1);
+        countp.push_back(1);
+        countp.push_back(n_snapshots);
+    }
     for (uint64_t i=0; i < num_comp; i++) {
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -1657,60 +1741,139 @@ void output_handle_t::flush_buffer(
             startp.data(),
             countp.data(),
             output_buffer_int[1].data()));
+
     // gradients
     if (this->simulation_mode != limited_time_ensembles) {
         if (local_num_comp > 1) {
             startp.insert(startp.begin(), 0);
-            countp.insert(countp.begin(), local_num_comp);
+            if (no_flush) {
+                countp.insert(countp.begin(), 0);
+            } else {
+                countp.insert(countp.begin(), local_num_comp);
+            }
         }
 
         // Use an offset if the number of snapshots does not fit
         // This is necessary since the slow index is [0] (Output Parameter)
         // and the fast index is [3] (time), which has gaps now
         if (local_num_comp > 1 && countp[3] != total_snapshots) {
-            std::vector<std::ptrdiff_t> stridep, imap;
-            stridep.push_back(1);
-            stridep.push_back(1);
-            stridep.push_back(1);
-            stridep.push_back(1);
-            imap.push_back(total_snapshots);
-            imap.push_back(1);
-            imap.push_back(1);
-            imap.push_back(1);
+#ifdef COMPRESS_OUTPUT
+            if (this->simulation_mode == limited_time_ensembles
+            || this->simulation_mode == trajectory_sensitivity
+            || this->simulation_mode == grid_sensitivity) {
+                // uint64_t n_snapshots_per_comp = n_snapshots/local_num_comp;
+                // For compression: loop over output variables for which
+                // we gather sensitivities.
+                countp[0] = (no_flush) ? 0 : 1;
 
-            if (!track_ic) {
-                for (uint64_t j=0; j < num_par; j++) {
-                    if (cc.trace_check(j, false)) {
-                        SUCCESS_OR_DIE(
-                            nc_put_varm(
-                                ncid,
-                                varid[Var_idx::n_vars + j],
-                                startp.data(),
-                                countp.data(),
-                                stridep.data(),
-                                imap.data(),
-                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                uint64_t comp_idx = 0;
+                if (!track_ic) {
+                    for (int i=0; i < local_num_comp; i++) {
+                        // gradient sensitive to output parameter i
+                        if (!cc.trace_check(i, true))
+                            continue;
+                        startp[0] = (no_flush) ? 0 : comp_idx;
+
+                        for (uint64_t j=0; j < num_par-num_par_init; j++) {
+                            if (cc.trace_check(j, false)) {
+                                SUCCESS_OR_DIE(
+                                    nc_put_vara(
+                                        ncid,
+                                        varid[Var_idx::n_vars + j],
+                                        startp.data(),
+                                        countp.data(),
+                                        output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()
+                                        + comp_idx*total_snapshots));
+                            }
+                        }
+                        comp_idx++;
+                    }
+                } else {
+                    // initial conditions
+                    for (int i=0; i < local_num_comp; i++) {
+                        // gradient sensitive to output parameter i
+                        if (!cc.trace_check(i, true))
+                            continue;
+                        startp[0] = (no_flush) ? 0 : comp_idx;
+
+                        for (uint64_t j=0; j < num_par_init; j++) {
+                            if (cc.trace_check(j, 2)) {
+                                SUCCESS_OR_DIE(
+                                    nc_put_vara(
+                                        ncid,
+                                        varid[Var_idx::n_vars + j],
+                                        startp.data(),
+                                        countp.data(),
+                                        output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()
+                                        + comp_idx*total_snapshots));
+                            }
+                        }
+                        comp_idx++;
                     }
                 }
             } else {
-                // initial conditions sensitivity
-                for (uint64_t j=0; j < num_par_init; j++) {
-                    if (cc.trace_check(j, 2)) {
-                        SUCCESS_OR_DIE(
-                            nc_put_varm(
-                                ncid,
-                                varid[Var_idx::n_vars + j],
-                                startp.data(),
-                                countp.data(),
-                                stridep.data(),
-                                imap.data(),
-                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+#endif
+                // nc_put_varm is discouraged. We use it only if no compression is
+                // enabled, since it fails sometimes with compression.
+                std::vector<std::ptrdiff_t> stridep, imap;
+                if (no_flush) {
+                    stridep.push_back(1);
+                    stridep.push_back(1);
+                    stridep.push_back(1);
+                    stridep.push_back(1);
+                    imap.push_back(1);
+                    imap.push_back(1);
+                    imap.push_back(1);
+                    imap.push_back(1);
+                } else {
+                    stridep.push_back(1);
+                    stridep.push_back(1);
+                    stridep.push_back(1);
+                    stridep.push_back(1);
+                    imap.push_back(total_snapshots);
+                    imap.push_back(1);
+                    imap.push_back(1);
+                    imap.push_back(1);
+                }
+
+
+                if (!track_ic) {
+                    for (uint64_t j=0; j < num_par-num_par_init; j++) {
+                        if (cc.trace_check(j, false)) {
+                            SUCCESS_OR_DIE(
+                                nc_put_varm(
+                                    ncid,
+                                    varid[Var_idx::n_vars + j],
+                                    startp.data(),
+                                    countp.data(),
+                                    stridep.data(),
+                                    imap.data(),
+                                    output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                        }
+                    }
+
+                } else {
+                    // initial conditions sensitivity
+                    for (uint64_t j=0; j < num_par_init; j++) {
+                        if (cc.trace_check(j, 2)) {
+                            SUCCESS_OR_DIE(
+                                nc_put_varm(
+                                    ncid,
+                                    varid[Var_idx::n_vars + j],
+                                    startp.data(),
+                                    countp.data(),
+                                    stridep.data(),
+                                    imap.data(),
+                                    output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                        }
                     }
                 }
+#ifdef COMPRESS_OUTPUT
             }
+#endif
         } else {
             if (!track_ic) {
-                for (uint64_t j=0; j < num_par; j++) {
+                for (uint64_t j=0; j < num_par-num_par_init; j++) {
                     if (cc.trace_check(j, false)) {
                         SUCCESS_OR_DIE(
                             nc_put_vara(
@@ -1736,21 +1899,82 @@ void output_handle_t::flush_buffer(
                 }
             }
         }
-    } else if (cc.traj_id == 0) {
+#ifdef COMPRESS_OUTPUT
+    } else {
+        // Compression doesn't work in this simulation mode with
+        // strided writes. We have to do that manually.
         std::vector<size_t> startp2, countp2;
         startp2.push_back(0);
-        startp2.push_back(flushed_snapshots);
-        countp2.push_back(local_num_comp);
-        countp2.push_back(n_snapshots);
+        if (no_flush || cc.traj_id != 0) {
+            startp2.push_back(0);
+            countp2.push_back(0);
+            countp2.push_back(0);
+        } else {
+            startp2.push_back(flushed_snapshots);
+            countp2.push_back(1);
+            countp2.push_back(n_snapshots);
+        }
+        if (!track_ic) {
+            for (uint64_t j=0; j < num_par-num_par_init; j++) {
+                if (cc.trace_check(j, false)) {
+                    for (int i = 0; i < local_num_comp; i++) {
+                        startp2[0] = i;
+                        SUCCESS_OR_DIE(
+                            nc_put_vara(
+                                ncid,
+                                varid[Var_idx::n_vars + j],
+                                startp2.data(),
+                                countp2.data(),
+                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                    }
+                }
+            }
+        } else {
+            // initial conditions
+            for (uint64_t j=0; j < num_par_init; j++) {
+                if (cc.trace_check(j, 2)) {
+                    for (int i = 0; i < local_num_comp; i++) {
+                        startp2[0] = i;
+                        SUCCESS_OR_DIE(
+                            nc_put_vara(
+                                ncid,
+                                varid[Var_idx::n_vars + j],
+                                startp2.data(),
+                                countp2.data(),
+                                output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].data()));
+                    }
+                }
+            }
+        }
+    }
+#else
+    } else if (cc.traj_id == 0) {
+        // Only traj_id = 0 writes gradients
+        std::vector<size_t> startp2, countp2;
+        startp2.push_back(0);
+        if (no_flush) {
+            startp2.push_back(0);
+            countp2.push_back(0);
+            countp2.push_back(0);
+        } else {
+            startp2.push_back(flushed_snapshots);
+            countp2.push_back(local_num_comp);
+            countp2.push_back(n_snapshots);
+        }
+
         if (countp[1] != total_snapshots) {
             std::vector<std::ptrdiff_t> stridep, imap;
             stridep.push_back(1);
             stridep.push_back(1);
-            imap.push_back(total_snapshots);
+            if (no_flush) {
+                imap.push_back(0);
+            } else {
+                imap.push_back(total_snapshots);
+            }
             imap.push_back(1);
 
             if (!track_ic) {
-                for (uint64_t j=0; j < num_par; j++) {
+                for (uint64_t j=0; j < num_par-num_par_init; j++) {
                     if (cc.trace_check(j, false))
                         SUCCESS_OR_DIE(
                             nc_put_varm(
@@ -1779,7 +2003,7 @@ void output_handle_t::flush_buffer(
             }
         } else {
             if (!track_ic) {
-                for (uint64_t j=0; j < num_par; j++) {
+                for (uint64_t j=0; j < num_par-num_par_init; j++) {
                     if (cc.trace_check(j, false))
                         SUCCESS_OR_DIE(
                             nc_put_vara(
@@ -1804,7 +2028,8 @@ void output_handle_t::flush_buffer(
             }
         }
     }
-    flushed_snapshots += n_snapshots;
+#endif
+    if (!no_flush) flushed_snapshots += n_snapshots;
     n_snapshots = 0;
 }
 
@@ -1916,10 +2141,10 @@ template void output_handle_t::buffer<codi::RealForwardVec<num_par_init> >(
     const uint32_t);
 
 template void output_handle_t::flush_buffer<codi::RealReverse>(
-    const model_constants_t<codi::RealReverse>&);
+    const model_constants_t<codi::RealReverse>&, const bool);
 
 template void output_handle_t::flush_buffer<codi::RealForwardVec<num_par_init> >(
-    const model_constants_t<codi::RealForwardVec<num_par_init> >&);
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&, const bool);
 
 template void output_handle_t::process_step<codi::RealReverse>(
     const model_constants_t<codi::RealReverse>&,
