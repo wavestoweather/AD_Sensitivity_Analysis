@@ -59,12 +59,14 @@ template<class float_t>
 int particle_model_constants_t<float_t>::from_json(
     const nlohmann::json& j) {
     int err = 0;
-    std::map<uint32_t, double> perturbed;
-    j.at("perturbed").get_to(perturbed);
-    perturbed_idx.clear();
-    for (auto const& pert : perturbed) {
-        this->constants[pert.first] = pert.second;
-        perturbed_idx.push_back(pert.first);
+    if (j.find("perturbed") != j.end()) {
+        std::map<uint32_t, double> perturbed;
+        j.at("perturbed").get_to(perturbed);
+        perturbed_idx.clear();
+        for (auto const& pert : perturbed) {
+            this->constants[pert.first] = pert.second;
+            perturbed_idx.push_back(pert.first);
+        }
     }
     return err;
 }

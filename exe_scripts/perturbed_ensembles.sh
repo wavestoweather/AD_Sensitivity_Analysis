@@ -3,7 +3,7 @@ cd ..
 AD_SIM_HOME=$(pwd)
 
 # Set to the number of threads or CPUs in case you want to run ensemble simulations
-NTASKS=2
+NTASKS=6
 
 # The simulation mode determines how multiple processes are used
 # ensembles at different time steps and sensitvity analysis 0
@@ -37,7 +37,9 @@ START_OVER_ENVIRONMENT="1"
 # The number indicates how many iterations are done between updates of
 # the progressbar. On an Intel i7 there are between 1000 and 4000 steps per
 # second.
-PROGRESSBAR="0"
+PROGRESSBAR="500"
+TRAJ="0"
+TRACK_FILE=${AD_SIM_HOME}/configs/james_sens_config.json
 
 for FILENAME in "no_exclusions_conv_400_quan25" "no_exclusions_conv_400_median" "no_exclusions_conv_400_quan75" "no_exclusions_conv_600_quan25" "no_exclusions_conv_600_median"  "no_exclusions_conv_600_quan75"
 do
@@ -73,7 +75,8 @@ do
         -p ${PROGRESSBAR} \
         -l ${INPUT_FILENAME} \
         -n ${START_TIME} \
-        -r 0 \
+        -s ${TRACK_FILE} \
+        -r ${TRAJ} \
         -m ${ENSEMBLE_CONFIG} \
         -u ${WARM_UP}
         break
