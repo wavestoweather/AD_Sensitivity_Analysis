@@ -268,7 +268,7 @@ else()
     message("~~~ AEC")
     find_library(AEC_LIBRARIES NAMES aec)
     message(STATUS "Found AEC: ${AEC_LIBRARIES}")
-    set(targets "${targets};${Zip_LIBRARIES} ${AEC_LIBRARIES}")
+    set(targets "${targets};${Zip_LIBRARIES};${AEC_LIBRARIES}")
 endif()
 
 message("~~~ CURL")
