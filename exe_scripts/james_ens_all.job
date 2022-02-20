@@ -41,7 +41,7 @@ TRAJ=0
 INPUT_FILENAME="${AD_SIM_HOME}/data/${SAVE_INPUTFILENAME##*/}"
 FOLDER_NAME=${SAVE_INPUTFILENAME##*/}
 FOLDER_NAME=${FOLDER_NAME%.*}
-SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/vladiana_keyparams/dec_21/${FOLDER_NAME}/"
+SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/vladiana_keyparams/feb_22/${FOLDER_NAME}/"
 OUTPUT_PATH="${AD_SIM_HOME}/output/${FOLDER_NAME}/"
 SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/all/"
 
@@ -130,7 +130,7 @@ START_TIME="-2800"
 # second.
 PROGRESSBAR="0"
 # How many seconds shall be simulated
-TARGET_TIME_AFTER_START="26000"
+TARGET_TIME_AFTER_START="27800"
 # The simulation mode determines how multiple processes are used
 # ensembles at different time steps and sensitvity analysis 0
 # sensitivity analysis 1
