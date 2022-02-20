@@ -1252,7 +1252,9 @@ void model_constants_t<float_t>::load_configuration(
     if (config.find("model_state_variable") != config.end()) {
         local_num_comp = 0;
         track_state = 0;
-        for (const uint32_t &id : config["model_state_variable"]) {
+        for (const auto &c : config["model_state_variable"].items()) {
+            const uint32_t id = c.value();
+        // for (const uint32_t &id : config["model_state_variable"]) {
             track_state = track_state | (((uint64_t) 1) << id);
             local_num_comp++;
         }
@@ -1264,7 +1266,9 @@ void model_constants_t<float_t>::load_configuration(
     if (config.find("out_params") != config.end()) {
         local_num_par = 0;
         for (auto &t : track_param) t = 0;
-        for (const std::string &id_name : config["out_params"]) {
+        // for (const std::string &id_name : config["out_params"]) {
+        for (const auto &c : config["out_params"].items()) {
+            const std::string id_name = c.value();
             auto it_tmp = std::find(
                 output_grad_idx.begin(),
                 output_grad_idx.end(),
@@ -1283,7 +1287,8 @@ void model_constants_t<float_t>::load_configuration(
     if (config.find("initial_condition") != config.end()) {
         track_ic = 0;
         local_ic_par = 0;
-        for (const std::string &id_name : config["initial_condition"]) {
+        for (const auto &c : config["initial_condition"].items()) {
+            const std::string id_name = c.value();
             auto it_tmp = std::find(
                 init_grad_idx.begin(),
                 init_grad_idx.end(),
