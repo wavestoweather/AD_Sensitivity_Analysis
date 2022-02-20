@@ -29,16 +29,16 @@ task_scheduler_t::task_scheduler_t(
     SUCCESS_OR_DIE(
         MPI_Win_create(
             free_worker.data(),
-            n_processes*sizeof(std::int8_t),
-            sizeof(std::int8_t),
+            n_processes*sizeof(int),
+            sizeof(int),
             MPI_INFO_NULL,
             MPI_COMM_WORLD,
             &free_window));
     SUCCESS_OR_DIE(
         MPI_Win_create(
             work_available.data(),
-            n_processes*sizeof(std::int8_t),
-            sizeof(std::int8_t),
+            n_processes*sizeof(int),
+            sizeof(int),
             MPI_INFO_NULL,
             MPI_COMM_WORLD,
             &work_window));
@@ -76,16 +76,16 @@ task_scheduler_t::task_scheduler_t(
         SUCCESS_OR_DIE(
             MPI_Win_create(
                 free_worker.data(),
-                n_processes*sizeof(std::int8_t),
-                sizeof(std::int8_t),
+                n_processes*sizeof(int),
+                sizeof(int),
                 MPI_INFO_NULL,
                 MPI_COMM_WORLD,
                 &free_window));
         SUCCESS_OR_DIE(
             MPI_Win_create(
                 work_available.data(),
-                n_processes*sizeof(std::int8_t),
-                sizeof(std::int8_t),
+                n_processes*sizeof(int),
+                sizeof(int),
                 MPI_INFO_NULL,
                 MPI_COMM_WORLD,
                 &work_window));
@@ -154,15 +154,15 @@ bool task_scheduler_t::send_task(
             orig_is_dest = true;
             if (my_rank == 0) {
                 // free_worker[0] = 0;
-                std::int8_t busy = 0;
-                std::int8_t current_value = 1;
-                std::int8_t compare_value = 1;
+                int busy = 0;
+                int current_value = 1;
+                int compare_value = 1;
                 SUCCESS_OR_DIE(
                     MPI_Compare_and_swap(
                         &busy,              // source
                         &compare_value,     // compare
                         &current_value,     // result
-                        MPI_INT8_T,         // datatype
+                        MPI_INT,         // datatype
                         0,                  // target rank
                         0,                  // displacement in window
                         free_window));
@@ -187,15 +187,15 @@ void task_scheduler_t::send_new_task(
     if (it != free_worker.end()) {
         auto idx = std::distance(free_worker.begin(), it);
         checkpoint.send_checkpoint(idx);
-        std::int8_t busy = 0;
-        std::int8_t current_value = 1;
-        std::int8_t compare_value = 1;
+        int busy = 0;
+        int current_value = 1;
+        int compare_value = 1;
         SUCCESS_OR_DIE(
             MPI_Compare_and_swap(
                 &busy,              // source
                 &compare_value,     // compare
                 &current_value,     // result
-                MPI_INT8_T,         // datatype
+                MPI_INT,         // datatype
                 0,                  // target rank
                 idx,                  // displacement in window
                 free_window));
@@ -221,21 +221,21 @@ void task_scheduler_t::signal_send_task() {
                 for (uint32_t i=work_idx; i < work_available.size(); ++i) {
                     if (work_available[i] > 0) {
                         // signal to work_idx to send to worker
-                        std::int8_t free = 1;
-                        std::int8_t current_value = 0;
-                        std::int8_t compare_value = 0;
+                        int free = 1;
+                        int current_value = 0;
+                        int compare_value = 0;
                         SUCCESS_OR_DIE(
                             MPI_Compare_and_swap(
                                 &free,              // source
                                 &compare_value,     // compare
                                 &current_value,     // result
-                                MPI_INT8_T,         // datatype
+                                MPI_INT,         // datatype
                                 work_idx,                  // target rank
                                 worker,                  // displacement in window
                                 free_window));
 
                         // Mark worker as busy and remove work
-                        std::int8_t busy = 0;
+                        int busy = 0;
                         current_value = 1;
                         compare_value = 1;
                         SUCCESS_OR_DIE(
@@ -243,7 +243,7 @@ void task_scheduler_t::signal_send_task() {
                                 &busy,              // source
                                 &compare_value,     // compare
                                 &current_value,     // result
-                                MPI_INT8_T,         // datatype
+                                MPI_INT,         // datatype
                                 my_rank,                  // target rank
                                 worker,             // displacement in window
                                 free_window));
@@ -268,14 +268,14 @@ bool task_scheduler_t::all_free() {
             // We send it to every worker, however broadcast a single
             // value everytime we are here is not a good idea.
             for (uint32_t i=1; i < free_worker.size(); ++i) {
-                std::int8_t current_value = 0;
-                std::int8_t compare_value = 0;
+                int current_value = 0;
+                int compare_value = 0;
                 SUCCESS_OR_DIE(
                     MPI_Compare_and_swap(
                         free_worker.data(),  // source
                         &compare_value,     // compare
                         &current_value,     // result
-                        MPI_INT8_T,         // datatype
+                        MPI_INT,         // datatype
                         i,                  // target rank
                         0,            // displacement in window
                         free_window));
@@ -325,15 +325,15 @@ bool task_scheduler_t::receive_task(
         if (my_rank == 0) {
             SUCCESS_OR_DIE(
                 MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, work_window));
-            std::int8_t free = 1;
-            std::int8_t current_value = 0;
-            std::int8_t compare_value = 0;
+            int free = 1;
+            int current_value = 0;
+            int compare_value = 0;
             SUCCESS_OR_DIE(
                 MPI_Compare_and_swap(
                     &free,              // source
                     &compare_value,     // compare
                     &current_value,     // result
-                    MPI_INT8_T,         // datatype
+                    MPI_INT,         // datatype
                     0,                  // target rank
                     my_rank,            // displacement in window
                     free_window));
@@ -351,7 +351,7 @@ bool task_scheduler_t::receive_task(
                 signal_send_task();
             if (it == free_worker.end() && no_more_work) {
                 // signal everyone that we are finished somehow
-                std::int8_t finished = 2;
+                int finished = 2;
                 current_value = 2;
                 compare_value = 0;
                 while (compare_value != current_value) {
@@ -360,7 +360,7 @@ bool task_scheduler_t::receive_task(
                             &finished,              // source
                             &compare_value,     // compare
                             &current_value,     // result
-                            MPI_INT8_T,         // datatype
+                            MPI_INT,         // datatype
                             0,                  // target rank
                             0,            // displacement in window
                             free_window));
@@ -378,7 +378,7 @@ bool task_scheduler_t::receive_task(
                                 &finished,              // source
                                 &compare_value,     // compare
                                 &current_value,     // result
-                                MPI_INT8_T,         // datatype
+                                MPI_INT,         // datatype
                                 i,                  // target rank
                                 0,            // displacement in window
                                 free_window));
@@ -408,15 +408,15 @@ void task_scheduler_t::signal_free() {
     // rare cases.
     // Or in other words: If process 0 already thinks this process is
     // free (1) then there is no need for a swap.
-    std::int8_t free = 1;
-    std::int8_t current_value = 0;
-    std::int8_t compare_value = 0;
+    int free = 1;
+    int current_value = 0;
+    int compare_value = 0;
     SUCCESS_OR_DIE(
         MPI_Compare_and_swap(
             &free,              // source
             &compare_value,     // compare
             &current_value,     // result
-            MPI_INT8_T,         // datatype
+            MPI_INT,         // datatype
             0,                  // target rank
             my_rank,            // displacement in window
             free_window));
@@ -426,16 +426,16 @@ void task_scheduler_t::signal_free() {
 void task_scheduler_t::signal_work_avail() {
     SUCCESS_OR_DIE(
         MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, work_window));
-    std::int8_t work = checkpoint_queue.size();
+    int work = checkpoint_queue.size();
     SUCCESS_OR_DIE(
         MPI_Put(
             &work,          // source
             1,              // count
-            MPI_INT8_T,     // datatype
+            MPI_INT,     // datatype
             0,              // target
             my_rank,        // displacement in target
             1,              // target count
-            MPI_INT8_T,     // target datatype
+            MPI_INT,     // target datatype
             work_window));
     SUCCESS_OR_DIE(MPI_Win_unlock(0, work_window));
 }

@@ -30,19 +30,19 @@ struct task_scheduler_t{
      * Every other rank can use MPI_Put for its own idx to signal it is free.
      * If free_worker[0] == 2, then all processes are finished.
      */
-    std::vector<std::int8_t> free_worker;
+    std::vector<int> free_worker;
     /**
      * Number of work available at rank idx but not sent yet.
      * Rank 0 can reduce it with each signal by one. Each rank can modify
      * its own idx with MPI_Put in case it just took over its own available
      * work or found new one that could not be sent.
      */
-    std::vector<std::int8_t> work_available;
+    std::vector<int> work_available;
 
     /**
      * If 1 at idx then send work to process idx.
      */
-    // std::vector<std::int8_t> send_list;
+    // std::vector<int> send_list;
 
     /**
      * Store the maximum ensemble id that had been created.
