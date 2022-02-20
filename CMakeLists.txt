@@ -320,14 +320,14 @@ if (NOT ${HDF5_FOUND} )
     endif()
 else()
     # Add high level library that are hard to find with CMake for some reason
-    string(REPLACE "include" "lib" HDF5_HL_LIBRARIES ${HDF5_INCLUDE_DIR})
-    set(HDF5_HL_LIBRARIES "${HDF5_HL_LIBRARIES}/libhdf5_hl.a;${HDF5_HL_LIBRARIES}/libhdf5.a")
+    if( "${HDF5_HL_LIBRARIES}" STREQUAL "" )
+        string(REPLACE "include" "lib" HDF5_HL_LIBRARIES ${HDF5_INCLUDE_DIR})
+        set(HDF5_HL_LIBRARIES "${HDF5_HL_LIBRARIES}/libhdf5_hl.a;${HDF5_HL_LIBRARIES}/libhdf5.a")
+    endif()
     set(targets "${targets};${HDF5_HL_LIBRARIES}")
 endif()
 message(STATUS "HDF5 Version: ${HDF5_VERSION}")
-
 set(targets "${targets};${HDF5_LIBRARIES}")
-message(STATUS "${HDF5_HL_LIBRARIES}")
 
 message("~~~ CoDiPack")
 find_package(CoDiPack)
@@ -355,6 +355,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" CACHE STRING
     "Flags used by the compiler during all build types")
 
 set(targets "${targets};${CMAKE_DL_LIBS}")
-
+message(STATUS ${targets})
 add_subdirectory(src)
 
