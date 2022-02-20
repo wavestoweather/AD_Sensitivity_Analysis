@@ -59,7 +59,7 @@ do
     -d ${TIMESTEP} \
     -i ${SNAPSHOT_INDEX} \
     -b ${SIMULATION_MODE} \
-    -o ${OUTPUT_PATH}${FILENAME}.nc_wcb \
+    -o ${OUTPUT_PATH}${FILENAME}.nc \
     -e ${START_OVER_ENVIRONMENT} \
     -p ${PROGRESSBAR} \
     -n ${START_TIME} \

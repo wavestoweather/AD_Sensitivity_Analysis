@@ -28,7 +28,6 @@ Python Prerequisites for Post-Processing and Plotting
 ------------------------------------------------------
 - [Python3](https://www.python.org/) (Tested with v3.7.6)
 - [pandas](https://pandas.pydata.org/) (Tested with v1.0.1)
-- [DASK](https://dask.org/) (Tested with v2.16.0)
 - [progressbar2](https://pypi.org/project/progressbar2/) (Tested with v3.37.1)
 - [seaborn](https://seaborn.pydata.org/) (Tested with v0.10.0)
 - [scipy](https://www.scipy.org/) (Tested with v1.4.1)
@@ -67,7 +66,9 @@ C++ Prerequisites
 - [Boost](https://www.boost.org/) (Tested with v1.6.2)
 - [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/) (Tested with v1.8.0)
 - [CMake](https://cmake.org/) (v3.7.2 or above; tested with v3.15.0)
+- [nlohmann/json](https://github.com/nlohmann/json) (v3.9.1 or above; tested with v3.9.1)
 - [(optional) PnetCDF](https://parallel-netcdf.github.io/) (tested with v1.12.2; only if you want to use classic NetCDF-files)
+- [(optional) zlib](https://zlib.net/) (tested with v1.2.11; in case you want to compress data with zlib)
 
 
 Compiling code
