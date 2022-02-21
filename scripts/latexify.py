@@ -2699,13 +2699,13 @@ in_params_notation_mapping = {
         "independent",
     ],
     "dM_w": [
-        "Molar mass of water used for homogeneous nuclation of ice",
+        "Molar mass of water used for homogeneous nuclation of ice. Not tracked.",
         r"$ M_w $",
         r"\citeA{karcher_physically_2006}",
         "independent",
     ],
     "dM_a": [
-        "Molar mass of dry air",
+        "Molar mass of dry air. Not tracked.",
         r"$ M $",
         r"\citeA{karcher_physically_2006}",
         "independent",
@@ -2717,7 +2717,7 @@ in_params_notation_mapping = {
         "independent",
     ],  # not tracked!
     "dEpsilon": [
-        "Quotient of the gas constants for dry air and for water vapor used in saturation adjustment and for updating temperature and pressure",
+        "Quotient of the gas constants for dry air and for water vapor used in saturation adjustment and for updating temperature and pressure. Not tracked.",
         r"$ \epsilon $",
         r"\citeA{baumgartner_algorithmic_2019}",
         "independent",
@@ -2729,13 +2729,13 @@ in_params_notation_mapping = {
         "independent",
     ],
     "dR_a": [
-        "Gas constant for dry air used in homogeneous ice nucleation and for updating temperature and pressure",
+        "Gas constant for dry air used in homogeneous ice nucleation and for updating temperature and pressure. Not tracked.",
         r"$ R_a $",
         r"\citeA{baumgartner_algorithmic_2019}",
         "independent",
     ],
     "dR_v": [
-        "Gas constant for water vapor used in evaporation and melting processes",
+        "Gas constant for water vapor used in evaporation and melting processes. Not tracked.",
         r"$ R_v $",
         r"\citeA{baumgartner_algorithmic_2019}",
         "independent",
@@ -2771,25 +2771,25 @@ in_params_notation_mapping = {
         "independent",
     ],
     "dK_T": [
-        "Heat conductivity of air used for melting and evaporation",
+        "Heat conductivity of air used for melting and evaporation. Not tracked.",
         r"$ K_T $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
     ],
     "dL_wd": [
-        "Latent heat of evaporation of water used in saturation ajustment, melting and evaporation",
+        "Latent heat of evaporation of water used in saturation ajustment, melting and evaporation. Not tracked.",
         r"$ L_{lv} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
     ],
     "dL_ed": [
-        " Heat of sublimation ice to vapor used in sublimation and homogeneous ice nucleation",
+        " Heat of sublimation ice to vapor used in sublimation and homogeneous ice nucleation. Not tracked.",
         r"$ L_{iv} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
     ],
     "dD_v": [
-        r"Diffusivity of water vapor in air at $0^\circ\text{C} $ used in evaporation of ice particles",
+        r"Diffusivity of water vapor in air at $0^\circ\text{C} $ used in evaporation of ice particles. Not tracked",
         r"$ D_v $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
@@ -2819,7 +2819,7 @@ in_params_notation_mapping = {
         "independent",
     ],
     "dC_mult": [
-        "Coefficient for splintering during Hallet-Mossop ice multiplication",
+        "Coefficient for splintering during Hallet-Mossop ice multiplication.",
         r"$ F_\text{splint} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",

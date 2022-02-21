@@ -205,7 +205,8 @@ def load_dataset(
                 not_perturbed_path = path + "_notPerturbed.nc_wcb"
             if not os.path.isfile(not_perturbed_path):
                 not_perturbed_path = path + in_params[0][1::] + ".nc_wcb"
-
+            if not os.path.isfile(not_perturbed_path):
+                not_perturbed_path = path + in_params[0][1::] + "_" + path.split("/")[-2] + ".nc"
             val_df = load_sensitivity(
                 not_perturbed_path, out_params, param_names, in_params, par_dim_name
             )
@@ -264,6 +265,9 @@ def load_dataset(
                     load_path = path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb"
                     if not os.path.isfile(load_path):
                         load_path = path + in_p[1::] + ".nc_wcb"
+                    if not os.path.isfile(load_path):
+                        print(f"Parameter {in_p[1::]} does not exist")
+                        continue
                     ds = xr.open_dataset(
                         load_path,
                         decode_times=False,
