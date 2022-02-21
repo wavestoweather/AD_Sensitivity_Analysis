@@ -512,13 +512,16 @@ void run_substeps(
 
         // Time update
         time_new = (sub + (t+cc.done_steps)*cc.num_sub_steps)*cc.dt;
+        // std::cout << time_new << "\n";
         if (time_new >= delay_out_time) {
+           //  std::cout << "process last step\n";
             // TODO(mahieron): what if delay_out_time is not a multiple of dt_prime?
             out_handler.process_step(cc, netcdf_reader, y_single_new, y_diff,
                 sub, t,
                 input.write_index,
                 input.snapshot_index,
                 last_step, ref_quant);
+           //  std::cout << "last step processed\n";
         }
         // Interchange old and new for next step
         time_old = time_new;
@@ -535,6 +538,9 @@ void run_substeps(
         if (last_step)
             break;
     }  // End substep
+#ifdef TRACE_COMM_DEBUG
+    std::cout << "after substep time \n";
+#endif
 }
 
 void run_substeps(
@@ -728,11 +734,17 @@ int run_simulation(
             out_handler.flush_buffer(cc);
             break;
         }
+#ifdef TRACE_COMM_DEBUG
+        std::cout << rank << ", sim " << t << " / " << cc.num_steps - cc.done_steps - 1 << "\n";
+#endif
         // Iterate over each substep
         run_substeps(input, ref_quant, t, cc, y_single_old,
             inflow, y_single_new, netcdf_reader, y_diff, out_handler,
             sub_start, ensemble, segments, pbar, scheduler,
             delay_out_time);
+#ifdef TRACE_COMM_DEBUG
+       std::cout << rank << ", sim done " << t << " / " << cc.num_steps - cc.done_steps - 1 << "\n";
+#endif
 #ifdef TRACE_QG
         if (trace)
             std::cout << "\nSediment total q: " << sediment_q_total
@@ -744,6 +756,9 @@ int run_simulation(
         checkpoint_t throw_away;
         scheduler.send_task(throw_away, false);
     }
+#ifdef TRACE_COMM_DEBUG
+    std::cout << rank << ", sim end. pbar.finish()\n";
+#endif
     if (finish_progress)
         pbar.finish();
 
@@ -935,7 +950,7 @@ void limited_time_ensembe_simulation(
     ProgressBar pbar = ProgressBar(
         cc.num_sub_steps*cc.num_steps * sims_for_r0 + steps_members,
         progress_index, "simulation step", std::cout);
-
+    SUCCESS_OR_DIE(MPI_Win_lock_all(0, scheduler.free_window));
     if (rank == 0) {
         scheduler.set_n_ensembles(1);
         scheduler.set_n_trajectories(segments[0].n_members);
@@ -947,7 +962,6 @@ void limited_time_ensembe_simulation(
             y_single_old[ii] = y_init[ii];
 
         out_handler.reset(scheduler.current_traj, scheduler.current_ens);
-
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow,
             out_handler, segments, scheduler, netcdf_reader, pbar, input.delay_time_store, 0, false));
@@ -995,12 +1009,17 @@ void limited_time_ensembe_simulation(
 
         pbar.set_current_step(pbar_counter);
         pbar.progress();
-
+#ifdef TRACE_COMM
+        std::cout << "rank " << rank << ", run simulation\n";
+#endif
         // run simulation
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow,
             out_handler, segments, scheduler, netcdf_reader, pbar, 0, 1, false));
         pbar_counter += (cc.num_steps - cc.done_steps)*cc.num_sub_steps;
+#ifdef TRACE_COMM
+        std::cout << "rank " << rank << ", simulation done\n";
+#endif
     }
 #ifdef TRACE_COMM
         std::cout << "rank " << rank << " busy\n";
@@ -1010,6 +1029,7 @@ void limited_time_ensembe_simulation(
 #ifdef TRACE_COMM
         std::cout << "rank " << rank << " all done\n";
 #endif
+    SUCCESS_OR_DIE(MPI_Win_unlock_all(scheduler.free_window));
 }
 
 template<class float_t>
