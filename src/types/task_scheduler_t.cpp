@@ -162,7 +162,7 @@ bool task_scheduler_t::send_task(
                         &busy,              // source
                         &compare_value,     // compare
                         &current_value,     // result
-                        MPI_INT,         // datatype
+                        MPI_INT,            // datatype
                         0,                  // target rank
                         0,                  // displacement in window
                         free_window));
@@ -195,9 +195,9 @@ void task_scheduler_t::send_new_task(
                 &busy,              // source
                 &compare_value,     // compare
                 &current_value,     // result
-                MPI_INT,         // datatype
+                MPI_INT,            // datatype
                 0,                  // target rank
-                idx,                  // displacement in window
+                idx,                // displacement in window
                 free_window));
     } else {
         checkpoint_queue.push(checkpoint);
@@ -229,9 +229,9 @@ void task_scheduler_t::signal_send_task() {
                                 &free,              // source
                                 &compare_value,     // compare
                                 &current_value,     // result
-                                MPI_INT,         // datatype
-                                work_idx,                  // target rank
-                                worker,                  // displacement in window
+                                MPI_INT,            // datatype
+                                work_idx,           // target rank
+                                worker,             // displacement in window
                                 free_window));
 
                         // Mark worker as busy and remove work
@@ -243,8 +243,8 @@ void task_scheduler_t::signal_send_task() {
                                 &busy,              // source
                                 &compare_value,     // compare
                                 &current_value,     // result
-                                MPI_INT,         // datatype
-                                my_rank,                  // target rank
+                                MPI_INT,            // datatype
+                                my_rank,            // target rank
                                 worker,             // displacement in window
                                 free_window));
                         work_available[i]--;
@@ -310,16 +310,13 @@ bool task_scheduler_t::receive_task(
         current_traj = next_idx;
         return true;
     }
-    // bool signal_sent = false;
     // check if work is directly available
-//    std::cout << my_rank << " attempt to lock\n";
-//    SUCCESS_OR_DIE(MPI_Win_lock_all(0, free_window));
     int all_done = 0;
     bool task_sent = false;
     while (!checkpoint.receive_checkpoint()) {
         // check if work is available on own queue ?
         // Send any tasks in case it didn't happen yet
-        if (send_task(checkpoint)) task_sent = true; //return true;
+        if (send_task(checkpoint)) task_sent = true;  // return true;
         // if not, signal free to the master and continue busy waiting
         if (!signal_sent && my_rank != 0 && !task_sent) {
             signal_free();
@@ -337,7 +334,7 @@ bool task_scheduler_t::receive_task(
                     &free,              // source
                     &compare_value,     // compare
                     &current_value,     // result
-                    MPI_INT,         // datatype
+                    MPI_INT,            // datatype
                     0,                  // target rank
                     my_rank,            // displacement in window
                     free_window));
@@ -355,52 +352,8 @@ bool task_scheduler_t::receive_task(
                 signal_send_task();
             if (it == free_worker.end() && no_more_work) {
                 all_done = 1;
-
-
-                // // signal everyone that we are finished somehow
-                // int finished = 2;
-                // current_value = 2;
-                // compare_value = 0;
-                // while (compare_value != current_value) {
-                //     SUCCESS_OR_DIE(
-                //         MPI_Compare_and_swap(
-                //             &finished,              // source
-                //             &compare_value,     // compare
-                //             &current_value,     // result
-                //             MPI_INT,         // datatype
-                //             0,                  // target rank
-                //             0,            // displacement in window
-                //             free_window));
-                //     compare_value = current_value;
-                //     current_value = 2;
-                // }
-                // // We send it to every worker, however broadcast a single
-                // // value everytime we are here is not a good idea.
-                // for (uint32_t i=1; i < free_worker.size(); ++i) {
-                //     compare_value = 0;
-                //     current_value = 2;
-                //     while (compare_value != current_value) {
-                //         SUCCESS_OR_DIE(
-                //             MPI_Compare_and_swap(
-                //                 &finished,              // source
-                //                 &compare_value,     // compare
-                //                 &current_value,     // result
-                //                 MPI_INT,         // datatype
-                //                 i,                  // target rank
-                //                 0,            // displacement in window
-                //                 free_window));
-                //         compare_value = current_value;
-                //         current_value = 2;
-                //     }
-                // }
-                // SUCCESS_OR_DIE(MPI_Win_unlock(my_rank, work_window));
-                // return false;
             }
             SUCCESS_OR_DIE(MPI_Win_unlock(my_rank, work_window));
-        } else {
-            // if (free_worker[0] == 2) {
-            //     return false;
-            // }
         }
         SUCCESS_OR_DIE(MPI_Bcast(&all_done, 1, MPI_INT, 0, MPI_COMM_WORLD));
         if (task_sent) return true;
@@ -411,245 +364,7 @@ bool task_scheduler_t::receive_task(
     if (all_done == 1) return false;
     return true;
 }
-/*
-    int all_done = 0;
-    while (!checkpoint.receive_checkpoint()) {
-        // check if work is available on own queue ?
-        // Send any tasks in case it didn't happen yet
-        if (send_task(checkpoint)) return true;
-        // if not, signal free to the master and continue busy waiting
-        if (!signal_sent && my_rank != 0) {
-            signal_free();
-            signal_sent = true;
-        }
-        // if all are free, return
-        if (my_rank == 0) {
-            SUCCESS_OR_DIE(
-                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, work_window));
-            int free = 1;
-            int current_value = 0;
-            int compare_value = 0;
-            SUCCESS_OR_DIE(
-                MPI_Compare_and_swap(
-                    &free,              // source
-                    &compare_value,     // compare
-                    &current_value,     // result
-                    MPI_INT,         // datatype
-                    0,                  // target rank
-                    my_rank,            // displacement in window
-                    free_window));
 
-            auto it = std::find(free_worker.begin(), free_worker.end(), 0);
-            bool no_more_work = true;
-            for (const auto &work : work_available) {
-                if (work > 0) {
-                    no_more_work = false;
-                    break;
-                }
-            }
-            // Get that work done by someone
-            if (!no_more_work)
-                signal_send_task();
-            if (it == free_worker.end() && no_more_work) {
-                all_done = 1;
-
-
-                // // signal everyone that we are finished somehow
-                // int finished = 2;
-                // current_value = 2;
-                // compare_value = 0;
-                // while (compare_value != current_value) {
-                //     SUCCESS_OR_DIE(
-                //         MPI_Compare_and_swap(
-                //             &finished,              // source
-                //             &compare_value,     // compare
-                //             &current_value,     // result
-                //             MPI_INT,         // datatype
-                //             0,                  // target rank
-                //             0,            // displacement in window
-                //             free_window));
-                //     compare_value = current_value;
-                //     current_value = 2;
-                // }
-                // // We send it to every worker, however broadcast a single
-                // // value everytime we are here is not a good idea.
-                // for (uint32_t i=1; i < free_worker.size(); ++i) {
-                //     compare_value = 0;
-                //     current_value = 2;
-                //     while (compare_value != current_value) {
-                //         SUCCESS_OR_DIE(
-                //             MPI_Compare_and_swap(
-                //                 &finished,              // source
-                //                 &compare_value,     // compare
-                //                 &current_value,     // result
-                //                 MPI_INT,         // datatype
-                //                 i,                  // target rank
-                //                 0,            // displacement in window
-                //                 free_window));
-                //         compare_value = current_value;
-                //         current_value = 2;
-                //     }
-                // }
-                // SUCCESS_OR_DIE(MPI_Win_unlock(my_rank, work_window));
-                // return false;
-            }
-            SUCCESS_OR_DIE(MPI_Win_unlock(my_rank, work_window));
-        } else {
-            // if (free_worker[0] == 2) {
-            //     return false;
-            // }
-        }
-        std::cout << my_rank << ", broadcast " << all_done << "\n";
-        SUCCESS_OR_DIE(MPI_Bcast(&all_done, 1, MPI_INT, 0, MPI_COMM_WORLD));
-        std::cout << my_rank << ", after bcast " << all_done << "\n";
-        if (all_done == 1) return false;
-    }
-    signal_sent = false;
-
-    if (all_done == 1) return false;
-    return true;
-}*/
-/*
-    while (!checkpoint.receive_checkpoint()) {
-        // check if work is available on own queue ?
-        // Send any tasks in case it didn't happen yet
-        if (send_task(checkpoint)) {
-//            std::cout << my_rank << " unlock send_task\n";
-//            SUCCESS_OR_DIE(MPI_Win_unlock_all(free_window));  
-            return true;
-        }
-        // if not, signal free to the master and continue busy waiting
-        if (!signal_sent && my_rank != 0) {
-            signal_free();
-            signal_sent = true;
-        }
-        // if all are free, return
-        if (my_rank == 0) {
-            SUCCESS_OR_DIE(
-                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, my_rank, 0, work_window));
-            int free = 1;
-            int current_value = 0;
-            int compare_value = 0;
-            SUCCESS_OR_DIE(
-                MPI_Compare_and_swap(
-                    &free,              // source
-                    &compare_value,     // compare
-                    &current_value,     // result
-                    MPI_INT,         // datatype
-                    0,                  // target rank
-                    my_rank,            // displacement in window
-                    free_window));
-
-            auto it = std::find(free_worker.begin(), free_worker.end(), 0);
-            bool no_more_work = true;
-            for (const auto &work : work_available) {
-                if (work > 0) {
-                    no_more_work = false;
-                    break;
-                }
-            }
-            // Get that work done by someone
-            if (!no_more_work)
-                signal_send_task();
-            if (it == free_worker.end() && no_more_work) {
-                // signal everyone that we are finished somehow
-                int finished = 2;
-                current_value = 2;
-                compare_value = 0;
-                while (compare_value != current_value) {
-                    SUCCESS_OR_DIE(
-                        MPI_Compare_and_swap(
-                            &finished,              // source
-                            &compare_value,     // compare
-                            &current_value,     // result
-                            MPI_INT,         // datatype
-                            0,                  // target rank
-                            0,            // displacement in window
-                            free_window));
-                    compare_value = current_value;
-                    current_value = 2;
-                }
-#ifdef TRACE_COMM
-                std::cout << "0 set free_worker to " << free_worker[0] << "\n";
-#endif
-                // We send it to every worker, however broadcast a single
-                // value everytime we are here is not a good idea.
-                SUCCESS_OR_DIE(MPI_Win_lock_all(0, free_window));
-                for (uint32_t i=1; i < free_worker.size(); ++i) {
-                    compare_value = 0;
-                    current_value = 2;
-#ifdef TRACE_COMM
-                    std::cout << "Signal to " << i << " finished\n";
-#endif
-//                    SUCCESS_OR_DIE(
-//                        MPI_Win_lock(MPI_LOCK_SHARED, i, 0, free_window));
-//                    SUCCESS_OR_DIE(
-//        MPI_Put(
-//            &finished,          // source
-//            1,              // count
-//            MPI_INT,     // datatype
-//            i,              // target
-//            0,        // displacement in target
-//            1,              // target count
-//            MPI_INT,     // target datatype
-//            free_window));
-                   while (compare_value != current_value) {
-                        SUCCESS_OR_DIE(
-                            MPI_Compare_and_swap(
-                                &finished,              // source
-                                &compare_value,     // compare
-                                &current_value,     // result
-                                MPI_INT,         // datatype
-                                i,                  // target rank
-                               0,            // displacement in window
-                                free_window));
-                        compare_value = current_value;
-                        current_value = 2;
-                    }
-                   // SUCCESS_OR_DIE(MPI_Win_flush(i, free_window));
-//                    SUCCESS_OR_DIE(MPI_Win_unlock(i, free_window));
-#ifdef TRACE_COMM
-                    std::cout << " to " << i << ", compare: " << compare_value << " fin: " << finished << " f_local: " << free_worker[i]  << "\n";
-#endif
-                }
-                SUCCESS_OR_DIE(MPI_Win_unlock_all(free_window));
-                SUCCESS_OR_DIE(MPI_Win_flush_all(free_window));
-//                std::cout << my_rank << " unlock after flush\n";
-//                SUCCESS_OR_DIE(MPI_Win_fence(0, free_window));
-                SUCCESS_OR_DIE(MPI_Win_unlock(my_rank, work_window));
-//                SUCCESS_OR_DIE(MPI_Win_unlock_all(free_window));
-                return false;
-            }
-//            SUCCESS_OR_DIE(MPI_Win_fence(0, free_window));
-            SUCCESS_OR_DIE(MPI_Win_unlock(my_rank, work_window));
-        } else {
-//              std::cout << "going into a fence\n";
-//              SUCCESS_OR_DIE(MPI_Win_fence(0, free_window));
-//              std::cout << "after fence\n";
-//            SUCCESS_OR_DIE(
-//                        MPI_Win_lock(MPI_LOCK_SHARED, my_rank, 0, free_window));
-#ifdef TRACE_COMM
-//            std::cout << my_rank << " worker val " << free_worker[0] << "\n";
-            for (auto idx_tmp = 0; idx_tmp < free_worker.size(); idx_tmp++)
-                if (free_worker[idx_tmp] != 0)
-                    std::cout << my_rank << " worker val " << free_worker[idx_tmp] << " --- " << idx_tmp  << "\n";
-#endif          
-            if (free_worker[0] == 2) {
-                  std::cout << my_rank << " unlock free 2\n";
-//                  SUCCESS_OR_DIE(MPI_Win_unlock_all(free_window));
-//                SUCCESS_OR_DIE(MPI_Win_unlock(my_rank, free_window));
-                return false;
-            }
-//            SUCCESS_OR_DIE(MPI_Win_unlock(my_rank, free_window));
-        }
-    }
-//    if (my_rank == 0) SUCCESS_OR_DIE(MPI_Win_fence(0, free_window));
-    signal_sent = false;
-//    std::cout << my_rank << " unlock end func\n";
-//    SUCCESS_OR_DIE(MPI_Win_unlock_all(free_window));
-    return true;
-}
-*/
 
 void task_scheduler_t::signal_free() {
     // Set to free (1) if current status is busy (0).
@@ -666,7 +381,7 @@ void task_scheduler_t::signal_free() {
             &free,              // source
             &compare_value,     // compare
             &current_value,     // result
-            MPI_INT,         // datatype
+            MPI_INT,            // datatype
             0,                  // target rank
             my_rank,            // displacement in window
             free_window));
@@ -681,11 +396,11 @@ void task_scheduler_t::signal_work_avail() {
         MPI_Put(
             &work,          // source
             1,              // count
-            MPI_INT,     // datatype
+            MPI_INT,        // datatype
             0,              // target
             my_rank,        // displacement in target
             1,              // target count
-            MPI_INT,     // target datatype
+            MPI_INT,        // target datatype
             work_window));
     SUCCESS_OR_DIE(MPI_Win_unlock(0, work_window));
 }
