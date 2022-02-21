@@ -206,6 +206,8 @@ def load_dataset(
             if not os.path.isfile(not_perturbed_path):
                 not_perturbed_path = path + in_params[0][1::] + ".nc_wcb"
             if not os.path.isfile(not_perturbed_path):
+                not_perturbed_path = path + in_params[0][1::] + ".nc"
+            if not os.path.isfile(not_perturbed_path):
                 not_perturbed_path = (
                     path + in_params[0][1::] + "_" + path.split("/")[-2] + ".nc"
                 )
@@ -246,6 +248,8 @@ def load_dataset(
         if not os.path.isfile(not_perturbed_path):
             not_perturbed_path = path + in_params[0][1::] + ".nc_wcb"
         if not os.path.isfile(not_perturbed_path):
+            not_perturbed_path = path + in_params[0][1::] + ".nc"
+        if not os.path.isfile(not_perturbed_path):
             not_perturbed_path = (
                 path + in_params[0][1::] + "_" + path.split("/")[-2] + ".nc"
             )
@@ -272,6 +276,8 @@ def load_dataset(
                     if not os.path.isfile(load_path):
                         load_path = path + in_p[1::] + ".nc_wcb"
                     if not os.path.isfile(load_path):
+                        load_path = path + in_p[1::] + ".nc"
+                    if not os.path.isfile(load_path):
                         load_path = path + in_p[1::] + "_" + path.split("/")[-2] + ".nc"
                     ds = xr.open_dataset(
                         load_path,
@@ -292,6 +298,8 @@ def load_dataset(
                     load_path = path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb"
                     if not os.path.isfile(load_path):
                         load_path = path + in_p[1::] + ".nc_wcb"
+                    if not os.path.isfile(load_path):
+                        load_path = path + in_p[1::] + ".nc"
                     if not os.path.isfile(load_path):
                         load_path = path + in_p[1::] + "_" + path.split("/")[-2] + ".nc"
                     ds = xr.open_dataset(
