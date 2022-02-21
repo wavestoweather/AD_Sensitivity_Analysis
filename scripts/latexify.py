@@ -2536,13 +2536,13 @@ in_params_notation_mapping = {
         "independent",
     ],
     "drain_gfak": [
-        "Coefficient for gamma evaluation in rain evaporation",
+        "Coefficient for gamma evaluation in rain evaporation. Not tracked.",
         "",
         "",
         "independent",
     ],
     "dcloud_k_au": [
-        "Coefficient for autoconversion of cloud to rain",
+        "Coefficient for autoconversion of cloud to rain. Not tracked.",
         r"$ \frac{k_{cc}}{20x^\ast} \frac{(\nu_c+2)(\nu_c+4)}{(\nu_c+1)^2} $",
         r"\citeA{seifert_two-moment_2006}",
         "dependent",
@@ -2651,13 +2651,13 @@ in_params_notation_mapping = {
         "independent",
     ],
     "dT_freeze": [
-        "Threshold for freezing of water",
+        "Threshold for freezing of water. Not tracked.",
         r"$ T_3 $",
         r"\cite{seifert_two-moment_2006}",
         "independent",
     ],
     "dT_f": [
-        "Lower temperature threshold for (instantaneous) raindrop freezing",
+        "Lower temperature threshold for (instantaneous) raindrop freezing. Not tracked.",
         "-",
         "-",
         "independent",
@@ -2669,13 +2669,13 @@ in_params_notation_mapping = {
         "independent",
     ],  # not tracked! (not used anywhere; is actually cmu3)
     "drho_w": [
-        r"Density of liquid water in $ \text{kg}/\text{m}^3 $",
+        r"Density of liquid water in $ \text{kg}/\text{m}^3 $. Not tracked.",
         r"$ \rho_w $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
     ],
     "drho_0": [
-        "Air density at surface conditions",
+        "Air density at surface conditions. Not tracked.",
         r"$ \rho_0 $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
@@ -2693,7 +2693,7 @@ in_params_notation_mapping = {
         "independent",
     ],
     "drho_ice": [
-        r"Density of ice in $ \text{kg}/\text{m}^3 $",
+        r"Density of ice in $ \text{kg}/\text{m}^3 $. Not tracked.",
         r"$ \rho_\epsilon $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
@@ -2723,7 +2723,7 @@ in_params_notation_mapping = {
         "independent",
     ],
     "dgravity_acc": [
-        "Gravitational acceleration used in homogeneous ice nucleation and for updating temperature and pressure",
+        "Gravitational acceleration used in homogeneous ice nucleation and for updating temperature and pressure. Not tracked.",
         r"$ g $",
         r"\citeA{karcher_physically_2006}",
         "independent",
@@ -2891,7 +2891,7 @@ in_params_notation_mapping = {
         "independent",
     ],
     "dcp": [
-        r"Specific heat capacity of air at constant pressure in $ \text{J}/\text{K}/\text{kg} $",
+        r"Specific heat capacity of air at constant pressure in $ \text{J}/\text{K}/\text{kg} $. Not tracked.",
         r"$ c_p $",
         r"\citeA{karcher_physically_2006}",
         "independent",
@@ -3132,37 +3132,37 @@ in_params_notation_mapping = {
         "independent",
     ],  # not used!
     "dp_sat_const_a": [
-        r"Parameter for saturation $ S $ adjustment.",
+        r"Parameter for saturation $ S $ adjustment. Not tracked.",
         "",
         "",
         "independent",
     ],
     "dp_sat_ice_const_a": [
-        "Parameter for saturation adjustment. Constant saturated ice pressure",
+        "Parameter for saturation adjustment. Constant saturated ice pressure. Not tracked.",
         "",
         "-",
         "independent",
     ],
     "dp_sat_const_b": [
-        "Parameter for saturation adjustment. Constant saturated water vapor pressure",
+        "Parameter for saturation adjustment. Constant saturated water vapor pressure. Not tracked.",
         "",
         "-",
         "independent",
     ],
     "dp_sat_ice_const_b": [
-        "Parameter for saturation adjustment. Constant saturated ice pressure",
+        "Parameter for saturation adjustment. Constant saturated ice pressure. Not tracked.",
         "",
         "-",
         "independent",
     ],
     "dp_sat_low_temp": [
-        r"Parameter for saturation adjustment. Saturated water vapor pressure at $T = 233 $K",
+        r"Parameter for saturation adjustment. Saturated water vapor pressure at $T = 233 $K. Not tracked.",
         "",
         "-",
         "independent",
     ],
     "dT_sat_low_temp": [
-        "Parameter for saturation adjustment",
+        "Parameter for saturation adjustment. Not tracked.",
         "",
         "",
         "independent",
@@ -3501,7 +3501,7 @@ in_params_notation_mapping = {
         "independent",
     ],
     "dcloud_c_z": [
-        "Coefficient for 2nd mass moment used in homogeneous freezing",
+        "Coefficient for 2nd mass moment used in homogeneous freezing. Not tracked.",
         r"Similar to $ \frac{\nu_c + 2}{\nu_c + 1} $",
         r"\citeA{seifert_two-moment_2006} Eq. (50)",
         "dependent",
@@ -3797,8 +3797,18 @@ in_params_notation_mapping = {
         r"\citeA{seifert_two-moment_2006}, Eq. (78)",
         "dependent",
     ],
-    "dgraupel_vsedi_min": ["Minimum sedimentation velocity parameter", "-", "-"],
-    "dgraupel_vsedi_max": ["Maximum sedimentation velocity parameter", "-", "-"],
+    "dgraupel_vsedi_min": [
+        "Minimum sedimentation velocity parameter",
+        "-",
+        "-",
+        "independent",
+    ],
+    "dgraupel_vsedi_max": [
+        "Maximum sedimentation velocity parameter",
+        "-",
+        "-",
+        "independent",
+    ],
     # Hail
     "dhail_a_geo": [
         "Coefficient for diameter size calculation",
@@ -3886,7 +3896,7 @@ in_params_notation_mapping = {
     ],
     "dhail_c_z": ["Not used", "", "", "dependent"],
     "dhail_sc_coll_n": [
-        "Coefficient in graupel self collection and cloud riming",
+        "Coefficient in graupel self collection and cloud riming. Not tracked.",
         r"combination of $ \vartheta $ and $ \delta $",
         r"\citeA{seifert_two-moment_2006}, Eq. (62)",
         "independent",
@@ -3989,8 +3999,18 @@ in_params_notation_mapping = {
         r"\citeA{seifert_two-moment_2006}, Eq. (78)",
         "dependent",
     ],
-    "dhail_vsedi_min": ["Minimum sedimentation velocity parameter", "-", "-"],
-    "dhail_vsedi_max": ["Maximum sedimentation velocity parameter", "-", "-"],
+    "dhail_vsedi_min": [
+        "Minimum sedimentation velocity parameter",
+        "-",
+        "-",
+        "independent",
+    ],
+    "dhail_vsedi_max": [
+        "Maximum sedimentation velocity parameter",
+        "-",
+        "-",
+        "independent",
+    ],
     # Ice
     "dice_a_geo": [
         "Coefficient for diameter size calculation",
@@ -4231,8 +4251,18 @@ in_params_notation_mapping = {
         r"\citeA{seifert_two-moment_2006}, Eq. (78)",
         "dependent",
     ],
-    "dice_vsedi_min": ["Minimum sedimentation velocity parameter", "-", "-"],
-    "dice_vsedi_max": ["Maximum sedimentation velocity parameter", "-", "-"],
+    "dice_vsedi_min": [
+        "Minimum sedimentation velocity parameter",
+        "-",
+        "-",
+        "independent",
+    ],
+    "dice_vsedi_max": [
+        "Maximum sedimentation velocity parameter",
+        "-",
+        "-",
+        "independent",
+    ],
     # Snow
     "dsnow_a_geo": [
         "Coefficient for diameter size calculation",
@@ -4438,8 +4468,18 @@ in_params_notation_mapping = {
         r"\citeA{seifert_two-moment_2006}, Eq. (78)",
         "dependent",
     ],
-    "dsnow_vsedi_min": ["Minimum sedimentation velocity parameter", "-", "-"],
-    "dsnow_vsedi_max": ["Maximum sedimentation velocity parameter", "-", "-"],
+    "dsnow_vsedi_min": [
+        "Minimum sedimentation velocity parameter",
+        "-",
+        "-",
+        "independent",
+    ],
+    "dsnow_vsedi_max": [
+        "Maximum sedimentation velocity parameter",
+        "-",
+        "-",
+        "independent",
+    ],
 }
 
 # A dictionary of used values for each parameter
