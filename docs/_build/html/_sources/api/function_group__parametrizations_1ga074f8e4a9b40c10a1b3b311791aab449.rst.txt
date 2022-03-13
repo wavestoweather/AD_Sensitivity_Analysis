@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga074f8e4a9b40c10a1b3b311791aab449:
+
+Template Function density_ice
+=============================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: density_ice(float_t)

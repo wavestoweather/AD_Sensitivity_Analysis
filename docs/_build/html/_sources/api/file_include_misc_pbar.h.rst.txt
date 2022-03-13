@@ -1,0 +1,60 @@
+
+.. _file_include_misc_pbar.h:
+
+File pbar.h
+===========
+
+|exhale_lsh| :ref:`Parent directory <dir_include_misc>` (``include/misc``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. contents:: Contents
+   :local:
+   :backlinks: none
+
+Definition (``include/misc/pbar.h``)
+------------------------------------
+
+
+.. toctree::
+   :maxdepth: 1
+
+   program_listing_file_include_misc_pbar.h.rst
+
+
+
+
+
+Includes
+--------
+
+
+- ``chrono``
+
+- ``cstring``
+
+- ``iomanip``
+
+- ``iostream``
+
+- ``math.h``
+
+- ``string``
+
+- ``sys/ioctl.h``
+
+- ``unistd.h``
+
+- ``vector``
+
+
+
+
+
+
+Classes
+-------
+
+
+- :ref:`exhale_class_classProgressBar`
+

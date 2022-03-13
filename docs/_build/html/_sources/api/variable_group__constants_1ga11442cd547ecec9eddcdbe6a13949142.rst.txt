@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga11442cd547ecec9eddcdbe6a13949142:
+
+Variable hail_q_crit_c
+======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: hail_q_crit_c

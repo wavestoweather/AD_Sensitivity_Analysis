@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga58bd1f69f0658bc58308ddbb06bba6f1:
+
+Variable s_smax
+===============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: s_smax

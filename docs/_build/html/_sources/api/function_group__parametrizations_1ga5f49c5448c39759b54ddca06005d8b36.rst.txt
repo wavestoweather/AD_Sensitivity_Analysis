@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga5f49c5448c39759b54ddca06005d8b36:
+
+Template Function density_water
+===============================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: density_water(float_t)

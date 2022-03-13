@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga049a556c2af9a1b2fbb819a7089f249f:
+
+Variable ice_a_vel
+==================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: ice_a_vel

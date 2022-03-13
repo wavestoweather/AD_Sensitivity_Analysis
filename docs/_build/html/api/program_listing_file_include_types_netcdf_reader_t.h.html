@@ -1,0 +1,390 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Program Listing for File netcdf_reader_t.h &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Program Listing for File netcdf_reader_t.h</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/program_listing_file_include_types_netcdf_reader_t.h.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="program-listing-for-file-netcdf-reader-t-h">
+<span id="program-listing-file-include-types-netcdf-reader-t-h"></span><h1>Program Listing for File netcdf_reader_t.h<a class="headerlink" href="#program-listing-for-file-netcdf-reader-t-h" title="Permalink to this headline">¶</a></h1>
+<p>↰ <a class="reference internal" href="file_include_types_netcdf_reader_t.h.html#file-include-types-netcdf-reader-t-h"><span class="std std-ref">Return to documentation for file</span></a> (<code class="docutils literal notranslate"><span class="pre">include/types/netcdf_reader_t.h</span></code>)</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#pragma once</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;netcdf.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;netcdf_par.h&gt;</span><span class="cp"></span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;array&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span><span class="cp"></span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;codi.hpp&quot;</span><span class="cp"></span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;include/misc/error.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;include/types/model_constants_t.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;include/types/reference_quantities_t.h&quot;</span><span class="cp"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">netcdf_reader_t</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">n_ensembles</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">n_trajectories</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// double dlon, dlat;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">start_time_idx_given</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">start_time_idx</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">start_time_idx_original</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">time_idx</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">explicit</span><span class="w"> </span><span class="n">netcdf_reader_t</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">buffer_size</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span><span class="w"> </span><span class="nc">float_t</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">read_buffer</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="n">model_constants_t</span><span class="o">&lt;</span><span class="n">float_t</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cc</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">reference_quantities_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">ref_quant</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">float_t</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">y_single_old</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">float_t</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">inflows</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">step</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="o">&amp;</span><span class="n">checkpoint_flag</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="o">&amp;</span><span class="n">start_over_env</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span><span class="w"> </span><span class="nc">float_t</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">set_dims</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">input_file</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">model_constants_t</span><span class="o">&lt;</span><span class="n">float_t</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cc</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">&amp;</span><span class="n">simulation_mode</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span><span class="w"> </span><span class="nc">float_t</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">init_netcdf</span><span class="p">(</span><span class="w"></span>
+<span class="cp">#ifdef MET3D</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="o">&amp;</span><span class="n">start_time</span><span class="p">,</span><span class="w"></span>
+<span class="cp">#endif</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">input_file</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="o">&amp;</span><span class="n">checkpoint_flag</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">model_constants_t</span><span class="o">&lt;</span><span class="n">float_t</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cc</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">&amp;</span><span class="n">simulation_mode</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">current_time</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">reference_quantities_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">ref_quant</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span><span class="w"> </span><span class="nc">float_t</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">read_initial_values</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">y_init</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">reference_quantities_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">ref_quant</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">model_constants_t</span><span class="o">&lt;</span><span class="n">float_t</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cc</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="o">&amp;</span><span class="n">checkpoint_flag</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">uint64_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">traj_id</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">uint64_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">ens_id</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span><span class="w"> </span><span class="nc">float_t</span><span class="o">&gt;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">read_initial_values</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">y_init</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">reference_quantities_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">ref_quant</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">model_constants_t</span><span class="o">&lt;</span><span class="n">float_t</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cc</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="o">&amp;</span><span class="n">checkpoint_flag</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="nf">get_lat</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sub</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="nf">get_lon</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sub</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+<span class="cp">#if defined(MET3D) || defined(B_EIGHT)</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="nf">get_relative_time</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">buffer</span><span class="p">[</span><span class="n">Par_idx</span><span class="o">::</span><span class="n">time_after_ascent</span><span class="p">][</span><span class="n">t</span><span class="o">%</span><span class="n">buffer</span><span class="p">[</span><span class="n">Par_idx</span><span class="o">::</span><span class="n">time_after_ascent</span><span class="p">].</span><span class="n">size</span><span class="p">()];</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="cp">#if !defined(B_EIGHT)</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">get_conv_400</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">buffer</span><span class="p">[</span><span class="n">Par_idx</span><span class="o">::</span><span class="n">conv_400</span><span class="p">][</span><span class="w"></span>
+<span class="w">        </span><span class="n">t</span><span class="o">%</span><span class="n">buffer</span><span class="p">[</span><span class="n">Par_idx</span><span class="o">::</span><span class="n">conv_400</span><span class="p">].</span><span class="n">size</span><span class="p">()]</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">);}</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">get_conv_600</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">buffer</span><span class="p">[</span><span class="n">Par_idx</span><span class="o">::</span><span class="n">conv_600</span><span class="p">][</span><span class="w"></span>
+<span class="w">        </span><span class="n">t</span><span class="o">%</span><span class="n">buffer</span><span class="p">[</span><span class="n">Par_idx</span><span class="o">::</span><span class="n">conv_600</span><span class="p">].</span><span class="n">size</span><span class="p">()]</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">);}</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">get_slan_400</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">buffer</span><span class="p">[</span><span class="n">Par_idx</span><span class="o">::</span><span class="n">slan_400</span><span class="p">][</span><span class="w"></span>
+<span class="w">        </span><span class="n">t</span><span class="o">%</span><span class="n">buffer</span><span class="p">[</span><span class="n">Par_idx</span><span class="o">::</span><span class="n">slan_400</span><span class="p">].</span><span class="n">size</span><span class="p">()]</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">);}</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">get_slan_600</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">buffer</span><span class="p">[</span><span class="n">Par_idx</span><span class="o">::</span><span class="n">slan_600</span><span class="p">][</span><span class="w"></span>
+<span class="w">        </span><span class="n">t</span><span class="o">%</span><span class="n">buffer</span><span class="p">[</span><span class="n">Par_idx</span><span class="o">::</span><span class="n">slan_600</span><span class="p">].</span><span class="n">size</span><span class="p">()]</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">);}</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="cp">#endif</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="nf">get_traj_idx</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="k">return</span><span class="w"> </span><span class="n">traj_idx</span><span class="p">;}</span><span class="w"></span>
+
+<span class="w"> </span><span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">startp</span><span class="p">,</span><span class="w"> </span><span class="n">countp</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ncid</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">n_timesteps_in</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">n_timesteps_buffer</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">time_buffer_idx</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">traj_idx</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">ens_idx</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">already_open</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">n_subs</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">pascal_conv</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">dimid</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">varid</span><span class="p">,</span><span class="w"> </span><span class="n">varid_once</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Par_idx</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">pressure</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">temperature</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">ascent</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">lat</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">lon</span><span class="p">,</span><span class="w"></span>
+<span class="cp">#if defined(FLUX) &amp;&amp; !defined(WCB)</span>
+<span class="w">        </span><span class="n">qr_in</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">nr_in</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#if defined(RK4ICE)</span>
+<span class="w">        </span><span class="n">qi_in</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">qs_in</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">qg_in</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#if defined(B_EIGHT)</span>
+<span class="w">        </span><span class="n">qh_in</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="w">        </span><span class="n">ni_in</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">ns_in</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">ng_in</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#if defined(B_EIGHT)</span>
+<span class="w">        </span><span class="n">nh_in</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="cp">#endif</span>
+<span class="w">        </span><span class="n">height</span><span class="p">,</span><span class="w"></span>
+<span class="cp">#ifdef MET3D</span>
+<span class="w">        </span><span class="n">time_after_ascent</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">conv_400</span><span class="p">,</span><span class="w">  </span><span class="c1">// might make trouble type wise</span>
+<span class="w">        </span><span class="n">conv_600</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">slan_400</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">slan_600</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#ifdef TURBULENCE</span>
+<span class="w">        </span><span class="n">q_turb</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="cp">#endif</span>
+<span class="w">        </span><span class="n">n_pars</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Dim_idx</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">time_dim_idx</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">trajectory_dim_idx</span><span class="p">,</span><span class="w"></span>
+<span class="cp">#if !defined(B_EIGHT)</span>
+<span class="w">        </span><span class="n">ensemble_dim_idx</span><span class="p">,</span><span class="w"></span>
+<span class="cp">#endif</span>
+<span class="w">        </span><span class="n">n_dims</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// Index for variable ids that are read during initialization</span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Par_once_idx</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">qv</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">qc</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">qr</span><span class="p">,</span><span class="w"></span>
+<span class="cp">#if defined(RK4ICE)</span>
+<span class="w">        </span><span class="n">qi</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">qs</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">qg</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#if defined(B_EIGHT)</span>
+<span class="w">        </span><span class="n">qh</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="w">        </span><span class="n">nc</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">nr</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">ni</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">ns</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">ng</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#if defined(B_EIGHT)</span>
+<span class="w">        </span><span class="n">nh</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="cp">#endif</span>
+<span class="w">        </span><span class="n">time</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">n_pars_once</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">Par_idx</span><span class="o">::</span><span class="n">n_pars</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">buffer</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">load_vars</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">buffer_params</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">reference_quantities_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">ref_quant</span><span class="p">);</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

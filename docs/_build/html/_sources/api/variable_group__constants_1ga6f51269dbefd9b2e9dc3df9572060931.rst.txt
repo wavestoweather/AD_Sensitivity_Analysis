@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga6f51269dbefd9b2e9dc3df9572060931:
+
+Variable ecoll_gg_wet
+=====================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: ecoll_gg_wet

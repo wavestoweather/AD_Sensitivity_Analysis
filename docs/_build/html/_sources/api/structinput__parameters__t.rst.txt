@@ -1,0 +1,16 @@
+.. _exhale_struct_structinput__parameters__t:
+
+Struct input_parameters_t
+=========================
+
+- Defined in :ref:`file_include_types_input_parameters_t.h`
+
+
+Struct Documentation
+--------------------
+
+
+.. doxygenstruct:: input_parameters_t
+   :members:
+   :protected-members:
+   :undoc-members:

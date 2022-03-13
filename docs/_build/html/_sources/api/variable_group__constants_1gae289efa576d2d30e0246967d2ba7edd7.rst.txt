@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gae289efa576d2d30e0246967d2ba7edd7:
+
+Variable enhanced_melting
+=========================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: enhanced_melting

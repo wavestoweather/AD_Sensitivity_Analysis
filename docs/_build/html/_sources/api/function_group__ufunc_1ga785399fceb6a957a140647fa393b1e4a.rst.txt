@@ -1,0 +1,13 @@
+.. _exhale_function_group__ufunc_1ga785399fceb6a957a140647fa393b1e4a:
+
+Template Function auto_conversion_sb
+====================================
+
+- Defined in :ref:`file_include_microphysics_user_functions.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: auto_conversion_sb(float_t&, float_t&, float_t&, std::vector<float_t>&, model_constants_t<float_t>&)

@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gabe89923ce0c917bd178489bf352479da:
+
+Variable T_f
+============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: T_f

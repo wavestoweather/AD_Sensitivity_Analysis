@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gadcf582d6e7130ca9eb22939277b604a6:
+
+Variable use_hdcp2_het
+======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: use_hdcp2_het

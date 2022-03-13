@@ -1,0 +1,60 @@
+
+.. _file_include_microphysics_rk4.h:
+
+File rk4.h
+==========
+
+|exhale_lsh| :ref:`Parent directory <dir_include_microphysics>` (``include/microphysics``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. contents:: Contents
+   :local:
+   :backlinks: none
+
+Definition (``include/microphysics/rk4.h``)
+-------------------------------------------
+
+
+.. toctree::
+   :maxdepth: 1
+
+   program_listing_file_include_microphysics_rk4.h.rst
+
+
+
+
+
+Includes
+--------
+
+
+- ``algorithm``
+
+- ``codi.hpp``
+
+- ``include/microphysics/constants.h`` (:ref:`file_include_microphysics_constants.h`)
+
+- ``include/microphysics/user_functions.h`` (:ref:`file_include_microphysics_user_functions.h`)
+
+- ``include/types/model_constants_t.h`` (:ref:`file_include_types_model_constants_t.h`)
+
+- ``include/types/reference_quantities_t.h`` (:ref:`file_include_types_reference_quantities_t.h`)
+
+- ``math.h``
+
+- ``vector``
+
+
+
+
+
+
+Functions
+---------
+
+
+- :ref:`exhale_function_group__rk_1ga7f7162c3651bd34188f099ffbc24f0a5`
+
+- :ref:`exhale_function_group__rk_1ga2c368b4748835b79295b09b369805733`
+

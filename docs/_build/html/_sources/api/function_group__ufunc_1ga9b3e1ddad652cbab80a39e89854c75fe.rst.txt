@@ -1,0 +1,13 @@
+.. _exhale_function_group__ufunc_1ga9b3e1ddad652cbab80a39e89854c75fe:
+
+Template Function saturation_adjust_legacy
+==========================================
+
+- Defined in :ref:`file_include_microphysics_user_functions.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: saturation_adjust_legacy(const float_t&, const float_t&, const float_t&, const float_t&, const float_t&, std::vector<float_t>&, const model_constants_t<float_t>&)

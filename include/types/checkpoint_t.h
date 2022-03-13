@@ -7,10 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <boost/iostreams/stream.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <nlohmann/json.hpp>
 
 #include "include/misc/error.h"
 #include "include/misc/general.h"
@@ -21,11 +18,9 @@
 #include "include/types/output_handle_t.h"
 #include "include/types/reference_quantities_t.h"
 
-namespace pt = boost::property_tree;
-
 struct checkpoint_t {
  private:
-    pt::ptree checkpoint;
+    nlohmann::json checkpoint;
 
  public:
     checkpoint_t();
@@ -106,6 +101,7 @@ struct checkpoint_t {
         std::vector<segment_t> &segments,
         const input_parameters_t &input,
         const double &current_time);
+
     /**
      * Write checkpoint to disk as a json file. A property tree must have been
      * created before or nothing will be written.
@@ -113,9 +109,12 @@ struct checkpoint_t {
     template<class float_t>
     void write_checkpoint(
         std::string &filename,
-        model_constants_t<float_t> &cc,
-        std::vector<segment_t> &segments);
+        const model_constants_t<float_t> &cc,
+        const std::vector<segment_t> &segments);
 
+    /**
+     * Print the checkpoint to std::out. For debugging purpose.
+     */
     void print_checkpoint();
 
     /**
@@ -128,10 +127,6 @@ struct checkpoint_t {
      */
     bool receive_checkpoint();
 
-    // /**
-    //  * Getter for the underlying property tree
-    //  */
-    // pt::ptree get_checkpoint();
     /**
      * Check if a checkpoint had been stored already.
      */

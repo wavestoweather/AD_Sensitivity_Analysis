@@ -1,0 +1,16 @@
+.. _exhale_struct_structnetcdf__reader__t:
+
+Struct netcdf_reader_t
+======================
+
+- Defined in :ref:`file_include_types_netcdf_reader_t.h`
+
+
+Struct Documentation
+--------------------
+
+
+.. doxygenstruct:: netcdf_reader_t
+   :members:
+   :protected-members:
+   :undoc-members:

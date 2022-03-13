@@ -9,6 +9,8 @@ We recommend an [anaconda](https://www.anaconda.com/) environment for which you 
 use `requirements_conda.txt`. Either way, `requirements_pip.txt` with pip is needed
 as well to create a documentation.
 
+We also provide a docker image `mahieronymus/ad_sensitivity:2.0` with all necessary prerequisites installed. 
+
 
 
 Contents
@@ -17,10 +19,10 @@ Contents
 - **scripts:** Python scripts for plots and training a random forest.
 - **src:** C++ code.
 - **include:** Header files for the C++ code.
-- **docs:** Documentation. Go in this folder and type `make html` to create a HTML documentation (recommended) or `make latexpdf` to create a pdf documentation with Latex.
+- **docs:** Documentation. Go in this folder and type `make html` to create a HTML documentation (recommended) or `make latexpdf` to create a pdf documentation with Latex. This documentation is outdated and may only be used to browse the code.
 - **exe_scripts:** Bash scripts to compile and run the simulation.
-- **configs:** Configuration files for running ensembles during simulation.
-- **data:** Example NetCDF files with environment variables and initial datapoints. Output data can be stored here.
+- **configs:** Configuration files for running ensembles during simulation or for specifying parameters for a sensitivity analysis.
+- **data:** Example NetCDF files with environment variables and initial datapoints. Output data can be stored here. The results of an ensemble simulations are stored as `data/vladiana_ensembles_postprocess/predictions.nc`.
 - **pics:** Default folder to save plots.
 
 
@@ -28,7 +30,6 @@ Python Prerequisites for Post-Processing and Plotting
 ------------------------------------------------------
 - [Python3](https://www.python.org/) (Tested with v3.7.6)
 - [pandas](https://pandas.pydata.org/) (Tested with v1.0.1)
-- [DASK](https://dask.org/) (Tested with v2.16.0)
 - [progressbar2](https://pypi.org/project/progressbar2/) (Tested with v3.37.1)
 - [seaborn](https://seaborn.pydata.org/) (Tested with v0.10.0)
 - [scipy](https://www.scipy.org/) (Tested with v1.4.1)
@@ -59,38 +60,39 @@ Docs Prerequisites
 
 C++ Prerequisites
 -----------------
-- [GCC](https://gcc.gnu.org/) (Tested with v6.3.0)
-- [OpenMPI](https://www.open-mpi.org/) (Tested with v2.0.2)
-- [GSL](https://www.gnu.org/software/gsl/) (Tested with v2.3)
+- [GCC](https://gcc.gnu.org/) (Tested with v10.2.1-6)
+- [OpenMPI](https://www.open-mpi.org/) (Tested with v4.1.2)
+- [GSL](https://www.gnu.org/software/gsl/) (Tested with v2.7.1)
 - [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) (Tested with v4.8.1)
 - [HDF5](https://www.hdfgroup.org/solutions/hdf5/) (Tested with v1.12.1; problems may occur with versions below v1.12)
 - [Boost](https://www.boost.org/) (Tested with v1.6.2)
-- [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/) (Tested with v1.8.0)
-- [CMake](https://cmake.org/) (v3.7.2 or above; tested with v3.15.0)
+- [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/) (Tested with v2.0; must be at least v2.0)
+- [CMake](https://cmake.org/) (v3.7.2 or above; tested with v3.18.4)
+- [nlohmann/json](https://github.com/nlohmann/json) (v3.9.1 or above; tested with v3.9.1)
 - [(optional) PnetCDF](https://parallel-netcdf.github.io/) (tested with v1.12.2; only if you want to use classic NetCDF-files)
+- [(optional) zlib](https://zlib.net/) (tested with v1.2.11; in case you want to compress data with zlib)
 
 
 Compiling code
 ---------------
 In order to compile the code, create a folder `build` and in this folder type
 ```
-cmake .. -DCMAKE_BUILD_TYPE=release
-make -j4
+cmake .. -DCMAKE_BUILD_TYPE=release -DTRUSTED_DATA:BOOL=ON -DTARGET=simulation
+make -j 6
 ```
-You may change the number for `make` to the number of cores available.
-In case the CMake does not find a specific library, you can specify them like this:
-```
-cmake .. -DNETCDF_INCLUDE_DIR=<path/to/netcdf/include/> -DCODIPACK_INCLUDEDIR=<path/to/codipack/include/> -DCMAKE_BUILD_TYPE=release
-```
-You may change the target for timing the microphysics with `-DTARGET=timing` if you wish to check the penalty cost of executing AD at every time step for varying amounts of model state variables and model parameters.
-If you trust your dataset to always have latitude, longitude and time values, you can use
-```
-cmake .. -DCMAKE_BUILD_TYPE=release -DTRUSTED_DATA:BOOL=ON
-```
-This way the program just stops simulations for every trajectory with more than 10
+With the option `TRUSTED_DATA` the program just stops simulations for every trajectory with more than 10
 consecutive NaNs for every other input column. Without this option, the program
 assumes the dataset is broken and terminates directly, giving information which
 trajectory and time index starts with consecutive NaNs.
+
+You may change the number for `make` to the number of cores available.
+In case the CMake does not find a specific library, you can specify them like this:
+```
+cmake .. -DNETCDF_INCLUDE_DIR=<path/to/netcdf/include/> -DCODIPACK_INCLUDEDIR=<path/to/codipack/include/> -DHDF5_DIR=<path/to/hdf5/> -DCMAKE_BUILD_TYPE=release
+```
+You may change the target for timing the microphysics with `-DTARGET=timing` if you wish to check the penalty cost of executing AD at every time step for varying amounts of model state variables and model parameters.
+
+You can add `-DCOMPRESS_OUTPUT:BOOL=ON` to write compressed output with zlib. You need for this HDF5 v1.10.2 or higher. Compression is only supported for sensitivity analysis but not for ensemble simulations at the moment.
 
 Running a simulation
 ---------------------
@@ -165,7 +167,7 @@ python plot_mse.py \
 or only for water vapor mass density:
 ```
 python plot_mse.py \
-	--data_path /data/project/wcb/netcdf/vladiana_keyparams_errors/tmp_less.nc \
+	--data_path /data/project/wcb/netcdf/vladiana_keyparams_errors/predictions.nc \
 	--add_zero_sens \
 	--plot_types \
 	--backend bokeh \

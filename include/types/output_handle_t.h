@@ -12,8 +12,9 @@
 #include <string>
 #include <vector>
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+// #include <boost/property_tree/ptree.hpp>
+// #include <boost/property_tree/json_parser.hpp>
+#include <nlohmann/json.hpp>
 
 #include "include/misc/error.h"
 #include "include/types/model_constants_t.h"
@@ -237,12 +238,16 @@ struct output_handle_t{
         const uint32_t snapshot_index);
 
     /**
-     * Write the buffered data to disk.
+     * Write the buffered data to disk or call certain functions for collective
+     * access of the data if needed.
      *
      * @param cc
+     * @param no_flush If true: do not really flush anything and just call
+     *                 the flushing routines, which is needed if compression
+     *                 is enabled.
      */
     template<class float_t>
-    void flush_buffer(const model_constants_t<float_t> &cc);
+    void flush_buffer(const model_constants_t<float_t> &cc, const bool no_flush = false);
 
     /**
      * Buffer the current data  (model state and gradients) and

@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga7fe0572f2803a8c3016f01c0ad728cd3:
+
+Variable rho_w
+==============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: rho_w

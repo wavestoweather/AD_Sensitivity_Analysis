@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gadf32e34f6230b09be0ca6cb536290472:
+
+Variable ice_cap
+================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: ice_cap

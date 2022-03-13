@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga99b4ad97bfdc774d5617cf3921b72655:
+
+Variable T_freeze
+=================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: T_freeze

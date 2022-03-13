@@ -1,0 +1,378 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Struct netcdf_reader_t &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Struct output_handle_t" href="structoutput__handle__t.html" />
+    <link rel="prev" title="Template Struct model_constants_t" href="structmodel__constants__t.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="library_root.html">C++ API</a> &raquo;</li>
+        
+      <li>Struct netcdf_reader_t</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/structnetcdf__reader__t.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="struct-netcdf-reader-t">
+<span id="exhale-struct-structnetcdf-reader-t"></span><h1>Struct netcdf_reader_t<a class="headerlink" href="#struct-netcdf-reader-t" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_include_types_netcdf_reader_t.h.html#file-include-types-netcdf-reader-t-h"><span class="std std-ref">File netcdf_reader_t.h</span></a></p></li>
+</ul>
+<div class="section" id="struct-documentation">
+<h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv415netcdf_reader_t">
+<span id="_CPPv315netcdf_reader_t"></span><span id="_CPPv215netcdf_reader_t"></span><span id="netcdf_reader_t"></span><span class="target" id="structnetcdf__reader__t"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">netcdf_reader_t</span></span></span><a class="headerlink" href="#_CPPv415netcdf_reader_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15netcdf_reader_t15netcdf_reader_tERK8uint32_t">
+<span id="_CPPv3N15netcdf_reader_t15netcdf_reader_tERK8uint32_t"></span><span id="_CPPv2N15netcdf_reader_t15netcdf_reader_tERK8uint32_t"></span><span id="netcdf_reader_t::netcdf_reader_t__uint32_tCR"></span><span class="target" id="structnetcdf__reader__t_1aefb270a09a60b783bf41cf06c43358b9"></span><span class="sig-name descname"><span class="n"><span class="pre">netcdf_reader_t</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">buffer_size</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15netcdf_reader_t15netcdf_reader_tERK8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">buffer_size</span></code>: Number of time steps to read at once </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15netcdf_reader_t11read_bufferEiR17model_constants_tI7float_tERK22reference_quantities_tRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK8uint32_tRKbRKb">
+<span id="_CPPv3I0EN15netcdf_reader_t11read_bufferER17model_constants_tI7float_tERK22reference_quantities_tRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK8uint32_tRKbRKb"></span><span id="_CPPv2I0EN15netcdf_reader_t11read_bufferER17model_constants_tI7float_tERK22reference_quantities_tRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK8uint32_tRKbRKb"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structnetcdf__reader__t_1ab763bd59731db800ec618ce42a34e0a6"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">read_buffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15netcdf_reader_t11read_bufferEiR17model_constants_tI7float_tERK22reference_quantities_tRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK8uint32_tRKbRKb" title="netcdf_reader_t::read_buffer::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t"><span class="n"><span class="pre">reference_quantities_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref_quant</span></span>, <span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15netcdf_reader_t11read_bufferEiR17model_constants_tI7float_tERK22reference_quantities_tRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK8uint32_tRKbRKb" title="netcdf_reader_t::read_buffer::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">y_single_old</span></span>, <span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15netcdf_reader_t11read_bufferEiR17model_constants_tI7float_tERK22reference_quantities_tRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK8uint32_tRKbRKb" title="netcdf_reader_t::read_buffer::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inflows</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">step</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">checkpoint_flag</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">start_over_env</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15netcdf_reader_t11read_bufferEiR17model_constants_tI7float_tERK22reference_quantities_tRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK8uint32_tRKbRKb" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Read data from the buffer and store in in y_single_old and inflows. If the buffer has been read completely, the next few datapoints are loaded from the netCDF file via buffer_params().</p>
+<p><dl class="simple">
+<dt><strong>Return</strong></dt><dd><p>SUCCESS or with #def TRUSTED_DATA INPUT_NAN_ERR, otherwise throws an error. </p>
+</dd>
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: Model constants. On out: Added number of simulation steps </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ref_quant</span></code>: Reference quantities used to change from netcdf units to simulation units </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">y_single_old</span></code>: Vector with (possibly updated) model state variables after return </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inflows</span></code>: Vector with inflow from above after return </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">step</span></code>: Current iteration step </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">checkpoint_flag</span></code>: If true: do not update model state </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">start_over_env</span></code>: If true: update environment/thermodynamics</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15netcdf_reader_t8set_dimsEvPKcR17model_constants_tI7float_tERKi">
+<span id="_CPPv3I0EN15netcdf_reader_t8set_dimsEPKcR17model_constants_tI7float_tERKi"></span><span id="_CPPv2I0EN15netcdf_reader_t8set_dimsEPKcR17model_constants_tI7float_tERKi"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structnetcdf__reader__t_1aab12014022268fe90bf4110dd03f098a"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_dims</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">input_file</span></span>, <a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15netcdf_reader_t8set_dimsEvPKcR17model_constants_tI7float_tERKi" title="netcdf_reader_t::set_dims::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulation_mode</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15netcdf_reader_t8set_dimsEvPKcR17model_constants_tI7float_tERKi" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set dimids of this object and set the maximum amount of trajectories and ensembles in cc. Sets pressure in reference quantities. Default is 1e5 for Pa, otherwise hPa with 1e3 is possible as well.</p>
+<p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">input_file</span></code>: Path to file to read </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: Model constants with number of ensembles and trajectories on return </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simulation_mode</span></code>: The simulation mode defined on the command line </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15netcdf_reader_t11init_netcdfEvPKcRKbR17model_constants_tI7float_tERKiKdRK22reference_quantities_t">
+<span id="_CPPv3I0EN15netcdf_reader_t11init_netcdfEPKcRKbR17model_constants_tI7float_tERKiKdRK22reference_quantities_t"></span><span id="_CPPv2I0EN15netcdf_reader_t11init_netcdfEPKcRKbR17model_constants_tI7float_tERKiKdRK22reference_quantities_t"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structnetcdf__reader__t_1a5544a6f9a69014ad04c21525e3ef6ec0"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">init_netcdf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">input_file</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">checkpoint_flag</span></span>, <a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15netcdf_reader_t11init_netcdfEvPKcRKbR17model_constants_tI7float_tERKiKdRK22reference_quantities_t" title="netcdf_reader_t::init_netcdf::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulation_mode</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">current_time</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t"><span class="n"><span class="pre">reference_quantities_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref_quant</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15netcdf_reader_t11init_netcdfEvPKcRKbR17model_constants_tI7float_tERKiKdRK22reference_quantities_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Read initial values from the netcdf file and stores them to y_init. Also stores the amount of trajectories in the input file and several quantities to cc such as the number of steps to simulate.</p>
+<p><dl class="simple">
+<dt><strong>Return</strong></dt><dd><p>Errorcode (0=no errors; 1=simulation breaking error) </p>
+</dd>
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">input_file</span></code>: Path to input netcdf file as char array </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">checkpoint_flag</span></code>: Is this already initialized via a checkpoint? </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: Model constants. On out: Added number of simulation steps </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simulation_mode</span></code>: Needed to define if parallel access to the file is possible. </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">current_time</span></code>: Time in seconds from a checkpoint </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15netcdf_reader_t19read_initial_valuesEvRNSt6vectorIdEERK22reference_quantities_tR17model_constants_tI7float_tERKbRK8uint64_tRK8uint64_t">
+<span id="_CPPv3I0EN15netcdf_reader_t19read_initial_valuesERNSt6vectorIdEERK22reference_quantities_tR17model_constants_tI7float_tERKbRK8uint64_tRK8uint64_t"></span><span id="_CPPv2I0EN15netcdf_reader_t19read_initial_valuesERNSt6vectorIdEERK22reference_quantities_tR17model_constants_tI7float_tERKbRK8uint64_tRK8uint64_t"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structnetcdf__reader__t_1a5c7f9083ba629c7ce0b589a0bff3e5c7"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">read_initial_values</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">double</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">y_init</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t"><span class="n"><span class="pre">reference_quantities_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref_quant</span></span>, <a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15netcdf_reader_t19read_initial_valuesEvRNSt6vectorIdEERK22reference_quantities_tR17model_constants_tI7float_tERKbRK8uint64_tRK8uint64_t" title="netcdf_reader_t::read_initial_values::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">checkpoint_flag</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">traj_id</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ens_id</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15netcdf_reader_t19read_initial_valuesEvRNSt6vectorIdEERK22reference_quantities_tR17model_constants_tI7float_tERKbRK8uint64_tRK8uint64_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15netcdf_reader_t19read_initial_valuesEvRNSt6vectorIdEERK22reference_quantities_tR17model_constants_tI7float_tERKb">
+<span id="_CPPv3I0EN15netcdf_reader_t19read_initial_valuesERNSt6vectorIdEERK22reference_quantities_tR17model_constants_tI7float_tERKb"></span><span id="_CPPv2I0EN15netcdf_reader_t19read_initial_valuesERNSt6vectorIdEERK22reference_quantities_tR17model_constants_tI7float_tERKb"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structnetcdf__reader__t_1a53c91457fe0a41fa85206e1edbeab1c0"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">read_initial_values</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">double</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">y_init</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t"><span class="n"><span class="pre">reference_quantities_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref_quant</span></span>, <a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15netcdf_reader_t19read_initial_valuesEvRNSt6vectorIdEERK22reference_quantities_tR17model_constants_tI7float_tERKb" title="netcdf_reader_t::read_initial_values::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">checkpoint_flag</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15netcdf_reader_t19read_initial_valuesEvRNSt6vectorIdEERK22reference_quantities_tR17model_constants_tI7float_tERKb" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Read values for initializing a simulation.</p>
+<p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">y_init</span></code>: Array of num_comp many doubles </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ref_quant</span></code>: Reference quantities used to change from netcdf units to simulation units </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">checkpoint_flag</span></code>: Is this already initialized via a checkpoint? </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: Model constants. On out: Added number of simulation steps </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">checkpoint_flag</span></code>: Wether the data is already there due to loading a checkpoint </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15netcdf_reader_t7get_latERK8uint32_tRK8uint32_t">
+<span id="_CPPv3NK15netcdf_reader_t7get_latERK8uint32_tRK8uint32_t"></span><span id="_CPPv2NK15netcdf_reader_t7get_latERK8uint32_tRK8uint32_t"></span><span id="netcdf_reader_t::get_lat__uint32_tCR.uint32_tCRC"></span><span class="target" id="structnetcdf__reader__t_1acdb2ec0e06922d670bb525ba1fd739b0"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_lat</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sub</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK15netcdf_reader_t7get_latERK8uint32_tRK8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15netcdf_reader_t7get_lonERK8uint32_tRK8uint32_t">
+<span id="_CPPv3NK15netcdf_reader_t7get_lonERK8uint32_tRK8uint32_t"></span><span id="_CPPv2NK15netcdf_reader_t7get_lonERK8uint32_tRK8uint32_t"></span><span id="netcdf_reader_t::get_lon__uint32_tCR.uint32_tCRC"></span><span class="target" id="structnetcdf__reader__t_1a6dc579d31878f7ae316be2976326fa9b"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_lon</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sub</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK15netcdf_reader_t7get_lonERK8uint32_tRK8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15netcdf_reader_t12get_traj_idxEv">
+<span id="_CPPv3NK15netcdf_reader_t12get_traj_idxEv"></span><span id="_CPPv2NK15netcdf_reader_t12get_traj_idxEv"></span><span id="netcdf_reader_t::get_traj_idxC"></span><span class="target" id="structnetcdf__reader__t_1a7e866e610c61221d4dba1cf5c2c7b136"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_traj_idx</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK15netcdf_reader_t12get_traj_idxEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15netcdf_reader_t11n_ensemblesE">
+<span id="_CPPv3N15netcdf_reader_t11n_ensemblesE"></span><span id="_CPPv2N15netcdf_reader_t11n_ensemblesE"></span><span id="netcdf_reader_t::n_ensembles__uint64_t"></span><span class="target" id="structnetcdf__reader__t_1a4edaea4a1675c9e73d8a478ad342a387"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_ensembles</span></span></span><a class="headerlink" href="#_CPPv4N15netcdf_reader_t11n_ensemblesE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15netcdf_reader_t14n_trajectoriesE">
+<span id="_CPPv3N15netcdf_reader_t14n_trajectoriesE"></span><span id="_CPPv2N15netcdf_reader_t14n_trajectoriesE"></span><span id="netcdf_reader_t::n_trajectories__uint64_t"></span><span class="target" id="structnetcdf__reader__t_1a4b910c3fd55c1ca7a871d2e0b7e97eb3"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_trajectories</span></span></span><a class="headerlink" href="#_CPPv4N15netcdf_reader_t14n_trajectoriesE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15netcdf_reader_t20start_time_idx_givenE">
+<span id="_CPPv3N15netcdf_reader_t20start_time_idx_givenE"></span><span id="_CPPv2N15netcdf_reader_t20start_time_idx_givenE"></span><span id="netcdf_reader_t::start_time_idx_given__b"></span><span class="target" id="structnetcdf__reader__t_1aff8e57f6a58b82755dacd83eb88d01a3"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">start_time_idx_given</span></span></span><a class="headerlink" href="#_CPPv4N15netcdf_reader_t20start_time_idx_givenE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>True if start_time_idx is given by the user. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15netcdf_reader_t14start_time_idxE">
+<span id="_CPPv3N15netcdf_reader_t14start_time_idxE"></span><span id="_CPPv2N15netcdf_reader_t14start_time_idxE"></span><span id="netcdf_reader_t::start_time_idx__uint64_t"></span><span class="target" id="structnetcdf__reader__t_1a2eb6d59fa0c1719e986fea1dbe77e150"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">start_time_idx</span></span></span><a class="headerlink" href="#_CPPv4N15netcdf_reader_t14start_time_idxE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The start time index. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15netcdf_reader_t23start_time_idx_originalE">
+<span id="_CPPv3N15netcdf_reader_t23start_time_idx_originalE"></span><span id="_CPPv2N15netcdf_reader_t23start_time_idx_originalE"></span><span id="netcdf_reader_t::start_time_idx_original__uint64_t"></span><span class="target" id="structnetcdf__reader__t_1adf734ca0ddb648c610e264aedef73484"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">start_time_idx_original</span></span></span><a class="headerlink" href="#_CPPv4N15netcdf_reader_t23start_time_idx_originalE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>The initial start time index. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15netcdf_reader_t8time_idxE">
+<span id="_CPPv3N15netcdf_reader_t8time_idxE"></span><span id="_CPPv2N15netcdf_reader_t8time_idxE"></span><span id="netcdf_reader_t::time_idx__uint64_t"></span><span class="target" id="structnetcdf__reader__t_1aee1a87015fb8d25888675f368de82008"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">time_idx</span></span></span><a class="headerlink" href="#_CPPv4N15netcdf_reader_t8time_idxE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Current index to read from netcdf file. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="structoutput__handle__t.html" class="btn btn-neutral float-right" title="Struct output_handle_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="structmodel__constants__t.html" class="btn btn-neutral float-left" title="Template Struct model_constants_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

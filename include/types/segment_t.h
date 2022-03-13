@@ -4,7 +4,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <boost/property_tree/ptree.hpp>
+// #include <boost/property_tree/ptree.hpp>
+#include <nlohmann/json.hpp>
 
 #include "include/misc/error.h"
 #include "include/microphysics/constants.h"
@@ -13,7 +14,7 @@
 #include "include/types/param_t.h"
 #include "include/types/reference_quantities_t.h"
 
-namespace pt = boost::property_tree;
+// namespace pt = boost::property_tree;
 
 struct segment_t {
     std::vector<param_t> params;
@@ -413,14 +414,22 @@ struct segment_t {
     template<class float_t>
     void reset_variables(model_constants_t<float_t> &cc);
 
-    void put(pt::ptree &ptree) const;
+    // void put(pt::ptree &ptree) const;
+
+    // void to_json(nlohmann::json& j) const;
+
+    /**
+     * Used to read from a checkpoint file.
+     */
+    template<class float_t>
+    void from_json(const nlohmann::json& j, model_constants_t<float_t> &cc);
 
     /**
      * Used to read from a checkpoint file where the mean for the gaussians
      * to draw from is given.
      */
-    template<class float_t>
-    int from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc);
+    // template<class float_t>
+    // int from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc);
 
     /**
      * Get the number of seconds that the ensenmble shall run.
@@ -429,3 +438,6 @@ struct segment_t {
      */
     double limit_duration() const;
 };
+
+void to_json(nlohmann::json& j, const segment_t& s);
+// void from_json(const nlohmann::json& j, segment_t& s);

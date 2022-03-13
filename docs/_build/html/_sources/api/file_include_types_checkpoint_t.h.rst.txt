@@ -1,0 +1,76 @@
+
+.. _file_include_types_checkpoint_t.h:
+
+File checkpoint_t.h
+===================
+
+|exhale_lsh| :ref:`Parent directory <dir_include_types>` (``include/types``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. contents:: Contents
+   :local:
+   :backlinks: none
+
+Definition (``include/types/checkpoint_t.h``)
+---------------------------------------------
+
+
+.. toctree::
+   :maxdepth: 1
+
+   program_listing_file_include_types_checkpoint_t.h.rst
+
+
+
+
+
+Includes
+--------
+
+
+- ``cmath``
+
+- ``include/misc/error.h`` (:ref:`file_include_misc_error.h`)
+
+- ``include/misc/general.h`` (:ref:`file_include_misc_general.h`)
+
+- ``include/types/input_parameters_t.h`` (:ref:`file_include_types_input_parameters_t.h`)
+
+- ``include/types/model_constants_t.h`` (:ref:`file_include_types_model_constants_t.h`)
+
+- ``include/types/output_handle_t.h`` (:ref:`file_include_types_output_handle_t.h`)
+
+- ``include/types/param_t.h`` (:ref:`file_include_types_param_t.h`)
+
+- ``include/types/reference_quantities_t.h`` (:ref:`file_include_types_reference_quantities_t.h`)
+
+- ``include/types/segment_t.h`` (:ref:`file_include_types_segment_t.h`)
+
+- ``mpi.h``
+
+- ``nlohmann/json.hpp``
+
+- ``string``
+
+- ``unordered_map``
+
+- ``vector``
+
+
+
+Included By
+-----------
+
+
+- :ref:`file_include_types_task_scheduler_t.h`
+
+
+
+
+Classes
+-------
+
+
+- :ref:`exhale_struct_structcheckpoint__t`
+

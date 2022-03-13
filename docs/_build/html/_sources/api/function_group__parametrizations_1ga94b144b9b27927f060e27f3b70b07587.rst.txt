@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga94b144b9b27927f060e27f3b70b07587:
+
+Template Function latent_heat_ice
+=================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: latent_heat_ice(float_t, float_t)

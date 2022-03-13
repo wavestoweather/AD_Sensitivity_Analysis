@@ -1,0 +1,13 @@
+.. _exhale_define_group__constants_1gaffefc008728c32990663f48ac9aa0927:
+
+Define Ng_out_idx
+=================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Define Documentation
+--------------------
+
+
+.. doxygendefine:: Ng_out_idx

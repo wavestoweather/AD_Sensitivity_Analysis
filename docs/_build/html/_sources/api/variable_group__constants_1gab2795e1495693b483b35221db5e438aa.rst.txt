@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gab2795e1495693b483b35221db5e438aa:
+
+Variable rain_min_x
+===================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: rain_min_x

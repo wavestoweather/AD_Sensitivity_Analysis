@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga4c1eb007d7e38c620833f63058171552:
+
+Template Function thermal_conductivity_moist_air
+================================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: thermal_conductivity_moist_air(float_t, float_t, float_t)

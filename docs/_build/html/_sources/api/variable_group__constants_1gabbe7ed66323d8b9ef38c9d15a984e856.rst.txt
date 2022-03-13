@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gabbe7ed66323d8b9ef38c9d15a984e856:
+
+Variable graupel_min_x
+======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: graupel_min_x

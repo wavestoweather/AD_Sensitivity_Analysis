@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gac0c186c3ab3b2833fe98265ea745debd:
+
+Variable graupel_mu
+===================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: graupel_mu

@@ -1,0 +1,49 @@
+
+.. _program_listing_file_include_misc_general.h:
+
+Program Listing for File general.h
+==================================
+
+|exhale_lsh| :ref:`Return to documentation for file <file_include_misc_general.h>` (``include/misc/general.h``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. code-block:: cpp
+
+   #pragma once
+   
+   #include <stdio.h>
+   #include <sys/stat.h>
+   
+   #include <string>
+   #include <vector>
+   
+   #include "codi.hpp"
+   
+   #include "include/microphysics/constants.h"
+   #include "include/types/particle_model_constants_t.h"
+   #include "include/types/reference_quantities_t.h"
+   #include "include/types/model_constants_t.h"
+   #include "include/types/segment_t.h"
+   
+   void printy(const double y[]);
+   
+   void v1pav2(double y[],
+           const double v1[],
+           const double v2[],
+           const double a);
+   
+   template<class float_t>
+   void print_particle_params(
+       const particle_model_constants_t<float_t> &pc,
+       const std::string title);
+   
+   void print_reference_quantities(const reference_quantities_t &ref);
+   
+   void print_segments(const std::vector<segment_t> &segments);
+   
+   inline bool exists(const std::string& name) {
+     struct stat buffer;
+     return (stat (name.c_str(), &buffer) == 0);
+   }
+     // end of group general

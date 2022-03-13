@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gab71b0ee33167ac78bc8ceb7b2fa7658d:
+
+Variable amw
+============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: amw

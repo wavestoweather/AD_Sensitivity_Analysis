@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1gabce1e464a61824e204f008597576ad08:
+
+Template Function latent_heat_water
+===================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: latent_heat_water(float_t, float_t, float_t, float_t, float_t, float_t, float_t)

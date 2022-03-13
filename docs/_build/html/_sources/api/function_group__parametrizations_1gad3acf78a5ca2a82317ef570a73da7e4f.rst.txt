@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1gad3acf78a5ca2a82317ef570a73da7e4f:
+
+Template Function coll_theta_11
+===============================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: coll_theta_11(particle_model_constants_t<float_t>&, particle_model_constants_t<float_t>&, const uint64_t)

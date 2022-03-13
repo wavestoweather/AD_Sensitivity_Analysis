@@ -1,0 +1,226 @@
+
+.. _program_listing_file_include_types_output_handle_t.h:
+
+Program Listing for File output_handle_t.h
+==========================================
+
+|exhale_lsh| :ref:`Return to documentation for file <file_include_types_output_handle_t.h>` (``include/types/output_handle_t.h``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. code-block:: cpp
+
+   #pragma once
+   
+   #include <mpi.h>
+   #include <netcdf.h>
+   #include <netcdf_par.h>
+   
+   #include <array>
+   #include <cmath>
+   #include <fstream>
+   #include <limits>
+   #include <sstream>
+   #include <string>
+   #include <vector>
+   
+   // #include <boost/property_tree/ptree.hpp>
+   // #include <boost/property_tree/json_parser.hpp>
+   #include <nlohmann/json.hpp>
+   
+   #include "include/misc/error.h"
+   #include "include/types/model_constants_t.h"
+   #include "include/types/netcdf_reader_t.h"
+   #include "include/types/reference_quantities_t.h"
+   
+   struct output_handle_t{
+       uint64_t n_snapshots;  // number of buffered snapshots
+       uint64_t flushed_snapshots;
+       int ncid;  // ID of output file
+       int local_num_comp;
+       int local_num_par;
+       int local_ic_par;
+       // Tracking either initial conditions or model parameters.
+       // Both at the same time is not possible (or rather would take too long)
+       bool track_ic;
+   #ifdef OUT_DOUBLE
+       const double FILLVALUE = std::numeric_limits<double>::quiet_NaN();
+   #else
+       const float FILLVALUE = std::numeric_limits<float>::quiet_NaN();
+   #endif
+   
+       std::string filetype;
+       // for netCDF files and a vector for each column
+       // columns: output parameter + gradients + time_afer_ascent + type + flags
+       // fast index: record
+       // each array = one column
+       // slow index: num_comp
+   #ifdef OUT_DOUBLE
+       std::array<std::vector<double>, num_comp+num_par+4+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
+   #else
+       std::array<std::vector<float>, num_comp+num_par+4+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
+   #endif
+   #if !defined B_EIGHT
+       std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
+   #else
+       std::array<std::vector<unsigned char>, 0 > output_buffer_flags;
+   #endif
+       // std::array<std::vector<std::string>, 1 > output_buffer_str;
+       std::array<std::vector<uint64_t>, 2 > output_buffer_int;
+       std::vector<int> dimid;
+       std::vector<int> varid;
+   
+       uint64_t n_ens;
+       uint64_t n_trajs;
+       uint64_t n_trajs_file;
+       uint64_t traj;
+       uint64_t ens;
+       uint64_t total_snapshots;
+       std::string filename;
+   
+   
+       uint64_t num_time;
+       uint64_t num_ens;
+   
+       int simulation_mode;
+   
+       enum Dim_idx {
+           out_param_dim,
+           ensemble_dim,
+           trajectory_dim,
+           time_dim,
+           n_dims
+       };
+   
+       enum Var_idx {
+           // this should be the same as the *_idx in constants.h
+           pressure,
+           temperature,
+           ascent,
+           sat,
+           qc,
+           qr,
+           qv,
+           ncloud,
+           nrain,
+           qi,
+           nice,
+           qs,
+           nsnow,
+           qg,
+           ngraupel,
+           qh,
+           nhail,
+           qi_out,
+           qs_out,
+           qr_out,
+           qg_out,
+           qh_out,
+           lat_heat,
+           lat_cool,
+           ni_out,
+           ns_out,
+           nr_out,
+           ng_out,
+           nh_out,
+           height,
+           inactive,
+           dep,
+           sub,
+   
+           time,
+           trajectory,
+           ensemble,
+           out_param,
+   
+           time_ascent,
+           lat,
+           lon,
+   #if !defined(B_EIGHT)
+           conv_400,
+           conv_600,
+           slan_400,
+           slan_600,
+   #endif
+           step,
+           phase,
+   
+           // We do not clutter the gradient values here
+           // The index is given by n_vars + i
+           n_vars
+       };
+       enum Buffer_idx {
+           // The first entries are already given via constants.h *_idx
+           time_ascent_buf = num_comp,
+           lat_buf = num_comp+1,
+           lon_buf = num_comp+2,
+           n_buffer = num_comp+3
+           // We do not clutter the gradient values here
+           // The index is given by n_buffer + i
+       };
+   
+       output_handle_t();
+   
+       template<class float_t>
+       output_handle_t(
+           const std::string filetype,
+           const std::string filename,
+           const model_constants_t<float_t> &cc,
+           const reference_quantities_t &ref_quant,
+           const std::string in_filename,
+           const uint32_t write_index,
+           const uint32_t snapshot_index,
+           const int &rank,
+           const int &simulation_mode,
+           const bool &initial_cond,
+           const double delay_out_time = 0);
+   
+       template<class float_t>
+       void setup(
+           const std::string filetype,
+           const std::string filename,
+           const model_constants_t<float_t> &cc,
+           const reference_quantities_t &ref_quant,
+           const std::string in_filename,
+           const uint32_t write_index,
+           const uint32_t snapshot_index,
+           const int &rank,
+           const double delay_out_time = 0);
+   
+       void reset(
+           const uint32_t traj_id,
+           const uint32_t ens_id,
+           const uint64_t n_flushed = 0);
+   
+       template<class float_t>
+       void buffer_gradient(
+           const model_constants_t<float_t> &cc,
+           const std::vector< std::array<double, num_par > > &y_diff,
+           const uint32_t snapshot_index);
+   
+       template<class float_t>
+       void buffer(const model_constants_t<float_t> &cc,
+           const netcdf_reader_t &netcdf_reader,
+           const std::vector<float_t> &y_single_new,
+           const std::vector< std::array<double, num_par > > &y_diff,
+           const uint32_t sub,
+           const uint32_t t,
+           const reference_quantities_t &ref_quant,
+           const uint32_t snapshot_index);
+   
+       template<class float_t>
+       void flush_buffer(const model_constants_t<float_t> &cc, const bool no_flush = false);
+   
+       template<class float_t>
+       void process_step(
+           const model_constants_t<float_t> &cc,
+           const netcdf_reader_t &netcdf_reader,
+           const std::vector<float_t> &y_single_new,
+           const std::vector< std::array<double, num_par > > &y_diff,
+           const uint32_t sub,
+           const uint32_t t,
+           const uint32_t write_index,
+           const uint32_t snapshot_index,
+           const bool last_step,
+           const reference_quantities_t &ref_quant);
+   };

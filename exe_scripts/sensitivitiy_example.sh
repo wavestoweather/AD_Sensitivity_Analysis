@@ -6,7 +6,7 @@ AD_SIM_HOME=$(pwd)
 NTASKS=4
 
 # The simulation mode determines how multiple processes are used
-# ensembles at different time steps and sensitvity analysis 0
+# ensembles at different time steps and sensitivity analysis 0
 # sensitivity analysis 1
 # ensembles at different time steps 2
 # sensitivity analysis on grids 3
@@ -20,7 +20,7 @@ WRITE_INDEX="20000"
 TIMESTEP="20"
 # Get results every SNAPSHOT_INDEX steps, in this example every $TIMESTEP (20) seconds
 SNAPSHOT_INDEX="1"
-# Wether to take the data from the netcdf-file every 20 seconds (=1)
+# Whether to take the data from the netcdf-file every 20 seconds (=1)
 # or just use the initial pressure, temperature and ascent
 # from the file and simulate microphysics
 # until the target time is reached (=0 not recommended)
@@ -32,13 +32,12 @@ START_TIME="-2800"
 PROGRESSBAR="500"
 # Configuration file that defines a subset of parameters that shall be tracked
 # We use this here to track only few parameters which speeds up the simulation.
-TRACK_FILE="configs/qr_config_all.json"
+TRACK_FILE="configs/james_sens_config.json"
 
 for FILENAME in "conv_400_0_traj_t000000_p001_met3d" "conv_400_10_traj_t000600_p001_met3d" "conv_600_20_traj_t001200_p001_met3d" "conv_600_40_traj_t002400_p001_met3d"
 do
 
-    INPUT_FILENAME="${AD_SIM_HOME}data/vladiana_input/${FILENAME}.nc_wcb"
-    INPUT_FILENAME="/data/project/wcb/netcdf/vladiana_met_updated_comparison/${FILENAME}.nc_wcb"
+    INPUT_FILENAME="${AD_SIM_HOME}/data/vladiana_input/${FILENAME}.nc_wcb"
     TARGET_TIME_AFTER_START=$(ncdump -h $INPUT_FILENAME | grep -m 1 "time = " | sed 's/[^0-9]//g' )
     TARGET_TIME_AFTER_START=$(($TARGET_TIME_AFTER_START * 20 - 20))
     # TARGET_TIME_AFTER_START=25000
@@ -60,12 +59,11 @@ do
     -d ${TIMESTEP} \
     -i ${SNAPSHOT_INDEX} \
     -b ${SIMULATION_MODE} \
-    -o ${OUTPUT_PATH}${FILENAME}.nc_wcb \
+    -o ${OUTPUT_PATH}${FILENAME}.nc \
     -e ${START_OVER_ENVIRONMENT} \
     -p ${PROGRESSBAR} \
     -n ${START_TIME} \
     -r "0" \
     -l ${INPUT_FILENAME} \
     -s ${TRACK_FILE}
-    break
 done

@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga94c5ec8c132b91ce766e74dfca370f9c:
+
+Variable ice_b_geo
+==================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: ice_b_geo

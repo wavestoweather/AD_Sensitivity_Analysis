@@ -205,7 +205,12 @@ def load_dataset(
                 not_perturbed_path = path + "_notPerturbed.nc_wcb"
             if not os.path.isfile(not_perturbed_path):
                 not_perturbed_path = path + in_params[0][1::] + ".nc_wcb"
-
+            if not os.path.isfile(not_perturbed_path):
+                not_perturbed_path = path + in_params[0][1::] + ".nc"
+            if not os.path.isfile(not_perturbed_path):
+                not_perturbed_path = (
+                    path + in_params[0][1::] + "_" + path.split("/")[-2] + ".nc"
+                )
             val_df = load_sensitivity(
                 not_perturbed_path, out_params, param_names, in_params, par_dim_name
             )
@@ -242,6 +247,12 @@ def load_dataset(
             not_perturbed_path = path + "_notPerturbed.nc_wcb"
         if not os.path.isfile(not_perturbed_path):
             not_perturbed_path = path + in_params[0][1::] + ".nc_wcb"
+        if not os.path.isfile(not_perturbed_path):
+            not_perturbed_path = path + in_params[0][1::] + ".nc"
+        if not os.path.isfile(not_perturbed_path):
+            not_perturbed_path = (
+                path + in_params[0][1::] + "_" + path.split("/")[-2] + ".nc"
+            )
 
         if verbosity > 1:
             print(f"Loading from {not_perturbed_path} for index {traj_idx}")
@@ -264,6 +275,10 @@ def load_dataset(
                     load_path = path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb"
                     if not os.path.isfile(load_path):
                         load_path = path + in_p[1::] + ".nc_wcb"
+                    if not os.path.isfile(load_path):
+                        load_path = path + in_p[1::] + ".nc"
+                    if not os.path.isfile(load_path):
+                        load_path = path + in_p[1::] + "_" + path.split("/")[-2] + ".nc"
                     ds = xr.open_dataset(
                         load_path,
                         decode_times=False,
@@ -283,6 +298,10 @@ def load_dataset(
                     load_path = path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb"
                     if not os.path.isfile(load_path):
                         load_path = path + in_p[1::] + ".nc_wcb"
+                    if not os.path.isfile(load_path):
+                        load_path = path + in_p[1::] + ".nc"
+                    if not os.path.isfile(load_path):
+                        load_path = path + in_p[1::] + "_" + path.split("/")[-2] + ".nc"
                     ds = xr.open_dataset(
                         load_path,
                         decode_times=False,
@@ -3561,6 +3580,7 @@ if __name__ == "__main__":
                 "Not tracked" in in_params_notation_mapping[in_p][0]
                 or "Not used" in in_params_notation_mapping[in_p][0]
                 or "one-moment warm physics" in in_params_notation_mapping[in_p][0]
+                or "dependent" == in_params_notation_mapping[in_p][3]
             ):
                 # or in_p in physical_params):
                 continue
@@ -3643,6 +3663,10 @@ if __name__ == "__main__":
     if args.store_appended_data is not None:
         comp = dict(zlib=True, complevel=9)
         encoding = {var: comp for var in data.data_vars}
+        index = store_appended_data.rfind("/")
+        store_path = store_appended_data[:index]
+        if not os.path.isdir(store_path):
+            os.mkdir(store_path)
         data.to_netcdf(
             path=f"{store_appended_data}",
             encoding=encoding,

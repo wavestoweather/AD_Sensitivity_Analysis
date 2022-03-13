@@ -1,11 +1,14 @@
 #pragma once
 
 #include <algorithm>
+#include <fstream>
 #include <string>
 #include <vector>
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+// #include <boost/property_tree/ptree.hpp>
+// #include <boost/property_tree/json_parser.hpp>
+#include <nlohmann/json.hpp>
+
 #include "codi.hpp"
 
 #include "include/misc/error.h"
@@ -17,7 +20,7 @@
 #include "include/types/reference_quantities_t.h"
 #include "include/types/table_t.h"
 
-namespace pt = boost::property_tree;
+// namespace pt = boost::property_tree;
 
 /**
  * Structure for constants of a model. Includes particle constants as well.
@@ -278,9 +281,9 @@ struct model_constants_t {
      *
      * @params ptree Property tree, where a tree "model_constants" is being added.
      */
-    void put(pt::ptree &ptree) const;
+    // void put(pt::ptree &ptree) const;
 
-    int from_pt(pt::ptree &ptree);
+    // int from_pt(pt::ptree &ptree);
 
 #if defined(RK4_ONE_MOMENT)
     /**
@@ -314,11 +317,27 @@ struct model_constants_t {
     void setup_cloud_autoconversion(particle_model_constants_t<float_t> &pc);
 
     /**
-     * Setup model constants and gamma tables.
+     * Setup all model constants and gamma tables including dependent constants.
+     * @param input
+     * @param ref_quant
      */
     void setup_model_constants(
         const input_parameters_t &input,
         const reference_quantities_t &ref_quant);
+
+    /**
+     * Setup dependent variables.
+     *
+     * @param ref_quant
+     */
+    void setup_dependent_model_constants(
+        const reference_quantities_t &ref_quant);
+
+    /**
+     * Set the uncertainty for every parameter. Currently it is only 10% for
+     * each parameter.
+     */
+    void set_uncertainty();
 
     /**
      * Set time step from input netcdf file.
@@ -337,7 +356,9 @@ struct model_constants_t {
      *
      * @param idx Index of the model state variable or model parameter
      *              to check.
-     * @param state_param If true: idx is a model state variable
+     * @param state_param   0: idx is a model parameter
+     *                      1: idx is a model state variable
+     *                      2: idx is an initial condition
      */
     bool trace_check(const int &idx, const int state_param) const;
 
@@ -355,4 +376,9 @@ struct model_constants_t {
     uint64_t track_state;
     uint64_t track_ic;
     std::vector<uint64_t> track_param;
+
+    int from_json(const nlohmann::json &j);
 };
+
+template<class float_t>
+void to_json(nlohmann::json& j, const model_constants_t<float_t>& cc);

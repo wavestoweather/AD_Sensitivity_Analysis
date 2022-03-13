@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga492c59b50d5a3446a8fd2ffcef437a18:
+
+Variable D_coll_c
+=================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: D_coll_c

@@ -1,0 +1,13 @@
+.. _exhale_function_group__ufunc_1gaa2f72dcebf341067572b0306c74b7b05:
+
+Template Function sedimentation_explicit
+========================================
+
+- Defined in :ref:`file_include_microphysics_user_functions.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: sedimentation_explicit(float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, std::vector<float_t>&, model_constants_t<float_t>&)

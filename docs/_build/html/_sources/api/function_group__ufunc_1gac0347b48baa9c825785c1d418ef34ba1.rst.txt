@@ -1,0 +1,13 @@
+.. _exhale_function_group__ufunc_1gac0347b48baa9c825785c1d418ef34ba1:
+
+Template Function vapor_dep_relaxation
+======================================
+
+- Defined in :ref:`file_include_microphysics_user_functions.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: vapor_dep_relaxation(float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, const double&, float_t&, float_t&, float_t&, std::vector<float_t>&, model_constants_t<float_t>&)

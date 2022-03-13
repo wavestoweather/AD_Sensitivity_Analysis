@@ -1,0 +1,13 @@
+.. _exhale_function_group__ufunc_1gafafe031861f5b873d04bcaabfe1b64ec:
+
+Template Function particle_collection
+=====================================
+
+- Defined in :ref:`file_include_microphysics_user_functions.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: particle_collection(float_t&, float_t&, float_t&, float_t&, float_t&, collection_model_constants_t<float_t>&, particle_model_constants_t<float_t>&, particle_model_constants_t<float_t>&, const double&)

@@ -1,0 +1,99 @@
+
+.. _file_include_types_model_constants_t.h:
+
+File model_constants_t.h
+========================
+
+|exhale_lsh| :ref:`Parent directory <dir_include_types>` (``include/types``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. contents:: Contents
+   :local:
+   :backlinks: none
+
+Definition (``include/types/model_constants_t.h``)
+--------------------------------------------------
+
+
+.. toctree::
+   :maxdepth: 1
+
+   program_listing_file_include_types_model_constants_t.h.rst
+
+
+
+
+
+Includes
+--------
+
+
+- ``algorithm``
+
+- ``codi.hpp``
+
+- ``fstream``
+
+- ``include/microphysics/physical_parameterizations.h`` (:ref:`file_include_microphysics_physical_parameterizations.h`)
+
+- ``include/misc/error.h`` (:ref:`file_include_misc_error.h`)
+
+- ``include/types/collection_model_constants_t.h`` (:ref:`file_include_types_collection_model_constants_t.h`)
+
+- ``include/types/gamma_table_t.h`` (:ref:`file_include_types_gamma_table_t.h`)
+
+- ``include/types/input_parameters_t.h`` (:ref:`file_include_types_input_parameters_t.h`)
+
+- ``include/types/particle_model_constants_t.h`` (:ref:`file_include_types_particle_model_constants_t.h`)
+
+- ``include/types/reference_quantities_t.h`` (:ref:`file_include_types_reference_quantities_t.h`)
+
+- ``include/types/table_t.h`` (:ref:`file_include_types_table_t.h`)
+
+- ``nlohmann/json.hpp``
+
+- ``string``
+
+- ``vector``
+
+
+
+Included By
+-----------
+
+
+- :ref:`file_include_microphysics_program_io.h`
+
+- :ref:`file_include_microphysics_rk4.h`
+
+- :ref:`file_include_microphysics_user_functions.h`
+
+- :ref:`file_include_misc_general.h`
+
+- :ref:`file_include_types_checkpoint_t.h`
+
+- :ref:`file_include_types_netcdf_reader_t.h`
+
+- :ref:`file_include_types_output_handle_t.h`
+
+- :ref:`file_include_types_param_t.h`
+
+- :ref:`file_include_types_segment_t.h`
+
+
+
+
+Classes
+-------
+
+
+- :ref:`exhale_struct_structmodel__constants__t`
+
+
+Functions
+---------
+
+
+- :ref:`exhale_function_model__constants__t_8h_1a8d404f9fef17e0a3110f62c569812776`
+

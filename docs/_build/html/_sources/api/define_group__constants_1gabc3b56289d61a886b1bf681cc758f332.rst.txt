@@ -1,0 +1,13 @@
+.. _exhale_define_group__constants_1gabc3b56289d61a886b1bf681cc758f332:
+
+Define trajectory_sensitvity_perturbance
+========================================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Define Documentation
+--------------------
+
+
+.. doxygendefine:: trajectory_sensitvity_perturbance

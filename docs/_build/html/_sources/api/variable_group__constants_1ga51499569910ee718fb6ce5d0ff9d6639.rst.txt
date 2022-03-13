@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga51499569910ee718fb6ce5d0ff9d6639:
+
+Variable rain_b_geo
+===================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: rain_b_geo

@@ -1,0 +1,69 @@
+
+.. _file_include_types_particle_model_constants_t.h:
+
+File particle_model_constants_t.h
+=================================
+
+|exhale_lsh| :ref:`Parent directory <dir_include_types>` (``include/types``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. contents:: Contents
+   :local:
+   :backlinks: none
+
+Definition (``include/types/particle_model_constants_t.h``)
+-----------------------------------------------------------
+
+
+.. toctree::
+   :maxdepth: 1
+
+   program_listing_file_include_types_particle_model_constants_t.h.rst
+
+
+
+
+
+Includes
+--------
+
+
+- ``codi.hpp``
+
+- ``include/microphysics/constants.h`` (:ref:`file_include_microphysics_constants.h`)
+
+- ``nlohmann/json.hpp``
+
+- ``string``
+
+- ``vector``
+
+
+
+Included By
+-----------
+
+
+- :ref:`file_include_microphysics_physical_parameterizations.h`
+
+- :ref:`file_include_misc_general.h`
+
+- :ref:`file_include_types_model_constants_t.h`
+
+
+
+
+Classes
+-------
+
+
+- :ref:`exhale_struct_structparticle__model__constants__t`
+
+
+Functions
+---------
+
+
+- :ref:`exhale_function_particle__model__constants__t_8h_1adfdaefa2d25f2f4f3624d216a5ee09c8`
+

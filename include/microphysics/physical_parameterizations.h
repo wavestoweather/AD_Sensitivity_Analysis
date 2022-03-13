@@ -321,7 +321,7 @@ inline float_t specific_heat_ice(float_t T, float_t M_w) {
 
 
 /**
- * Latent heat of vaporization of (supercooled) liquid water in
+ * Latent heat of vaporization of supercooled liquid water in
  * \f$ \text{J}/\text{kg} \f$.
  * From Murphy and Koop (2005)
  * Validity range: \f$ 236 \text{K} <= \text{T} <= 273.16 \text{K} \f$
@@ -330,10 +330,37 @@ inline float_t specific_heat_ice(float_t T, float_t M_w) {
  * @return Latent heat
  */
 template <class float_t>
-inline float_t latent_heat_water(float_t T, float_t M_w) {
+inline float_t latent_heat_water_supercooled(float_t T, float_t M_w) {
     return ((56579.0 - 42.212*T + exp(0.1149*(281.6-T)))/M_w);
 }
 
+
+/**
+ * Latent heat of vaporization of liquid water in
+ * \f$ \text{J}/\text{kg} \f$.
+ *
+ * @param T Temperature in Kelvin
+ * @param L_wd Latent heat of evaporation of water (water->vapor)
+ * @param cv Specific heat capacity of water vapor at constant pressure in \f$\text{J}/\text{K}/\text{kg}\f$
+ * @param cp Specific heat capacity of air at constant pressure in \f$\text{J}/\text{K}/\text{kg}\f$
+ * @param T_freeze Lower temperature threshold for raindrop freezing
+ * @param R_v  Gas constant for water vapor, unit in \f$\text{J}/\text{K}/\text{kg}\f$
+ * @param R_a Gas constant for dry air, unit: \f$\text{J}/\text{K}/\text{kg}\f$
+ * @return Latent heat
+ */
+template <class float_t>
+inline float_t latent_heat_water(
+    float_t T,
+    float_t L_wd,
+    float_t cv,
+    float_t cp,
+    float_t T_freeze,
+    float_t R_v,
+    float_t R_a) {
+    // 4.1733*cp = liquid water heat capacity
+    // cp - R_a = specific heat at constant volume
+    return (L_wd + (cv - 4.1733*cp) * (T - T_freeze) - R_v * T) / (cp - R_a);
+}
 
 /**
  * Latent heat of sublimation of ice in
@@ -604,10 +631,20 @@ inline float_t convert_S_to_qv(float_t p,
     float_t T_sat_low_temp,
     float_t p_sat_const_b,
     float_t Epsilon) {
-
+// #ifdef B_EIGHT
+//     float_t r_d = 287.04;
+//     float_t r_v = 461.51;
+//     float_t qv_sat = r_d/r_v * saturation_pressure_water(
+        // T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
+//         / (p - (1-r_d/r_v)
+//             * saturation_pressure_water(
+        // T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b));
+//     return S*qv_sat*100.0;
+// #else
     return (Epsilon*(
         compute_pv(T, S, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
         / compute_pa(p, T, S, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)));
+// #endif
 }
 
 
@@ -658,9 +695,19 @@ inline float_t convert_qv_to_S(
     float_t T_sat_low_temp,
     float_t p_sat_const_b,
     float_t Epsilon) {
-
+// #ifdef B_EIGHT
+//     float_t r_d = 287.04;
+//     float_t r_v = 461.51;
+//     float_t qv_sat = r_d/r_v * saturation_pressure_water(
+        // T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
+//         / (p - (1-r_d/r_v)
+//             * saturation_pressure_water(
+        // T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b));
+//     return qv/qv_sat/100.0;
+// #else
     return ((p*qv)/((Epsilon + qv)
         * saturation_pressure_water(T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)));
+// #endif
 }
 
 

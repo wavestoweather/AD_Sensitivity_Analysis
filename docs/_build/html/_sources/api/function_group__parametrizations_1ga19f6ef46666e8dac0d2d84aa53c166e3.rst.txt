@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga19f6ef46666e8dac0d2d84aa53c166e3:
+
+Template Function convert_qv_to_S
+=================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: convert_qv_to_S(float_t, float_t, float_t, float_t, float_t, float_t, float_t, float_t)

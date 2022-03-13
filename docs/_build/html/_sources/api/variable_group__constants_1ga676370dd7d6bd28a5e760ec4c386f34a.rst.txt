@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga676370dd7d6bd28a5e760ec4c386f34a:
+
+Variable n_lookup_hr_dummy
+==========================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: n_lookup_hr_dummy

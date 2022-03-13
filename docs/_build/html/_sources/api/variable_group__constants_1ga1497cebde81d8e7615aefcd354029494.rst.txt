@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga1497cebde81d8e7615aefcd354029494:
+
+Variable na_orga
+================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: na_orga

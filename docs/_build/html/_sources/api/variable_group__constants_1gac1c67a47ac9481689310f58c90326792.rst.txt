@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gac1c67a47ac9481689310f58c90326792:
+
+Variable hail_mu
+================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: hail_mu

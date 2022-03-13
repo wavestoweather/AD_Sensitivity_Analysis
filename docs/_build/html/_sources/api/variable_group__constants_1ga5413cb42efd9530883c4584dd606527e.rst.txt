@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga5413cb42efd9530883c4584dd606527e:
+
+Variable n_f
+============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: n_f

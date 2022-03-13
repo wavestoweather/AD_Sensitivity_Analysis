@@ -340,6 +340,8 @@ def plot_mse(
     height=900,
     hist=True,
     plot_kind="paper",
+    legend_pos="top_left",
+    corr_line=False,
 ):
     """
     Plot the dataframe which should hold parameters with their sensitivity
@@ -384,13 +386,17 @@ def plot_mse(
     plot_kind : string
         "paper" for single plots, "single_plot" for a plot with
         multiple output parameters at once.
+    legend_pos : string
+        if plot_kind == "paper", then define the legend position here.
+    corr_line : bool
+        Plot a dashed line to show the 1-to-1 mapping in the plot.
     """
 
     in_params = np.unique(df["Input Parameter"])
 
     datashade = False
 
-    if plot_kind == "single_plot":
+    if plot_kind == "paper" or plot_kind == "single_plot":
         alpha = 0.5
     else:
         alpha = 1
@@ -453,10 +459,12 @@ def plot_mse(
         prefix="_s_e_lxlyabshist",
         title=title,
         linewidth=3,
-        xlabel=xlabel,
-        ylabel=ylabel,
+        xlabel=None,
+        ylabel=None,
         plot_path=store_path,
         inf_val=inf_val,
+        legend_pos=legend_pos,
+        corr_line=corr_line,
     )
 
 
@@ -572,9 +580,9 @@ def plot_time_evolution(
             np.nanmin(df.loc[df["Predicted Error"] != -np.inf]["Predicted Error"]) - 1
         )
         df.replace(-np.inf, min_log_twin, inplace=True)
-
+    # print(df)
     df = df.loc[df["Predicted Error"] < np.max(df["Predicted Error"])]
-
+    # print(df)
     lower_y = np.min(df["Predicted Error"])
     upper_y = np.max(df["Predicted Error"])
 
@@ -924,7 +932,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--confidence",
         type=float,
-        default=0.90,
+        default=None,
         help="""
         Plot a confidence ellipse around each sample with confidence
         between 0 and 1. If none is given, no ellipse will be plotted.
@@ -1064,6 +1072,21 @@ if __name__ == "__main__":
         help="""
         If plot_type is "time_plot", use this as last point for the plot
         as in time after ascent.
+        """,
+    )
+    parser.add_argument(
+        "--legend_pos",
+        type=str,
+        default="bottom_right",
+        help="""
+        Define the position of the legend for most plots.
+        """,
+    )
+    parser.add_argument(
+        "--corr_line",
+        action="store_true",
+        help="""
+        Add a dashed line for a 1-to-1 map of the data.
         """,
     )
     args = parser.parse_args()
@@ -1225,6 +1248,8 @@ if __name__ == "__main__":
                         width=args.width,
                         height=args.height,
                         hist=hist,
+                        legend_pos=args.legend_pos,
+                        corr_line=args.corr_line,
                     )
     elif args.plot_variant == "time_plot":
         if args.traj < 0:

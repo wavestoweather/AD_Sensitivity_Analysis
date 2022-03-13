@@ -1,0 +1,113 @@
+
+.. _program_listing_file_include_types_checkpoint_t.h:
+
+Program Listing for File checkpoint_t.h
+=======================================
+
+|exhale_lsh| :ref:`Return to documentation for file <file_include_types_checkpoint_t.h>` (``include/types/checkpoint_t.h``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. code-block:: cpp
+
+   #pragma once
+   
+   #include <mpi.h>
+   
+   #include <cmath>
+   #include <string>
+   #include <unordered_map>
+   #include <vector>
+   
+   #include <nlohmann/json.hpp>
+   
+   #include "include/misc/error.h"
+   #include "include/misc/general.h"
+   #include "include/types/param_t.h"
+   #include "include/types/segment_t.h"
+   #include "include/types/input_parameters_t.h"
+   #include "include/types/model_constants_t.h"
+   #include "include/types/output_handle_t.h"
+   #include "include/types/reference_quantities_t.h"
+   
+   struct checkpoint_t {
+    private:
+       nlohmann::json checkpoint;
+   
+    public:
+       checkpoint_t();
+   
+       template<class float_t>
+       checkpoint_t(
+           const model_constants_t<float_t> &cc,
+           const std::vector<float_t> &y,
+           const std::vector<segment_t> &segments,
+           const input_parameters_t &input,
+           const double &current_time);
+   
+       template<class float_t>
+       checkpoint_t(
+           model_constants_t<float_t> &cc,
+           const std::vector<float_t> &y,
+           const std::vector<segment_t> &segments,
+           const input_parameters_t &input,
+           const double &current_time,
+           const uint32_t &id,
+           const uint64_t &ens_id,
+           const uint64_t &n_trajs,
+           const double duration = 0);
+   
+       template<class float_t>
+       void create_checkpoint(
+           const model_constants_t<float_t> &cc,
+           const std::vector<float_t> &y,
+           const std::vector<segment_t> &segments,
+           const input_parameters_t &input,
+           const double &current_time);
+   
+       template<class float_t>
+       int load_checkpoint(
+           const std::string &filename,
+           model_constants_t<float_t> &cc,
+           std::vector<double> &y,
+           std::vector<segment_t> &segments,
+           input_parameters_t &input,
+           const reference_quantities_t &ref_quant);
+       template<class float_t>
+       int load_checkpoint(
+           model_constants_t<float_t> &cc,
+           std::vector<double> &y,
+           std::vector<segment_t> &segments,
+           input_parameters_t &input,
+           const reference_quantities_t &ref_quant);
+       template<class float_t>
+       int load_checkpoint(
+           model_constants_t<float_t> &cc,
+           std::vector<double> &y,
+           std::vector<segment_t> &segments,
+           input_parameters_t &input,
+           const reference_quantities_t &ref_quant,
+           output_handle_t &out_handler);
+   
+       template<class float_t>
+       void write_checkpoint(
+           std::string &filename,
+           model_constants_t<float_t> &cc,
+           const std::vector<float_t> &y,
+           std::vector<segment_t> &segments,
+           const input_parameters_t &input,
+           const double &current_time);
+   
+       template<class float_t>
+       void write_checkpoint(
+           std::string &filename,
+           const model_constants_t<float_t> &cc,
+           const std::vector<segment_t> &segments);
+   
+       void print_checkpoint();
+   
+       void send_checkpoint(const int send_id);
+       bool receive_checkpoint();
+   
+       bool checkpoint_available() const;
+   };

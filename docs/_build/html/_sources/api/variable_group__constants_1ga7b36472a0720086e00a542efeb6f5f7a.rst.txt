@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga7b36472a0720086e00a542efeb6f5f7a:
+
+Variable trace
+==============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: trace
