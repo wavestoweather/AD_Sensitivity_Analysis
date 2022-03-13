@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gabab856f3b3889ff0ac5e8efcd46d3929:
+
+Variable D_br
+=============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: D_br

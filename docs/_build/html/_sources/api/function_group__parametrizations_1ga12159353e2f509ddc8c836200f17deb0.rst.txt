@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga12159353e2f509ddc8c836200f17deb0:
+
+Template Function thermal_conductivity_dry_air
+==============================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: thermal_conductivity_dry_air(float_t)

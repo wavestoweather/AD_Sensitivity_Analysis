@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga5925e488d5ebdbbb41e29ae4e71870e6:
+
+Variable snow_ecoll_c
+=====================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: snow_ecoll_c

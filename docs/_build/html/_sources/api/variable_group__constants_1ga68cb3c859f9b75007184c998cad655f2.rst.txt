@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga68cb3c859f9b75007184c998cad655f2:
+
+Variable ice_ecoll_c
+====================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: ice_ecoll_c

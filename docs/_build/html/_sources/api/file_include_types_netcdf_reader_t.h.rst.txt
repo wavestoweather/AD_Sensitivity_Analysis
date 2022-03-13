@@ -1,0 +1,64 @@
+
+.. _file_include_types_netcdf_reader_t.h:
+
+File netcdf_reader_t.h
+======================
+
+|exhale_lsh| :ref:`Parent directory <dir_include_types>` (``include/types``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. contents:: Contents
+   :local:
+   :backlinks: none
+
+Definition (``include/types/netcdf_reader_t.h``)
+------------------------------------------------
+
+
+.. toctree::
+   :maxdepth: 1
+
+   program_listing_file_include_types_netcdf_reader_t.h.rst
+
+
+
+
+
+Includes
+--------
+
+
+- ``array``
+
+- ``codi.hpp``
+
+- ``include/misc/error.h`` (:ref:`file_include_misc_error.h`)
+
+- ``include/types/model_constants_t.h`` (:ref:`file_include_types_model_constants_t.h`)
+
+- ``include/types/reference_quantities_t.h`` (:ref:`file_include_types_reference_quantities_t.h`)
+
+- ``netcdf.h``
+
+- ``netcdf_par.h``
+
+- ``vector``
+
+
+
+Included By
+-----------
+
+
+- :ref:`file_include_types_output_handle_t.h`
+
+
+
+
+Classes
+-------
+
+
+- :ref:`exhale_struct_structnetcdf__reader__t`
+

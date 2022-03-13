@@ -1,0 +1,13 @@
+.. _exhale_define_group__constants_1ga97369439d1b5bc3b0a6e50b886049a2a:
+
+Define Ni_in_idx
+================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Define Documentation
+--------------------
+
+
+.. doxygendefine:: Ni_in_idx

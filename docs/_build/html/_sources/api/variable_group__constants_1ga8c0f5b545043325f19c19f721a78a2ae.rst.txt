@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga8c0f5b545043325f19c19f721a78a2ae:
+
+Variable cloud_q_crit_c
+=======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: cloud_q_crit_c

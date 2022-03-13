@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga8e273e98285715439a7f276555a2df88:
+
+Variable rain_cmu4
+==================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: rain_cmu4

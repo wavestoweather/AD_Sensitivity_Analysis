@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga292aae688169fe1ae78a43e5bbaecd77:
+
+Variable rain_vsedi_min
+=======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: rain_vsedi_min

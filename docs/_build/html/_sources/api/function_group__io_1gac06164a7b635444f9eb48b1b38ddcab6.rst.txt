@@ -1,0 +1,13 @@
+.. _exhale_function_group__io_1gac06164a7b635444f9eb48b1b38ddcab6:
+
+Template Function load_lookup_table
+===================================
+
+- Defined in :ref:`file_include_microphysics_program_io.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: load_lookup_table(table_t<float_t>&, std::string, uint32_t)

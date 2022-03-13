@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gad42dc5f665e38fd7a381d7991cd0216f:
+
+Variable n_lookup
+=================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: n_lookup

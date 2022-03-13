@@ -1,0 +1,744 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Struct output_handle_t &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Struct param_t" href="structparam__t.html" />
+    <link rel="prev" title="Struct netcdf_reader_t" href="structnetcdf__reader__t.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="library_root.html">C++ API</a> &raquo;</li>
+        
+      <li>Struct output_handle_t</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/structoutput__handle__t.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="struct-output-handle-t">
+<span id="exhale-struct-structoutput-handle-t"></span><h1>Struct output_handle_t<a class="headerlink" href="#struct-output-handle-t" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_include_types_output_handle_t.h.html#file-include-types-output-handle-t-h"><span class="std std-ref">File output_handle_t.h</span></a></p></li>
+</ul>
+<div class="section" id="struct-documentation">
+<h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv415output_handle_t">
+<span id="_CPPv315output_handle_t"></span><span id="_CPPv215output_handle_t"></span><span id="output_handle_t"></span><span class="target" id="structoutput__handle__t"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">output_handle_t</span></span></span><a class="headerlink" href="#_CPPv415output_handle_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Dim_idxE">
+<span id="_CPPv3N15output_handle_t7Dim_idxE"></span><span id="_CPPv2N15output_handle_t7Dim_idxE"></span><span class="target" id="structoutput__handle__t_1a5b9856b59285acf88a4f3fd53fd10628"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Dim_idx</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Dim_idxE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Dim_idx13out_param_dimE">
+<span id="_CPPv3N15output_handle_t7Dim_idx13out_param_dimE"></span><span id="_CPPv2N15output_handle_t7Dim_idx13out_param_dimE"></span><span class="target" id="structoutput__handle__t_1a5b9856b59285acf88a4f3fd53fd10628afbb6aa50c7910d693090bf3bb865d605"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">out_param_dim</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Dim_idx13out_param_dimE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Dim_idx12ensemble_dimE">
+<span id="_CPPv3N15output_handle_t7Dim_idx12ensemble_dimE"></span><span id="_CPPv2N15output_handle_t7Dim_idx12ensemble_dimE"></span><span class="target" id="structoutput__handle__t_1a5b9856b59285acf88a4f3fd53fd10628aa62a83fd9266ec8b1edadb05ec609535"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ensemble_dim</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Dim_idx12ensemble_dimE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Dim_idx14trajectory_dimE">
+<span id="_CPPv3N15output_handle_t7Dim_idx14trajectory_dimE"></span><span id="_CPPv2N15output_handle_t7Dim_idx14trajectory_dimE"></span><span class="target" id="structoutput__handle__t_1a5b9856b59285acf88a4f3fd53fd10628a9cb61b75364f188613cd5358a39774e3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">trajectory_dim</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Dim_idx14trajectory_dimE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Dim_idx8time_dimE">
+<span id="_CPPv3N15output_handle_t7Dim_idx8time_dimE"></span><span id="_CPPv2N15output_handle_t7Dim_idx8time_dimE"></span><span class="target" id="structoutput__handle__t_1a5b9856b59285acf88a4f3fd53fd10628a38ea4206194025f19c96d67192c480ce"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">time_dim</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Dim_idx8time_dimE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Dim_idx6n_dimsE">
+<span id="_CPPv3N15output_handle_t7Dim_idx6n_dimsE"></span><span id="_CPPv2N15output_handle_t7Dim_idx6n_dimsE"></span><span class="target" id="structoutput__handle__t_1a5b9856b59285acf88a4f3fd53fd10628a1790b9d6ef8fe92876832a23f112c0a9"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_dims</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Dim_idx6n_dimsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idxE">
+<span id="_CPPv3N15output_handle_t7Var_idxE"></span><span id="_CPPv2N15output_handle_t7Var_idxE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bb"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Var_idx</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idxE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx8pressureE">
+<span id="_CPPv3N15output_handle_t7Var_idx8pressureE"></span><span id="_CPPv2N15output_handle_t7Var_idx8pressureE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba95cc9c038a29add20fd965ea1c73baab"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pressure</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx8pressureE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx11temperatureE">
+<span id="_CPPv3N15output_handle_t7Var_idx11temperatureE"></span><span id="_CPPv2N15output_handle_t7Var_idx11temperatureE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba0918a8b745e08ba4621225315eb15f13"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">temperature</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx11temperatureE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6ascentE">
+<span id="_CPPv3N15output_handle_t7Var_idx6ascentE"></span><span id="_CPPv2N15output_handle_t7Var_idx6ascentE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbae334d8fc1b2e19fa9f5dcba8fa4401e8"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ascent</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6ascentE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx3satE">
+<span id="_CPPv3N15output_handle_t7Var_idx3satE"></span><span id="_CPPv2N15output_handle_t7Var_idx3satE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba4d98d7d666105c18afa37c4f53517e6e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sat</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx3satE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx2qcE">
+<span id="_CPPv3N15output_handle_t7Var_idx2qcE"></span><span id="_CPPv2N15output_handle_t7Var_idx2qcE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbaca64568c6614667af21a014c5bbd9d55"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qc</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx2qcE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx2qrE">
+<span id="_CPPv3N15output_handle_t7Var_idx2qrE"></span><span id="_CPPv2N15output_handle_t7Var_idx2qrE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbac828b73bd0f0c384f0459ec840dd44b0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qr</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx2qrE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx2qvE">
+<span id="_CPPv3N15output_handle_t7Var_idx2qvE"></span><span id="_CPPv2N15output_handle_t7Var_idx2qvE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbaf947f1552e87556aed7a50fb029ffd9c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qv</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx2qvE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6ncloudE">
+<span id="_CPPv3N15output_handle_t7Var_idx6ncloudE"></span><span id="_CPPv2N15output_handle_t7Var_idx6ncloudE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbad6f8c8312314664f90b97fb2f01da00d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ncloud</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6ncloudE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx5nrainE">
+<span id="_CPPv3N15output_handle_t7Var_idx5nrainE"></span><span id="_CPPv2N15output_handle_t7Var_idx5nrainE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba6cd043c308fa65e0e38b21121c7b04a9"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nrain</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx5nrainE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx2qiE">
+<span id="_CPPv3N15output_handle_t7Var_idx2qiE"></span><span id="_CPPv2N15output_handle_t7Var_idx2qiE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbae1575fe58f3b19fa946d7dbfb52e4b97"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qi</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx2qiE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx4niceE">
+<span id="_CPPv3N15output_handle_t7Var_idx4niceE"></span><span id="_CPPv2N15output_handle_t7Var_idx4niceE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbaf29063e3481851e66bd42db1ab1ebff5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nice</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx4niceE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx2qsE">
+<span id="_CPPv3N15output_handle_t7Var_idx2qsE"></span><span id="_CPPv2N15output_handle_t7Var_idx2qsE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba1954cdf73f4dea63345c69ebc41d3de5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qs</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx2qsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx5nsnowE">
+<span id="_CPPv3N15output_handle_t7Var_idx5nsnowE"></span><span id="_CPPv2N15output_handle_t7Var_idx5nsnowE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbafea68eefdd7323d68cd368c8760a1c60"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nsnow</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx5nsnowE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx2qgE">
+<span id="_CPPv3N15output_handle_t7Var_idx2qgE"></span><span id="_CPPv2N15output_handle_t7Var_idx2qgE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba12a8031296f605dc0c40eb219d12a596"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qg</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx2qgE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx8ngraupelE">
+<span id="_CPPv3N15output_handle_t7Var_idx8ngraupelE"></span><span id="_CPPv2N15output_handle_t7Var_idx8ngraupelE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbacfb4ad039da2b77247228bc675dd02eb"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ngraupel</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx8ngraupelE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx2qhE">
+<span id="_CPPv3N15output_handle_t7Var_idx2qhE"></span><span id="_CPPv2N15output_handle_t7Var_idx2qhE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba99686bdc22fc54c8ed6e2dabde4009a5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qh</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx2qhE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx5nhailE">
+<span id="_CPPv3N15output_handle_t7Var_idx5nhailE"></span><span id="_CPPv2N15output_handle_t7Var_idx5nhailE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba9557f0ba0bf8b9a1dbaadcf4685c7671"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nhail</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx5nhailE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6qi_outE">
+<span id="_CPPv3N15output_handle_t7Var_idx6qi_outE"></span><span id="_CPPv2N15output_handle_t7Var_idx6qi_outE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbaff37b35f88185b7f7707cb92eded1fd2"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qi_out</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6qi_outE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6qs_outE">
+<span id="_CPPv3N15output_handle_t7Var_idx6qs_outE"></span><span id="_CPPv2N15output_handle_t7Var_idx6qs_outE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba5604855704b96fb9f821c2644c7d42f7"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qs_out</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6qs_outE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6qr_outE">
+<span id="_CPPv3N15output_handle_t7Var_idx6qr_outE"></span><span id="_CPPv2N15output_handle_t7Var_idx6qr_outE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba3e9cad9a87a3e574155cbd9836feafe0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qr_out</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6qr_outE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6qg_outE">
+<span id="_CPPv3N15output_handle_t7Var_idx6qg_outE"></span><span id="_CPPv2N15output_handle_t7Var_idx6qg_outE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba130b74b80dd2145123a0641a2f2cfe09"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qg_out</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6qg_outE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6qh_outE">
+<span id="_CPPv3N15output_handle_t7Var_idx6qh_outE"></span><span id="_CPPv2N15output_handle_t7Var_idx6qh_outE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbae4a5bc10b02cd90b2932c32d6afa6e32"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">qh_out</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6qh_outE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx8lat_heatE">
+<span id="_CPPv3N15output_handle_t7Var_idx8lat_heatE"></span><span id="_CPPv2N15output_handle_t7Var_idx8lat_heatE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba0ff5de285013dce6e22d5e65f3337fa5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">lat_heat</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx8lat_heatE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx8lat_coolE">
+<span id="_CPPv3N15output_handle_t7Var_idx8lat_coolE"></span><span id="_CPPv2N15output_handle_t7Var_idx8lat_coolE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbaf99c8535207b42cc8721d0689c8f8b34"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">lat_cool</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx8lat_coolE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6ni_outE">
+<span id="_CPPv3N15output_handle_t7Var_idx6ni_outE"></span><span id="_CPPv2N15output_handle_t7Var_idx6ni_outE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbaaee469cd885214e57842c6276bf9aec0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ni_out</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6ni_outE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6ns_outE">
+<span id="_CPPv3N15output_handle_t7Var_idx6ns_outE"></span><span id="_CPPv2N15output_handle_t7Var_idx6ns_outE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba952a50f26e7f5d781bad767356bf8e33"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ns_out</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6ns_outE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6nr_outE">
+<span id="_CPPv3N15output_handle_t7Var_idx6nr_outE"></span><span id="_CPPv2N15output_handle_t7Var_idx6nr_outE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba2383bab9fd54d4a93d9cf0aab70f16ee"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nr_out</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6nr_outE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6ng_outE">
+<span id="_CPPv3N15output_handle_t7Var_idx6ng_outE"></span><span id="_CPPv2N15output_handle_t7Var_idx6ng_outE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba5db49bf968892e6705a214b3cfddaafa"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ng_out</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6ng_outE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6nh_outE">
+<span id="_CPPv3N15output_handle_t7Var_idx6nh_outE"></span><span id="_CPPv2N15output_handle_t7Var_idx6nh_outE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba948723adb86a08fd7d81394039e398ca"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nh_out</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6nh_outE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6heightE">
+<span id="_CPPv3N15output_handle_t7Var_idx6heightE"></span><span id="_CPPv2N15output_handle_t7Var_idx6heightE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba7438b66cbd4abc25031e05bfb1bd4985"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">height</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6heightE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx8inactiveE">
+<span id="_CPPv3N15output_handle_t7Var_idx8inactiveE"></span><span id="_CPPv2N15output_handle_t7Var_idx8inactiveE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbac7c92371337e9e0665b4f70c98fe25e2"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">inactive</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx8inactiveE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx3depE">
+<span id="_CPPv3N15output_handle_t7Var_idx3depE"></span><span id="_CPPv2N15output_handle_t7Var_idx3depE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbacd229e49e47a936cd53d80bb2f342650"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dep</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx3depE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx3subE">
+<span id="_CPPv3N15output_handle_t7Var_idx3subE"></span><span id="_CPPv2N15output_handle_t7Var_idx3subE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbae3b92bc4683dbebd45d45eb6d23c73a9"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sub</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx3subE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx4timeE">
+<span id="_CPPv3N15output_handle_t7Var_idx4timeE"></span><span id="_CPPv2N15output_handle_t7Var_idx4timeE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba454440c2020c328f800a37c7a96e4214"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">time</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx4timeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx10trajectoryE">
+<span id="_CPPv3N15output_handle_t7Var_idx10trajectoryE"></span><span id="_CPPv2N15output_handle_t7Var_idx10trajectoryE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba6cc0cd7610df21af017daae74f793316"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">trajectory</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx10trajectoryE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx8ensembleE">
+<span id="_CPPv3N15output_handle_t7Var_idx8ensembleE"></span><span id="_CPPv2N15output_handle_t7Var_idx8ensembleE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba3c46dfb8859fb16cd7f4a025b35a29c7"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ensemble</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx8ensembleE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx9out_paramE">
+<span id="_CPPv3N15output_handle_t7Var_idx9out_paramE"></span><span id="_CPPv2N15output_handle_t7Var_idx9out_paramE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba188dc412a0015371ebf773ec5019c334"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">out_param</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx9out_paramE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx11time_ascentE">
+<span id="_CPPv3N15output_handle_t7Var_idx11time_ascentE"></span><span id="_CPPv2N15output_handle_t7Var_idx11time_ascentE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbab7a6b1995d872f5eb868b4a118b9a2a5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">time_ascent</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx11time_ascentE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx3latE">
+<span id="_CPPv3N15output_handle_t7Var_idx3latE"></span><span id="_CPPv2N15output_handle_t7Var_idx3latE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbaf9e4f1a0f927a22b2ed40c8e2e438c26"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">lat</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx3latE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx3lonE">
+<span id="_CPPv3N15output_handle_t7Var_idx3lonE"></span><span id="_CPPv2N15output_handle_t7Var_idx3lonE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbaf8933c011e4665e177d8c678b7079f99"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">lon</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx3lonE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx8conv_400E">
+<span id="_CPPv3N15output_handle_t7Var_idx8conv_400E"></span><span id="_CPPv2N15output_handle_t7Var_idx8conv_400E"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba9346fe9c1cf183cb60a1e036a3e4071b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">conv_400</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx8conv_400E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx8conv_600E">
+<span id="_CPPv3N15output_handle_t7Var_idx8conv_600E"></span><span id="_CPPv2N15output_handle_t7Var_idx8conv_600E"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbab7b5a701b3a0741741e935af4401b854"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">conv_600</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx8conv_600E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx8slan_400E">
+<span id="_CPPv3N15output_handle_t7Var_idx8slan_400E"></span><span id="_CPPv2N15output_handle_t7Var_idx8slan_400E"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba2b156987ab9ed4aa26f6f2516699aabf"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">slan_400</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx8slan_400E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx8slan_600E">
+<span id="_CPPv3N15output_handle_t7Var_idx8slan_600E"></span><span id="_CPPv2N15output_handle_t7Var_idx8slan_600E"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bbada08271766d1a49d50bbfd3e83516dd5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">slan_600</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx8slan_600E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx4stepE">
+<span id="_CPPv3N15output_handle_t7Var_idx4stepE"></span><span id="_CPPv2N15output_handle_t7Var_idx4stepE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba0e4286b4e5de3d3506b774ea08ba1432"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">step</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx4stepE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx5phaseE">
+<span id="_CPPv3N15output_handle_t7Var_idx5phaseE"></span><span id="_CPPv2N15output_handle_t7Var_idx5phaseE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba9020c83ae941ba522b38facbcf1bbc3d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">phase</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx5phaseE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7Var_idx6n_varsE">
+<span id="_CPPv3N15output_handle_t7Var_idx6n_varsE"></span><span id="_CPPv2N15output_handle_t7Var_idx6n_varsE"></span><span class="target" id="structoutput__handle__t_1a8f8eda7052b388bcc12fbec6eacf30bba120e6aba1d031cc56832c045f4daef8c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_vars</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7Var_idx6n_varsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t10Buffer_idxE">
+<span id="_CPPv3N15output_handle_t10Buffer_idxE"></span><span id="_CPPv2N15output_handle_t10Buffer_idxE"></span><span class="target" id="structoutput__handle__t_1a9245c47a60e55c58a83742f543b6616f"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Buffer_idx</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t10Buffer_idxE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Indices within the double buffer </p>
+<p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t10Buffer_idx15time_ascent_bufE">
+<span id="_CPPv3N15output_handle_t10Buffer_idx15time_ascent_bufE"></span><span id="_CPPv2N15output_handle_t10Buffer_idx15time_ascent_bufE"></span><span class="target" id="structoutput__handle__t_1a9245c47a60e55c58a83742f543b6616fad7ab776ae9a786492ac84aa92965bfd0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">time_ascent_buf</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">num_comp</span></span><a class="headerlink" href="#_CPPv4N15output_handle_t10Buffer_idx15time_ascent_bufE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t10Buffer_idx7lat_bufE">
+<span id="_CPPv3N15output_handle_t10Buffer_idx7lat_bufE"></span><span id="_CPPv2N15output_handle_t10Buffer_idx7lat_bufE"></span><span class="target" id="structoutput__handle__t_1a9245c47a60e55c58a83742f543b6616faebff817637e38d03a30b424a23d1a0ab"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">lat_buf</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">num_comp</span></span><span class="w"> </span><span class="o"><span class="pre">+</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><a class="headerlink" href="#_CPPv4N15output_handle_t10Buffer_idx7lat_bufE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t10Buffer_idx7lon_bufE">
+<span id="_CPPv3N15output_handle_t10Buffer_idx7lon_bufE"></span><span id="_CPPv2N15output_handle_t10Buffer_idx7lon_bufE"></span><span class="target" id="structoutput__handle__t_1a9245c47a60e55c58a83742f543b6616fa28d993ebd6eb413bfb1b87291c6ef775"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">lon_buf</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">num_comp</span></span><span class="w"> </span><span class="o"><span class="pre">+</span></span><span class="w"> </span><span class="m"><span class="pre">2</span></span><a class="headerlink" href="#_CPPv4N15output_handle_t10Buffer_idx7lon_bufE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t10Buffer_idx8n_bufferE">
+<span id="_CPPv3N15output_handle_t10Buffer_idx8n_bufferE"></span><span id="_CPPv2N15output_handle_t10Buffer_idx8n_bufferE"></span><span class="target" id="structoutput__handle__t_1a9245c47a60e55c58a83742f543b6616faba8777b42635b29759eaa1148390c7c0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_buffer</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">num_comp</span></span><span class="w"> </span><span class="o"><span class="pre">+</span></span><span class="w"> </span><span class="m"><span class="pre">3</span></span><a class="headerlink" href="#_CPPv4N15output_handle_t10Buffer_idx8n_bufferE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t15output_handle_tEv">
+<span id="_CPPv3N15output_handle_t15output_handle_tEv"></span><span id="_CPPv2N15output_handle_t15output_handle_tEv"></span><span id="output_handle_t::output_handle_t"></span><span class="target" id="structoutput__handle__t_1a6d22064de605321ac68231d1c0fdabea"></span><span class="sig-name descname"><span class="n"><span class="pre">output_handle_t</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15output_handle_t15output_handle_tEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15output_handle_t15output_handle_tEKNSt6stringEKNSt6stringERK17model_constants_tI7float_tERK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_tRKiRKiRKbKd">
+<span id="_CPPv3I0EN15output_handle_t15output_handle_tEKNSt6stringEKNSt6stringERK17model_constants_tI7float_tERK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_tRKiRKiRKbKd"></span><span id="_CPPv2I0EN15output_handle_t15output_handle_tEKNSt6stringEKNSt6stringERK17model_constants_tI7float_tERK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_tRKiRKiRKbKd"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structoutput__handle__t_1ac4add80427503019c37105df04d7f89f"></span><span class="sig-name descname"><span class="n"><span class="pre">output_handle_t</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">filetype</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">filename</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15output_handle_t15output_handle_tEKNSt6stringEKNSt6stringERK17model_constants_tI7float_tERK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_tRKiRKiRKbKd" title="output_handle_t::output_handle_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t"><span class="n"><span class="pre">reference_quantities_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref_quant</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">in_filename</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">write_index</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">snapshot_index</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rank</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulation_mode</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">initial_cond</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">delay_out_time</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15output_handle_t15output_handle_tEKNSt6stringEKNSt6stringERK17model_constants_tI7float_tERK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_tRKiRKiRKbKd" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15output_handle_t5setupEvKNSt6stringEKNSt6stringERK17model_constants_tI7float_tERK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_tRKiKd">
+<span id="_CPPv3I0EN15output_handle_t5setupEKNSt6stringEKNSt6stringERK17model_constants_tI7float_tERK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_tRKiKd"></span><span id="_CPPv2I0EN15output_handle_t5setupEKNSt6stringEKNSt6stringERK17model_constants_tI7float_tERK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_tRKiKd"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structoutput__handle__t_1aed9fba038981f8609a948072d5bd1211"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setup</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">filetype</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">filename</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15output_handle_t5setupEvKNSt6stringEKNSt6stringERK17model_constants_tI7float_tERK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_tRKiKd" title="output_handle_t::setup::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t"><span class="n"><span class="pre">reference_quantities_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref_quant</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">in_filename</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">write_index</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">snapshot_index</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rank</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">delay_out_time</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15output_handle_t5setupEvKNSt6stringEKNSt6stringERK17model_constants_tI7float_tERK22reference_quantities_tKNSt6stringEK8uint32_tK8uint32_tRKiKd" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t5resetEK8uint32_tK8uint32_tK8uint64_t">
+<span id="_CPPv3N15output_handle_t5resetEK8uint32_tK8uint32_tK8uint64_t"></span><span id="_CPPv2N15output_handle_t5resetEK8uint32_tK8uint32_tK8uint64_t"></span><span id="output_handle_t::reset__uint32_tC.uint32_tC.uint64_tC"></span><span class="target" id="structoutput__handle__t_1ad1a0153efe68916ce775e6f5885b44c0"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reset</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">traj_id</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">ens_id</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">n_flushed</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15output_handle_t5resetEK8uint32_tK8uint32_tK8uint64_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Reset the number of flushed and recorded snapshots and update the current trajectory and ensemble id. This function is needed for static scheduling.</p>
+<p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">traj_id</span></code>: New trajectory id for the output </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ens_id</span></code>: New ensemble id for the output </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15output_handle_t15buffer_gradientEvRK17model_constants_tI7float_tERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_t">
+<span id="_CPPv3I0EN15output_handle_t15buffer_gradientERK17model_constants_tI7float_tERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_t"></span><span id="_CPPv2I0EN15output_handle_t15buffer_gradientERK17model_constants_tI7float_tERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_t"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structoutput__handle__t_1ad627b403a43df15533a0b64a75d688bb"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">buffer_gradient</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15output_handle_t15buffer_gradientEvRK17model_constants_tI7float_tERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_t" title="output_handle_t::buffer_gradient::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">double</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">num_par</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">y_diff</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">snapshot_index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15output_handle_t15buffer_gradientEvRK17model_constants_tI7float_tERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Buffer the gradients. If snapshot_index &gt; 1, then the average gradient is saved.</p>
+<p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">y_diff</span></code>: </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">snpashot_index</span></code>: </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15output_handle_t6bufferEvRK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tRK22reference_quantities_tK8uint32_t">
+<span id="_CPPv3I0EN15output_handle_t6bufferERK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tRK22reference_quantities_tK8uint32_t"></span><span id="_CPPv2I0EN15output_handle_t6bufferERK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tRK22reference_quantities_tK8uint32_t"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structoutput__handle__t_1a5ce869f2c60ddbb3e6512b7425cf09cd"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">buffer</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15output_handle_t6bufferEvRK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tRK22reference_quantities_tK8uint32_t" title="output_handle_t::buffer::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structnetcdf__reader__t.html#_CPPv415netcdf_reader_t" title="netcdf_reader_t"><span class="n"><span class="pre">netcdf_reader_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">netcdf_reader</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15output_handle_t6bufferEvRK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tRK22reference_quantities_tK8uint32_t" title="output_handle_t::buffer::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">y_single_new</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">double</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">num_par</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">y_diff</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">sub</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">t</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t"><span class="n"><span class="pre">reference_quantities_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref_quant</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">snapshot_index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15output_handle_t6bufferEvRK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tRK22reference_quantities_tK8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Writes data either to a stringstream for txt files or to different vectors for netCDF files. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15output_handle_t12flush_bufferEvRK17model_constants_tI7float_tEKb">
+<span id="_CPPv3I0EN15output_handle_t12flush_bufferERK17model_constants_tI7float_tEKb"></span><span id="_CPPv2I0EN15output_handle_t12flush_bufferERK17model_constants_tI7float_tEKb"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structoutput__handle__t_1ad05f8e74d249637d53767f13db1ec797"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flush_buffer</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15output_handle_t12flush_bufferEvRK17model_constants_tI7float_tEKb" title="output_handle_t::flush_buffer::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">no_flush</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15output_handle_t12flush_bufferEvRK17model_constants_tI7float_tEKb" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Write the buffered data to disk or call certain functions for collective access of the data if needed.</p>
+<p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">no_flush</span></code>: If true: do not really flush anything and just call the flushing routines, which is needed if compression is enabled. </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN15output_handle_t12process_stepEvRK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tK8uint32_tK8uint32_tKbRK22reference_quantities_t">
+<span id="_CPPv3I0EN15output_handle_t12process_stepERK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tK8uint32_tK8uint32_tKbRK22reference_quantities_t"></span><span id="_CPPv2I0EN15output_handle_t12process_stepERK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tK8uint32_tK8uint32_tKbRK22reference_quantities_t"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structoutput__handle__t_1a8549e5bc5de8a03400c2df1eb6fab37c"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">process_step</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15output_handle_t12process_stepEvRK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tK8uint32_tK8uint32_tKbRK22reference_quantities_t" title="output_handle_t::process_step::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structnetcdf__reader__t.html#_CPPv415netcdf_reader_t" title="netcdf_reader_t"><span class="n"><span class="pre">netcdf_reader_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">netcdf_reader</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0EN15output_handle_t12process_stepEvRK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tK8uint32_tK8uint32_tKbRK22reference_quantities_t" title="output_handle_t::process_step::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">y_single_new</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">double</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">num_par</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">y_diff</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">sub</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">t</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">write_index</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">snapshot_index</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">last_step</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t"><span class="n"><span class="pre">reference_quantities_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref_quant</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN15output_handle_t12process_stepEvRK17model_constants_tI7float_tERK15netcdf_reader_tRKNSt6vectorI7float_tEERKNSt6vectorINSt5arrayId7num_parEEEEK8uint32_tK8uint32_tK8uint32_tK8uint32_tKbRK22reference_quantities_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Buffer the current data (model state and gradients) and flush it to disk if necessary (depending on the time step.).</p>
+<p><dl class="simple">
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t11n_snapshotsE">
+<span id="_CPPv3N15output_handle_t11n_snapshotsE"></span><span id="_CPPv2N15output_handle_t11n_snapshotsE"></span><span id="output_handle_t::n_snapshots__uint64_t"></span><span class="target" id="structoutput__handle__t_1affb1b966eb32b224dcc745101d9c7d77"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_snapshots</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t11n_snapshotsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t17flushed_snapshotsE">
+<span id="_CPPv3N15output_handle_t17flushed_snapshotsE"></span><span id="_CPPv2N15output_handle_t17flushed_snapshotsE"></span><span id="output_handle_t::flushed_snapshots__uint64_t"></span><span class="target" id="structoutput__handle__t_1a12a0359d34cf84e822f53230c71e4652"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flushed_snapshots</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t17flushed_snapshotsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t4ncidE">
+<span id="_CPPv3N15output_handle_t4ncidE"></span><span id="_CPPv2N15output_handle_t4ncidE"></span><span id="output_handle_t::ncid__i"></span><span class="target" id="structoutput__handle__t_1a4c5afedb3ba1bbbef12079fdb744f75d"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ncid</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t4ncidE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t14local_num_compE">
+<span id="_CPPv3N15output_handle_t14local_num_compE"></span><span id="_CPPv2N15output_handle_t14local_num_compE"></span><span id="output_handle_t::local_num_comp__i"></span><span class="target" id="structoutput__handle__t_1afb3a04a0aaee70ca2f7f85e18a232445"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">local_num_comp</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t14local_num_compE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t13local_num_parE">
+<span id="_CPPv3N15output_handle_t13local_num_parE"></span><span id="_CPPv2N15output_handle_t13local_num_parE"></span><span id="output_handle_t::local_num_par__i"></span><span class="target" id="structoutput__handle__t_1afed711513a16a714010072c7b2513900"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">local_num_par</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t13local_num_parE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t12local_ic_parE">
+<span id="_CPPv3N15output_handle_t12local_ic_parE"></span><span id="_CPPv2N15output_handle_t12local_ic_parE"></span><span id="output_handle_t::local_ic_par__i"></span><span class="target" id="structoutput__handle__t_1a7f8ac517d52e415c9ba585da861f49f3"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">local_ic_par</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t12local_ic_parE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t8track_icE">
+<span id="_CPPv3N15output_handle_t8track_icE"></span><span id="_CPPv2N15output_handle_t8track_icE"></span><span id="output_handle_t::track_ic__b"></span><span class="target" id="structoutput__handle__t_1aaa2a510dca363c0daa3b905401c8cb46"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">track_ic</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t8track_icE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t9FILLVALUEE">
+<span id="_CPPv3N15output_handle_t9FILLVALUEE"></span><span id="_CPPv2N15output_handle_t9FILLVALUEE"></span><span id="output_handle_t::FILLVALUE__floatC"></span><span class="target" id="structoutput__handle__t_1a936d73a174b860b8361afb758081cf9d"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FILLVALUE</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">numeric_limits</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">quiet_NaN</span></span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span><a class="headerlink" href="#_CPPv4N15output_handle_t9FILLVALUEE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t8filetypeE">
+<span id="_CPPv3N15output_handle_t8filetypeE"></span><span id="_CPPv2N15output_handle_t8filetypeE"></span><span id="output_handle_t::filetype__ss"></span><span class="target" id="structoutput__handle__t_1af8f132937764cce33d5f096645125c4e"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">filetype</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t8filetypeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t13output_bufferE">
+<span id="_CPPv3N15output_handle_t13output_bufferE"></span><span id="_CPPv2N15output_handle_t13output_bufferE"></span><span id="output_handle_t::output_buffer__std::array:std::vector:float:.num_comp-+-num_par-+-4-+-static_cast<uint32_t>(Init_cons_idx::n_items):"></span><span class="target" id="structoutput__handle__t_1a05ec7ebf9cabafc0651e5a29582e5b43"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">num_comp</span></span><span class="w"> </span><span class="o"><span class="pre">+</span></span><span class="w"> </span><span class="n"><span class="pre">num_par</span></span><span class="w"> </span><span class="o"><span class="pre">+</span></span><span class="w"> </span><span class="m"><span class="pre">4</span></span><span class="w"> </span><span class="o"><span class="pre">+</span></span><span class="w"> </span><span class="k"><span class="pre">static_cast</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">uint32_t</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="enum_group__constants_1gad36d816028b4887318ac23eb3ad6968c.html#_CPPv413Init_cons_idx" title="Init_cons_idx"><span class="n"><span class="pre">Init_cons_idx</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="enum_group__constants_1gad36d816028b4887318ac23eb3ad6968c.html#_CPPv4N13Init_cons_idx7n_itemsE" title="Init_cons_idx::n_items"><span class="n"><span class="pre">n_items</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">output_buffer</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t13output_bufferE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t19output_buffer_flagsE">
+<span id="_CPPv3N15output_handle_t19output_buffer_flagsE"></span><span id="_CPPv2N15output_handle_t19output_buffer_flagsE"></span><span id="output_handle_t::output_buffer_flags__std::array:std::vector:unsigned-c:.4:"></span><span class="target" id="structoutput__handle__t_1ae2cae39b1b75db886fb01ce58fa4e2fb"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">4</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">output_buffer_flags</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t19output_buffer_flagsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t17output_buffer_intE">
+<span id="_CPPv3N15output_handle_t17output_buffer_intE"></span><span id="_CPPv2N15output_handle_t17output_buffer_intE"></span><span id="output_handle_t::output_buffer_int__std::array:std::vector:uint64_t:.2:"></span><span class="target" id="structoutput__handle__t_1a84ba7b4d9d9cc3b1d8baa7b699efe391"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">uint64_t</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">output_buffer_int</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t17output_buffer_intE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t5dimidE">
+<span id="_CPPv3N15output_handle_t5dimidE"></span><span id="_CPPv2N15output_handle_t5dimidE"></span><span id="output_handle_t::dimid__std::vector:i:"></span><span class="target" id="structoutput__handle__t_1a67176f9d86dc80b0bf76fc74aeea1467"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dimid</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t5dimidE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>ID for dimensions of output file. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t5varidE">
+<span id="_CPPv3N15output_handle_t5varidE"></span><span id="_CPPv2N15output_handle_t5varidE"></span><span id="output_handle_t::varid__std::vector:i:"></span><span class="target" id="structoutput__handle__t_1a662fc6dd5d6062ed95e1b4dac63b1f33"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">varid</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t5varidE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>ID for variables of output file. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t5n_ensE">
+<span id="_CPPv3N15output_handle_t5n_ensE"></span><span id="_CPPv2N15output_handle_t5n_ensE"></span><span id="output_handle_t::n_ens__uint64_t"></span><span class="target" id="structoutput__handle__t_1a567a96be330c83d2d212d04fe95899fe"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_ens</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t5n_ensE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7n_trajsE">
+<span id="_CPPv3N15output_handle_t7n_trajsE"></span><span id="_CPPv2N15output_handle_t7n_trajsE"></span><span id="output_handle_t::n_trajs__uint64_t"></span><span class="target" id="structoutput__handle__t_1a4252038c666bf0ec3d39fc6439e3eee5"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_trajs</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7n_trajsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t12n_trajs_fileE">
+<span id="_CPPv3N15output_handle_t12n_trajs_fileE"></span><span id="_CPPv2N15output_handle_t12n_trajs_fileE"></span><span id="output_handle_t::n_trajs_file__uint64_t"></span><span class="target" id="structoutput__handle__t_1a64029348aa5584ec1d3156e66191fb44"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_trajs_file</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t12n_trajs_fileE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t4trajE">
+<span id="_CPPv3N15output_handle_t4trajE"></span><span id="_CPPv2N15output_handle_t4trajE"></span><span id="output_handle_t::traj__uint64_t"></span><span class="target" id="structoutput__handle__t_1aeb7ec23391eea08b970ceaba27a47b93"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">traj</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t4trajE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t3ensE">
+<span id="_CPPv3N15output_handle_t3ensE"></span><span id="_CPPv2N15output_handle_t3ensE"></span><span id="output_handle_t::ens__uint64_t"></span><span class="target" id="structoutput__handle__t_1a2ea203f90dd8a183d37e967788255bc2"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ens</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t3ensE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t15total_snapshotsE">
+<span id="_CPPv3N15output_handle_t15total_snapshotsE"></span><span id="_CPPv2N15output_handle_t15total_snapshotsE"></span><span id="output_handle_t::total_snapshots__uint64_t"></span><span class="target" id="structoutput__handle__t_1aa7a0072ab2f3816b112211872b1a84ad"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">total_snapshots</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t15total_snapshotsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t8filenameE">
+<span id="_CPPv3N15output_handle_t8filenameE"></span><span id="_CPPv2N15output_handle_t8filenameE"></span><span id="output_handle_t::filename__ss"></span><span class="target" id="structoutput__handle__t_1a700cf845b55954ca72022c3181203aaa"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">filename</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t8filenameE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t8num_timeE">
+<span id="_CPPv3N15output_handle_t8num_timeE"></span><span id="_CPPv2N15output_handle_t8num_timeE"></span><span id="output_handle_t::num_time__uint64_t"></span><span class="target" id="structoutput__handle__t_1a4bec50fee74749fbce7051166caa1a22"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">num_time</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t8num_timeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number of time steps to write in the output. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t7num_ensE">
+<span id="_CPPv3N15output_handle_t7num_ensE"></span><span id="_CPPv2N15output_handle_t7num_ensE"></span><span id="output_handle_t::num_ens__uint64_t"></span><span class="target" id="structoutput__handle__t_1a80e75146694cf52b7bbbe366baed1acc"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">num_ens</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t7num_ensE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number of ensembles in the output. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15output_handle_t15simulation_modeE">
+<span id="_CPPv3N15output_handle_t15simulation_modeE"></span><span id="_CPPv2N15output_handle_t15simulation_modeE"></span><span id="output_handle_t::simulation_mode__i"></span><span class="target" id="structoutput__handle__t_1a0cd125f4f4a484994fa4bc5f43d97293"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">simulation_mode</span></span></span><a class="headerlink" href="#_CPPv4N15output_handle_t15simulation_modeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Simulation mode determines the order of the output file and the mpi access mode. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="structparam__t.html" class="btn btn-neutral float-right" title="Struct param_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="structnetcdf__reader__t.html" class="btn btn-neutral float-left" title="Struct netcdf_reader_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

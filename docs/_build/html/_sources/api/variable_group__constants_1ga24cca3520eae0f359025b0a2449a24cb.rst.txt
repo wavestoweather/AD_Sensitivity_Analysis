@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga24cca3520eae0f359025b0a2449a24cb:
+
+Variable D_eq
+=============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: D_eq

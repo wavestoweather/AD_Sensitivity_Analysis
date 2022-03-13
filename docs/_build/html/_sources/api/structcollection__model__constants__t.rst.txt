@@ -1,0 +1,16 @@
+.. _exhale_struct_structcollection__model__constants__t:
+
+Template Struct collection_model_constants_t
+============================================
+
+- Defined in :ref:`file_include_types_collection_model_constants_t.h`
+
+
+Struct Documentation
+--------------------
+
+
+.. doxygenstruct:: collection_model_constants_t
+   :members:
+   :protected-members:
+   :undoc-members:

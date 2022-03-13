@@ -1,0 +1,13 @@
+.. _exhale_define_group__constants_1ga8e9178051433f118b42d8d958b8be670:
+
+Define qc_idx
+=============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Define Documentation
+--------------------
+
+
+.. doxygendefine:: qc_idx

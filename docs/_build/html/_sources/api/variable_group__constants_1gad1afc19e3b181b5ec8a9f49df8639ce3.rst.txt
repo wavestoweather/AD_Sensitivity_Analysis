@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gad1afc19e3b181b5ec8a9f49df8639ce3:
+
+Variable k_b
+============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: k_b

@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gae086631607ed7214f41bdfc2b4d07254:
+
+Variable N_Sc
+=============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: N_Sc

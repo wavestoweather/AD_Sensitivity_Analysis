@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1gad6b9b3f394e657cf8aff39edac0579b4:
+
+Template Function specific_heat_water
+=====================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: specific_heat_water(float_t)

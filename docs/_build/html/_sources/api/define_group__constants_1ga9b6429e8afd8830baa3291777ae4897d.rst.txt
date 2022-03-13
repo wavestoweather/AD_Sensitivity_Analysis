@@ -1,0 +1,13 @@
+.. _exhale_define_group__constants_1ga9b6429e8afd8830baa3291777ae4897d:
+
+Define w_idx
+============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Define Documentation
+--------------------
+
+
+.. doxygendefine:: w_idx

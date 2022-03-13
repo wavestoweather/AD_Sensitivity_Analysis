@@ -1,0 +1,13 @@
+.. _exhale_function_group__ufunc_1ga7fdc24cf2fcc6e890043048f007a5f33:
+
+Template Function particle_rain_riming
+======================================
+
+- Defined in :ref:`file_include_microphysics_user_functions.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: particle_rain_riming(float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, collection_model_constants_t<float_t>&, particle_model_constants_t<float_t>&, std::vector<float_t>&, model_constants_t<float_t>&)

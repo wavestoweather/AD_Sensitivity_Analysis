@@ -1,0 +1,13 @@
+.. _exhale_function_group__ufunc_1ga54a72f0b20abc6df5a0d9e78c1b5a5bc:
+
+Template Function riming_rain_core
+==================================
+
+- Defined in :ref:`file_include_microphysics_user_functions.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: riming_rain_core(float_t&, float_t&, float_t&, float_t&, particle_model_constants_t<float_t>&, collection_model_constants_t<float_t>&, float_t&, float_t&, float_t&, model_constants_t<float_t>&)

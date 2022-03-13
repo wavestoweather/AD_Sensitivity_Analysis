@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga8c19c4605bfcf79875ad95e7a1fbc314:
+
+Variable graupel_s_vel
+======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: graupel_s_vel

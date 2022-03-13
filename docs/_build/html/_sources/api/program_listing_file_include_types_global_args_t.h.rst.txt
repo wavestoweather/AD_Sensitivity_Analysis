@@ -1,0 +1,104 @@
+
+.. _program_listing_file_include_types_global_args_t.h:
+
+Program Listing for File global_args_t.h
+========================================
+
+|exhale_lsh| :ref:`Return to documentation for file <file_include_types_global_args_t.h>` (``include/types/global_args_t.h``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. code-block:: cpp
+
+   #pragma once
+   
+   #include <getopt.h>
+   #include <stdlib.h>
+   
+   #include <iostream>
+   
+   #include "include/misc/error.h"
+   #include "include/microphysics/constants.h"
+   
+   struct global_args_t {
+       int final_time_flag; 
+       char* final_time_string;
+   
+       int timestep_flag; 
+       char* timestep_string;
+   
+       int snapshot_index_flag; 
+       char* snapshot_index_string;
+   
+       int simulation_mode_flag;
+       char* simulation_mode_string;
+   
+       int output_flag; 
+       char* output_string;
+   
+       int input_flag; 
+       char* input_file;
+   
+       // int start_over_flag; /*!< Reload mixing ratios and particle numbers from trajectory every few seconds? */
+       // char* start_over_string;
+   
+       int time_start_idx_flag;
+       char* time_start_idx_string;
+   
+       int start_over_env_flag; 
+       char* start_over_env_string;
+   
+       int fixed_iteration_flag; 
+       char* fixed_iteration_string;
+   
+       int auto_type_flag; 
+       char* auto_type_string;
+   
+       int traj_flag; 
+       char* traj_string;
+   
+       int write_flag; 
+       char* write_string;
+   
+       int progress_index_flag; 
+       char* progress_index_string;
+   #ifdef MET3D
+       int delay_start_flag; 
+       char* delay_start_string;
+   #endif
+   
+       int ens_config_flag; 
+       char* ens_config_string;
+   
+       int checkpoint_flag; 
+       char* checkpoint_string;
+   
+       int tracking_file_flag;
+       char* tracking_file_string;
+   
+       // int gnu_id_flag; /*!< ID given for this instance, i.e. thread_id or id by GNU parallel. */
+       // char* gnu_id_string;
+   
+       int folder_name_flag;
+       char* folder_name_string;
+   
+       int n_ens_flag;
+       char* n_ens_string;
+   
+       int warm_up_flag;
+       char* warm_up_string;
+   
+       int track_ic_flag;
+       char* track_ic_string;
+   
+       global_args_t();
+   
+       int parse_arguments(
+           const int argc,
+           char* const * argv,
+           const int &rank,
+           const int &n_processes);
+       void display_usage();
+   
+       void display_error_on_command_line();
+   };

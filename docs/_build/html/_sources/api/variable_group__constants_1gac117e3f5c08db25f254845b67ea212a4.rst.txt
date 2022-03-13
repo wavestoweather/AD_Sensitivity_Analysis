@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gac117e3f5c08db25f254845b67ea212a4:
+
+Variable ice_d_crit_c
+=====================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: ice_d_crit_c

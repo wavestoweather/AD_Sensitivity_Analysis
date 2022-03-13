@@ -1,0 +1,13 @@
+.. _exhale_function_group__ufunc_1ga1348cc10db2c96e11a414ae3cfbfec31:
+
+Template Function ice_nuc_hom
+=============================
+
+- Defined in :ref:`file_include_microphysics_user_functions.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: ice_nuc_hom(float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, float_t&, std::vector<float_t>&, model_constants_t<float_t>&)

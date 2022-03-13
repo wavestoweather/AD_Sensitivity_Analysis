@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga5919dd913a2e6ae515760d6e8050faa6:
+
+Variable snow_q_crit_c
+======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: snow_q_crit_c

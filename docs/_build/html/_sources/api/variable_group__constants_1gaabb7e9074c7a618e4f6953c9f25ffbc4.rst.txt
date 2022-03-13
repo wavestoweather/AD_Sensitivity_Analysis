@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gaabb7e9074c7a618e4f6953c9f25ffbc4:
+
+Variable rain_gamma
+===================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: rain_gamma

@@ -1,0 +1,13 @@
+.. _exhale_define_group__constants_1ga72733bdf8b6b1b8b7c26498b642ecbe7:
+
+Define Nc_idx
+=============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Define Documentation
+--------------------
+
+
+.. doxygendefine:: Nc_idx

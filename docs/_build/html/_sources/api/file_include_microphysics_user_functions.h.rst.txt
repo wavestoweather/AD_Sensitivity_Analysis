@@ -1,0 +1,138 @@
+
+.. _file_include_microphysics_user_functions.h:
+
+File user_functions.h
+=====================
+
+|exhale_lsh| :ref:`Parent directory <dir_include_microphysics>` (``include/microphysics``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. contents:: Contents
+   :local:
+   :backlinks: none
+
+Definition (``include/microphysics/user_functions.h``)
+------------------------------------------------------
+
+
+.. toctree::
+   :maxdepth: 1
+
+   program_listing_file_include_microphysics_user_functions.h.rst
+
+
+
+
+
+Includes
+--------
+
+
+- ``algorithm``
+
+- ``cmath``
+
+- ``codi.hpp``
+
+- ``include/microphysics/constants.h`` (:ref:`file_include_microphysics_constants.h`)
+
+- ``include/microphysics/physical_parameterizations.h`` (:ref:`file_include_microphysics_physical_parameterizations.h`)
+
+- ``include/misc/error.h`` (:ref:`file_include_misc_error.h`)
+
+- ``include/types/model_constants_t.h`` (:ref:`file_include_types_model_constants_t.h`)
+
+- ``include/types/reference_quantities_t.h`` (:ref:`file_include_types_reference_quantities_t.h`)
+
+- ``math.h``
+
+- ``tgmath.h``
+
+- ``vector``
+
+
+
+Included By
+-----------
+
+
+- :ref:`file_include_microphysics_euler.h`
+
+- :ref:`file_include_microphysics_implicit_euler.h`
+
+- :ref:`file_include_microphysics_rk4.h`
+
+
+
+
+Functions
+---------
+
+
+- :ref:`exhale_function_group__ufunc_1ga11499b81f16cdd3ffacd6ae95042b262`
+
+- :ref:`exhale_function_group__ufunc_1ga785399fceb6a957a140647fa393b1e4a`
+
+- :ref:`exhale_function_group__ufunc_1gab9edb21d9b17436d0f79a3cdf85c2959`
+
+- :ref:`exhale_function_group__ufunc_1ga3da0a94b45d2bc49f36dccf8fcbb6805`
+
+- :ref:`exhale_function_group__ufunc_1gad5191ff6941123758c0c29f9ae49f646`
+
+- :ref:`exhale_function_group__ufunc_1ga0dd64dbcb3b78c22fae1cb1391dbda08`
+
+- :ref:`exhale_function_group__ufunc_1ga9e8b8eedfc3ed565427d08f758d73b24`
+
+- :ref:`exhale_function_group__ufunc_1ga3237346783d6546b8454b35b95a71591`
+
+- :ref:`exhale_function_group__ufunc_1gab24b416a811051fbda6aecfa62f54916`
+
+- :ref:`exhale_function_group__ufunc_1ga2d025c656acd1e26957945d58aa1f17d`
+
+- :ref:`exhale_function_group__ufunc_1ga3c32a879ed465f43252061cfe62d0bd5`
+
+- :ref:`exhale_function_group__ufunc_1ga1348cc10db2c96e11a414ae3cfbfec31`
+
+- :ref:`exhale_function_group__ufunc_1ga0b3dc285a7fb4e29bb13e55ca38ee732`
+
+- :ref:`exhale_function_group__ufunc_1ga7cc8fcdb5c0ae6a63c6bd1e8a0faf646`
+
+- :ref:`exhale_function_group__ufunc_1gac77534e0ca29a726f276ac2bc67cdd09`
+
+- :ref:`exhale_function_group__ufunc_1gafafe031861f5b873d04bcaabfe1b64ec`
+
+- :ref:`exhale_function_group__ufunc_1ga7892a65a16b9118b7bdf5acd8f53f029`
+
+- :ref:`exhale_function_group__ufunc_1ga7fdc24cf2fcc6e890043048f007a5f33`
+
+- :ref:`exhale_function_group__ufunc_1gab327a048fa750ec15916155ccff168e9`
+
+- :ref:`exhale_function_group__ufunc_1ga6400205cfaacfa71424a8296af14a203`
+
+- :ref:`exhale_function_group__ufunc_1ga648777090d467ccb9c4e1b37dac56b5a`
+
+- :ref:`exhale_function_group__ufunc_1ga73511891d2d279b150966ed2d8f452ee`
+
+- :ref:`exhale_function_group__ufunc_1gafd8094b8f007a0f86d1ef783cd4199c4`
+
+- :ref:`exhale_function_group__ufunc_1ga54a72f0b20abc6df5a0d9e78c1b5a5bc`
+
+- :ref:`exhale_function_group__ufunc_1gac9c075657ff0eb221c31de9faba87b4a`
+
+- :ref:`exhale_function_group__ufunc_1ga9b3e1ddad652cbab80a39e89854c75fe`
+
+- :ref:`exhale_function_group__ufunc_1gaa2f72dcebf341067572b0306c74b7b05`
+
+- :ref:`exhale_function_group__ufunc_1ga8d6afa7542f9be8b554944e84b817ec6`
+
+- :ref:`exhale_function_group__ufunc_1ga625167a4154ee9c0f34ff424681b4dd0`
+
+- :ref:`exhale_function_group__ufunc_1ga9bceb2b3e3eb350dda667d54dbde3402`
+
+- :ref:`exhale_function_group__ufunc_1ga15565411d1f159ce0580d31928a28471`
+
+- :ref:`exhale_function_group__ufunc_1ga0c49179aa9c20a8f6b4b6953bf887605`
+
+- :ref:`exhale_function_group__ufunc_1gac0347b48baa9c825785c1d418ef34ba1`
+

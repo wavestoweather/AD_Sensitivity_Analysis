@@ -1,0 +1,13 @@
+.. _exhale_function_group__ufunc_1ga8d6afa7542f9be8b554944e84b817ec6:
+
+Template Function snow_melting
+==============================
+
+- Defined in :ref:`file_include_microphysics_user_functions.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: snow_melting(float_t&, float_t&, float_t&, std::vector<float_t>&, model_constants_t<float_t>&)

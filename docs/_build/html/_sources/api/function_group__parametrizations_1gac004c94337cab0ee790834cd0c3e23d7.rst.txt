@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1gac004c94337cab0ee790834cd0c3e23d7:
+
+Template Function polyval4
+==========================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: polyval4(const double, const double, const double, const double, const double, float_t)

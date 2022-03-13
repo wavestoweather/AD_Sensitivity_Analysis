@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga27805cb464b8dfe4ee58635d4cd6e886:
+
+Variable nuc_type
+=================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: nuc_type

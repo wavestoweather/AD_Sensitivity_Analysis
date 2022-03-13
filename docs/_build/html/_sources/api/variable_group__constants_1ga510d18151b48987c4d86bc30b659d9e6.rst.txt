@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga510d18151b48987c4d86bc30b659d9e6:
+
+Variable alpha_depo
+===================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: alpha_depo

@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga30be6a19b19106d008762009428a21a9:
+
+Template Function compute_pv
+============================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: compute_pv(float_t, float_t, float_t, float_t, float_t, float_t)

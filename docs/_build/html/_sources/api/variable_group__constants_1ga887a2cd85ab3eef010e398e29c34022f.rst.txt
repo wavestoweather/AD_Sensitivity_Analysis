@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga887a2cd85ab3eef010e398e29c34022f:
+
+Variable ni_hom_max
+===================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: ni_hom_max

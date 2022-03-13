@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1gad4845afee4f2aad5f4ab1db3eb21d3e3:
+
+Template Function coll_delta_12
+===============================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: coll_delta_12(particle_model_constants_t<float_t>&, particle_model_constants_t<float_t>&, const uint64_t)

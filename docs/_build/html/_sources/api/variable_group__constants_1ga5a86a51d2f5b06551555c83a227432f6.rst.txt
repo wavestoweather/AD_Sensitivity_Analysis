@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga5a86a51d2f5b06551555c83a227432f6:
+
+Variable rand_device
+====================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: rand_device
