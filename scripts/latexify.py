@@ -1799,6 +1799,8 @@ def parse_word(word):
         }
         if word in mappings:
             return mappings[word]
+        if "_prime" in word:
+            return r"$ \partial " + word[1] + " $"
         if "dnm" in word:
             return r"$ \partial n_{m, " + word[-1] + r"} $"
         if "_nm1" in word:
@@ -1948,181 +1950,143 @@ def parse_word(word):
 
 
 in_params_numeric_value_dic = {
-    "da_1": 0.001,  # Not relevant for two-moment scheme
-    "da_2": 0.0121568,  # Not relevant for two-moment scheme
-    "de_1": 0.0590233,  # Not relevant for two-moment scheme
-    "de_2": 0.185865,  # Not relevant for two-moment scheme
-    "dd": 0.0147626,  # Not relevant for two-moment scheme
-    "dN_c": 50,  # Not relevant for two-moment scheme
-    "dgamma": 1.0,  # Not relevant for two-moment scheme
-    "dbeta_c": 1.0,  # Not relevant for two-moment scheme
-    "dbeta_r": 7 / 8,  # Not relevant for two-moment scheme
-    "ddelta1": 0.5,  # Not relevant for two-moment scheme
-    "ddelta2": 11 / 16,  # Not relevant for two-moment scheme
-    "dzeta": 9 / 8,  # Not relevant for two-moment scheme
+    "da1_scale": 0.001,
+    "da2_scale": 0.0121568,
+    "de1_scale": 0.0590233,
+    "de2_scale": 0.185865,
     "dd_scale": 0.0147626,
-    "dScaling factor": 1,
-    "dd_ccn_4": 3.60849e08,
-    "dd_ccn_3": 0.890749,
-    "dd_ccn_2": 0.625881,
-    "dd_ccn_1": 2.87736e08,
-    "dc_ccn_1": 16.242,
+    "dc_br": 0,
+    "dk_br": 0,
+    "dc_ccn_2": 3.22012,
     "db_ccn_4": 0.000198616,
-    "db_ccn_1": 0.000198405,
-    "dk_r": 5.78,
-    "dk_2_conv": 0.7,
-    "dalpha_depo": 0.5,
     "db_ccn_3": 0.000184323,
+    "db_ccn_2": 4.47319e-05,
+    "da_ccn_3": -0.29224,
+    "dk_2_conv": 0.7,
+    "dk_1_conv": 400,
+    "dc_ccn_1": 16.242,
+    "db_ccn_1": 0.000198405,
+    "dT_sat_low_temp": 273.15,
     "dp_sat_low_temp": 610.78,
     "dp_sat_ice_const_b": 7.66,
-    "dp_sat_const_a": 17.2694,
-    "dr_const": 287.04,
-    "da_ccn_2": 0.101474,
-    "dbet_dep": 1.4705,
-    "dnim_imm": 49920,
-    "dd_dep": 0.26789,
-    "dr_0": 2.5e-07,
-    "dc_dep": -1.3107,
-    "dr1_const": 461.5,
-    "da_dep": 0.27626,
-    "da_ccn_4": 2.2919e08,
-    "dni_hom_max": 5e06,
-    "dna_orga": 3e07,
+    "dD_br": 0,
     "dcv": 718.66,
-    "dna_dust": 1.6e06,
-    "db_ccn_2": 4.47319e-05,
-    "dN_avo": 6.02214e23,
-    "dN_sc": 0.71,
-    "da_ccn_1": 1.83231e08,
-    "da_HET": 0.65,
-    "da_ccn_3": -0.29224,
+    "dr1_const": 461.5,
+    "dr_const": 287.04,
+    "dr_0": 2.5e-07,
+    "dbet_imm": 1.2044,
+    "dbet_dep": 1.4705,
+    "dc_ccn_3": 13.8499,
     "dalf_imm": 0.2622,
     "dnin_dep": 77167,
-    "dk_b": 1.38065e-23,
-    "dD_rainfrz_gh": 0.00125,
-    "dD_rainfrz_ig": 0.0005,
-    "dp_sat_ice_const_a": 21.8746,
-    "dconst3": 0.333333,
-    "dT_sat_low_temp": 273.15,
+    "dd_dep": 0.26789,
+    "da_dep": 0.27626,
+    "dni_hom_max": 5e06,
+    "dni_het_max": 500000,
+    "dna_orga": 3e07,
+    "dN_sc": 0.71,
+    "db_HET": 200,
+    "dcp": 1004.64,
+    "dp_sat_const_b": 35.86,
+    "ddv0": 2.22e-05,
+    "dna_dust": 1.6e06,
     "dconst5": 0.0109087,
+    "dconst4": -0.5,
+    "dconst3": 0.333333,
+    "dp_sat_ice_const_a": 21.8746,
+    "dp_sat_const_a": 17.2694,
+    "dconst0": 33333.3,
+    "da_ccn_4": 2.2919e08,
     "dT_mult_opt": 268,
-    "dT_mult_min": 265,
-    "dC_mult": 3.5e08,
-    "dc_ccn_3": 13.8499,
+    "dn_f": 0.333,
+    "dT_mult_max": 270,
     "dkin_visc_air": 1.5e-05,
-    "decoll_gg_wet": 0.4,
-    "decoll_gg": 0.1,
-    "dL_ed": 2.8345e06,
-    "dL_wd": 2.5008e06,
-    "dK_T": 0.024,
-    "dk_1_accr": 0.0005,
+    "dD_rainfrz_gh": 0.00125,
+    "dc_prime": 600,
+    "db_prime": 9.8,
+    "da_prime": 9.65,
+    "dd_ccn_3": 0.890749,
+    "dT_mult_min": 265,
+    "dD_v": 2.22e-05,
     "db_v": 0.308,
+    "dd_ccn_1": 2.87736e08,
     "da_v": 0.78,
     "dR_v": 461.523,
+    "dN_avo": 6.02214e23,
     "dgravity_acc": 9.80665,
-    "db_dep": 6.21,
+    "decoll_gg_wet": 0.4,
     "dR_universal": 8.31446,
-    "dcp": 1004.64,
-    "dD_v": 2.22e-05,
-    "dM_a": 0.0289655,
     "drho_ice": 916.7,
-    "dc_ccn_4": 16.2462,
-    "db_HET": 200,
     "drho_vel_c": 1,
+    "db_dep": 6.21,
+    "da_HET": 0.65,
+    "dL_ed": 2.8345e06,
     "drho_vel": 0.4,
-    "dp_sat_melt": 610.78,
     "drho_0": 1.225,
-    "drho_w": 1000,
+    "dnim_imm": 49920,
+    "dc_dep": -1.3107,
     "dD_eq": 0.0011,
+    "dk_r": 5.78,
     "dT_f": 233,
     "dT_freeze": 273.15,
-    "dni_het_max": 500000,
-    "dconst4": -0.5,
     "dT_nuc": 268.15,
     "dalpha_spacefilling": 0.01,
-    "dparcel_height": 250,
-    "dx_conv": 1e-10,
-    "dD_conv_ig": 0.0002,
-    "dM_w": 0.0180153,
-    "dD_conv_sg": 0.0002,
-    "dq_crit": 1e-07,
-    "dq_crit_fr": 1e-06,
+    "dalpha_depo": 0.5,
     "dna_soot": 2.5e07,
-    "dn_f": 0.333,
+    "dparcel_height": 250,
+    "dM_a": 0.0289655,
+    "dD_conv_sg": 0.0002,
+    "dc_ccn_4": 16.2462,
+    "dq_crit": 1e-09,
+    "dq_crit_fr": 1e-06,
     "dD_crit_r": 0.0001,
+    "decoll_gg": 0.1,
+    "dK_T": 0.024,
     "dq_crit_r": 1e-05,
+    "dp_sat_melt": 610.78,
     "dD_conv_i": 7.5e-05,
-    "dk_1_conv": 400,
-    "dT_mult_max": 270,
-    "dD_crit_i": 0.0001,
+    "da_ccn_1": 1.83231e08,
     "dq_crit_i": 1e-06,
-    "ddw": 0.000159454,
-    "db_prime": 9.8,
+    "dD_crit_i": 0.0001,
+    "ddw": 0,
+    "dR_a": 287.047,
     "dinv_z": 0.004,
+    "dC_mult": 3.5e08,
     "dkc_autocon": 9.44e09,
-    "dcloud_k_sc": 1.888e10,
-    "dcloud_k_au": 1.45231e19,
+    "dD_rainfrz_ig": 0.0005,
+    "dcloud_k_sc": 1.416e10,
     "drain_gfak": 1,
-    "dbet_imm": 1.2044,
+    "drho_w": 1000,
     "dzeta": 1.125,
     "ddelta2": 0.6875,
-    "decoll_min": 0.01,
-    "dc_prime": 600,
-    "dEpsilon": 0.621957,
     "ddelta1": 0.5,
-    "da_prime": 9.65,
+    "dd_ccn_2": 0.625881,
+    "da_ccn_2": 0.101474,
     "dbeta_r": 0.875,
+    "dx_conv": 1e-10,
     "dbeta_c": 1,
-    "dc_ccn_2": 3.22012,
+    "dd_ccn_4": 3.60849e08,
+    "dL_wd": 2.5008e06,
+    "dD_conv_ig": 0.0002,
     "dgamma": 1,
+    "dk_1_accr": 0.0005,
+    "dk_b": 1.38065e-23,
+    "dcloud_k_au": 6.80769e18,
     "dN_c": 0,
     "dd": 0,
-    "dp_sat_const_b": 35.86,
-    "dR_a": 287.047,
+    "dM_w": 0.0180153,
     "de_2": 0,
-    "ddv0": 2.22e-05,
-    "dconst0": 33333.3,
-    "dD_coll_c": 4e-05,
+    "dD_br_threshold": 0,
+    "dEpsilon": 0.621957,
     "de_1": 0,
+    "dD_coll_c": 4e-05,
     "da_2": 0,
+    "decoll_min": 0.01,
     "da_1": 0,
-    "da_geo": 0.1366,
-    "db_geo": 0.333333,
-    "dmin_x": 2.6e-09,
-    "dmax_x": 0.0005,
-    "dsc_theta_q": 0,
-    "dsc_delta_q": 0,
-    "dsc_theta_n": 0,
-    "dsc_delta_n": 0,
-    "ds_vel": 0,
-    "da_vel": 39.3,
-    "db_vel": 0.166667,
-    "drho_v": 0,
-    "dc_z": 2.94643,
-    "dsc_coll_n": 1,
-    "dnu": 1,
-    "dmu": 0.333333,
-    "dq_crit_c": 1e-06,
-    "dd_crit_c": 0.0001,
-    "decoll_c": 1,
-    "dcap": 2,
-    "da_ven": 0.78,
-    "db_ven": 0.308,
-    "dc_s": 0.5,
-    "da_f": 0.673182,
-    "db_f": 60.7445,
-    "db_f (COSMO variant)": 0.263684,
-    "dalfa_n": 0,
-    "dalfa_q": 0,
-    "dlambda": 0,
-    "dvsedi_min": 0.1,
-    "dvsedi_max": 30,
-    "dg1": 0,
-    "dg2": 0,
     "dcloud_vsedi_max": 1,
     "dcloud_vsedi_min": 0,
-    "dcloud_lambda": 0,
-    "dcloud_alfa_n": 0,
+    "dcloud_lambda": 0.5,
+    "dcloud_alfa_n": 564216,
     "dcloud_a_ven": 0.78,
     "dcloud_d_crit_c": 1e-05,
     "dcloud_q_crit_c": 1e-06,
@@ -2153,7 +2117,7 @@ in_params_numeric_value_dic = {
     "dcloud_sc_delta_q": 0,
     "dcloud_mu": 1,
     "dcloud_sc_theta_q": 0,
-    "dcloud_alfa_q": 0,
+    "dcloud_alfa_q": 752288,
     "dcloud_max_x": 2.6e-10,
     "dcloud_min_x_sedimentation": 4.2e-15,
     "dcloud_a_f": 0.737109,
@@ -2177,12 +2141,12 @@ in_params_numeric_value_dic = {
     "dcloud_a_geo": 0.124,
     "drain_vsedi_max": 20,
     "drain_vsedi_min": 0.1,
-    "drain_lambda": 0,
-    "drain_alfa_n": 0,
-    "drain_a_ven": 0,
+    "drain_lambda": 0.166667,
+    "drain_alfa_n": 103.665,
+    "drain_a_ven": 0.78,
     "drain_d_crit_c": 0,
     "drain_q_crit_c": 0,
-    "drain_b_ven": 0,
+    "drain_b_ven": 0.308,
     "drain_nm3": 7,
     "drain_nm2": 4,
     "drain_nm1": 1,
@@ -2198,7 +2162,7 @@ in_params_numeric_value_dic = {
     "drain_cmu3": 0.0011,
     "drain_cmu2": 1000,
     "drain_cmu1": 30,
-    "drain_b_f": 0,
+    "drain_b_f": 41.1318,
     "drain_c_z": 20,
     "drain_rho_v": 0,
     "drain_sc_coll_n": 0,
@@ -2209,10 +2173,10 @@ in_params_numeric_value_dic = {
     "drain_sc_delta_q": 0,
     "drain_mu": 0.333333,
     "drain_sc_theta_q": 0,
-    "drain_alfa_q": 0,
+    "drain_alfa_q": 294.546,
     "drain_max_x": 3e-06,
     "drain_min_x_sedimentation": 2.6e-10,
-    "drain_a_f": 0,
+    "drain_a_f": 0.429251,
     "drain_min_x_conversion": 2.6e-10,
     "drain_min_x_collection": 2.6e-10,
     "drain_min_x_collision": 2.6e-10,
@@ -2233,8 +2197,8 @@ in_params_numeric_value_dic = {
     "drain_a_geo": 0.124,
     "dice_vsedi_max": 3,
     "dice_vsedi_min": 0,
-    "dice_lambda": 0,
-    "dice_alfa_n": 0,
+    "dice_lambda": 0.00297619,
+    "dice_alfa_n": 86.7053,
     "dice_a_ven": 0.78,
     "dice_d_crit_c": 0.00015,
     "dice_q_crit_c": 1e-05,
@@ -2257,7 +2221,7 @@ in_params_numeric_value_dic = {
     "dice_b_f": 62.0574,
     "dice_c_z": 2.94643,
     "dice_rho_v": 0,
-    "dice_sc_coll_n": 0.8,
+    "dice_sc_coll_n": 0,
     "dice_b_vel": 0.21579,
     "dice_cmu0": 0,
     "dice_s_vel": 0.05,
@@ -2265,7 +2229,7 @@ in_params_numeric_value_dic = {
     "dice_sc_delta_q": 5.39197,
     "dice_mu": 0.333333,
     "dice_sc_theta_q": 0.193013,
-    "dice_alfa_q": 0,
+    "dice_alfa_q": 113.436,
     "dice_max_x": 1e-05,
     "dice_min_x_sedimentation": 1e-12,
     "dice_a_f": 0.667109,
@@ -2289,8 +2253,8 @@ in_params_numeric_value_dic = {
     "dice_a_geo": 0.835,
     "dsnow_vsedi_max": 3,
     "dsnow_vsedi_min": 0.1,
-    "dsnow_lambda": 0,
-    "dsnow_alfa_n": 0,
+    "dsnow_lambda": 0.00297619,
+    "dsnow_alfa_n": 19.3054,
     "dsnow_a_ven": 0.78,
     "dsnow_d_crit_c": 0.00015,
     "dsnow_q_crit_c": 1e-05,
@@ -2313,7 +2277,7 @@ in_params_numeric_value_dic = {
     "dsnow_b_f": 63.268,
     "dsnow_c_z": 2.94643,
     "dsnow_rho_v": 0,
-    "dsnow_sc_coll_n": 0.8,
+    "dsnow_sc_coll_n": 0,
     "dsnow_b_vel": 0.15,
     "dsnow_cmu0": 0,
     "dsnow_s_vel": 0.25,
@@ -2321,7 +2285,7 @@ in_params_numeric_value_dic = {
     "dsnow_sc_delta_q": 0,
     "dsnow_mu": 0.333333,
     "dsnow_sc_theta_q": 0,
-    "dsnow_alfa_q": 0,
+    "dsnow_alfa_q": 23.3299,
     "dsnow_max_x": 2e-05,
     "dsnow_min_x_sedimentation": 1e-10,
     "dsnow_a_f": 0.663731,
@@ -2345,8 +2309,8 @@ in_params_numeric_value_dic = {
     "dsnow_a_geo": 2.4,
     "dgraupel_vsedi_max": 30,
     "dgraupel_vsedi_min": 0.1,
-    "dgraupel_lambda": 0,
-    "dgraupel_alfa_n": 0,
+    "dgraupel_lambda": 0.00297619,
+    "dgraupel_alfa_n": 362.91,
     "dgraupel_a_ven": 0.78,
     "dgraupel_d_crit_c": 0.0001,
     "dgraupel_q_crit_c": 1e-06,
@@ -2377,32 +2341,32 @@ in_params_numeric_value_dic = {
     "dgraupel_sc_delta_q": 0,
     "dgraupel_mu": 0.333333,
     "dgraupel_sc_theta_q": 0,
-    "dgraupel_alfa_q": 0,
-    "dgraupel_max_x": 0.0005,
-    "dgraupel_min_x_sedimentation": 1e-09,
+    "dgraupel_alfa_q": 505.11,
+    "dgraupel_max_x": 0.00053,
+    "dgraupel_min_x_sedimentation": 4.19e-09,
     "dgraupel_a_f": 0.675949,
-    "dgraupel_min_x_conversion": 1e-09,
-    "dgraupel_min_x_collection": 1e-09,
-    "dgraupel_min_x_collision": 1e-09,
-    "dgraupel_min_x_depo": 1e-09,
-    "dgraupel_min_x_riming": 1e-09,
-    "dgraupel_min_x_freezing": 1e-09,
+    "dgraupel_min_x_conversion": 4.19e-09,
+    "dgraupel_min_x_collection": 4.19e-09,
+    "dgraupel_min_x_collision": 4.19e-09,
+    "dgraupel_min_x_depo": 4.19e-09,
+    "dgraupel_min_x_riming": 4.19e-09,
+    "dgraupel_min_x_freezing": 4.19e-09,
     "dgraupel_cap": 2,
     "dgraupel_cmu4": 0,
-    "dgraupel_min_x_evap": 1e-09,
-    "dgraupel_min_x_melt": 1e-09,
-    "dgraupel_min_x_nuc_hetero": 1e-09,
-    "dgraupel_min_x": 1e-09,
-    "dgraupel_min_x_nuc_homo": 1e-09,
+    "dgraupel_min_x_evap": 4.19e-09,
+    "dgraupel_min_x_melt": 4.19e-09,
+    "dgraupel_min_x_nuc_hetero": 4.19e-09,
+    "dgraupel_min_x": 4.19e-09,
+    "dgraupel_min_x_nuc_homo": 4.19e-09,
     "dgraupel_b_geo": 0.314,
     "dgraupel_a_vel": 86.8937,
     "dgraupel_sc_theta_n": 0,
-    "dgraupel_min_x_act": 1e-09,
+    "dgraupel_min_x_act": 4.19e-09,
     "dgraupel_a_geo": 0.142,
     "dhail_vsedi_max": 30,
     "dhail_vsedi_min": 0.1,
-    "dhail_lambda": 0,
-    "dhail_alfa_n": 0,
+    "dhail_lambda": 0.00297619,
+    "dhail_alfa_n": 94.2824,
     "dhail_a_ven": 0.78,
     "dhail_d_crit_c": 0.0001,
     "dhail_q_crit_c": 1e-06,
@@ -2425,7 +2389,7 @@ in_params_numeric_value_dic = {
     "dhail_b_f": 60.7445,
     "dhail_c_z": 2.94643,
     "dhail_rho_v": 0,
-    "dhail_sc_coll_n": 1,
+    "dhail_sc_coll_n": 0,
     "dhail_b_vel": 0.166667,
     "dhail_cmu0": 0,
     "dhail_s_vel": 0,
@@ -2433,8 +2397,8 @@ in_params_numeric_value_dic = {
     "dhail_sc_delta_q": 0,
     "dhail_mu": 0.333333,
     "dhail_sc_theta_q": 0,
-    "dhail_alfa_q": 0,
-    "dhail_max_x": 0.0005,
+    "dhail_alfa_q": 116.275,
+    "dhail_max_x": 0.00054,
     "dhail_min_x_sedimentation": 2.6e-09,
     "dhail_a_f": 0.673182,
     "dhail_min_x_conversion": 2.6e-09,
@@ -2562,7 +2526,7 @@ in_params_notation_mapping = {
     "dinv_z": [
         "Inverse of air parcel size (height) used in explicit sedimentation",
         "-",
-        "-",
+        "Necessary for our box model simulation",
         "independent",
     ],
     "dw": ["Change in buoancy. Not used", "", "", "independent"],
@@ -2586,20 +2550,20 @@ in_params_notation_mapping = {
     ],
     "dq_crit_r": [
         "Threshold (mass density) for ice rain riming and snow rain riming",
-        "-",
-        "-",
+        r"Similar to $ \overline{D}_{c, 0} $ but for rain mass density",
+        r"\citeA{seifert_two-moment_2006}, Eq. (65)",
         "independent",
     ],
     "dD_crit_r": [
         "Threshold (diameter) for ice rain riming and snow rain riming",
-        "-",
-        "-",
+        r"Similar to $ \overline{D}_{c, 0} $ but for rain",
+        r"\citeA{seifert_two-moment_2006}, Eq. (65)",
         "independent",
     ],
     "dq_crit_fr": [
-        "Threshold (mass density) for rain freezing to ice, graupel and hail.",
+        "Threshold (mass density) for instantaneous rain freezing to ice, graupel and hail.",
         "-",
-        "-",
+        "Introduced to avoid numerical issues",
         "independent",
     ],
     "dD_coll_c": [
@@ -2629,7 +2593,7 @@ in_params_notation_mapping = {
     "dx_conv": [
         "Minimum mean mass for conversion of ice or snow to graupel",
         "-",
-        "-",
+        "Introduced to avoid the conversion of too many particles due to too small mean diameter",
         "independent",
     ],
     "dparcel_height": [
@@ -2646,8 +2610,8 @@ in_params_notation_mapping = {
     ],  # not tracked!
     "dT_nuc": [
         "Upper temperature threshold for heterogeneous ice nucleation",
-        "268.15 K",
-        "\citeA{}",  # Meyers et al. 1992
+        r"Hidden in $\xi$",
+        "\citeA{phillips_empirical_2008}, page 2763",
         "independent",
     ],
     "dT_freeze": [
@@ -2682,14 +2646,14 @@ in_params_notation_mapping = {
     ],
     "drho_vel": [
         "Exponent for density correction",
-        r"Not a variable but a constant $ 0.5 $ in Eq. (28)",
-        r"\citeA{seifert_two-moment_2006}",
+        r"$ \gamma $",
+        r"\citeA{seifert_two-moment_2006}, Eq. (33)",
         "independent",
     ],
     "drho_vel_c": [
         "Exponent for density correction of cloud droplets",
-        r"Not a variable but a constant $ 0.5 $ in Eq. (28)",
-        r"\citeA{seifert_two-moment_2006}",
+        r"$ \gamma $",
+        r"\citeA{seifert_two-moment_2006}, Eq. (33)",
         "independent",
     ],
     "drho_ice": [
@@ -2741,33 +2705,33 @@ in_params_notation_mapping = {
         "independent",
     ],
     "da_v": [
-        "Constant used in rain evaporation after Seifert (2008) to calculate the ventilation factor",
+        "Constant used in rain evaporation to calculate the ventilation factor",
         r"$ a_v $",
-        r"\citeA{seifert_parameterization_2008}",
+        r"\citeA{seifert_parameterization_2008}, Eq. (8)",
         "independent",
     ],
     "db_v": [
-        "Coefficient used in rain evaporation after Seifert (2008) to calculate the ventilation factor",
+        "Coefficient used in rain evaporation to calculate the ventilation factor",
         r"$ b_v $",
-        r"\citeA{seifert_parameterization_2008}",
+        r"\citeA{seifert_parameterization_2008}, Eq. (8)",
         "independent",
     ],
     "da_prime": [
         "Constant used to calculate the terminal fall velocity of raindrops during rain evaporation more accurately than with a power law",
         r"$ a $",
-        r"\citeA{seifert_parameterization_2008}",
+        r"\citeA{seifert_parameterization_2008}, Eq. (A4)",
         "independent",
     ],
     "db_prime": [
         "Coefficient used to calculate the terminal fall velocity of raindrops during rain evaporation more accurately than with a power law",
         r"$ b $",
-        r"\citeA{seifert_parameterization_2008}",
+        r"\citeA{seifert_parameterization_2008}, Eq. (A4)",
         "independent",
     ],
     "dc_prime": [
         "Exponent used to calculate the terminal fall velocity of raindrops during rain evaporation more accurately than with a power law",
         r"$ c $",
-        r"\citeA{seifert_parameterization_2008}",
+        r"\citeA{seifert_parameterization_2008}, Eq. (A4)",
         "independent",
     ],
     "dK_T": [
@@ -2803,13 +2767,13 @@ in_params_notation_mapping = {
     "decoll_gg": [
         "Collision efficiency for graupel selfcollection",
         r"$ \overline{E}_{\text{coll}, gg} $",
-        r"\citeA{seifert_two-moment_2006}",
+        r"\citeA{seifert_two-moment_2006}, Eq. (64)",
         "independent",
     ],
     "decoll_gg_wet": [
         "Collision efficiency for wet graupel",
         r"similar to $ \overline{E}_{\text{coll}, gg} $",
-        r"\citeA{seifert_two-moment_2006}",
+        r"\citeA{seifert_two-moment_2006}, Eq. (64)",
         "independent",
     ],
     "dkin_visc_air": [
@@ -2827,37 +2791,37 @@ in_params_notation_mapping = {
     "dT_mult_min": [
         "Coefficient used in Hallet-Mossop ice multiplication",
         r"$ T_{\text{splint}, \text{min}} $",
-        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002} Eq. (4.127)",
         "independent",
     ],
     "dT_mult_max": [
         "Coefficient used in Hallet-Mossop ice multiplication",
         r"$ T_{\text{splint}, \text{max}} $",
-        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002} Eq. (4.127)",
         "independent",
     ],
     "dT_mult_opt": [
         "Coefficient used in Hallet-Mossop ice multiplication. Not tracked",
         r"$ T_{\text{splint}, \text{opt}} $",
-        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002} Eq. (4.127)",
         "independent",
     ],  # not tracked! (used to calculate const3, const4)
     "dconst0": [
         "Coefficient used in riming processes",
         r"$ (\overline{D}_{c,1} - \overline{D}_{c, 0})^{-1} $",
-        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
+        r"\citeA{seifert_two-moment_2006}, Eq. (65)",
         "independent",
     ],
     "dconst3": [
         "Coefficient used in riming processes for breaking up particles",
         r"$( T_{\text{splint}, \text{opt}} - T_{\text{splint}, \text{min}})^{-1}$",
-        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002} Eq. (4.127)",
         "independent",
     ],
     "dconst4": [
         "Coefficient used in riming processes for breaking up particles",
         r"$( T_{\text{splint}, \text{opt}} - T_{\text{splint}, \text{max}})^{-1}$",
-        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002}",
+        r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002} Eq. (4.127)",
         "independent",
     ],
     "dconst5": [
@@ -2897,28 +2861,29 @@ in_params_notation_mapping = {
         "independent",
     ],
     "dk_b": [
-        r"Boltzmann constant in $ \text{J}/\text{K} $",
-        r"Used to calculate $ n_{\text{sat}} $",
-        r"$ c_p $",
-        r"\citeA{karcher_physically_2006}",
+        r"Boltzmann constant to calculate the water vapor number density at ice saturation and the thermal speed of water molecules. See Equations~\ref{eq:n_sat}~and~\ref{eq:v_th}.",
+        # r"Used to calculate $ n_{\text{sat}} $",
+        "In $b_1$ and $b_2$",
+        # r"$ c_p $",
+        r"\citeA{karcher_physically_2006}, page 2",
         "independent",
     ],
     "da_HET": [
         "Exponent for heterogeneous rain freezing with data of Barklie and Gokhale",
-        r"$ A_{\text{HET}} $",
+        r"$ B_{\text{HET}} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
     ],
     "db_HET": [
         "Coefficient for heterogeneous rain freezing with data of Barklie and Gokhale",
-        r"$ B_{\text{HET}} $",
+        r"$ A_{\text{HET}} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
     ],
     "dN_sc": [
         "Schmidt number used in rain evaporation",
         r"$ N_{\text{sc}} $",
-        r"\citeA{seifert_parameterization_2008}",
+        r"\citeA{seifert_parameterization_2008}, Eqs. (8), (A3), (A6), and (A7)",
         "independent",
     ],
     "dn_f": [
@@ -2928,39 +2893,39 @@ in_params_notation_mapping = {
         "independent",
     ],  # not tracked!
     "dN_avo": [
-        r"Avogadro number in $ \text{mol}^{-1} $ used in homogeneous ice nucleation to calculate the mass of a water molecule $m_w$",
-        r"see $m_w$",
-        r"\citeA{karcher_physically_2006}",
+        r"Avogadro number used in homogeneous ice nucleation to calculate the mass of a water molecule $M_a$ for the thermal speed of water molecules. See Equation~\ref{eq:v_th}.",
+        "In $b_1$ and $b_2$",
+        r"\citeA{karcher_physically_2006}, page 2",
         "independent",
     ],
     "dna_dust": [
-        r"Initial number density of dust [$m^{-3} $]",
+        r"Initial number density of dust",
         r"Similar to $ n_{\text{IN}, \text{DM}} $",
         r"\citeA{phillips_empirical_2008}",
         "independent",
     ],
     "dna_soot": [
-        r"Initial number density of soot [$m^{-3} $]",
+        r"Initial number density of soot",
         r"$ n_{\text{IN}, \text{BC}} $",
         r"\citeA{phillips_empirical_2008}",
         "independent",
     ],
     "dna_orga": [
-        r"Initial number density of organics [$m^{-3} $]",
+        r"Initial number density of organics",
         r"$ n_{\text{IN}, \text{O}} $",
         r"\citeA{phillips_empirical_2008}",
         "independent",
     ],
     "dni_het_max": [
-        r"Constants for ice nucleation scheme max number of IN between $ 1^{-10} $ per liter, i.e. 1d3-10d3",
-        "",
-        r"\citeA{phillips_empirical_2008}",
+        r"Maximum particle number for heterogeneous ice nucleation per liter",
+        r"$ n_{\text{IN}, X} $",
+        r"\citeA{phillips_empirical_2008}, Eq. (13)",
         "independent",
     ],
     "dni_hom_max": [
-        r"Constants for ice nucleation scheme number of liquid aerosols between $ 100-5000 $ per liter",
-        "",
-        r"\citeA{phillips_empirical_2008}",
+        r"Maximum particle number for homogeneous ice nucleation per liter",
+        r"$ n $",
+        r"\citeA{karcher_physically_2006}, Eq. (10)",
         "independent",
     ],
     "da_dep": [
@@ -3168,8 +3133,8 @@ in_params_notation_mapping = {
         "independent",
     ],
     "dalpha_depo": [
-        "Depostion coefficient for homogeneous ice nucleation",
-        r"$ \alpha $",
+        "Deposition coefficient of water molecules touching ice for homogeneous ice nucleation",
+        r"$ \alpha $ (below Eq. (2))",
         r"\citeA{karcher_physically_2006}",
         "independent",
     ],
@@ -3181,20 +3146,20 @@ in_params_notation_mapping = {
     ],
     "dk_1_conv": [
         "Exponent for autoconversion of qc to qr",
-        r"Not a parameter; value of $ 400 $",
-        r"\citeA{seifert_two-moment_2006}",
+        "-",
+        r"\citeA{seifert_two-moment_2006}, Eq. (6)",
         "independent",
     ],
     "dk_2_conv": [
         "Exponent for autoconversion of qc to qr",
-        r"Not a parameter; value of $ 0.7 $",
-        r"\citeA{seifert_two-moment_2006}",
+        "-",
+        r"\citeA{seifert_two-moment_2006}, Eq. (6)",
         "independent",
     ],
     "dk_1_accr": [
         "Coefficient for accretion of qc to qr",
-        r"Not a parameter; value of $ 5 \cdot 10^{-5} $",
-        r"\citeA{seifert_two-moment_2006}",
+        "-",
+        r"\citeA{seifert_two-moment_2006}, Eq. (8)",
         "independent",
     ],
     "dk_r": [
@@ -3286,7 +3251,7 @@ in_params_notation_mapping = {
         "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
         r"$ \Big( \frac{\rho_0}{\rho} \Big)^\gamma $",
         r"\citeA{seifert_two-moment_2006} Eq. (33)",
-        "independent",
+        "dependent",
     ],
     "drain_c_z": [
         "Coefficient for 2nd mass moment used in homogeneous freezing",
@@ -3297,13 +3262,13 @@ in_params_notation_mapping = {
     "drain_sc_coll_n": ["Not used", "", "", "independent"],
     "drain_cmu0": [
         r"Coefficient for calculating the shape parameter $ \mu $ during rain evaporation",
-        "Not a parameter; value of 6",
+        "-",
         r"\citeA{seifert_parameterization_2008}, Eq. (20)",
         "independent",
     ],
     "drain_cmu1": [
         r"Coefficient for calculating the shape parameter $ \mu $ during rain evaporation",
-        "Not a parameter; value of 30",
+        "-",
         r"\citeA{seifert_parameterization_2008}, Eq. (20)",
         "independent",
     ],
@@ -3321,13 +3286,13 @@ in_params_notation_mapping = {
     ],
     "drain_cmu4": [
         r"Constant for calculating the shape parameter $ \mu $ during rain evaporation",
-        "Not a parameter; value of 1",
+        "-",
         r"\citeA{seifert_parameterization_2008}, Eq. (20)",
         "independent",
     ],
     "drain_cmu5": [
         r"Exponent for calculating the shape parameter $ \mu $ during rain evaporation",
-        "Not a parameter; value of 2",
+        "-",
         r"\citeA{seifert_parameterization_2008}, Eq. (20)",
         "independent",
     ],
@@ -3370,7 +3335,7 @@ in_params_notation_mapping = {
     "drain_mu": [
         r"Shape parameter of the generalized $ \Gamma $-distribution",
         r"$ \nu $",
-        r"\cite{seifert_two-moment_2006}, Eq. (79)",
+        r"\citeA{seifert_two-moment_2006}, Eq. (79)",
         "independent",
     ],
     "drain_nm1": [
@@ -3498,7 +3463,7 @@ in_params_notation_mapping = {
         "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
         r"$ \Big( \frac{\rho_0}{\rho} \Big)^\gamma $",
         r"\citeA{seifert_two-moment_2006} Eq. (33)",
-        "independent",
+        "dependent",
     ],
     "dcloud_c_z": [
         "Coefficient for 2nd mass moment used in homogeneous freezing. Not tracked.",
@@ -3527,7 +3492,7 @@ in_params_notation_mapping = {
     "dcloud_mu": [
         r"Shape parameter of the generalized $ \Gamma $-distribution. Not tracked",
         r"$ \nu $",
-        r"\cite{seifert_two-moment_2006}, Eq. (79)",
+        r"\citeA{seifert_two-moment_2006}, Eq. (79)",
         "independent",
     ],
     "dcloud_nm1": ["Not used", "", "", "independent"],
@@ -3649,7 +3614,7 @@ in_params_notation_mapping = {
     "dgraupel_sc_theta_n": ["Not used", "", "", "independent"],
     "dgraupel_sc_delta_n": ["Not used", "", "", "independent"],
     "dgraupel_s_vel": [
-        "Variance for the assumed Gaussian velocity distributions used in collection and riming processes",
+        "Variance for the assumed Gaussian velocity distributions used in collection and riming processes. Not used.",
         r"similar to $ \sigma_i $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
@@ -3670,7 +3635,7 @@ in_params_notation_mapping = {
         "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
         r"$ \Big( \frac{\rho_0}{\rho} \Big)^\gamma $",
         r"\citeA{seifert_two-moment_2006} Eq. (33)",
-        "independent",
+        "dependent",
     ],
     "dgraupel_c_z": ["Not used", "", "", "dependent"],
     "dgraupel_sc_coll_n": [
@@ -3709,7 +3674,7 @@ in_params_notation_mapping = {
     "dgraupel_mu": [
         r"Shape parameter of the generalized $ \Gamma $-distribution",
         r"$ \nu $",
-        r"\cite{seifert_two-moment_2006}, Eq. (79)",
+        r"\citeA{seifert_two-moment_2006}, Eq. (79)",
         "independent",
     ],
     "dgraupel_nm1": [
@@ -3741,7 +3706,7 @@ in_params_notation_mapping = {
         "Riming coefficient. Maximum collision efficiency with cloud droplets",
         r"$ \overline{E}_{g, \text{max}} $",
         r"\citeA{seifert_two-moment_2006}",
-        "dependent",
+        "independent",
     ],
     "dgraupel_cap": [
         "Coefficient for capacity of particle. Not tracked",
@@ -3800,13 +3765,13 @@ in_params_notation_mapping = {
     "dgraupel_vsedi_min": [
         "Minimum sedimentation velocity parameter",
         "-",
-        "-",
+        "Introduced to avoid numerical issues",
         "independent",
     ],
     "dgraupel_vsedi_max": [
         "Maximum sedimentation velocity parameter",
         "-",
-        "-",
+        "Introduced to avoid numerical issues",
         "independent",
     ],
     # Hail
@@ -3871,7 +3836,7 @@ in_params_notation_mapping = {
     "dhail_sc_theta_n": ["Not used", "", "", "independent"],
     "dhail_sc_delta_n": ["Not used", "", "", "independent"],
     "dhail_s_vel": [
-        "Variance for the assumed Gaussian velocity distributions used in collection and riming processes",
+        "Variance for the assumed Gaussian velocity distributions used in collection and riming processes. Not used.",
         r"similar to $ \sigma_i $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
@@ -3892,7 +3857,7 @@ in_params_notation_mapping = {
         "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
         r"$ \Big( \frac{\rho_0}{\rho} \Big)^\gamma $",
         r"\citeA{seifert_two-moment_2006} Eq. (33)",
-        "independent",
+        "dependent",
     ],
     "dhail_c_z": ["Not used", "", "", "dependent"],
     "dhail_sc_coll_n": [
@@ -3921,7 +3886,7 @@ in_params_notation_mapping = {
     "dhail_mu": [
         r"Shape parameter of the generalized $ \Gamma $-distribution. Not tracked",
         r"$ \nu $",
-        r"\cite{seifert_two-moment_2006}, Eq. (79)",
+        r"\citeA{seifert_two-moment_2006}, Eq. (79)",
         "independent",
     ],
     "dhail_nm1": ["Not used", "", "", "independent"],
@@ -3943,7 +3908,7 @@ in_params_notation_mapping = {
         "Riming coefficient. Maximum collision efficiency with cloud droplets",
         r"Similar to $ \overline{E}_{g, \text{max}} $",
         r"\citeA{seifert_two-moment_2006}",
-        "dependent",
+        "independent",
     ],
     "dhail_cap": [
         "Coefficient for capacity of particle. Not tracked",
@@ -4002,13 +3967,13 @@ in_params_notation_mapping = {
     "dhail_vsedi_min": [
         "Minimum sedimentation velocity parameter",
         "-",
-        "-",
+        "Introduced to avoid numerical issues",
         "independent",
     ],
     "dhail_vsedi_max": [
         "Maximum sedimentation velocity parameter",
         "-",
-        "-",
+        "Introduced to avoid numerical issues",
         "independent",
     ],
     # Ice
@@ -4149,7 +4114,7 @@ in_params_notation_mapping = {
         "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
         r"$ \Big( \frac{\rho_0}{\rho} \Big)^\gamma $",
         r"\citeA{seifert_two-moment_2006} Eq. (33)",
-        "independent",
+        "dependent",
     ],
     "dice_c_z": ["Not used", "", "", "dependent"],
     "dice_sc_coll_n": ["Not used", "", "", "independent"],
@@ -4173,7 +4138,7 @@ in_params_notation_mapping = {
     "dice_mu": [
         r"Shape parameter of the generalized $ \Gamma $-distribution. Not tracked",
         r"$ \nu $",
-        r"\cite{seifert_two-moment_2006}, Eq. (79)",
+        r"\citeA{seifert_two-moment_2006}, Eq. (79)",
         "independent",
     ],
     "dice_nm1": ["Not used", "", "", "independent"],
@@ -4195,7 +4160,7 @@ in_params_notation_mapping = {
         "Riming coefficient. Maximum collision efficiency with cloud droplets",
         r"$ \overline{E}_{i, \text{max}} $",
         r"\citeA{seifert_two-moment_2006}",
-        "dependent",
+        "independent",
     ],
     "dice_cap": [
         "Coefficient for capacity of particle. Not tracked",
@@ -4252,15 +4217,15 @@ in_params_notation_mapping = {
         "dependent",
     ],
     "dice_vsedi_min": [
-        "Minimum sedimentation velocity parameter",
+        "Minimum sedimentation velocity parameter. Not tracked.",
         "-",
-        "-",
+        "Introduced to avoid numerical issues",
         "independent",
     ],
     "dice_vsedi_max": [
         "Maximum sedimentation velocity parameter",
         "-",
-        "-",
+        "Introduced to avoid numerical issues",
         "independent",
     ],
     # Snow
@@ -4366,7 +4331,7 @@ in_params_notation_mapping = {
         "Coefficient used in density correction for the increased terminal fall velocity with decreasing air density",
         r"$ \Big( \frac{\rho_0}{\rho} \Big)^\gamma $",
         r"\citeA{seifert_two-moment_2006} Eq. (33)",
-        "independent",
+        "dependent",
     ],
     "dsnow_c_z": ["Not used", "", "", "dependent"],
     "dsnow_sc_coll_n": ["Not used", "", "", "independent"],
@@ -4390,7 +4355,7 @@ in_params_notation_mapping = {
     "dsnow_mu": [
         r"Shape parameter of the generalized $ \Gamma $-distribution. Not tracked",
         r"$ \nu $",
-        r"\cite{seifert_two-moment_2006}, Eq. (79)",
+        r"\citeA{seifert_two-moment_2006}, Eq. (79)",
         "independent",
     ],
     "dsnow_nm1": ["Not used", "", "", "independent"],
@@ -4412,7 +4377,7 @@ in_params_notation_mapping = {
         "Riming coefficient. Maximum collision efficiency with cloud droplets",
         r"$ \overline{E}_{s, \text{max}} $",
         r"\citeA{seifert_two-moment_2006}",
-        "dependent",
+        "independent",
     ],
     "dsnow_cap": [
         "Coefficient for capacity of particle. Not tracked",
@@ -4471,13 +4436,13 @@ in_params_notation_mapping = {
     "dsnow_vsedi_min": [
         "Minimum sedimentation velocity parameter",
         "-",
-        "-",
+        "Introduced to avoid numerical issues",
         "independent",
     ],
     "dsnow_vsedi_max": [
         "Maximum sedimentation velocity parameter",
         "-",
-        "-",
+        "Introduced to avoid numerical issues",
         "independent",
     ],
 }
@@ -4894,6 +4859,33 @@ def set_size(beamer=True, scale=None):
         )
 
 
+def replace_cites(s):
+    """
+
+    Parameters
+    ----------
+    s : string
+        String with occurrences of the form of \citeA{...}
+    Returns
+    -------
+    Replaced the \citeA with the name of the citation.
+    """
+    cite_dic = {
+        r"\citeA{seifert_two-moment_2006}": "Seifert and Beheng (2006a)",
+        r"\citeA{seifert_parameterization_2008}": "Seifert (2008)",
+        r"\citeA{hande_parameterizing_2016}": "Hande et al. (2016)",
+        r"\citeA{phillips_empirical_2008}": "Phillips et al. (2008)",
+        r"\citeA{hallett_production_1974}": "Hallet and Mossop (1974)",
+        r"\citeA{seifert_parametrisierung_2002}": "Seifert (2002)",
+        r"\citeA{seifert_double-moment_2001}": "Seifert and Beheng (2001)",
+        r"\citeA{karcher_physically_2006}": r"Kärcher et al. (2006)",
+    }
+    for key in cite_dic:
+        if key in s:
+            s = s.replace(key, cite_dic[key])
+    return s
+
+
 def get_value(param):
     """
     Given an input parameter, get the value used in the model.
@@ -4907,10 +4899,49 @@ def get_value(param):
     -------
     Formatted string with value of the model input parameter.
     """
-    if param in in_params_value_dic:
-        if isinstance(in_params_value_dic[param], str):
-            return in_params_value_dic[param]
-        return f"$ {in_params_value_dic[param]:1.3e} $"
+    bracket = "}"
+    if param in in_params_numeric_value_dic:
+        # val_s = f"$ {in_params_numeric_value_dic[param]:1.5g}" # {bracket} $"
+        # if "e" in val_s:
+        #     return (val_s + f"{bracket} $").replace("e", "\mathrm{e}{")
+        # else:
+        #     return val_s + " $"
+        # return f"$ {in_params_numeric_value_dic[param]:1.3g}{bracket} $".replace("e", "\mathrm{e}{")
+        if (
+            in_params_numeric_value_dic[param] < 1000
+            and in_params_numeric_value_dic[param] >= 1
+        ):
+            if float(in_params_numeric_value_dic[param]).is_integer():
+                return f"$ {in_params_numeric_value_dic[param]} $"
+            s = f"$ {in_params_numeric_value_dic[param]:1.3E}{bracket} $".replace(
+                "E", "\mathrm{E}{"
+            )
+            s = (
+                s.replace("0\mathrm{E}", "\mathrm{E}")
+                .replace("0\mathrm{E}", "\mathrm{E}")
+                .replace("0\mathrm{E}", "\mathrm{E}")
+            )
+            if ".\mathrm{E}" in s:
+                s = s.replace(".\mathrm{E}", "\mathrm{E}")
+            if "\mathrm{E}+00" in s:
+                return s.replace("\mathrm{E}+00", "")
+            return s
+        if float(in_params_numeric_value_dic[param]).is_integer():
+            return f"$ {in_params_numeric_value_dic[param]:1.0E}{bracket} $".replace(
+                "E", "\mathrm{E}{"
+            )
+        s = f"$ {in_params_numeric_value_dic[param]:1.3E}{bracket} $".replace(
+            "E", "\mathrm{E}{"
+        )
+        if in_params_numeric_value_dic[param] < 1:
+            s = (
+                s.replace("0\mathrm{E}", "\mathrm{E}")
+                .replace("0\mathrm{E}", "\mathrm{E}")
+                .replace("0\mathrm{E}", "\mathrm{E}")
+            )
+            if ".\mathrm{E}" in s:
+                s = s.replace(".\mathrm{E}", "\mathrm{E}")
+        return s
     return ""
 
 
@@ -4953,10 +4984,96 @@ def get_unit(param, brackets=False):
         "QS": r"kg/m³",
         "Q_cold": r"kg/m³",
         "Q_liquid": r"kg/m³",
+        "dinv_z": r"$ \mathrm{m}^{-1} $",
+        "drain_vsedi_min": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "drain_vsedi_max": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "dice_vsedi_min": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "dice_vsedi_max": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "dsnow_vsedi_min": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "dsnow_vsedi_max": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "dgraupel_vsedi_min": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "dgraupel_vsedi_max": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "dhail_vsedi_min": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "dhail_vsedi_max": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "dkc_autocon": r"$ \mathrm{m}\,\mathrm{kg}^{-2}\mathrm{s}^{-1} $",
+        "dq_crit_i": r"$ \mathrm{kg}\,\mathrm{m}^{-3} $",
+        "dD_crit_i": r"m",
+        "dD_conv_i": r"m",
+        "dq_crit_r": r"$ \mathrm{kg}\,\mathrm{m}^{-3} $",
+        "dD_crit_r": r"m",
+        "dq_crit_fr": r"$ \mathrm{kg}\,\mathrm{m}^{-3} $",
+        "dD_conv_sg": r"m",
+        "dD_conv_ig": r"m",
+        "dx_conv": "kg",
+        "dT_nuc": "K",
+        "da_prime": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "db_prime": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "dc_prime": r"$ \mathrm{m}^{-1} $",
+        "dkin_visc_air": r"$ \mathrm{m}^2\mathrm{s}^{-1} $",
+        "dC_mult": r"$ \mathrm{kg}^{-1} $",
+        "dT_mult_min": "K",
+        "dT_mult_max": "K",
+        "dconst0": r"$ \mathrm{m}^{-1} $",
+        "dconst3": r"$ \mathrm{K}^{-1} $",
+        "dconst4": r"$ \mathrm{K}^{-1} $",
+        "dD_rainfrz_gh": "m",
+        "dD_rainfrz_ig": "m",
+        "ddv0": r"$ \mathrm{m}^2\mathrm{s}^{-1} $",
+        "dp_sat_melt": "Pa",
+        "dk_b": r"$ \mathrm{J}\,\mathrm{K}^{-1} $",
+        "da_HET": r"$ \mathrm{K}^{-1} $",
+        "db_HET": r"$ \mathrm{kg}^{-1}\mathrm{s}^{-1} $",
+        "dN_avo": r"$ \mathrm{mol}^{-1} $",
+        "dna_dust": r"$ \mathrm{m}^{-3} $",
+        "dna_soot": r"$ \mathrm{m}^{-3} $",
+        "dna_orga": r"$ \mathrm{m}^{-3} $",
+        "dni_het_max": r"$ \mathrm{l}^{-1} $",
+        "dni_hom_max": r"$ \mathrm{l}^{-1} $",
+        "dr_0": "m",
+        "dk_r": r"$ \mathrm{m}^3\mathrm{kg}^{-1}\mathrm{s}^{-1} $",
+        "da_ccn_1": r"$ \mathrm{m}^{-3} $",
+        "da_ccn_2": r"$ \log(\mathrm{m}\,\mathrm{s}^{-1})^{-1} $",
+        "da_ccn_4": r"$ \mathrm{m}^{-3} $",
+        "db_ccn_1": r"$ \mathrm{Pa}^{-1} $",
+        "db_ccn_2": r"$ \mathrm{Pa}^{-1} $",
+        "db_ccn_4": r"$ \mathrm{Pa}^{-1} $",
+        "dd_ccn_1": r"$ \mathrm{m}^{-3} $",
+        "dd_ccn_2": r"$ \log(\mathrm{m}\,\mathrm{s}^{-1})^{-1} $",
+        "dd_ccn_4": r"$ \mathrm{m}^{-3} $",
+        "drain_cmu2": r"$ \mathrm{m}^{-1} $",
+        "drain_cmu3": r"$ \mathrm{m} $",
+        "drain_alpha": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "drain_beta": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "drain_gamma": r"$ \mathrm{m}\,\mathrm{s}^{-1} $",
+        "drain_gamma": r"$ \mathrm{m}^{-1} $",
     }
     if param in unit_dic:
         if brackets:
             return "[" + unit_dic[param] + "]"
         return unit_dic[param]
+    elif param.endswith("_min_x") or "_min_x_" in param:
+        return r"kg"
+    elif "_a_geo" in param:
+        particle = param[1:].replace("_a_geo", "")
+        return (
+            r"$ \mathrm{m}\,\mathrm{kg}^{-\mathrm{geo}_{b, \mathrm{"
+            + particle
+            + r"}}} $"
+        )
+    elif "_a_vel" in param:
+        particle = param[1:].replace("_a_vel", "")
+        return (
+            r"$ \mathrm{m}\,\mathrm{s}^{-1}\mathrm{kg}^{-\mathrm{vel}_{b, \mathrm{"
+            + particle
+            + r"}}} $"
+        )
+    elif param.endswith("_max_x"):
+        return "kg"
+    elif param.endswith("_q_crit_c"):
+        return r"$ \mathrm{kg}\,\mathrm{m}^{-3} $"
+    elif param.endswith("_d_crit_c"):
+        return r"$ \mathrm{m} $"
+    elif param.endswith("_s_vel"):
+        return r"$ \mathrm{m}\,\mathrm{s}^{-1} $"
     else:
         return ""
