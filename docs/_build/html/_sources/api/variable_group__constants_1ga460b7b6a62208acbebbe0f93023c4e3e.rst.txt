@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga460b7b6a62208acbebbe0f93023c4e3e:
+
+Variable graupel_vsedi_max
+==========================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: graupel_vsedi_max

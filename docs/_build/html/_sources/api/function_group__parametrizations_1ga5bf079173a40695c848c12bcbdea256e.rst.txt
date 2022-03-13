@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga5bf079173a40695c848c12bcbdea256e:
+
+Template Function compute_rhoa
+==============================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: compute_rhoa(float_t, float_t, float_t, float_t, float_t, float_t, float_t, float_t)

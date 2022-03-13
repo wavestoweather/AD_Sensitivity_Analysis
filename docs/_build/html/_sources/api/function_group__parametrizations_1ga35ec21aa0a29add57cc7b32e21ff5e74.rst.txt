@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga35ec21aa0a29add57cc7b32e21ff5e74:
+
+Template Function particle_velocity
+===================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: particle_velocity(const float_t&, const float_t&, const float_t&)

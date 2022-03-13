@@ -1,0 +1,22 @@
+.. _dir_include_misc:
+
+
+Directory misc
+==============
+
+
+|exhale_lsh| :ref:`Parent directory <dir_include>` (``include``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+*Directory path:* ``include/misc``
+
+
+Files
+-----
+
+- :ref:`file_include_misc_error.h`
+- :ref:`file_include_misc_general.h`
+- :ref:`file_include_misc_pbar.h`
+
+

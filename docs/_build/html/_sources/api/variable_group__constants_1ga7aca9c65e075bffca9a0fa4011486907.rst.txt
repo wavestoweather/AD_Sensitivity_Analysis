@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga7aca9c65e075bffca9a0fa4011486907:
+
+Variable rain_beta
+==================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: rain_beta

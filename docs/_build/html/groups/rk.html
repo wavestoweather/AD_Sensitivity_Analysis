@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
         <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
         <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
@@ -35,6 +35,8 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -83,7 +85,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ufunc.html">User Functions</a></li>
@@ -92,11 +94,11 @@
 <li class="toctree-l1"><a class="reference internal" href="types.html">Custom Types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="general.html">General Functions</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Example Results</span></p>
+<p class="caption" role="heading"><span class="caption-text">Example Results</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">Full C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">C++ API</a></li>
 </ul>
@@ -165,60 +167,20 @@
             
   <div class="section" id="runge-kutta-4">
 <h1>Runge-Kutta 4<a class="headerlink" href="#runge-kutta-4" title="Permalink to this headline">¶</a></h1>
-<dl class="group">
-<dt>
-<span class="target" id="group__rk"></span><em>group</em> <code class="sig-name descname">rk</code></dt>
+<dl>
+<dt class="sig sig-object">
+<span class="target" id="group__rk"></span><em><span class="pre">group</span></em> <span class="sig-name descname"><span class="pre">rk</span></span></dt>
 <dd><p>This file provides the function for a single step with the Runge-Kutta 4 method. </p>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric">Functions</p>
 <dl class="cpp function">
-<dt id="_CPPv48RK4_stepRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERK22reference_quantities_tR17model_constants_tR15nc_parameters_tb">
-<span id="_CPPv38RK4_stepRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERK22reference_quantities_tR17model_constants_tR15nc_parameters_tb"></span><span id="_CPPv28RK4_stepRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERK22reference_quantities_tR17model_constants_tR15nc_parameters_tb"></span><span id="RK4_step__std::vector:codi::RealReverse:R.std::vector:codi::RealReverse:R.reference_quantities_tCR.model_constants_tR.nc_parameters_tR.b"></span><span class="target" id="group__rk_1gab50ab9a467d2634225be0a4cc4254dfd"></span>void <code class="sig-name descname">RK4_step</code><span class="sig-paren">(</span>std::vector&lt;codi::RealReverse&gt; &amp;<em>ynew</em>, std::vector&lt;codi::RealReverse&gt; &amp;<em>yold</em>, <em class="property">const</em> <a class="reference internal" href="../api/structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t">reference_quantities_t</a> &amp;<em>ref</em>, <a class="reference internal" href="../api/structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em>, <a class="reference internal" href="../api/structnc__parameters__t.html#_CPPv415nc_parameters_t" title="nc_parameters_t">nc_parameters_t</a> &amp;<em>nc</em>, bool <em>fixed</em><span class="sig-paren">)</span><br /></dt>
-<dd><p>Compute a single step using the Runge-Kutta 4 method for the ODE <div class="math">
-<p><img src="../_images/math/835a441ec563b4c4d8fc0fcbbf1bddf197f56f6f.png" alt="y' = \text{RHS}(y)"/></p>
-</div> with old system state yold and new system state ynew. It uses the 1 moment bulk scheme from 10.1175/JAS3980</p>
-<p><dl class="simple">
-<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">ynew</span></code>: On out: new system state </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">yold</span></code>: Old system state </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ref</span></code>: Pointer to reference quantities to transform between units </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: Pointer to constants from the model </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">nc</span></code>: Pointer to parameters from the netCDF file </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">fixed</span></code>: If True: Do not change pressure, temperature and ascent (w) </p></li>
-</ul>
-</dd>
-</dl>
-</p>
-</dd></dl>
-
-<dl class="cpp function">
-<dt id="_CPPv417RK4_step_2_no_iceRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERK22reference_quantities_tR17model_constants_tR15nc_parameters_tb">
-<span id="_CPPv317RK4_step_2_no_iceRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERK22reference_quantities_tR17model_constants_tR15nc_parameters_tb"></span><span id="_CPPv217RK4_step_2_no_iceRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERK22reference_quantities_tR17model_constants_tR15nc_parameters_tb"></span><span id="RK4_step_2_no_ice__std::vector:codi::RealReverse:R.std::vector:codi::RealReverse:R.reference_quantities_tCR.model_constants_tR.nc_parameters_tR.b"></span><span class="target" id="group__rk_1ga4625a1a080d90bf616e260edbcf45125"></span>void <code class="sig-name descname">RK4_step_2_no_ice</code><span class="sig-paren">(</span>std::vector&lt;codi::RealReverse&gt; &amp;<em>ynew</em>, std::vector&lt;codi::RealReverse&gt; &amp;<em>yold</em>, <em class="property">const</em> <a class="reference internal" href="../api/structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t">reference_quantities_t</a> &amp;<em>ref</em>, <a class="reference internal" href="../api/structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em>, <a class="reference internal" href="../api/structnc__parameters__t.html#_CPPv415nc_parameters_t" title="nc_parameters_t">nc_parameters_t</a> &amp;<em>nc</em>, bool <em>fixed</em><span class="sig-paren">)</span><br /></dt>
-<dd><p>Compute a single step using the Runge-Kutta 4 method for the ODE <div class="math">
-<p><img src="../_images/math/835a441ec563b4c4d8fc0fcbbf1bddf197f56f6f.png" alt="y' = \text{RHS}(y)"/></p>
-</div> with old system state yold and new system state ynew. It uses the 2 moment bulk scheme from 10.1175/JAS3980 without ice.</p>
-<p><dl class="simple">
-<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">ynew</span></code>: On out: new system state </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">yold</span></code>: Old system state </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ref</span></code>: Pointer to reference quantities to transform between units </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: Pointer to constants from the model </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">nc</span></code>: Pointer to parameters from the netCDF file </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">fixed</span></code>: If True: Do not change pressure, temperature and ascent (w) </p></li>
-</ul>
-</dd>
-</dl>
-</p>
-</dd></dl>
-
-<dl class="cpp function">
-<dt id="_CPPv4I0E10set_limitsvRNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_t">
-<span id="_CPPv3I0E10set_limitsRNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_t"></span><span id="_CPPv2I0E10set_limitsRNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_t"></span>template&lt;class <code class="sig-name descname">float_t</code>&gt;<br /><span class="target" id="group__rk_1gab2e87ea5f74ec70dbb4b911743e48b03"></span>void <code class="sig-name descname">set_limits</code><span class="sig-paren">(</span>std::vector&lt;<a class="reference internal" href="../api/function_group__rk_1gab2e87ea5f74ec70dbb4b911743e48b03.html#_CPPv4I0E10set_limitsvRNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_t" title="set_limits::float_t">float_t</a>&gt; &amp;<em>y</em>, <em class="property">const</em> <a class="reference internal" href="../api/structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t">reference_quantities_t</a> &amp;<em>ref</em>, <a class="reference internal" href="../api/structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em><span class="sig-paren">)</span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4I0E10set_limitsvRNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tE">
+<span id="_CPPv3I0E10set_limitsRNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tE"></span><span id="_CPPv2I0E10set_limitsRNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="group__rk_1ga2c368b4748835b79295b09b369805733"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_limits</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../api/function_group__rk_1ga2c368b4748835b79295b09b369805733.html#_CPPv4I0E10set_limitsvRNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tE" title="set_limits::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">y</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../api/structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t"><span class="n"><span class="pre">reference_quantities_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref</span></span>, <a class="reference internal" href="../api/structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../api/function_group__rk_1ga2c368b4748835b79295b09b369805733.html#_CPPv4I0E10set_limitsvRNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tE" title="set_limits::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span><span class="sig-paren">)</span><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv417RK4_step_2_sb_iceRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERK22reference_quantities_tR17model_constants_tR15nc_parameters_tb">
-<span id="_CPPv317RK4_step_2_sb_iceRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERK22reference_quantities_tR17model_constants_tR15nc_parameters_tb"></span><span id="_CPPv217RK4_step_2_sb_iceRNSt6vectorIN4codi11RealReverseEEERNSt6vectorIN4codi11RealReverseEEERK22reference_quantities_tR17model_constants_tR15nc_parameters_tb"></span><span id="RK4_step_2_sb_ice__std::vector:codi::RealReverse:R.std::vector:codi::RealReverse:R.reference_quantities_tCR.model_constants_tR.nc_parameters_tR.b"></span><span class="target" id="group__rk_1gac944a753a97ca0f47dbf43a64075e344"></span>void <code class="sig-name descname">RK4_step_2_sb_ice</code><span class="sig-paren">(</span>std::vector&lt;codi::RealReverse&gt; &amp;<em>ynew</em>, std::vector&lt;codi::RealReverse&gt; &amp;<em>yold</em>, <em class="property">const</em> <a class="reference internal" href="../api/structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t">reference_quantities_t</a> &amp;<em>ref</em>, <a class="reference internal" href="../api/structmodel__constants__t.html#_CPPv417model_constants_t" title="model_constants_t">model_constants_t</a> &amp;<em>cc</em>, <a class="reference internal" href="../api/structnc__parameters__t.html#_CPPv415nc_parameters_t" title="nc_parameters_t">nc_parameters_t</a> &amp;<em>nc</em>, bool <em>fixed</em><span class="sig-paren">)</span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4I0E17RK4_step_2_sb_icevRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tEb">
+<span id="_CPPv3I0E17RK4_step_2_sb_iceRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tEb"></span><span id="_CPPv2I0E17RK4_step_2_sb_iceRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tEb"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="group__rk_1ga7f7162c3651bd34188f099ffbc24f0a5"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RK4_step_2_sb_ice</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../api/function_group__rk_1ga7f7162c3651bd34188f099ffbc24f0a5.html#_CPPv4I0E17RK4_step_2_sb_icevRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tEb" title="RK4_step_2_sb_ice::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ynew</span></span>, <span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../api/function_group__rk_1ga7f7162c3651bd34188f099ffbc24f0a5.html#_CPPv4I0E17RK4_step_2_sb_icevRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tEb" title="RK4_step_2_sb_ice::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">yold</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../api/structreference__quantities__t.html#_CPPv422reference_quantities_t" title="reference_quantities_t"><span class="n"><span class="pre">reference_quantities_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ref</span></span>, <a class="reference internal" href="../api/structmodel__constants__t.html#_CPPv4I0E17model_constants_t" title="model_constants_t"><span class="n"><span class="pre">model_constants_t</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../api/function_group__rk_1ga7f7162c3651bd34188f099ffbc24f0a5.html#_CPPv4I0E17RK4_step_2_sb_icevRNSt6vectorI7float_tEERNSt6vectorI7float_tEERK22reference_quantities_tR17model_constants_tI7float_tEb" title="RK4_step_2_sb_ice::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cc</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">fixed</span></span><span class="sig-paren">)</span><br /></dt>
 <dd><p>Compute a single step using the Runge-Kutta 4 method for the ODE <div class="math">
 <p><img src="../_images/math/835a441ec563b4c4d8fc0fcbbf1bddf197f56f6f.png" alt="y' = \text{RHS}(y)"/></p>
 </div> with old system state yold and new system state ynew. It uses the 2 moment bulk scheme from 10.1175/JAS3980 with ice.</p>
@@ -228,7 +190,6 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">yold</span></code>: Old system state </p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ref</span></code>: Pointer to reference quantities to transform between units </p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cc</span></code>: Pointer to constants from the model </p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">nc</span></code>: Pointer to parameters from the netCDF file </p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">fixed</span></code>: If True: Do not change pressure, temperature and ascent (w) </p></li>
 </ul>
 </dd>

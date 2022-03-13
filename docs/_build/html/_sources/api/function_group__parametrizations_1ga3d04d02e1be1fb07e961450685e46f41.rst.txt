@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga3d04d02e1be1fb07e961450685e46f41:
+
+Template Function rain_mue_dm_relation_sb
+=========================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: rain_mue_dm_relation_sb(const float_t&, const float_t&, const float_t&, const float_t&, const float_t&, const float_t&)

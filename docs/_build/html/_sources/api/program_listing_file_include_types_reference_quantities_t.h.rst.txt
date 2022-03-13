@@ -1,0 +1,23 @@
+
+.. _program_listing_file_include_types_reference_quantities_t.h:
+
+Program Listing for File reference_quantities_t.h
+=================================================
+
+|exhale_lsh| :ref:`Return to documentation for file <file_include_types_reference_quantities_t.h>` (``include/types/reference_quantities_t.h``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. code-block:: cpp
+
+   #pragma once
+   
+   struct reference_quantities_t{
+     double Tref;          
+     double pref;          
+     double qref;          
+     double wref;          
+     double tref;          
+     double zref;          
+     double Nref;          
+   };

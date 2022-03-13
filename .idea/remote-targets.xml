@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="mahieron@hameed.zdv.uni-mainz.de:22" type="ssh/sftp" uuid="925effd6-498e-4f2c-a6e3-132e0cfbb08e">
+        <config>
+          <option name="projectRootOnTarget" value="/mnt/localscratch/data/Software/remote/process_plot_scripts" />
+          <option name="serverName" value="mahieron@hameed.zdv.uni-mainz.de:22 key" />
+          <option name="useRsync" value="true" />
+        </config>
+      </target>
+    </targets>
+  </component>
+</project>

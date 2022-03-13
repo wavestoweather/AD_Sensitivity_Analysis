@@ -16,6 +16,7 @@ struct netcdf_reader_t {
     uint64_t n_ensembles;
     uint64_t n_trajectories;
     // double dlon, dlat;
+    bool start_time_idx_given; /*!< True if start_time_idx is given by the user. */
     uint64_t start_time_idx; /*!< The start time index. */
     uint64_t start_time_idx_original; /*!< The initial start time index. */
     uint64_t time_idx; /*!< Current index to read from netcdf file. */
@@ -56,7 +57,8 @@ struct netcdf_reader_t {
 
     /**
      * Set dimids of this object and set the maximum amount of trajectories and
-     * ensembles in cc.
+     * ensembles in cc. Sets pressure in reference quantities. Default is 1e5
+     * for Pa, otherwise hPa with 1e3 is possible as well.
      *
      * @param input_file Path to file to read
      * @param cc Model constants with number of ensembles and trajectories on return
@@ -150,6 +152,7 @@ struct netcdf_reader_t {
     uint32_t ens_idx; /*!< Index of ensemble to read from. */
     bool already_open; /*!< Is the netCDF file already open? */
     uint32_t n_subs; /*!< Time step size of model from file / size of this model . */
+    double pascal_conv; /*!< Convert pressure to Pa even if it is stored as hPa. */
 
     /**
      * ID for dimensions of output file.

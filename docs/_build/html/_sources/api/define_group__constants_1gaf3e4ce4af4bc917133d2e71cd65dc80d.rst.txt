@@ -1,0 +1,13 @@
+.. _exhale_define_group__constants_1gaf3e4ce4af4bc917133d2e71cd65dc80d:
+
+Define n_inact_idx
+==================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Define Documentation
+--------------------
+
+
+.. doxygendefine:: n_inact_idx

@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gab06b3fdcd85c25ed3ddb70fb8f073d94:
+
+Variable cloud_a_vel
+====================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: cloud_a_vel

@@ -3,12 +3,13 @@
 #include <cmath>
 #include <string>
 
-#include <boost/property_tree/ptree.hpp>
+// #include <boost/property_tree/ptree.hpp>
+#include <nlohmann/json.hpp>
 
 #include "include/misc/error.h"
 #include "include/types/global_args_t.h"
 
-namespace pt = boost::property_tree;
+// namespace pt = boost::property_tree;
 
 /**
  * Structure to collect all input parameters.
@@ -54,14 +55,14 @@ struct input_parameters_t {
 
     input_parameters_t();
 
-    void put(pt::ptree &ptree, const double &time) const;
+    // void put(pt::ptree &ptree, const double &time) const;
 
-    void put(pt::ptree &ptree) const;
+    // void put(pt::ptree &ptree) const;
 
     /**
      * Set values from property tree used in reading checkpoint files.
      */
-    int from_pt(pt::ptree &ptree);
+    // int from_pt(pt::ptree &ptree);
 
     /**
      * Set the input parameters with the data from the global arguments.
@@ -75,4 +76,9 @@ struct input_parameters_t {
      * Print all given input parameters.
      */
     void print_parameters();
+
+    void to_json(nlohmann::json &j, const double &time) const;
 };
+
+void to_json(nlohmann::json &j, const input_parameters_t &input);
+void from_json(const nlohmann::json &j, input_parameters_t &input);

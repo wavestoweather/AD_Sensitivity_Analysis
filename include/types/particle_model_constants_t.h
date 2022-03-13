@@ -3,12 +3,14 @@
 #include <string>
 #include <vector>
 
-#include <boost/property_tree/ptree.hpp>
+// #include <boost/property_tree/ptree.hpp>
+#include <nlohmann/json.hpp>
+
 #include "codi.hpp"
 
 #include "include/microphysics/constants.h"
 
-namespace pt = boost::property_tree;
+// namespace pt = boost::property_tree;
 
 /**
  * Struct to hold all model constants regarding particles that we want to
@@ -51,7 +53,7 @@ struct particle_model_constants_t{
         uint32_t &idx,
         const bool info = false) const;
 
-    void put(pt::ptree &ptree, const std::string &type_name) const;
+    // void put(pt::ptree &ptree, const std::string &type_name) const;
 
     /**
      * Set any perturbed parameter from the property tree.
@@ -61,7 +63,7 @@ struct particle_model_constants_t{
      *
      * @returns Errorcode
      */
-    int from_pt(pt::ptree &ptree);
+    // int from_pt(pt::ptree &ptree);
 
     /**
      * Print the constants used for this particle.
@@ -69,4 +71,9 @@ struct particle_model_constants_t{
      * @param title Name of particle
      */
     void print(const std::string &title);
+
+    int from_json(const nlohmann::json& j);
 };
+
+template<class float_t>
+void to_json(nlohmann::json& j, const particle_model_constants_t<float_t>& p);

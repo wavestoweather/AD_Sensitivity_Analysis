@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1gaac525e5cae9580129604e9341dc27106:
+
+Template Function setup_bulk_sedi
+=================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: setup_bulk_sedi(particle_model_constants_t<float_t>&)

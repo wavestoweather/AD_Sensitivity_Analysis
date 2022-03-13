@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gac12374d5d43e7b67f4c285cdc9c22b5b:
+
+Variable graupel_max_x
+======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: graupel_max_x

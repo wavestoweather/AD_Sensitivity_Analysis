@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga455034db6de4fbc192a72a0455d0e6f4:
+
+Template Function wet_growth_diam
+=================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: wet_growth_diam(const float_t&, const float_t&, const float_t&, const float_t&, const table_t<float_t>&)

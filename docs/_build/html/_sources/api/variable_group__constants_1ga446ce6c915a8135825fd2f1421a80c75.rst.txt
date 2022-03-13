@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga446ce6c915a8135825fd2f1421a80c75:
+
+Variable snow_min_x
+===================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: snow_min_x

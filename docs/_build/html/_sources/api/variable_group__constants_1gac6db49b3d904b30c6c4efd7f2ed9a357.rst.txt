@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gac6db49b3d904b30c6c4efd7f2ed9a357:
+
+Variable rho_vel_c
+==================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: rho_vel_c

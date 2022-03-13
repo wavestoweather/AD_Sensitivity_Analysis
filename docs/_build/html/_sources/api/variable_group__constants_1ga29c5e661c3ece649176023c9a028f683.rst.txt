@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga29c5e661c3ece649176023c9a028f683:
+
+Variable graupel_q_crit_c
+=========================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: graupel_q_crit_c

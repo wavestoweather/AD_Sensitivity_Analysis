@@ -125,11 +125,12 @@ typedef bool(*track_func)(const int&, const bool&);
  */
 #define grid_sensitivity 3
 /**
- * Input data is a sinlge trajectory. Perturbed ensembles are started according
+ * Input data is a single trajectory. Perturbed ensembles are started according
  * to the ensemble configuration file.
  * The output contains sensitivities.
  */
 #define limited_time_ensembles 4
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Random generators
@@ -145,8 +146,8 @@ extern bool trace;
 #if defined(TRACE_TIME)
 // Relative to ascent time
 extern double trace_time;
-const double trace_start = -1000;
-const double trace_end = 3500;
+const double trace_start = 0;
+const double trace_end = 180;
 #endif
 
 #if defined(RK4_ONE_MOMENT)
@@ -1513,12 +1514,12 @@ const double M_w = 0.018015265;
 const double M_a = 0.02896546;
 
 /**
- * Gas constant for water vapor, unit: J/(kg*K)
+ * Gas constant for water vapor, unit: \f$\text{J}/\text{K}/\text{kg}\f$
  */
 const double R_v = R_universal/M_w;  //  461.51 in ICON
 
 /**
- * Gas constant for dry air, unit: J/(kg*K)
+ * Gas constant for dry air, unit: \f$\text{J}/\text{K}/\text{kg}\f$
  */
 const double R_a = R_universal/M_a;
 

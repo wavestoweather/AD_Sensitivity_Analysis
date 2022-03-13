@@ -3,10 +3,10 @@ cd ..
 AD_SIM_HOME=$(pwd)
 
 # Set to the number of threads or CPUs in case you want to run ensemble simulations
-NTASKS=4
+NTASKS=6
 
 # The simulation mode determines how multiple processes are used
-# ensembles at different time steps and sensitvity analysis 0
+# ensembles at different time steps and sensitivity analysis 0
 # sensitivity analysis 1
 # ensembles at different time steps 2
 # sensitivity analysis on grids 3
@@ -27,17 +27,19 @@ SNAPSHOT_INDEX="1"
 FIXED_ITERATION="0"
 # Warm up time in seconds for the model before any data is tracked
 WARM_UP="1800"
-# Wether to take the data from the netcdf-file every 20 seconds (=1)
+# Whether to take the data from the netcdf-file every 20 seconds (=1)
 # or just use the initial pressure, temperature and ascent
 # from the file and simulate microphysics
 # until the target time is reached (=0 not recommended)
 START_OVER_ENVIRONMENT="1"
 # If you want to see a progressbar, set the value to 500 or above.
-# The sumulation is rather fast, hence we set it off (=0).
+# The simulation is rather fast, hence we set it off (=0).
 # The number indicates how many iterations are done between updates of
-# the progressbar. On an Intel i7 there are between 1000 and 4000 steps per
+# the progressbar. On an Intel i7 there are between 450 and 500 steps per
 # second.
-PROGRESSBAR="0"
+PROGRESSBAR="500"
+TRAJ="0"
+TRACK_FILE=${AD_SIM_HOME}/configs/james_sens_config.json
 
 for FILENAME in "no_exclusions_conv_400_quan25" "no_exclusions_conv_400_median" "no_exclusions_conv_400_quan75" "no_exclusions_conv_600_quan25" "no_exclusions_conv_600_median"  "no_exclusions_conv_600_quan75"
 do
@@ -54,11 +56,13 @@ do
         SUFF=${SUFF%.*}
 
         INPUT_FILENAME="${AD_SIM_HOME}/data/vladiana_trajectories/${FILENAME}.nc_wcb"
-        TARGET_TIME_AFTER_START="27800"
+        TARGET_TIME_AFTER_START="26000"
 
         echo "###################################"
         echo "Running for ${INPUT_FILENAME} while perturbing ${SUFF}"
         echo ""
+        start=`date +%s.%N`
+        # optional in case of problems occur: mpirun --mca osc pt2pt
 
         mpirun -n ${NTASKS} build/bin/./trajectories \
         -w ${WRITE_INDEX} \
@@ -68,13 +72,19 @@ do
         -d ${TIMESTEP} \
         -i ${SNAPSHOT_INDEX} \
         -b ${SIMULATION_MODE} \
-        -o ${OUTPUT_PATH}${SUFF}".nc_wcb" \
+        -o ${OUTPUT_PATH}${SUFF}".nc" \
         -e ${START_OVER_ENVIRONMENT} \
         -p ${PROGRESSBAR} \
         -l ${INPUT_FILENAME} \
         -n ${START_TIME} \
-        -r 0 \
+        -s ${TRACK_FILE} \
+        -r ${TRAJ} \
         -m ${ENSEMBLE_CONFIG} \
         -u ${WARM_UP}
+
+        end=`date +%s.%N`
+        runtime=$( echo "$end - $start" | bc -l )
+
+        echo "done in ${runtime} s"
     done
 done

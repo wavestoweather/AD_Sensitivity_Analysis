@@ -1,0 +1,13 @@
+.. _exhale_function_group__rk_1ga7f7162c3651bd34188f099ffbc24f0a5:
+
+Template Function RK4_step_2_sb_ice
+===================================
+
+- Defined in :ref:`file_include_microphysics_rk4.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: RK4_step_2_sb_ice(std::vector<float_t>&, std::vector<float_t>&, const reference_quantities_t&, model_constants_t<float_t>&, bool)

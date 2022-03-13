@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga7a53171befa628e7350e814cfed82e6f:
+
+Variable p_sat_ice_const_a
+==========================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: p_sat_ice_const_a

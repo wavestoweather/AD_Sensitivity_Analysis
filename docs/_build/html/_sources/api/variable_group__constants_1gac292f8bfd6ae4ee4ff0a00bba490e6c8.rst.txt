@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gac292f8bfd6ae4ee4ff0a00bba490e6c8:
+
+Variable hail_s_vel
+===================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: hail_s_vel

@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gacf0a818e839f4119d7a8952f49672b02:
+
+Variable s_sstep
+================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: s_sstep

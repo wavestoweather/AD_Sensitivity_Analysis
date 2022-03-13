@@ -1,0 +1,48 @@
+
+.. _program_listing_file_include_types_table_t.h:
+
+Program Listing for File table_t.h
+==================================
+
+|exhale_lsh| :ref:`Return to documentation for file <file_include_types_table_t.h>` (``include/types/table_t.h``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. code-block:: cpp
+
+   #pragma once
+   
+   #include <vector>
+   #include "codi.hpp"
+   
+   #include "include/microphysics/constants.h"
+   
+   // A 4D lookup table
+   template<class float_t>
+   struct table_t{
+       uint64_t n1;
+       uint64_t n2;
+       uint64_t n3;
+       uint64_t n4;
+   
+       std::vector<float_t> x1; 
+       std::vector<float_t> x2; 
+       std::vector<float_t> x3; 
+       std::vector<float_t> x4; 
+       float_t dx1; 
+       float_t dx2; 
+       float_t dx3; 
+       float_t dx4; 
+       float_t odx1; 
+       float_t odx2; 
+       float_t odx3; 
+       float_t odx4; 
+       std::vector<float_t> table; 
+       table_t();
+   
+       float_t get(
+           const uint64_t i,
+           const uint64_t j,
+           const uint64_t k,
+           const uint64_t l) const;
+   };

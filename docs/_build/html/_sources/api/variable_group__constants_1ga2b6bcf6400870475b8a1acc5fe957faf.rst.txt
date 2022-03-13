@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga2b6bcf6400870475b8a1acc5fe957faf:
+
+Variable hail_vsedi_min
+=======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: hail_vsedi_min

@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga036ffede89385a03e4b9d296df00ef6b:
+
+Variable b_dep
+==============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: b_dep

@@ -1,0 +1,375 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Struct task_scheduler_t &mdash; Process and Plot Scripts 1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Class ProgressBar" href="classProgressBar.html" />
+    <link rel="prev" title="Template Struct table_t" href="structtable__t.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Process and Plot Scripts
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Grouped C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/io.html">Input/Output Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/parametrizations.html">Physical Parametrizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example Results</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Full C++ Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Process and Plot Scripts</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="library_root.html">C++ API</a> &raquo;</li>
+        
+      <li>Struct task_scheduler_t</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/structtask__scheduler__t.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="struct-task-scheduler-t">
+<span id="exhale-struct-structtask-scheduler-t"></span><h1>Struct task_scheduler_t<a class="headerlink" href="#struct-task-scheduler-t" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_include_types_task_scheduler_t.h.html#file-include-types-task-scheduler-t-h"><span class="std std-ref">File task_scheduler_t.h</span></a></p></li>
+</ul>
+<div class="section" id="struct-documentation">
+<h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv416task_scheduler_t">
+<span id="_CPPv316task_scheduler_t"></span><span id="_CPPv216task_scheduler_t"></span><span id="task_scheduler_t"></span><span class="target" id="structtask__scheduler__t"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">task_scheduler_t</span></span></span><a class="headerlink" href="#_CPPv416task_scheduler_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Put all emerging trajectories to be calculated on a queue where every process can check for new work. If all processes are finished, the scheduler signals every process to finish up.</p>
+<p>Idea: Rank 0 solely distributes tasks and sets any process to busy. Rank 0 sends its own tasks or sends to a process with available work a rank id to send its own tasks to. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t16task_scheduler_tERKiRKiRKi">
+<span id="_CPPv3N16task_scheduler_t16task_scheduler_tERKiRKiRKi"></span><span id="_CPPv2N16task_scheduler_t16task_scheduler_tERKiRKiRKi"></span><span id="task_scheduler_t::task_scheduler_t__iCR.iCR.iCR"></span><span class="target" id="structtask__scheduler__t_1af31f0fa36e24ded792de75bce6052005"></span><span class="sig-name descname"><span class="n"><span class="pre">task_scheduler_t</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rank</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n_processes</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simulation_mode</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16task_scheduler_t16task_scheduler_tERKiRKiRKi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t9send_taskER12checkpoint_tKb">
+<span id="_CPPv3N16task_scheduler_t9send_taskER12checkpoint_tKb"></span><span id="_CPPv2N16task_scheduler_t9send_taskER12checkpoint_tKb"></span><span id="task_scheduler_t::send_task__checkpoint_tR.bC"></span><span class="target" id="structtask__scheduler__t_1a78ae70b85fbd225efe6c1c1731895f96"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">send_task</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structcheckpoint__t.html#_CPPv412checkpoint_t" title="checkpoint_t"><span class="n"><span class="pre">checkpoint_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">checkpoint</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">send_to_self</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16task_scheduler_t9send_taskER12checkpoint_tKb" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Check if someone is available to send a task from queue to and send it. <dl class="simple">
+<dt><strong>Return</strong></dt><dd><p>True if own queue is where it shall be sent to. </p>
+</dd>
+<dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">checkpoint</span></code>: on out: checkpoint if receiver and sender are the same </p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">send_to_self</span></code>: If true: allow to store checkpoint in checkpoint for further use. </p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t13send_new_taskER12checkpoint_t">
+<span id="_CPPv3N16task_scheduler_t13send_new_taskER12checkpoint_t"></span><span id="_CPPv2N16task_scheduler_t13send_new_taskER12checkpoint_t"></span><span id="task_scheduler_t::send_new_task__checkpoint_tR"></span><span class="target" id="structtask__scheduler__t_1a77b3d6796e528345945e7b4d21a43ff1"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">send_new_task</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structcheckpoint__t.html#_CPPv412checkpoint_t" title="checkpoint_t"><span class="n"><span class="pre">checkpoint_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">checkpoint</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16task_scheduler_t13send_new_taskER12checkpoint_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Checks if any worker is free and send it a new task. If all workers are busy, add the task to its queue for later sends. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t8all_freeEv">
+<span id="_CPPv3N16task_scheduler_t8all_freeEv"></span><span id="_CPPv2N16task_scheduler_t8all_freeEv"></span><span id="task_scheduler_t::all_free"></span><span class="target" id="structtask__scheduler__t_1a8d307817f99770a6213f1e680954ebbf"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">all_free</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16task_scheduler_t8all_freeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t12receive_taskER12checkpoint_t">
+<span id="_CPPv3N16task_scheduler_t12receive_taskER12checkpoint_t"></span><span id="_CPPv2N16task_scheduler_t12receive_taskER12checkpoint_t"></span><span id="task_scheduler_t::receive_task__checkpoint_tR"></span><span class="target" id="structtask__scheduler__t_1ab3f197ced9165900a8dcdfc8eec81796"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">receive_task</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structcheckpoint__t.html#_CPPv412checkpoint_t" title="checkpoint_t"><span class="n"><span class="pre">checkpoint_t</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">checkpoint</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16task_scheduler_t12receive_taskER12checkpoint_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Busy waiting until a new task is available and returns true. If all processes are waiting, then no more work is available and it returns false, signaling that all processes are finished. Returns immediately if static scheduling is enabled.</p>
+<p><dl class="simple">
+<dt><strong>Return</strong></dt><dd><p>False if all processes are finished and there is no new work True if new work had been found and loaded. </p>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t11signal_freeEv">
+<span id="_CPPv3N16task_scheduler_t11signal_freeEv"></span><span id="_CPPv2N16task_scheduler_t11signal_freeEv"></span><span id="task_scheduler_t::signal_free"></span><span class="target" id="structtask__scheduler__t_1afa138d3384fc486d587e968d9e8e75f0"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">signal_free</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16task_scheduler_t11signal_freeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Broadcast to other processes that this process is free for work. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t17signal_work_availEv">
+<span id="_CPPv3N16task_scheduler_t17signal_work_availEv"></span><span id="_CPPv2N16task_scheduler_t17signal_work_availEv"></span><span id="task_scheduler_t::signal_work_avail"></span><span class="target" id="structtask__scheduler__t_1a885f103aeb4762a4661b4f3ed5724963"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">signal_work_avail</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16task_scheduler_t17signal_work_availEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Signal to rank 0 how much work is available. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t15set_n_ensemblesERKi">
+<span id="_CPPv3N16task_scheduler_t15set_n_ensemblesERKi"></span><span id="_CPPv2N16task_scheduler_t15set_n_ensemblesERKi"></span><span id="task_scheduler_t::set_n_ensembles__iCR"></span><span class="target" id="structtask__scheduler__t_1ae968f856e1e6d82df9cb41c476e6e7e7"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_n_ensembles</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16task_scheduler_t15set_n_ensemblesERKi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t18set_n_trajectoriesERKi">
+<span id="_CPPv3N16task_scheduler_t18set_n_trajectoriesERKi"></span><span id="_CPPv2N16task_scheduler_t18set_n_trajectoriesERKi"></span><span id="task_scheduler_t::set_n_trajectories__iCR"></span><span class="target" id="structtask__scheduler__t_1abeb8d6c808edf501ec9c12026e7ec5c7"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_n_trajectories</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16task_scheduler_t18set_n_trajectoriesERKi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16task_scheduler_t15get_n_ensemblesEv">
+<span id="_CPPv3NK16task_scheduler_t15get_n_ensemblesEv"></span><span id="_CPPv2NK16task_scheduler_t15get_n_ensemblesEv"></span><span id="task_scheduler_t::get_n_ensemblesC"></span><span class="target" id="structtask__scheduler__t_1ac6a8ef85a271adcbed17eab1058850c0"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_n_ensembles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16task_scheduler_t15get_n_ensemblesEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16task_scheduler_t18get_n_trajectoriesEv">
+<span id="_CPPv3NK16task_scheduler_t18get_n_trajectoriesEv"></span><span id="_CPPv2NK16task_scheduler_t18get_n_trajectoriesEv"></span><span id="task_scheduler_t::get_n_trajectoriesC"></span><span class="target" id="structtask__scheduler__t_1abbe7ec2cc26001226d0358d0f913eaba"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_n_trajectories</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16task_scheduler_t18get_n_trajectoriesEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK16task_scheduler_t15get_n_processesEv">
+<span id="_CPPv3NK16task_scheduler_t15get_n_processesEv"></span><span id="_CPPv2NK16task_scheduler_t15get_n_processesEv"></span><span id="task_scheduler_t::get_n_processesC"></span><span class="target" id="structtask__scheduler__t_1adf83d9e3b8451515ae3f534442ba9c62"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_n_processes</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK16task_scheduler_t15get_n_processesEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t11current_ensE">
+<span id="_CPPv3N16task_scheduler_t11current_ensE"></span><span id="_CPPv2N16task_scheduler_t11current_ensE"></span><span id="task_scheduler_t::current_ens__uint64_t"></span><span class="target" id="structtask__scheduler__t_1aa61875a948aa1a3920154d39e3a18b08"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">current_ens</span></span></span><a class="headerlink" href="#_CPPv4N16task_scheduler_t11current_ensE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t12current_trajE">
+<span id="_CPPv3N16task_scheduler_t12current_trajE"></span><span id="_CPPv2N16task_scheduler_t12current_trajE"></span><span id="task_scheduler_t::current_traj__i"></span><span class="target" id="structtask__scheduler__t_1ad82bc8b091eb5d00dcd050939815cdc0"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">current_traj</span></span></span><a class="headerlink" href="#_CPPv4N16task_scheduler_t12current_trajE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t16checkpoint_queueE">
+<span id="_CPPv3N16task_scheduler_t16checkpoint_queueE"></span><span id="_CPPv2N16task_scheduler_t16checkpoint_queueE"></span><span id="task_scheduler_t::checkpoint_queue__std::queue:checkpoint_t:"></span><span class="target" id="structtask__scheduler__t_1a4d10f8bf674b44171a976dfbf15f24ef"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">queue</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="structcheckpoint__t.html#_CPPv412checkpoint_t" title="checkpoint_t"><span class="n"><span class="pre">checkpoint_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">checkpoint_queue</span></span></span><a class="headerlink" href="#_CPPv4N16task_scheduler_t16checkpoint_queueE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>A queue of all the available work to send to someone in case all are busy at the moment. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t11free_workerE">
+<span id="_CPPv3N16task_scheduler_t11free_workerE"></span><span id="_CPPv2N16task_scheduler_t11free_workerE"></span><span id="task_scheduler_t::free_worker__std::vector:i:"></span><span class="target" id="structtask__scheduler__t_1ade05e1483e7f7f2a262b0d6247002102"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">free_worker</span></span></span><a class="headerlink" href="#_CPPv4N16task_scheduler_t11free_workerE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>A list of all ranks with 0 being busy and 1 free for work. Rank 0 is allowed to set it as busy if it sends a task or allows another rank to send a task. Every other rank can use MPI_Put for its own idx to signal it is free. If free_worker[0] == 2, then all processes are finished. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t14work_availableE">
+<span id="_CPPv3N16task_scheduler_t14work_availableE"></span><span id="_CPPv2N16task_scheduler_t14work_availableE"></span><span id="task_scheduler_t::work_available__std::vector:i:"></span><span class="target" id="structtask__scheduler__t_1a5a56aa30aa3672476f2fded728e85b27"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">work_available</span></span></span><a class="headerlink" href="#_CPPv4N16task_scheduler_t14work_availableE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Number of work available at rank idx but not sent yet. Rank 0 can reduce it with each signal by one. Each rank can modify its own idx with MPI_Put in case it just took over its own available work or found new one that could not be sent. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t15max_ensemble_idE">
+<span id="_CPPv3N16task_scheduler_t15max_ensemble_idE"></span><span id="_CPPv2N16task_scheduler_t15max_ensemble_idE"></span><span id="task_scheduler_t::max_ensemble_id__uint64_t"></span><span class="target" id="structtask__scheduler__t_1ae012711aadccbc58c9ca29597e930a39"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">max_ensemble_id</span></span></span><a class="headerlink" href="#_CPPv4N16task_scheduler_t15max_ensemble_idE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>If 1 at idx then send work to process idx. Store the maximum ensemble id that had been created. rank 0: Always has the maximum number at hand. rank &gt; 0: not necessarily up to date. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t11free_windowE">
+<span id="_CPPv3N16task_scheduler_t11free_windowE"></span><span id="_CPPv2N16task_scheduler_t11free_windowE"></span><span id="task_scheduler_t::free_window__MPI_Win"></span><span class="target" id="structtask__scheduler__t_1a8713f4e0d0f521b063cf075ebf9ebc49"></span><span class="n"><span class="pre">MPI_Win</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">free_window</span></span></span><a class="headerlink" href="#_CPPv4N16task_scheduler_t11free_windowE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t11work_windowE">
+<span id="_CPPv3N16task_scheduler_t11work_windowE"></span><span id="_CPPv2N16task_scheduler_t11work_windowE"></span><span id="task_scheduler_t::work_window__MPI_Win"></span><span class="target" id="structtask__scheduler__t_1a50dc59d59616b865c4603c8dbe3ff43b"></span><span class="n"><span class="pre">MPI_Win</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">work_window</span></span></span><a class="headerlink" href="#_CPPv4N16task_scheduler_t11work_windowE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t10ens_windowE">
+<span id="_CPPv3N16task_scheduler_t10ens_windowE"></span><span id="_CPPv2N16task_scheduler_t10ens_windowE"></span><span id="task_scheduler_t::ens_window__MPI_Win"></span><span class="target" id="structtask__scheduler__t_1a8aedb6dab5ae23800df2533551874b52"></span><span class="n"><span class="pre">MPI_Win</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ens_window</span></span></span><a class="headerlink" href="#_CPPv4N16task_scheduler_t10ens_windowE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N16task_scheduler_t7my_rankE">
+<span id="_CPPv3N16task_scheduler_t7my_rankE"></span><span id="_CPPv2N16task_scheduler_t7my_rankE"></span><span id="task_scheduler_t::my_rank__i"></span><span class="target" id="structtask__scheduler__t_1ae4bcc39a6c8986ce8678f5de6da2098d"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">my_rank</span></span></span><a class="headerlink" href="#_CPPv4N16task_scheduler_t7my_rankE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="classProgressBar.html" class="btn btn-neutral float-right" title="Class ProgressBar" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="structtable__t.html" class="btn btn-neutral float-left" title="Template Struct table_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Maicon Hieronymus
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -3111,6 +3111,8 @@ class Deriv_dask:
         title=None,
         linewidth=None,
         inf_val=None,
+        legend_pos="bottom_right",
+        corr_line=False,
         **kwargs,
     ):
         """
@@ -3234,6 +3236,10 @@ class Deriv_dask:
             If mse_df has a column "Real Predicted Squared Error", then
             those datapoints (x != 0) are used for the confidence ellipse. If the
             column is not present, then no datapoint at x = inf_val is used.
+        legend_pos : string
+            If kind == "paper", then define the position of the legend.
+        corr_line : bool
+            Plot a dashed line to show the 1-to-1 mapping in the plot.
         kwargs : Dict of args
             Arguments are passed to ellipse, i.e. {"color": "red"}
         """
@@ -3329,12 +3335,18 @@ class Deriv_dask:
 
         if xlabel is None:
             if log_x:
-                xlabel = "Log " + sens_key
+                if sens_key == "Predicted Squared Error":
+                    xlabel = r"$$\text{AD-Estimated} \log_{10} \text{MSD}$$"
+                else:
+                    xlabel = "Log " + sens_key
             else:
                 xlabel = sens_key
         if ylabel is None:
             if log_y:
-                ylabel = "Log " + error_key
+                if error_key == "Mean Squared Error":
+                    ylabel = r"$$\text{Ensemble-Estimated} \log_{10} \text{MSD}$$"
+                else:
+                    ylabel = "Log " + error_key
             else:
                 ylabel = error_key
         hspace = 0.05
@@ -3638,7 +3650,7 @@ class Deriv_dask:
             all_plots = None
             legend = False
             if kind == "paper":
-                legend = "top_left"  # bottom, top_left
+                legend = legend_pos  # "bottom_right"  # bottom, top_left bottom_right
             else:
                 if log_x and not abs_x:
                     pos_plot = mse_df.loc[mse_df[sens_key] >= 0].hvplot.hist(
@@ -3765,7 +3777,7 @@ class Deriv_dask:
                         color=cmap_values,
                     )
 
-                    # Get cosest value to zero for proper ticks
+                    # Get closest value to zero for proper ticks
                     max_x_tick = np.max(tmp_df[sens_key])
                     if -1 * np.min(tmp_df[sens_key]) > max_x_tick:
                         max_x_tick = -1 * np.min(tmp_df[sens_key])
@@ -3917,9 +3929,6 @@ class Deriv_dask:
                     else:
                         all_plots += mse_plot
                 else:
-                    # experimental
-                    # Assume 10^-80 (or here -80) for kind==paper is
-                    # negative infinity
                     if (
                         kind == "paper" and inf_val is not None
                     ):  # np.min(tmp_df[sens_key]) == -80:
@@ -3933,7 +3942,6 @@ class Deriv_dask:
                         while tick_val < stop_crit:
                             xticks_list.append((tick_val, tick_val))
                             tick_val += delta_tick
-
                         mse_plot = (
                             tmp_df.hvplot.scatter(
                                 x=sens_key,
@@ -3953,8 +3961,8 @@ class Deriv_dask:
                             .opts(opts.Scatter(**scatter_kwargs))  # s=scatter_size
                             .opts(**opts_dic2)
                             .options(
-                                ylabel=ylabel,
-                                xlabel="",
+                                ylabel=ylabel,  # ylabel,
+                                xlabel=xlabel,  # ""
                                 xticks=xticks_list,
                                 width=width,
                                 height=height,
@@ -3962,6 +3970,17 @@ class Deriv_dask:
                         )
                         # Save space by removing legend title
                         mse_plot.get_dimension(by_col).label = ""
+                        if corr_line:
+                            tmp_min = min_x
+                            if tmp_min < min_y:
+                                tmp_min = min_y
+                            tmp_max = max_x
+                            if tmp_max > max_y:
+                                tmp_max = max_y
+                            line_plot = hv.Curve(
+                                [[tmp_min, tmp_min], [tmp_max, tmp_max]]
+                            ).opts(line_dash="dashed", color="black")
+                            mse_plot = mse_plot * line_plot
                     else:
                         mse_plot = (
                             tmp_df.hvplot.scatter(
@@ -3983,11 +4002,22 @@ class Deriv_dask:
                             .opts(**opts_dic2)
                             .options(
                                 ylabel=ylabel,
-                                xlabel="",
+                                xlabel=xlabel,  # ""
                                 width=width,
                                 height=height,
                             )
                         )
+                        if corr_line:
+                            tmp_min = min_x
+                            if tmp_min < min_y:
+                                tmp_min = min_y
+                            tmp_max = max_x
+                            if tmp_max > max_y:
+                                tmp_max = max_y
+                            line_plot = hv.Curve(
+                                [[tmp_min, tmp_min], [tmp_max, tmp_max]]
+                            ).opts(line_dash="dashed", color="black")
+                            mse_plot = mse_plot * line_plot
 
                     # Adding histograms around those
                     if hist:
@@ -4151,7 +4181,7 @@ class Deriv_dask:
                 i = i + 1
                 save = plot_path + prefix + "_" + "{:03d}".format(i)
             renderer.save(mse_plot, save)
-            hvplot.show(mse_plot)
+            # hvplot.show(mse_plot)
         else:
 
             self.plots.append(mse_plot)

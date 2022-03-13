@@ -1,0 +1,16 @@
+.. _exhale_class_classProgressBar:
+
+Class ProgressBar
+=================
+
+- Defined in :ref:`file_include_misc_pbar.h`
+
+
+Class Documentation
+-------------------
+
+
+.. doxygenclass:: ProgressBar
+   :members:
+   :protected-members:
+   :undoc-members:

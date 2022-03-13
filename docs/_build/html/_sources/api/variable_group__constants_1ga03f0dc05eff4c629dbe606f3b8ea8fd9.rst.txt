@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga03f0dc05eff4c629dbe606f3b8ea8fd9:
+
+Variable b_prime
+================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: b_prime

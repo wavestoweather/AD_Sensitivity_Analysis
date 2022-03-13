@@ -1,0 +1,13 @@
+.. _exhale_function_group__general_1gab47a3e7939687b90ee14022283252445:
+
+Function printy
+===============
+
+- Defined in :ref:`file_include_misc_general.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: printy(const double)

@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga1ca436b5c948c3fd64ca7a9906d59cc3:
+
+Variable hail_b_geo
+===================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: hail_b_geo

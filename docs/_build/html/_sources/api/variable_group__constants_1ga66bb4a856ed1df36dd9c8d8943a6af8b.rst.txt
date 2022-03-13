@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga66bb4a856ed1df36dd9c8d8943a6af8b:
+
+Variable q_crit
+===============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: q_crit

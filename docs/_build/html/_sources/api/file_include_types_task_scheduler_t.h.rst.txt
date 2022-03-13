@@ -1,0 +1,50 @@
+
+.. _file_include_types_task_scheduler_t.h:
+
+File task_scheduler_t.h
+=======================
+
+|exhale_lsh| :ref:`Parent directory <dir_include_types>` (``include/types``)
+
+.. |exhale_lsh| unicode:: U+021B0 .. UPWARDS ARROW WITH TIP LEFTWARDS
+
+.. contents:: Contents
+   :local:
+   :backlinks: none
+
+Definition (``include/types/task_scheduler_t.h``)
+-------------------------------------------------
+
+
+.. toctree::
+   :maxdepth: 1
+
+   program_listing_file_include_types_task_scheduler_t.h.rst
+
+
+
+
+
+Includes
+--------
+
+
+- ``include/types/checkpoint_t.h`` (:ref:`file_include_types_checkpoint_t.h`)
+
+- ``mpi.h``
+
+- ``queue``
+
+- ``vector``
+
+
+
+
+
+
+Classes
+-------
+
+
+- :ref:`exhale_struct_structtask__scheduler__t`
+

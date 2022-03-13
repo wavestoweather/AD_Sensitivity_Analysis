@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga4c6e753c4071c5ba4da77d9591d2616d:
+
+Template Function specific_heat_ice
+===================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: specific_heat_ice(float_t, float_t)

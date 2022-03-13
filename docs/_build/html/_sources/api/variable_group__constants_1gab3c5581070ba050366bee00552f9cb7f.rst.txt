@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gab3c5581070ba050366bee00552f9cb7f:
+
+Variable hail_vsedi_max
+=======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: hail_vsedi_max

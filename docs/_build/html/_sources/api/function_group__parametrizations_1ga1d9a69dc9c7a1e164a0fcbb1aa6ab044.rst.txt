@@ -1,0 +1,13 @@
+.. _exhale_function_group__parametrizations_1ga1d9a69dc9c7a1e164a0fcbb1aa6ab044:
+
+Template Function latent_heat_evap
+==================================
+
+- Defined in :ref:`file_include_microphysics_physical_parameterizations.h`
+
+
+Function Documentation
+----------------------
+
+
+.. doxygenfunction:: latent_heat_evap(float_t)

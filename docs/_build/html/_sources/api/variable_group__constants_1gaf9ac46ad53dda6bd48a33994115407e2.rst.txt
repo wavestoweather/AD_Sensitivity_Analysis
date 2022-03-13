@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gaf9ac46ad53dda6bd48a33994115407e2:
+
+Variable ni_het_max
+===================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: ni_het_max

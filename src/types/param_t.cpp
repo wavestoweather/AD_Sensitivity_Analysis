@@ -189,49 +189,67 @@ int param_t::check() {
 }
 
 
-void param_t::put(
-    pt::ptree &ptree) const {
-    if (err != 0)
+void to_json(
+    nlohmann::json& j,
+    const param_t& p) {
+    if (p.err != 0)
         return;
-    pt::ptree param;
-    param.put("mean", mean);
-    param.put("name", param_name);
-    if (!isnan(sigma))
-        param.put("sigma", sigma);
+    j["mean"] = p.mean;
+    j["name"] = p.param_name;
+    if (!isnan(p.sigma))
+        j["sigma"] = p.sigma;
     else
-        param.put("sigma_perc", sigma_perc);
-    param.put("rand_func", func_name);
-    param.put("type", outparam_name);
-    ptree.push_back(std::make_pair("", param));
+        j["sigma_perc"] = p.sigma_perc;
+    j["rand_func"] = p.func_name;
+    j["type"] = p.outparam_name;
 }
 
 
 template<class float_t>
-int param_t::from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc) {
-    int err = SUCCESS;
-    add_type(ptree.get<std::string>("type"));
-    if (err != 0)
-        return err;
-    for (auto &it : ptree) {
-        auto first = it.first;
-        if (first == "name") {
-            err = add_name(it.second.get_value<std::string>(), cc);
+int param_t::from_json(
+    const nlohmann::json& j,
+    model_constants_t<float_t> &cc) {
+    std::string o_name;
+    j.at("type").get_to(o_name);
+    this->add_type(o_name);
+    for (auto &it : j.items()) {
+        auto first = it.key();
+        if (first == "mean") {
+            double m;
+            j.at(first).get_to(m);
+            this->add_mean(m);
+        } else if (first == "name") {
+            // j.at(first).get_to(this->param_name);
+            std::string p_name;
+            j.at(first).get_to(p_name);
+            err = add_name(p_name, cc);
             if (err != SUCCESS) return err;
-        } else if (first == "sigma_perc") {
-            add_sigma_perc(it.second.get_value<double>());
         } else if (first == "sigma") {
-            add_sigma(it.second.get_value<double>());
-        } else if (first == "mean") {
-            add_mean(it.second.get_value<double>());
-        } else if (first == "type") {
-            // Needs to be done before the for-loop.
+            double s;
+            j.at(first).get_to(s);
+            this->add_sigma(s);
+        } else if (first == "sigma_perc") {
+            double s;
+            j.at(first).get_to(s);
+            this->add_sigma_perc(s);
         } else if (first == "rand_func") {
-            add_rand_function(it.second.get_value<std::string>());
+            std::string f_name;
+            j.at(first).get_to(f_name);
+            this->add_rand_function(f_name);
+        } else if (first == "type") {
+            // Needs to be done before the for-loop
         } else {
-            err = PARAM_CONFIG_ERR;
+            return PARAM_CONFIG_ERR;
         }
     }
-    return err;
+    return SUCCESS;
+}
+
+
+template<class float_t>
+int param_t::check_name(
+    model_constants_t<float_t> &cc) {
+    return add_name(param_name, cc);
 }
 
 
@@ -331,17 +349,18 @@ std::string param_t::get_name() const {
     }
 }
 
+
+template int param_t::check_name<codi::RealReverse>(
+    model_constants_t<codi::RealReverse>&);
+
+template int param_t::check_name<codi::RealForwardVec<num_par_init> >(
+    model_constants_t<codi::RealForwardVec<num_par_init> >&);
+
 template int param_t::add_name<codi::RealReverse>(
     std::string, model_constants_t<codi::RealReverse>&);
 
 template int param_t::add_name<codi::RealForwardVec<num_par_init> >(
     std::string, model_constants_t<codi::RealForwardVec<num_par_init> >&);
-
-template int param_t::from_pt<codi::RealReverse>(
-    pt::ptree&, model_constants_t<codi::RealReverse>&);
-
-template int param_t::from_pt<codi::RealForwardVec<num_par_init> >(
-    pt::ptree&, model_constants_t<codi::RealForwardVec<num_par_init> >&);
 
 template void param_t::perturb<codi::RealReverse>(
     model_constants_t<codi::RealReverse>&) const;
@@ -354,3 +373,10 @@ template void param_t::reset<codi::RealReverse>(
 
 template void param_t::reset<codi::RealForwardVec<num_par_init> >(
     model_constants_t<codi::RealForwardVec<num_par_init> >&) const;
+
+template int param_t::from_json<codi::RealReverse>(
+    const nlohmann::json&,
+    model_constants_t<codi::RealReverse>&);
+template int param_t::from_json<codi::RealForwardVec<num_par_init> >(
+    const nlohmann::json&,
+    model_constants_t<codi::RealForwardVec<num_par_init> >&);

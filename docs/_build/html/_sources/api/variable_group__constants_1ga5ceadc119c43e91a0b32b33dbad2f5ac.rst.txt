@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga5ceadc119c43e91a0b32b33dbad2f5ac:
+
+Variable k_1_accr
+=================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: k_1_accr

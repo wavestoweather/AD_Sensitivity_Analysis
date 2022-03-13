@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gac1729321b653bcaa4bfdffe7fdf00f3a:
+
+Variable L_ew
+=============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: L_ew

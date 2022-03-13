@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga12712fa561a9b1d934399a3c4f7a9040:
+
+Variable graupel_a_geo
+======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: graupel_a_geo

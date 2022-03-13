@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga87f82656b10760e10886d8f0eeccfe0f:
+
+Variable T_nuc
+==============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: T_nuc

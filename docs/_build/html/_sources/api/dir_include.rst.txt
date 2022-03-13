@@ -1,0 +1,18 @@
+.. _dir_include:
+
+
+Directory include
+=================
+
+
+*Directory path:* ``include``
+
+Subdirectories
+--------------
+
+- :ref:`dir_include_microphysics`
+- :ref:`dir_include_misc`
+- :ref:`dir_include_types`
+
+
+

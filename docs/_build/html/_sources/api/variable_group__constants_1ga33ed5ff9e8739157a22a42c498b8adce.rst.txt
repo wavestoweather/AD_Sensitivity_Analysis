@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga33ed5ff9e8739157a22a42c498b8adce:
+
+Variable R_a
+============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: R_a

@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1gaf786e3d2d2780afa796f920280fa5a07:
+
+Variable na_dust_2
+==================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: na_dust_2

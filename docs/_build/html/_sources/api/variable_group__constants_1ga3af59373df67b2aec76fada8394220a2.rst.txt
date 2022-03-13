@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga3af59373df67b2aec76fada8394220a2:
+
+Variable init_grad_idx
+======================
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: init_grad_idx

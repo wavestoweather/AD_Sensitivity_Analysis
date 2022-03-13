@@ -8,6 +8,7 @@ checkpoint_id*
 pics/*
 data/*
 build/*
+cmake-build*
 # Sphinx build
 docs/_build/doctrees/*
 docs/_static/*

@@ -1,0 +1,16 @@
+.. _exhale_struct_structreference__quantities__t:
+
+Struct reference_quantities_t
+=============================
+
+- Defined in :ref:`file_include_types_reference_quantities_t.h`
+
+
+Struct Documentation
+--------------------
+
+
+.. doxygenstruct:: reference_quantities_t
+   :members:
+   :protected-members:
+   :undoc-members:

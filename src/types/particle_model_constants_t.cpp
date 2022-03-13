@@ -37,6 +37,10 @@ void particle_model_constants_t<codi::RealReverse>::get_gradient(
 
     const uint32_t start_idx = idx;
     for (auto &c : this->constants) {
+#ifdef DEVELOP
+        std::cout << "get_gradient particle size uncert = " << uncertainty.size()
+                  << " idx: " << idx << " start_idx: " << start_idx << " diff " << idx - start_idx << "\n";
+#endif
         out_vec[idx] = c.getGradient() * uncertainty[idx-start_idx];
         idx++;
     }
@@ -54,31 +58,17 @@ void particle_model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradie
 
 
 template<class float_t>
-void particle_model_constants_t<float_t>::put(
-    pt::ptree &ptree,
-    const std::string &type_name) const {
-    if (perturbed_idx.empty())
-        return;
-
-    pt::ptree perturbed;
-
-    for (uint32_t idx : perturbed_idx) {
-        perturbed.put(std::to_string(idx), constants[idx].getValue());
-    }
-    pt::ptree perturbed_vals;
-    perturbed_vals.add_child("perturbed", perturbed);
-    ptree.add_child(type_name, perturbed_vals);
-}
-
-
-template<class float_t>
-int particle_model_constants_t<float_t>::from_pt(
-    pt::ptree &ptree) {
+int particle_model_constants_t<float_t>::from_json(
+    const nlohmann::json& j) {
     int err = 0;
-    for (auto &it : ptree.get_child("perturbed")) {
-        uint32_t idx = std::stoi(it.first);
-        this->constants[idx] = it.second.get_value<double>();
-        perturbed_idx.push_back(idx);
+    if (j.find("perturbed") != j.end()) {
+        std::map<uint32_t, double> perturbed;
+        j.at("perturbed").get_to(perturbed);
+        perturbed_idx.clear();
+        for (auto const& pert : perturbed) {
+            this->constants[pert.first] = pert.second;
+            perturbed_idx.push_back(pert.first);
+        }
     }
     return err;
 }
@@ -101,3 +91,25 @@ void particle_model_constants_t<float_t>::print(
 
 template class particle_model_constants_t<codi::RealReverse>;
 template class particle_model_constants_t<codi::RealForwardVec<num_par_init> >;
+
+template<class float_t>
+void to_json(
+    nlohmann::json& j,
+    const particle_model_constants_t<float_t>& p) {
+    if (p.perturbed_idx.empty())
+        return;
+
+    std::map<uint32_t, double> perturbed;
+    for (uint32_t idx : p.perturbed_idx) {
+        perturbed[idx] = p.constants[idx].getValue();
+    }
+    j["perturbed"] = perturbed;
+}
+
+template void to_json<codi::RealReverse>(
+    nlohmann::json&,
+    const particle_model_constants_t<codi::RealReverse>& p);
+
+template void to_json<codi::RealForwardVec<num_par_init> >(
+    nlohmann::json&,
+    const particle_model_constants_t<codi::RealForwardVec<num_par_init> >& p);

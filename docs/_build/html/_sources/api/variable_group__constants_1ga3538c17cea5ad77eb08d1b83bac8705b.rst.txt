@@ -1,0 +1,13 @@
+.. _exhale_variable_group__constants_1ga3538c17cea5ad77eb08d1b83bac8705b:
+
+Variable M_w
+============
+
+- Defined in :ref:`file_include_microphysics_constants.h`
+
+
+Variable Documentation
+----------------------
+
+
+.. doxygenvariable:: M_w

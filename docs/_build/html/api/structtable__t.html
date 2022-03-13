@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Struct table_t &mdash; Process and Plot Scripts 1 documentation</title>
+  <title>Template Struct table_t &mdash; Process and Plot Scripts 1 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
         <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
         <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
@@ -35,11 +35,13 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Class ProgressBar" href="classProgressBar.html" />
-    <link rel="prev" title="Struct reference_quantities_t" href="structreference__quantities__t.html" /> 
+    <link rel="next" title="Struct task_scheduler_t" href="structtask__scheduler__t.html" />
+    <link rel="prev" title="Struct segment_t" href="structsegment__t.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -83,7 +85,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -92,11 +94,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Example Results</span></p>
+<p class="caption" role="heading"><span class="caption-text">Example Results</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">Full C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
 </ul>
@@ -146,7 +148,7 @@
         
           <li><a href="library_root.html">C++ API</a> &raquo;</li>
         
-      <li>Struct table_t</li>
+      <li>Template Struct table_t</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -165,22 +167,27 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="struct-table-t">
-<span id="exhale-struct-structtable-t"></span><h1>Struct table_t<a class="headerlink" href="#struct-table-t" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="template-struct-table-t">
+<span id="exhale-struct-structtable-t"></span><h1>Template Struct table_t<a class="headerlink" href="#template-struct-table-t" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
-<li><p>Defined in <a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a></p></li>
+<li><p>Defined in <a class="reference internal" href="file_include_types_table_t.h.html#file-include-types-table-t-h"><span class="std std-ref">File table_t.h</span></a></p></li>
 </ul>
 <div class="section" id="struct-documentation">
 <h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
 <dl class="cpp struct">
-<dt id="_CPPv47table_t">
-<span id="_CPPv37table_t"></span><span id="_CPPv27table_t"></span><span id="table_t"></span><span class="target" id="structtable__t"></span><em class="property">struct </em><code class="sig-name descname">table_t</code><a class="headerlink" href="#_CPPv47table_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4I0E7table_t">
+<span id="_CPPv3I0E7table_t"></span><span id="_CPPv2I0E7table_t"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structtable__t"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">table_t</span></span></span><a class="headerlink" href="#_CPPv4I0E7table_t" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>A 4D lookup table on a grid used in ICON. </p>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric">Public Functions</p>
 <dl class="cpp function">
-<dt id="_CPPv4NK7table_t3getE8uint64_t8uint64_t8uint64_t8uint64_t">
-<span id="_CPPv3NK7table_t3getE8uint64_t8uint64_t8uint64_t8uint64_t"></span><span id="_CPPv2NK7table_t3getE8uint64_t8uint64_t8uint64_t8uint64_t"></span><span id="table_t::get__uint64_t.uint64_t.uint64_t.uint64_tC"></span><span class="target" id="structtable__t_1aa542f9c0af25925ae096a727862c9b77"></span>codi::RealReverse <code class="sig-name descname">get</code><span class="sig-paren">(</span>uint64_t <em>i</em>, uint64_t <em>j</em>, uint64_t <em>k</em>, uint64_t <em>l</em><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv4NK7table_t3getE8uint64_t8uint64_t8uint64_t8uint64_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t7table_tEv">
+<span id="_CPPv3N7table_t7table_tEv"></span><span id="_CPPv2N7table_t7table_tEv"></span><span id="table_t::table_t"></span><span class="target" id="structtable__t_1a45605aa54202914a22a6091fbe15201d"></span><span class="sig-name descname"><span class="n"><span class="pre">table_t</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7table_t7table_tEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7table_t3getEK8uint64_tK8uint64_tK8uint64_tK8uint64_t">
+<span id="_CPPv3NK7table_t3getEK8uint64_tK8uint64_tK8uint64_tK8uint64_t"></span><span id="_CPPv2NK7table_t3getEK8uint64_tK8uint64_tK8uint64_tK8uint64_t"></span><span id="table_t::get__uint64_tC.uint64_tC.uint64_tC.uint64_tCC"></span><span class="target" id="structtable__t_1a741ac5cc2f55aa23c688166048a2f682"></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">j</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">k</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">l</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK7table_t3getEK8uint64_tK8uint64_tK8uint64_tK8uint64_t" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Get the value at a given index.</p>
 <p><dl class="simple">
 <dt><strong>Parameters</strong></dt><dd><ul class="breatheparameterlist simple">
@@ -198,104 +205,104 @@
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric">Public Members</p>
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t2n1E">
-<span id="_CPPv3N7table_t2n1E"></span><span id="_CPPv2N7table_t2n1E"></span><span id="table_t::n1__uint64_t"></span><span class="target" id="structtable__t_1ab23fa4b12c8779fb4eae82475c658c9d"></span>uint64_t <code class="sig-name descname">n1</code><a class="headerlink" href="#_CPPv4N7table_t2n1E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t2n1E">
+<span id="_CPPv3N7table_t2n1E"></span><span id="_CPPv2N7table_t2n1E"></span><span id="table_t::n1__uint64_t"></span><span class="target" id="structtable__t_1a16ac0d4f2df3b0d1cc3b5bc77a2dd8ad"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n1</span></span></span><a class="headerlink" href="#_CPPv4N7table_t2n1E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Number of grid points in direction 1. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t2n2E">
-<span id="_CPPv3N7table_t2n2E"></span><span id="_CPPv2N7table_t2n2E"></span><span id="table_t::n2__uint64_t"></span><span class="target" id="structtable__t_1a570c54464138eb02ada5b0f3042e5426"></span>uint64_t <code class="sig-name descname">n2</code><a class="headerlink" href="#_CPPv4N7table_t2n2E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t2n2E">
+<span id="_CPPv3N7table_t2n2E"></span><span id="_CPPv2N7table_t2n2E"></span><span id="table_t::n2__uint64_t"></span><span class="target" id="structtable__t_1a6b4c6f67c5dd14bbb12cc68448a5f74b"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n2</span></span></span><a class="headerlink" href="#_CPPv4N7table_t2n2E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Number of grid points in direction 1. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t2n3E">
-<span id="_CPPv3N7table_t2n3E"></span><span id="_CPPv2N7table_t2n3E"></span><span id="table_t::n3__uint64_t"></span><span class="target" id="structtable__t_1a256cd5252b69b6dda2b024acdf2ef44a"></span>uint64_t <code class="sig-name descname">n3</code><a class="headerlink" href="#_CPPv4N7table_t2n3E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t2n3E">
+<span id="_CPPv3N7table_t2n3E"></span><span id="_CPPv2N7table_t2n3E"></span><span id="table_t::n3__uint64_t"></span><span class="target" id="structtable__t_1a0462f906d597f8c8e03d3ba7cc0d0452"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n3</span></span></span><a class="headerlink" href="#_CPPv4N7table_t2n3E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Number of grid points in direction 1. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t2n4E">
-<span id="_CPPv3N7table_t2n4E"></span><span id="_CPPv2N7table_t2n4E"></span><span id="table_t::n4__uint64_t"></span><span class="target" id="structtable__t_1a2c83c01da25daf1b0da23fba20e7e64c"></span>uint64_t <code class="sig-name descname">n4</code><a class="headerlink" href="#_CPPv4N7table_t2n4E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t2n4E">
+<span id="_CPPv3N7table_t2n4E"></span><span id="_CPPv2N7table_t2n4E"></span><span id="table_t::n4__uint64_t"></span><span class="target" id="structtable__t_1a3419fe29a907d29bb1de0c20416b1cf8"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n4</span></span></span><a class="headerlink" href="#_CPPv4N7table_t2n4E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Number of grid points in direction 1. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t2x1E">
-<span id="_CPPv3N7table_t2x1E"></span><span id="_CPPv2N7table_t2x1E"></span><span id="table_t::x1__std::vector:codi::RealReverse:"></span><span class="target" id="structtable__t_1a0bd649170ed303c84b71f02a8423334c"></span>std::vector&lt;codi::RealReverse&gt; <code class="sig-name descname">x1</code><a class="headerlink" href="#_CPPv4N7table_t2x1E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t2x1E">
+<span id="_CPPv3N7table_t2x1E"></span><span id="_CPPv2N7table_t2x1E"></span><span id="table_t::x1__std::vector:float_t:"></span><span class="target" id="structtable__t_1ab7b2ad7111a9e0510b93c3db703956ab"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">x1</span></span></span><a class="headerlink" href="#_CPPv4N7table_t2x1E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Grid vector </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t2x2E">
-<span id="_CPPv3N7table_t2x2E"></span><span id="_CPPv2N7table_t2x2E"></span><span id="table_t::x2__std::vector:codi::RealReverse:"></span><span class="target" id="structtable__t_1a587d1f31d4d8009da6ba07f9928e9ea5"></span>std::vector&lt;codi::RealReverse&gt; <code class="sig-name descname">x2</code><a class="headerlink" href="#_CPPv4N7table_t2x2E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t2x2E">
+<span id="_CPPv3N7table_t2x2E"></span><span id="_CPPv2N7table_t2x2E"></span><span id="table_t::x2__std::vector:float_t:"></span><span class="target" id="structtable__t_1a943e9571a1458d5ad7cef8a8372c9ea6"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">x2</span></span></span><a class="headerlink" href="#_CPPv4N7table_t2x2E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Grid vector </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t2x3E">
-<span id="_CPPv3N7table_t2x3E"></span><span id="_CPPv2N7table_t2x3E"></span><span id="table_t::x3__std::vector:codi::RealReverse:"></span><span class="target" id="structtable__t_1ab2831b293c5d8d9351ddac1f2453e7c8"></span>std::vector&lt;codi::RealReverse&gt; <code class="sig-name descname">x3</code><a class="headerlink" href="#_CPPv4N7table_t2x3E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t2x3E">
+<span id="_CPPv3N7table_t2x3E"></span><span id="_CPPv2N7table_t2x3E"></span><span id="table_t::x3__std::vector:float_t:"></span><span class="target" id="structtable__t_1abadae46157f5081ebed25cf2fd92aff5"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">x3</span></span></span><a class="headerlink" href="#_CPPv4N7table_t2x3E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Grid vector </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t2x4E">
-<span id="_CPPv3N7table_t2x4E"></span><span id="_CPPv2N7table_t2x4E"></span><span id="table_t::x4__std::vector:codi::RealReverse:"></span><span class="target" id="structtable__t_1ae8029a3e1257844ead3e9d18fc19ae11"></span>std::vector&lt;codi::RealReverse&gt; <code class="sig-name descname">x4</code><a class="headerlink" href="#_CPPv4N7table_t2x4E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t2x4E">
+<span id="_CPPv3N7table_t2x4E"></span><span id="_CPPv2N7table_t2x4E"></span><span id="table_t::x4__std::vector:float_t:"></span><span class="target" id="structtable__t_1ac5fddb5a64c2bdd8271a547229a36829"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">x4</span></span></span><a class="headerlink" href="#_CPPv4N7table_t2x4E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Grid vector </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t3dx1E">
-<span id="_CPPv3N7table_t3dx1E"></span><span id="_CPPv2N7table_t3dx1E"></span><span id="table_t::dx1__codi::RealReverse"></span><span class="target" id="structtable__t_1a1e23b3b867b8a869a793ed865b581df2"></span>codi::RealReverse <code class="sig-name descname">dx1</code><a class="headerlink" href="#_CPPv4N7table_t3dx1E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t3dx1E">
+<span id="_CPPv3N7table_t3dx1E"></span><span id="_CPPv2N7table_t3dx1E"></span><span id="table_t::dx1__float_t"></span><span class="target" id="structtable__t_1a122975a44188b941dd3dc3270c4786cc"></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dx1</span></span></span><a class="headerlink" href="#_CPPv4N7table_t3dx1E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Grid distances for vector x1 </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t3dx2E">
-<span id="_CPPv3N7table_t3dx2E"></span><span id="_CPPv2N7table_t3dx2E"></span><span id="table_t::dx2__codi::RealReverse"></span><span class="target" id="structtable__t_1a06b4779564226aa32726f48053c2d5f6"></span>codi::RealReverse <code class="sig-name descname">dx2</code><a class="headerlink" href="#_CPPv4N7table_t3dx2E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t3dx2E">
+<span id="_CPPv3N7table_t3dx2E"></span><span id="_CPPv2N7table_t3dx2E"></span><span id="table_t::dx2__float_t"></span><span class="target" id="structtable__t_1af896f8ab50cd24e3fdd733c47fab1304"></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dx2</span></span></span><a class="headerlink" href="#_CPPv4N7table_t3dx2E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Grid distances for vector x2 </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t3dx3E">
-<span id="_CPPv3N7table_t3dx3E"></span><span id="_CPPv2N7table_t3dx3E"></span><span id="table_t::dx3__codi::RealReverse"></span><span class="target" id="structtable__t_1af1478e4590208f073b06f386e055d120"></span>codi::RealReverse <code class="sig-name descname">dx3</code><a class="headerlink" href="#_CPPv4N7table_t3dx3E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t3dx3E">
+<span id="_CPPv3N7table_t3dx3E"></span><span id="_CPPv2N7table_t3dx3E"></span><span id="table_t::dx3__float_t"></span><span class="target" id="structtable__t_1a98455be7c9c55127db329dbb0b2f7fcb"></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dx3</span></span></span><a class="headerlink" href="#_CPPv4N7table_t3dx3E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Grid distances for vector x3 </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t3dx4E">
-<span id="_CPPv3N7table_t3dx4E"></span><span id="_CPPv2N7table_t3dx4E"></span><span id="table_t::dx4__codi::RealReverse"></span><span class="target" id="structtable__t_1a0b99177b8e89e9b43f6ccb01a84f7327"></span>codi::RealReverse <code class="sig-name descname">dx4</code><a class="headerlink" href="#_CPPv4N7table_t3dx4E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t3dx4E">
+<span id="_CPPv3N7table_t3dx4E"></span><span id="_CPPv2N7table_t3dx4E"></span><span id="table_t::dx4__float_t"></span><span class="target" id="structtable__t_1a9b90a7ed5304e380a220de88b76470e5"></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dx4</span></span></span><a class="headerlink" href="#_CPPv4N7table_t3dx4E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>Grid distances for vector x4 </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t4odx1E">
-<span id="_CPPv3N7table_t4odx1E"></span><span id="_CPPv2N7table_t4odx1E"></span><span id="table_t::odx1__codi::RealReverse"></span><span class="target" id="structtable__t_1ae1141c6720d0900c6fb910daf750f131"></span>codi::RealReverse <code class="sig-name descname">odx1</code><a class="headerlink" href="#_CPPv4N7table_t4odx1E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t4odx1E">
+<span id="_CPPv3N7table_t4odx1E"></span><span id="_CPPv2N7table_t4odx1E"></span><span id="table_t::odx1__float_t"></span><span class="target" id="structtable__t_1a7ac984c3fad258a6bebeac354b0cce8f"></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">odx1</span></span></span><a class="headerlink" href="#_CPPv4N7table_t4odx1E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>One over dx1 </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t4odx2E">
-<span id="_CPPv3N7table_t4odx2E"></span><span id="_CPPv2N7table_t4odx2E"></span><span id="table_t::odx2__codi::RealReverse"></span><span class="target" id="structtable__t_1ac8052bc16118191008dfef44a8037e41"></span>codi::RealReverse <code class="sig-name descname">odx2</code><a class="headerlink" href="#_CPPv4N7table_t4odx2E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t4odx2E">
+<span id="_CPPv3N7table_t4odx2E"></span><span id="_CPPv2N7table_t4odx2E"></span><span id="table_t::odx2__float_t"></span><span class="target" id="structtable__t_1a700b0db8d66dfca93ededfd6774064cd"></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">odx2</span></span></span><a class="headerlink" href="#_CPPv4N7table_t4odx2E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>One over dx2 </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t4odx3E">
-<span id="_CPPv3N7table_t4odx3E"></span><span id="_CPPv2N7table_t4odx3E"></span><span id="table_t::odx3__codi::RealReverse"></span><span class="target" id="structtable__t_1a62c44a3c0de5d4952f73a2cd5feeaee0"></span>codi::RealReverse <code class="sig-name descname">odx3</code><a class="headerlink" href="#_CPPv4N7table_t4odx3E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t4odx3E">
+<span id="_CPPv3N7table_t4odx3E"></span><span id="_CPPv2N7table_t4odx3E"></span><span id="table_t::odx3__float_t"></span><span class="target" id="structtable__t_1a9254380175f39fca4d3e51b429bfee64"></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">odx3</span></span></span><a class="headerlink" href="#_CPPv4N7table_t4odx3E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>One over dx3 </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t4odx4E">
-<span id="_CPPv3N7table_t4odx4E"></span><span id="_CPPv2N7table_t4odx4E"></span><span id="table_t::odx4__codi::RealReverse"></span><span class="target" id="structtable__t_1a20d9682f91c4b657df2f84511f047fff"></span>codi::RealReverse <code class="sig-name descname">odx4</code><a class="headerlink" href="#_CPPv4N7table_t4odx4E" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t4odx4E">
+<span id="_CPPv3N7table_t4odx4E"></span><span id="_CPPv2N7table_t4odx4E"></span><span id="table_t::odx4__float_t"></span><span class="target" id="structtable__t_1a2de678b39386d81973c9e28c990f1c8e"></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">odx4</span></span></span><a class="headerlink" href="#_CPPv4N7table_t4odx4E" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>One over dx4 </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N7table_t5tableE">
-<span id="_CPPv3N7table_t5tableE"></span><span id="_CPPv2N7table_t5tableE"></span><span id="table_t::table__std::vector:codi::RealReverse:"></span><span class="target" id="structtable__t_1a31630631d17226c8421076d642adb88d"></span>std::vector&lt;codi::RealReverse&gt; <code class="sig-name descname">table</code><a class="headerlink" href="#_CPPv4N7table_t5tableE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N7table_t5tableE">
+<span id="_CPPv3N7table_t5tableE"></span><span id="_CPPv2N7table_t5tableE"></span><span id="table_t::table__std::vector:float_t:"></span><span class="target" id="structtable__t_1a9bac25df81de532a865d2b5d06df6749"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I0E7table_t" title="table_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">table</span></span></span><a class="headerlink" href="#_CPPv4N7table_t5tableE" title="Permalink to this definition">¶</a><br /></dt>
 <dd><p>The table values </p>
 </dd></dl>
 
@@ -313,10 +320,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="classProgressBar.html" class="btn btn-neutral float-right" title="Class ProgressBar" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="structtask__scheduler__t.html" class="btn btn-neutral float-right" title="Struct task_scheduler_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="structreference__quantities__t.html" class="btn btn-neutral float-left" title="Struct reference_quantities_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="structsegment__t.html" class="btn btn-neutral float-left" title="Struct segment_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
