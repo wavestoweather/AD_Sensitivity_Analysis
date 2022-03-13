@@ -37,6 +37,10 @@ void particle_model_constants_t<codi::RealReverse>::get_gradient(
 
     const uint32_t start_idx = idx;
     for (auto &c : this->constants) {
+#ifdef DEVELOP
+        std::cout << "get_gradient particle size uncert = " << uncertainty.size()
+                  << " idx: " << idx << " start_idx: " << start_idx << " diff " << idx - start_idx << "\n";
+#endif
         out_vec[idx] = c.getGradient() * uncertainty[idx-start_idx];
         idx++;
     }
@@ -51,8 +55,6 @@ void particle_model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradie
 
     // Nothing to be done for forward mode
 }
-
-
 
 
 template<class float_t>
@@ -70,36 +72,6 @@ int particle_model_constants_t<float_t>::from_json(
     }
     return err;
 }
-
-// template<class float_t>
-// void particle_model_constants_t<float_t>::put(
-//     pt::ptree &ptree,
-//     const std::string &type_name) const {
-//     if (perturbed_idx.empty())
-//         return;
-
-//     pt::ptree perturbed;
-
-//     for (uint32_t idx : perturbed_idx) {
-//         perturbed.put(std::to_string(idx), constants[idx].getValue());
-//     }
-//     pt::ptree perturbed_vals;
-//     perturbed_vals.add_child("perturbed", perturbed);
-//     ptree.add_child(type_name, perturbed_vals);
-// }
-
-
-// template<class float_t>
-// int particle_model_constants_t<float_t>::from_pt(
-//     pt::ptree &ptree) {
-//     int err = 0;
-//     for (auto &it : ptree.get_child("perturbed")) {
-//         uint32_t idx = std::stoi(it.first);
-//         this->constants[idx] = it.second.get_value<double>();
-//         perturbed_idx.push_back(idx);
-//     }
-//     return err;
-// }
 
 
 template<class float_t>

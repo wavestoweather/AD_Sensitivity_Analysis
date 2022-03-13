@@ -505,192 +505,9 @@ void ccn_act_hande(
 }
 #endif
 
-/**
- * CCN activation after Seifert & Beheng (2006):
- * @params p_prime Pressure [Pa]
- * @params p Pressure but dimensionless
- * @params T_prime Temperature [K]
- * @params T Temperature but dimensionless
- * @params qv_prime Water vapor mixing ratio
- * @params qv Water vapor mixing ratio but dimensionless
- * @params qc_prime Cloud water mixing ratio
- * @params qc Cloud water mixing ratio but dimensionless
- * @params Nc Number of cloud droplets
- * @params qr Rain droplet mixing ratio but dimensionless
- * @params z Height above sealevel [m]
- * @params dt Timestep size [s]
- * @params w Ascend velocity [m s^-1]
- * @params S Saturation
- * @params psat_prime Saturation pressure [Pa]
- * @params ref Struct with reference values
- * @params res Vector to store the changes
- * @params cc Model constants
- */
-template<class float_t>
-void ccn_act_seifert(
-    float_t &p_prime,
-    float_t &p,
-    float_t &T_prime,
-    float_t &T,
-    float_t &qv_prime,
-    float_t &qv,
-    float_t &qc_prime,
-    float_t &qc,
-    float_t &Nc,
-    float_t &qr,
-    float_t &z_prime,
-    const double &dt,
-    float_t &w,
-    float_t &S,
-    float_t &psat_prime,
-    const reference_quantities_t &ref,
-    std::vector<float_t> &res,
-    model_constants_t<float_t> &cc) {
-
-    float_t N_ccn = 1260e06;
-    float_t N_max = 3000e06;
-    float_t N_min =  300e02;
-    float_t S_max = 20.000;  // in percentage
-    float_t k_ccn = 0.308;
-    // Parameter for exp decrease of CCN with height
-    float_t z_nccn = 99999;
-
-    // oversaturation in percentage
-    float_t S_percentage = (S-1)*100;
-
-    // In contrast to Seifert & Beheng, we do not approximate dS/dt via
-    // w dS/dz but calculate dS/dt
-    float_t qsat_prime = get_at(cc.constants, Cons_idx::Epsilon)*(psat_prime/(p_prime - psat_prime));
-    float_t p_div_T_prime = p_prime / T_prime;
-    float_t cpv_prime = specific_heat_water_vapor(T_prime);
-    float_t cpa_prime = get_at(cc.constants, Cons_idx::cp);
-    float_t cpl_prime = specific_heat_water(T_prime);
-    float_t rhow_prime = density_water(T_prime);
-    float_t L_prime = latent_heat_water_supercooled(T_prime, get_at(cc.constants, Cons_idx::M_w));
-    float_t H_prime =
-        1.0/(((L_prime/(get_at(cc.constants, Cons_idx::R_v)*T_prime)) - 1.0)
-        *(L_prime/(thermal_conductivity_dry_air(T_prime)*T_prime))
-        + ((get_at(cc.constants, Cons_idx::R_v)*T_prime)/(cc.alpha_d*diffusivity(T_prime, p_prime)*psat_prime)));
-    float_t c_prime =
-        4.0*M_PI*H_prime*pow((3.0/(4.0*M_PI*rhow_prime))*Nc*Nc , 1.0/3.0);
-    float_t qc_third = pow(qc , 1.0/3.0);
-    float_t qr_delta1 = pow(qr , get_at(cc.constants, Cons_idx::delta1));
-    float_t qr_delta2 = pow(qr , get_at(cc.constants, Cons_idx::delta2));
-
-    float_t C1 = (ref.tref*get_at(cc.constants, Cons_idx::gravity_acc)*ref.wref)
-        / (get_at(cc.constants, Cons_idx::R_a)*ref.Tref);
-    float_t C2 = ((1.0-get_at(cc.constants, Cons_idx::Epsilon))*ref.qref)/get_at(cc.constants, Cons_idx::Epsilon);
-    float_t C3 = (cpv_prime*ref.qref)/cpa_prime;
-    float_t C4 = (cpl_prime*ref.qref)/cpa_prime;
-    float_t C5 = (get_at(cc.constants, Cons_idx::gravity_acc)*ref.wref*ref.tref)/(ref.Tref*cpa_prime);
-    float_t C6 = (ref.tref*L_prime*c_prime*pow(ref.qref, 1.0/3.0))/(ref.Tref*cpa_prime);
-    float_t C7 = (ref.tref*L_prime*get_at(cc.constants, Cons_idx::e1_prime)
-        *pow(ref.qref, get_at(cc.constants, Cons_idx::delta1)))/(ref.Tref*cpa_prime);
-    float_t C8 = (ref.tref*L_prime*get_at(cc.constants, Cons_idx::e2_prime)
-        *pow(ref.qref, get_at(cc.constants, Cons_idx::delta2)))/(ref.Tref*cpa_prime);
-    // float_t B = ref.tref*nc.QRin;
-    float_t C9 = (ref.tref*c_prime)/pow(ref.qref , 2.0/3.0);
-    float_t C12 =
-        ref.tref*get_at(cc.constants, Cons_idx::e1_prime)*pow(ref.qref , get_at(cc.constants, Cons_idx::delta1)-1.0);
-    float_t C13 =
-        ref.tref*get_at(cc.constants, Cons_idx::e2_prime)*pow(ref.qref , get_at(cc.constants, Cons_idx::delta2)-1.0);
-    float_t C15 = get_at(cc.constants, Cons_idx::Epsilon)/ref.qref;
-    float_t C16 = L_prime/(get_at(cc.constants, Cons_idx::R_v)*ref.Tref);
-
-    float_t dp = -(C1/(1.0 + C2*(qv/(1.0 + qv_prime))))*((p*w)/T);
-    float_t dT = (1.0/(1.0 + C3*qv + C4*(qc + qr)))*(-C5*w + C6*qc_third*(S-1.0)
-        + (C7*qr_delta1 + C8*qr_delta2)*std::min(S-1.0, 0.0));
-    float_t dS = (S/p)*dp - (S/qv)*(1.0 - (qv/(C15+qv)))*(C9*qc_third*(S-1.0)
-        + (C12*qr_delta1 + C13*qr_delta2)*std::min(S-1.0, 0.0)) - C16*(S/(T*T))*dT;
-    dS = (S/p)*dp - C16*(S/(T*T))*dT;
-#ifdef TRACE_SAT
-    if (trace)
-        std::cout << "traj: " << cc.traj_id << " Saturation (CCN activation) dS: " << dS
-                    << ", times dt: " << dS * dt
-                    << ", Evaporation: " << (C12*qr_delta1 + C13*qr_delta2)*std::min(S-1.0, 0.0)
-                    << ", Condensation: " << C9*qc_third*(S-1.0)
-                    << ", Last part: " << - C16*(S/(T*T))*res[T_idx]
-                    << ", First part: " << (S/p)*res[p_idx]
-                    << ", Middle part: " << - (S/qv)*(1.0 - (qv/(C15+qv)))
-                    << ", S_percentage: " << S_percentage
-                    << ", S: " << S
-                    << ", e_d: " << qv_prime * get_at(cc.constants, Cons_idx::R_v) * T_prime
-                    << ", qv_prime: " << qv_prime
-                    << ", get_at(cc.constants, Cons_idx::R_v): " << get_at(cc.constants, Cons_idx::R_v)
-                    << ", T_prime " << T_prime
-                    << ", p_sat: " << saturation_pressure_water(
-                        T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
-                        get_at(cc.constants, Cons_idx::p_sat_const_a),
-                        get_at(cc.constants, Cons_idx::T_sat_low_temp),
-                        get_at(cc.constants, Cons_idx::p_sat_const_b))
-                    << ", s_sw = e_d/p_sat - 1: " << qv_prime * get_at(cc.constants, Cons_idx::R_v)
-                        * T_prime/saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
-                            get_at(cc.constants, Cons_idx::p_sat_const_a),
-                            get_at(cc.constants, Cons_idx::T_sat_low_temp),
-                            get_at(cc.constants, Cons_idx::p_sat_const_b))-1
-                    << ", S calculated: " << qv_prime * get_at(cc.constants, Cons_idx::R_v)
-                        * T_prime/saturation_pressure_water(T_prime, get_at(cc.constants, Cons_idx::p_sat_low_temp),
-                            get_at(cc.constants, Cons_idx::p_sat_const_a),
-                            get_at(cc.constants, Cons_idx::T_sat_low_temp),
-                            get_at(cc.constants, Cons_idx::p_sat_const_b))
-                    << "\n";
-#endif
-    // dS can be considered above zero all the time w is above zero (?)
-    if (S_percentage > 0.0 && dS >= 0.0 && S_percentage <= S_max && T_prime >= get_at(cc.constants, Cons_idx::T_f)) {
-        float_t delta_n = 0;
-        float_t delta_q = 0;
-
-        if (z_prime <= z_nccn) {
-            delta_n = N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0) * dS;
-        } else {
-            delta_n = (N_ccn * k_ccn * pow(S_percentage, k_ccn-1.0) * dS
-                - N_ccn/z_nccn * pow(S_percentage, k_ccn))
-                * exp((z_nccn - z_prime)/z_nccn);
-        }
-
-        delta_n = std::max(std::min(delta_n, N_max-Nc), float_t(0.0));
-        delta_q = delta_n * get_at(cc.cloud.constants, Particle_cons_idx::min_x_act);
-
-        if (delta_q > qv_prime) {
-            delta_q = qv_prime;
-            delta_n = delta_q/get_at(cc.cloud.constants, Particle_cons_idx::min_x_act);
-        }
-        res[Nc_idx] += delta_n;
-        res[qc_idx] += delta_q;
-        res[qv_idx] -= delta_q;
-#ifdef TRACE_QV
-        if (trace)
-            std::cout << "traj: " << cc.traj_id << " SB ccn activation dqv " << -delta_q << "\n";
-#endif
-#ifdef TRACE_QC
-        if (trace)
-            std::cout << "traj: " << cc.traj_id
-                << " SB ccn activation no bound dqc " << delta_q << ", dNc " << delta_n
-                << "\n with bound? " << (res[Nc_idx]*dt + Nc > N_max) << " dNc "
-                << (N_max - Nc)/dt
-                << "\nelse ? " << (res[Nc_idx]*dt + Nc < N_min) << " dNc "
-                << (N_min - Nc)/dt << "\n";
-#endif
-        // Hard upper and lower limits
-        if (res[Nc_idx]*dt + Nc > N_max) {
-            res[Nc_idx] = (N_max - Nc)/dt;
-        } else if (res[Nc_idx]*dt + Nc < N_min) {
-            res[Nc_idx] = (N_min - Nc)/dt;
-        }
-
-        float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
-        // Evaporation
-        if (delta_q < 0.0)
-            res[lat_cool_idx] += delta_e;
-        else
-            res[lat_heat_idx] += delta_e;
-    }
-}
 
 /**
  * (optional) homogeneous nucleation using Kaercher et al (2006)
- * Physically based parameterization of cirrus cloud formation for
- * use in global atmospheric models
  *
  * @params T_prime Temperature [K]
  * @params w_prime Ascend velocity [m s^-1]
@@ -805,84 +622,8 @@ void ice_nuc_hom(
 
 
 /**
- * Heterogeneous nucleation using Hande et al.
- *
- * @params qc_prime Cloud water mixing ratio
- * @params qv_prime Water vapor mixing ratio
- * @params T_prime Temperature [K]
- * @params S_i Over saturation regarding to ice
- * @params n_inact Number of inactivated nuclei
- * @params res Vector to store the changes
- * @params cc Model constants
- */
-template<class float_t>
-void ice_activation_hande(
-    float_t &qc_prime,
-    float_t &qv_prime,
-    float_t &T_prime,
-    float_t &S_i,
-    float_t &n_inact,
-    std::vector<float_t> &res,
-    model_constants_t<float_t> &cc) {
-
-    if (T_prime < get_at(cc.constants, Cons_idx::T_nuc)
-        && T_prime > 180.0 && S_i > 1.0 && n_inact < get_at(cc.constants, Cons_idx::ni_het_max)) {
-        const double EPSILON = 1.0e-20;
-        float_t ndiag = 0.0;
-        if (qc_prime > EPSILON) {
-            float_t T_tmp = std::max(T_prime, float_t(237.1501));
-            if (T_tmp < 261.15) {
-                ndiag = get_at(cc.constants, Cons_idx::nim_imm) * exp(-get_at(cc.constants, Cons_idx::alf_imm)
-                    * exp(get_at(cc.constants, Cons_idx::bet_imm)*log(T_tmp-237.15)));
-            }
-        } else {
-            // Hande et al. scheme, Eq. (3) with (2) and (1)
-            float_t T_tmp = std::max(T_prime, float_t(220.001));
-            if (T_tmp < 253.0) {
-                ndiag = get_at(cc.constants, Cons_idx::nin_dep) * exp(-alf_dep
-                    * exp(get_at(cc.constants, Cons_idx::bet_dep)*log(T_tmp - 220.0)));
-                ndiag = ndiag * (get_at(cc.constants, Cons_idx::a_dep)
-                    * atan(get_at(cc.constants, Cons_idx::b_dep)*(S_i-1.0)
-                    + get_at(cc.constants, Cons_idx::c_dep))+get_at(cc.constants, Cons_idx::d_dep));
-            }
-        }
-
-        float_t delta_n = std::max(ndiag - n_inact, float_t(0.0))/cc.dt_prime;
-        float_t tmp_delta = (res[qv_idx] + qv_prime)/cc.dt_prime;
-        float_t delta_q =
-            std::max(float_t(0),
-                std::min(delta_n * get_at(cc.ice.constants, Particle_cons_idx::min_x_nuc_hetero), tmp_delta));
-        delta_n = delta_q/get_at(cc.ice.constants, Particle_cons_idx::min_x_nuc_hetero);
-
-        res[qi_idx] += delta_q;
-        res[Ni_idx] += delta_n;
-        res[qv_idx] -= delta_q;
-#ifdef TRACE_QV
-        if (trace)
-            std::cout << "traj: " << cc.traj_id << " heterogeneous nucleation dqv " << -delta_q << "\n";
-#endif
-#ifdef TRACE_QI
-        if (trace)
-            std::cout << "traj: " << cc.traj_id
-                << " heterogeneous nucleation dqi " << delta_q << ", dNi " << delta_n << "\n";
-#endif
-        n_inact += delta_n;
-
-        // latent heating and cooling
-        float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * delta_q
-            / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
-        // Sublimation, cooling
-        if (delta_q < 0.0)
-            res[lat_cool_idx] += delta_e;
-        // Deposition, heating
-        else
-            res[lat_heat_idx] += delta_e;
-    }
-}
-
-
-/**
  * Heterogeneous nucleation using Phillips et al. (2008)
+ * 10.1175/2007JAS2546.1
  * Implementation by Carmen Koehler and AS
  * modified for C++ and Codipack by Maicon Hieronymus
  *
@@ -986,15 +727,7 @@ void ice_activation_phillips(
                       << "\nn_inact: " << n_inact
                       << "\nna_dust: " << get_at(cc.constants, Cons_idx::na_dust) << "\n";
 #endif
-        if (use_prog_in) {
-            // Not implemented
-            // n_inpot replaces n_dust
-            // ndiag = n_inpot * ndiag;
-            // ndiag_dust = n_inpot*infrac[0];
-            // ndiag_all = ndiag;
-        } else {
-            // ndiag = na_dust * ndiag;
-        }
+
         float_t tmp_ndiag = get_at(cc.constants, Cons_idx::ni_het_max)/cc.dt_prime;
         ndiag = std::min(ndiag, tmp_ndiag);
         float_t delta_n = std::max(ndiag-n_inact, float_t(0.0))/cc.dt_prime;
@@ -1194,7 +927,8 @@ void ice_self_collection(
 }
 
 /**
- * Snow-snow collection.
+ * Snow-snow collection after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qs_prime Snowflakes mixing ratio
  * @params Ns Number of snowflakes
@@ -1237,7 +971,8 @@ void snow_self_collection(
 
 
 /**
- * Melting of snow for temperatures above freezing temperature.
+ * Melting of snow for temperatures above freezing temperature after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qs_prime Snowflakes mixing ratio
  * @params Ns Number of snowflakes
@@ -1318,7 +1053,8 @@ void snow_melting(
 
 
 /**
- * Melting of graupel.
+ * Melting of graupel after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qg_prime Graupel mixing ratio
  * @params Ng Number of graupel particles
@@ -1394,8 +1130,8 @@ void graupel_melting(
 
 
 /**
- * Melting of hail.
- *
+ * Melting of hail after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  * @params qh_prime Hail mixing ratio
  * @params Nh Number of hail particles
  * @params T_prime Temperature [K]
@@ -1469,7 +1205,8 @@ void hail_melting(
 
 
 /**
- * Conversion of cloud droplets to rain droplets.
+ * Conversion of cloud droplets to rain droplets after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qc_prime Cloud mixing ratio
  * @params Nc Number of cloud droplets
@@ -1532,6 +1269,7 @@ void auto_conversion_kb(
  * Formation of raindrops by coagulating cloud droplets and growth
  * of raindrops collecting cloud droplets using Seifert and Beheng (2006)
  * section 2.2.1.
+ * 10.1007/s00703-005-0112-4
  *
  * @params qc_prime Cloud mixing ratio
  * @params Nc Number of cloud droplets
@@ -1613,8 +1351,9 @@ void auto_conversion_sb(
 
 
 /**
- * Rain self collection after Seifert and Beheng (2001), includes breakup
+ * Rain self collection after Seifert and Beheng (2002), includes breakup
  * of droplets that are bigger than 0.3e-3.
+ * https://www.imk-tro.kit.edu/4437_1388.php
  *
  * @params qr_prime Rain mixing ratio
  * @params Nr Number of rain droplets
@@ -1658,6 +1397,7 @@ void rain_self_collection_sb(
 
 /**
  * Rain evaporation after Seifert (2008)
+ * 10.1175/2008JAS2586.1
  *
  * @params qr_prime Rain mixing ratio
  * @params Nr Number of rain droplets
@@ -2080,7 +1820,8 @@ void sedimentation_explicit(
 
 
 /**
- * Evaporation from melting ice particles.
+ * Evaporation from melting ice particles after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qv_prime Water vapor mixing ratio
  * @params e_d Partial pressure of water vapor
@@ -2156,7 +1897,8 @@ void evaporation(
  * Depositional growth of all ice particles.
  * Deposition and sublimation, where deposition rate of ice and snow are
  * being stored.
- * Seifert (2008) Section 3.3
+ * Seifert (2006) Section 3.3
+ * 10.1007/s00703-005-0112-4
  *
  * @params qv_prime Water vapor mixing ratio
  * @params qi_prime Ice crystal mixing ratio
@@ -2367,6 +2109,8 @@ void vapor_dep_relaxation(
  * hail+snow -> hail
  * snow+ice  -> snow
  * This function does only one of these.
+ * After Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params q1 Mixing mass ratio
  * @params q2 Mixing mass ratio
@@ -2449,6 +2193,8 @@ std::vector<float_t> particle_collection(
  * graupel+snow     -> graupel
  * All those processes are done in this function.
  * Technically, this could be used for hail instead of graupel as well.
+ * After Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qi_prime Ice crystal mixing ratio
  * @params Ni Number of ice crystals
@@ -2560,7 +2306,8 @@ void particle_particle_collection(
 
 
 /**
- * Conversion graupel to hail and hail collisions.
+ * Conversion graupel to hail and hail collisions after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qc_prime Cloud water mixing ratio
  * @params qr_prime Rain mixing ratio
@@ -2649,8 +2396,8 @@ void graupel_hail_conv(
 
 
 /**
- * Hail collision with ice and snow.
- *
+ * Hail collision with ice and snow after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  * @params qh_prime Hail mixing ratio
  * @params Nh Number of hail particle
  * @params qs_prime Snowflakes mixing ratio
@@ -2712,7 +2459,8 @@ void hail_collision(
 
 
 /**
- * Rate of ice or snow collecting cloud droplets.
+ * Rate of ice or snow collecting cloud droplets after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qc_prime Cloud water mixing ratio
  * @params Nc Number of cloud droplets
@@ -2790,7 +2538,8 @@ void riming_cloud_core(
 
 
 /**
- * Riming of rain droplets with ice or snow particles.
+ * Riming of rain droplets with ice or snow particles after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qr_prime Rain mixing ratio
  * @params Nr Number of rain droplets
@@ -2867,6 +2616,8 @@ void riming_rain_core(
 
 
 /**
+ * Riming of cloud and rain droplets on ice after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qc_prime Cloud water mixing ratio
  * @params Nc Number of cloud droplets
@@ -3203,6 +2954,7 @@ void ice_riming(
  * Riming of snow with cloud droplets.
  *
  * Also see Seifert & Beheng (2006), Section 3.5.3
+ * 10.1007/s00703-005-0112-4
  *
  * @params qc_prime Cloud water mixing ratio
  * @params Nc Number of cloud droplets
@@ -3585,6 +3337,8 @@ void snow_riming(
 
 
 /**
+ * Riming of cloud droplets with graupel or hail after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qc_prime Cloud water mixing ratio
  * @params Nc Number of cloud droplets
@@ -3742,7 +3496,8 @@ void particle_cloud_riming(
 
 
 /**
- * Riming with rain droplets.
+ * Riming with rain droplets after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qr_prime Rain mixing ratio
  * @params Nr Number of rain droplets
@@ -3891,8 +3646,9 @@ void particle_rain_riming(
 
 
 /**
- * Freezing of rain and conversion to ice, graupel, hail
- *
+ * Freezing of rain and conversion to ice, graupel, hail after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
+ *10.1007/s00703-005-0112-4
  * @params qr_prime Rain mixing ratio
  * @params Nr Number of rain droplets
  * @params T_prime Temperature [K]
@@ -4084,7 +3840,8 @@ void rain_freeze(
 
 
 /**
- * Ice melts instantanuous to rain or cloud droplets.
+ * Ice melts instantaneous to rain or cloud droplets after Seifert & Beheng (2006).
+ * 10.1007/s00703-005-0112-4
  *
  * @params qi_prime Ice crystal mixing ratio
  * @params Ni Number of ice crystals
@@ -4376,34 +4133,17 @@ void RHS_SB(std::vector<float_t> &res,
 #endif
     const double EPSILON = 1.0e-20;
 
-    ////////////// ccn_activation_hdcp2
-    if (nuc_type == 0) {
-        // Not implemented
-    } else if (nuc_type < 6) {
 #if defined(B_EIGHT)
-        ccn_act_hande_akm(p_prime, w_prime, T_prime, qv_prime, qc_prime, Nc,
-            EPSILON, res, cc);
+    ccn_act_hande_akm(p_prime, w_prime, T_prime, qv_prime, qc_prime, Nc,
+        EPSILON, res, cc);
 #else
-        ccn_act_hande(p_prime, w_prime, T_prime, qv_prime, qc_prime, Nc,
-            EPSILON, res, cc);
+    ccn_act_hande(p_prime, w_prime, T_prime, qv_prime, qc_prime, Nc,
+        EPSILON, res, cc);
 #endif
 
-    } else if (nuc_type == 6) {
-        // Not implemented
-    } else {
-        // Seifert & Beheng (2006)
-        ccn_act_seifert(p_prime, p, T_prime, T, qv_prime, qv, qc_prime, qc,
-            Nc, qr, z_prime, dt, w, S, p_sat, ref, res, cc);
-    }
-
     bool use_prog_in = false;
-    if (use_hdcp2_het) {
-        ice_activation_hande(qc_prime, qv_prime, T_prime, S_i,
-            n_inact, res, cc);
-    } else {
-        ice_activation_phillips(qc_prime, qv_prime, T_prime,
-             S_i, n_inact, use_prog_in, res, cc);
-    }
+    ice_activation_phillips(qc_prime, qv_prime, T_prime,
+         S_i, n_inact, use_prog_in, res, cc);
 
     // (optional) homogeneous nucleation using KHL06
     ice_nuc_hom(T_prime, w_prime, p_prime, qv_prime,

@@ -9,15 +9,18 @@
           </mappings>
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_com-host" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_compress" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_release_james_compress" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_vis" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_host" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_james" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_compress" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james-host" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_vis" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_james_compress" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_vis" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_host" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_release_james" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_debug_james" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_com_host" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_james" />
           </excludedPaths>
         </serverdata>
       </paths>

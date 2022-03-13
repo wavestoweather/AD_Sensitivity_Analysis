@@ -56,14 +56,15 @@ do
         SUFF=${SUFF%.*}
 
         INPUT_FILENAME="${AD_SIM_HOME}/data/vladiana_trajectories/${FILENAME}.nc_wcb"
-        TARGET_TIME_AFTER_START="26000"
+        TARGET_TIME_AFTER_START="10000"
 
         echo "###################################"
         echo "Running for ${INPUT_FILENAME} while perturbing ${SUFF}"
         echo ""
         start=`date +%s.%N`
         # optional in case of problems occur: mpirun --mca osc pt2pt
-        mpirun --mca osc pt2pt -n ${NTASKS} build/bin/./trajectories \
+
+        mpirun -n ${NTASKS} build/bin/./trajectories \
         -w ${WRITE_INDEX} \
         -a ${AUTO_TYPE} \
         -t ${FIXED_ITERATION} \
@@ -85,5 +86,7 @@ do
         runtime=$( echo "$end - $start" | bc -l )
 
         echo "done in ${runtime} s"
+        break
     done
+    break
 done

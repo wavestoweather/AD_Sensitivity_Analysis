@@ -188,6 +188,7 @@ int param_t::check() {
     }
 }
 
+
 void to_json(
     nlohmann::json& j,
     const param_t& p) {
@@ -236,7 +237,7 @@ int param_t::from_json(
             j.at(first).get_to(f_name);
             this->add_rand_function(f_name);
         } else if (first == "type") {
-            // Needs to be done before the for-loothis->
+            // Needs to be done before the for-loop
         } else {
             return PARAM_CONFIG_ERR;
         }
@@ -244,56 +245,12 @@ int param_t::from_json(
     return SUCCESS;
 }
 
+
 template<class float_t>
 int param_t::check_name(
     model_constants_t<float_t> &cc) {
     return add_name(param_name, cc);
 }
-
-// void param_t::put(
-//     pt::ptree &ptree) const {
-//     if (err != 0)
-//         return;
-//     pt::ptree param;
-//     param.put("mean", mean);
-//     param.put("name", param_name);
-//     if (!isnan(sigma))
-//         param.put("sigma", sigma);
-//     else
-//         param.put("sigma_perc", sigma_perc);
-//     param.put("rand_func", func_name);
-//     param.put("type", outparam_name);
-//     ptree.push_back(std::make_pair("", param));
-// }
-
-
-// template<class float_t>
-// int param_t::from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc) {
-//     int err = SUCCESS;
-//     add_type(ptree.get<std::string>("type"));
-//     if (err != 0)
-//         return err;
-//     for (auto &it : ptree) {
-//         auto first = it.first;
-//         if (first == "name") {
-//             err = add_name(it.second.get_value<std::string>(), cc);
-//             if (err != SUCCESS) return err;
-//         } else if (first == "sigma_perc") {
-//             add_sigma_perc(it.second.get_value<double>());
-//         } else if (first == "sigma") {
-//             add_sigma(it.second.get_value<double>());
-//         } else if (first == "mean") {
-//             add_mean(it.second.get_value<double>());
-//         } else if (first == "type") {
-//             // Needs to be done before the for-loop.
-//         } else if (first == "rand_func") {
-//             add_rand_function(it.second.get_value<std::string>());
-//         } else {
-//             err = PARAM_CONFIG_ERR;
-//         }
-//     }
-//     return err;
-// }
 
 
 template<class float_t>
@@ -392,6 +349,7 @@ std::string param_t::get_name() const {
     }
 }
 
+
 template int param_t::check_name<codi::RealReverse>(
     model_constants_t<codi::RealReverse>&);
 
@@ -403,12 +361,6 @@ template int param_t::add_name<codi::RealReverse>(
 
 template int param_t::add_name<codi::RealForwardVec<num_par_init> >(
     std::string, model_constants_t<codi::RealForwardVec<num_par_init> >&);
-
-// template int param_t::from_pt<codi::RealReverse>(
-//     pt::ptree&, model_constants_t<codi::RealReverse>&);
-
-// template int param_t::from_pt<codi::RealForwardVec<num_par_init> >(
-//     pt::ptree&, model_constants_t<codi::RealForwardVec<num_par_init> >&);
 
 template void param_t::perturb<codi::RealReverse>(
     model_constants_t<codi::RealReverse>&) const;

@@ -1262,11 +1262,11 @@ void output_handle_t::setup(
 #endif
         SUCCESS_OR_DIE(
             nc_put_vara(
-                ncid,                       // ncid
-                varid[Var_idx::time],       // varid
-                startp.data(),              // startp
+                ncid,                               // ncid
+                varid[Var_idx::time],         // varid
+                startp.data(),               // startp
                 countp.data(),              // countp
-                time_steps.data()));        // op
+                time_steps.data()));            // op
 #ifdef DEVELOP
         std::cout << "done time_steps\n" << std::flush;
 #endif

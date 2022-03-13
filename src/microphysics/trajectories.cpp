@@ -307,9 +307,9 @@ void parameter_check(
                         SUCCESS_OR_DIE(
                         MPI_Compare_and_swap(
                             &ens_id,                        // origin
-                            &scheduler.max_ensemble_id,     // compare
+                            &scheduler.max_ensemble_id,   // compare
                             &result,                        // result
-                            MPI_UINT64_T,                   // datatype
+                            MPI_UINT64_T,                     // datatype
                             0,                              // target rank
                             0,                              // target displ
                             scheduler.ens_window));
@@ -493,6 +493,9 @@ void run_substeps(
                 get_at(cc.constants, Cons_idx::p_sat_const_b),
                 get_at(cc.constants, Cons_idx::Epsilon));
         }
+#ifdef DEVELOP
+        std::cout << "run RK4\n";
+#endif
 //////////////// Add any different scheme and model here
 #if defined(RK4) || defined(RK4_ONE_MOMENT) || defined(OTHER)
         // Not implemented
@@ -502,32 +505,43 @@ void run_substeps(
         RK4_step_2_sb_ice(y_single_new, y_single_old, ref_quant, cc,
             input.fixed_iteration);
 #endif
+#ifdef DEVELOP
+        std::cout << "done with RK4\n";
+#endif
 #ifndef IN_SAT_ADJ
         if (last_step) {
             finish_last_step(y_single_new, ref_quant, cc);
         }
 #endif
+#ifdef DEVELOP
+        std::cout << "get gradients\n";
+#endif
         if (cc.traj_id == 0 || input.simulation_mode != limited_time_ensembles)
             cc.get_gradients(y_single_new, y_diff, tape);
-
+#ifdef DEVELOP
+        std::cout << "got gradients\n";
+#endif
         // Time update
         time_new = (sub + (t+cc.done_steps)*cc.num_sub_steps)*cc.dt;
-        // std::cout << time_new << "\n";
         if (time_new >= delay_out_time) {
-           //  std::cout << "process last step\n";
+#ifdef DEVELOP
+            std::cout << "process_step\n";
+#endif
             // TODO(mahieron): what if delay_out_time is not a multiple of dt_prime?
             out_handler.process_step(cc, netcdf_reader, y_single_new, y_diff,
                 sub, t,
                 input.write_index,
                 input.snapshot_index,
                 last_step, ref_quant);
-           //  std::cout << "last step processed\n";
         }
         // Interchange old and new for next step
         time_old = time_new;
         y_single_old.swap(y_single_new);
         if (time_new != cc.t_end_prime) {
             // Check if parameter shall be perturbed
+#ifdef DEVELOP
+            std::cout << "check parameters\n";
+#endif
             parameter_check(segments, cc, time_old, y_diff,
                 y_single_old, input, ref_quant, scheduler);
         }
@@ -538,7 +552,7 @@ void run_substeps(
         if (last_step)
             break;
     }  // End substep
-#ifdef TRACE_COMM_DEBUG
+#if defined(TRACE_COMM_DEBUG) || defined(DEVELOP)
     std::cout << "after substep time \n";
 #endif
 }
@@ -731,10 +745,13 @@ int run_simulation(
             inflow, t, global_args.checkpoint_flag, input.start_over_env) != SUCCESS) {
             // If the input file consists of (multiple) NaNs, we do not
             // need a simulation.
+#ifdef DEVELOP
+            std::cout << rank << " flush buffer\n";
+#endif
             out_handler.flush_buffer(cc);
             break;
         }
-#ifdef TRACE_COMM_DEBUG
+#if defined(TRACE_COMM_DEBUG) || defined(DEVELOP)
         std::cout << rank << ", sim " << t << " / " << cc.num_steps - cc.done_steps - 1 << "\n";
 #endif
         // Iterate over each substep
@@ -742,7 +759,7 @@ int run_simulation(
             inflow, y_single_new, netcdf_reader, y_diff, out_handler,
             sub_start, ensemble, segments, pbar, scheduler,
             delay_out_time);
-#ifdef TRACE_COMM_DEBUG
+#if defined(TRACE_COMM_DEBUG) || defined(DEVELOP)
        std::cout << rank << ", sim done " << t << " / " << cc.num_steps - cc.done_steps - 1 << "\n";
 #endif
 #ifdef TRACE_QG
@@ -756,7 +773,7 @@ int run_simulation(
         checkpoint_t throw_away;
         scheduler.send_task(throw_away, false);
     }
-#ifdef TRACE_COMM_DEBUG
+#if defined(TRACE_COMM_DEBUG) || defined(DEVELOP)
     std::cout << rank << ", sim end. pbar.finish()\n";
 #endif
     if (finish_progress)
@@ -962,12 +979,20 @@ void limited_time_ensemble_simulation(
         scheduler.set_n_trajectories(segments[0].n_members);
         netcdf_reader.read_initial_values(y_init, ref_quant, cc,
             global_args.checkpoint_flag, input.traj, input.ensemble);
-
+#ifdef DEVELOP
+        std::cout << rank << " setting y for " << num_comp << " variables. sizes: "
+                  << y_single_old.size() << ", " << y_init.size() << "\n";
+#endif
         // Set "old" values as temporary holder of values.
         for (int ii = 0 ; ii < num_comp ; ii++)
             y_single_old[ii] = y_init[ii];
-
+#ifdef DEVELOP
+        std::cout << rank << " resetting out_handler\n";
+#endif
         out_handler.reset(scheduler.current_traj, scheduler.current_ens);
+#ifdef DEVELOP
+        std::cout << rank << " run simulation \n";
+#endif
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow,
             out_handler, segments, scheduler, netcdf_reader, pbar, input.delay_time_store, 0, false));
@@ -975,6 +1000,9 @@ void limited_time_ensemble_simulation(
     uint64_t pbar_counter =  cc.num_sub_steps*cc.num_steps-1;
 
     while (scheduler.receive_task(checkpoint)) {
+#ifdef DEVELOP
+        std::cout << " rank " << rank << " received task \n";
+#endif
         global_args.checkpoint_flag = true;
 
         setup_simulation(argc, argv, rank, n_processes, input,

@@ -536,6 +536,10 @@ int netcdf_reader_t::read_buffer(
             y_single_old[w_idx] = 0;
             cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
         } else if (i > 0) {
+#ifdef DEVELOP
+            std::cout << "read buffer: write at " << time_buffer_idx+i
+                      << " with size " << buffer.size() << " and " << buffer[Par_idx::pressure].size() << "\n";
+#endif
             y_single_old[p_idx] += (buffer[Par_idx::pressure][time_buffer_idx+i] - y_single_old[p_idx]) / (i+1);
             // If the dataset isn't broken, then I can just reuse the found i.
             // A check at the end of the function will be done in case the
@@ -583,26 +587,41 @@ int netcdf_reader_t::read_buffer(
 #endif
 
         } else {
+#ifdef DEVELOP
+            std::cout << "read buffer: read at " << time_buffer_idx
+                      << " with size " << buffer.size() << " and " << buffer[Par_idx::pressure].size() << "\n";
+#endif
             y_single_old[p_idx] = buffer[Par_idx::pressure][time_buffer_idx];
             y_single_old[T_idx] = buffer[Par_idx::temperature][time_buffer_idx];
 #if defined(RK4ICE) || defined(RK4NOICE)
             y_single_old[w_idx] = buffer[Par_idx::ascent][time_buffer_idx];
-
+#ifdef DEVELOP
+            std::cout << " test \n";
+#endif
             if (time_idx == n_timesteps_in) {
                 cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
             } else {
                 // Here we need to find the next valid w value again
+#ifdef DEVELOP
+                std::cout << " test 2\n";
+#endif
                 uint32_t j = 1;
                 while (time_idx+j <= n_timesteps_in && j < 11
                     && std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j])) {
                     j++;
                 }
+#ifdef DEVELOP
+                std::cout << " test 3\n";
+#endif
                 if (j == 11 || std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j])) {
                     cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
                 } else {
                     cc.constants[static_cast<int>(Cons_idx::dw)] = (
                         (buffer[Par_idx::ascent][time_buffer_idx+j] - buffer[Par_idx::ascent][time_buffer_idx])
                         / (cc.dt*cc.num_sub_steps*j));
+#ifdef DEVELOP
+                    std::cout << " test 4\n";
+#endif
                 }
             }
 #endif
@@ -676,6 +695,9 @@ int netcdf_reader_t::read_buffer(
             }
         }
     }
+#ifdef DEVELOP
+    std::cout << " test end\n";
+#endif
     return err;
 }
 
