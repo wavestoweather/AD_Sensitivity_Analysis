@@ -89,17 +89,19 @@ else()
     message(WARNING "~~~ You are not using a GNU compiler. This has not been tested")
 endif()
 
+
+
+# Check for build types such as -DBUILD_TYPE=debug
+if ((NOT CMAKE_BUILD_TYPE) OR (CMAKE_BUILD_TYPE MATCHES "^None"))
+    set(CMAKE_BUILD_TYPE "release")
+endif()
+boost_report_pretty("CMake build" CMAKE_BUILD_TYPE)
 message(STATUS "Setting flags")
 
 set(CXX_WARNING_FLAGS "-Wall")
 
 if( NOT RELOPTLEVEL )
     set(RELOPTLEVEL 2)
-endif()
-
-# Check for build types such as -DBUILD_TYPE=debug
-if ((NOT CMAKE_BUILD_TYPE) OR (CMAKE_BUILD_TYPE MATCHES "^None"))
-    set(CMAKE_BUILD_TYPE "release")
 endif()
 set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: None debug release" FORCE)
 

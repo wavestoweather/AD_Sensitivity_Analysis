@@ -476,6 +476,10 @@ int netcdf_reader_t::read_buffer(
         buffer_params(ref_quant);
         time_buffer_idx = 0;
     }
+#ifdef TRACE_COMM
+    std::cout << "read buffer: set time_buffer_idx: " << time_buffer_idx
+              << ", with n_timesteps_buffer: " << n_timesteps_buffer << "\n";
+#endif
     // Reset outflow
     y_single_old[qi_out_idx] = 0;
     y_single_old[qs_out_idx] = 0;
@@ -830,13 +834,26 @@ void netcdf_reader_t::init_netcdf(
     cc.set_dt(time[1]-time[0], ref_quant);
 
     if (this->start_time_idx_given) {
+#ifdef TRACE_COMM
+      std::cout << "traj: " << traj_idx << " start_time_idx given with " << this->start_time_idx << "\n";
+#endif
         start_time_idx = this->start_time_idx;
     } else if (!std::isnan(start_time) && !checkpoint_flag) {
         // Calculate the needed index
         start_time_idx = (start_time-rel_start_time)/cc.dt_traject;
+#ifdef TRACE_COMM
+        std::cout << "traj: " << traj_idx << " start_time not nan and not a checkpoint. start_time: " << start_time
+                  << ", rel_start_time: " << rel_start_time << ", dt_traject: " << cc.dt_traject
+                  << ", start_time_idx: " << start_time_idx << "\n";
+#endif
     } else if (checkpoint_flag && !std::isnan(start_time)) {
         // Calculate the needed index
         start_time_idx = ceil(start_time-rel_start_time + current_time)/cc.dt_traject;
+#ifdef TRACE_COMM
+        std::cout << "traj: " << traj_idx << " start_time not nan and is a checkpoint. start_time: " << start_time
+                  << ", rel_start_time: " << rel_start_time << ", dt_traject: " << cc.dt_traject
+                  << ", current_time: " << current_time << ", start_time_idx: " << start_time_idx << "\n";
+#endif
     }
     time_idx = start_time_idx;
     this->start_time_idx = start_time_idx;
@@ -922,6 +939,9 @@ void netcdf_reader_t::init_netcdf(
     cc.start_time = 0;
 #endif
     this->start_time_idx_original = this->start_time_idx;
+#ifdef TRACE_COMM
+    std::cout << "Init_netcdf, start_time_idx: " << this->start_time_idx << "\n";
+#endif
 
 #if defined(MET3D) || defined(B_EIGHT)
     std::vector<size_t> startp3;
@@ -961,7 +981,8 @@ void netcdf_reader_t::read_initial_values(
     std::vector<size_t> startp;
 #ifdef TRACE_COMM
     std::cout << "read_initial_values checkpoint: " << checkpoint_flag
-        << ", traj_idx: " << traj_idx << ", cc.traj_id: " << cc.traj_id << "\n";
+        << ", traj_idx: " << traj_idx << ", cc.traj_id: " << cc.traj_id
+        << ", start_time_idx: " << start_time_idx << "\n";
 #endif
     if (!checkpoint_flag) {
 #if defined B_EIGHT

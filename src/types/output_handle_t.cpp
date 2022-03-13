@@ -1170,40 +1170,46 @@ void output_handle_t::setup(
         // Needs netcdf-c >= 4.7.4
         // All variables must be written in collective mode
         // Perturbed simulations do not work with compression enabled!
+#ifdef DEVELOP
+        std::cout << "before compression\n";
+#endif
 #ifdef COMPRESS_OUTPUT
+#ifdef DEVELOP
+        std::cout << "Using compression\n";
+#endif
         if (this->simulation_mode == limited_time_ensembles
             || this->simulation_mode == trajectory_sensitivity
             || this->simulation_mode == grid_sensitivity) {
-            for (uint32_t i=0; i < Var_idx::n_vars; ++i) {
-                // This could be a version for szip
-                // if (local_num_comp > 8 || i != static_cast<int>(Var_idx::out_param))
-                //     SUCCESS_OR_DIE(
-                //         nc_def_var_szip(
-                //             ncid,
-                //             varid[i],
-                //             H5_SZIP_NN_OPTION_MASK,
-                //             8));  // pixels per block
-                // This does not work on scalars; we need to filter those out
-                if (local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param))
-                    // zlib version
-                    SUCCESS_OR_DIE(
-                        nc_def_var_deflate(
-                            ncid,
-                            varid[i],
-                            1,  // shuffle
-                            1,  // deflate
-                            9));  // max compression
-            }
+            // Compressing this is buggy
+//            for (uint32_t i=0; i < Var_idx::n_vars; ++i) {
+//                // This does not work on scalars; we need to filter those out
+//                if (local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param))
+//                // This could be a version for szip
+////                         SUCCESS_OR_DIE(
+////                             nc_def_var_szip(
+////                                 ncid,
+////                                 varid[i],
+////                                 NC_SZIP_NN,
+////                                 8));  // pixels per block
+//                        // zlib version
+//                        SUCCESS_OR_DIE(
+//                            nc_def_var_deflate(
+//                                ncid,
+//                                varid[i],
+//                                1,  // shuffle
+//                                1,  // deflate
+//                                9));  // max compression
+//            }
             if (!track_ic) {
                 // gradients
                 for (uint32_t i=0; i < num_par-num_par_init; ++i) {
                     if (cc.trace_check(i, false))
-                        // SUCCESS_OR_DIE(
-                        //     nc_def_var_szip(
-                        //         ncid,
-                        //         varid[Var_idx::n_vars + i],
-                        //         H5_SZIP_NN_OPTION_MASK,
-                        //         8));
+//                         SUCCESS_OR_DIE(
+//                             nc_def_var_szip(
+//                                 ncid,
+//                                 varid[Var_idx::n_vars + i],
+//                                 NC_SZIP_NN,
+//                                 8));
                         SUCCESS_OR_DIE(
                             nc_def_var_deflate(
                                 ncid,
@@ -1216,12 +1222,12 @@ void output_handle_t::setup(
                 // initial conditions
                 for (uint32_t i=0; i < num_par_init; ++i) {
                     if (cc.trace_check(i, 2))
-                        // SUCCESS_OR_DIE(
-                        //     nc_def_var_szip(
-                        //         ncid,
-                        //         varid[Var_idx::n_vars + i],
-                        //         H5_SZIP_NN_OPTION_MASK,
-                        //         8));
+//                         SUCCESS_OR_DIE(
+//                             nc_def_var_szip(
+//                                 ncid,
+//                                 varid[Var_idx::n_vars + i],
+//                                 NC_SZIP_NN,
+//                                 8));
                         SUCCESS_OR_DIE(
                             nc_def_var_deflate(
                                 ncid,
@@ -1358,10 +1364,10 @@ void output_handle_t::setup(
     // model state
     for (uint32_t i=0; i < num_comp; ++i)
         SUCCESS_OR_DIE(
-            nc_inq_varid(
-                ncid,
-                output_par_idx[i].c_str(),
-                &varid[i]));
+                nc_inq_varid(
+                    ncid,
+                    output_par_idx[i].c_str(),
+                    &varid[i]));
 #ifdef DEVELOP
         std::cout << "get track varids\n" << std::flush;
 #endif
@@ -1482,8 +1488,9 @@ void output_handle_t::setup(
 #endif
         // Make the access independent which is a must due to the dynamic
         // work schedule; This can be expensive though.
-        for (uint32_t i=0; i < Var_idx::n_vars; i++)
+        for (uint32_t i=0; i < Var_idx::n_vars; i++) {
             SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_COLLECTIVE));
+        }
         if (!track_ic) {
             for (uint32_t i=0; i < num_par-num_par_init; i++)
                 if (cc.trace_check(i, false))
@@ -1679,7 +1686,20 @@ void output_handle_t::flush_buffer(
         countp.push_back(1);
         countp.push_back(n_snapshots);
     }
+#ifdef DEVELOP
+    std::cout << "traj: " << traj << " at " << flushed_snapshots
+              << " with n_snapshots: " << n_snapshots << "\n";
+#endif
     for (uint64_t i=0; i < num_comp; i++) {
+//    for (uint64_t i=num_comp-1; i >= 0; i--) {
+#ifdef DEVELOP
+//        if (i >= 12 && i < 21) continue;
+        std::cout << "traj: " << traj << " at " << flushed_snapshots
+                  << " i: " << i << "/" << num_comp
+                  << " output_size: " << output_buffer[i].size()
+                  << " varid: " << varid[i] << "\n";
+
+#endif
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,
@@ -1688,6 +1708,10 @@ void output_handle_t::flush_buffer(
                 countp.data(),
                 output_buffer[i].data()));
     }
+#ifdef DEVELOP
+    std::cout << "traj: " << traj << " at " << flushed_snapshots
+              << " flushed the model state variables" << "\n";
+#endif
     // time after ascent
     SUCCESS_OR_DIE(
         nc_put_vara(
@@ -1696,6 +1720,10 @@ void output_handle_t::flush_buffer(
             startp.data(),
             countp.data(),
             output_buffer[Buffer_idx::time_ascent_buf].data()));
+#ifdef DEVELOP
+    std::cout << "traj: " << traj << " at " << flushed_snapshots
+              << " flushed time_ascent" << "\n";
+#endif
     // flags
     for (uint64_t i=0; i < output_buffer_flags.size(); i++) {
 #if !defined B_EIGHT
@@ -1752,7 +1780,10 @@ void output_handle_t::flush_buffer(
                 countp.insert(countp.begin(), local_num_comp);
             }
         }
-
+#ifdef DEVELOP
+        std::cout << "traj: " << traj << " at " << flushed_snapshots
+                  << " not limited time ensemble; flush gradients\n";
+#endif
         // Use an offset if the number of snapshots does not fit
         // This is necessary since the slow index is [0] (Output Parameter)
         // and the fast index is [3] (time), which has gaps now
@@ -1776,6 +1807,11 @@ void output_handle_t::flush_buffer(
 
                         for (uint64_t j=0; j < num_par-num_par_init; j++) {
                             if (cc.trace_check(j, false)) {
+#ifdef DEVELOP
+                                std::cout << "traj: " << traj << " at " << flushed_snapshots
+                                          << " param " << i << "/" << local_num_comp
+                                          << " gradient " << j << "/" << num_par-num_par_init << "\n";
+#endif
                                 SUCCESS_OR_DIE(
                                     nc_put_vara(
                                         ncid,
@@ -1798,6 +1834,11 @@ void output_handle_t::flush_buffer(
 
                         for (uint64_t j=0; j < num_par_init; j++) {
                             if (cc.trace_check(j, 2)) {
+#ifdef DEVELOP
+                                std::cout << "traj: " << traj << " at " << flushed_snapshots
+                                          << " IC param " << i << "/" << local_num_comp
+                                          << " gradient " << j << "/" << num_par-num_par_init << "\n";
+#endif
                                 SUCCESS_OR_DIE(
                                     nc_put_vara(
                                         ncid,
@@ -1811,6 +1852,10 @@ void output_handle_t::flush_buffer(
                         comp_idx++;
                     }
                 }
+#ifdef DEVELOP
+                std::cout << "traj: " << traj << " at " << flushed_snapshots
+                  << " not limited time ensemble; flushed gradients\n";
+#endif
             } else {
 #endif
                 // nc_put_varm is discouraged. We use it only if no compression is
@@ -1840,6 +1885,10 @@ void output_handle_t::flush_buffer(
                 if (!track_ic) {
                     for (uint64_t j=0; j < num_par-num_par_init; j++) {
                         if (cc.trace_check(j, false)) {
+#ifdef DEVELOP
+                            std::cout << "traj: " << traj << " at " << flushed_snapshots
+                                      << " gradient " << j << "/" << num_par-num_par_init << "\n";
+#endif
                             SUCCESS_OR_DIE(
                                 nc_put_varm(
                                     ncid,
@@ -1856,6 +1905,10 @@ void output_handle_t::flush_buffer(
                     // initial conditions sensitivity
                     for (uint64_t j=0; j < num_par_init; j++) {
                         if (cc.trace_check(j, 2)) {
+#ifdef DEVELOP
+                            std::cout << "traj: " << traj << " at " << flushed_snapshots
+                                      << " IC gradient " << j << "/" << num_par-num_par_init << "\n";
+#endif
                             SUCCESS_OR_DIE(
                                 nc_put_varm(
                                     ncid,
@@ -1875,6 +1928,11 @@ void output_handle_t::flush_buffer(
             if (!track_ic) {
                 for (uint64_t j=0; j < num_par-num_par_init; j++) {
                     if (cc.trace_check(j, false)) {
+#ifdef DEVELOP
+                        std::cout << "traj: " << traj << " at " << flushed_snapshots
+                                  << " Two gradient " << j << "/" << num_par-num_par_init
+                                  << " varid: " << varid[Var_idx::n_vars + j] << "\n";
+#endif
                         SUCCESS_OR_DIE(
                             nc_put_vara(
                                 ncid,
@@ -1888,6 +1946,10 @@ void output_handle_t::flush_buffer(
                 // initial conditions
                 for (uint64_t j=0; j < num_par_init; j++) {
                     if (cc.trace_check(j, 2)) {
+#ifdef DEVELOP
+                        std::cout << "traj: " << traj << " at " << flushed_snapshots
+                                  << " IC Two gradient " << j << "/" << num_par-num_par_init << "\n";
+#endif
                         SUCCESS_OR_DIE(
                             nc_put_vara(
                                 ncid,
@@ -1918,6 +1980,11 @@ void output_handle_t::flush_buffer(
             for (uint64_t j=0; j < num_par-num_par_init; j++) {
                 if (cc.trace_check(j, false)) {
                     for (int i = 0; i < local_num_comp; i++) {
+#ifdef DEVELOP
+                        std::cout << "traj: " << traj << " at " << flushed_snapshots
+                                  << " Manual param " << i << "/" << local_num_comp
+                                  << " gradient " << j << "/" << num_par-num_par_init << "\n";
+#endif
                         startp2[0] = i;
                         SUCCESS_OR_DIE(
                             nc_put_vara(
@@ -1935,6 +2002,11 @@ void output_handle_t::flush_buffer(
                 if (cc.trace_check(j, 2)) {
                     for (int i = 0; i < local_num_comp; i++) {
                         startp2[0] = i;
+#ifdef DEVELOP
+                        std::cout << "traj: " << traj << " at " << flushed_snapshots
+                                  << " Manual IC param " << i << "/" << local_num_comp
+                                  << " gradient " << j << "/" << num_par-num_par_init << "\n";
+#endif
                         SUCCESS_OR_DIE(
                             nc_put_vara(
                                 ncid,

@@ -893,13 +893,19 @@ void only_sensitivity_simulation(
                 out_handler, segments, scheduler, netcdf_reader, pbar, input.delay_time_store, 0, false));
         }
     }
+#ifdef DEVELOP
+    std::cout << rank << " before busy_flush\n";
+#endif
     busy_flush(scheduler, cc, out_handler);
+#ifdef DEVELOP
+    std::cout << rank << " after busy_flush\n";
+#endif
     pbar.finish();
 }
 
 
 template<class float_t>
-void limited_time_ensembe_simulation(
+void limited_time_ensemble_simulation(
     const int &argc,
     char* const * argv,
     const int &rank,
@@ -1162,11 +1168,11 @@ int main(int argc, char** argv) {
         }
     } else if (input.simulation_mode == limited_time_ensembles) {
         if (input.track_initial_cond) {
-            limited_time_ensembe_simulation<codi::RealForwardVec<num_par_init> >(
+            limited_time_ensemble_simulation<codi::RealForwardVec<num_par_init> >(
                 argc, argv, rank, n_processes, input, global_args,
                 ref_quant, scheduler, netcdf_reader);
         } else {
-            limited_time_ensembe_simulation<codi::RealReverse>(
+            limited_time_ensemble_simulation<codi::RealReverse>(
                 argc, argv, rank, n_processes, input, global_args,
                 ref_quant, scheduler, netcdf_reader);
         }

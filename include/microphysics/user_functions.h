@@ -717,7 +717,7 @@ void ice_nuc_hom(
     model_constants_t<float_t> &cc) {
 
     float_t s_crit = 2.349 - T_prime * (1.0/259.0);
-    // mass of water molecule [kg)
+    // mass of water molecule [kg]
     float_t ma_w = get_at(cc.constants, Cons_idx::M_w)/get_at(cc.constants, Cons_idx::N_avo);
     float_t svol = ma_w / get_at(cc.constants, Cons_idx::rho_ice);  // specific volume of a water molecule in ice
 
@@ -748,7 +748,7 @@ void ice_nuc_hom(
         // pre-existing ice crystals included as reduced updraft speed
         float_t ri_dot = bcoeff[0] / (1.0 + bcoeff[1] * r_i);
         float_t R_ik = (4.0*M_PI) / svol * Ni * r_i*r_i * ri_dot;
-        float_t w_pre = std::max(float_t(0.0), (acoeff[1] + acoeff[2] * S_i)/(acoeff[0]*S_i)*R_ik);  // KHL06 Eq. 19
+        float_t w_pre = std::max(float_t(0.0), (acoeff[1] + acoeff[2] * S_i)/(acoeff[0]*S_i)*R_ik);  // Eq. 19
 
         // homogenous nucleation event
         if (w_prime > w_pre) {
@@ -758,7 +758,7 @@ void ice_nuc_hom(
             float_t delta = bcoeff[1] * get_at(cc.constants, Cons_idx::r_0);
             float_t phi = acoeff[0]*S_i / (acoeff[1]+acoeff[2]*S_i) * (w_prime - w_pre);
 
-            // monodisperse approximation following KHL06
+            // monodisperse approximation
             float_t kappa = 2.0 * bcoeff[0]*bcoeff[1]*tau/((1.0+delta)*(1.0+delta));
             float_t sqrtkap = sqrt(kappa);
             float_t ren = 3.0*sqrtkap / (2.0 + sqrt(1.0+9.0*kappa/M_PI));
@@ -1030,7 +1030,7 @@ void ice_activation_phillips(
 }
 
 /**
- * Homogeneous freezing of cloud droplets. Cotton and Field (2002)
+ * Homogeneous freezing of cloud droplets. Cotton and Field (2002), Seifert & Beheng (2006) for reference
  * Ice nucleation characteristics of an isolated wave cloud
  * Freeze only if cloud droplets to freeze are available
  * and the temperature is low enough.
@@ -1777,7 +1777,7 @@ void rain_evaporation_sb(
 
 
 /**
- * Sedimentation after Seifert and Beheng (2006, 2008). This function
+ * Sedimentation after Seifert and Beheng (2006). This function
  * processes rain, snow, ice, hail and graupel sedimentation at once.
  * The main difference in sedi_icon_core to ICON and COSMO here is that we do not
  * approximate the fall velocity based on the cell above the current one.
@@ -3201,6 +3201,8 @@ void ice_riming(
 
 /**
  * Riming of snow with cloud droplets.
+ *
+ * Also see Seifert & Beheng (2006), Section 3.5.3
  *
  * @params qc_prime Cloud water mixing ratio
  * @params Nc Number of cloud droplets
