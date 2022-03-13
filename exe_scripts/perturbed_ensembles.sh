@@ -6,7 +6,7 @@ AD_SIM_HOME=$(pwd)
 NTASKS=6
 
 # The simulation mode determines how multiple processes are used
-# ensembles at different time steps and sensitvity analysis 0
+# ensembles at different time steps and sensitivity analysis 0
 # sensitivity analysis 1
 # ensembles at different time steps 2
 # sensitivity analysis on grids 3
@@ -27,15 +27,15 @@ SNAPSHOT_INDEX="1"
 FIXED_ITERATION="0"
 # Warm up time in seconds for the model before any data is tracked
 WARM_UP="1800"
-# Wether to take the data from the netcdf-file every 20 seconds (=1)
+# Whether to take the data from the netcdf-file every 20 seconds (=1)
 # or just use the initial pressure, temperature and ascent
 # from the file and simulate microphysics
 # until the target time is reached (=0 not recommended)
 START_OVER_ENVIRONMENT="1"
 # If you want to see a progressbar, set the value to 500 or above.
-# The sumulation is rather fast, hence we set it off (=0).
+# The simulation is rather fast, hence we set it off (=0).
 # The number indicates how many iterations are done between updates of
-# the progressbar. On an Intel i7 there are between 1000 and 4000 steps per
+# the progressbar. On an Intel i7 there are between 450 and 500 steps per
 # second.
 PROGRESSBAR="500"
 TRAJ="0"
@@ -56,7 +56,7 @@ do
         SUFF=${SUFF%.*}
 
         INPUT_FILENAME="${AD_SIM_HOME}/data/vladiana_trajectories/${FILENAME}.nc_wcb"
-        TARGET_TIME_AFTER_START="10000"
+        TARGET_TIME_AFTER_START="26000"
 
         echo "###################################"
         echo "Running for ${INPUT_FILENAME} while perturbing ${SUFF}"
@@ -86,7 +86,5 @@ do
         runtime=$( echo "$end - $start" | bc -l )
 
         echo "done in ${runtime} s"
-        break
     done
-    break
 done
