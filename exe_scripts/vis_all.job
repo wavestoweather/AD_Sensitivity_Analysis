@@ -1,0 +1,191 @@
+#!/bin/bash
+#SBATCH --job-name=vis_model
+#SBATCH --output=logs/vis_model_%A.out
+#SBATCH --error=logs/vis_model_%A.err
+#SBATCH --time=24:00:00
+#SBATCH -p parallel
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=32
+#SBATCH --cpus-per-task=1
+#SBATCH -A m2_zdvresearch
+#SBATCH --mem=32000
+#SBATCH -C skylake
+
+############################### This is the one and only script needed to run
+# run with
+# sbatch vis_all.job all
+# On my local machine with 4 cores, it takes about 2 to 2.5 hours per file.
+# There are roughly 68 files.
+# With 32 cores, we should be able to do that in about 19.2 hours.
+module purge
+module load data/HDF5/1.12.1-gompi-2021b
+module load numlib/GSL/2.7-GCC-11.2.0
+module load devel/Boost/1.77.0-gompi-2021b
+module load devel/CMake/3.21.1
+module load data/netCDF/4.8.1-gompi-2021b
+
+# Store working directory to be safe
+cd ..
+SAVEDPWD=$(pwd)
+export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}
+ID_NUMBER=$SLURM_ARRAY_TASK_ID
+SAVE_INPUTFILEPATH=/lustre/project/m2_zdvresearch/mahieron/data/vladiana_deduplicated/
+INPUT_FILEPATH="${AD_SIM_HOME}/data/"
+SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/vladiana_vis/march_22/"
+OUTPUT_PATH="${AD_SIM_HOME}/output/"
+SAVE_TRACK_FILE="${SAVEDPWD}/configs/qr_vis_top40_config.json"
+
+echo "Using ${1} and storing to ${SAVE_OUTPUTPATH}"
+
+cleanup(){
+    echo "Copy from ${OUTPUT_PATH}*.nc to ${SAVE_OUTPUTPATH}*.nc"
+    if [ ! -d "${SAVE_OUTPUTPATH}" ]
+    then
+        mkdir -p "${SAVE_OUTPUTPATH}"
+    fi
+    find ${OUTPUT_PATH} -type f -name "*.nc" -exec cp {} ${SAVE_OUTPUTPATH} \;
+}
+
+# Copy executable, input file, configuration file
+# Create directories for temporary files, output data
+if [ ! -d "${SAVE_OUTPUTPATH}" ]
+then
+    mkdir -p "${SAVE_OUTPUTPATH}"
+fi
+
+if [ ! -d "${AD_SIM_HOME}/build/bin/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/build/bin/"
+fi
+
+cd ${AD_SIM_HOME}
+if [ ! -d ${AD_SIM_HOME}/build ]
+then
+    mkdir ${AD_SIM_HOME}/build
+fi
+cp -r ${SAVEDPWD}/src .
+cp -r ${SAVEDPWD}/cmake .
+cp -r ${SAVEDPWD}/include .
+cp ${SAVEDPWD}/CMakeLists.txt .
+
+cd ${AD_SIM_HOME}/build
+export NETCDF_DIR=/cluster/easybuild/broadwell/software/netCDF/4.7.3-gompi-2019b/
+cmake .. -Dnlohmann_json_DIR=/home/mahieron/software/json-3.10.5/build/ -DCODIPACK_INCLUDEDIR=/home/mahieron/custom/include/ -DCMAKE_BUILD_TYPE=release -DTARGET=simulation -DSILENT_MODE:BOOL=ON -DTRUSTED_DATA:BOOL=ON -DHDF5_DIR=/cluster/easybuild/broadwell/software/HDF5/1.12.1-gompi-2021b/ && make -j6
+cd ..
+
+if [ ! -d "${AD_SIM_HOME}/data/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/data/"
+fi
+
+if [ ! -d "${AD_SIM_HOME}/tmp/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/tmp/"
+fi
+
+if [ ! -d "${AD_SIM_HOME}/configs" ]
+then
+    mkdir -p "${AD_SIM_HOME}/configs"
+fi
+
+cp ${SAVE_TRACK_FILE} ${AD_SIM_HOME}/configs/.
+cp ${SAVEDPWD}/dmin_wetgrowth_lookup.dat ${AD_SIM_HOME}/
+cd ${AD_SIM_HOME}
+
+TRACK_FILE=${AD_SIM_HOME}/configs/qr_vis_top40_config.json
+
+if [ ! -d ${OUTPUT_PATH} ]
+then
+    mkdir -p ${OUTPUT_PATH}
+fi
+
+# The simulation mode determines how multiple processes are used
+# ensembles at different time steps and sensitvity analysis 0
+# sensitivity analysis 1
+# ensembles at different time steps 2
+# sensitivity analysis on grids 3
+# ensembles at fixed intervals and sensitivity analysis 4
+SIMULATION_MODE="1"
+AUTO_TYPE="3"
+# Write to disk every WRITE_INDEX steps. If you experience I/O issues,
+# then set it to a multiple of SNAPSHOT_INDEX
+WRITE_INDEX="20000"
+# Time step in seconds
+TIMESTEP="20"
+# Get results every SNAPSHOT_INDEX steps, in this example every $TIMESTEP (20) seconds
+SNAPSHOT_INDEX="1"
+# Wether to take the data from the netcdf-file every 20 seconds (=1)
+# or just use the initial pressure, temperature and ascent
+# from the file and simulate microphysics
+# until the target time is reached (=0 not recommended)
+START_OVER_ENVIRONMENT="1"
+# Fix pressure, temperature and ascent during microphysics (=1)
+# or take any changes of them into account (=0)
+FIXED_ITERATION="0"
+# Warm up time in seconds for the model before any data is tracked
+WARM_UP="1800"
+# Start index along the time dimension at which one should start the
+# simulation
+# An alternative way would be the option '-n START_TIME', where
+# START_TIME is the start time in seconds relative to the start of the
+# (convective or slantwise) ascend.
+# We can remove it as well if it is just 0
+START_TIME_IDX="0"
+# The number indicates how many iterations are done between updates of
+# the progressbar. On an Intel i7 there are between 1000 and 4000 steps per
+# second.
+PROGRESSBAR="0"
+
+function run_sim {
+    FILENAME=$1
+    INPUT_FILENAME="${INPUT_FILEPATH}${FILENAME}.nc"
+    cp "${SAVE_INPUTFILEPATH}${FILENAME}.nc" ${INPUT_FILEPATH}
+    TARGET_TIME_AFTER_START=$(ncdump -h "$INPUT_FILENAME" | grep -m 1 "time = " | sed 's/[^0-9]//g' )
+    TARGET_TIME_AFTER_START=$(($TARGET_TIME_AFTER_START * ${TIMESTEP} - 10 * ${TIMESTEP}))
+
+    echo "###################################"
+    echo "Running for ${INPUT_FILENAME} until ${TARGET_TIME_AFTER_START}"
+    echo ""
+
+    mpirun -n ${SLURM_NTASKS} ${AD_SIM_HOME}/build/bin/./trajectories \
+    -w ${WRITE_INDEX} \
+    -a ${AUTO_TYPE} \
+    -t ${FIXED_ITERATION} \
+    -f ${TARGET_TIME_AFTER_START} \
+    -d ${TIMESTEP} \
+    -i ${SNAPSHOT_INDEX} \
+    -b ${SIMULATION_MODE} \
+    -o ${OUTPUT_PATH}${FILENAME}.nc \
+    -e ${START_OVER_ENVIRONMENT} \
+    -p ${PROGRESSBAR} \
+    -g ${START_TIME_IDX} \
+    -l ${INPUT_FILENAME} \
+    -s ${TRACK_FILE} \
+    -u ${WARM_UP}
+}
+
+if [ $1 ]
+then
+    # Do it for all files
+    if [ "$1" == "all" ]
+    then
+        echo "Running for all files in ${1}"
+        for INPUT in ${INPUT_FILEPATH}*.nc
+        do
+            FILENAME=${INPUT##*/}
+            FILENAME=${FILENAME%.*}
+            run_sim $FILENAME
+        done
+    else
+        # Do it for a specific file
+        run_sim $1
+    fi
+else
+    # Do it for an example
+    FILENAME="traj_t000000_p001"
+    run_sim $FILENAME
+fi
+
+cleanup
+wait
+exit 0
