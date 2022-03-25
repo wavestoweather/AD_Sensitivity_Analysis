@@ -44,6 +44,7 @@ cleanup(){
         mkdir -p "${SAVE_OUTPUTPATH}"
     fi
     find ${OUTPUT_PATH} -type f -name "*.nc" -exec cp {} ${SAVE_OUTPUTPATH} \;
+    find ${OUTPUT_PATH} -type f -name "*.nc" -exec rm {} \;
 }
 
 # Copy executable, input file, configuration file
@@ -163,6 +164,8 @@ function run_sim {
     -s ${TRACK_FILE} \
     -u ${WARM_UP}
 
+    echo "Finished run for ${FILENAME}"
+    cleanup
     rm "${INPUT_FILENAME}"
 }
 
@@ -188,6 +191,5 @@ else
     run_sim $FILENAME
 fi
 
-cleanup
 wait
 exit 0

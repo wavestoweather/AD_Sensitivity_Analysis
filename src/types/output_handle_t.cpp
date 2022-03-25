@@ -1678,7 +1678,7 @@ bool output_handle_t::flush_buffer(
 #ifdef COMPRESS_OUTPUT
     int needed = (no_flush) ? 0 : 1;
     std::vector<int> needed_receive(n_processes, 0);
-    std::cout << cc.rank << " broadcast " << needed << "\n";
+//    std::cout << cc.rank << " broadcast " << needed << "\n";
     SUCCESS_OR_DIE(
             MPI_Allgather(
                     &needed,
