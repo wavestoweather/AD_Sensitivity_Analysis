@@ -175,7 +175,7 @@ then
     if [ "$1" == "all" ]
     then
         echo "Running for all files in ${1}"
-        for INPUT in ${INPUT_FILEPATH}*.nc
+        for INPUT in ${SAVE_INPUTFILEPATH}*.nc
         do
             FILENAME=${INPUT##*/}
             FILENAME=${FILENAME%.*}
