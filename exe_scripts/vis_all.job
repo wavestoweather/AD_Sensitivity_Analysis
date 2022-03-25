@@ -70,7 +70,7 @@ cp ${SAVEDPWD}/CMakeLists.txt .
 
 cd ${AD_SIM_HOME}/build
 export NETCDF_DIR=/cluster/easybuild/broadwell/software/netCDF/4.7.3-gompi-2019b/
-cmake .. -Dnlohmann_json_DIR=/home/mahieron/software/json-3.10.5/build/ -DCODIPACK_INCLUDEDIR=/home/mahieron/custom/include/ -DCMAKE_BUILD_TYPE=release -DTARGET=simulation -DSILENT_MODE:BOOL=ON -DTRUSTED_DATA:BOOL=ON -DHDF5_DIR=/cluster/easybuild/broadwell/software/HDF5/1.12.1-gompi-2021b/ && make -j6
+cmake .. -Dnlohmann_json_DIR=/home/mahieron/software/json-3.10.5/build/ -DCODIPACK_INCLUDEDIR=/home/mahieron/custom/include/ -DCMAKE_BUILD_TYPE=release -DTARGET=simulation -DSILENT_MODE:BOOL=ON -DTRUSTED_DATA:BOOL=ON -DCOMPRESS_OUTPUT:BOOL=ON -DHDF5_DIR=/cluster/easybuild/broadwell/software/HDF5/1.12.1-gompi-2021b/ && make -j6
 cd ..
 
 if [ ! -d "${AD_SIM_HOME}/data/" ]
@@ -162,6 +162,8 @@ function run_sim {
     -l ${INPUT_FILENAME} \
     -s ${TRACK_FILE} \
     -u ${WARM_UP}
+
+    rm "${INPUT_FILENAME}"
 }
 
 if [ $1 ]
