@@ -173,7 +173,7 @@ def get_magnitude_list(ds, out_params, print_out=True, verbose=True):
             f"Number of distinct parameters by taking the top 3 orders of magnitude: {len(top_three_orders_list)}"
         )
         print("Parameters within the top order of magnitude:")
-        print(top_one_order_list)
+        print(top_two_orders_list)
     return top_one_order_list, top_two_orders_list, top_three_orders_list
 
 
@@ -207,7 +207,7 @@ def print_unique_params(top_sens_dic):
 
 def print_correlation_broad(ds, out_params):
     """
-    Print correlation coefficients (Spearman and Pearson) using each time step individually with all data,
+    Print correlation coefficients (Spearman, Pearson, and Kendall) using each time step individually with all data,
     for each type of state variable (first moment, second moment, sedimentation), and for each output variable.
     Parameters
     ----------
@@ -216,20 +216,25 @@ def print_correlation_broad(ds, out_params):
 
     """
     print(f"\nCorrelation with all data\n")
+
+    def get_corr(df, kind):
+        return (df[["Predicted Squared Error", "Mean Squared Error"]].corr(kind)[
+            "Predicted Squared Error"][1]
+        )
+    def print_corr(df):
+        spearman = get_corr(df, "spearman")
+        pearson = get_corr(df, "pearson")
+        kendall = get_corr(df, "kendall")
+        print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
+        df = df.loc[df["Predicted Squared Error"] != 0]
+        n = len(np.unique(df["Input Parameter"]))
+        print(f"Correlation without zero parameters; total of {n} parameters")
+        spearman = get_corr(df, "spearman")
+        pearson = get_corr(df, "pearson")
+        kendall = get_corr(df, "kendall")
+        print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
     df = ds.to_dataframe().reset_index()
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
+    print_corr(df)
 
     print("\nFor each output variable type individually\n")
 
@@ -240,99 +245,19 @@ def print_correlation_broad(ds, out_params):
 
     print("##################First Moment (Number Count)")
     df = ds.sel({"Output Parameter": first_moment}).to_dataframe().reset_index()
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
+    print_corr(df)
 
     print("##################Second Moment (Mixing Ratio)")
     df = ds.sel({"Output Parameter": second_moment}).to_dataframe().reset_index()
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
+    print_corr(df)
 
     print("##################First Moment Sedimentation (Number Count)")
     df = ds.sel({"Output Parameter": first_sed}).to_dataframe().reset_index()
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
+    print_corr(df)
 
     print("##################Second Moment Sedimentation (Mixing Ratio)")
     df = ds.sel({"Output Parameter": second_sed}).to_dataframe().reset_index()
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
+    print_corr(df)
 
     print("\nFor each output variable individually\n")
 
@@ -340,28 +265,7 @@ def print_correlation_broad(ds, out_params):
         out_p = out_p
         print(f"##################{out_p}")
         df = ds.sel({"Output Parameter": [out_p]}).to_dataframe().reset_index()
-        print(
-            df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-                "Predicted Squared Error"
-            ][1]
-        )
-        pearson_1 = df[["Predicted Squared Error", "Mean Squared Error"]].corr(
-            "pearson"
-        )["Predicted Squared Error"][1]
-        df = df.loc[df["Predicted Squared Error"] != 0]
-        n = len(np.unique(df["Input Parameter"]))
-        print(f"Correlation without zero parameters; total of {n} parameters")
-        print(
-            df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-                "Predicted Squared Error"
-            ][1]
-        )
-        pearson_2 = df[["Predicted Squared Error", "Mean Squared Error"]].corr(
-            "pearson"
-        )["Predicted Squared Error"][1]
-        print("Using pearson:")
-        print(pearson_1)
-        print(pearson_2)
+        print_corr(df)
 
 
 def print_correlation_mean(ds, out_params):
@@ -378,33 +282,29 @@ def print_correlation_mean(ds, out_params):
     )
     print("take the mean of those and look at the correlation\n")
     print(f"\nCorrelation with all data\n")
+
+    def get_corr(df, kind):
+        return (df[["Predicted Squared Error", "Mean Squared Error"]].corr(kind)[
+            "Predicted Squared Error"][1]
+        )
+    def print_corr(df):
+        spearman = get_corr(df, "spearman")
+        pearson = get_corr(df, "pearson")
+        kendall = get_corr(df, "kendall")
+        print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
+        df = df.loc[df["Predicted Squared Error"] != 0]
+        n = len(np.unique(df["Input Parameter"]))
+        print(f"Correlation without zero parameters; total of {n} parameters")
+        spearman = get_corr(df, "spearman")
+        pearson = get_corr(df, "pearson")
+        kendall = get_corr(df, "kendall")
+        print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
     df = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-        .to_dataframe()
-        .reset_index()
+            .to_dataframe()
+            .reset_index()
     )
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson_1 = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson_2 = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print("Using pearson:")
-    print(pearson_1)
-    print(pearson_2)
+    print_corr(df)
 
     print("\nFor each output variable individually\n")
     for out_p in out_params:
@@ -416,28 +316,7 @@ def print_correlation_mean(ds, out_params):
             .to_dataframe()
             .reset_index()
         )
-        print(
-            df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-                "Predicted Squared Error"
-            ][1]
-        )
-        pearson_1 = df[["Predicted Squared Error", "Mean Squared Error"]].corr(
-            "pearson"
-        )["Predicted Squared Error"][1]
-        df = df.loc[df["Predicted Squared Error"] != 0]
-        n = len(np.unique(df["Input Parameter"]))
-        print(f"Correlation without zero parameters; total of {n} parameters")
-        print(
-            df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-                "Predicted Squared Error"
-            ][1]
-        )
-        pearson_2 = df[["Predicted Squared Error", "Mean Squared Error"]].corr(
-            "pearson"
-        )["Predicted Squared Error"][1]
-        print("Using pearson:")
-        print(pearson_1)
-        print(pearson_2)
+        print_corr(df)
 
     print("\nCorrelation taking different number of top parameters\n")
     df = (
@@ -468,7 +347,10 @@ def print_correlation_mean(ds, out_params):
         pearson = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr(
             "pearson"
         )["Predicted Squared Error"][1]
-        print(f"Pearson: {pearson}")
+        kendall = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr(
+            "kendall"
+        )["Predicted Squared Error"][1]
+        print(f"Pearson: {pearson}, Kendall: {kendall}")
         tuples.append(
             (
                 n,
@@ -505,7 +387,10 @@ def print_correlation_mean(ds, out_params):
         pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
             "Predicted Squared Error"
         ][1]
-        print(f"Pearson: {pearson}")
+        kendall = df[["Predicted Squared Error", "Mean Squared Error"]].corr("kendall")[
+            "Predicted Squared Error"
+        ][1]
+        print(f"Pearson: {pearson}, Kendall: {kendall}")
     params = list(set(params))
     print(f"Number of parameters: {len(params)}")
     df_tmp = (

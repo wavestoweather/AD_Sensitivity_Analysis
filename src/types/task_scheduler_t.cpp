@@ -404,3 +404,24 @@ void task_scheduler_t::signal_work_avail() {
             work_window));
     SUCCESS_OR_DIE(MPI_Win_unlock(0, work_window));
 }
+
+
+//#ifdef COMPRESS_OUTPUT
+//bool task_scheduler_t::flush_needed(const int needed) const {
+//    std::vector<int> needed_receive(n_processes);
+//    SUCCESS_OR_DIE(
+//        MPI_Alltoall(
+//            &needed,
+//            1,
+//            MPI_INT,
+//            needed_receive.data(),
+//            1,
+//            MPI_INT,
+//            MPI_COMM_WORLD));
+//    if (needed == 1) return true;
+//    for (auto const &n : needed_receive ) {
+//        if (n == 1) return true;
+//    }
+//    return false;
+//}
+//#endif

@@ -31,6 +31,9 @@ struct output_handle_t{
     // Tracking either initial conditions or model parameters.
     // Both at the same time is not possible (or rather would take too long)
     bool track_ic;
+#ifdef COMPRESS_OUTPUT
+    int n_processes;
+#endif
 #ifdef OUT_DOUBLE
     const double FILLVALUE = std::numeric_limits<double>::quiet_NaN();
 #else
@@ -180,6 +183,9 @@ struct output_handle_t{
         const int &rank,
         const int &simulation_mode,
         const bool &initial_cond,
+#ifdef COMPRESS_OUTPUT
+        const int &n_processes,
+#endif
         const double delay_out_time = 0);
 
     template<class float_t>
@@ -247,7 +253,7 @@ struct output_handle_t{
      *                 is enabled.
      */
     template<class float_t>
-    void flush_buffer(const model_constants_t<float_t> &cc, const bool no_flush = false);
+    bool flush_buffer(const model_constants_t<float_t> &cc, const bool no_flush = false);
 
     /**
      * Buffer the current data  (model state and gradients) and

@@ -36,6 +36,7 @@ struct model_constants_t {
      *  Running id for the ensembles starting from this instance.
      */
     uint64_t ensemble_id;
+    int rank;
 
     /**
      * Running id for the trajectory in this ensemble.

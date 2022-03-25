@@ -13,6 +13,8 @@
 #include <iostream>
 #include <vector>
 
+#include <unistd.h>
+
 #include "codi.hpp"
 
 #include "include/microphysics/constants.h"
@@ -794,11 +796,14 @@ void busy_flush(
     // is not a multiple of the number of processes), we need to force some
     // processes to access the flush routine without flushing anything.
     // rank 0 should always check if all processes are done.
+//    do {
+//        // rank 0 would update the info on all processes if necessary.
+//        scheduler.all_free();
+//        out_handler.flush_buffer(cc, true);
+//    } while (!scheduler.all_free());
     do {
-        // rank 0 would update the info on all processes if necessary.
-        scheduler.all_free();
-        out_handler.flush_buffer(cc, true);
-    } while (!scheduler.all_free());
+
+    } while(out_handler.flush_buffer(cc, true));
 #endif
 }
 
@@ -827,18 +832,23 @@ void only_sensitivity_simulation(
 
     model_constants_t<float_t> cc = prepare_constants<float_t>(rank, input, global_args,
         ref_quant, segments, y_init, checkpoint);
-
     netcdf_reader.set_dims(input.INPUT_FILENAME.c_str(), cc, input.simulation_mode);
 
     // static scheduling with parallel read and write enabled
     setup_simulation_base(argc, argv, rank, n_processes, input,
         global_args, ref_quant, cc, y_init,
         already_loaded, netcdf_reader);
-
+#ifdef COMPRESS_OUTPUT
+    output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
+        ref_quant, input.INPUT_FILENAME, input.write_index,
+        input.snapshot_index, rank, input.simulation_mode,
+        input.track_initial_cond, n_processes, input.delay_time_store);
+#else
     output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
         ref_quant, input.INPUT_FILENAME, input.write_index,
         input.snapshot_index, rank, input.simulation_mode,
         input.track_initial_cond, input.delay_time_store);
+#endif
 #ifdef DEVELOP
         std::cout << "out_handler done\n" << std::flush;
 #endif
@@ -872,7 +882,7 @@ void only_sensitivity_simulation(
 #endif
         out_handler.reset(scheduler.current_traj, scheduler.current_ens);
         int sim_counter = 1;
-
+        cc.rank = rank;
         // run simulation
         SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
             global_args, y_single_old, y_diff, y_single_new, inflow,
@@ -888,7 +898,6 @@ void only_sensitivity_simulation(
             setup_simulation_base(argc, argv, rank, n_processes, input,
                 global_args, ref_quant, cc, y_init,
                 already_loaded, netcdf_reader);
-
             netcdf_reader.read_initial_values(y_init, ref_quant, cc,
                 global_args.checkpoint_flag, scheduler.current_traj, scheduler.current_ens);
             out_handler.reset(scheduler.current_traj, scheduler.current_ens);
@@ -904,20 +913,28 @@ void only_sensitivity_simulation(
             std::cout << "rank " << rank << ", init pressure: "
                 << y_init[p_idx]*ref_quant.pref << "\n";
 #endif
+            cc.rank = rank;
+//            std::cout << rank << " running\n";
+//            if (rank == 1)
+//                sleep(30);
             // run simulation
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,
                 out_handler, segments, scheduler, netcdf_reader, pbar, input.delay_time_store, 0, false));
+//            std::cout << rank << " finished run\n";
         }
     }
+//    std::cout << "\nProcess " << rank << " finished\n";
 #ifdef DEVELOP
-    std::cout << rank << " before busy_flush\n";
+    std::cout << "\n" << rank << " before busy_flush\n";
 #endif
     busy_flush(scheduler, cc, out_handler);
 #ifdef DEVELOP
-    std::cout << rank << " after busy_flush\n";
+    std::cout << "\n" << rank << " after busy_flush\n";
 #endif
+//    std::cout << "\nProcess " << rank << " cleaning up\n";
     pbar.finish();
+//    std::cout << "\nProcess " << rank << " returning\n";
 }
 
 
@@ -952,12 +969,17 @@ void limited_time_ensemble_simulation(
     setup_simulation_base(argc, argv, rank, n_processes, input,
         global_args, ref_quant, cc, y_init,
         already_loaded, netcdf_reader);
-
+#ifdef COMPRESS_OUTPUT
+    output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
+        ref_quant, input.INPUT_FILENAME, input.write_index,
+        input.snapshot_index, rank, input.simulation_mode,
+        input.track_initial_cond, n_processes, input.delay_time_store);
+#else
     output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
         ref_quant, input.INPUT_FILENAME, input.write_index,
         input.snapshot_index, rank, input.simulation_mode,
         input.track_initial_cond, input.delay_time_store);
-
+#endif
     // The progressbar here is just an estimate since the members
     // are distributed dynamically
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
@@ -1090,11 +1112,17 @@ void dynamic_ensemble_simulation(
 
     model_constants_t<float_t> cc = prepare_constants<float_t>(rank, input, global_args,
         ref_quant, segments, y_init, checkpoint);
-
+#ifdef COMPRESS_OUTPUT
+    output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
+        ref_quant, input.INPUT_FILENAME, input.write_index,
+        input.snapshot_index, rank, input.simulation_mode,
+        input.track_initial_cond, n_processes);
+#else
     output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
         ref_quant, input.INPUT_FILENAME, input.write_index,
         input.snapshot_index, rank, input.simulation_mode,
         input.track_initial_cond);
+#endif
     netcdf_reader.set_dims(input.INPUT_FILENAME.c_str(), cc, input.simulation_mode);
     if (rank == 0) {
         setup_simulation(argc, argv, rank, n_processes, input,

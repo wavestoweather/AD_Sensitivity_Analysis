@@ -5,7 +5,7 @@
       <paths name="Remote Host (589a1279-cf64-4f80-a9ef-f71cd83cd86b)">
         <serverdata>
           <mappings>
-            <mapping deploy="/tmp/tmp.TMuzguV628" local="$PROJECT_DIR$" />
+            <mapping deploy="/mnt/localscratch/data/Software/remote" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_com-host" />
@@ -21,6 +21,7 @@
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_release_james" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_debug_james" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_com_host" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_vis_host" />
           </excludedPaths>
         </serverdata>
       </paths>

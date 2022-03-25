@@ -17,6 +17,9 @@ output_handle_t::output_handle_t(
     const int &rank,
     const int &simulation_mode,
     const bool &initial_cond,
+#ifdef COMPRESS_OUTPUT
+    const int &n_processes,
+#endif
     const double delay_out_time) {
 
     this->simulation_mode = simulation_mode;
@@ -24,7 +27,9 @@ output_handle_t::output_handle_t(
     local_num_par = cc.local_num_par;
     local_ic_par = cc.local_ic_par;
     this->track_ic = initial_cond;
-
+#ifdef COMPRESS_OUTPUT
+    this->n_processes = n_processes;
+#endif
     this->setup(filetype, filename, cc, ref_quant,
         in_filename, write_index, snapshot_index,
         rank, delay_out_time);
@@ -801,7 +806,7 @@ void output_handle_t::setup(
             ncid,
             varid[Var_idx::sat],
             "units",
-            strlen("percentage"),
+            strlen("1"),
             "percentage"));
         SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
@@ -813,7 +818,7 @@ void output_handle_t::setup(
             ncid,
             varid[Var_idx::sat],
             _FillValue,
-#ifdef OUT_DOUBLE
+#ifdef OUT_DOUBLEflush_buffer
             NC_DOUBLE,
 #else
             NC_FLOAT,
@@ -1181,25 +1186,25 @@ void output_handle_t::setup(
             || this->simulation_mode == trajectory_sensitivity
             || this->simulation_mode == grid_sensitivity) {
             // Compressing this is buggy
-//            for (uint32_t i=0; i < Var_idx::n_vars; ++i) {
-//                // This does not work on scalars; we need to filter those out
-//                if (local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param))
-//                // This could be a version for szip
-////                         SUCCESS_OR_DIE(
-////                             nc_def_var_szip(
-////                                 ncid,
-////                                 varid[i],
-////                                 NC_SZIP_NN,
-////                                 8));  // pixels per block
-//                        // zlib version
-//                        SUCCESS_OR_DIE(
-//                            nc_def_var_deflate(
-//                                ncid,
-//                                varid[i],
-//                                1,  // shuffle
-//                                1,  // deflate
-//                                9));  // max compression
-//            }
+            for (uint32_t i=0; i < Var_idx::n_vars; ++i) {
+                // This does not work on scalars; we need to filter those out
+                if (local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param))
+                // This could be a version for szip
+//                         SUCCESS_OR_DIE(
+//                             nc_def_var_szip(
+//                                 ncid,
+//                                 varid[i],
+//                                 NC_SZIP_NN,
+//                                 8));  // pixels per block
+                        // zlib version
+                        SUCCESS_OR_DIE(
+                            nc_def_var_deflate(
+                                ncid,
+                                varid[i],
+                                1,  // shuffle
+                                1,  // deflate
+                                9));  // max compression
+            }
             if (!track_ic) {
                 // gradients
                 for (uint32_t i=0; i < num_par-num_par_init; ++i) {
@@ -1667,9 +1672,40 @@ void output_handle_t::buffer(
 
 
 template<class float_t>
-void output_handle_t::flush_buffer(
+bool output_handle_t::flush_buffer(
     const model_constants_t<float_t> &cc,
     const bool no_flush) {
+#ifdef COMPRESS_OUTPUT
+    int needed = (no_flush) ? 0 : 1;
+    std::vector<int> needed_receive(n_processes, 0);
+    std::cout << cc.rank << " broadcast " << needed << "\n";
+    SUCCESS_OR_DIE(
+            MPI_Allgather(
+                    &needed,
+                    1,
+                    MPI_INT,
+                    needed_receive.data(),
+                    1,
+                    MPI_INT,
+                    MPI_COMM_WORLD));
+//    std::cout << cc.rank << " broadcast done\n";
+//    std::cout << cc.rank << " received " << needed_receive[0] << ", " << needed_receive[1] << ", " << needed_receive[2] << ", " << needed_receive[3] << "\n";
+    if (no_flush) {
+        bool return_early = true;
+        for (auto const &n : needed_receive ) {
+            if (n == 1) {
+                return_early = false;
+//                std::cout <<  cc.rank << " found a flusher\n";
+                break;
+            }
+        }
+        if (return_early) {
+//            std::cout << cc.rank << " returning\n";
+            return false;
+        }
+    }
+//    std::cout << cc.rank << " flushing \n";
+#endif
     std::vector<size_t> startp, countp;
     if (no_flush) {
         startp.push_back(0);
@@ -2103,6 +2139,7 @@ void output_handle_t::flush_buffer(
 #endif
     if (!no_flush) flushed_snapshots += n_snapshots;
     n_snapshots = 0;
+    return true;
 }
 
 
@@ -2145,6 +2182,9 @@ template output_handle_t::output_handle_t<codi::RealReverse>(
     const int&,
     const int&,
     const bool&,
+#ifdef COMPRESS_OUTPUT
+    const int&,
+#endif
     const double);
 
 template output_handle_t::output_handle_t<codi::RealForwardVec<num_par_init> >(
@@ -2158,6 +2198,9 @@ template output_handle_t::output_handle_t<codi::RealForwardVec<num_par_init> >(
     const int&,
     const int&,
     const bool&,
+#ifdef COMPRESS_OUTPUT
+    const int&,
+#endif
     const double);
 
 template void output_handle_t::setup<codi::RealReverse>(
@@ -2212,10 +2255,10 @@ template void output_handle_t::buffer<codi::RealForwardVec<num_par_init> >(
     const reference_quantities_t&,
     const uint32_t);
 
-template void output_handle_t::flush_buffer<codi::RealReverse>(
+template bool output_handle_t::flush_buffer<codi::RealReverse>(
     const model_constants_t<codi::RealReverse>&, const bool);
 
-template void output_handle_t::flush_buffer<codi::RealForwardVec<num_par_init> >(
+template bool output_handle_t::flush_buffer<codi::RealForwardVec<num_par_init> >(
     const model_constants_t<codi::RealForwardVec<num_par_init> >&, const bool);
 
 template void output_handle_t::process_step<codi::RealReverse>(
