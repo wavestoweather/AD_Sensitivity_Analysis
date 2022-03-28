@@ -13,8 +13,6 @@
 #include <iostream>
 #include <vector>
 
-#include <unistd.h>
-
 #include "codi.hpp"
 
 #include "include/microphysics/constants.h"
@@ -802,8 +800,7 @@ void busy_flush(
 //        out_handler.flush_buffer(cc, true);
 //    } while (!scheduler.all_free());
     do {
-
-    } while(out_handler.flush_buffer(cc, true));
+    } while (out_handler.flush_buffer(cc, true));
 #endif
 }
 

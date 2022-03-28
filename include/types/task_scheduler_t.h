@@ -105,16 +105,6 @@ struct task_scheduler_t{
     int get_n_ensembles() const {return n_ensembles;}
     int get_n_trajectories() const {return n_trajectories;}
     int get_n_processes() const {return n_processes;}
-//#ifdef COMPRESS_OUTPUT
-//
-//    /**
-//     * Check if any process asks for flushing data. Needed to avoid Deadlocks.
-//     * Also signal if this process needs to flush now
-//     * @param needed 1 if flushing is needed by this process.
-//     * @return True if any process asks for flushing.
-//     */
-//    bool flush_needed(const int needed = 0) const;
-//#endif
 
  private:
     bool static_scheduling;

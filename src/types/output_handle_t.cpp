@@ -1678,7 +1678,6 @@ bool output_handle_t::flush_buffer(
 #ifdef COMPRESS_OUTPUT
     int needed = (no_flush) ? 0 : 1;
     std::vector<int> needed_receive(n_processes, 0);
-//    std::cout << cc.rank << " broadcast " << needed << "\n";
     SUCCESS_OR_DIE(
             MPI_Allgather(
                     &needed,
@@ -1688,23 +1687,18 @@ bool output_handle_t::flush_buffer(
                     1,
                     MPI_INT,
                     MPI_COMM_WORLD));
-//    std::cout << cc.rank << " broadcast done\n";
-//    std::cout << cc.rank << " received " << needed_receive[0] << ", " << needed_receive[1] << ", " << needed_receive[2] << ", " << needed_receive[3] << "\n";
     if (no_flush) {
         bool return_early = true;
-        for (auto const &n : needed_receive ) {
+        for (auto const &n : needed_receive) {
             if (n == 1) {
                 return_early = false;
-//                std::cout <<  cc.rank << " found a flusher\n";
                 break;
             }
         }
         if (return_early) {
-//            std::cout << cc.rank << " returning\n";
             return false;
         }
     }
-//    std::cout << cc.rank << " flushing \n";
 #endif
     std::vector<size_t> startp, countp;
     if (no_flush) {
@@ -1727,7 +1721,6 @@ bool output_handle_t::flush_buffer(
               << " with n_snapshots: " << n_snapshots << "\n";
 #endif
     for (uint64_t i=0; i < num_comp; i++) {
-//    for (uint64_t i=num_comp-1; i >= 0; i--) {
 #ifdef DEVELOP
 //        if (i >= 12 && i < 21) continue;
         std::cout << "traj: " << traj << " at " << flushed_snapshots
