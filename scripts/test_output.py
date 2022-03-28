@@ -340,24 +340,27 @@ def test_saturation(ds, recalc, verbose):
     print("~*~*~*~Testing over saturation in each trajectory~*~*~*~")
     err = 0
     err_traj = 0
+
     def sat_p_water(T):
         p_sat_low_temp = 610.78
         p_sat_const_a = 17.2693882
         p_sat_const_b = 35.86
         T_sat_low_temp = 273.15
-        return p_sat_low_temp * np.exp(p_sat_const_a * (T-T_sat_low_temp) / (T-p_sat_const_b))
+        return p_sat_low_temp * np.exp(
+            p_sat_const_a * (T - T_sat_low_temp) / (T - p_sat_const_b)
+        )
 
     def calc_saturation(p, qv, T):
         R_universal = 8.3144598
         M_w = 0.018015265
         M_a = 0.02896546
-        R_a = R_universal/M_a
-        R_v = R_universal/M_w
-        Epsilon = R_a/R_v
-        return ((p*qv)/((Epsilon + qv) * sat_p_water(T)))
+        R_a = R_universal / M_a
+        R_v = R_universal / M_w
+        Epsilon = R_a / R_v
+        return (p * qv) / ((Epsilon + qv) * sat_p_water(T))
 
     def is_oversat(p, qv, T):
-        return (calc_saturation(p, qv, T) > 1)
+        return calc_saturation(p, qv, T) > 1
 
     n_traj = len(ds["trajectory"])
     if "S" not in ds:
@@ -373,9 +376,13 @@ def test_saturation(ds, recalc, verbose):
         ds_t = ds.isel({"trajectory": i})
         if recalc:
             if "pressure" in ds_t:
-                err_tmp = np.sum(is_oversat(si_unit*ds_t["pressure"], ds_t["QV"], ds_t["T"])).item()
+                err_tmp = np.sum(
+                    is_oversat(si_unit * ds_t["pressure"], ds_t["QV"], ds_t["T"])
+                ).item()
             else:
-                err_tmp = np.sum(is_oversat(si_unit*ds_t["p"], ds_t["QV"], ds_t["T"])).item()
+                err_tmp = np.sum(
+                    is_oversat(si_unit * ds_t["p"], ds_t["QV"], ds_t["T"])
+                ).item()
         else:
             err_tmp = np.sum((np.asarray(ds_t["S"]) > sat_unit))
         if err_tmp > 0:
@@ -391,7 +398,9 @@ def test_saturation(ds, recalc, verbose):
             f"{Error}Failed: Over saturation detected for {err_traj} of {n_traj} trajectories.{ColourReset}\n"
         )
     else:
-        print(f"{Success}No over saturation for all {n_traj} trajectories detected.{ColourReset}\n")
+        print(
+            f"{Success}No over saturation for all {n_traj} trajectories detected.{ColourReset}\n"
+        )
     return err, err_traj
 
 

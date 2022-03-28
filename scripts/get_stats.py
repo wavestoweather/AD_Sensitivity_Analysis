@@ -218,9 +218,10 @@ def print_correlation_broad(ds, out_params):
     print(f"\nCorrelation with all data\n")
 
     def get_corr(df, kind):
-        return (df[["Predicted Squared Error", "Mean Squared Error"]].corr(kind)[
-            "Predicted Squared Error"][1]
-        )
+        return df[["Predicted Squared Error", "Mean Squared Error"]].corr(kind)[
+            "Predicted Squared Error"
+        ][1]
+
     def print_corr(df):
         spearman = get_corr(df, "spearman")
         pearson = get_corr(df, "pearson")
@@ -233,6 +234,7 @@ def print_correlation_broad(ds, out_params):
         pearson = get_corr(df, "pearson")
         kendall = get_corr(df, "kendall")
         print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
+
     df = ds.to_dataframe().reset_index()
     print_corr(df)
 
@@ -284,9 +286,10 @@ def print_correlation_mean(ds, out_params):
     print(f"\nCorrelation with all data\n")
 
     def get_corr(df, kind):
-        return (df[["Predicted Squared Error", "Mean Squared Error"]].corr(kind)[
-            "Predicted Squared Error"][1]
-        )
+        return df[["Predicted Squared Error", "Mean Squared Error"]].corr(kind)[
+            "Predicted Squared Error"
+        ][1]
+
     def print_corr(df):
         spearman = get_corr(df, "spearman")
         pearson = get_corr(df, "pearson")
@@ -299,10 +302,11 @@ def print_correlation_mean(ds, out_params):
         pearson = get_corr(df, "pearson")
         kendall = get_corr(df, "kendall")
         print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
+
     df = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-            .to_dataframe()
-            .reset_index()
+        .to_dataframe()
+        .reset_index()
     )
     print_corr(df)
 
