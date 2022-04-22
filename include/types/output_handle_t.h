@@ -48,9 +48,9 @@ struct output_handle_t{
     // each array = one column
     // slow index: num_comp
 #ifdef OUT_DOUBLE
-    std::array<std::vector<double>, num_comp+num_par+4+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
+    std::array<std::vector<double>, num_comp+num_par+5+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
 #else
-    std::array<std::vector<float>, num_comp+num_par+4+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
+    std::array<std::vector<float>, num_comp+num_par+5+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
 #endif
 #if !defined B_EIGHT
     std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
