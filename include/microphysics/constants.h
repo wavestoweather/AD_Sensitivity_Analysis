@@ -130,6 +130,22 @@ typedef bool(*track_func)(const int&, const bool&);
  * The output contains sensitivities.
  */
 #define limited_time_ensembles 4
+/**
+ * Old:
+ * Create a training set according to the configuration file. The output file contains
+ * impact matrices M_ix, where x is the time in minutes until the impact is evaluated
+ * and a prediction matrix M_px.
+ * Variable perturbed_val gives the perturbed value(s), perturbed_param names the perturbed parameter(s).
+ * Variable output parameter gives the names of the output parameters and the order at which those are
+ * stored for M_i and M_x.
+ *
+ * New:
+ * Input data are trajectories with one ensemble. Sensitivities are stored for
+ * ensemble 0 (not perturbed trajectories). Additionally variables are stored
+ * for each ensemble which parameter has been perturbed and by how much.
+ *
+ */
+#define create_train_set 5
 
 
 ////////////////////////////////////////////////////////////////////////////////

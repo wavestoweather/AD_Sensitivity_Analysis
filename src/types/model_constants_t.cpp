@@ -1180,6 +1180,53 @@ void model_constants_t<float_t>::load_configuration(
     }
 }
 
+#ifdef OUT_DOUBLE
+template<class float_t>
+void model_constants_t<float_t>::get_perturbed_info(
+    std::vector<float> &p_values,
+    std::vector<uint64_t> &p_idx) const {
+#else
+template<class float_t>
+void model_constants_t<float_t>::get_perturbed_info(
+    std::vector<float> &perturbed,
+    std::vector<uint64_t> &param_idx) const {
+#endif
+
+    for (const uint32_t idx : perturbed_idx) {
+        perturbed.push_back(constants[idx].getValue());
+        param_idx.push_back(idx);
+    }
+    uint64_t offset = constants.size();
+    for (const uint32_t idx : cloud.perturbed_idx) {
+        perturbed.push_back(cloud.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+    offset += cloud.constants.size();
+    for (const uint32_t idx : rain.perturbed_idx) {
+        perturbed.push_back(rain.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+    offset += rain.constants.size();
+    for (const uint32_t idx : ice.perturbed_idx) {
+        perturbed.push_back(ice.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+    offset += ice.constants.size();
+    for (const uint32_t idx : snow.perturbed_idx) {
+        perturbed.push_back(snow.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+    offset += snow.constants.size();
+    for (const uint32_t idx : graupel.perturbed_idx) {
+        perturbed.push_back(graupel.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+    offset += graupel.constants.size();
+    for (const uint32_t idx : hail.perturbed_idx) {
+        perturbed.push_back(hail.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+}
 
 template class model_constants_t<codi::RealReverse>;
 template class model_constants_t<codi::RealForwardVec<num_par_init> >;

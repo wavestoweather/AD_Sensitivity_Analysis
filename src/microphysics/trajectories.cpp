@@ -516,7 +516,9 @@ void run_substeps(
 #ifdef DEVELOP
         std::cout << "get gradients\n";
 #endif
-        if (cc.traj_id == 0 || input.simulation_mode != limited_time_ensembles)
+        if ( (input.simulation_mode == create_train_set && cc.ensemble_id == 0)
+             || (input.simulation_mode == limited_time_ensembles && cc.traj_id == 0)
+             || (input.simulation_mode != create_train_set && input.simulation_mode != limited_time_ensembles) )
             cc.get_gradients(y_single_new, y_diff, tape);
 #ifdef DEVELOP
         std::cout << "got gradients\n";
@@ -636,7 +638,9 @@ void run_substeps(
             finish_last_step(y_single_new, ref_quant, cc);
         }
 #endif
-        if (cc.traj_id == 0 || input.simulation_mode != limited_time_ensembles)
+        if ( (input.simulation_mode == create_train_set && cc.ensemble_id == 0)
+             || (input.simulation_mode == limited_time_ensembles && cc.traj_id == 0)
+             || (input.simulation_mode != create_train_set && input.simulation_mode != limited_time_ensembles) )
             cc.get_gradients(y_single_new, y_diff);
 
         // Time update
@@ -891,7 +895,7 @@ void only_sensitivity_simulation(
             pbar.set_current_step(sim_counter*cc.num_sub_steps*cc.num_steps-1);
             pbar.progress();
             sim_counter++;
-            // global_args.checkpoint_flag = true;
+
             setup_simulation_base(argc, argv, rank, n_processes, input,
                 global_args, ref_quant, cc, y_init,
                 already_loaded, netcdf_reader);
@@ -911,17 +915,12 @@ void only_sensitivity_simulation(
                 << y_init[p_idx]*ref_quant.pref << "\n";
 #endif
             cc.rank = rank;
-//            std::cout << rank << " running\n";
-//            if (rank == 1)
-//                sleep(30);
             // run simulation
             SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
                 global_args, y_single_old, y_diff, y_single_new, inflow,
                 out_handler, segments, scheduler, netcdf_reader, pbar, input.delay_time_store, 0, false));
-//            std::cout << rank << " finished run\n";
         }
     }
-//    std::cout << "\nProcess " << rank << " finished\n";
 #ifdef DEVELOP
     std::cout << "\n" << rank << " before busy_flush\n";
 #endif
@@ -929,11 +928,8 @@ void only_sensitivity_simulation(
 #ifdef DEVELOP
     std::cout << "\n" << rank << " after busy_flush\n";
 #endif
-//    std::cout << "\nProcess " << rank << " cleaning up\n";
     pbar.finish();
-//    std::cout << "\nProcess " << rank << " returning\n";
 }
-
 
 template<class float_t>
 void limited_time_ensemble_simulation(
@@ -1086,6 +1082,138 @@ void limited_time_ensemble_simulation(
 }
 
 template<class float_t>
+void create_set_simulation(
+        const int &argc,
+        char* const * argv,
+        const int &rank,
+        const int &n_processes,
+        input_parameters_t &input,
+        global_args_t &global_args,
+        reference_quantities_t &ref_quant,
+        task_scheduler_t &scheduler,
+        netcdf_reader_t &netcdf_reader) {
+    std::vector<double> y_init(num_comp);
+    checkpoint_t checkpoint;
+    std::vector<segment_t> segments;
+    std::vector< std::array<double, num_par > >  y_diff(num_comp + static_cast<uint32_t>(Init_cons_idx::n_items));
+
+    bool already_loaded = false;
+    std::vector<float_t> y_single_old(num_comp);
+    std::vector<float_t> y_single_new(num_comp);
+    std::vector<float_t> inflow(num_inflows);
+
+    model_constants_t<float_t> cc = prepare_constants<float_t>(rank, input, global_args,
+                                                               ref_quant, segments, y_init, checkpoint);
+    netcdf_reader.set_dims(input.INPUT_FILENAME.c_str(), cc, input.simulation_mode);
+
+    // static scheduling with parallel read and write enabled
+    // The output is based on the ensemble configuration file.
+    setup_simulation_base(argc, argv, rank, n_processes, input,
+                          global_args, ref_quant, cc, y_init,
+                          already_loaded, netcdf_reader);
+#ifdef COMPRESS_OUTPUT
+    output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
+                                ref_quant, input.INPUT_FILENAME, input.write_index,
+                                input.snapshot_index, rank, input.simulation_mode,
+                                input.track_initial_cond, n_processes, input.delay_time_store, segments);
+#else
+    output_handle_t out_handler("netcdf", input.OUTPUT_FILENAME, cc,
+        ref_quant, input.INPUT_FILENAME, input.write_index,
+        input.snapshot_index, rank, input.simulation_mode,
+        input.track_initial_cond, input.delay_time_store, segments);
+#endif
+    const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
+    uint64_t sims_for_r0 = (segments.size()*netcdf_reader.n_trajectories + n_processes-1)/n_processes;
+
+    ProgressBar pbar = ProgressBar(cc.num_sub_steps*cc.num_steps*sims_for_r0,
+                                   progress_index, "simulation step", std::cout);
+
+    scheduler.set_n_ensembles(segments.size());
+    scheduler.set_n_trajectories(netcdf_reader.n_trajectories);
+
+    uint64_t old_ensemble_id = 0;
+
+    if (scheduler.receive_task(checkpoint)) {
+        cc.traj_id = scheduler.current_traj;
+        cc.ensemble_id = scheduler.current_ens;
+#ifdef TRACE_COMM
+        std::cout << "rank " << rank << ", received traj: " << scheduler.current_traj
+            << ", ens: " << scheduler.current_ens << "\n";
+#endif
+        netcdf_reader.read_initial_values(y_init, ref_quant, cc,
+                                          global_args.checkpoint_flag, cc.traj_id, cc.ensemble_id);
+        // Set "old" values as temporary holder of values.
+        for (int ii = 0 ; ii < num_comp ; ii++)
+            y_single_old[ii] = y_init[ii];
+#ifdef TRACE_COMM
+        std::cout << "rank " << rank << ", init pressure: "
+            << y_init[p_idx]*ref_quant.pref << "\n";
+#endif
+        out_handler.reset(scheduler.current_traj, scheduler.current_ens);
+        int sim_counter = 1;
+        cc.rank = rank;
+        if (cc.ensemble_id != 0) {
+            std::string descr;
+            segments[cc.ensemble_id].perturb(cc, ref_quant, input, descr);
+            old_ensemble_id = cc.ensemble_id;
+        }
+        // run simulation
+        SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
+                                      global_args, y_single_old, y_diff, y_single_new, inflow,
+                                      out_handler, segments, scheduler, netcdf_reader, pbar,
+                                      input.delay_time_store, 0, false));
+
+        while (scheduler.receive_task(checkpoint)) {
+            cc.traj_id = scheduler.current_traj;
+            cc.ensemble_id = scheduler.current_ens;
+            pbar.set_current_step(sim_counter*cc.num_sub_steps*cc.num_steps-1);
+            pbar.progress();
+            sim_counter++;
+            if (cc.ensemble_id != old_ensemble_id) {
+                segments[old_ensemble_id].reset_variables(cc);
+            }
+            setup_simulation_base(argc, argv, rank, n_processes, input,
+                                  global_args, ref_quant, cc, y_init,
+                                  already_loaded, netcdf_reader);
+            netcdf_reader.read_initial_values(y_init, ref_quant, cc,
+                                              global_args.checkpoint_flag,
+                                              scheduler.current_traj, scheduler.current_ens);
+            out_handler.reset(scheduler.current_traj, scheduler.current_ens);
+            if (cc.ensemble_id != old_ensemble_id) {
+                std::string descr;
+                segments[cc.ensemble_id].perturb(cc, ref_quant, input, descr);
+                old_ensemble_id = cc.ensemble_id;
+            }
+#ifdef TRACE_COMM
+            std::cout << "rank " << rank << ", received traj: " << scheduler.current_traj
+                << ", ens: " << scheduler.current_ens << "\n";
+#endif
+            // Set "old" values as temporary holder of values.
+            for (int ii = 0 ; ii < num_comp ; ii++)
+                y_single_old[ii] = y_init[ii];
+#ifdef TRACE_COMM
+            std::cout << "rank " << rank << ", init pressure: "
+                << y_init[p_idx]*ref_quant.pref << "\n";
+#endif
+            cc.rank = rank;
+            // run simulation
+            SUCCESS_OR_DIE(run_simulation(rank, n_processes, cc, input, ref_quant,
+                                          global_args, y_single_old, y_diff, y_single_new, inflow,
+                                          out_handler, segments, scheduler, netcdf_reader, pbar,
+                                          input.delay_time_store, 0, false));
+        }
+    }
+#ifdef DEVELOP
+    std::cout << "\n" << rank << " before busy_flush\n";
+#endif
+    busy_flush(scheduler, cc, out_handler);
+#ifdef DEVELOP
+    std::cout << "\n" << rank << " after busy_flush\n";
+#endif
+    pbar.finish();
+}
+
+template<class float_t>
 void dynamic_ensemble_simulation(
     const int &argc,
     char* const * argv,
@@ -1222,12 +1350,22 @@ int main(int argc, char** argv) {
     } else if (input.simulation_mode == limited_time_ensembles) {
         if (input.track_initial_cond) {
             limited_time_ensemble_simulation<codi::RealForwardVec<num_par_init> >(
-                argc, argv, rank, n_processes, input, global_args,
-                ref_quant, scheduler, netcdf_reader);
+                    argc, argv, rank, n_processes, input, global_args,
+                    ref_quant, scheduler, netcdf_reader);
         } else {
             limited_time_ensemble_simulation<codi::RealReverse>(
-                argc, argv, rank, n_processes, input, global_args,
-                ref_quant, scheduler, netcdf_reader);
+                    argc, argv, rank, n_processes, input, global_args,
+                    ref_quant, scheduler, netcdf_reader);
+        }
+    } else if (input.simulation_mode == create_train_set) {
+        if (input.track_initial_cond) {
+            create_set_simulation<codi::RealForwardVec<num_par_init> >(
+                    argc, argv, rank, n_processes, input, global_args,
+                    ref_quant, scheduler, netcdf_reader);
+        } else {
+            create_set_simulation<codi::RealReverse>(
+                    argc, argv, rank, n_processes, input, global_args,
+                    ref_quant, scheduler, netcdf_reader);
         }
     } else {   // dynamic scheduling with parallel read and write disabled
         if (input.track_initial_cond) {

@@ -42,7 +42,7 @@ struct segment_t {
     const double tol = 1e-5;
 
     enum Method {
-        impact_change, sign_flip, value_method, repeated_time
+        impact_change, sign_flip, value_method, repeated_time, full_perturbation
     };
     std::unordered_map<std::string, Method> const table_method = {
         {"impact_change", Method::impact_change}, {"sign_flip", Method::sign_flip},
@@ -440,4 +440,3 @@ struct segment_t {
 };
 
 void to_json(nlohmann::json& j, const segment_t& s);
-// void from_json(const nlohmann::json& j, segment_t& s);

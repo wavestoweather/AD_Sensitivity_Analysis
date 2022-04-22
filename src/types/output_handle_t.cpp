@@ -7,6 +7,36 @@ output_handle_t::output_handle_t() {
 
 template<class float_t>
 output_handle_t::output_handle_t(
+        const std::string filetype,
+        const std::string filename,
+        const model_constants_t<float_t> &cc,
+        const reference_quantities_t &ref_quant,
+        const std::string in_filename,
+        const uint32_t write_index,
+        const uint32_t snapshot_index,
+        const int &rank,
+        const int &simulation_mode,
+        const bool &initial_cond,
+#ifdef COMPRESS_OUTPUT
+        const int &n_processes,
+#endif
+        const double delay_out_time) {
+    this->simulation_mode = simulation_mode;
+    local_num_comp = cc.local_num_comp;
+    local_num_par = cc.local_num_par;
+    local_ic_par = cc.local_ic_par;
+    this->track_ic = initial_cond;
+#ifdef COMPRESS_OUTPUT
+    this->n_processes = n_processes;
+#endif
+    this->setup(filetype, filename, cc, ref_quant,
+                in_filename, write_index, snapshot_index,
+                rank, delay_out_time);
+}
+
+
+template<class float_t>
+output_handle_t::output_handle_t(
     const std::string filetype,
     const std::string filename,
     const model_constants_t<float_t> &cc,
@@ -20,7 +50,8 @@ output_handle_t::output_handle_t(
 #ifdef COMPRESS_OUTPUT
     const int &n_processes,
 #endif
-    const double delay_out_time) {
+    const double delay_out_time,
+    const std::vector<segment_t> &segments) {
 
     this->simulation_mode = simulation_mode;
     local_num_comp = cc.local_num_comp;
@@ -30,11 +61,1592 @@ output_handle_t::output_handle_t(
 #ifdef COMPRESS_OUTPUT
     this->n_processes = n_processes;
 #endif
+    if (simulation_mode == create_train_set && segments.size() > 0) {
+        uint64_t param_size = cc.constants.size()
+            + cc.cloud.constants.size() + cc.rain.constants.size()
+            + cc.ice.constants.size() + cc.snow.constants.size()
+            + cc.graupel.constants.size() + cc.hail.constants.size();
+
+        perturbed_idx.resize(param_size);
+        std::fill(perturbed_idx.begin(), perturbed_idx.end(), -1);
+        // Define an order of the perturbed parameters for each ensemble
+        // for the case of create_train_set, that can be reused in the
+        // output file.
+        // Get the idx of the parameter and its first occurrence in the segments.
+        // Some parameters might be perturbed in multiple ensembles.
+        n_perturbed_params = 0;
+        for (const auto &s : segments) {
+            // Get all parameters that shall be perturbed and their index.
+            // Is it already in perturbed_idx? Then skip it.
+            for (const auto &p : s.params) {
+                std::string p_name = p.get_name();
+                auto it = std::find(perturbed_names.begin(), perturbed_names.end(), p_name);
+                if (it == perturbed_names.end()) {
+                    perturbed_names.push_back(p_name);
+                    uint64_t param_idx = p.get_idx();
+                    if (p.outparam_name == "cloud") {
+                        unperturbed_vals.push_back(cc.cloud.constants[param_idx].getValue());
+                        param_idx += cc.constants.size();
+                    } else if (p.outparam_name == "rain") {
+                        unperturbed_vals.push_back(cc.rain.constants[param_idx].getValue());
+                        param_idx += cc.constants.size() + cc.cloud.constants.size();
+                    } else if (p.outparam_name == "ice") {
+                        unperturbed_vals.push_back(cc.ice.constants[param_idx].getValue());
+                        param_idx += cc.constants.size() + cc.cloud.constants.size() + cc.rain.constants.size();
+                    } else if (p.outparam_name == "snow") {
+                        unperturbed_vals.push_back(cc.snow.constants[param_idx].getValue());
+                        param_idx += cc.constants.size() + cc.cloud.constants.size() + cc.rain.constants.size()
+                                     + cc.ice.constants.size();
+                    } else if (p.outparam_name == "graupel") {
+                        unperturbed_vals.push_back(cc.graupel.constants[param_idx].getValue());
+                        param_idx += cc.constants.size() + cc.cloud.constants.size() + cc.rain.constants.size()
+                                     + cc.ice.constants.size() + cc.snow.constants.size();
+                    } else if (p.outparam_name == "hail") {
+                        unperturbed_vals.push_back(cc.hail.constants[param_idx].getValue());
+                        param_idx += cc.constants.size() + cc.cloud.constants.size() + cc.rain.constants.size()
+                                     + cc.ice.constants.size() + cc.snow.constants.size()
+                                     + cc.graupel.constants.size();
+                    } else {
+                        unperturbed_vals.push_back(cc.constants[param_idx].getValue());
+                    }
+                        perturbed_idx[param_idx] = n_perturbed_params;
+                    n_perturbed_params++;
+                }
+            }
+        }
+    }
     this->setup(filetype, filename, cc, ref_quant,
         in_filename, write_index, snapshot_index,
         rank, delay_out_time);
 }
 
+
+template<class float_t>
+void output_handle_t::setup_gradients_limited_time_ens(
+    const model_constants_t<float_t> &cc) {
+
+    std::vector<int> dimid_tmp;
+    auto dim_pointer = &dimid[Dim_idx::time_dim];
+    int n_dims = 1;
+    if (local_num_comp > 1) {
+        dimid_tmp.push_back(dimid[Dim_idx::out_param_dim]);
+        dimid_tmp.push_back(dimid[Dim_idx::time_dim]);
+        dim_pointer = &dimid_tmp[0];
+        n_dims = 2;
+    }
+    define_var_gradients(cc, dim_pointer, n_dims);
+}
+
+
+template<class float_t>
+void output_handle_t::setup_gradients_train_ens(
+    const model_constants_t<float_t> &cc) {
+
+    std::vector<int> dimid_tmp;
+    int n_dims = 3;
+    dimid_tmp.push_back(dimid[Dim_idx::out_param_dim]);
+    dimid_tmp.push_back(dimid[Dim_idx::trajectory_dim]);
+    dimid_tmp.push_back(dimid[Dim_idx::time_dim]);
+    auto dim_pointer = &dimid_tmp[0];
+    define_var_gradients(cc, dim_pointer, n_dims);
+}
+
+
+template<class float_t>
+void output_handle_t::setup_gradients(
+    const model_constants_t<float_t> &cc) {
+
+    auto dim_pointer = &dimid[Dim_idx::out_param_dim];
+    int n_dims = 4;
+    if (local_num_comp == 1) {
+        dim_pointer = &dimid[Dim_idx::ensemble_dim];
+        n_dims = 3;
+    }
+    define_var_gradients(cc, dim_pointer, n_dims);
+}
+
+
+template<class float_t>
+void output_handle_t::define_var_gradients(
+    const model_constants_t<float_t> &cc,
+    const int *dim_pointer,
+    const int &n_dims) {
+
+    if (track_ic) {
+        // initial condition sensitivity
+        for (uint32_t i = 0; i < num_par_init; ++i) {
+            if (cc.trace_check(i, 2)) {
+                SUCCESS_OR_DIE(nc_def_var(
+                        ncid,
+                        init_grad_idx[i].c_str(),
+#ifdef OUT_DOUBLE
+                       NC_DOUBLE,
+#else
+                       NC_FLOAT,
+#endif
+                       n_dims,
+                       dim_pointer,
+                       &varid[Var_idx::n_vars + i]));
+            }
+        }
+    } else {
+        for (uint32_t i = 0; i < num_par - num_par_init; ++i) {
+            if (cc.trace_check(i, false)) {
+                SUCCESS_OR_DIE(nc_def_var(
+                        ncid,
+                        output_grad_idx[i].c_str(),
+#ifdef OUT_DOUBLE
+                       NC_DOUBLE,
+#else
+                       NC_FLOAT,
+#endif
+                       n_dims,
+                       dim_pointer,
+                       &varid[Var_idx::n_vars + i]));
+            }
+        }
+    }
+}
+
+
+template<class float_t>
+void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
+    // Define variables for dimensions
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "Output_Parameter_ID",
+            NC_UINT64,  // type
+            (local_num_comp > 1),          // ndims 2: matrix, 1: vector, 0: scalar
+            &dimid[Dim_idx::out_param_dim],    // ignored for ndims = 0
+            &varid[Var_idx::out_param]));
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "trajectory",
+            NC_UINT64,
+            1,
+            &dimid[Dim_idx::trajectory_dim],
+            &varid[Var_idx::trajectory]));
+    if (simulation_mode == create_train_set) {
+        SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "perturbed",
+            NC_STRING,
+            (n_perturbed_params > 1),
+            &dimid[Dim_idx::perturb_param_dim],
+            &varid[Var_idx::perturbed]));
+    }
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "ensemble",
+            NC_UINT64,
+            1,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::ensemble]));
+
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "time",
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &dimid[Dim_idx::time_dim],
+           &varid[Var_idx::time]));
+
+    // model state
+    for (uint32_t i = 0; i < num_comp; ++i)
+        SUCCESS_OR_DIE(
+            nc_def_var(
+                ncid,
+                output_par_idx[i].c_str(),
+#ifdef OUT_DOUBLE
+                NC_DOUBLE,
+#else
+                NC_FLOAT,
+#endif
+                3,
+                &dimid[Dim_idx::ensemble_dim],
+                &varid[i]));
+
+    // gradients
+    if (this->simulation_mode == limited_time_ensembles) {
+        setup_gradients_limited_time_ens(cc);
+    } else if (this->simulation_mode == create_train_set) {
+        setup_gradients_train_ens(cc);
+    } else {
+        setup_gradients(cc);
+    }
+
+    // the rest
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "time_after_ascent",
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           3,
+           &dimid[Dim_idx::ensemble_dim],
+           &varid[Var_idx::time_ascent]));
+#if !defined B_EIGHT
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "conv_400",
+            NC_BYTE,
+            3,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::conv_400]));
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "conv_600",
+            NC_BYTE,
+            3,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::conv_600]));
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "slan_400",
+            NC_BYTE,
+            3,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::slan_400]));
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "slan_600",
+            NC_BYTE,
+            3,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::slan_600]));
+#endif
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "lat",
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           3,
+           &dimid[Dim_idx::ensemble_dim],
+           &varid[Var_idx::lat]));
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "lon",
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           3,
+           &dimid[Dim_idx::ensemble_dim],
+           &varid[Var_idx::lon]));
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "step",
+            NC_UINT64,
+            3,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::step]));
+
+    // Phase of the trajectory
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "phase",
+            NC_UINT64,
+            3,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::phase]));
+
+    if (simulation_mode == create_train_set) {
+        std::vector<int> dimid_tmp;
+        dimid_tmp.push_back(dimid[Dim_idx::ensemble_dim]);
+        dimid_tmp.push_back(dimid[Dim_idx::time_dim]);
+        // Names of the perturbed parameters
+//        SUCCESS_OR_DIE(nc_def_var(
+//                ncid,
+//                "perturbed_param",
+//                NC_UINT64,
+//                2,
+//                &dimid_tmp[0],
+//                &varid[Var_idx::perturbed_param]));
+
+//        dimid_tmp.push_back(dimid[Dim_idx::perturb_param_dim]);
+//        dimid_tmp[1] = dimid[Dim_idx::time_dim];
+        // Amount of perturbation
+        SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "perturbation_value",
+#ifdef OUT_DOUBLE
+               NC_DOUBLE,
+#else
+               NC_FLOAT,
+#endif
+                3,
+                &dimid_tmp[0],
+                &varid[Var_idx::perturbation_value]));
+    }
+}
+
+
+template<class float_t>
+void output_handle_t::set_attributes(
+    const model_constants_t<float_t> &cc,
+    const std::string in_filename) {
+#ifdef DEVELOP
+    std::cout << "attempt to open " << in_filename << "\n";
+#endif
+    // Add attributes; read attributes from in_filename first
+    int in_ncid;
+    SUCCESS_OR_DIE(nc_open(in_filename.c_str(), NC_NOWRITE, &in_ncid));
+#ifdef DEVELOP
+    std::cout << "opened\n" << std::flush;
+#endif
+    // get amount of attributes
+    int n_atts;
+    SUCCESS_OR_DIE(nc_inq(in_ncid, NULL, NULL, &n_atts, NULL));
+
+    // for every attribute, get the name, type and length, and the values
+    for (int i=0; i < n_atts; i++) {
+        char att_name[NC_MAX_NAME];
+        SUCCESS_OR_DIE(nc_inq_attname(in_ncid, NC_GLOBAL, i, att_name));
+        nc_type att_type;
+        size_t att_len;
+        SUCCESS_OR_DIE(nc_inq_att(
+                in_ncid, NC_GLOBAL, att_name, &att_type, &att_len));
+        std::vector<nc_vlen_t> att_val(att_len);
+        SUCCESS_OR_DIE(nc_get_att(
+                in_ncid, NC_GLOBAL, att_name, att_val.data()));
+        SUCCESS_OR_DIE(nc_put_att(
+                ncid, NC_GLOBAL, att_name, att_type, att_len, att_val.data()));
+    }
+    // time
+    int in_time_id;
+    SUCCESS_OR_DIE(nc_inq_varid(in_ncid, "time", &in_time_id));
+    SUCCESS_OR_DIE(nc_inq_varnatts(in_ncid, in_time_id, &n_atts));
+    for (int i=0; i < n_atts; i++) {
+        char att_name[NC_MAX_NAME];
+        SUCCESS_OR_DIE(nc_inq_attname(in_ncid, in_time_id, i, att_name));
+        if (!std::strcmp(att_name, "_FillValue")) {
+            continue;
+        }
+        size_t att_len;
+        SUCCESS_OR_DIE(nc_inq_att(
+                in_ncid, in_time_id, att_name, NULL, &att_len));
+        std::vector<char> att_val(att_len);
+        SUCCESS_OR_DIE(nc_get_att(
+                in_ncid, in_time_id, att_name, att_val.data()));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::time],
+                att_name,
+                att_len,
+                att_val.data()));
+    }
+    SUCCESS_OR_DIE(ncclose(in_ncid));
+
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::out_param],
+            "long_name",
+            strlen("gradients are calculated w.r.t. this output parameter"),
+            "gradients are calculated w.r.t. this output parameter"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::out_param],
+            "standard_name",
+            strlen("output_parameter_id"),
+            "output_parameter_id"));
+
+    if (this->simulation_mode == create_train_set) {
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::perturbed],
+                "long_name",
+                strlen("Name of the perturbed parameter (each ensemble can have different and " \
+                       "multiple perturbed parameters)."),
+                "Name of the perturbed parameter (each ensemble can have different and " \
+                        "multiple perturbed parameters)."));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::perturbed],
+                "standard_name",
+                strlen("perturbed_parameter"),
+                "perturbed_parameter"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::perturbed],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes"));
+
+//        SUCCESS_OR_DIE(nc_put_att_text(
+//                ncid,
+//                varid[Var_idx::perturbed_param],
+//                "long_name",
+//                strlen("Name of the (perturbed) parameter."),
+//                "Name of the (perturbed) parameter."));
+//        SUCCESS_OR_DIE(nc_put_att_text(
+//                ncid,
+//                varid[Var_idx::perturbed_param],
+//                "standard_name",
+//                strlen("perturbed_parameter_name"),
+//                "perturbed_parameter_name"));
+//        SUCCESS_OR_DIE(nc_put_att_text(
+//                ncid,
+//                varid[Var_idx::perturbed_param],
+//                "auxiliary_data",
+//                strlen("yes"),
+//                "yes"));
+
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::perturbation_value],
+                "long_name",
+                strlen("Value of the perturbation."),
+                "Value of the perturbation."));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::perturbation_value],
+                "standard_name",
+                strlen("perturbation_value"),
+                "perturbation_value"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::perturbation_value],
+                "auxiliary_data",
+                strlen("yes"),
+                "yes"));
+    }
+
+    auto put_att_mass = [&](
+            const char *mass_name,
+            const char *long_mass_name,
+            auto &varid) {
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "units",
+                strlen("kg m^-3"),
+                "kg m^-3"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "auxiliary_data",
+                strlen("yes"),
+                "yes"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "long_name",
+                strlen(long_mass_name),
+                long_mass_name));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "standard_name",
+                strlen(mass_name),
+                mass_name));
+        SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+               NC_DOUBLE,
+#else
+               NC_FLOAT,
+#endif
+               1,
+               &FILLVALUE));
+    };
+    put_att_mass("water_vapor_mass_density", "water vapor mass density", varid[Var_idx::qv]);
+    put_att_mass("cloud_droplet_mass_density", "cloud droplet mass density", varid[Var_idx::qc]);
+    put_att_mass("rain_droplet_mass_density", "rain droplet mass density", varid[Var_idx::qr]);
+    put_att_mass("snow_mass_density", "snow mass density", varid[Var_idx::qs]);
+    put_att_mass("ice_mass_density", "ice mass density", varid[Var_idx::qi]);
+    put_att_mass("graupel_mass_density", "graupel mass density", varid[Var_idx::qg]);
+    put_att_mass("hail_mass_density", "hail mass density", varid[Var_idx::qh]);
+
+    auto put_att_nums = [&](
+            const char *name,
+            const char *long_name,
+            auto &varid) {
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "units",
+                strlen("m^-3"),
+                "m^-3"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "auxiliary_data",
+                strlen("yes"),
+                "yes"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "long_name",
+                strlen(long_name),
+                long_name));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "standard_name",
+                strlen(name),
+                name));
+        SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+               NC_DOUBLE,
+#else
+               NC_FLOAT,
+#endif
+               1,
+               &FILLVALUE));
+    };
+    put_att_nums("cloud_droplet_number_density", "cloud droplet number density", varid[Var_idx::ncloud]);
+    put_att_nums("rain_droplet_number_density", "rain droplet number density", varid[Var_idx::nrain]);
+    put_att_nums("snow_number_density", "snow number density", varid[Var_idx::nsnow]);
+    put_att_nums("ice_number_density", "ice number density", varid[Var_idx::nice]);
+    put_att_nums("graupel_number_density", "graupel number density", varid[Var_idx::ngraupel]);
+    put_att_nums("hail_number_density", "hail number density", varid[Var_idx::nhail]);
+
+    auto put_att_mass_sed = [&](
+            const char *mass_name,
+            const char *long_mass_name,
+            auto &varid) {
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "units",
+                strlen("kg m^-3 s^-1"),
+                "kg m^-3 s^-1"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "auxiliary_data",
+                strlen("yes"),
+                "yes"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "long_name",
+                strlen(long_mass_name),
+                long_mass_name));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "standard_name",
+                strlen(mass_name),
+                mass_name));
+        SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+               NC_DOUBLE,
+#else
+               NC_FLOAT,
+#endif
+               1,
+               &FILLVALUE));
+    };
+    put_att_mass_sed(
+            "sedi_outflux_of_rain_droplet_mass",
+            "sedimentation of rain droplet mass",
+            varid[Var_idx::qr_out]);
+    put_att_mass_sed(
+            "sedi_outflux_of_snow_mass",
+            "sedimentation of snow mass",
+            varid[Var_idx::qs_out]);
+    put_att_mass_sed(
+            "sedi_outflux_of_ice_mass",
+            "sedimentation of ice mass",
+            varid[Var_idx::qi_out]);
+    put_att_mass_sed(
+            "sedi_outflux_of_graupel_mass",
+            "sedimentation of graupel mass",
+            varid[Var_idx::qg_out]);
+    put_att_mass_sed(
+            "sedi_outflux_of_hail_mass",
+            "sedimentation of hail mass",
+            varid[Var_idx::qh_out]);
+
+    auto put_att_nums_sed = [&](
+            const char *name,
+            const char *long_name,
+            auto &varid) {
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "units",
+                strlen("m^-3 s^-1"),
+                "m^-3 s^-1"));
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "auxiliary_data",
+                strlen("yes"),
+                "yes"));
+        std::string tmp_string = "sedimentation of " + std::string(long_name) + " number";
+        const char *att_val = tmp_string.c_str();
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "long_name",
+                strlen(att_val),
+                att_val));
+        std::string tmp_string_2 = "sedi_outflux_of_" + std::string(name) + "_number";
+        const char *att_val_2 = tmp_string_2.c_str();
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid,
+                "standard_name",
+                strlen(att_val_2),
+                att_val_2));
+        SUCCESS_OR_DIE(nc_put_att(
+                ncid,
+                varid,
+                _FillValue,
+#ifdef OUT_DOUBLE
+               NC_DOUBLE,
+#else
+               NC_FLOAT,
+#endif
+               1,
+               &FILLVALUE));
+    };
+    put_att_nums_sed("sedi_outflux_of_rain_droplet_number", "sedimentation of rain droplet number",
+                     varid[Var_idx::nr_out]);
+    put_att_nums_sed("sedi_outflux_of_snow_number", "sedimentation of snow number", varid[Var_idx::ns_out]);
+    put_att_nums_sed("sedi_outflux_of_ice_number", "sedimentation of ice number", varid[Var_idx::ni_out]);
+    put_att_nums_sed("sedi_outflux_of_graupel_number", "sedimentation of graupel number", varid[Var_idx::ng_out]);
+    put_att_nums_sed("sedi_outflux_of_hail_number", "sedimentation of hail number", varid[Var_idx::nh_out]);
+
+    if (!track_ic) {
+        // all gradients are auxiliary data
+        for (int i=0; i < num_par-num_par_init; i++) {
+            if (cc.trace_check(i, false)) {
+                SUCCESS_OR_DIE(nc_put_att_text(
+                        ncid,
+                        varid[Var_idx::n_vars + i],
+                        "auxiliary_data",
+                        strlen("yes"),
+                        "yes"));
+                SUCCESS_OR_DIE(nc_put_att(
+                        ncid,
+                        varid[Var_idx::n_vars + i],
+                        _FillValue,
+#ifdef OUT_DOUBLE
+                       NC_DOUBLE,
+#else
+                       NC_FLOAT,
+#endif
+                       1,
+                       &FILLVALUE));
+            }
+        }
+    } else {
+        // initial condition gradients
+        for (int i=0; i < num_par_init; i++) {
+            if (cc.trace_check(i, 2)) {
+                SUCCESS_OR_DIE(nc_put_att_text(
+                        ncid,
+                        varid[Var_idx::n_vars + i],
+                        "auxiliary_data",
+                        strlen("yes"),
+                        "yes"));
+                SUCCESS_OR_DIE(nc_put_att(
+                        ncid,
+                        varid[Var_idx::n_vars + i],
+                        _FillValue,
+#ifdef OUT_DOUBLE
+                       NC_DOUBLE,
+#else
+                       NC_FLOAT,
+#endif
+                       1,
+                       &FILLVALUE));
+            }
+        }
+    }
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::pressure],
+            "long_name",
+            strlen("pressure"),
+            "pressure"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::pressure],
+            "standard_name",
+            strlen("air_pressure"),
+            "air_pressure"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::pressure],
+            "units",
+            strlen("Pa"),
+            "Pa"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::pressure],
+            "positive",
+            strlen("down"),
+            "down"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::pressure],
+            "axis",
+            strlen("Z"),
+            "Z"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::pressure],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::temperature],
+            "long_name",
+            strlen("temperature"),
+            "temperature"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::temperature],
+            "standard_name",
+            strlen("air_temperature"),
+            "air_temperature"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::temperature],
+            "units",
+            strlen("K"),
+            "K"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::temperature],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::temperature],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::ascent],
+            "long_name",
+            strlen("ascend velocity"),
+            "ascend velocity"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::ascent],
+            "standard_name",
+            strlen("ascend_velocity"),
+            "ascend_velocity"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::ascent],
+            "units",
+            strlen("m s^-1"),
+            "m s^-1"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::ascent],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::ascent],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::sat],
+            "long_name",
+            strlen("saturation"),
+            "saturation"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::sat],
+            "standard_name",
+            strlen("saturation"),
+            "saturation"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::sat],
+            "units",
+            strlen("1"),
+            "percentage"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::sat],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::sat],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::height],
+            "long_name",
+            strlen("height above mean sea level"),
+            "height above mean sea level"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::height],
+            "standard_name",
+            strlen("height"),
+            "height"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::height],
+            "units",
+            strlen("m AMSL"),
+            "m AMSL"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::height],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::height],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::inactive],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::inactive],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::dep],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::dep],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::sub],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::sub],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::lat_heat],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lat_heat],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::lat_cool],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lat_cool],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::time_ascent],
+            "long_name",
+            strlen("time after rapid ascent started"),
+            "time after rapid ascent started"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::time_ascent],
+            "standard_name",
+            strlen("time_after_ascent"),
+            "time_after_ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::time_ascent],
+            "units",
+            strlen("seconds since start of convective/slantwise ascent"),
+            "seconds since start of convective/slantwise ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::time_ascent],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::time_ascent],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::lat],
+            "long_name",
+            strlen("rotated latitude"),
+            "rotated latitude"));
+
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::lat],
+            "standard_name",
+            strlen("latitude"),
+            "latitude"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::lat],
+            "units",
+            strlen("degrees"),
+            "degrees"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lat],
+            _FillValue,
+#ifdef OUT_DOUBLE
+           NC_DOUBLE,
+#else
+           NC_FLOAT,
+#endif
+           1,
+           &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::lon],
+            "long_name",
+            strlen("rotated longitude"),
+            "rotated longitude"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::lon],
+            "standard_name",
+            strlen("longitude"),
+            "longitude"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::lon],
+            "units",
+            strlen("degrees"),
+            "degrees"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::lon],
+            _FillValue,
+#ifdef OUT_DOUBLE
+                           NC_DOUBLE,
+#else
+                           NC_FLOAT,
+#endif
+                           1,
+                           &FILLVALUE));
+#if !defined B_EIGHT
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::conv_400],
+            "long_name",
+            strlen("convective 400hPa ascent"),
+            "convective 400hPa ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::conv_400],
+            "standard_name",
+            strlen("convective_400hPa_ascent"),
+            "convective_400hPa_ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::conv_400],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::conv_600],
+            "long_name",
+            strlen("convective 600hPa ascent"),
+            "convective 600hPa ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::conv_600],
+            "standard_name",
+            strlen("convective_600hPa_ascent"),
+            "convective_600hPa_ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::conv_600],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::slan_400],
+            "long_name",
+            strlen("slantwise 400hPa ascent"),
+            "slantwise 400hPa ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::slan_400],
+            "standard_name",
+            strlen("slantwise_400hPa_ascent"),
+            "slantwise_400hPa_ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::slan_400],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::slan_600],
+            "long_name",
+            strlen("slantwise 600hPa ascent"),
+            "slantwise 600hPa ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::slan_600],
+            "standard_name",
+            strlen("slantwise_600hPa_ascent"),
+            "slantwise_600hPa_ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::slan_600],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+#endif
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::step],
+            "long_name",
+            strlen("simulation step"),
+            "simulation step"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::step],
+            "standard_name",
+            strlen("step"),
+            "step"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::step],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    const uint64_t FILLINT = 0;
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::step],
+            _FillValue,
+            NC_UINT64,
+            1,
+            &FILLINT));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "long_name",
+            strlen("phase"),
+            "phase"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "standard_name",
+            strlen("phase"),
+            "phase"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "description",
+            strlen("0: warm phase, 1: mixed phase, 2: ice phase, 3: neutral phase"),
+            "0: warm phase, 1: mixed phase, 2: ice phase, 3: neutral phase"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::phase],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::phase],
+            _FillValue,
+            NC_UINT64,
+            1,
+            &FILLINT));
+}
+
+
+template<class float_t>
+void output_handle_t::set_compression(const model_constants_t<float_t> &cc) {
+#ifdef DEVELOP
+    std::cout << "Using compression\n";
+#endif
+    if (this->simulation_mode == limited_time_ensembles
+        || this->simulation_mode == trajectory_sensitivity
+        || this->simulation_mode == grid_sensitivity
+        || this->simulation_mode == create_train_set) {
+        // Compressing this is buggy
+        for (uint32_t i=0; i < Var_idx::n_vars; ++i) {
+            // This does not work on scalars; we need to filter those out
+            if ((local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param)) &&
+              (n_perturbed_params > 1 || i != static_cast<int>(Var_idx::perturbed)))
+                // This could be a version for szip
+//                         SUCCESS_OR_DIE(
+//                             nc_def_var_szip(
+//                                 ncid,
+//                                 varid[i],
+//                                 NC_SZIP_NN,
+//                                 8));  // pixels per block
+                // zlib version
+                SUCCESS_OR_DIE(
+                        nc_def_var_deflate(
+                                ncid,
+                                varid[i],
+                                1,  // shuffle
+                                1,  // deflate
+                                9));  // max compression
+        }
+        if (!track_ic) {
+            // gradients
+            for (uint32_t i=0; i < num_par-num_par_init; ++i) {
+                if (cc.trace_check(i, false))
+//                         SUCCESS_OR_DIE(
+//                             nc_def_var_szip(
+//                                 ncid,
+//                                 varid[Var_idx::n_vars + i],
+//                                 NC_SZIP_NN,
+//                                 8));
+                    SUCCESS_OR_DIE(
+                            nc_def_var_deflate(
+                                    ncid,
+                                    varid[Var_idx::n_vars + i],
+                                    1,  // shuffle
+                                    1,  // deflate
+                                    9));  // max compression
+            }
+        } else {
+            // initial conditions
+            for (uint32_t i=0; i < num_par_init; ++i) {
+                if (cc.trace_check(i, 2))
+//                         SUCCESS_OR_DIE(
+//                             nc_def_var_szip(
+//                                 ncid,
+//                                 varid[Var_idx::n_vars + i],
+//                                 NC_SZIP_NN,
+//                                 8));
+                    SUCCESS_OR_DIE(
+                            nc_def_var_deflate(
+                                    ncid,
+                                    varid[Var_idx::n_vars + i],
+                                    1,  // shuffle
+                                    1,  // deflate
+                                    9));  // max compression
+            }
+        }
+    }
+#ifdef DEVELOP
+    std::cout << "all done; attempt to close\n" << std::flush;
+#endif
+}
+
+
+template<class float_t>
+void output_handle_t::write_dimension_values(
+    const model_constants_t<float_t> &cc,
+    const double delay_out_time) {
+
+    std::vector<size_t> startp, countp;
+    startp.push_back(0);
+    countp.push_back(num_time);
+#ifdef OUT_DOUBLE
+    std::vector<double> time_steps(num_time);
+#else
+    std::vector<float> time_steps(num_time);
+#endif
+    for (uint32_t i=0; i < num_time; i++)
+        time_steps[i] = cc.dt*i + cc.start_time + delay_out_time;
+#ifdef DEVELOP
+    std::cout << "attempt to write\n" << std::flush;
+#endif
+    SUCCESS_OR_DIE(
+            nc_put_vara(
+                    ncid,                               // ncid
+                    varid[Var_idx::time],         // varid
+                    startp.data(),               // startp
+                    countp.data(),              // countp
+                    time_steps.data()));            // op
+#ifdef DEVELOP
+    std::cout << "done time_steps\n" << std::flush;
+#endif
+    countp[0] = n_trajs_file;
+    std::vector<uint64_t> data(n_trajs_file);
+    for (uint32_t i=0; i < n_trajs_file; i++)
+        data[i] = i;
+    SUCCESS_OR_DIE(
+            nc_put_vara(
+                    ncid,
+                    varid[Var_idx::trajectory],
+                    startp.data(),
+                    countp.data(),
+                    data.data()));
+#ifdef DEVELOP
+    std::cout << "done n_trajs; starting with num_ens " << num_ens << "\n" << std::flush;
+#endif
+    countp[0] = num_ens;
+    data.resize(num_ens);
+    for (uint32_t i=0; i < num_ens; i++)
+        data[i] = i;
+    SUCCESS_OR_DIE(
+            nc_put_vara(
+                    ncid,
+                    varid[Var_idx::ensemble],
+                    startp.data(),
+                    countp.data(),
+                    data.data()));
+#ifdef DEVELOP
+    std::cout << "out_param\n" << std::flush;
+#endif
+    countp[0] = local_num_comp;
+    data.resize(local_num_comp);
+    uint32_t counter = 0;
+    for (uint32_t i=0; i < num_comp; i++) {
+        if (cc.trace_check(i, true)) {
+            data[counter] = i;
+            counter++;
+        }
+    }
+    SUCCESS_OR_DIE(
+            nc_put_vara(
+                    ncid,
+                    varid[Var_idx::out_param],
+                    startp.data(),
+                    countp.data(),
+                    data.data()));
+#ifdef DEVELOP
+    std::cout << "out_param done\n" << std::flush;
+#endif
+#ifdef DEVELOP
+    std::cout << "write perturbed_id\n" << std::flush;
+#endif
+    if (this->simulation_mode == create_train_set) {
+//        data.resize(n_perturbed_params);
+        countp[0] = n_perturbed_params;
+//        for (uint64_t i=0; i < n_perturbed_params; ++i) data[i] = i;
+        SUCCESS_OR_DIE(
+                nc_put_vara(
+                        ncid,
+                        varid[Var_idx::perturbed],
+                        startp.data(),
+                        countp.data(),
+                        perturbed_names.data()));
+    }
+
+#ifdef DEVELOP
+    std::cout << "perturbed_id done\n" << std::flush;
+#endif
+    SUCCESS_OR_DIE(ncclose(ncid));
+#ifdef DEVELOP
+    std::cout << "closed\n" << std::flush;
+#endif
+}
+
+
+template<class float_t>
+void output_handle_t::set_parallel_access(
+    const model_constants_t<float_t> &cc,
+    const std::string file_string) {
+#ifdef DEVELOP
+    std::cout << "attempt to open " << filename << "\n" << std::flush;
+#endif
+    SUCCESS_OR_DIE(
+        nc_open_par(
+            file_string.c_str(),
+            NC_WRITE,
+            MPI_COMM_WORLD,
+            MPI_INFO_NULL,
+            &ncid));
+#ifdef DEVELOP
+    std::cout << "get varids\n" << std::flush;
+#endif
+    // gather all necessary variable ids
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "Output_Parameter_ID",
+            &varid[Var_idx::out_param]));
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "ensemble",
+            &varid[Var_idx::ensemble]));
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "trajectory",
+            &varid[Var_idx::trajectory]));
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "time",
+            &varid[Var_idx::time]));
+    if (this->simulation_mode == create_train_set) {
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "perturbed",
+                &varid[Var_idx::perturbed]));
+    }
+#ifdef DEVELOP
+    std::cout << "get model varids\n" << std::flush;
+#endif
+    // model state
+    for (uint32_t i=0; i < num_comp; ++i)
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                output_par_idx[i].c_str(),
+                &varid[i]));
+#ifdef DEVELOP
+    std::cout << "get track varids\n" << std::flush;
+#endif
+    if (!track_ic) {
+        // gradients
+        for (uint32_t i=0; i < num_par-num_par_init; ++i) {
+            if (cc.trace_check(i, false)) {
+                SUCCESS_OR_DIE(
+                    nc_inq_varid(
+                        ncid,
+                        output_grad_idx[i].c_str(),
+                        &varid[Var_idx::n_vars + i]));
+            }
+        }
+    } else {
+        // initial conditions
+        for (uint32_t i=0; i < num_par_init; ++i) {
+            if (cc.trace_check(i, 2)) {
+                SUCCESS_OR_DIE(
+                    nc_inq_varid(
+                        ncid,
+                        init_grad_idx[i].c_str(),
+                        &varid[Var_idx::n_vars + i]));
+            }
+        }
+    }
+#ifdef DEVELOP
+    std::cout << "get more time\n" << std::flush;
+#endif
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "time_after_ascent",
+            &varid[Var_idx::time_ascent]));
+#if !defined(B_EIGHT)
+#ifdef DEVELOP
+    std::cout << "get conv\n" << std::flush;
+#endif
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "conv_400",
+            &varid[Var_idx::conv_400]));
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "conv_600",
+            &varid[Var_idx::conv_600]));
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "slan_400",
+            &varid[Var_idx::slan_400]));
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "slan_600",
+            &varid[Var_idx::slan_600]));
+#endif
+#ifdef DEVELOP
+    std::cout << "get lat\n" << std::flush;
+#endif
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "lat",
+            &varid[Var_idx::lat]));
+#ifdef DEVELOP
+    std::cout << "get lon\n" << std::flush;
+#endif
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "lon",
+            &varid[Var_idx::lon]));
+#ifdef DEVELOP
+    std::cout << "get step\n" << std::flush;
+#endif
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "step",
+            &varid[Var_idx::step]));
+#ifdef DEVELOP
+    std::cout << "get phase\n" << std::flush;
+#endif
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "phase",
+            &varid[Var_idx::phase]));
+
+    if (simulation_mode == create_train_set) {
+//        SUCCESS_OR_DIE(
+//            nc_inq_varid(
+//                ncid,
+//                "perturbed_param",
+//                &varid[Var_idx::perturbed_param]));
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "perturbation_value",
+                &varid[Var_idx::perturbation_value]));
+    }
+
+    if ((this->simulation_mode == trajectory_sensitvity_perturbance)
+        || (this->simulation_mode == trajectory_perturbance)) {
+#ifdef DEVELOP
+        std::cout << "different accesses\n" << std::flush;
+#endif
+        // Make the access independent which is a must due to the dynamic
+        // work schedule; This can be expensive though.
+        for (uint32_t i=0; i < Var_idx::n_vars; i++)
+            SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_INDEPENDENT));
+        if (!track_ic) {
+            for (uint32_t i=0; i < num_par-num_par_init; i++)
+                if (cc.trace_check(i, false))
+                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
+        } else {
+            for (uint32_t i=0; i < num_par_init; i++)
+                if (cc.trace_check(i, 2))
+                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
+        }
+    }
+#ifdef COMPRESS_OUTPUT
+    // We need to explicitly tell that we want to collectively write the data
+    if ((this->simulation_mode != trajectory_sensitvity_perturbance)
+        && (this->simulation_mode != trajectory_perturbance)) {
+#ifdef DEVELOP
+        std::cout << "different accesses\n" << std::flush;
+#endif
+        // Make the access independent which is a must due to the dynamic
+        // work schedule; This can be expensive though.
+        for (uint32_t i=0; i < Var_idx::n_vars; i++) {
+            SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_COLLECTIVE));
+        }
+        if (!track_ic) {
+            for (uint32_t i=0; i < num_par-num_par_init; i++)
+                if (cc.trace_check(i, false))
+                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_COLLECTIVE));
+        } else {
+            for (uint32_t i=0; i < num_par_init; i++)
+                if (cc.trace_check(i, 2))
+                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_COLLECTIVE));
+        }
+    }
+#endif
+}
 
 template<class float_t>
 void output_handle_t::setup(
@@ -92,6 +1704,8 @@ void output_handle_t::setup(
     output_buffer[Buffer_idx::time_ascent_buf].resize(vec_size);
     output_buffer[Buffer_idx::lat_buf].resize(vec_size);
     output_buffer[Buffer_idx::lon_buf].resize(vec_size);
+    if (this->simulation_mode == create_train_set)
+        output_buffer[Buffer_idx::perturb_buf].resize(vec_size*n_perturbed_params);
     if (!track_ic) {
         // gradients
         for (uint32_t i=Buffer_idx::n_buffer; i < Buffer_idx::n_buffer+num_par-num_par_init; i++)
@@ -133,1380 +1747,34 @@ void output_handle_t::setup(
         // This is useful as long as Met3D does not support this dimension.
         if (local_num_comp > 1) {
             SUCCESS_OR_DIE(nc_def_dim(
-                ncid, "Output_Parameter_ID", local_num_comp, &dimid[Dim_idx::out_param_dim]));
+                    ncid, "Output_Parameter_ID", local_num_comp, &dimid[Dim_idx::out_param_dim]));
         }
         SUCCESS_OR_DIE(nc_def_dim(
-            ncid, "ensemble", num_ens, &dimid[Dim_idx::ensemble_dim]));
+                ncid, "trajectory", n_trajs_file, &dimid[Dim_idx::trajectory_dim]));
         SUCCESS_OR_DIE(nc_def_dim(
-            ncid, "trajectory", n_trajs_file, &dimid[Dim_idx::trajectory_dim]));
+                ncid, "ensemble", num_ens, &dimid[Dim_idx::ensemble_dim]));
         SUCCESS_OR_DIE(nc_def_dim(
-            ncid, "time", num_time, &dimid[Dim_idx::time_dim]));
-
-        // Create variables
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "Output_Parameter_ID",
-            NC_UINT64,  // type
-            (local_num_comp > 1),          // ndims 2: matrix, 1: vector, 0: scalar
-            &dimid[Dim_idx::out_param_dim],    // ignored for ndims = 0
-            &varid[Var_idx::out_param]));
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "ensemble",
-            NC_UINT64,
-            1,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::ensemble]));
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "trajectory",
-            NC_UINT64,
-            1,
-            &dimid[Dim_idx::trajectory_dim],
-            &varid[Var_idx::trajectory]));
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "time",
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &dimid[Dim_idx::time_dim],
-            &varid[Var_idx::time]));
-
-        // model state
-        for (uint32_t i=0; i < num_comp; ++i)
-            SUCCESS_OR_DIE(
-                nc_def_var(
-                    ncid,
-                    output_par_idx[i].c_str(),
-#ifdef OUT_DOUBLE
-                    NC_DOUBLE,
-#else
-                    NC_FLOAT,
-#endif
-                    3,
-                    &dimid[Dim_idx::ensemble_dim],
-                    &varid[i]));
-
-        // gradients
-        if (this->simulation_mode != limited_time_ensembles) {
-            auto dim_pointer = &dimid[Dim_idx::out_param_dim];
-            int n_dims = 4;
-            if (local_num_comp == 1) {
-                dim_pointer = &dimid[Dim_idx::ensemble_dim];
-                n_dims = 3;
-            }
-            if (track_ic) {
-                // initial condition sensitivity
-                for (uint32_t i=0; i < num_par_init; ++i) {
-                    if (cc.trace_check(i, 2)) {
-                        SUCCESS_OR_DIE(nc_def_var(
-                            ncid,
-                            init_grad_idx[i].c_str(),
-#ifdef OUT_DOUBLE
-                            NC_DOUBLE,
-#else
-                            NC_FLOAT,
-#endif
-                            n_dims,
-                            dim_pointer,
-                            &varid[Var_idx::n_vars + i]));
-                    }
-                }
-            } else {
-                for (uint32_t i=0; i < num_par-num_par_init; ++i) {
-                    if (cc.trace_check(i, false)) {
-                        SUCCESS_OR_DIE(nc_def_var(
-                            ncid,
-                            output_grad_idx[i].c_str(),
-#ifdef OUT_DOUBLE
-                            NC_DOUBLE,
-#else
-                            NC_FLOAT,
-#endif
-                            n_dims,
-                            dim_pointer,
-                            &varid[Var_idx::n_vars + i]));
-                    }
-                }
-            }
-
-        } else {
-            std::vector<int> dimid_tmp;
-            auto dim_pointer = &dimid[Dim_idx::time_dim];
-            int n_dims = 1;
-            if (local_num_comp > 1) {
-                // std::vector<int> dimid_tmp;
-                dimid_tmp.push_back(dimid[Dim_idx::out_param_dim]);
-                dimid_tmp.push_back(dimid[Dim_idx::time_dim]);
-                dim_pointer = &dimid_tmp[0];
-                n_dims = 2;
-            }
-            if (!track_ic) {
-                for (uint32_t i=0; i < num_par-num_par_init; ++i) {
-                    if (cc.trace_check(i, false)) {
-                        SUCCESS_OR_DIE(nc_def_var(
-                            ncid,
-                            output_grad_idx[i].c_str(),
-#ifdef OUT_DOUBLE
-                            NC_DOUBLE,
-#else
-                            NC_FLOAT,
-#endif
-                            n_dims,
-                            dim_pointer,
-                            &varid[Var_idx::n_vars + i]));
-                    }
-                }
-            } else {
-                // initial condition sensitivity
-                for (uint32_t i=0; i < num_par_init; ++i) {
-                    if (cc.trace_check(i, 2)) {
-                        SUCCESS_OR_DIE(nc_def_var(
-                            ncid,
-                            init_grad_idx[i].c_str(),
-#ifdef OUT_DOUBLE
-                            NC_DOUBLE,
-#else
-                            NC_FLOAT,
-#endif
-                            n_dims,
-                            dim_pointer,
-                            &varid[Var_idx::n_vars + i]));
-                    }
-                }
-            }
+                ncid, "time", num_time, &dimid[Dim_idx::time_dim]));
+        // The training set stores the perturbed parameter for each ensemble as additional
+        // information
+        if (simulation_mode == create_train_set) {
+            SUCCESS_OR_DIE(nc_def_dim(
+                    ncid, "perturbed_ID", local_num_comp, &dimid[Dim_idx::perturb_param_dim]));
         }
 
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "time_after_ascent",
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::time_ascent]));
-#if !defined B_EIGHT
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "conv_400",
-            NC_BYTE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::conv_400]));
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "conv_600",
-            NC_BYTE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::conv_600]));
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "slan_400",
-            NC_BYTE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::slan_400]));
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "slan_600",
-            NC_BYTE,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::slan_600]));
-#endif
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "lat",
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::lat]));
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "lon",
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::lon]));
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "step",
-            NC_UINT64,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::step]));
-
-        // Phase of the trajectory
-        SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "phase",
-            NC_UINT64,
-            3,
-            &dimid[Dim_idx::ensemble_dim],
-            &varid[Var_idx::phase]));
-#ifdef DEVELOP
-        std::cout << "attempt to open " << in_filename << "\n";
-#endif
-        // Add attributes; read attributes from in_filename first
-        int in_ncid;
-        SUCCESS_OR_DIE(nc_open(in_filename.c_str(), NC_NOWRITE, &in_ncid));
-#ifdef DEVELOP
-        std::cout << "opened\n" << std::flush;
-#endif
-        // get amount of attributes
-        int n_atts;
-        SUCCESS_OR_DIE(nc_inq(in_ncid, NULL, NULL, &n_atts, NULL));
-
-        // for every attribute, get the name, type and length, and the values
-        for (int i=0; i < n_atts; i++) {
-            char att_name[NC_MAX_NAME];
-            SUCCESS_OR_DIE(nc_inq_attname(in_ncid, NC_GLOBAL, i, att_name));
-            nc_type att_type;
-            size_t att_len;
-            SUCCESS_OR_DIE(nc_inq_att(
-                in_ncid, NC_GLOBAL, att_name, &att_type, &att_len));
-            std::vector<nc_vlen_t> att_val(att_len);
-            SUCCESS_OR_DIE(nc_get_att(
-                in_ncid, NC_GLOBAL, att_name, att_val.data()));
-            SUCCESS_OR_DIE(nc_put_att(
-                ncid, NC_GLOBAL, att_name, att_type, att_len, att_val.data()));
-        }
-        // time
-        int in_time_id;
-        SUCCESS_OR_DIE(nc_inq_varid(in_ncid, "time", &in_time_id));
-        SUCCESS_OR_DIE(nc_inq_varnatts(in_ncid, in_time_id, &n_atts));
-        for (int i=0; i < n_atts; i++) {
-            char att_name[NC_MAX_NAME];
-            SUCCESS_OR_DIE(nc_inq_attname(in_ncid, in_time_id, i, att_name));
-            if (!std::strcmp(att_name, "_FillValue")) {
-                continue;
-            }
-            size_t att_len;
-            SUCCESS_OR_DIE(nc_inq_att(
-                in_ncid, in_time_id, att_name, NULL, &att_len));
-            std::vector<char> att_val(att_len);
-            SUCCESS_OR_DIE(nc_get_att(
-                in_ncid, in_time_id, att_name, att_val.data()));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid[Var_idx::time],
-                att_name,
-                att_len,
-                att_val.data()));
-        }
-        SUCCESS_OR_DIE(ncclose(in_ncid));
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::out_param],
-            "long_name",
-            strlen("gradients are calculated w.r.t. this output parameter"),
-            "gradients are calculated w.r.t. this output parameter"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::out_param],
-            "standard_name",
-            strlen("output_parameter_id"),
-            "output_parameter_id"));
-
-        auto put_att_mass = [&](
-            const char *mass_name,
-            const char *long_mass_name,
-            auto &varid) {
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "units",
-                strlen("kg m^-3"),
-                "kg m^-3"));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "auxiliary_data",
-                strlen("yes"),
-                "yes"));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "long_name",
-                strlen(long_mass_name),
-                long_mass_name));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "standard_name",
-                strlen(mass_name),
-                mass_name));
-            SUCCESS_OR_DIE(nc_put_att(
-                ncid,
-                varid,
-                _FillValue,
-#ifdef OUT_DOUBLE
-                NC_DOUBLE,
-#else
-                NC_FLOAT,
-#endif
-                1,
-                &FILLVALUE));
-        };
-        put_att_mass("water_vapor_mass_density", "water vapor mass density", varid[Var_idx::qv]);
-        put_att_mass("cloud_droplet_mass_density", "cloud droplet mass density", varid[Var_idx::qc]);
-        put_att_mass("rain_droplet_mass_density", "rain droplet mass density", varid[Var_idx::qr]);
-        put_att_mass("snow_mass_density", "snow mass density", varid[Var_idx::qs]);
-        put_att_mass("ice_mass_density", "ice mass density", varid[Var_idx::qi]);
-        put_att_mass("graupel_mass_density", "graupel mass density", varid[Var_idx::qg]);
-        put_att_mass("hail_mass_density", "hail mass density", varid[Var_idx::qh]);
-
-        auto put_att_nums = [&](
-            const char *name,
-            const char *long_name,
-            auto &varid) {
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "units",
-                strlen("m^-3"),
-                "m^-3"));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "auxiliary_data",
-                strlen("yes"),
-                "yes"));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "long_name",
-                strlen(long_name),
-                long_name));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "standard_name",
-                strlen(name),
-                name));
-            SUCCESS_OR_DIE(nc_put_att(
-                ncid,
-                varid,
-                _FillValue,
-#ifdef OUT_DOUBLE
-                NC_DOUBLE,
-#else
-                NC_FLOAT,
-#endif
-                1,
-                &FILLVALUE));
-        };
-        put_att_nums("cloud_droplet_number_density", "cloud droplet number density", varid[Var_idx::ncloud]);
-        put_att_nums("rain_droplet_number_density", "rain droplet number density", varid[Var_idx::nrain]);
-        put_att_nums("snow_number_density", "snow number density", varid[Var_idx::nsnow]);
-        put_att_nums("ice_number_density", "ice number density", varid[Var_idx::nice]);
-        put_att_nums("graupel_number_density", "graupel number density", varid[Var_idx::ngraupel]);
-        put_att_nums("hail_number_density", "hail number density", varid[Var_idx::nhail]);
-
-        auto put_att_mass_sed = [&](
-            const char *mass_name,
-            const char *long_mass_name,
-            auto &varid) {
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "units",
-                strlen("kg m^-3 s^-1"),
-                "kg m^-3 s^-1"));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "auxiliary_data",
-                strlen("yes"),
-                "yes"));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "long_name",
-                strlen(long_mass_name),
-                long_mass_name));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "standard_name",
-                strlen(mass_name),
-                mass_name));
-            SUCCESS_OR_DIE(nc_put_att(
-                ncid,
-                varid,
-                _FillValue,
-#ifdef OUT_DOUBLE
-                NC_DOUBLE,
-#else
-                NC_FLOAT,
-#endif
-                1,
-                &FILLVALUE));
-        };
-        put_att_mass_sed(
-            "sedi_outflux_of_rain_droplet_mass",
-            "sedimentation of rain droplet mass",
-            varid[Var_idx::qr_out]);
-        put_att_mass_sed(
-            "sedi_outflux_of_snow_mass",
-            "sedimentation of snow mass",
-            varid[Var_idx::qs_out]);
-        put_att_mass_sed(
-            "sedi_outflux_of_ice_mass",
-            "sedimentation of ice mass",
-            varid[Var_idx::qi_out]);
-        put_att_mass_sed(
-            "sedi_outflux_of_graupel_mass",
-            "sedimentation of graupel mass",
-            varid[Var_idx::qg_out]);
-        put_att_mass_sed(
-            "sedi_outflux_of_hail_mass",
-            "sedimentation of hail mass",
-            varid[Var_idx::qh_out]);
-
-        auto put_att_nums_sed = [&](
-            const char *name,
-            const char *long_name,
-            auto &varid) {
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "units",
-                strlen("m^-3 s^-1"),
-                "m^-3 s^-1"));
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "auxiliary_data",
-                strlen("yes"),
-                "yes"));
-            std::string tmp_string = "sedimentation of " + std::string(long_name) + " number";
-            const char *att_val = tmp_string.c_str();
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "long_name",
-                strlen(att_val),
-                att_val));
-            std::string tmp_string_2 = "sedi_outflux_of_" + std::string(name) + "_number";
-            const char *att_val_2 = tmp_string_2.c_str();
-            SUCCESS_OR_DIE(nc_put_att_text(
-                ncid,
-                varid,
-                "standard_name",
-                strlen(att_val_2),
-                att_val_2));
-            SUCCESS_OR_DIE(nc_put_att(
-                ncid,
-                varid,
-                _FillValue,
-#ifdef OUT_DOUBLE
-                NC_DOUBLE,
-#else
-                NC_FLOAT,
-#endif
-                1,
-                &FILLVALUE));
-        };
-        put_att_nums_sed("sedi_outflux_of_rain_droplet_number", "sedimentation of rain droplet number",
-            varid[Var_idx::nr_out]);
-        put_att_nums_sed("sedi_outflux_of_snow_number", "sedimentation of snow number", varid[Var_idx::ns_out]);
-        put_att_nums_sed("sedi_outflux_of_ice_number", "sedimentation of ice number", varid[Var_idx::ni_out]);
-        put_att_nums_sed("sedi_outflux_of_graupel_number", "sedimentation of graupel number", varid[Var_idx::ng_out]);
-        put_att_nums_sed("sedi_outflux_of_hail_number", "sedimentation of hail number", varid[Var_idx::nh_out]);
-
-        if (!track_ic) {
-            // all gradients are auxiliary data
-            for (int i=0; i < num_par-num_par_init; i++) {
-                if (cc.trace_check(i, false)) {
-                    SUCCESS_OR_DIE(nc_put_att_text(
-                        ncid,
-                        varid[Var_idx::n_vars + i],
-                        "auxiliary_data",
-                        strlen("yes"),
-                        "yes"));
-                    SUCCESS_OR_DIE(nc_put_att(
-                        ncid,
-                        varid[Var_idx::n_vars + i],
-                        _FillValue,
-#ifdef OUT_DOUBLE
-                        NC_DOUBLE,
-#else
-                        NC_FLOAT,
-#endif
-                        1,
-                        &FILLVALUE));
-                }
-            }
-        } else {
-            // initial condition gradients
-            for (int i=0; i < num_par_init; i++) {
-                if (cc.trace_check(i, 2)) {
-                    SUCCESS_OR_DIE(nc_put_att_text(
-                        ncid,
-                        varid[Var_idx::n_vars + i],
-                        "auxiliary_data",
-                        strlen("yes"),
-                        "yes"));
-                    SUCCESS_OR_DIE(nc_put_att(
-                        ncid,
-                        varid[Var_idx::n_vars + i],
-                        _FillValue,
-#ifdef OUT_DOUBLE
-                        NC_DOUBLE,
-#else
-                        NC_FLOAT,
-#endif
-                        1,
-                        &FILLVALUE));
-                }
-            }
-        }
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::pressure],
-            "long_name",
-            strlen("pressure"),
-            "pressure"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::pressure],
-            "standard_name",
-            strlen("air_pressure"),
-            "air_pressure"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::pressure],
-            "units",
-            strlen("Pa"),
-            "Pa"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::pressure],
-            "positive",
-            strlen("down"),
-            "down"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::pressure],
-            "axis",
-            strlen("Z"),
-            "Z"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::pressure],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::temperature],
-            "long_name",
-            strlen("temperature"),
-            "temperature"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::temperature],
-            "standard_name",
-            strlen("air_temperature"),
-            "air_temperature"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::temperature],
-            "units",
-            strlen("K"),
-            "K"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::temperature],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::temperature],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::ascent],
-            "long_name",
-            strlen("ascend velocity"),
-            "ascend velocity"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::ascent],
-            "standard_name",
-            strlen("ascend_velocity"),
-            "ascend_velocity"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::ascent],
-            "units",
-            strlen("m s^-1"),
-            "m s^-1"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::ascent],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::ascent],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::sat],
-            "long_name",
-            strlen("saturation"),
-            "saturation"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::sat],
-            "standard_name",
-            strlen("saturation"),
-            "saturation"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::sat],
-            "units",
-            strlen("1"),
-            "percentage"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::sat],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::sat],
-            _FillValue,
-#ifdef OUT_DOUBLEflush_buffer
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::height],
-            "long_name",
-            strlen("height above mean sea level"),
-            "height above mean sea level"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::height],
-            "standard_name",
-            strlen("height"),
-            "height"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::height],
-            "units",
-            strlen("m AMSL"),
-            "m AMSL"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::height],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::height],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::inactive],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::inactive],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::dep],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::dep],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::sub],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::sub],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lat_heat],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::lat_heat],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lat_cool],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::lat_cool],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::time_ascent],
-            "long_name",
-            strlen("time after rapid ascent started"),
-            "time after rapid ascent started"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::time_ascent],
-            "standard_name",
-            strlen("time_after_ascent"),
-            "time_after_ascent"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::time_ascent],
-            "units",
-            strlen("seconds since start of convective/slantwise ascent"),
-            "seconds since start of convective/slantwise ascent"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::time_ascent],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::time_ascent],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lat],
-            "long_name",
-            strlen("rotated latitude"),
-            "rotated latitude"));
-
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lat],
-            "standard_name",
-            strlen("latitude"),
-            "latitude"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lat],
-            "units",
-            strlen("degrees"),
-            "degrees"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::lat],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lon],
-            "long_name",
-            strlen("rotated longitude"),
-            "rotated longitude"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lon],
-            "standard_name",
-            strlen("longitude"),
-            "longitude"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::lon],
-            "units",
-            strlen("degrees"),
-            "degrees"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::lon],
-            _FillValue,
-#ifdef OUT_DOUBLE
-            NC_DOUBLE,
-#else
-            NC_FLOAT,
-#endif
-            1,
-            &FILLVALUE));
-#if !defined B_EIGHT
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_400],
-            "long_name",
-            strlen("convective 400hPa ascent"),
-            "convective 400hPa ascent"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_400],
-            "standard_name",
-            strlen("convective_400hPa_ascent"),
-            "convective_400hPa_ascent"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_400],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_600],
-            "long_name",
-            strlen("convective 600hPa ascent"),
-            "convective 600hPa ascent"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_600],
-            "standard_name",
-            strlen("convective_600hPa_ascent"),
-            "convective_600hPa_ascent"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::conv_600],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_400],
-            "long_name",
-            strlen("slantwise 400hPa ascent"),
-            "slantwise 400hPa ascent"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_400],
-            "standard_name",
-            strlen("slantwise_400hPa_ascent"),
-            "slantwise_400hPa_ascent"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_400],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_600],
-            "long_name",
-            strlen("slantwise 600hPa ascent"),
-            "slantwise 600hPa ascent"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_600],
-            "standard_name",
-            strlen("slantwise_600hPa_ascent"),
-            "slantwise_600hPa_ascent"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::slan_600],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-#endif
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::step],
-            "long_name",
-            strlen("simulation step"),
-            "simulation step"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::step],
-            "standard_name",
-            strlen("step"),
-            "step"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::step],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        const uint64_t FILLINT = 0;
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::step],
-            _FillValue,
-            NC_UINT64,
-            1,
-            &FILLINT));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::phase],
-            "long_name",
-            strlen("phase"),
-            "phase"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::phase],
-            "standard_name",
-            strlen("phase"),
-            "phase"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::phase],
-            "description",
-            strlen("0: warm phase, 1: mixed phase, 2: ice phase, 3: neutral phase"),
-            "0: warm phase, 1: mixed phase, 2: ice phase, 3: neutral phase"));
-        SUCCESS_OR_DIE(nc_put_att_text(
-            ncid,
-            varid[Var_idx::phase],
-            "auxiliary_data",
-            strlen("yes"),
-            "yes"));
-        SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::phase],
-            _FillValue,
-            NC_UINT64,
-            1,
-            &FILLINT));
-        // in theory, one could apply compression here
-        // but this needs HDF5 >=1.10.2 and Lustre
-        // Needs netcdf-c >= 4.7.4
-        // All variables must be written in collective mode
-        // Perturbed simulations do not work with compression enabled!
-#ifdef DEVELOP
-        std::cout << "before compression\n";
-#endif
+        define_vars(cc);
+        set_attributes(cc, in_filename);
 #ifdef COMPRESS_OUTPUT
-#ifdef DEVELOP
-        std::cout << "Using compression\n";
-#endif
-        if (this->simulation_mode == limited_time_ensembles
-            || this->simulation_mode == trajectory_sensitivity
-            || this->simulation_mode == grid_sensitivity) {
-            // Compressing this is buggy
-            for (uint32_t i=0; i < Var_idx::n_vars; ++i) {
-                // This does not work on scalars; we need to filter those out
-                if (local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param))
-                // This could be a version for szip
-//                         SUCCESS_OR_DIE(
-//                             nc_def_var_szip(
-//                                 ncid,
-//                                 varid[i],
-//                                 NC_SZIP_NN,
-//                                 8));  // pixels per block
-                        // zlib version
-                        SUCCESS_OR_DIE(
-                            nc_def_var_deflate(
-                                ncid,
-                                varid[i],
-                                1,  // shuffle
-                                1,  // deflate
-                                9));  // max compression
-            }
-            if (!track_ic) {
-                // gradients
-                for (uint32_t i=0; i < num_par-num_par_init; ++i) {
-                    if (cc.trace_check(i, false))
-//                         SUCCESS_OR_DIE(
-//                             nc_def_var_szip(
-//                                 ncid,
-//                                 varid[Var_idx::n_vars + i],
-//                                 NC_SZIP_NN,
-//                                 8));
-                        SUCCESS_OR_DIE(
-                            nc_def_var_deflate(
-                                ncid,
-                                varid[Var_idx::n_vars + i],
-                                1,  // shuffle
-                                1,  // deflate
-                                9));  // max compression
-                }
-            } else {
-                // initial conditions
-                for (uint32_t i=0; i < num_par_init; ++i) {
-                    if (cc.trace_check(i, 2))
-//                         SUCCESS_OR_DIE(
-//                             nc_def_var_szip(
-//                                 ncid,
-//                                 varid[Var_idx::n_vars + i],
-//                                 NC_SZIP_NN,
-//                                 8));
-                        SUCCESS_OR_DIE(
-                            nc_def_var_deflate(
-                                ncid,
-                                varid[Var_idx::n_vars + i],
-                                1,  // shuffle
-                                1,  // deflate
-                                9));  // max compression
-                }
-            }
-        }
-#endif
-#ifdef DEVELOP
-        std::cout << "all done; attempt to close\n" << std::flush;
+        set_compression(cc);
 #endif
         SUCCESS_OR_DIE(nc_enddef(ncid));
 #ifdef DEVELOP
         std::cout << "closed\n" << std::flush;
 #endif
-        // Write dimensions here
-        std::vector<size_t> startp, countp;
-        startp.push_back(0);
-        countp.push_back(num_time);
-#ifdef OUT_DOUBLE
-        std::vector<double> time_steps(num_time);
-#else
-        std::vector<float> time_steps(num_time);
-#endif
-        for (uint32_t i=0; i < num_time; i++)
-            time_steps[i] = cc.dt*i + cc.start_time + delay_out_time;
-#ifdef DEVELOP
-        std::cout << "attempt to write\n" << std::flush;
-#endif
-        SUCCESS_OR_DIE(
-            nc_put_vara(
-                ncid,                               // ncid
-                varid[Var_idx::time],         // varid
-                startp.data(),               // startp
-                countp.data(),              // countp
-                time_steps.data()));            // op
-#ifdef DEVELOP
-        std::cout << "done time_steps\n" << std::flush;
-#endif
-        countp[0] = n_trajs_file;
-        std::vector<uint64_t> data(n_trajs_file);
-        for (uint32_t i=0; i < n_trajs_file; i++)
-            data[i] = i;
-        SUCCESS_OR_DIE(
-            nc_put_vara(
-                ncid,
-                varid[Var_idx::trajectory],
-                startp.data(),
-                countp.data(),
-                data.data()));
-#ifdef DEVELOP
-        std::cout << "done n_trajs; starting with num_ens " << num_ens << "\n" << std::flush;
-#endif
-        countp[0] = num_ens;
-        data.resize(num_ens);
-        for (uint32_t i=0; i < num_ens; i++)
-            data[i] = i;
-        SUCCESS_OR_DIE(
-            nc_put_vara(
-                ncid,
-                varid[Var_idx::ensemble],
-                startp.data(),
-                countp.data(),
-                data.data()));
-#ifdef DEVELOP
-        std::cout << "out_param\n" << std::flush;
-#endif
-        countp[0] = local_num_comp;
-        data.resize(local_num_comp);
-        uint32_t counter = 0;
-        for (uint32_t i=0; i < num_comp; i++) {
-            if (cc.trace_check(i, true)) {
-                data[counter] = i;
-                counter++;
-            }
-        }
-        SUCCESS_OR_DIE(
-            nc_put_vara(
-                ncid,
-                varid[Var_idx::out_param],
-                startp.data(),
-                countp.data(),
-                data.data()));
-#ifdef DEVELOP
-        std::cout << "out_param done\n" << std::flush;
-#endif
-        SUCCESS_OR_DIE(ncclose(ncid));
-#ifdef DEVELOP
-        std::cout << "closed\n" << std::flush;
-#endif
+        write_dimension_values(cc, delay_out_time);
     }
     // Open it again for writing with all processes
-    std::string file_string = filename;
-#ifdef DEVELOP
-        std::cout << "attempt to open " << filename << "\n" << std::flush;
-#endif
-    SUCCESS_OR_DIE(
-        nc_open_par(
-            file_string.c_str(),
-            NC_WRITE,
-            MPI_COMM_WORLD,
-            MPI_INFO_NULL,
-            &ncid));
-#ifdef DEVELOP
-        std::cout << "get varids\n" << std::flush;
-#endif
-    // gather all necessary variable ids
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "Output_Parameter_ID",
-            &varid[Var_idx::out_param]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "ensemble",
-            &varid[Var_idx::ensemble]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "trajectory",
-            &varid[Var_idx::trajectory]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "time",
-            &varid[Var_idx::time]));
-#ifdef DEVELOP
-        std::cout << "get model varids\n" << std::flush;
-#endif
-    // model state
-    for (uint32_t i=0; i < num_comp; ++i)
-        SUCCESS_OR_DIE(
-                nc_inq_varid(
-                    ncid,
-                    output_par_idx[i].c_str(),
-                    &varid[i]));
-#ifdef DEVELOP
-        std::cout << "get track varids\n" << std::flush;
-#endif
-    if (!track_ic) {
-        // gradients
-        for (uint32_t i=0; i < num_par-num_par_init; ++i) {
-            if (cc.trace_check(i, false)) {
-                SUCCESS_OR_DIE(
-                    nc_inq_varid(
-                        ncid,
-                        output_grad_idx[i].c_str(),
-                        &varid[Var_idx::n_vars + i]));
-            }
-        }
-    } else {
-        // initial conditions
-        for (uint32_t i=0; i < num_par_init; ++i) {
-            if (cc.trace_check(i, 2)) {
-                SUCCESS_OR_DIE(
-                    nc_inq_varid(
-                        ncid,
-                        init_grad_idx[i].c_str(),
-                        &varid[Var_idx::n_vars + i]));
-            }
-        }
-    }
-#ifdef DEVELOP
-        std::cout << "get more time\n" << std::flush;
-#endif
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "time_after_ascent",
-            &varid[Var_idx::time_ascent]));
-#if !defined(B_EIGHT)
-#ifdef DEVELOP
-        std::cout << "get conv\n" << std::flush;
-#endif
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "conv_400",
-            &varid[Var_idx::conv_400]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "conv_600",
-            &varid[Var_idx::conv_600]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "slan_400",
-            &varid[Var_idx::slan_400]));
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "slan_600",
-            &varid[Var_idx::slan_600]));
-#endif
-#ifdef DEVELOP
-        std::cout << "get lat\n" << std::flush;
-#endif
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "lat",
-            &varid[Var_idx::lat]));
-#ifdef DEVELOP
-        std::cout << "get lon\n" << std::flush;
-#endif
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "lon",
-            &varid[Var_idx::lon]));
-#ifdef DEVELOP
-        std::cout << "get step\n" << std::flush;
-#endif
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "step",
-            &varid[Var_idx::step]));
-#ifdef DEVELOP
-        std::cout << "get phase\n" << std::flush;
-#endif
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "phase",
-            &varid[Var_idx::phase]));
-
-    if ((this->simulation_mode == trajectory_sensitvity_perturbance)
-        || (this->simulation_mode == trajectory_perturbance)) {
-#ifdef DEVELOP
-        std::cout << "different accesses\n" << std::flush;
-#endif
-        // Make the access independent which is a must due to the dynamic
-        // work schedule; This can be expensive though.
-        for (uint32_t i=0; i < Var_idx::n_vars; i++)
-            SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_INDEPENDENT));
-        if (!track_ic) {
-            for (uint32_t i=0; i < num_par-num_par_init; i++)
-                if (cc.trace_check(i, false))
-                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
-        } else {
-            for (uint32_t i=0; i < num_par_init; i++)
-                if (cc.trace_check(i, 2))
-                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
-        }
-    }
-#ifdef COMPRESS_OUTPUT
-    // We need to explicitly tell that we want to collectively write the data
-    if ((this->simulation_mode != trajectory_sensitvity_perturbance)
-        && (this->simulation_mode != trajectory_perturbance)) {
-#ifdef DEVELOP
-        std::cout << "different accesses\n" << std::flush;
-#endif
-        // Make the access independent which is a must due to the dynamic
-        // work schedule; This can be expensive though.
-        for (uint32_t i=0; i < Var_idx::n_vars; i++) {
-            SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_COLLECTIVE));
-        }
-        if (!track_ic) {
-            for (uint32_t i=0; i < num_par-num_par_init; i++)
-                if (cc.trace_check(i, false))
-                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_COLLECTIVE));
-        } else {
-            for (uint32_t i=0; i < num_par_init; i++)
-                if (cc.trace_check(i, 2))
-                    SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_COLLECTIVE));
-        }
-    }
-#endif
+    set_parallel_access(cc, filename);
 #ifdef DEVELOP
     std::cout << "done\n" << std::flush;
 #endif
@@ -1629,7 +1897,9 @@ void output_handle_t::buffer(
                 break;
         }
     }
-    if (this->simulation_mode != limited_time_ensembles || cc.traj_id == 0)
+    if ( (this->simulation_mode == create_train_set && cc.ensemble_id == 0)
+        || (this->simulation_mode == limited_time_ensembles && cc.traj_id == 0)
+        || (this->simulation_mode != create_train_set && this->simulation_mode != limited_time_ensembles) )
         buffer_gradient(cc, y_diff, snapshot_index);
     // lat
     output_buffer[Buffer_idx::lat_buf][n_snapshots] = netcdf_reader.get_lat(t, sub);
@@ -1649,6 +1919,30 @@ void output_handle_t::buffer(
     output_buffer_flags[3][n_snapshots] = netcdf_reader.get_slan_600(t);
 #endif
 #endif
+    // Value of perturbed parameter
+    if (this->simulation_mode == create_train_set) {
+        std::vector<float> perturbed;
+        std::vector<uint64_t> param_idx;
+        cc.get_perturbed_info(perturbed, param_idx);
+        // This stores the difference to the unperturbed parameters
+        std::fill(output_buffer[Buffer_idx::perturb_buf].begin() + n_snapshots*n_perturbed_params,
+                  output_buffer[Buffer_idx::perturb_buf].begin() + (n_snapshots+1)*n_perturbed_params, 0);
+        for (uint32_t i=0; i < perturbed.size(); ++i) {
+            const uint64_t idx = param_idx[i];
+            output_buffer[Buffer_idx::perturb_buf][n_snapshots * n_perturbed_params + perturbed_idx[idx]] =
+                    perturbed[i] - unperturbed_vals[perturbed_idx[idx]];
+        }
+        // The following stores the new values
+//        std::copy(output_buffer[Buffer_idx::perturb_buf].begin() + n_snapshots*n_perturbed_params,
+//                  output_buffer[Buffer_idx::perturb_buf].begin() + (n_snapshots+1)*n_perturbed_params,
+//                  unperturbed_vals);
+//        for (uint32_t i=0; i < perturbed.size(); ++i) {
+//            const uint64_t idx = param_idx[i];
+//            output_buffer[Buffer_idx::perturb_buf][n_snapshots * n_perturbed_params + perturbed_idx[idx]] =
+//            perturbed[i];
+//        }
+    }
+
     // simulation step
     output_buffer_int[0][n_snapshots] = sub + t*cc.num_sub_steps;
 
@@ -2154,6 +2448,7 @@ void output_handle_t::process_step(
         this->buffer(cc, netcdf_reader, y_single_new, y_diff, sub, t,
             ref_quant, snapshot_index);
     } else if (this->simulation_mode != limited_time_ensembles || cc.traj_id == 0) {
+        // Why do we have this case here? This would store gradients at every step.
         this->buffer_gradient(cc, y_diff, snapshot_index);
     }
 
@@ -2195,6 +2490,104 @@ template output_handle_t::output_handle_t<codi::RealForwardVec<num_par_init> >(
     const int&,
 #endif
     const double);
+
+template output_handle_t::output_handle_t<codi::RealReverse>(
+        const std::string,
+        const std::string,
+        const model_constants_t<codi::RealReverse>&,
+        const reference_quantities_t&,
+        const std::string,
+        const uint32_t,
+        const uint32_t ,
+        const int&,
+        const int&,
+        const bool&,
+#ifdef COMPRESS_OUTPUT
+        const int&,
+#endif
+        const double,
+        const std::vector<segment_t>&);
+
+template output_handle_t::output_handle_t<codi::RealForwardVec<num_par_init> >(
+        const std::string,
+        const std::string,
+        const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+        const reference_quantities_t&,
+        const std::string,
+        const uint32_t,
+        const uint32_t,
+        const int&,
+        const int&,
+        const bool&,
+#ifdef COMPRESS_OUTPUT
+        const int&,
+#endif
+        const double,
+        const std::vector<segment_t>&);
+
+template void output_handle_t::setup_gradients_limited_time_ens<codi::RealReverse>(
+        const model_constants_t<codi::RealReverse> &);
+
+template void output_handle_t::setup_gradients_limited_time_ens<codi::RealForwardVec<num_par_init> >(
+        const model_constants_t<codi::RealForwardVec<num_par_init> > &);
+
+template void output_handle_t::setup_gradients_train_ens<codi::RealReverse>(
+        const model_constants_t<codi::RealReverse> &);
+
+template void output_handle_t::setup_gradients_train_ens<codi::RealForwardVec<num_par_init> >(
+        const model_constants_t<codi::RealForwardVec<num_par_init> > &);
+
+template void output_handle_t::setup_gradients<codi::RealReverse>(
+        const model_constants_t<codi::RealReverse> &);
+
+template void output_handle_t::setup_gradients<codi::RealForwardVec<num_par_init> >(
+        const model_constants_t<codi::RealForwardVec<num_par_init> > &);
+
+template void output_handle_t::define_var_gradients<codi::RealReverse>(
+        const model_constants_t<codi::RealReverse> &,
+        const int*,
+        const int&);
+
+template void output_handle_t::define_var_gradients<codi::RealForwardVec<num_par_init> >(
+        const model_constants_t<codi::RealForwardVec<num_par_init> > &,
+        const int*,
+        const int&);
+
+template void output_handle_t::define_vars<codi::RealReverse>(
+        const model_constants_t<codi::RealReverse> &);
+
+template void output_handle_t::define_vars<codi::RealForwardVec<num_par_init> >(
+        const model_constants_t<codi::RealForwardVec<num_par_init> > &);
+
+template void output_handle_t::set_attributes<codi::RealReverse>(
+        const model_constants_t<codi::RealReverse> &,
+        const std::string);
+
+template void output_handle_t::set_attributes<codi::RealForwardVec<num_par_init> >(
+        const model_constants_t<codi::RealForwardVec<num_par_init> > &,
+        const std::string);
+
+template void output_handle_t::set_compression<codi::RealReverse>(
+        const model_constants_t<codi::RealReverse> &);
+
+template void output_handle_t::set_compression<codi::RealForwardVec<num_par_init> >(
+        const model_constants_t<codi::RealForwardVec<num_par_init> > &);
+
+template void output_handle_t::write_dimension_values<codi::RealReverse>(
+        const model_constants_t<codi::RealReverse> &,
+        const double);
+
+template void output_handle_t::write_dimension_values<codi::RealForwardVec<num_par_init> >(
+        const model_constants_t<codi::RealForwardVec<num_par_init> > &,
+        const double);
+
+template void output_handle_t::set_parallel_access<codi::RealReverse>(
+        const model_constants_t<codi::RealReverse> &,
+        const std::string);
+
+template void output_handle_t::set_parallel_access<codi::RealForwardVec<num_par_init> >(
+        const model_constants_t<codi::RealForwardVec<num_par_init> > &,
+        const std::string);
 
 template void output_handle_t::setup<codi::RealReverse>(
     const std::string,

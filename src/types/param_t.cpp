@@ -29,7 +29,7 @@ void param_t::add_type(
             particle_param = true;
         outparam_name = param_type;
     } else {
-        err = OUTPARAM_CONFIG_ERR;
+        SUCCESS_OR_DIE(OUTPARAM_CONFIG_ERR);
     }
 }
 
@@ -219,7 +219,6 @@ int param_t::from_json(
             j.at(first).get_to(m);
             this->add_mean(m);
         } else if (first == "name") {
-            // j.at(first).get_to(this->param_name);
             std::string p_name;
             j.at(first).get_to(p_name);
             err = add_name(p_name, cc);
