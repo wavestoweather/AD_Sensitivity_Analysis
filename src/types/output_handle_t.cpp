@@ -373,7 +373,7 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
 //                &dimid_tmp[0],
 //                &varid[Var_idx::perturbed_param]));
 
-//        dimid_tmp.push_back(dimid[Dim_idx::perturb_param_dim]);
+        dimid_tmp.push_back(dimid[Dim_idx::perturb_param_dim]);
 //        dimid_tmp[1] = dimid[Dim_idx::time_dim];
         // Amount of perturbation
         SUCCESS_OR_DIE(nc_def_var(
@@ -1283,21 +1283,22 @@ void output_handle_t::set_compression(const model_constants_t<float_t> &cc) {
             // This does not work on scalars; we need to filter those out
             if ((local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param)) &&
               (n_perturbed_params > 1 || i != static_cast<int>(Var_idx::perturbed)))
-                // This could be a version for szip
-//                         SUCCESS_OR_DIE(
-//                             nc_def_var_szip(
-//                                 ncid,
-//                                 varid[i],
-//                                 NC_SZIP_NN,
-//                                 8));  // pixels per block
-                // zlib version
-                SUCCESS_OR_DIE(
-                        nc_def_var_deflate(
-                                ncid,
-                                varid[i],
-                                1,  // shuffle
-                                1,  // deflate
-                                9));  // max compression
+                if (simulation_mode == create_train_set || i != static_cast<int>(Var_idx::perturbation_value) )
+                    // This could be a version for szip
+    //                         SUCCESS_OR_DIE(
+    //                             nc_def_var_szip(
+    //                                 ncid,
+    //                                 varid[i],
+    //                                 NC_SZIP_NN,
+    //                                 8));  // pixels per block
+                    // zlib version
+                    SUCCESS_OR_DIE(
+                            nc_def_var_deflate(
+                                    ncid,
+                                    varid[i],
+                                    1,  // shuffle
+                                    1,  // deflate
+                                    9));  // max compression
         }
         if (!track_ic) {
             // gradients

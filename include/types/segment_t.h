@@ -46,7 +46,7 @@ struct segment_t {
     };
     std::unordered_map<std::string, Method> const table_method = {
         {"impact_change", Method::impact_change}, {"sign_flip", Method::sign_flip},
-        {"value", Method::value_method}, {"repeated_time", Method::repeated_time}
+        {"value", Method::value_method}, {"repeated_time", Method::repeated_time}, {"full_perturbation", Method::full_perturbation}
     };
     int method;
     enum Param {

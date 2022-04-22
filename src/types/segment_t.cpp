@@ -97,13 +97,14 @@ void segment_t::add_amount(
 
 
 int segment_t::check() {
-    if (n_members == 1)
+    if (n_members == 1 && method != Method::full_perturbation)
         err = N_MEMBERS_CONFIG_ERR;
-    else if (n_segments < 0)
+    else if (n_segments < 0 && method != Method::full_perturbation)
         err = N_SEGMENTS_CONFIG_ERR;
     else if (value_name == -1
             && method != Method::impact_change
-            && method != Method::repeated_time)
+            && method != Method::repeated_time
+            && method != Method::full_perturbation)
         err = VALUE_NAME_CONFIG_ERR;
     else if (method == -1)
         err = METHOD_CONFIG_ERR;

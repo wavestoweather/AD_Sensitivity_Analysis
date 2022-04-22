@@ -10,8 +10,7 @@
           "rand_func": "fixed"
         }
       ]
-    },
-    {
+    }, {
       "when_method": "full_perturbation",
       "params": [
         {
@@ -21,8 +20,7 @@
           "rand_func": "fixed"
         }
       ]
-    },
-    {
+    }, {
       "when_method": "full_perturbation",
       "params": [
         {
