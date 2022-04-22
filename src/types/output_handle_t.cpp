@@ -1426,13 +1426,34 @@ void output_handle_t::write_dimension_values(
 //        data.resize(n_perturbed_params);
         countp[0] = n_perturbed_params;
 //        for (uint64_t i=0; i < n_perturbed_params; ++i) data[i] = i;
-        SUCCESS_OR_DIE(
-                nc_put_vara(
-                        ncid,
-                        varid[Var_idx::perturbed],
-                        startp.data(),
-                        countp.data(),
-                        perturbed_names.data()));
+//        std::vector<std::vector<char>> vstrings;
+//        std::vector<char*> cstrings;
+//        cstrings.reserve(perturbed_names.size());
+//        vstrings.reserve(perturbed_names.size());
+//        for (const auto &s: perturbed_names)
+//            cstrings.push_back(const_cast<char*>(s.c_str()));
+
+        std::vector<const char*> cstrings;
+        cstrings.reserve(perturbed_names.size());
+
+        for(const auto& s: perturbed_names)
+            cstrings.push_back(&s[0]);
+//        SUCCESS_OR_DIE(
+//                nc_put_vara_string(
+//                        ncid,
+//                        varid[Var_idx::perturbed],
+//                        startp.data(),
+//                        countp.data(),
+//                        cstrings.data()));
+        for (auto s : cstrings) {
+            SUCCESS_OR_DIE(
+                nc_put_var1_string(
+                    ncid,
+                    varid[Var_idx::perturbed],
+                    startp.data(),
+                    &s));
+            startp[0]++;
+        }
     }
 
 #ifdef DEVELOP
@@ -1760,7 +1781,7 @@ void output_handle_t::setup(
         // information
         if (simulation_mode == create_train_set) {
             SUCCESS_OR_DIE(nc_def_dim(
-                    ncid, "perturbed_ID", local_num_comp, &dimid[Dim_idx::perturb_param_dim]));
+                    ncid, "perturbed", n_perturbed_params, &dimid[Dim_idx::perturb_param_dim]));
         }
 
         define_vars(cc);
