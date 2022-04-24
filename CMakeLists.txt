@@ -98,7 +98,7 @@ endif()
 boost_report_pretty("CMake build" CMAKE_BUILD_TYPE)
 message(STATUS "Setting flags")
 
-set(CXX_WARNING_FLAGS "-Wall -Wextra -Werror -Wpedantic")
+set(CXX_WARNING_FLAGS "-Wall -Wextra -Wpedantic")
 
 if( NOT RELOPTLEVEL )
     set(RELOPTLEVEL 3)
