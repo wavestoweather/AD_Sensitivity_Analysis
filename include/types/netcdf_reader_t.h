@@ -247,7 +247,7 @@ struct netcdf_reader_t {
         {"QI_IN", "QI_in"}, {"QS_IN", "QS_in"}, {"QR_IN", "QR_in"},
         {"QG_IN", "QG_in"}, {"NI_IN", "QNI_in"}, {"NS_IN", "QNS_in"},
         {"NR_IN", "QNR_in"}, {"NG_IN", "QNG_in"}, {"z", "z"}, {"w", "w"},
-        {"QH_IN", "QH_in"}, {"NH_IN", "NH_in"},
+        {"QH_IN", "QH_in"}, {"NH_IN", "QNH_in"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
         {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}
     };
