@@ -237,7 +237,7 @@ struct netcdf_reader_t {
 
     std::array<std::vector<double>, Par_idx::n_pars > buffer;
 #if defined B_EIGHT
-    std::unordered_map<std::string, std::string> const reader_names = {
+    std::unordered_map<std::string, const char*> const reader_names = {
         {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
         {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
         {"QS", "QS"}, {"NCGRAUPEL", "QNG"}, {"NCICE", "QNI"},
@@ -252,7 +252,7 @@ struct netcdf_reader_t {
         {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}
     };
 #elif defined WCB
-    std::unordered_map<std::string, std::string> const reader_names = {
+    std::unordered_map<std::string, const char*> const reader_names = {
         {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
         {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
         {"QS", "QS"}, {"NCGRAUPEL", "NCGRAUPEL"}, {"NCICE", "NCICE"},
@@ -266,7 +266,7 @@ struct netcdf_reader_t {
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
         {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "ntra"}, {"ensemble", "ensemble"}
 #elif defined WCB2
-    std::unordered_map<std::string, std::string> const reader_names = {
+    std::unordered_map<std::string, const char*> const reader_names = {
         {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
         {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
         {"QS", "QS"}, {"NCGRAUPEL", "NCGRAUPEL"}, {"NCICE", "NCICE"},
