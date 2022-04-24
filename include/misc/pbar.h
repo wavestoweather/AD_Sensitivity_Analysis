@@ -85,17 +85,17 @@ class ProgressBar {
         time = time + std::to_string(static_cast<int>(dt_total)%60) + "s ";
         int window_width = get_console_width();
         // Get average amount of steps per second
-        uint64_t dt_step = round(current_step/dt_total);
+        double dt_step = round(current_step/dt_total);
         std::stringstream right_side;
         right_side << std::fixed << std::setprecision(3) << description
                    << ": " << current_step << "/"
                    << end_step_string << time << "(";
         if (dt_step > 1e6) {
-            right_side << dt_step/1e6 << "MHz)";
+            right_side << static_cast<int>(dt_step/1e6) << "MHz)";
         } else if (dt_step > 1e3) {
-            right_side << dt_step/1e3 << "kHz)";
+            right_side << static_cast<int>(dt_step/1e3) << "kHz)";
         } else {
-            right_side << dt_step << "Hz)";
+            right_side << static_cast<int>(dt_step) << "Hz)";
         }
         std::string right_string = right_side.str();
 

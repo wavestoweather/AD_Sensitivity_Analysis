@@ -37,8 +37,10 @@ struct output_handle_t{
 #endif
 #ifdef OUT_DOUBLE
     const double FILLVALUE = std::numeric_limits<double>::quiet_NaN();
+    const nc_type NC_FLOAT_T = NC_DOUBLE;
 #else
     const float FILLVALUE = std::numeric_limits<float>::quiet_NaN();
+    const nc_type NC_FLOAT_T = NC_FLOAT;
 #endif
 
     std::string filetype;
@@ -67,8 +69,8 @@ struct output_handle_t{
      */
     std::vector<int> varid;
 
-    uint64_t n_ens;
-    uint64_t n_trajs;
+//    uint64_t n_ens;
+//    uint64_t n_trajs;
     uint64_t n_trajs_file;
     uint64_t traj;
     uint64_t ens;
@@ -104,7 +106,6 @@ struct output_handle_t{
 #else
     std::vector<float> unperturbed_vals;
 #endif
-
     enum Dim_idx {
         perturb_param_dim,
         out_param_dim,
@@ -195,7 +196,7 @@ struct output_handle_t{
         const std::string filetype,
         const std::string filename,
         const model_constants_t<float_t> &cc,
-        const reference_quantities_t &ref_quant,
+//        const reference_quantities_t &ref_quant,
         const std::string in_filename,
         const uint32_t write_index,
         const uint32_t snapshot_index,
@@ -212,7 +213,7 @@ struct output_handle_t{
         const std::string filetype,
         const std::string filename,
         const model_constants_t<float_t> &cc,
-        const reference_quantities_t &ref_quant,
+//        const reference_quantities_t &ref_quant,
         const std::string in_filename,
         const uint32_t write_index,
         const uint32_t snapshot_index,
@@ -225,12 +226,14 @@ struct output_handle_t{
         const double delay_out_time,
         const std::vector<segment_t> &segments);
 
+    ~output_handle_t() {nc_close(ncid);}
+
     template<class float_t>
     void setup(
         const std::string filetype,
         const std::string filename,
         const model_constants_t<float_t> &cc,
-        const reference_quantities_t &ref_quant,
+//        const reference_quantities_t &ref_quant,
         const std::string in_filename,
         const uint32_t write_index,
         const uint32_t snapshot_index,

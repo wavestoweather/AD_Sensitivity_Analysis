@@ -10,7 +10,6 @@ output_handle_t::output_handle_t(
         const std::string filetype,
         const std::string filename,
         const model_constants_t<float_t> &cc,
-        const reference_quantities_t &ref_quant,
         const std::string in_filename,
         const uint32_t write_index,
         const uint32_t snapshot_index,
@@ -29,7 +28,7 @@ output_handle_t::output_handle_t(
 #ifdef COMPRESS_OUTPUT
     this->n_processes = n_processes;
 #endif
-    this->setup(filetype, filename, cc, ref_quant,
+    this->setup(filetype, filename, cc,
                 in_filename, write_index, snapshot_index,
                 rank, delay_out_time);
 }
@@ -40,7 +39,6 @@ output_handle_t::output_handle_t(
     const std::string filetype,
     const std::string filename,
     const model_constants_t<float_t> &cc,
-    const reference_quantities_t &ref_quant,
     const std::string in_filename,
     const uint32_t write_index,
     const uint32_t snapshot_index,
@@ -115,7 +113,7 @@ output_handle_t::output_handle_t(
             }
         }
     }
-    this->setup(filetype, filename, cc, ref_quant,
+    this->setup(filetype, filename, cc,
         in_filename, write_index, snapshot_index,
         rank, delay_out_time);
 }
@@ -179,11 +177,7 @@ void output_handle_t::define_var_gradients(
                 SUCCESS_OR_DIE(nc_def_var(
                         ncid,
                         init_grad_idx[i].c_str(),
-#ifdef OUT_DOUBLE
-                       NC_DOUBLE,
-#else
-                       NC_FLOAT,
-#endif
+                       NC_FLOAT_T,
                        n_dims,
                        dim_pointer,
                        &varid[Var_idx::n_vars + i]));
@@ -195,11 +189,7 @@ void output_handle_t::define_var_gradients(
                 SUCCESS_OR_DIE(nc_def_var(
                         ncid,
                         output_grad_idx[i].c_str(),
-#ifdef OUT_DOUBLE
-                       NC_DOUBLE,
-#else
-                       NC_FLOAT,
-#endif
+                       NC_FLOAT_T,
                        n_dims,
                        dim_pointer,
                        &varid[Var_idx::n_vars + i]));
@@ -246,11 +236,7 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
     SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "time",
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &dimid[Dim_idx::time_dim],
            &varid[Var_idx::time]));
@@ -261,11 +247,7 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
             nc_def_var(
                 ncid,
                 output_par_idx[i].c_str(),
-#ifdef OUT_DOUBLE
-                NC_DOUBLE,
-#else
-                NC_FLOAT,
-#endif
+                NC_FLOAT_T,
                 3,
                 &dimid[Dim_idx::ensemble_dim],
                 &varid[i]));
@@ -283,11 +265,7 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
     SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "time_after_ascent",
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            3,
            &dimid[Dim_idx::ensemble_dim],
            &varid[Var_idx::time_ascent]));
@@ -324,22 +302,14 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
     SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "lat",
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            3,
            &dimid[Dim_idx::ensemble_dim],
            &varid[Var_idx::lat]));
     SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "lon",
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            3,
            &dimid[Dim_idx::ensemble_dim],
            &varid[Var_idx::lon]));
@@ -364,26 +334,11 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
         std::vector<int> dimid_tmp;
         dimid_tmp.push_back(dimid[Dim_idx::ensemble_dim]);
         dimid_tmp.push_back(dimid[Dim_idx::time_dim]);
-        // Names of the perturbed parameters
-//        SUCCESS_OR_DIE(nc_def_var(
-//                ncid,
-//                "perturbed_param",
-//                NC_UINT64,
-//                2,
-//                &dimid_tmp[0],
-//                &varid[Var_idx::perturbed_param]));
-
         dimid_tmp.push_back(dimid[Dim_idx::perturb_param_dim]);
-//        dimid_tmp[1] = dimid[Dim_idx::time_dim];
-        // Amount of perturbation
         SUCCESS_OR_DIE(nc_def_var(
                 ncid,
                 "perturbation_value",
-#ifdef OUT_DOUBLE
-               NC_DOUBLE,
-#else
-               NC_FLOAT,
-#endif
+               NC_FLOAT_T,
                 3,
                 &dimid_tmp[0],
                 &varid[Var_idx::perturbation_value]));
@@ -481,26 +436,6 @@ void output_handle_t::set_attributes(
                 "auxiliary_data",
                 strlen("yes"),
                 "yes"));
-
-//        SUCCESS_OR_DIE(nc_put_att_text(
-//                ncid,
-//                varid[Var_idx::perturbed_param],
-//                "long_name",
-//                strlen("Name of the (perturbed) parameter."),
-//                "Name of the (perturbed) parameter."));
-//        SUCCESS_OR_DIE(nc_put_att_text(
-//                ncid,
-//                varid[Var_idx::perturbed_param],
-//                "standard_name",
-//                strlen("perturbed_parameter_name"),
-//                "perturbed_parameter_name"));
-//        SUCCESS_OR_DIE(nc_put_att_text(
-//                ncid,
-//                varid[Var_idx::perturbed_param],
-//                "auxiliary_data",
-//                strlen("yes"),
-//                "yes"));
-
         SUCCESS_OR_DIE(nc_put_att_text(
                 ncid,
                 varid[Var_idx::perturbation_value],
@@ -553,11 +488,7 @@ void output_handle_t::set_attributes(
                 ncid,
                 varid,
                 _FillValue,
-#ifdef OUT_DOUBLE
-               NC_DOUBLE,
-#else
-               NC_FLOAT,
-#endif
+               NC_FLOAT_T,
                1,
                &FILLVALUE));
     };
@@ -601,11 +532,7 @@ void output_handle_t::set_attributes(
                 ncid,
                 varid,
                 _FillValue,
-#ifdef OUT_DOUBLE
-               NC_DOUBLE,
-#else
-               NC_FLOAT,
-#endif
+               NC_FLOAT_T,
                1,
                &FILLVALUE));
     };
@@ -648,11 +575,7 @@ void output_handle_t::set_attributes(
                 ncid,
                 varid,
                 _FillValue,
-#ifdef OUT_DOUBLE
-               NC_DOUBLE,
-#else
-               NC_FLOAT,
-#endif
+               NC_FLOAT_T,
                1,
                &FILLVALUE));
     };
@@ -713,11 +636,7 @@ void output_handle_t::set_attributes(
                 ncid,
                 varid,
                 _FillValue,
-#ifdef OUT_DOUBLE
-               NC_DOUBLE,
-#else
-               NC_FLOAT,
-#endif
+                NC_FLOAT_T,
                1,
                &FILLVALUE));
     };
@@ -742,11 +661,7 @@ void output_handle_t::set_attributes(
                         ncid,
                         varid[Var_idx::n_vars + i],
                         _FillValue,
-#ifdef OUT_DOUBLE
-                       NC_DOUBLE,
-#else
-                       NC_FLOAT,
-#endif
+                       NC_FLOAT_T,
                        1,
                        &FILLVALUE));
             }
@@ -765,11 +680,7 @@ void output_handle_t::set_attributes(
                         ncid,
                         varid[Var_idx::n_vars + i],
                         _FillValue,
-#ifdef OUT_DOUBLE
-                       NC_DOUBLE,
-#else
-                       NC_FLOAT,
-#endif
+                       NC_FLOAT_T,
                        1,
                        &FILLVALUE));
             }
@@ -809,11 +720,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::pressure],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -844,11 +751,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::temperature],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -879,11 +782,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::ascent],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -914,11 +813,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::sat],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -949,11 +844,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::height],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -966,11 +857,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::inactive],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -983,11 +870,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::dep],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -1000,11 +883,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::sub],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -1017,11 +896,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::lat_heat],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -1034,11 +909,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::lat_cool],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -1069,11 +940,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::time_ascent],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -1099,11 +966,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::lat],
             _FillValue,
-#ifdef OUT_DOUBLE
-           NC_DOUBLE,
-#else
-           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
            1,
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
@@ -1128,11 +991,7 @@ void output_handle_t::set_attributes(
             ncid,
             varid[Var_idx::lon],
             _FillValue,
-#ifdef OUT_DOUBLE
-                           NC_DOUBLE,
-#else
-                           NC_FLOAT,
-#endif
+            NC_FLOAT_T,
                            1,
                            &FILLVALUE));
 #if !defined B_EIGHT
@@ -1423,28 +1282,13 @@ void output_handle_t::write_dimension_values(
     std::cout << "write perturbed_id\n" << std::flush;
 #endif
     if (this->simulation_mode == create_train_set) {
-//        data.resize(n_perturbed_params);
         countp[0] = n_perturbed_params;
-//        for (uint64_t i=0; i < n_perturbed_params; ++i) data[i] = i;
-//        std::vector<std::vector<char>> vstrings;
-//        std::vector<char*> cstrings;
-//        cstrings.reserve(perturbed_names.size());
-//        vstrings.reserve(perturbed_names.size());
-//        for (const auto &s: perturbed_names)
-//            cstrings.push_back(const_cast<char*>(s.c_str()));
-
         std::vector<const char*> cstrings;
         cstrings.reserve(perturbed_names.size());
 
-        for(const auto& s: perturbed_names)
+        for (const auto& s : perturbed_names)
             cstrings.push_back(&s[0]);
-//        SUCCESS_OR_DIE(
-//                nc_put_vara_string(
-//                        ncid,
-//                        varid[Var_idx::perturbed],
-//                        startp.data(),
-//                        countp.data(),
-//                        cstrings.data()));
+
         for (auto s : cstrings) {
             SUCCESS_OR_DIE(
                 nc_put_var1_string(
@@ -1614,11 +1458,6 @@ void output_handle_t::set_parallel_access(
             &varid[Var_idx::phase]));
 
     if (simulation_mode == create_train_set) {
-//        SUCCESS_OR_DIE(
-//            nc_inq_varid(
-//                ncid,
-//                "perturbed_param",
-//                &varid[Var_idx::perturbed_param]));
         SUCCESS_OR_DIE(
             nc_inq_varid(
                 ncid,
@@ -1675,7 +1514,6 @@ void output_handle_t::setup(
     const std::string filetype,
     const std::string filename,
     const model_constants_t<float_t> &cc,
-    const reference_quantities_t &ref_quant,
     const std::string in_filename,
     const uint32_t write_index,
     const uint32_t snapshot_index,
@@ -1726,6 +1564,7 @@ void output_handle_t::setup(
     output_buffer[Buffer_idx::time_ascent_buf].resize(vec_size);
     output_buffer[Buffer_idx::lat_buf].resize(vec_size);
     output_buffer[Buffer_idx::lon_buf].resize(vec_size);
+
     if (this->simulation_mode == create_train_set)
         output_buffer[Buffer_idx::perturb_buf].resize(vec_size*n_perturbed_params);
     if (!track_ic) {
@@ -1783,7 +1622,9 @@ void output_handle_t::setup(
             SUCCESS_OR_DIE(nc_def_dim(
                     ncid, "perturbed", n_perturbed_params, &dimid[Dim_idx::perturb_param_dim]));
         }
-
+#ifdef DEBUG_SEG
+        std::cout << "trajs " << n_trajs_file << " ens " << num_ens << " time " << num_time << "\n";
+#endif
         define_vars(cc);
         set_attributes(cc, in_filename);
 #ifdef COMPRESS_OUTPUT
@@ -2037,7 +1878,7 @@ bool output_handle_t::flush_buffer(
               << " with n_snapshots: " << n_snapshots << "\n";
 #endif
     for (uint64_t i=0; i < num_comp; i++) {
-#ifdef DEVELOP
+#if defined(DEVELOP)
 //        if (i >= 12 && i < 21) continue;
         std::cout << "traj: " << traj << " at " << flushed_snapshots
                   << " i: " << i << "/" << num_comp
@@ -2485,7 +2326,6 @@ template output_handle_t::output_handle_t<codi::RealReverse>(
     const std::string,
     const std::string,
     const model_constants_t<codi::RealReverse>&,
-    const reference_quantities_t&,
     const std::string,
     const uint32_t,
     const uint32_t ,
@@ -2501,7 +2341,6 @@ template output_handle_t::output_handle_t<codi::RealForwardVec<num_par_init> >(
     const std::string,
     const std::string,
     const model_constants_t<codi::RealForwardVec<num_par_init> >&,
-    const reference_quantities_t&,
     const std::string,
     const uint32_t,
     const uint32_t,
@@ -2517,7 +2356,6 @@ template output_handle_t::output_handle_t<codi::RealReverse>(
         const std::string,
         const std::string,
         const model_constants_t<codi::RealReverse>&,
-        const reference_quantities_t&,
         const std::string,
         const uint32_t,
         const uint32_t ,
@@ -2534,7 +2372,6 @@ template output_handle_t::output_handle_t<codi::RealForwardVec<num_par_init> >(
         const std::string,
         const std::string,
         const model_constants_t<codi::RealForwardVec<num_par_init> >&,
-        const reference_quantities_t&,
         const std::string,
         const uint32_t,
         const uint32_t,
@@ -2615,7 +2452,6 @@ template void output_handle_t::setup<codi::RealReverse>(
     const std::string,
     const std::string,
     const model_constants_t<codi::RealReverse>&,
-    const reference_quantities_t&,
     const std::string,
     const uint32_t,
     const uint32_t,
@@ -2626,7 +2462,6 @@ template void output_handle_t::setup<codi::RealForwardVec<num_par_init> >(
     const std::string,
     const std::string,
     const model_constants_t<codi::RealForwardVec<num_par_init> >&,
-    const reference_quantities_t&,
     const std::string,
     const uint32_t,
     const uint32_t,

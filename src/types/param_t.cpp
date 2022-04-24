@@ -299,7 +299,17 @@ void param_t::perturb(
         } else {
             cc.constants[name] = get_rand();
         }
+#ifdef DEBUG_SEG
+        std::cout << "rank " << cc.rank << " traj " << cc.traj_id << " attempt to add " << name <<
+        " with size " << cc.perturbed_idx.size() << "\n"
+                      << std::flush;
+#endif
         cc.perturbed_idx.push_back(name);
+#ifdef DEBUG_SEG
+        std::cout << "rank " << cc.rank << " traj " << cc.traj_id << " after add " << name <<
+                  " with size " << cc.perturbed_idx.size() << "\n"
+                  << std::flush;
+#endif
     }
 }
 
@@ -334,8 +344,15 @@ void param_t::reset(
         pt_model->constants[name] = mean;
         pt_model->perturbed_idx.pop_back();
     } else {
+#ifdef DEBUG_SEG
+        std::cout << "rank " << cc.rank << " before pop of " << name << " -- "
+            << cc.perturbed_idx[cc.perturbed_idx.size()-1] << " size " << cc.perturbed_idx.size() << "\n";
+#endif
         cc.constants[name] = mean;
         cc.perturbed_idx.pop_back();
+#ifdef DEBUG_SEG
+        std::cout << "rank " << cc.rank << " after pop " << cc.perturbed_idx.size() << "\n";
+#endif
     }
 }
 

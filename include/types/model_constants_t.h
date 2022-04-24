@@ -261,7 +261,7 @@ struct model_constants_t {
     void get_gradients(
         std::vector<float_t> &y_single_new,
         std::vector< std::array<double, num_par > > &y_diff,
-        codi::RealReverse::Tape &tape) const;
+        codi::RealReverse::Tape &tape);
 
     /**
      * Get the gradients of all its members. You need to register them on a
@@ -271,8 +271,12 @@ struct model_constants_t {
      */
     void get_gradient(
         std::array<double, num_par> &out_vec,
-        std::vector<float_t> &y_single_new,
+        std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
         uint32_t ii) const;
+
+    void get_gradient(
+        std::array<double, num_par> &out_vec) const;
+
 
 #if defined(RK4_ONE_MOMENT)
     /**
@@ -319,8 +323,7 @@ struct model_constants_t {
      *
      * @param ref_quant
      */
-    void setup_dependent_model_constants(
-        const reference_quantities_t &ref_quant);
+    void setup_dependent_model_constants();
 
     /**
      * Set the uncertainty for every parameter. Currently it is only 10% for

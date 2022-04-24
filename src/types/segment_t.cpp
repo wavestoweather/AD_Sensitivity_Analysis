@@ -154,7 +154,7 @@ int segment_t::check() {
 
 template<class float_t>
 bool segment_t::perturb_check(
-    const model_constants_t<float_t> &cc,
+//    const model_constants_t<float_t> &cc,
     const std::vector< std::array<double, num_par > > &gradients,
     const std::vector<float_t> &y,
     const double timestep) {
@@ -379,13 +379,13 @@ double segment_t::limit_duration() const {
 }
 
 template bool segment_t::perturb_check<codi::RealReverse>(
-    const model_constants_t<codi::RealReverse>&,
+//    const model_constants_t<codi::RealReverse>&,
     const std::vector< std::array<double, num_par > >&,
     const std::vector<codi::RealReverse>&,
     const double);
 
 template bool segment_t::perturb_check<codi::RealForwardVec<num_par_init> >(
-    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+//    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
     const std::vector< std::array<double, num_par > >&,
     const std::vector<codi::RealForwardVec<num_par_init> >&,
     const double);

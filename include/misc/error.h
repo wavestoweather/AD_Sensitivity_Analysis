@@ -31,7 +31,7 @@ enum {
 };
 
 // Credits to http://www.gpi-site.com/ for this function and the name
-#define SUCCESS_OR_DIE(f...)                                                \
+#define SUCCESS_OR_DIE(f)                                                \
     do {                                                                    \
         const int err = f;                                                  \
         if (err != SUCCESS) {                                               \

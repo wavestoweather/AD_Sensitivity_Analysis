@@ -270,7 +270,7 @@ inline float_t specific_heat_dry_air(float_t T) {
  * @return Specific heat capacity
  */
 template <class float_t>
-inline float_t specific_heat_water_vapor(float_t T) {
+inline float_t specific_heat_water_vapor() {
     return 1884.06;
 }
 
@@ -880,7 +880,6 @@ inline float_t coll_delta(
 template <class float_t = codi::RealReverse>
 inline float_t coll_delta_11(
     particle_model_constants_t<float_t> &pc1,
-    particle_model_constants_t<float_t> &pc2,
     const uint64_t n) {
 
     return coll_delta<float_t>(pc1, n);
@@ -897,11 +896,10 @@ inline float_t coll_delta_11(
  */
 template <class float_t = codi::RealReverse>
 inline float_t coll_delta_22(
-    particle_model_constants_t<float_t> &pc1,
-    particle_model_constants_t<float_t> &pc2,
+    particle_model_constants_t<float_t> &pc,
     const uint64_t n) {
 
-    return coll_delta<float_t>(pc2, n);
+    return coll_delta<float_t>(pc, n);
 }
 
 
@@ -977,11 +975,10 @@ inline float_t coll_theta(
  */
 template <class float_t = codi::RealReverse>
 inline float_t coll_theta_11(
-    particle_model_constants_t<float_t> &pc1,
-    particle_model_constants_t<float_t> &pc2,
+    particle_model_constants_t<float_t> &pc,
     const uint64_t n) {
 
-    return coll_theta<float_t>(pc1, n);
+    return coll_theta<float_t>(pc, n);
 }
 
 
@@ -995,11 +992,10 @@ inline float_t coll_theta_11(
  */
 template <class float_t = codi::RealReverse>
 inline float_t coll_theta_22(
-    particle_model_constants_t<float_t> &pc1,
-    particle_model_constants_t<float_t> &pc2,
+    particle_model_constants_t<float_t> &pc,
     const uint64_t n) {
 
-    return coll_theta<float_t>(pc2, n);
+    return coll_theta<float_t>(pc, n);
 }
 
 

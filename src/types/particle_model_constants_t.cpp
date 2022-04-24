@@ -21,19 +21,9 @@ void particle_model_constants_t<codi::RealReverse>::register_input(
 
 
 template<>
-void particle_model_constants_t<codi::RealForwardVec<num_par_init> >::register_input(
-    codi::RealReverse::Tape &tape,
-    uint32_t &idx) {
-
-    // Nothing to be done for forward mode.
-}
-
-
-template<>
 void particle_model_constants_t<codi::RealReverse>::get_gradient(
     std::array<double, num_par> &out_vec,
-    uint32_t &idx,
-    const bool info) const {
+    uint32_t &idx) const {
 
     const uint32_t start_idx = idx;
     for (auto &c : this->constants) {
@@ -44,16 +34,6 @@ void particle_model_constants_t<codi::RealReverse>::get_gradient(
         out_vec[idx] = c.getGradient() * uncertainty[idx-start_idx];
         idx++;
     }
-}
-
-
-template<>
-void particle_model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradient(
-    std::array<double, num_par> &out_vec,
-    uint32_t &idx,
-    const bool info) const {
-
-    // Nothing to be done for forward mode
 }
 
 
