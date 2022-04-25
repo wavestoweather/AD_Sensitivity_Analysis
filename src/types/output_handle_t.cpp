@@ -120,47 +120,37 @@ output_handle_t::output_handle_t(
 
 
 template<class float_t>
-void output_handle_t::setup_gradients_limited_time_ens(
-    const model_constants_t<float_t> &cc) {
-
-    std::vector<int> dimid_tmp;
-    auto dim_pointer = &dimid[Dim_idx::time_dim];
-    int n_dims = 1;
-    if (local_num_comp > 1) {
-        dimid_tmp.push_back(dimid[Dim_idx::out_param_dim]);
-        dimid_tmp.push_back(dimid[Dim_idx::time_dim]);
-        dim_pointer = &dimid_tmp[0];
-        n_dims = 2;
-    }
-    define_var_gradients(cc, dim_pointer, n_dims);
-}
-
-
-template<class float_t>
-void output_handle_t::setup_gradients_train_ens(
-    const model_constants_t<float_t> &cc) {
-
-    std::vector<int> dimid_tmp;
-    int n_dims = 3;
-    dimid_tmp.push_back(dimid[Dim_idx::out_param_dim]);
-    dimid_tmp.push_back(dimid[Dim_idx::trajectory_dim]);
-    dimid_tmp.push_back(dimid[Dim_idx::time_dim]);
-    auto dim_pointer = &dimid_tmp[0];
-    define_var_gradients(cc, dim_pointer, n_dims);
-}
-
-
-template<class float_t>
 void output_handle_t::setup_gradients(
     const model_constants_t<float_t> &cc) {
 
-    auto dim_pointer = &dimid[Dim_idx::out_param_dim];
-    int n_dims = 4;
-    if (local_num_comp == 1) {
-        dim_pointer = &dimid[Dim_idx::ensemble_dim];
-        n_dims = 3;
+    if (this->simulation_mode == limited_time_ensembles) {
+        std::vector<int> dimid_tmp;
+        auto dim_pointer = &dimid[Dim_idx::time_dim];
+        int n_dims = 1;
+        if (local_num_comp > 1) {
+            dimid_tmp.push_back(dimid[Dim_idx::out_param_dim]);
+            dimid_tmp.push_back(dimid[Dim_idx::time_dim]);
+            dim_pointer = &dimid_tmp[0];
+            n_dims = 2;
+        }
+        define_var_gradients(cc, dim_pointer, n_dims);
+    } else if (this->simulation_mode == create_train_set) {
+        std::vector<int> dimid_tmp;
+        if (local_num_comp > 1) {
+            dimid_tmp.push_back(dimid[Dim_idx::out_param_dim]);
+        }
+        dimid_tmp.push_back(dimid[Dim_idx::trajectory_dim]);
+        dimid_tmp.push_back(dimid[Dim_idx::time_dim]);
+        define_var_gradients(cc, &dimid_tmp[0], dimid_tmp.size());
+    } else {
+        auto dim_pointer = &dimid[Dim_idx::out_param_dim];
+        int n_dims = 4;
+        if (local_num_comp == 1) {
+            dim_pointer = &dimid[Dim_idx::ensemble_dim];
+            n_dims = 3;
+        }
+        define_var_gradients(cc, dim_pointer, n_dims);
     }
-    define_var_gradients(cc, dim_pointer, n_dims);
 }
 
 
@@ -175,8 +165,8 @@ void output_handle_t::define_var_gradients(
         for (uint32_t i = 0; i < num_par_init; ++i) {
             if (cc.trace_check(i, 2)) {
                 SUCCESS_OR_DIE(nc_def_var(
-                        ncid,
-                        init_grad_idx[i].c_str(),
+                       ncid,
+                       init_grad_idx[i].c_str(),
                        NC_FLOAT_T,
                        n_dims,
                        dim_pointer,
@@ -187,8 +177,8 @@ void output_handle_t::define_var_gradients(
         for (uint32_t i = 0; i < num_par - num_par_init; ++i) {
             if (cc.trace_check(i, false)) {
                 SUCCESS_OR_DIE(nc_def_var(
-                        ncid,
-                        output_grad_idx[i].c_str(),
+                       ncid,
+                       output_grad_idx[i].c_str(),
                        NC_FLOAT_T,
                        n_dims,
                        dim_pointer,
@@ -202,13 +192,23 @@ void output_handle_t::define_var_gradients(
 template<class float_t>
 void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
     // Define variables for dimensions
-    SUCCESS_OR_DIE(nc_def_var(
-            ncid,
-            "Output_Parameter_ID",
-            NC_UINT64,  // type
-            (local_num_comp > 1),          // ndims 2: matrix, 1: vector, 0: scalar
-            &dimid[Dim_idx::out_param_dim],    // ignored for ndims = 0
-            &varid[Var_idx::out_param]));
+    if (simulation_mode == create_train_set) {
+        SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "Output_Parameter",
+                NC_STRING,
+                (local_num_comp > 1),
+                &dimid[Dim_idx::out_param_dim],
+                &varid[Var_idx::out_param]));
+    } else {
+        SUCCESS_OR_DIE(nc_def_var(
+                ncid,
+                "Output_Parameter_ID",
+                NC_UINT64,  // type
+                (local_num_comp > 1),          // ndims 2: matrix, 1: vector, 0: scalar
+                &dimid[Dim_idx::out_param_dim],    // ignored for ndims = 0
+                &varid[Var_idx::out_param]));
+    }
     SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "trajectory",
@@ -253,13 +253,7 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
                 &varid[i]));
 
     // gradients
-    if (this->simulation_mode == limited_time_ensembles) {
-        setup_gradients_limited_time_ens(cc);
-    } else if (this->simulation_mode == create_train_set) {
-        setup_gradients_train_ens(cc);
-    } else {
-        setup_gradients(cc);
-    }
+    setup_gradients(cc);
 
     // the rest
     SUCCESS_OR_DIE(nc_def_var(
@@ -411,11 +405,23 @@ void output_handle_t::set_attributes(
     SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::out_param],
-            "standard_name",
-            strlen("output_parameter_id"),
-            "output_parameter_id"));
-
-    if (this->simulation_mode == create_train_set) {
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    if (this->simulation_mode != create_train_set) {
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::out_param],
+                "standard_name",
+                strlen("output_parameter_id"),
+                "output_parameter_id"));
+    } else {
+        SUCCESS_OR_DIE(nc_put_att_text(
+                ncid,
+                varid[Var_idx::out_param],
+                "standard_name",
+                strlen("output_parameter"),
+                "output_parameter"));
         SUCCESS_OR_DIE(nc_put_att_text(
                 ncid,
                 varid[Var_idx::perturbed],
@@ -992,8 +998,8 @@ void output_handle_t::set_attributes(
             varid[Var_idx::lon],
             _FillValue,
             NC_FLOAT_T,
-                           1,
-                           &FILLVALUE));
+            1,
+            &FILLVALUE));
 #if !defined B_EIGHT
     SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
@@ -1224,10 +1230,10 @@ void output_handle_t::write_dimension_values(
     SUCCESS_OR_DIE(
             nc_put_vara(
                     ncid,                               // ncid
-                    varid[Var_idx::time],         // varid
-                    startp.data(),               // startp
-                    countp.data(),              // countp
-                    time_steps.data()));            // op
+                    varid[Var_idx::time],               // varid
+                    startp.data(),                      // startp
+                    countp.data(),                      // countp
+                    time_steps.data()));                // op
 #ifdef DEVELOP
     std::cout << "done time_steps\n" << std::flush;
 #endif
@@ -1260,21 +1266,23 @@ void output_handle_t::write_dimension_values(
     std::cout << "out_param\n" << std::flush;
 #endif
     countp[0] = local_num_comp;
-    data.resize(local_num_comp);
-    uint32_t counter = 0;
-    for (uint32_t i=0; i < num_comp; i++) {
-        if (cc.trace_check(i, true)) {
-            data[counter] = i;
-            counter++;
+    if (this->simulation_mode != create_train_set) {
+        data.resize(local_num_comp);
+        uint32_t counter = 0;
+        for (uint32_t i = 0; i < num_comp; i++) {
+            if (cc.trace_check(i, true)) {
+                data[counter] = i;
+                counter++;
+            }
         }
+        SUCCESS_OR_DIE(
+                nc_put_vara(
+                        ncid,
+                        varid[Var_idx::out_param],
+                        startp.data(),
+                        countp.data(),
+                        data.data()));
     }
-    SUCCESS_OR_DIE(
-            nc_put_vara(
-                    ncid,
-                    varid[Var_idx::out_param],
-                    startp.data(),
-                    countp.data(),
-                    data.data()));
 #ifdef DEVELOP
     std::cout << "out_param done\n" << std::flush;
 #endif
@@ -1282,6 +1290,23 @@ void output_handle_t::write_dimension_values(
     std::cout << "write perturbed_id\n" << std::flush;
 #endif
     if (this->simulation_mode == create_train_set) {
+        std::vector<const char*> cstrings_outp;
+        cstrings_outp.reserve(local_num_comp);
+        for (uint32_t i = 0; i < num_comp; i++) {
+            if (cc.trace_check(i, true)) {
+                cstrings_outp.push_back(&(output_par_idx[i])[0]);
+            }
+        }
+        for (auto s : cstrings_outp) {
+            SUCCESS_OR_DIE(
+                    nc_put_var1_string(
+                            ncid,
+                            varid[Var_idx::out_param],
+                            startp.data(),
+                            &s));
+            startp[0]++;
+        }
+        startp[0] = 0;
         countp[0] = n_perturbed_params;
         std::vector<const char*> cstrings;
         cstrings.reserve(perturbed_names.size());
@@ -1328,11 +1353,19 @@ void output_handle_t::set_parallel_access(
     std::cout << "get varids\n" << std::flush;
 #endif
     // gather all necessary variable ids
-    SUCCESS_OR_DIE(
-        nc_inq_varid(
-            ncid,
-            "Output_Parameter_ID",
-            &varid[Var_idx::out_param]));
+    if (this->simulation_mode == create_train_set) {
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "Output_Parameter",
+                &varid[Var_idx::out_param]));
+    } else {
+        SUCCESS_OR_DIE(
+            nc_inq_varid(
+                ncid,
+                "Output_Parameter_ID",
+                &varid[Var_idx::out_param]));
+    }
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -1607,8 +1640,13 @@ void output_handle_t::setup(
         // sensitivities for, drop that dimension and add that as a scalar.
         // This is useful as long as Met3D does not support this dimension.
         if (local_num_comp > 1) {
-            SUCCESS_OR_DIE(nc_def_dim(
+            if (this->simulation_mode == create_train_set) {
+                SUCCESS_OR_DIE(nc_def_dim(
+                    ncid, "Output_Parameter", local_num_comp, &dimid[Dim_idx::out_param_dim]));
+            } else {
+                SUCCESS_OR_DIE(nc_def_dim(
                     ncid, "Output_Parameter_ID", local_num_comp, &dimid[Dim_idx::out_param_dim]));
+            }
         }
         SUCCESS_OR_DIE(nc_def_dim(
                 ncid, "trajectory", n_trajs_file, &dimid[Dim_idx::trajectory_dim]));
@@ -2383,18 +2421,6 @@ template output_handle_t::output_handle_t<codi::RealForwardVec<num_par_init> >(
 #endif
         const double,
         const std::vector<segment_t>&);
-
-template void output_handle_t::setup_gradients_limited_time_ens<codi::RealReverse>(
-        const model_constants_t<codi::RealReverse> &);
-
-template void output_handle_t::setup_gradients_limited_time_ens<codi::RealForwardVec<num_par_init> >(
-        const model_constants_t<codi::RealForwardVec<num_par_init> > &);
-
-template void output_handle_t::setup_gradients_train_ens<codi::RealReverse>(
-        const model_constants_t<codi::RealReverse> &);
-
-template void output_handle_t::setup_gradients_train_ens<codi::RealForwardVec<num_par_init> >(
-        const model_constants_t<codi::RealForwardVec<num_par_init> > &);
 
 template void output_handle_t::setup_gradients<codi::RealReverse>(
         const model_constants_t<codi::RealReverse> &);

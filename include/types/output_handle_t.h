@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 
-// #include <boost/property_tree/ptree.hpp>
-// #include <boost/property_tree/json_parser.hpp>
 #include <nlohmann/json.hpp>
 
 #include "include/misc/error.h"
@@ -69,8 +67,6 @@ struct output_handle_t{
      */
     std::vector<int> varid;
 
-//    uint64_t n_ens;
-//    uint64_t n_trajs;
     uint64_t n_trajs_file;
     uint64_t traj;
     uint64_t ens;
@@ -317,27 +313,11 @@ struct output_handle_t{
  private:
     /**
      * Setup and define variables for gradients in the NetCDF-file. This method sets
-     * only a time dimension and an Out_Parameter_ID dimension if needed for
-     * the gradients. Calls define_var_gradients().
-     *
-     * @param cc
-     */
-    template<class float_t>
-    void setup_gradients_limited_time_ens(const model_constants_t<float_t> &cc);
-
-    /**
-     * Setup and define variables for gradients in the NetCDF-file. This method sets
-     * only an Out_Parameter_ID, a trajectory, and a time dimension for
-     * the gradients. Calls define_var_gradients().
-     *
-     * @param cc
-     */
-    template<class float_t>
-    void setup_gradients_train_ens(const model_constants_t<float_t> &cc);
-
-    /**
-     * Setup and define variables for gradients in the NetCDF-file. This method sets
-     * an ensemble, trajectory and time dimension and an Out_Parameter_ID dimension if needed for
+     * mode create_train_set: only an Out_Parameter_ID, a trajectory, and a time dimension for
+     * the gradients.
+     * mode limited_time_ens: only an Out_Parameter_ID, a trajectory, and a time dimension for
+     * the gradients
+     * else: an ensemble, trajectory and time dimension and an Out_Parameter_ID dimension if needed for
      * the gradients. Calls define_var_gradients().
      *
      * @param cc
