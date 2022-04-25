@@ -326,10 +326,16 @@ struct model_constants_t {
     void setup_dependent_model_constants();
 
     /**
-     * Set the uncertainty for every parameter. Currently it is only 10% for
-     * each parameter.
+     * Set the uncertainty for every parameter with a default value of 10% of each parameter.
      */
     void set_uncertainty();
+
+    /**
+     * Set the uncertainty for every parameter with scale * parameter value, i.e., scale = 0.1 results in
+     * 10% of each parameter.
+     * @param scale
+     */
+    void set_uncertainty(double scale);
 
     /**
      * Set time step from input netcdf file.

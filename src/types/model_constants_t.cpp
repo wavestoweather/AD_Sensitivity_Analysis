@@ -851,9 +851,13 @@ void model_constants_t<float_t>::setup_model_constants(
     this->snow.constants[static_cast<int>(Particle_cons_idx::s_vel)] = snow_s_vel;
 #endif
     setup_dependent_model_constants();
-    // Set the uncertainty of every parameter.
-    // Currently only uses 10% of the value.
-    set_uncertainty();
+    // Set the uncertainty of every parameter to scale the gradients.
+    if (input.simulation_mode == create_train_set) {
+        set_uncertainty(1.0);
+    } else {
+        // Default value of 10%.
+        set_uncertainty();
+    }
 }
 
 
@@ -1018,30 +1022,36 @@ void model_constants_t<float_t>::setup_dependent_model_constants() {
 
 template<class float_t>
 void model_constants_t<float_t>::set_uncertainty() {
+    set_uncertainty(0.1);
+}
+
+
+template<class float_t>
+void model_constants_t<float_t>::set_uncertainty(double scale) {
     for (uint32_t i=0; i < static_cast<uint32_t>(Cons_idx::n_items); ++i) {
-        this->uncertainty[i] = this->constants[i].getValue() * 0.1;
+        this->uncertainty[i] = this->constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->rain.uncertainty[i] = this->rain.constants[i].getValue() * 0.1;
+        this->rain.uncertainty[i] = this->rain.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->cloud.uncertainty[i] = this->cloud.constants[i].getValue() * 0.1;
+        this->cloud.uncertainty[i] = this->cloud.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->graupel.uncertainty[i] = this->graupel.constants[i].getValue() * 0.1;
+        this->graupel.uncertainty[i] = this->graupel.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->hail.uncertainty[i] = this->hail.constants[i].getValue() * 0.1;
+        this->hail.uncertainty[i] = this->hail.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->ice.uncertainty[i] = this->ice.constants[i].getValue() * 0.1;
+        this->ice.uncertainty[i] = this->ice.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->snow.uncertainty[i] = this->snow.constants[i].getValue() * 0.1;
+        this->snow.uncertainty[i] = this->snow.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Init_cons_idx::n_items); ++i) {
         this->uncertainty[i + static_cast<uint32_t>(Cons_idx::n_items)] =
-            this->initial_conditions[i].getValue() * 0.1;
+                this->initial_conditions[i].getValue() * scale;
     }
 }
 
