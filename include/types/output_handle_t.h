@@ -289,7 +289,7 @@ struct output_handle_t{
      *                 is enabled.
      */
     template<class float_t>
-    bool flush_buffer(const model_constants_t<float_t> &cc, const bool no_flush = false);
+    bool flush_buffer(const model_constants_t<float_t> &cc, bool no_flush = false);
 
     /**
      * Buffer the current data  (model state and gradients) and

@@ -863,7 +863,9 @@ void model_constants_t<float_t>::setup_model_constants(
 
 template<class float_t>
 void model_constants_t<float_t>::setup_dependent_model_constants() {
-    this->constants[static_cast<int>(Cons_idx::inv_z)] = 1.0/parcel_height;
+    auto it = std::find(perturbed_idx.begin(), perturbed_idx.end(), static_cast<uint32_t>(Cons_idx::inv_z));
+    if (it == perturbed_idx.end())
+        this->constants[static_cast<int>(Cons_idx::inv_z)] = 1.0/parcel_height;
     // Performance constants for warm cloud; COSMO
     this->a2_scale = 1.72 / pow(get_at(this->constants, Cons_idx::R_a) , 7./8.);
     this->e1_scale = 1.0 / sqrt(get_at(this->constants, Cons_idx::R_a));
