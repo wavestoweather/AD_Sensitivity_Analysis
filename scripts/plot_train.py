@@ -1,11 +1,13 @@
 import xarray as xr
 import hvplot.xarray  # noqa
 
+
 def load_data():
+    print("not implemented yet")
 
 
 def plot_time():
-
+    print("not implemented yet")
 
 
 if __name__ == "__main__":
