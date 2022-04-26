@@ -46,6 +46,8 @@ int particle_model_constants_t<float_t>::from_json(
         j.at("perturbed").get_to(perturbed);
         perturbed_idx.clear();
         for (auto const& pert : perturbed) {
+            if (pert.first >= this->constants.size())
+                err = MODEL_CONS_CHECKPOINT_ERR;
             this->constants[pert.first] = pert.second;
             perturbed_idx.push_back(pert.first);
         }

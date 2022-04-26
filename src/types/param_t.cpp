@@ -279,6 +279,10 @@ void param_t::perturb(
             default:
                 std::cout << "Error in perturbing...\n";
         }
+        if (name >= static_cast<int>(pt_model->constants.size())
+            || name < 0) {
+            SUCCESS_OR_DIE(PERTURB_ERR);
+        }
         if (func_name == "fixed") {
             if (positive) {
                 pt_model->constants[name] = mean+sigma;
@@ -290,6 +294,10 @@ void param_t::perturb(
         }
         pt_model->perturbed_idx.push_back(name);
     } else {
+        if (name >= static_cast<int>(cc.constants.size())
+            || name < 0) {
+            SUCCESS_OR_DIE(PERTURB_ERR);
+        }
         if (func_name == "fixed") {
             if (positive) {
                 cc.constants[name] = mean+sigma;

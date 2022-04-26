@@ -388,6 +388,8 @@ int model_constants_t<float_t>::from_json(
             std::map<uint32_t, double> perturbed;
             j.at(first).get_to(perturbed);
             for (auto const &p : perturbed) {
+                if (p.first >= this->constants.size())
+                    err = MODEL_CONS_CHECKPOINT_ERR;
                 this->perturbed_idx.push_back(p.first);
                 this->constants[p.first] = p.second;
             }

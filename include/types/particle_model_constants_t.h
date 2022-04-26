@@ -3,14 +3,13 @@
 #include <string>
 #include <vector>
 
-// #include <boost/property_tree/ptree.hpp>
 #include <nlohmann/json.hpp>
 
 #include "codi.hpp"
 
 #include "include/microphysics/constants.h"
+#include "include/misc/error.h"
 
-// namespace pt = boost::property_tree;
 
 /**
  * Struct to hold all model constants regarding particles that we want to

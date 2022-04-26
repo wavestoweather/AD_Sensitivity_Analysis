@@ -27,7 +27,8 @@ enum {
     NC_ERR = 115,
     CHECKPOINT_LOAD_ERR = 116,
     PARAM_ADD_NAME_ERR = 117,
-    INPUT_NAN_ERR = 118
+    INPUT_NAN_ERR = 118,
+    PERTURB_ERR = 119
 };
 
 // Credits to http://www.gpi-site.com/ for this function and the name

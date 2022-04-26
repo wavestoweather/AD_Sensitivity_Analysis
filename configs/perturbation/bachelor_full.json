@@ -664,9 +664,9 @@
       "when_method": "full_perturbation",
       "params": [
         {
-          "name": "nfrz_gh",
+          "name": "D_rainfrz_gh",
           "sigma_perc": 10,
-          "type": "rain",
+          "type": "model",
           "rand_func": "fixed"
         }
       ]
@@ -675,9 +675,9 @@
       "when_method": "full_perturbation",
       "params": [
         {
-          "name": "nfrz_gh",
+          "name": "D_rainfrz_gh",
           "sigma_perc": -10,
-          "type": "rain",
+          "type": "model",
           "rand_func": "fixed"
         }
       ]
