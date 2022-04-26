@@ -2020,17 +2020,26 @@ bool output_handle_t::flush_buffer(
             output_buffer[Buffer_idx::perturb_buf].data()));
 
     // gradients
-    if (this->simulation_mode == create_train_set && cc.ensemble_id != 0) {
-        no_flush = true;
-        startp[0] = 0;
-        startp[1] = 0;
-        startp[2] = 0;
-        countp[0] = 0;
-        countp[1] = 0;
-        countp[2] = 0;
+    if (this->simulation_mode == create_train_set) {
+        if (local_num_comp <= 1) {
+            // remove ensemble dimension since this does not exist in that
+            // simulation mode and it cannot be reused for dimension output_parameter
+            startp.erase(startp.begin());
+            countp.erase(countp.begin());
+        } else {
+            startp[0] = 0;
+            countp[0] = (no_flush) ? 0 : local_num_comp;
+        }
+        if (cc.ensemble_id != 0) {
+            no_flush = true;
+            for (auto &s : startp) s = 0;
+            for (auto &c : countp) c = 0;
+        }
     }
+
     if (this->simulation_mode != limited_time_ensembles) {
-        if (local_num_comp > 1) {
+        if (local_num_comp > 1 && this->simulation_mode != create_train_set) {
+            // This is done for create_train_set already
             startp.insert(startp.begin(), 0);
             if (no_flush) {
                 countp.insert(countp.begin(), 0);
@@ -2047,14 +2056,17 @@ bool output_handle_t::flush_buffer(
         // and the fast index is [3] (time), which has gaps now
         if (local_num_comp > 1 && countp[3] != total_snapshots) {
 #ifdef COMPRESS_OUTPUT
-            if (this->simulation_mode == limited_time_ensembles
-            || this->simulation_mode == trajectory_sensitivity
-            || this->simulation_mode == grid_sensitivity) {
+            // Write strided data for the defined simulation modes
+            if (this->simulation_mode == trajectory_sensitivity
+                || this->simulation_mode == grid_sensitivity
+                || this->simulation_mode == create_train_set) {
                 // uint64_t n_snapshots_per_comp = n_snapshots/local_num_comp;
                 // For compression: loop over output variables for which
                 // we gather sensitivities.
                 countp[0] = (no_flush) ? 0 : 1;
-
+                // The dimension are now
+                // for create_train_set: (output_parameter_id), trajectory, time
+                // all other modes: (output_parameter_id), ensemble, trajectory, time
                 uint64_t comp_idx = 0;
                 if (!track_ic) {
                     for (int i=0; i < local_num_comp; i++) {
@@ -2115,7 +2127,12 @@ bool output_handle_t::flush_buffer(
                   << " not limited time ensemble; flushed gradients\n";
 #endif
             } else {
-#endif
+#endif  // End COMPRESS_OUTPUT
+                // In case of compressed output: Write strided data for simulation modes
+                // other than trajectory_sensitivity, create_train_set and grid_sensitivity
+                // For not compressed output: Strided output is the same for all simulation modes
+                // if compression is dsiabled
+
                 // nc_put_varm is discouraged. We use it only if no compression is
                 // enabled, since it fails sometimes with compression.
                 std::vector<std::ptrdiff_t> stridep, imap;
@@ -2183,6 +2200,8 @@ bool output_handle_t::flush_buffer(
             }
 #endif
         } else {
+            // Compressed output: No strided output needed
+            // No compression: No strided output needed
             if (!track_ic) {
                 for (uint64_t j=0; j < num_par-num_par_init; j++) {
                     if (cc.trace_check(j, false)) {
@@ -2221,7 +2240,7 @@ bool output_handle_t::flush_buffer(
         }
 #ifdef COMPRESS_OUTPUT
     } else {
-        // Compression doesn't work in this simulation mode with
+        // Compression doesn't work in the simulation mode limited_time_ensemble with
         // strided writes. We have to do that manually.
         std::vector<size_t> startp2, countp2;
         startp2.push_back(0);
@@ -2279,6 +2298,7 @@ bool output_handle_t::flush_buffer(
     }
 #else
     } else if (cc.traj_id == 0) {
+        // no compression: limited_time_ensembles with and without strided output
         // Only traj_id = 0 writes gradients
         std::vector<size_t> startp2, countp2;
         startp2.push_back(0);

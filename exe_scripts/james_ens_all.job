@@ -5,7 +5,7 @@
 #SBATCH --time=09:00:00
 #SBATCH -p parallel
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=32
+#SBATCH --ntasks-per-node=16
 #SBATCH --cpus-per-task=1
 #SBATCH -A m2_zdvresearch
 #SBATCH --mem=29000
