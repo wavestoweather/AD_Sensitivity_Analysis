@@ -167,7 +167,7 @@ WARM_UP="0"
 # We can remove it as well if it is just 0
 START_TIME_IDX="0"
 # The number indicates how many iterations are done between updates of
-# the progressbar. On an Intel i7 there are between 1000 and 4000 steps per
+# the progressbar. On an Intel i7 there are between 80 and 200 steps per
 # second.
 PROGRESSBAR="0"
 
