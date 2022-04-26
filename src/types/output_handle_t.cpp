@@ -1995,29 +1995,31 @@ bool output_handle_t::flush_buffer(
             output_buffer_int[1].data()));
 
     // Perturbed parameter value
-    std::vector<size_t> startp2, countp2;
-    if (no_flush) {
-        startp2.push_back(0);
-        startp2.push_back(0);
-        startp2.push_back(0);
-        countp2.push_back(0);
-        countp2.push_back(0);
-        countp2.push_back(0);
-    } else {
-        startp2.push_back(ens);
-        startp2.push_back(flushed_snapshots);
-        startp2.push_back(0);
-        countp2.push_back(1);
-        countp2.push_back(n_snapshots);
-        countp2.push_back(n_perturbed_params);
+    if (this->simulation_mode == create_train_set) {
+        std::vector<size_t> startp2, countp2;
+        if (no_flush) {
+            startp2.push_back(0);
+            startp2.push_back(0);
+            startp2.push_back(0);
+            countp2.push_back(0);
+            countp2.push_back(0);
+            countp2.push_back(0);
+        } else {
+            startp2.push_back(ens);
+            startp2.push_back(flushed_snapshots);
+            startp2.push_back(0);
+            countp2.push_back(1);
+            countp2.push_back(n_snapshots);
+            countp2.push_back(n_perturbed_params);
+        }
+        SUCCESS_OR_DIE(
+            nc_put_vara(
+                ncid,
+                varid[Var_idx::perturbation_value],
+                startp2.data(),
+                countp2.data(),
+                output_buffer[Buffer_idx::perturb_buf].data()));
     }
-    SUCCESS_OR_DIE(
-        nc_put_vara(
-            ncid,
-            varid[Var_idx::perturbation_value],
-            startp2.data(),
-            countp2.data(),
-            output_buffer[Buffer_idx::perturb_buf].data()));
 
     // gradients
     if (this->simulation_mode == create_train_set) {
