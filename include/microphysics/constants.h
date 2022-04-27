@@ -60,9 +60,10 @@ typedef bool(*track_func)(const int&, const bool&);
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
 #if defined(B_EIGHT)
-#define num_par (56*6+124+18)
+#define num_par 472 /*!< Formerly (56*6+124+18) */
 #else
-#define num_par (56*6+134+18)  /*!< Number of gradients. 56 for each particle + model constants + initial conditions */
+/*!< Number of gradients. 56 for each particle + model constants + initial conditions (fromerly (56*6+134+18)) */
+#define num_par 478
 #endif
 
 #endif

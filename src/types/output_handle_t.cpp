@@ -2071,7 +2071,7 @@ bool output_handle_t::flush_buffer(
                 // all other modes: (output_parameter_id), ensemble, trajectory, time
                 uint64_t comp_idx = 0;
                 if (!track_ic) {
-                    for (int i=0; i < local_num_comp; i++) {
+                    for (int i=0; i < num_comp; i++) {
                         // gradient sensitive to output parameter i
                         if (!cc.trace_check(i, true))
                             continue;
@@ -2080,7 +2080,7 @@ bool output_handle_t::flush_buffer(
                         for (uint64_t j=0; j < num_par-num_par_init; j++) {
                             if (cc.trace_check(j, false)) {
 #ifdef DEVELOP
-                                std::cout << "traj: " << traj << " at " << flushed_snapshots
+                                std::cout << "(strided) traj: " << traj << " at " << flushed_snapshots
                                           << " param " << i << "/" << local_num_comp
                                           << " gradient " << j << "/" << num_par-num_par_init << "\n";
 #endif
@@ -2098,7 +2098,7 @@ bool output_handle_t::flush_buffer(
                     }
                 } else {
                     // initial conditions
-                    for (int i=0; i < local_num_comp; i++) {
+                    for (int i=0; i < num_comp; i++) {
                         // gradient sensitive to output parameter i
                         if (!cc.trace_check(i, true))
                             continue;
