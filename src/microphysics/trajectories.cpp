@@ -734,6 +734,9 @@ int run_simulation(
 #if defined(TRACE_COMM_DEBUG) || defined(DEVELOP)
         std::cout << cc.rank << ", sim " << t << " / " << cc.num_steps - cc.done_steps - 1 << "\n" << std::flush;
 #endif
+//        if (cc.traj_id == 0)
+//            std::cout << "old " << y_single_old[9] << ", new "
+//                << y_single_new[9] << ", inflow " << inflow[qi_in_idx] << "\n";
         // Iterate over each substep
         run_substeps(input, ref_quant, t, cc, y_single_old,
             inflow, y_single_new, netcdf_reader, y_diff, out_handler,

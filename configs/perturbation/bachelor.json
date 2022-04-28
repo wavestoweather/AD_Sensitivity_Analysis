@@ -4,43 +4,47 @@
       "when_method": "full_perturbation",
       "params": [
         {
-          "name": "b_ccn_1",
+          "name": "b_geo",
           "sigma_perc": 10,
-          "type": "model",
+          "type": "snow",
           "rand_func": "fixed"
         }
       ]
-    }, {
+    },
+    {
       "when_method": "full_perturbation",
       "params": [
         {
-          "name": "b_ccn_4",
-          "sigma_perc": 10,
-          "type": "model",
+          "name": "b_geo",
+          "sigma_perc": -10,
+          "type": "snow",
           "rand_func": "fixed"
         }
       ]
-    }, {
+    },
+    {
       "when_method": "full_perturbation",
       "params": [
         {
-          "name": "c_ccn_1",
+          "name": "vsedi_max",
           "sigma_perc": 10,
-          "type": "model",
+          "type": "graupel",
           "rand_func": "fixed"
         }
       ]
-    }, {
+    },
+    {
       "when_method": "full_perturbation",
       "params": [
         {
-          "name": "c_ccn_4",
-          "sigma_perc": 10,
-          "type": "model",
+          "name": "vsedi_max",
+          "sigma_perc": -10,
+          "type": "graupel",
           "rand_func": "fixed"
         }
       ]
-    }, {
+    },
+    {
       "when_method": "full_perturbation",
       "params": [
         {
@@ -50,53 +54,36 @@
           "rand_func": "fixed"
         }
       ]
-    }, {
+    },
+    {
+      "when_method": "full_perturbation",
+      "params": [
+        {
+          "name": "inv_z",
+          "sigma_perc": -10,
+          "type": "model",
+          "rand_func": "fixed"
+        }
+      ]
+    },
+    {
       "when_method": "full_perturbation",
       "params": [
         {
           "name": "a_geo",
           "sigma_perc": 10,
-          "type": "rain",
+          "type": "graupel",
           "rand_func": "fixed"
         }
       ]
-    }, {
+    },
+    {
       "when_method": "full_perturbation",
       "params": [
         {
-          "name": "b_geo",
-          "sigma_perc": 10,
-          "type": "rain",
-          "rand_func": "fixed"
-        }
-      ]
-    }, {
-      "when_method": "full_perturbation",
-      "params": [
-        {
-          "name": "alpha",
-          "sigma_perc": 10,
-          "type": "rain",
-          "rand_func": "fixed"
-        }
-      ]
-    }, {
-      "when_method": "full_perturbation",
-      "params": [
-        {
-          "name": "beta",
-          "sigma_perc": 10,
-          "type": "rain",
-          "rand_func": "fixed"
-        }
-      ]
-    }, {
-      "when_method": "full_perturbation",
-      "params": [
-        {
-          "name": "b_vel",
-          "sigma_perc": 10,
-          "type": "rain",
+          "name": "a_geo",
+          "sigma_perc": -10,
+          "type": "graupel",
           "rand_func": "fixed"
         }
       ]

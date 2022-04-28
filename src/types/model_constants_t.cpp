@@ -65,11 +65,15 @@ void model_constants_t<codi::RealReverse>::register_input(
     std::cout << "register input of at most " << static_cast<int>(Cons_idx::n_items)
               << " vs size " << this->constants.size() << "\n";
 #endif
+//    if (traj_id == 0)
+//        std::cout << "Cons_idx " << static_cast<int>(Cons_idx::n_items) << " -- " << this->constants.size() << "\n";
     for (uint32_t i=0; i<static_cast<int>(Cons_idx::n_items); i++) {
         if (trace_check(i, false)) {
 #ifdef DEVELOP
             std::cout << "register input " << i << "\n";
 #endif
+//            if (traj_id == 0)
+//            std::cout << "register " << i << "\n";
             tape.registerInput(this->constants[i]);
         }
     }
@@ -149,8 +153,12 @@ void model_constants_t<codi::RealReverse>::get_gradient(
               << " uncertainty: " << uncertainty.size() << "\n";
 #endif
     for (int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
-        if (trace_check(i, false))
+        if (trace_check(i, false)) {
             out_vec[i] = this->constants[i].getGradient() * uncertainty[i];
+//            if (traj_id == 0)
+//                std::cout << "i " << i << " unc " << uncertainty[i]
+//                    << " grad " << this->constants[i].getGradient() << "\n";
+        }
 
     uint32_t idx = static_cast<uint32_t>(Cons_idx::n_items);
 #ifdef DEVELOP
@@ -264,10 +272,11 @@ void model_constants_t<codi::RealReverse>::get_gradients(
 #ifdef DEVELOP
         std::cout << "get_gradients after tape evaluate\n" << std::flush;
 #endif
+//        if (traj_id == 0)
+//            std::cout << "ii " << ii << " --- " << y_single_new[ii] << "\n";
         this->get_gradient(y_diff[ii]);
         tape.clearAdjoints();
     }
-//    tape.clearAdjoints();
 
 #ifdef DEVELOP
     std::cout << "get_gradients end\n";
@@ -852,6 +861,7 @@ void model_constants_t<float_t>::setup_model_constants(
     this->snow.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = snow_q_crit_c;
     this->snow.constants[static_cast<int>(Particle_cons_idx::s_vel)] = snow_s_vel;
 #endif
+    this->constants[static_cast<int>(Cons_idx::inv_z)] = 1.0/parcel_height;
     setup_dependent_model_constants();
     // Set the uncertainty of every parameter to scale the gradients.
     if (input.simulation_mode == create_train_set) {
@@ -865,9 +875,6 @@ void model_constants_t<float_t>::setup_model_constants(
 
 template<class float_t>
 void model_constants_t<float_t>::setup_dependent_model_constants() {
-    auto it = std::find(perturbed_idx.begin(), perturbed_idx.end(), static_cast<uint32_t>(Cons_idx::inv_z));
-    if (it == perturbed_idx.end())
-        this->constants[static_cast<int>(Cons_idx::inv_z)] = 1.0/parcel_height;
     // Performance constants for warm cloud; COSMO
     this->a2_scale = 1.72 / pow(get_at(this->constants, Cons_idx::R_a) , 7./8.);
     this->e1_scale = 1.0 / sqrt(get_at(this->constants, Cons_idx::R_a));

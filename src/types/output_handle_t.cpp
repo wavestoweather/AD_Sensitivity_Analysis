@@ -1709,6 +1709,9 @@ void output_handle_t::buffer_gradient(
             for (uint64_t j=0; j < num_par-num_par_init; j++)  // gradient of input parameter j
                 if (cc.trace_check(j, false)) {
                     if (n_snapshots%snapshot_index == 0) {
+//                        if (traj == 0 and n_snapshots == 1)
+//                            std::cout << output_grad_idx.size() << " state " << i
+//                            << " param " << j << " grad " << y_diff[i][j]/snapshot_index << "\n";
                         output_buffer[Buffer_idx::n_buffer+j][comp_idx*total_snapshots + n_snapshots] =
                             y_diff[i][j]/snapshot_index;
                     } else {

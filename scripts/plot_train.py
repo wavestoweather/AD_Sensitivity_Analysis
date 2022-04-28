@@ -17,7 +17,7 @@ def get_info(ds):
     print(f"# of output parameters ny: {ny}")
 
 
-def get_training_data(ds):
+def get_training_data(ds, oat=True):
     n = len(ds["ensemble"]) - 1
     ny = len(ds["Output_Parameter"])
     n_time = len(ds["time"])
@@ -35,25 +35,38 @@ def get_training_data(ds):
                 out_p
             ].sel({"ensemble": ens})
 
-    for ens in tqdm(ds["ensemble"].values):
-        if ens == 0:
-            continue
-        ens_i = int(ens - 1)
-        for pert in ds["perturbed"].values:
-            orig_val = ds["perturbation_value"].sel({"ensemble": 0, "perturbed": pert})
-            ds_pert = (
-                ds["perturbation_value"].sel({"ensemble": ens, "perturbed": pert})
-                - orig_val
-            )
-
+    if oat:
+        for ens in tqdm(ds["ensemble"].values):
+            if ens == 0:
+                continue
+            ens_i = int(ens - 1)
+            pert = ds["perturbed"].values[ens_i // 2]
+            ds_pert = ds["perturbation_value"].sel({"ensemble": ens, "perturbed": pert})
             for p_i, out_p in enumerate(ds["Output_Parameter"].values):
                 for traj_i, traj in enumerate(ds["trajectory"]):
-                    prediction_matrix[traj_i, :, ens_i, p_i] += (
+                    prediction_matrix[traj_i, :, ens_i, p_i] = (
                         ds["d" + pert].sel(
                             {"Output_Parameter": out_p, "trajectory": traj}
                         )
                         * ds_pert
                     )
+    else:
+        for ens in tqdm(ds["ensemble"].values):
+            if ens == 0:
+                continue
+            ens_i = int(ens - 1)
+            for pert in ds["perturbed"].values:
+                ds_pert = ds["perturbation_value"].sel(
+                    {"ensemble": ens, "perturbed": pert}
+                )
+                for p_i, out_p in enumerate(ds["Output_Parameter"].values):
+                    for traj_i, traj in enumerate(ds["trajectory"]):
+                        prediction_matrix[traj_i, :, ens_i, p_i] += (
+                            ds["d" + pert].sel(
+                                {"Output_Parameter": out_p, "trajectory": traj}
+                            )
+                            * ds_pert
+                        )
 
     ds_training = xr.Dataset(
         coords=dict(

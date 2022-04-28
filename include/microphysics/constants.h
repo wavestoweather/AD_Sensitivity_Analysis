@@ -60,10 +60,10 @@ typedef bool(*track_func)(const int&, const bool&);
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
 #if defined(B_EIGHT)
-#define num_par 472 /*!< Formerly (56*6+124+18) */
+#define num_par 476 /*!< Formerly (56*6+124+18) */
 #else
 /*!< Number of gradients. 56 for each particle + model constants + initial conditions (fromerly (56*6+134+18)) */
-#define num_par 478
+#define num_par 482
 #endif
 
 #endif
@@ -239,6 +239,7 @@ const std::vector<std::string> output_grad_idx = {
     "dg_ccn_1", "dg_ccn_2", "dg_ccn_3",
     "di_ccn_1", "di_ccn_2", "dhande_ccn_fac",
 #endif
+    "dD_br_threshold", "dk_br", "dD_br", "dc_br",
     // Rain
     "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_min_x_act",
     "drain_min_x_nuc_homo", "drain_min_x_nuc_hetero", "drain_min_x_melt",
