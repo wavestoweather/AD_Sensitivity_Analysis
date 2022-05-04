@@ -292,6 +292,7 @@ if( PnetCDF_FOUND )
     set(targets "${targets};${PNETCDF_LIBRARIES}")
 endif()
 
+set(CMAKE_FIND_DEBUG_MODE TRUE)
 message("~~~ NetCDF")
 set(NETCDF "Yes")
 find_package(NetCDF)
@@ -304,11 +305,12 @@ else()
 "
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CMake was not able to find your NetCDF installation (maybe it wasn't build using CMake).
-Please define NETCDF_INCLUDE_DIR pointing to your installation. Make sure
-that -lnetcdf can be used by your compiler.
+Please define NETCDF_DIR pointing to your installation as environment variable.
+Make sure that -lnetcdf can be used by your compiler.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ")
 endif()
+set(CMAKE_FIND_DEBUG_MODE FALSE)
 
 message("~~~ HDF5")
 # I usually prefer the Config mode for CMake to look for HDF5 but for our supercomputer
