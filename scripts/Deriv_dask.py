@@ -4,7 +4,6 @@ except:
     import scripts.latexify as latexify
 
 import numpy as np
-import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -21,7 +20,11 @@ import os
 
 from itertools import repeat
 from itertools import product
-from progressbar import progressbar as pb
+
+try:
+    from progressbar import progressbar as pb
+except:
+    from tqdm import tqdm as pb
 
 try:
     import dask_loader

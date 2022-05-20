@@ -1,0 +1,92 @@
+{
+  "segments": [
+    {
+      "when_method": "full_perturbation",
+      "params": [
+        {
+          "name": "b_geo",
+          "sigma_perc": 10,
+          "type": "snow",
+          "rand_func": "fixed"
+        }
+      ]
+    },
+    {
+      "when_method": "full_perturbation",
+      "params": [
+        {
+          "name": "b_geo",
+          "sigma_perc": -10,
+          "type": "snow",
+          "rand_func": "fixed"
+        }
+      ]
+    },
+    {
+      "when_method": "full_perturbation",
+      "params": [
+        {
+          "name": "vsedi_max",
+          "sigma_perc": 10,
+          "type": "graupel",
+          "rand_func": "fixed"
+        }
+      ]
+    },
+    {
+      "when_method": "full_perturbation",
+      "params": [
+        {
+          "name": "vsedi_max",
+          "sigma_perc": -10,
+          "type": "graupel",
+          "rand_func": "fixed"
+        }
+      ]
+    },
+    {
+      "when_method": "full_perturbation",
+      "params": [
+        {
+          "name": "inv_z",
+          "sigma_perc": 10,
+          "type": "model",
+          "rand_func": "fixed"
+        }
+      ]
+    },
+    {
+      "when_method": "full_perturbation",
+      "params": [
+        {
+          "name": "inv_z",
+          "sigma_perc": -10,
+          "type": "model",
+          "rand_func": "fixed"
+        }
+      ]
+    },
+    {
+      "when_method": "full_perturbation",
+      "params": [
+        {
+          "name": "a_geo",
+          "sigma_perc": 10,
+          "type": "graupel",
+          "rand_func": "fixed"
+        }
+      ]
+    },
+    {
+      "when_method": "full_perturbation",
+      "params": [
+        {
+          "name": "a_geo",
+          "sigma_perc": -10,
+          "type": "graupel",
+          "rand_func": "fixed"
+        }
+      ]
+    }
+  ]
+}

@@ -5,7 +5,8 @@ task_scheduler_t::task_scheduler_t(
     const int &rank,
     const int &n_processes,
     const int &simulation_mode) {
-    if ((simulation_mode == grid_sensitivity) || (simulation_mode == trajectory_sensitivity)) {
+    if ((simulation_mode == grid_sensitivity) || (simulation_mode == trajectory_sensitivity)
+        || (simulation_mode == create_train_set)) {
         static_scheduling = true;
     } else {
         static_scheduling = false;

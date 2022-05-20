@@ -57,7 +57,6 @@ template<class float_t>
 void saturation_adjust(
     const float_t &T_prime,
     const float_t &p_prime,
-    const float_t &p_sat,
     const float_t &qv_prime,
     const float_t &qc_prime,
     std::vector<float_t> &res,
@@ -231,7 +230,6 @@ template<class float_t>
 void saturation_adjust_legacy(
     const float_t &T_prime,
     const float_t &p_prime,
-    const float_t &p_sat,
     const float_t &qv_prime,
     const float_t &qc_prime,
     std::vector<float_t> &res,
@@ -414,7 +412,7 @@ void ccn_act_hande_akm(
         if (trace)
             std::cout << "traj: " << cc.traj_id << " Ascent dqv " << -delta_q << "\n";
 #endif
-        float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
+        float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor<float_t>();
         // Evaporation
         if (delta_q < 0.0)
             res[lat_cool_idx] += delta_e;
@@ -495,7 +493,7 @@ void ccn_act_hande(
         if (trace)
             std::cout << "traj: " << cc.traj_id << " Ascent dqv " << -delta_q << "\n";
 #endif
-        float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor(T_prime);
+        float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor<float_t>();
         // Evaporation
         if (delta_q < 0.0)
             res[lat_cool_idx] += delta_e;
@@ -643,7 +641,6 @@ void ice_activation_phillips(
     float_t &T_prime,
     float_t &S_i,
     float_t &n_inact,
-    bool &use_prog_in,
     std::vector<float_t> &res,
     model_constants_t<float_t> &cc) {
 
@@ -1424,10 +1421,10 @@ void rain_evaporation_sb(
     model_constants_t<float_t> &cc) {
 
     if (s_sw < 0.0 && qr_prime > 0.0 && qc_prime < get_at(cc.constants, Cons_idx::q_crit)) {
-        float_t D_v = diffusivity(T_prime, p_prime);
+        float_t D_v_local = diffusivity(T_prime, p_prime);
         // Equation (A2) of 10.1175/2008JAS2586.1
         float_t g_d = 2*M_PI /
-            ((get_at(cc.constants, Cons_idx::R_v)*T_prime)/(D_v*p_sat)
+            ((get_at(cc.constants, Cons_idx::R_v)*T_prime)/(D_v_local*p_sat)
             + (get_at(cc.constants, Cons_idx::L_wd)*get_at(cc.constants, Cons_idx::L_wd))
             / (get_at(cc.constants, Cons_idx::K_T)*get_at(cc.constants, Cons_idx::R_v)*T_prime*T_prime));
         float_t x_r = particle_mean_mass(qr_prime, Nr, get_at(cc.rain.constants, Particle_cons_idx::min_x_evap),
@@ -1505,7 +1502,7 @@ void rain_evaporation_sb(
             std::cout << "traj: " << cc.traj_id << " rain evaporation after Seifert (2008) dqv " << delta_qv << "\n";
 #endif
         float_t delta_e = latent_heat_evap(T_prime) * delta_qv
-            / specific_heat_water_vapor(T_prime);
+            / specific_heat_water_vapor<float_t>();
         // Evaporation, cooling
         if (delta_qv > 0.0)
             res[lat_cool_idx] -= delta_e;
@@ -1552,8 +1549,6 @@ void rain_evaporation_sb(
  */
 template<class float_t>
 void sedimentation_explicit(
-    float_t &T_prime,
-    float_t &S,
     float_t &qc_prime,
     float_t &qr_prime,
     float_t &Nr,
@@ -1565,7 +1560,6 @@ void sedimentation_explicit(
     float_t &Nh,
     float_t &qg_prime,
     float_t &Ng,
-    float_t &p_prime,
     std::vector<float_t> &res,
     model_constants_t<float_t> &cc) {
     // Every other than from cloud should be the same
@@ -1837,8 +1831,6 @@ void sedimentation_explicit(
  */
 template<class float_t>
 void evaporation(
-    float_t &qv_prime,
-    float_t &e_d,
     float_t &p_sat,
     float_t &s_sw,
     float_t &T_prime,
@@ -1932,7 +1924,6 @@ void vapor_dep_relaxation(
     float_t &Nh,
     float_t &s_si,
     float_t &p_sat_ice,
-    float_t &e_d,
     float_t &p_prime,
     float_t &T_prime,
     const double &EPSILON,
@@ -2329,8 +2320,6 @@ void graupel_hail_conv(
     float_t &qi_prime,
     float_t &qg_prime,
     float_t &Ng,
-    float_t &qh_prime,
-    float_t &Nh,
     float_t &p_prime,
     float_t &T_prime,
     float_t &T_c,
@@ -3301,14 +3290,14 @@ void snow_riming(
                     std::cout << "traj: " << cc.traj_id
                         << " More melting dqs " << rime_qs << ", dNs " << rime_n << "\n";
 #endif
-                float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_qr
+                float_t delta_e_enhance = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_qr
                                             / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
                 // Melting, cooling
                 if (rime_qr > 0.0)
-                    res[lat_cool_idx] -= delta_e;
+                    res[lat_cool_idx] -= delta_e_enhance;
                 // Freezing, heating
                 else
-                    res[lat_heat_idx] -= delta_e;
+                    res[lat_heat_idx] -= delta_e_enhance;
             } else {
                 // from multiplication
                 // Ice
@@ -3482,14 +3471,14 @@ void particle_cloud_riming(
                 std::cout << "traj: " << cc.traj_id
                     << " enhancement of melting dqr " << melt_q << ", dNr " << melt_n << "\n";
 #endif
-            float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q
+            float_t delta_e_enhance = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q
                                         / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
             // Melting, cooling
             if (melt_q > 0.0)
-                res[lat_cool_idx] -= delta_e;
+                res[lat_cool_idx] -= delta_e_enhance;
             // Freezing, heating
             else
-                res[lat_heat_idx] -= delta_e;
+                res[lat_heat_idx] -= delta_e_enhance;
         }
     }
 }
@@ -3631,15 +3620,15 @@ void particle_rain_riming(
                 std::cout << "traj: " << cc.traj_id
                     << " particle rain riming enhancement dqr " << melt_q << ", dNr " << melt_n << "\n";
 #endif
-            float_t delta_e = latent_heat_melt(
+            float_t delta_e_enhance = latent_heat_melt(
                 T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * melt_q
                 / specific_heat_ice(T_prime, get_at(cc.constants, Cons_idx::M_w));
             // Melting, cooling
             if (melt_q > 0.0)
-                res[lat_cool_idx] -= delta_e;
+                res[lat_cool_idx] -= delta_e_enhance;
             // Freezing, heating
             else
-                res[lat_heat_idx] -= delta_e;
+                res[lat_heat_idx] -= delta_e_enhance;
         }
     }
 }
@@ -3855,7 +3844,6 @@ void ice_melting(
     float_t &qi_prime,
     float_t &Ni,
     float_t &T_prime,
-    const double &dt,
     std::vector<float_t> &res,
     model_constants_t<float_t> &cc) {
 
@@ -4141,9 +4129,8 @@ void RHS_SB(std::vector<float_t> &res,
         EPSILON, res, cc);
 #endif
 
-    bool use_prog_in = false;
     ice_activation_phillips(qc_prime, qv_prime, T_prime,
-         S_i, n_inact, use_prog_in, res, cc);
+         S_i, n_inact, res, cc);
 
     // (optional) homogeneous nucleation using KHL06
     ice_nuc_hom(T_prime, w_prime, p_prime, qv_prime,
@@ -4153,7 +4140,7 @@ void RHS_SB(std::vector<float_t> &res,
 
     vapor_dep_relaxation(qv_prime, qi_prime, Ni,
         qs_prime, Ns, qg_prime, Ng,
-        qh_prime, Nh, s_si, p_sat_ice, e_d, p_prime,
+        qh_prime, Nh, s_si, p_sat_ice, p_prime,
         T_prime, EPSILON, dep_rate_ice, dep_rate_snow, D_vtp, res, cc);
 
     ////////////// ice-ice collisions
@@ -4164,7 +4151,7 @@ void RHS_SB(std::vector<float_t> &res,
     particle_particle_collection(qi_prime, Ni, qs_prime, Ns,
         qg_prime, Ng, T_prime, T_c, res, cc);
 
-    graupel_hail_conv(qc_prime, qr_prime, qi_prime, qg_prime, Ng, qh_prime, Nh,
+    graupel_hail_conv(qc_prime, qr_prime, qi_prime, qg_prime, Ng,
         p_prime, T_prime, T_c, res, cc);
 
     hail_collision(qh_prime, Nh, qs_prime, Ns, qi_prime, Ni, T_c, res, cc);
@@ -4236,7 +4223,7 @@ void RHS_SB(std::vector<float_t> &res,
 
     rain_freeze(qr_prime, Nr, T_prime, dt, res, cc);
 
-    ice_melting(qi_prime, Ni, T_prime, dt, res, cc);
+    ice_melting(qi_prime, Ni, T_prime, res, cc);
 
     snow_melting(qs_prime, Ns, T_prime, res, cc);
 
@@ -4247,7 +4234,7 @@ void RHS_SB(std::vector<float_t> &res,
 #ifdef TRACE_QS
     auto qs_before = res[qs_idx];
 #endif
-    evaporation(qv_prime, e_d, p_sat, s_sw, T_prime,
+    evaporation(p_sat, s_sw, T_prime,
         qs_prime, Ns, res[qs_idx], cc.snow, res, cc);
 
 #ifdef TRACE_QS
@@ -4258,7 +4245,7 @@ void RHS_SB(std::vector<float_t> &res,
 #ifdef TRACE_QG
     qg_before = res[qg_idx];
 #endif
-    evaporation(qv_prime, e_d, p_sat, s_sw, T_prime,
+    evaporation(p_sat, s_sw, T_prime,
         qg_prime, Ng, res[qg_idx], cc.graupel, res, cc);
 #ifdef TRACE_QG
     if (trace)
@@ -4268,7 +4255,7 @@ void RHS_SB(std::vector<float_t> &res,
 #ifdef TRACE_QI
     auto qi_before = res[qi_idx];
 #endif
-    evaporation(qv_prime, e_d, p_sat, s_sw, T_prime,
+    evaporation(p_sat, s_sw, T_prime,
         qi_prime, Ni, res[qi_idx], cc.ice, res, cc);
 #ifdef TRACE_QI
     if (trace)
@@ -4289,11 +4276,11 @@ void RHS_SB(std::vector<float_t> &res,
     rain_evaporation_sb(qr_prime, Nr, qv_prime, qc_prime,
         T_prime, p_prime, s_sw, p_sat, res, cc);
 
-    sedimentation_explicit(T_prime, S,
+    sedimentation_explicit(
         qc_prime, qr_prime, Nr,
         qs_prime, Ns, qi_prime, Ni,
         qh_prime, Nh, qg_prime, Ng,
-        p_prime, res, cc);
+        res, cc);
 
 #if defined TRACE_QC && defined IN_SAT_ADJ
     if (trace)
@@ -4306,7 +4293,8 @@ void RHS_SB(std::vector<float_t> &res,
 #endif
 
 #ifdef IN_SAT_ADJ
-    saturation_adjust(T_prime, p_prime, p_sat, qv_prime, qc_prime, res, cc);
+    saturation_adjust(T_prime, p_prime,
+                      qv_prime, qc_prime, res, cc);
 #endif
 
 #ifdef TRACE_QV

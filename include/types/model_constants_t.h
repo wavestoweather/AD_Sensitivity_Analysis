@@ -36,6 +36,7 @@ struct model_constants_t {
      *  Running id for the ensembles starting from this instance.
      */
     uint64_t ensemble_id;
+    int rank;
 
     /**
      * Running id for the trajectory in this ensemble.
@@ -260,7 +261,7 @@ struct model_constants_t {
     void get_gradients(
         std::vector<float_t> &y_single_new,
         std::vector< std::array<double, num_par > > &y_diff,
-        codi::RealReverse::Tape &tape) const;
+        codi::RealReverse::Tape &tape);
 
     /**
      * Get the gradients of all its members. You need to register them on a
@@ -270,20 +271,12 @@ struct model_constants_t {
      */
     void get_gradient(
         std::array<double, num_par> &out_vec,
-        std::vector<float_t> &y_single_new,
+        std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
         uint32_t ii) const;
 
-    /**
-     * Put any perturbed parameter to a property tree.
-     * This will compare the parameters to the constants
-     * available in constants.h, assuming this is only called during
-     * checkpoint writing.
-     *
-     * @params ptree Property tree, where a tree "model_constants" is being added.
-     */
-    // void put(pt::ptree &ptree) const;
+    void get_gradient(
+        std::array<double, num_par> &out_vec) const;
 
-    // int from_pt(pt::ptree &ptree);
 
 #if defined(RK4_ONE_MOMENT)
     /**
@@ -330,14 +323,19 @@ struct model_constants_t {
      *
      * @param ref_quant
      */
-    void setup_dependent_model_constants(
-        const reference_quantities_t &ref_quant);
+    void setup_dependent_model_constants();
 
     /**
-     * Set the uncertainty for every parameter. Currently it is only 10% for
-     * each parameter.
+     * Set the uncertainty for every parameter with a default value of 10% of each parameter.
      */
     void set_uncertainty();
+
+    /**
+     * Set the uncertainty for every parameter with scale * parameter value, i.e., scale = 0.1 results in
+     * 10% of each parameter.
+     * @param scale
+     */
+    void set_uncertainty(double scale);
 
     /**
      * Set time step from input netcdf file.
@@ -368,6 +366,22 @@ struct model_constants_t {
      * @param filename Path to json configuration file
      */
     void load_configuration(const std::string &filename);
+
+    /**
+     * Return the values of all perturbed parameters.
+     *
+     * @return Vector with perturbed values of model parameters.
+     */
+#ifdef OUT_DOUBLE
+    void get_perturbed_info(
+        std::vector<double> &p_values,
+        std::vector<uint64_t> &p_idx) const;
+#else
+    void get_perturbed_info(
+        std::vector<float> &perturbed,
+        std::vector<uint64_t> &param_idx) const;
+#endif
+
 
 //  private:
     /**

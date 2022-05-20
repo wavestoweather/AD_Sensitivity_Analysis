@@ -1,0 +1,230 @@
+#!/bin/bash
+#SBATCH --job-name=create_train_set
+#SBATCH --output=logs/create_train_set_%A.out
+#SBATCH --error=logs/create_train_set_%A.err
+#SBATCH -p parallel
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=32
+#SBATCH --cpus-per-task=1
+#SBATCH -A m2_zdvresearch
+#SBATCH --mem=32000
+#SBATCH -C skylake
+
+# -t 24:00:00, here are the expected run times
+#Time with one node: 01-06:33:00 dd:hh:mm for traj_t000000_p001.nc
+#Time with one node: 01-06:00:00 dd:hh:mm for traj_t000120_p001.nc
+#Time with one node: 01-04:07:00 dd:hh:mm for traj_t000240_p001.nc
+#Time with one node: 01-04:47:00 dd:hh:mm for traj_t000360_p001.nc
+#Time with one node: 01-11:06:00 dd:hh:mm for traj_t000480_p001.nc
+#Time with one node: 01-08:24:00 dd:hh:mm for traj_t000600_p001.nc
+#Time with one node: 01-08:38:00 dd:hh:mm for traj_t000720_p001.nc
+#Time with one node: 01-10:25:00 dd:hh:mm for traj_t000840_p001.nc
+#Time with one node: 01-08:03:00 dd:hh:mm for traj_t000960_p001.nc
+#Time with one node: 01-09:57:00 dd:hh:mm for traj_t001080_p001.nc
+#Time with one node: 01-10:43:00 dd:hh:mm for traj_t001200_p001.nc
+#Time with one node: 01-09:04:00 dd:hh:mm for traj_t001320_p001.nc
+#Time with one node: 01-08:27:00 dd:hh:mm for traj_t001440_p001.nc
+#Time with one node: 01-08:40:00 dd:hh:mm for traj_t001560_p001.nc
+#Time with one node: 01-07:36:00 dd:hh:mm for traj_t001680_p001.nc
+#Time with one node: 01-06:08:00 dd:hh:mm for traj_t001800_p001.nc
+#Time with one node: 01-04:30:00 dd:hh:mm for traj_t001920_p001.nc
+#Time with one node: 01-04:57:00 dd:hh:mm for traj_t002040_p001.nc
+#Time with one node: 01-04:07:00 dd:hh:mm for traj_t002160_p001.nc
+#Time with one node: 01-01:32:00 dd:hh:mm for traj_t002280_p001.nc
+#Time with one node: 00-23:46:00 dd:hh:mm for traj_t002400_p001.nc
+#Time with one node: 01-01:12:00 dd:hh:mm for traj_t002520_p001.nc
+#Time with one node: 01-00:29:00 dd:hh:mm for traj_t002640_p001.nc
+#Time with one node: 01-01:34:00 dd:hh:mm for traj_t002760_p001.nc
+#Time with one node: 01-00:38:00 dd:hh:mm for traj_t002880_p001.nc
+#Time with one node: 00-21:24:00 dd:hh:mm for traj_t003000_p001.nc
+#Time with one node: 00-21:49:00 dd:hh:mm for traj_t003120_p001.nc
+#Time with one node: 00-21:45:00 dd:hh:mm for traj_t003240_p001.nc
+#Time with one node: 00-21:17:00 dd:hh:mm for traj_t003360_p001.nc
+#Time with one node: 00-19:34:00 dd:hh:mm for traj_t003480_p001.nc
+#Time with one node: 00-21:15:00 dd:hh:mm for traj_t003600_p001.nc
+#Time with one node: 00-20:03:00 dd:hh:mm for traj_t003720_p001.nc
+#Time with one node: 00-17:53:00 dd:hh:mm for traj_t003840_p001.nc
+############################### This is the one and only script needed to run
+# run with
+# sbatch -t 1-10:00:00 create_train_set.job traj_t000000_p001
+
+module purge
+module load data/HDF5/1.12.1-gompi-2021b
+module load numlib/GSL/2.7-GCC-11.2.0
+module load devel/Boost/1.77.0-gompi-2021b
+module load devel/CMake/3.21.1
+module load data/netCDF/4.8.1-gompi-2021b
+
+# Store working directory to be safe
+cd ..
+SAVEDPWD=$(pwd)
+export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}
+SAVE_INPUTFILEPATH=/lustre/project/m2_zdvresearch/mahieron/data/vladiana_deduplicated/
+INPUT_FILEPATH="${AD_SIM_HOME}/data/"
+SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/vladiana_train_set/"
+OUTPUT_PATH="${AD_SIM_HOME}/output/"
+SAVE_TRACK_FILE="${SAVEDPWD}/configs/top40_config.json"
+SAVE_ENS_FILE="${SAVEDPWD}/configs/perturbation/bachelor_full.json"
+
+echo "Using ${1} and storing to ${SAVE_OUTPUTPATH}"
+
+cleanup(){
+    echo "Copy from ${OUTPUT_PATH}*.nc to ${SAVE_OUTPUTPATH}*.nc"
+    if [ ! -d "${SAVE_OUTPUTPATH}" ]
+    then
+        mkdir -p "${SAVE_OUTPUTPATH}"
+    fi
+    find ${OUTPUT_PATH} -type f -name "*.nc" -exec cp {} ${SAVE_OUTPUTPATH} \;
+    find ${OUTPUT_PATH} -type f -name "*.nc" -exec rm {} \;
+}
+
+# Copy executable, input file, configuration file
+# Create directories for temporary files, output data
+if [ ! -d "${SAVE_OUTPUTPATH}" ]
+then
+    mkdir -p "${SAVE_OUTPUTPATH}"
+fi
+
+if [ ! -d "${AD_SIM_HOME}/build/bin/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/build/bin/"
+fi
+
+cd ${AD_SIM_HOME}
+if [ ! -d ${AD_SIM_HOME}/build ]
+then
+    mkdir ${AD_SIM_HOME}/build
+fi
+cp -r ${SAVEDPWD}/src .
+cp -r ${SAVEDPWD}/cmake .
+cp -r ${SAVEDPWD}/include .
+cp ${SAVEDPWD}/CMakeLists.txt .
+
+cd ${AD_SIM_HOME}/build
+export NETCDF_DIR=/cluster/easybuild/broadwell/software/netCDF/4.7.3-gompi-2019b/
+cmake .. -Dnlohmann_json_DIR=/home/mahieron/software/json-3.10.5/build/ -DCODIPACK_INCLUDEDIR=/home/mahieron/custom/include/ -DCMAKE_BUILD_TYPE=release -DTARGET=simulation -DSILENT_MODE:BOOL=ON -DTRUSTED_DATA:BOOL=ON -DCOMPRESS_OUTPUT:BOOL=ON -DHDF5_DIR=/cluster/easybuild/broadwell/software/HDF5/1.12.1-gompi-2021b/ && make -j6
+cd ..
+
+if [ ! -d "${AD_SIM_HOME}/data/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/data/"
+fi
+
+if [ ! -d "${AD_SIM_HOME}/tmp/" ]
+then
+    mkdir -p "${AD_SIM_HOME}/tmp/"
+fi
+
+if [ ! -d "${AD_SIM_HOME}/configs" ]
+then
+    mkdir -p "${AD_SIM_HOME}/configs"
+fi
+
+cp ${SAVE_TRACK_FILE} ${AD_SIM_HOME}/configs/.
+cp ${SAVE_ENS_FILE} ${AD_SIM_HOME}/configs/.
+cp ${SAVEDPWD}/dmin_wetgrowth_lookup.dat ${AD_SIM_HOME}/
+cd ${AD_SIM_HOME}
+
+TRACK_FILE=${AD_SIM_HOME}/configs/top40_config.json
+ENS_FILE=${AD_SIM_HOME}/configs/bachelor_full.json
+
+if [ ! -d ${OUTPUT_PATH} ]
+then
+    mkdir -p ${OUTPUT_PATH}
+fi
+
+# The simulation mode determines how multiple processes are used
+# ensembles at different time steps and sensitvity analysis 0
+# sensitivity analysis 1
+# ensembles at different time steps 2
+# sensitivity analysis on grids 3
+# ensembles at fixed intervals and sensitivity analysis 4
+# create training data for nets 5
+SIMULATION_MODE="5"
+AUTO_TYPE="3"
+# Write to disk every WRITE_INDEX steps. If you experience I/O issues,
+# then set it to a multiple of SNAPSHOT_INDEX
+WRITE_INDEX="20000"
+# Time step in seconds
+TIMESTEP="20"
+# Get results every SNAPSHOT_INDEX steps, in this example every $TIMESTEP (20) seconds
+SNAPSHOT_INDEX="1"
+# Wether to take the data from the netcdf-file every 20 seconds (=1)
+# or just use the initial pressure, temperature and ascent
+# from the file and simulate microphysics
+# until the target time is reached (=0 not recommended)
+START_OVER_ENVIRONMENT="1"
+# Fix pressure, temperature and ascent during microphysics (=1)
+# or take any changes of them into account (=0)
+FIXED_ITERATION="0"
+# Warm up time in seconds for the model before any data is tracked
+WARM_UP="0"
+# Start index along the time dimension at which one should start the
+# simulation
+# An alternative way would be the option '-n START_TIME', where
+# START_TIME is the start time in seconds relative to the start of the
+# (convective or slantwise) ascend.
+# We can remove it as well if it is just 0
+START_TIME_IDX="0"
+# The number indicates how many iterations are done between updates of
+# the progressbar. On an Intel i7 there are between 80 and 200 steps per
+# second.
+PROGRESSBAR="0"
+
+function run_sim {
+    FILENAME=$1
+    INPUT_FILENAME="${INPUT_FILEPATH}${FILENAME}.nc"
+    cp "${SAVE_INPUTFILEPATH}${FILENAME}.nc" ${INPUT_FILEPATH}
+    TARGET_TIME_AFTER_START=$(ncdump -h "$INPUT_FILENAME" | grep -m 1 "time = " | sed 's/[^0-9]//g' )
+    TARGET_TIME_AFTER_START=$(($TARGET_TIME_AFTER_START * ${TIMESTEP} - 10 * ${TIMESTEP}))
+
+    echo "###################################"
+    echo "Running for ${INPUT_FILENAME} until ${TARGET_TIME_AFTER_START}"
+    echo ""
+
+    mpirun -n ${SLURM_NTASKS} ${AD_SIM_HOME}/build/bin/./trajectories \
+    -w ${WRITE_INDEX} \
+    -a ${AUTO_TYPE} \
+    -t ${FIXED_ITERATION} \
+    -f ${TARGET_TIME_AFTER_START} \
+    -d ${TIMESTEP} \
+    -i ${SNAPSHOT_INDEX} \
+    -b ${SIMULATION_MODE} \
+    -o ${OUTPUT_PATH}${FILENAME}.nc \
+    -e ${START_OVER_ENVIRONMENT} \
+    -p ${PROGRESSBAR} \
+    -g ${START_TIME_IDX} \
+    -l ${INPUT_FILENAME} \
+    -s ${TRACK_FILE} \
+    -u ${WARM_UP} \
+    -m ${ENS_FILE}
+
+    echo "Finished run for ${FILENAME}"
+    cleanup
+    rm "${INPUT_FILENAME}"
+}
+
+if [ $1 ]
+then
+    # Do it for all files
+    if [ "$1" == "all" ]
+    then
+        echo "Running for all files in ${1}"
+        for INPUT in ${SAVE_INPUTFILEPATH}*.nc
+        do
+            FILENAME=${INPUT##*/}
+            FILENAME=${FILENAME%.*}
+            run_sim $FILENAME
+        done
+    else
+        # Do it for a specific file
+        run_sim $1
+    fi
+else
+    # Do it for an example
+    FILENAME="traj_t000000_p001"
+    run_sim $FILENAME
+fi
+
+wait
+exit 0

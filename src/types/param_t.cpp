@@ -29,7 +29,7 @@ void param_t::add_type(
             particle_param = true;
         outparam_name = param_type;
     } else {
-        err = OUTPARAM_CONFIG_ERR;
+        SUCCESS_OR_DIE(OUTPARAM_CONFIG_ERR);
     }
 }
 
@@ -219,7 +219,6 @@ int param_t::from_json(
             j.at(first).get_to(m);
             this->add_mean(m);
         } else if (first == "name") {
-            // j.at(first).get_to(this->param_name);
             std::string p_name;
             j.at(first).get_to(p_name);
             err = add_name(p_name, cc);
@@ -280,6 +279,10 @@ void param_t::perturb(
             default:
                 std::cout << "Error in perturbing...\n";
         }
+        if (name >= static_cast<int>(pt_model->constants.size())
+            || name < 0) {
+            SUCCESS_OR_DIE(PERTURB_ERR);
+        }
         if (func_name == "fixed") {
             if (positive) {
                 pt_model->constants[name] = mean+sigma;
@@ -291,6 +294,10 @@ void param_t::perturb(
         }
         pt_model->perturbed_idx.push_back(name);
     } else {
+        if (name >= static_cast<int>(cc.constants.size())
+            || name < 0) {
+            SUCCESS_OR_DIE(PERTURB_ERR);
+        }
         if (func_name == "fixed") {
             if (positive) {
                 cc.constants[name] = mean+sigma;
@@ -300,7 +307,17 @@ void param_t::perturb(
         } else {
             cc.constants[name] = get_rand();
         }
+#ifdef DEBUG_SEG
+        std::cout << "rank " << cc.rank << " traj " << cc.traj_id << " attempt to add " << name <<
+        " with size " << cc.perturbed_idx.size() << "\n"
+                      << std::flush;
+#endif
         cc.perturbed_idx.push_back(name);
+#ifdef DEBUG_SEG
+        std::cout << "rank " << cc.rank << " traj " << cc.traj_id << " after add " << name <<
+                  " with size " << cc.perturbed_idx.size() << "\n"
+                  << std::flush;
+#endif
     }
 }
 
@@ -335,8 +352,15 @@ void param_t::reset(
         pt_model->constants[name] = mean;
         pt_model->perturbed_idx.pop_back();
     } else {
+#ifdef DEBUG_SEG
+        std::cout << "rank " << cc.rank << " before pop of " << name << " -- "
+            << cc.perturbed_idx[cc.perturbed_idx.size()-1] << " size " << cc.perturbed_idx.size() << "\n";
+#endif
         cc.constants[name] = mean;
         cc.perturbed_idx.pop_back();
+#ifdef DEBUG_SEG
+        std::cout << "rank " << cc.rank << " after pop " << cc.perturbed_idx.size() << "\n";
+#endif
     }
 }
 

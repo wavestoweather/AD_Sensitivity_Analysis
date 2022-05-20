@@ -2427,6 +2427,12 @@ in_params_numeric_value_dic = {
 # Entry 4 shall be dependent or independent parameter
 # What about spherical parameters?
 in_params_notation_mapping = {
+    "dg_ccn_1": [
+        "Parameter for calculating CCN concentration during CCN activation",
+        "",
+        "",
+        "independent",
+    ],
     "da_1": [
         "Dimensional coefficient used in one-moment warm physics for qc and qr calculation",
         "",

@@ -1,29 +1,22 @@
 #!/bin/bash
-#SBATCH --job-name=sim_model
-#SBATCH --output=logs/sim_model_%A.out
-#SBATCH --error=logs/sim_model_%A.err
-#SBATCH --time=09:00:00
+#SBATCH --job-name=vis_model
+#SBATCH --output=logs/vis_model_%A.out
+#SBATCH --error=logs/vis_model_%A.err
+#SBATCH --time=24:00:00
 #SBATCH -p parallel
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=16
+#SBATCH --ntasks-per-node=32
 #SBATCH --cpus-per-task=1
 #SBATCH -A m2_zdvresearch
-#SBATCH --mem=29000
+#SBATCH --mem=32000
 #SBATCH -C skylake
 
 ############################### This is the one and only script needed to run
 # run with
-# sbatch james_ens_all.job /lustre/project/m2_zdvresearch/mahieron/data/ad_trajectories/netcdf_input/no_exclusions_conv_400_median.nc_wcb
-# A single run takes about 4 minutes
-# With 183 runs we get
-# 12 hours 12 minutes
-# But actually roughly 2 hours are enough. Most time of the 4 minutes is copying data and compiling.
-
-# Also _quan25 or _quan75
-# Do the AD simulation
-# Run ensembles
-# Merge the output
-# Copy out
+# sbatch vis_all.job all
+# On my local machine with 4 cores, it takes about 2 to 2.5 hours per file.
+# There are roughly 68 files.
+# With 32 cores, we should be able to do that in about 19.2 hours.
 module purge
 module load data/HDF5/1.12.1-gompi-2021b
 module load numlib/GSL/2.7-GCC-11.2.0
@@ -36,14 +29,11 @@ cd ..
 SAVEDPWD=$(pwd)
 export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}
 ID_NUMBER=$SLURM_ARRAY_TASK_ID
-SAVE_INPUTFILENAME=$1
-TRAJ=0
-INPUT_FILENAME="${AD_SIM_HOME}/data/${SAVE_INPUTFILENAME##*/}"
-FOLDER_NAME=${SAVE_INPUTFILENAME##*/}
-FOLDER_NAME=${FOLDER_NAME%.*}
-SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/vladiana_keyparams/feb_22/${FOLDER_NAME}/"
-OUTPUT_PATH="${AD_SIM_HOME}/output/${FOLDER_NAME}/"
-SAVE_ENSEMBLECONFIG="${SAVEDPWD}/configs/all/"
+SAVE_INPUTFILEPATH=/lustre/project/m2_zdvresearch/mahieron/data/vladiana_deduplicated/
+INPUT_FILEPATH="${AD_SIM_HOME}/data/"
+SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/vladiana_vis/march_22/"
+OUTPUT_PATH="${AD_SIM_HOME}/output/"
+SAVE_TRACK_FILE="${SAVEDPWD}/configs/qr_vis_top40_config.json"
 
 echo "Using ${1} and storing to ${SAVE_OUTPUTPATH}"
 
@@ -54,6 +44,7 @@ cleanup(){
         mkdir -p "${SAVE_OUTPUTPATH}"
     fi
     find ${OUTPUT_PATH} -type f -name "*.nc" -exec cp {} ${SAVE_OUTPUTPATH} \;
+    find ${OUTPUT_PATH} -type f -name "*.nc" -exec rm {} \;
 }
 
 # Copy executable, input file, configuration file
@@ -80,64 +71,42 @@ cp ${SAVEDPWD}/CMakeLists.txt .
 
 cd ${AD_SIM_HOME}/build
 export NETCDF_DIR=/cluster/easybuild/broadwell/software/netCDF/4.7.3-gompi-2019b/
-cmake .. -Dnlohmann_json_DIR=/home/mahieron/software/json-3.10.5/build/ -DCODIPACK_INCLUDEDIR=/home/mahieron/custom/include/ -DCMAKE_BUILD_TYPE=release -DTARGET=simulation -DSILENT_MODE:BOOL=ON -DTRUSTED_DATA:BOOL=ON -DHDF5_DIR=/cluster/easybuild/broadwell/software/HDF5/1.12.1-gompi-2021b/ && make -j6
+cmake .. -Dnlohmann_json_DIR=/home/mahieron/software/json-3.10.5/build/ -DCODIPACK_INCLUDEDIR=/home/mahieron/custom/include/ -DCMAKE_BUILD_TYPE=release -DTARGET=simulation -DSILENT_MODE:BOOL=ON -DTRUSTED_DATA:BOOL=ON -DCOMPRESS_OUTPUT:BOOL=ON -DHDF5_DIR=/cluster/easybuild/broadwell/software/HDF5/1.12.1-gompi-2021b/ && make -j6
 cd ..
 
 if [ ! -d "${AD_SIM_HOME}/data/" ]
 then
     mkdir -p "${AD_SIM_HOME}/data/"
 fi
-cp ${SAVE_INPUTFILENAME} ${AD_SIM_HOME}/data/
 
 if [ ! -d "${AD_SIM_HOME}/tmp/" ]
 then
     mkdir -p "${AD_SIM_HOME}/tmp/"
 fi
 
-if [ ! -d "${AD_SIM_HOME}/scripts/" ]
+if [ ! -d "${AD_SIM_HOME}/configs" ]
 then
-    mkdir -p "${AD_SIM_HOME}/scripts/"
+    mkdir -p "${AD_SIM_HOME}/configs"
 fi
 
-if [ ! -d "${AD_SIM_HOME}/configs/all" ]
-then
-    mkdir -p "${AD_SIM_HOME}/configs/all"
-fi
-
-cp ${SAVE_ENSEMBLECONFIG}* ${AD_SIM_HOME}/configs/all/.
-cp ${SAVEDPWD}/configs/james_sens_config.json ${AD_SIM_HOME}/configs/.
+cp ${SAVE_TRACK_FILE} ${AD_SIM_HOME}/configs/.
 cp ${SAVEDPWD}/dmin_wetgrowth_lookup.dat ${AD_SIM_HOME}/
 cd ${AD_SIM_HOME}
 
-TRACK_FILE=${AD_SIM_HOME}/configs/james_sens_config.json
+TRACK_FILE=${AD_SIM_HOME}/configs/qr_vis_top40_config.json
 
 if [ ! -d ${OUTPUT_PATH} ]
 then
     mkdir -p ${OUTPUT_PATH}
 fi
 
-# Warm up time in seconds for the model before any data is tracked
-WARM_UP="1800"
-# Start index along the time dimension at which one should start the
-# simulation
-# An alternative way would be the option '-n START_TIME', where
-# START_TIME is the start time in seconds relative to the start of the
-# (convective or slantwise) ascend.
-# We can remove it as well if it is just 0
-START_TIME="-2800"
-# The number indicates how many iterations are done between updates of
-# the progressbar. On an Intel i7 there are between 1000 and 4000 steps per
-# second.
-PROGRESSBAR="0"
-# How many seconds shall be simulated
-TARGET_TIME_AFTER_START="26000"
 # The simulation mode determines how multiple processes are used
 # ensembles at different time steps and sensitvity analysis 0
 # sensitivity analysis 1
 # ensembles at different time steps 2
 # sensitivity analysis on grids 3
 # ensembles at fixed intervals and sensitivity analysis 4
-SIMULATION_MODE="4"
+SIMULATION_MODE="1"
 AUTO_TYPE="3"
 # Write to disk every WRITE_INDEX steps. If you experience I/O issues,
 # then set it to a multiple of SNAPSHOT_INDEX
@@ -154,16 +123,31 @@ START_OVER_ENVIRONMENT="1"
 # Fix pressure, temperature and ascent during microphysics (=1)
 # or take any changes of them into account (=0)
 FIXED_ITERATION="0"
+# Warm up time in seconds for the model before any data is tracked
+WARM_UP="1800"
+# Start index along the time dimension at which one should start the
+# simulation
+# An alternative way would be the option '-n START_TIME', where
+# START_TIME is the start time in seconds relative to the start of the
+# (convective or slantwise) ascend.
+# We can remove it as well if it is just 0
+START_TIME_IDX="0"
+# The number indicates how many iterations are done between updates of
+# the progressbar. On an Intel i7 there are between 1000 and 4000 steps per
+# second.
+PROGRESSBAR="0"
 
-FILENAME=${INPUT_FILENAME##*/}
-FILENAME=${FILENAME%.*}
+function run_sim {
+    FILENAME=$1
+    INPUT_FILENAME="${INPUT_FILEPATH}${FILENAME}.nc"
+    cp "${SAVE_INPUTFILEPATH}${FILENAME}.nc" ${INPUT_FILEPATH}
+    TARGET_TIME_AFTER_START=$(ncdump -h "$INPUT_FILENAME" | grep -m 1 "time = " | sed 's/[^0-9]//g' )
+    TARGET_TIME_AFTER_START=$(($TARGET_TIME_AFTER_START * ${TIMESTEP} - 10 * ${TIMESTEP}))
 
-for ENSEMBLE_CONFIG in ${AD_SIM_HOME}/configs/all/*
-do
-    SUFF=${ENSEMBLE_CONFIG##*/}
-    SUFF=${SUFF%.*}
-    echo "Running for ${SUFF}"
-    # -mca osc pt2pt
+    echo "###################################"
+    echo "Running for ${INPUT_FILENAME} until ${TARGET_TIME_AFTER_START}"
+    echo ""
+
     mpirun -n ${SLURM_NTASKS} ${AD_SIM_HOME}/build/bin/./trajectories \
     -w ${WRITE_INDEX} \
     -a ${AUTO_TYPE} \
@@ -172,18 +156,40 @@ do
     -d ${TIMESTEP} \
     -i ${SNAPSHOT_INDEX} \
     -b ${SIMULATION_MODE} \
-    -o ${OUTPUT_PATH}${SUFF}_${FILENAME}.nc \
+    -o ${OUTPUT_PATH}${FILENAME}.nc \
     -e ${START_OVER_ENVIRONMENT} \
     -p ${PROGRESSBAR} \
-    -n ${START_TIME} \
+    -g ${START_TIME_IDX} \
     -l ${INPUT_FILENAME} \
     -s ${TRACK_FILE} \
-    -m ${ENSEMBLE_CONFIG} \
-    -r ${TRAJ} \
     -u ${WARM_UP}
 
-done
+    echo "Finished run for ${FILENAME}"
+    cleanup
+    rm "${INPUT_FILENAME}"
+}
 
-cleanup
+if [ $1 ]
+then
+    # Do it for all files
+    if [ "$1" == "all" ]
+    then
+        echo "Running for all files in ${1}"
+        for INPUT in ${SAVE_INPUTFILEPATH}*.nc
+        do
+            FILENAME=${INPUT##*/}
+            FILENAME=${FILENAME%.*}
+            run_sim $FILENAME
+        done
+    else
+        # Do it for a specific file
+        run_sim $1
+    fi
+else
+    # Do it for an example
+    FILENAME="traj_t000000_p001"
+    run_sim $FILENAME
+fi
+
 wait
 exit 0

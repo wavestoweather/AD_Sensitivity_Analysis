@@ -59,24 +59,21 @@ void model_constants_t<codi::RealReverse>::register_input() {
 
 
 template<>
-void model_constants_t<codi::RealForwardVec<num_par_init> >::register_input(
-    codi::RealReverse::Tape &tape) {
-    // Nothing to do for the forward mode
-}
-
-
-template<>
 void model_constants_t<codi::RealReverse>::register_input(
     codi::RealReverse::Tape &tape) {
 #ifdef DEVELOP
     std::cout << "register input of at most " << static_cast<int>(Cons_idx::n_items)
               << " vs size " << this->constants.size() << "\n";
 #endif
+//    if (traj_id == 0)
+//        std::cout << "Cons_idx " << static_cast<int>(Cons_idx::n_items) << " -- " << this->constants.size() << "\n";
     for (uint32_t i=0; i<static_cast<int>(Cons_idx::n_items); i++) {
         if (trace_check(i, false)) {
 #ifdef DEVELOP
             std::cout << "register input " << i << "\n";
 #endif
+//            if (traj_id == 0)
+//            std::cout << "register " << i << "\n";
             tape.registerInput(this->constants[i]);
         }
     }
@@ -98,8 +95,9 @@ void model_constants_t<codi::RealReverse>::register_input(
             offset++;
         }
         for (auto &c : this->cloud.constants) {
-            if (trace_check(offset, false))
+            if (trace_check(offset, false)) {
                 tape.registerInput(c);
+            }
             offset++;
         }
 #if defined(RK4ICE)
@@ -148,24 +146,26 @@ void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradient(
 
 template<>
 void model_constants_t<codi::RealReverse>::get_gradient(
-    std::array<double, num_par> &out_vec,
-    std::vector<codi::RealReverse> &y_single_new,
-    uint32_t ii) const {
+    std::array<double, num_par> &out_vec) const {
 #ifdef DEVELOP
     std::cout << "get_gradient items = " << static_cast<int>(Cons_idx::n_items)
               << " out_vec: " << out_vec.size() << " constants " << this->constants.size()
               << " uncertainty: " << uncertainty.size() << "\n";
 #endif
     for (int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
-        if (trace_check(i, false))
+        if (trace_check(i, false)) {
             out_vec[i] = this->constants[i].getGradient() * uncertainty[i];
+//            if (traj_id == 0)
+//                std::cout << "i " << i << " unc " << uncertainty[i]
+//                    << " grad " << this->constants[i].getGradient() << "\n";
+        }
 
     uint32_t idx = static_cast<uint32_t>(Cons_idx::n_items);
 #ifdef DEVELOP
     std::cout << "get_gradient idx = " << idx << "\n";
 #endif
     if (local_num_par == num_par) {
-        this->rain.get_gradient(out_vec, idx, (traj_id == 5 && ii == qc_idx));
+        this->rain.get_gradient(out_vec, idx);
         this->cloud.get_gradient(out_vec, idx);
 #if defined(RK4ICE)
         this->graupel.get_gradient(out_vec, idx);
@@ -220,15 +220,6 @@ void model_constants_t<codi::RealReverse>::get_gradient(
 
 
 template<>
-void model_constants_t<codi::RealReverse>::get_gradients(
-    std::vector<codi::RealReverse> &y_single_new,
-    std::vector< std::array<double, num_par > > &y_diff) const {
-
-    // Nothing to do here
-}
-
-
-template<>
 void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradients(
     std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
     std::vector< std::array<double, num_par > > &y_diff) const {
@@ -242,19 +233,10 @@ void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradients(
 
 
 template<>
-void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradients(
-    std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
-    std::vector< std::array<double, num_par > > &y_diff,
-    codi::RealReverse::Tape &tape) const {
-    // Nothing to do here in the forward mode
-}
-
-
-template<>
 void model_constants_t<codi::RealReverse>::get_gradients(
     std::vector<codi::RealReverse> &y_single_new,
     std::vector< std::array<double, num_par > > &y_diff,
-    codi::RealReverse::Tape &tape) const {
+    codi::RealReverse::Tape &tape)  {
 
     for (uint32_t ii = 0 ; ii < num_comp ; ii++) {
         if (trace_check(ii, true)) {
@@ -262,6 +244,7 @@ void model_constants_t<codi::RealReverse>::get_gradients(
         std::cout << "register Output " << ii << "\n";
 #endif
             tape.registerOutput(y_single_new[ii]);
+//            tape.evaluate();
         }
     }
 #ifdef DEVELOP
@@ -289,9 +272,12 @@ void model_constants_t<codi::RealReverse>::get_gradients(
 #ifdef DEVELOP
         std::cout << "get_gradients after tape evaluate\n" << std::flush;
 #endif
-        this->get_gradient(y_diff[ii], y_single_new, ii);
+//        if (traj_id == 0)
+//            std::cout << "ii " << ii << " --- " << y_single_new[ii] << "\n";
+        this->get_gradient(y_diff[ii]);
         tape.clearAdjoints();
     }
+
 #ifdef DEVELOP
     std::cout << "get_gradients end\n";
 #endif
@@ -411,6 +397,8 @@ int model_constants_t<float_t>::from_json(
             std::map<uint32_t, double> perturbed;
             j.at(first).get_to(perturbed);
             for (auto const &p : perturbed) {
+                if (p.first >= this->constants.size())
+                    err = MODEL_CONS_CHECKPOINT_ERR;
                 this->perturbed_idx.push_back(p.first);
                 this->constants[p.first] = p.second;
             }
@@ -500,23 +488,23 @@ void model_constants_t<float_t>::setCoefficients(
 template<class float_t>
 void model_constants_t<float_t>::setup_cloud_autoconversion(
     particle_model_constants_t<float_t> &pc) {
-    auto nu = get_at(pc.constants, Particle_cons_idx::nu) + 1.0;
-    auto mu = get_at(pc.constants, Particle_cons_idx::mu);
+    float_t nu_local = get_at(pc.constants, Particle_cons_idx::nu) + 1.0;
+    float_t mu_local = get_at(pc.constants, Particle_cons_idx::mu);
     if (get_at(pc.constants, Particle_cons_idx::mu) == 1.0) {
         this->constants[static_cast<int>(Cons_idx::cloud_k_au)] =
             get_at(this->constants, Cons_idx::kc_autocon)
             / get_at(pc.constants, Particle_cons_idx::max_x) * 0.05
-            * (nu+1.0)*(nu+3.0) / pow(nu, 2);
+            * (nu_local+1.0)*(nu_local+3.0) / pow(nu_local, 2);
         this->constants[static_cast<int>(Cons_idx::cloud_k_sc)] =
-            get_at(this->constants, Cons_idx::kc_autocon) * (nu+1.0)/(nu);
+            get_at(this->constants, Cons_idx::kc_autocon) * (nu_local+1.0)/(nu_local);
     } else {
         this->constants[static_cast<int>(Cons_idx::cloud_k_au)] =
             get_at(this->constants, Cons_idx::kc_autocon)
             / get_at(pc.constants, Particle_cons_idx::max_x) * 0.05
-            * (2.0 * tgamma((nu+3.0)/mu)
-            * tgamma((nu+1.0)/mu) * pow(tgamma((nu)/mu), 2)
-            - 1.0 * pow(tgamma((nu+2.0)/mu), 2) * pow(tgamma((nu)/mu), 2))
-            / pow(tgamma((nu+1.0)/mu), 4);
+            * (2.0 * tgamma((nu_local+3.0)/mu_local)
+            * tgamma((nu_local+1.0)/mu_local) * pow(tgamma((nu_local)/mu_local), 2)
+            - 1.0 * pow(tgamma((nu_local+2.0)/mu_local), 2) * pow(tgamma((nu_local)/mu_local), 2))
+            / pow(tgamma((nu_local+1.0)/mu_local), 4);
         this->constants[static_cast<int>(Cons_idx::cloud_k_sc)] =
             get_at(this->constants, Cons_idx::kc_autocon)
             * get_at(pc.constants, Particle_cons_idx::c_z);
@@ -873,17 +861,20 @@ void model_constants_t<float_t>::setup_model_constants(
     this->snow.constants[static_cast<int>(Particle_cons_idx::q_crit_c)] = snow_q_crit_c;
     this->snow.constants[static_cast<int>(Particle_cons_idx::s_vel)] = snow_s_vel;
 #endif
-    setup_dependent_model_constants(ref_quant);
-    // Set the uncertainty of every parameter.
-    // Currently only uses 10% of the value.
-    set_uncertainty();
+    this->constants[static_cast<int>(Cons_idx::inv_z)] = 1.0/parcel_height;
+    setup_dependent_model_constants();
+    // Set the uncertainty of every parameter to scale the gradients.
+    if (input.simulation_mode == create_train_set) {
+        set_uncertainty(1.0);
+    } else {
+        // Default value of 10%.
+        set_uncertainty();
+    }
 }
 
 
 template<class float_t>
-void model_constants_t<float_t>::setup_dependent_model_constants(
-    const reference_quantities_t &ref_quant) {
-    this->constants[static_cast<int>(Cons_idx::inv_z)] = 1.0/parcel_height;
+void model_constants_t<float_t>::setup_dependent_model_constants() {
     // Performance constants for warm cloud; COSMO
     this->a2_scale = 1.72 / pow(get_at(this->constants, Cons_idx::R_a) , 7./8.);
     this->e1_scale = 1.0 / sqrt(get_at(this->constants, Cons_idx::R_a));
@@ -1014,58 +1005,64 @@ void model_constants_t<float_t>::setup_dependent_model_constants(
 
     // Setup graupel, snow and ice selfcollection
     this->graupel.constants[static_cast<int>(Particle_cons_idx::sc_coll_n)] = M_PI/8.0
-        * (2.0*coll_delta_11(this->graupel, this->graupel, 0)
+        * (2.0*coll_delta_11(this->graupel,  0)
            + coll_delta_12(this->graupel, this->graupel, 0))
-        * sqrt((2.0*coll_theta_11(this->graupel, this->graupel, 0)
+        * sqrt((2.0*coll_theta_11(this->graupel,  0)
            - coll_theta_12(this->graupel, this->graupel, 0)));
 
     this->snow.constants[static_cast<int>(Particle_cons_idx::sc_delta_n)] = (
-        2.0*coll_delta_11(this->snow, this->snow, 0) + coll_delta_12(this->snow, this->snow, 0));
+        2.0*coll_delta_11(this->snow, 0) + coll_delta_12(this->snow, this->snow, 0));
     this->snow.constants[static_cast<int>(Particle_cons_idx::sc_theta_n)] = (
-        2.0*coll_theta_11(this->snow, this->snow, 0) - coll_theta_12(this->snow, this->snow, 0));
+        2.0*coll_theta_11(this->snow,  0) - coll_theta_12(this->snow, this->snow, 0));
 
-    this->ice.constants[static_cast<int>(Particle_cons_idx::sc_delta_n)] = coll_delta_11(this->ice, this->ice, 0)
+    this->ice.constants[static_cast<int>(Particle_cons_idx::sc_delta_n)] = coll_delta_11(this->ice, 0)
         + coll_delta_12(this->ice, this->ice, 0)
-        + coll_delta_22(this->ice, this->ice, 0);
-    this->ice.constants[static_cast<int>(Particle_cons_idx::sc_delta_q)] = coll_delta_11(this->ice, this->ice, 0)
+        + coll_delta_22(this->ice, 0);
+    this->ice.constants[static_cast<int>(Particle_cons_idx::sc_delta_q)] = coll_delta_11(this->ice, 0)
         + coll_delta_12(this->ice, this->ice, 1)
-        + coll_delta_22(this->ice, this->ice, 1);
-    this->ice.constants[static_cast<int>(Particle_cons_idx::sc_theta_n)] = coll_theta_11(this->ice, this->ice, 0)
+        + coll_delta_22(this->ice, 1);
+    this->ice.constants[static_cast<int>(Particle_cons_idx::sc_theta_n)] = coll_theta_11(this->ice,  0)
         - coll_theta_12(this->ice, this->ice, 0)
-        + coll_theta_22(this->ice, this->ice, 0);
-    this->ice.constants[static_cast<int>(Particle_cons_idx::sc_theta_q)] = coll_theta_11(this->ice, this->ice, 0)
+        + coll_theta_22(this->ice, 0);
+    this->ice.constants[static_cast<int>(Particle_cons_idx::sc_theta_q)] = coll_theta_11(this->ice, 0)
         - coll_theta_12(this->ice, this->ice, 1)
-        + coll_theta_22(this->ice, this->ice, 1);
+        + coll_theta_22(this->ice, 1);
 #endif
 }
 
 
 template<class float_t>
 void model_constants_t<float_t>::set_uncertainty() {
+    set_uncertainty(0.1);
+}
+
+
+template<class float_t>
+void model_constants_t<float_t>::set_uncertainty(double scale) {
     for (uint32_t i=0; i < static_cast<uint32_t>(Cons_idx::n_items); ++i) {
-        this->uncertainty[i] = this->constants[i].getValue() * 0.1;
+        this->uncertainty[i] = this->constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->rain.uncertainty[i] = this->rain.constants[i].getValue() * 0.1;
+        this->rain.uncertainty[i] = this->rain.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->cloud.uncertainty[i] = this->cloud.constants[i].getValue() * 0.1;
+        this->cloud.uncertainty[i] = this->cloud.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->graupel.uncertainty[i] = this->graupel.constants[i].getValue() * 0.1;
+        this->graupel.uncertainty[i] = this->graupel.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->hail.uncertainty[i] = this->hail.constants[i].getValue() * 0.1;
+        this->hail.uncertainty[i] = this->hail.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->ice.uncertainty[i] = this->ice.constants[i].getValue() * 0.1;
+        this->ice.uncertainty[i] = this->ice.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Particle_cons_idx::n_items); ++i) {
-        this->snow.uncertainty[i] = this->snow.constants[i].getValue() * 0.1;
+        this->snow.uncertainty[i] = this->snow.constants[i].getValue() * scale;
     }
     for (uint32_t i=0; i < static_cast<uint32_t>(Init_cons_idx::n_items); ++i) {
         this->uncertainty[i + static_cast<uint32_t>(Cons_idx::n_items)] =
-            this->initial_conditions[i].getValue() * 0.1;
+                this->initial_conditions[i].getValue() * scale;
     }
 }
 
@@ -1088,6 +1085,12 @@ void model_constants_t<float_t>::print() {
 #endif
   std::cout << "\nModel constants:\n"
         << "----------------\n"
+        << "Code for tracking model states = " << this->track_state << "\n"
+        << "Codes for tracking model parameters = ";
+    for (auto const &t : track_param) {
+        std::cout << t << ", ";
+    }
+    std::cout << "\nCode for tracking initial conditions = " << this->track_ic << "\n"
         << "Final integration time = " << this->t_end_prime << " seconds\n"
         << "Nondimensional final integration time = " << this->t_end << "\n"
         << "Timestep = " << this->dt_prime << " seconds\n"
@@ -1180,6 +1183,58 @@ void model_constants_t<float_t>::load_configuration(
     }
 }
 
+#ifdef OUT_DOUBLE
+template<class float_t>
+void model_constants_t<float_t>::get_perturbed_info(
+    std::vector<float> &perturbed,
+    std::vector<uint64_t> &param_idx) const {
+#else
+template<class float_t>
+void model_constants_t<float_t>::get_perturbed_info(
+    std::vector<float> &perturbed,
+    std::vector<uint64_t> &param_idx) const {
+#endif
+
+    for (const auto idx : perturbed_idx) {
+#ifdef DEBUG_SEG
+        std::cout << "rank " << rank << " idx " << idx << " size " << constants.size() <<
+        " pert_size " << perturbed_idx.size() <<
+        " empty? " << perturbed_idx.empty() << "\n";
+#endif
+        perturbed.push_back(constants[idx].getValue());
+        param_idx.push_back(idx);
+    }
+    uint64_t offset = constants.size();
+    for (const auto idx : cloud.perturbed_idx) {
+        perturbed.push_back(cloud.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+    offset += cloud.constants.size();
+    for (const auto idx : rain.perturbed_idx) {
+        perturbed.push_back(rain.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+    offset += rain.constants.size();
+    for (const auto idx : ice.perturbed_idx) {
+        perturbed.push_back(ice.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+    offset += ice.constants.size();
+    for (const auto idx : snow.perturbed_idx) {
+        perturbed.push_back(snow.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+    offset += snow.constants.size();
+    for (const auto idx : graupel.perturbed_idx) {
+        perturbed.push_back(graupel.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+    offset += graupel.constants.size();
+    for (const auto idx : hail.perturbed_idx) {
+        perturbed.push_back(hail.constants[idx].getValue());
+        param_idx.push_back(idx + offset);
+    }
+}
 
 template class model_constants_t<codi::RealReverse>;
 template class model_constants_t<codi::RealForwardVec<num_par_init> >;

@@ -76,6 +76,7 @@ struct param_t{
     void reset(model_constants_t<float_t> &cc) const;
 
     std::string get_name() const;
+    int get_idx() const {return name;}
 };
 
 void to_json(nlohmann::json& j, const param_t& p);

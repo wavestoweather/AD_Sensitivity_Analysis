@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-// #include <boost/property_tree/ptree.hpp>
+
 #include <nlohmann/json.hpp>
 
 #include "include/misc/error.h"
@@ -14,7 +14,6 @@
 #include "include/types/param_t.h"
 #include "include/types/reference_quantities_t.h"
 
-// namespace pt = boost::property_tree;
 
 struct segment_t {
     std::vector<param_t> params;
@@ -28,7 +27,7 @@ struct segment_t {
     int value_name;
     int value_name_sig; /*<! Which parameter had the most significant impact so far >*/
     int out_param; /*<! Which output parameter in case of sensitivity methods >*/
-    uint32_t n_segments;
+    int n_segments;
     uint32_t err;
     uint32_t old_sign;
     double duration; /*<! Maximum duration integration time for this ensemble >*/
@@ -42,11 +41,12 @@ struct segment_t {
     const double tol = 1e-5;
 
     enum Method {
-        impact_change, sign_flip, value_method, repeated_time
+        impact_change, sign_flip, value_method, repeated_time, full_perturbation
     };
     std::unordered_map<std::string, Method> const table_method = {
         {"impact_change", Method::impact_change}, {"sign_flip", Method::sign_flip},
-        {"value", Method::value_method}, {"repeated_time", Method::repeated_time}
+        {"value", Method::value_method}, {"repeated_time", Method::repeated_time},
+        {"full_perturbation", Method::full_perturbation}
     };
     int method;
     enum Param {
@@ -390,7 +390,7 @@ struct segment_t {
      */
     template<class float_t>
     bool perturb_check(
-        const model_constants_t<float_t> &cc,
+//        const model_constants_t<float_t> &cc,
         const std::vector< std::array<double, num_par > > &gradients,
         const std::vector<float_t> &y,
         const double timestep);
@@ -440,4 +440,3 @@ struct segment_t {
 };
 
 void to_json(nlohmann::json& j, const segment_t& s);
-// void from_json(const nlohmann::json& j, segment_t& s);

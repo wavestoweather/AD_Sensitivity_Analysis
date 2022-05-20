@@ -64,8 +64,7 @@ struct checkpoint_t {
         model_constants_t<float_t> &cc,
         std::vector<double> &y,
         std::vector<segment_t> &segments,
-        input_parameters_t &input,
-        const reference_quantities_t &ref_quant);
+        input_parameters_t &input);
     /**
      * Same as above with an already loaded checkpoint instead of reading a
      * file.
@@ -75,8 +74,7 @@ struct checkpoint_t {
         model_constants_t<float_t> &cc,
         std::vector<double> &y,
         std::vector<segment_t> &segments,
-        input_parameters_t &input,
-        const reference_quantities_t &ref_quant);
+        input_parameters_t &input);
     /**
      * Same as above with an already loaded checkpoint instead of reading a
      * file and adjusting time steps for flushing output.
@@ -87,30 +85,7 @@ struct checkpoint_t {
         std::vector<double> &y,
         std::vector<segment_t> &segments,
         input_parameters_t &input,
-        const reference_quantities_t &ref_quant,
         output_handle_t &out_handler);
-
-    /**
-     * Store all data in a property tree and write it as a json file to disk.
-     */
-    template<class float_t>
-    void write_checkpoint(
-        std::string &filename,
-        model_constants_t<float_t> &cc,
-        const std::vector<float_t> &y,
-        std::vector<segment_t> &segments,
-        const input_parameters_t &input,
-        const double &current_time);
-
-    /**
-     * Write checkpoint to disk as a json file. A property tree must have been
-     * created before or nothing will be written.
-     */
-    template<class float_t>
-    void write_checkpoint(
-        std::string &filename,
-        const model_constants_t<float_t> &cc,
-        const std::vector<segment_t> &segments);
 
     /**
      * Print the checkpoint to std::out. For debugging purpose.

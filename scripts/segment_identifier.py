@@ -1,3 +1,5 @@
+from typing import Union
+
 import holoviews as hv
 import itertools
 import numpy as np
@@ -5,7 +7,11 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 import os.path
 import pandas as pd
-from progressbar import progressbar as pb
+
+try:
+    from progressbar import progressbar as pb
+except:
+    from tqdm import tqdm as pb
 from timeit import default_timer as timer
 import warnings
 import xarray as xr
@@ -730,13 +736,13 @@ def combine_predictions(df, def_ver=True, jum_ver=False, acc_ver=False, how=Fals
             if final_pred is None:
                 final_pred = df["detected_segment_jump"]
             else:
-                final_pred = final_pred | df["detected_segment_jump"]
+                final_pred = Union[final_pred, df["detected_segment_jump"]]
 
         if acc_ver:
             if final_pred is None:
                 final_pred = df["detected_segment_acc"]
             else:
-                final_pred = final_pred | df["detected_segment_acc"]
+                final_pred = Union[final_pred, df["detected_segment_acc"]]
     return final_pred
 
 
