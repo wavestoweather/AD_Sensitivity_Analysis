@@ -526,8 +526,9 @@ if __name__ == "__main__":
 
     err = 0
     if args.input[-1] == "/":
-        n = len(os.listdir(args.input))
-        for i, f in enumerate(os.listdir(args.input)):
+        files = [f for f in os.listdir(args.input) if os.path.isfile(args.input + f)]
+        n = len(files)
+        for i, f in enumerate(files):
             n_files += 1
             print(f"{Status}~*~*~*~Parsing {f} {i+1}/{n}~*~*~*~{ColourReset}")
             ds = load_dataset(args.input + f)

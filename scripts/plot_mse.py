@@ -9,7 +9,6 @@ from multiprocessing import Pool
 import numpy as np
 import os
 import pandas as pd
-from progressbar import progressbar as pb
 import xarray as xr
 
 try:
