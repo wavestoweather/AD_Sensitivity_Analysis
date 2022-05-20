@@ -71,9 +71,7 @@ global_args_t::global_args_t() {
 
 int global_args_t::parse_arguments(
     const int argc,
-    char* const * argv,
-    const int &rank,
-    const int &n_processes) {
+    char* const * argv) {
     /**
      * String used to parse commandline input.
      */

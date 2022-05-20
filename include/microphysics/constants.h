@@ -60,9 +60,10 @@ typedef bool(*track_func)(const int&, const bool&);
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
 #if defined(B_EIGHT)
-#define num_par (56*6+124+18)
+#define num_par 476 /*!< Formerly (56*6+124+18) */
 #else
-#define num_par (56*6+134+18)  /*!< Number of gradients. 56 for each particle + model constants + initial conditions */
+/*!< Number of gradients. 56 for each particle + model constants + initial conditions (fromerly (56*6+134+18)) */
+#define num_par 482
 #endif
 
 #endif
@@ -130,6 +131,23 @@ typedef bool(*track_func)(const int&, const bool&);
  * The output contains sensitivities.
  */
 #define limited_time_ensembles 4
+/**
+ * Old:
+ * Create a training set according to the configuration file. The output file contains
+ * impact matrices M_ix, where x is the time in minutes until the impact is evaluated
+ * and a prediction matrix M_px.
+ * Variable perturbed_val gives the perturbed value(s), perturbed_param names the perturbed parameter(s).
+ * Variable output parameter gives the names of the output parameters and the order at which those are
+ * stored for M_i and M_x.
+ *
+ * New:
+ * Input data are trajectories with one ensemble. Sensitivities are stored for
+ * ensemble 0 (not perturbed trajectories). Additionally variables are stored
+ * for each ensemble which parameter has been perturbed and by how much.
+ *
+ */
+#define create_train_set 5
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -222,6 +240,7 @@ const std::vector<std::string> output_grad_idx = {
     "dg_ccn_1", "dg_ccn_2", "dg_ccn_3",
     "di_ccn_1", "di_ccn_2", "dhande_ccn_fac",
 #endif
+    "dD_br_threshold", "dk_br", "dD_br", "dc_br",
     // Rain
     "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_min_x_act",
     "drain_min_x_nuc_homo", "drain_min_x_nuc_hetero", "drain_min_x_melt",

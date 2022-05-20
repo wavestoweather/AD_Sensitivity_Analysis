@@ -9,7 +9,6 @@ from multiprocessing import Pool
 import numpy as np
 import os
 import pandas as pd
-from progressbar import progressbar as pb
 import xarray as xr
 
 try:
@@ -870,8 +869,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description="""
-        Plot either mean squared deviation from perturbance over mean
-        predicted deviation calculated via the sensitivity where the predicted
+        Plot either mean squared deviation/error from perturbation over mean
+        predicted deviation/error calculated via the sensitivity where the predicted
         axis is at most 1 such that plots for particle numbers are not entirely
         correct. Or plot the model state variable and predicted squared error
         over time.

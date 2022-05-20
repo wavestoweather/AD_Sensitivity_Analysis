@@ -12,10 +12,10 @@ netcdf_reader_t::netcdf_reader_t(
 #if defined B_EIGHT
             buffer[i].resize(this->n_timesteps_buffer+21);
 #else
-            buffer[i].resize(this->n_timesteps_buffer+1);
+            this->buffer[i].resize(this->n_timesteps_buffer+1);
 #endif
         } else {
-            buffer[i].resize(this->n_timesteps_buffer);
+            this->buffer[i].resize(this->n_timesteps_buffer);
         }
     }
     already_open = false;
@@ -29,60 +29,36 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
-            "QV",
-#else
-            "qv",
-#endif
+            reader_names.at("QV"),
             &varid_once[Par_once_idx::qv]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
-            "QC",
-#else
-            "qc",
-#endif
+            reader_names.at("QC"),
             &varid_once[Par_once_idx::qc]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
-            "QR",
-#else
-            "qr",
-#endif
+            reader_names.at("QR"),
             &varid_once[Par_once_idx::qr]));
 
 #if defined(RK4ICE)
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
-            "QI",
-    #else
-            "qi",
-    #endif
+            reader_names.at("QI"),
             &varid_once[Par_once_idx::qi]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
-            "QS",
-    #else
-            "qs",
-    #endif
+            reader_names.at("QS"),
             &varid_once[Par_once_idx::qs]));
 #endif
 #if !defined(WCB) && defined(RK4ICE)
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined WCB || defined WCB2 || defined MET3D || defined B_EIGHT
-            "QG",
-    #else
-            "qg",
-    #endif
+            reader_names.at("QG"),
             &varid_once[Par_once_idx::qg]));
 #endif
 
@@ -99,29 +75,17 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined(B_EIGHT)
-            "QNG",
-    #else
-            "NCGRAUPEL",
-    #endif
+            reader_names.at("NCGRAUPEL"),
             &varid_once[Par_once_idx::ng]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined(B_EIGHT)
-            "QNI",
-    #else
-            "NCICE",
-    #endif
+            reader_names.at("NCICE"),
             &varid_once[Par_once_idx::ni]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined(B_EIGHT)
-            "QNS",
-    #else
-            "NCSNOW",
-    #endif
+            reader_names.at("NCSNOW"),
             &varid_once[Par_once_idx::ns]));
 #endif
 
@@ -129,7 +93,7 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "QNH",
+            reader_names.at("NCHAIL"),
             &varid_once[Par_once_idx::nh]));
 #endif
 
@@ -137,200 +101,132 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined(B_EIGHT)
-            "QNC",
-    #else
-            "NCCLOUD",
-    #endif
+            reader_names.at("NCCLOUD"),
             &varid_once[Par_once_idx::nc]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined(B_EIGHT)
-            "QNR",
-    #else
-            "NCRAIN",
-    #endif
+            reader_names.at("NCRAIN"),
             &varid_once[Par_once_idx::nr]));
 #endif
 
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#ifdef WCB
-                "ntim",
-#else
-                "time",
-#endif
+            reader_names.at("time"),
             &varid_once[Par_once_idx::time]));
 
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "z",
+            reader_names.at("z"),
             &varid[Par_idx::height]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined(WCB2)
-            "latitude",
-#else
-            "lat",
-#endif
+            reader_names.at("lat"),
             &varid[Par_idx::lat]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined(WCB2)
-            "longitude",
-#else
-            "lon",
-#endif
+            reader_names.at("lon"),
             &varid[Par_idx::lon]));
 
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined(B_EIGHT)
-            "time_after_asc_start",
-#elif defined(MET3D)
-            "time_after_ascent",
-#else
-            "time_rel",
-#endif
+            reader_names.at("time_rel"),
             &varid[Par_idx::time_after_ascent]));
 
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined(MET3D) && !defined(B_EIGHT)
-            "pressure",
-#elif defined WCB || defined WCB2
-            "P",
-#else
-            "p",
-#endif
+            reader_names.at("pressure"),
             &varid[Par_idx::pressure]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-#if defined MET3D || defined B_EIGHT || defined WCB || defined WCB2
-            "T",
-#else
-            "t",
-#endif
+            reader_names.at("T"),
             &varid[Par_idx::temperature]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "w",
+            reader_names.at("w"),
             &varid[Par_idx::ascent]));
 
 #if defined WCB2 || defined MET3D || defined B_EIGHT
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined B_EIGHT
-            "QI_in",
-    #else
-            "QI_IN",
-    #endif
+            reader_names.at("QI_IN"),
             &varid[Par_idx::qi_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined B_EIGHT
-            "QS_in",
-    #else
-            "QS_IN",
-    #endif
+            reader_names.at("QS_IN"),
             &varid[Par_idx::qs_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined B_EIGHT
-            "QR_in",
-    #else
-            "QR_IN",
-    #endif
+            reader_names.at("QR_IN"),
             &varid[Par_idx::qr_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined B_EIGHT
-            "QG_in",
-    #else
-            "QG_IN",
-    #endif
+            reader_names.at("QG_IN"),
             &varid[Par_idx::qg_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined B_EIGHT
-            "QNI_in",
-    #else
-            "NI_IN",
-    #endif
+            reader_names.at("NI_IN"),
             &varid[Par_idx::ni_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined B_EIGHT
-            "QNS_in",
-    #else
-            "NS_IN",
-    #endif
+            reader_names.at("NS_IN"),
             &varid[Par_idx::ns_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined B_EIGHT
-            "QNR_in",
-    #else
-            "NR_IN",
-    #endif
+            reader_names.at("NR_IN"),
             &varid[Par_idx::nr_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-    #if defined B_EIGHT
-            "QNG_in",
-    #else
-            "NG_IN",
-    #endif
+            reader_names.at("NG_IN"),
             &varid[Par_idx::ng_in]));
     #if defined(B_EIGHT)
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "QH_in",
+            reader_names.at("QH_IN"),
             &varid[Par_idx::qh_in]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "QNH_in",
+            reader_names.at("NH_IN"),
             &varid[Par_idx::nh_in]));
     #endif
     #if !defined(B_EIGHT)
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "conv_400",
+            reader_names.at("conv_400"),
             &varid[Par_idx::conv_400]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "conv_600",
+            reader_names.at("conv_600"),
             &varid[Par_idx::conv_600]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "slan_400",
+            reader_names.at("slan_400"),
             &varid[Par_idx::slan_400]));
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "slan_600",
+            reader_names.at("slan_600"),
             &varid[Par_idx::slan_600]));
     #endif
 #endif
@@ -338,7 +234,7 @@ void netcdf_reader_t::load_vars() {
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
-            "Q_TURBULENCE",
+            reader_names.at("Q_TURBULENCE"),
             &varid[Par_idx::q_turb]));
 #endif
 }
@@ -731,19 +627,13 @@ void netcdf_reader_t::set_dims(
         SUCCESS_OR_DIE(
             nc_inq_dimid(
                 ncid,
-#ifdef WCB
-                "ntra",
-#elif defined(MET3D) || defined(B_EIGHT)
-                "trajectory",
-#else
-                "id",
-#endif
+                reader_names.at("trajectory"),
                 &dimid[Dim_idx::trajectory_dim_idx]));
 #if !defined(B_EIGHT)
         SUCCESS_OR_DIE(
             nc_inq_dimid(
                 ncid,
-                "ensemble",
+                reader_names.at("ensemble"),
                 &dimid[Dim_idx::ensemble_dim_idx]));
 #endif
     }
@@ -775,11 +665,7 @@ void netcdf_reader_t::set_dims(
         SUCCESS_OR_DIE(
             nc_inq_dimid(
                 ncid,
-#ifdef WCB
-                "ntim",
-#else
-                "time",
-#endif
+                reader_names.at("time"),
                 &dimid[Dim_idx::time_dim_idx]));
         SUCCESS_OR_DIE(
             nc_inq_dimlen(
@@ -793,13 +679,14 @@ void netcdf_reader_t::set_dims(
         // reference quantities accordingly.
         size_t att_len;
         if (0 == nc_inq_att(ncid, varid[Par_idx::pressure], "units", NULL, &att_len)) {
-            char att_val[att_len+1];
+            std::vector<char> att_val(att_len+1);
+//            char att_val[att_len+1];
             SUCCESS_OR_DIE(nc_get_att(
-                ncid, varid[Par_idx::pressure], "units", att_val));
+                ncid, varid[Par_idx::pressure], "units", att_val.data()));
             att_val[att_len] = '\0';
-            if (std::strcmp(att_val, "hPa") == 0) {
+            if (std::strcmp(att_val.data(), "hPa") == 0) {
                 pascal_conv = 100;
-            } else if (std::strcmp(att_val, "Pa") == 0) {
+            } else if (std::strcmp(att_val.data(), "Pa") == 0) {
                 pascal_conv = 1;
             } else {
                 pascal_conv = 1;  // default
@@ -816,10 +703,10 @@ void netcdf_reader_t::init_netcdf(
 #ifdef MET3D
     double &start_time,
 #endif
-    const char *input_file,
+//    const char *input_file,
     const bool &checkpoint_flag,
     model_constants_t<float_t> &cc,
-    const int &simulation_mode,
+//    const int &simulation_mode,
     const double current_time,
     const reference_quantities_t &ref_quant) {
     std::vector<size_t> startp, countp;
@@ -1327,10 +1214,10 @@ template void netcdf_reader_t::init_netcdf<codi::RealReverse>(
 #ifdef MET3D
     double&,
 #endif
-    const char*,
+//    const char*,
     const bool&,
     model_constants_t<codi::RealReverse>&,
-    const int&,
+//    const int&,
     const double,
     const reference_quantities_t &);
 
@@ -1338,10 +1225,10 @@ template void netcdf_reader_t::init_netcdf<codi::RealForwardVec<num_par_init> >(
 #ifdef MET3D
     double&,
 #endif
-    const char*,
+//    const char*,
     const bool&,
     model_constants_t<codi::RealForwardVec<num_par_init> >&,
-    const int&,
+//    const int&,
     const double,
     const reference_quantities_t &);
 

@@ -1,6 +1,15 @@
 import math
+import matplotlib.pyplot as plt
+import matplotlib.colors as mpl_col
 import numpy as np
+import os
 import pandas as pd
+
+try:
+    from tqdm import tqdm
+except:
+    from progressbar import progressbar as tqdm
+import seaborn as sns
 import xarray as xr
 
 try:
@@ -173,7 +182,7 @@ def get_magnitude_list(ds, out_params, print_out=True, verbose=True):
             f"Number of distinct parameters by taking the top 3 orders of magnitude: {len(top_three_orders_list)}"
         )
         print("Parameters within the top order of magnitude:")
-        print(top_one_order_list)
+        print(top_two_orders_list)
     return top_one_order_list, top_two_orders_list, top_three_orders_list
 
 
@@ -207,7 +216,7 @@ def print_unique_params(top_sens_dic):
 
 def print_correlation_broad(ds, out_params):
     """
-    Print correlation coefficients (Spearman and Pearson) using each time step individually with all data,
+    Print correlation coefficients (Spearman, Pearson, and Kendall) using each time step individually with all data,
     for each type of state variable (first moment, second moment, sedimentation), and for each output variable.
     Parameters
     ----------
@@ -216,20 +225,27 @@ def print_correlation_broad(ds, out_params):
 
     """
     print(f"\nCorrelation with all data\n")
+
+    def get_corr(df, kind):
+        return df[["Predicted Squared Error", "Mean Squared Error"]].corr(kind)[
+            "Predicted Squared Error"
+        ][1]
+
+    def print_corr(df):
+        spearman = get_corr(df, "spearman")
+        pearson = get_corr(df, "pearson")
+        kendall = get_corr(df, "kendall")
+        print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
+        df = df.loc[df["Predicted Squared Error"] != 0]
+        n = len(np.unique(df["Input Parameter"]))
+        print(f"Correlation without zero parameters; total of {n} parameters")
+        spearman = get_corr(df, "spearman")
+        pearson = get_corr(df, "pearson")
+        kendall = get_corr(df, "kendall")
+        print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
+
     df = ds.to_dataframe().reset_index()
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
+    print_corr(df)
 
     print("\nFor each output variable type individually\n")
 
@@ -240,99 +256,19 @@ def print_correlation_broad(ds, out_params):
 
     print("##################First Moment (Number Count)")
     df = ds.sel({"Output Parameter": first_moment}).to_dataframe().reset_index()
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
+    print_corr(df)
 
     print("##################Second Moment (Mixing Ratio)")
     df = ds.sel({"Output Parameter": second_moment}).to_dataframe().reset_index()
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
+    print_corr(df)
 
     print("##################First Moment Sedimentation (Number Count)")
     df = ds.sel({"Output Parameter": first_sed}).to_dataframe().reset_index()
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
+    print_corr(df)
 
     print("##################Second Moment Sedimentation (Mixing Ratio)")
     df = ds.sel({"Output Parameter": second_sed}).to_dataframe().reset_index()
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print(f"Pearson: {pearson}")
+    print_corr(df)
 
     print("\nFor each output variable individually\n")
 
@@ -340,28 +276,7 @@ def print_correlation_broad(ds, out_params):
         out_p = out_p
         print(f"##################{out_p}")
         df = ds.sel({"Output Parameter": [out_p]}).to_dataframe().reset_index()
-        print(
-            df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-                "Predicted Squared Error"
-            ][1]
-        )
-        pearson_1 = df[["Predicted Squared Error", "Mean Squared Error"]].corr(
-            "pearson"
-        )["Predicted Squared Error"][1]
-        df = df.loc[df["Predicted Squared Error"] != 0]
-        n = len(np.unique(df["Input Parameter"]))
-        print(f"Correlation without zero parameters; total of {n} parameters")
-        print(
-            df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-                "Predicted Squared Error"
-            ][1]
-        )
-        pearson_2 = df[["Predicted Squared Error", "Mean Squared Error"]].corr(
-            "pearson"
-        )["Predicted Squared Error"][1]
-        print("Using pearson:")
-        print(pearson_1)
-        print(pearson_2)
+        print_corr(df)
 
 
 def print_correlation_mean(ds, out_params):
@@ -378,33 +293,31 @@ def print_correlation_mean(ds, out_params):
     )
     print("take the mean of those and look at the correlation\n")
     print(f"\nCorrelation with all data\n")
+
+    def get_corr(df, kind):
+        return df[["Predicted Squared Error", "Mean Squared Error"]].corr(kind)[
+            "Predicted Squared Error"
+        ][1]
+
+    def print_corr(df):
+        spearman = get_corr(df, "spearman")
+        pearson = get_corr(df, "pearson")
+        kendall = get_corr(df, "kendall")
+        print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
+        df = df.loc[df["Predicted Squared Error"] != 0]
+        n = len(np.unique(df["Input Parameter"]))
+        print(f"Correlation without zero parameters; total of {n} parameters")
+        spearman = get_corr(df, "spearman")
+        pearson = get_corr(df, "pearson")
+        kendall = get_corr(df, "kendall")
+        print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
+
     df = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
         .to_dataframe()
         .reset_index()
     )
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson_1 = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    df = df.loc[df["Predicted Squared Error"] != 0]
-    n = len(np.unique(df["Input Parameter"]))
-    print(f"Correlation without zero parameters; total of {n} parameters")
-    print(
-        df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
-    )
-    pearson_2 = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
-        "Predicted Squared Error"
-    ][1]
-    print("Using pearson:")
-    print(pearson_1)
-    print(pearson_2)
+    print_corr(df)
 
     print("\nFor each output variable individually\n")
     for out_p in out_params:
@@ -416,28 +329,7 @@ def print_correlation_mean(ds, out_params):
             .to_dataframe()
             .reset_index()
         )
-        print(
-            df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-                "Predicted Squared Error"
-            ][1]
-        )
-        pearson_1 = df[["Predicted Squared Error", "Mean Squared Error"]].corr(
-            "pearson"
-        )["Predicted Squared Error"][1]
-        df = df.loc[df["Predicted Squared Error"] != 0]
-        n = len(np.unique(df["Input Parameter"]))
-        print(f"Correlation without zero parameters; total of {n} parameters")
-        print(
-            df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-                "Predicted Squared Error"
-            ][1]
-        )
-        pearson_2 = df[["Predicted Squared Error", "Mean Squared Error"]].corr(
-            "pearson"
-        )["Predicted Squared Error"][1]
-        print("Using pearson:")
-        print(pearson_1)
-        print(pearson_2)
+        print_corr(df)
 
     print("\nCorrelation taking different number of top parameters\n")
     df = (
@@ -468,7 +360,10 @@ def print_correlation_mean(ds, out_params):
         pearson = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr(
             "pearson"
         )["Predicted Squared Error"][1]
-        print(f"Pearson: {pearson}")
+        kendall = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr(
+            "kendall"
+        )["Predicted Squared Error"][1]
+        print(f"Pearson: {pearson}, Kendall: {kendall}")
         tuples.append(
             (
                 n,
@@ -505,7 +400,10 @@ def print_correlation_mean(ds, out_params):
         pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
             "Predicted Squared Error"
         ][1]
-        print(f"Pearson: {pearson}")
+        kendall = df[["Predicted Squared Error", "Mean Squared Error"]].corr("kendall")[
+            "Predicted Squared Error"
+        ][1]
+        print(f"Pearson: {pearson}, Kendall: {kendall}")
     params = list(set(params))
     print(f"Number of parameters: {len(params)}")
     df_tmp = (
@@ -1052,19 +950,579 @@ def print_table_top_lists(top_n_lists, top_orders_lists):
     print(df)
 
 
+def traj_get_sum_derivatives(file_path):
+    """
+
+    Parameters
+    ----------
+    file_path : String
+        Path to NetCDF-files with sensitivities that used simulation_mode 1 (sensitivity analysis for trajectories)
+        in the AD-based C++ simulation.
+
+    Returns
+    -------
+    Dictionary with tracked output parameters as keys and a pandas.Dataframe with the sum of absolute values
+    of the gradients.
+    """
+    files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+    ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+    out_params = ds["Output_Parameter_ID"]
+    in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
+    param_name = []
+    for idx in out_params:
+        param_name.append(latexify.param_id_map[idx.value])
+
+    sums = {}
+    for f in tqdm(files):
+        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+        for out_p, out_name in zip(out_params, param_name):
+            ds[in_params] = np.abs(ds[in_params])
+            df = (
+                ds[in_params]
+                .sel({"Output_Parameter_ID": out_p})
+                .sum(dim=["trajectory", "time"], skipna=True)
+                .to_dataframe()
+                .reset_index()
+            )
+            df = df[in_params]
+
+            if out_name in sums.keys():
+                sums[out_name] += df
+            else:
+                sums[out_name] = df
+    return sums, param_name
+
+
+def traj_get_top_params(dict_of_df, param_name, n, orders):
+    """
+
+    Parameters
+    ----------
+    dict_of_df
+    param_name
+    n : int
+        Get the top n parameters for each tracked model state variable
+    orders : int or float
+        Get the parameters within orders many orders of magnitude for each tracked model state variable
+    Returns
+    -------
+    Set of parameters within the given order of magnitude, set of top n parameters,
+
+    """
+    top_sens_dic = {}
+    top_magn_sens_dic = {}
+
+    for out_name in param_name:
+        top_sens_dic[out_name] = dict_of_df[out_name].T.nlargest(n, 0).T.columns.values
+        tmp_df = dict_of_df[out_name].T
+        max_order = np.max(tmp_df[0])
+        top_magn_sens_dic[out_name] = tmp_df[
+            tmp_df[0] >= max_order / (10 ** orders)
+        ].T.columns.values
+
+    tmp = []
+    tmp2 = []
+    for out_name in param_name:
+        tmp.extend(top_magn_sens_dic[out_name])
+        tmp2.extend(top_sens_dic[out_name])
+    top_magn_set = set(tmp)
+    top10_set = set(tmp2)
+    return top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic
+
+
+def get_histogram(file_path, in_params=None, out_params=None, n_bins=100):
+    """
+
+    Parameters
+    ----------
+    file_path
+    in_params
+    out_params
+    n_bins
+
+    Returns
+    -------
+
+    """
+    files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+    ds = None
+    if in_params is None:
+        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+        in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
+
+    if out_params is None:
+        if ds is None:
+            ds = xr.open_dataset(
+                file_path + files[0], decode_times=False, engine="netcdf4"
+            )
+        out_params = ds["Output_Parameter_ID"]
+
+    param_name = []
+    for idx in out_params:
+        param_name.append(latexify.param_id_map[idx.values])
+    min_max = {}
+    min_max_in_params = {}
+    for out_p in param_name:
+        min_max_in_params[out_p] = {}
+
+    for f in tqdm(files):
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        for out_p, out_name in tqdm(
+            zip(out_params, param_name), leave=False, total=len(param_name)
+        ):
+            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            min_p = np.min(ds[out_name]).values
+            max_p = np.max(ds[out_name]).values
+            if out_name in min_max.keys():
+                if min_p < min_max[out_name][0]:
+                    min_max[out_name][0] = min_p
+                if max_p > min_max[out_name][1]:
+                    min_max[out_name][1] = max_p
+            else:
+                min_max[out_name] = [min_p, max_p]
+            for in_p in tqdm(in_params, leave=False):
+                min_p = np.min(ds_tmp[in_p]).values
+                max_p = np.max(ds_tmp[in_p]).values
+                if in_p in min_max_in_params[out_name]:
+                    if min_p < min_max_in_params[out_name][in_p][0]:
+                        min_max_in_params[out_name][in_p][0] = min_p
+                    if max_p > min_max_in_params[out_name][in_p][1]:
+                        min_max_in_params[out_name][in_p][1] = max_p
+                else:
+                    min_max_in_params[out_name][in_p] = [min_p, max_p]
+
+    edges = {}
+    edges_in_params = {}
+    for out_p in param_name:
+        delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
+        edges[out_p] = np.arange(
+            min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
+        )
+        edges_in_params[out_p] = {}
+        for in_p in in_params:
+            delta = (
+                min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
+            ) / n_bins
+            if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][1]:
+                continue
+                # delta = 1.0/n_bins
+                # edges_in_params[out_p][in_p] = np.arange(0.0, 1.0+delta/2, delta)
+            else:
+                edges_in_params[out_p][in_p] = np.arange(
+                    min_max_in_params[out_p][in_p][0],
+                    min_max_in_params[out_p][in_p][1] + delta / 2,
+                    delta,
+                )
+    hist = {}
+    hist_in_params = {}
+    for f in tqdm(files):
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        for out_p, out_name in tqdm(
+            zip(out_params, param_name), leave=False, total=len(param_name)
+        ):
+            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            hist_tmp, _ = np.histogram(ds[out_name], edges[out_name])
+            if out_name in hist:
+                hist[out_name] += hist_tmp
+            else:
+                hist[out_name] = hist_tmp
+                hist_in_params[out_name] = {}
+            for in_p in tqdm(in_params, leave=False):
+                if in_p not in edges_in_params[out_name]:
+                    continue
+                hist_tmp, _ = np.histogram(
+                    ds_tmp[in_p], edges_in_params[out_name][in_p]
+                )
+                if in_p in hist_in_params[out_name]:
+                    hist_in_params[out_name][in_p] += hist_tmp
+                else:
+                    hist_in_params[out_name][in_p] = hist_tmp
+
+    return hist, hist_in_params, edges, edges_in_params
+
+
+def traj_plot_histogram_out(
+    out_params, filename, edges, hist, width=24, height=12, title=None, verbose=False
+):
+    """
+    Giuen histograms from a sensitivity analysis with multiple trajectories, plot the histogram of an output parameter,
+    i.e., QV, latent_heat, latent_cool, etc.
+
+    Parameters
+    ----------
+    out_params : string or list-like of strings
+        Output parameter name or multiple output parameter names to plot the histogram for.
+    filename : string
+        Path and name of the output file. If the file already exists, a number will be appended.
+    edges : Dictionary of list-like of float
+        Edges for the histogram. Keys must be in out_params.
+    hist : Dictionary of list-like of int
+        Number of entries for each bin. Keys must be in out_params.
+    width : float
+        Width in inches
+    height : float
+        Height in inches
+    title : string
+        Title of the histogram. If none is given, a title will be generated.
+    """
+    sns.set(rc={"figure.figsize": (width, height)})
+
+    def plot_hist(out_p, title=None):
+        if title is None:
+            title = f"Histogram for {latexify.parse_word(out_p)}"
+        if verbose:
+            print(f"Plotting histogram for {out_p}")
+        ax = sns.barplot(x=edges[out_p][:-1], y=hist[out_p], color="seagreen")
+        x_labels = [f"{tick:1.1e}" for tick in edges[out_p][:-1]]
+        _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
+        _ = ax.set_title(title)
+        fig = ax.get_figure()
+        # fig = ax.fig
+        i = 0
+        store_path = filename.split(".")[0]
+        store_type = filename.split(".")[1]
+        save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+        while os.path.isfile(save):
+            i = i + 1
+            save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+        plt.tight_layout()
+        fig.savefig(save, dpi=300)
+        plt.clf()
+
+    if isinstance(out_params, list):
+        for out_p in out_params:
+            plot_hist(out_p, title)
+    else:
+        plot_hist(out_params, title)
+    if verbose:
+        print("All plots finished!")
+
+
+def traj_plot_histogram_inp(
+    in_params,
+    filename,
+    edges_in_params,
+    hist_in_params,
+    width=24,
+    height=12,
+    title=None,
+    verbose=False,
+):
+    """
+    Giuen histograms from a sensitivity analysis with multiple trajectories, plot three histograms per image with
+    \partial output / \partial model parameter
+    where output is QV, latent_heat and latent_cool. Plot one image per model_parameter.
+
+    Parameters
+    ----------
+    in_params : string or list-like of strings
+        Model parameter name or multiple input parameter names to plot the histogram for.
+    filename : string
+        Path and name of the output file. If the file already exists, a number will be appended.
+    edges_in_params : Dictionary of dictionary list-like of float
+        Edges for the histogram. First keys are output parameters, second keys must be in in_params.
+    hist_in_params : Dictionary of dictionary list-like of int
+        Number of entries for each bin. First keys are output parameters, second keys must be in in_params.
+    width : float
+        Width in inches
+    height : float
+        Height in inches
+    title : string
+        Title of the histogram. If none is given, a title will be generated.
+    """
+    sns.set(rc={"figure.figsize": (width, height)})
+
+    def plot_hist(out_params, in_p, title=None):
+
+        if len(out_params) != 3:
+            print("The number of output params should be three.")
+            print("Future versions will support varying numbers.")
+        ax1 = plt.subplot(311)
+        ax2 = plt.subplot(312)
+        ax3 = plt.subplot(313)
+        if verbose:
+            print(f"Plotting histogram w.r.t. {in_p}")
+
+        def create_fig(ax, out_p, in_p, title=None):
+            if in_p not in edges_in_params[out_p]:
+                return
+            if title is None:
+                title = f"Histogram for {out_p} w.r.t. {in_p}"
+            ax_t = sns.barplot(
+                x=edges_in_params[out_p][in_p][:-1],
+                y=hist_in_params[out_p][in_p],
+                color="seagreen",
+                ax=ax,
+            )
+            ax_t.set_yscale("log")
+            x_labels = [f"{tick:1.1e}" for tick in edges_in_params[out_p][in_p][:-1]]
+            _ = ax_t.set_xticklabels(x_labels, rotation=45, ha="right")
+            _ = ax_t.set_title(title)
+
+        create_fig(ax1, out_params[0], in_p, title)
+        create_fig(ax2, out_params[1], in_p, title)
+        create_fig(ax3, out_params[2], in_p, title)
+
+        plt.tight_layout()
+
+        i = 0
+        store_path = filename.split(".")[0]
+        store_type = filename.split(".")[1]
+        save = store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
+        while os.path.isfile(save):
+            i = i + 1
+            save = store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
+        plt.savefig(save, dpi=300)
+
+        plt.clf()
+
+    out_params = list(edges_in_params.keys())
+    if isinstance(in_params, list):
+        for in_p in in_params:
+            plot_hist(out_params, in_p, title)
+    else:
+        plot_hist(out_params, in_params, title)
+    if verbose:
+        print("All plots finished!")
+
+
+def plot_heatmap_traj(
+    in_params,
+    filename,
+    edges_in_params,
+    hist_in_params,
+    width=24,
+    height=24,
+    title=None,
+    verbose=False,
+):
+    """
+    Giuen histograms from a sensitivity analysis with multiple trajectories, plot a heatmap "model parameters" over
+    "bin number" where each row is another histogram for a certain model parameter.
+
+    Parameters
+    ----------
+    in_params : string or list-like of strings
+        Model parameter name or multiple input parameter names to plot the histogram for.
+    filename : string
+        Path and name of the output file. If the file already exists, a number will be appended.
+    edges_in_params : Dictionary of dictionary list-like of float
+        Edges for the histogram. First keys are output parameters, second keys must be in in_params.
+    hist_in_params : Dictionary of dictionary list-like of int
+        Number of entries for each bin. First keys are output parameters, second keys must be in in_params.
+    width : float
+        Width in inches
+    height : float
+        Height in inches
+    title : string
+        Title of the histogram. If none is given, a title will be generated.
+    """
+    sns.set(rc={"figure.figsize": (width, height)})
+    # sort the histogram by a simple similarity metric. It is not perfect but better than random.
+    out_params = list(edges_in_params.keys())
+    for out_p in out_params:
+        in_params_tmp = []
+        for in_p in in_params:
+            if in_p in hist_in_params[out_p]:
+                in_params_tmp.append(in_p)
+
+        corr_matrix = np.zeros((len(in_params_tmp), len(in_params)))
+        if verbose:
+            print(f"Create similarity matrix for {out_p}")
+        for i in range(len(in_params_tmp)):
+            for j in range(len(in_params_tmp)):
+                if i == j:
+                    corr_matrix[i, j] = 1
+                if i >= j:
+                    continue
+                corr_matrix[i, j] = np.corrcoef(
+                    hist_in_params[out_p][in_params_tmp[i]],
+                    hist_in_params[out_p][in_params_tmp[j]],
+                )[0][1]
+                corr_matrix[j, i] = corr_matrix[i, j]
+        if verbose:
+            print("Sort parameters according to correlation matrix")
+        best_row = 0
+        best_value = -1
+        for i in range(len(in_params_tmp)):
+            for j in range(len(in_params_tmp)):
+                if i >= j:
+                    continue
+                if best_value == -1:
+                    best_value = corr_matrix[i, j]
+                    best_row = i
+                elif best_value < corr_matrix[i, j]:
+                    best_value = corr_matrix[i, j]
+                    best_row = i
+        in_params_sorted = [in_params_tmp[best_row]]
+        previous_rows = [best_row]
+        if verbose:
+            print("Generate matrix for plotting")
+        for i in range(len(in_params_tmp) - 1):
+            next_row = 0
+            next_best_value = -1
+            for j in range(len(in_params_tmp)):
+                if j in previous_rows:
+                    continue
+                if next_best_value == -1:
+                    next_best_value = corr_matrix[i, j]
+                    next_row = j
+                elif next_best_value < corr_matrix[i, j]:
+                    next_best_value = corr_matrix[i, j]
+                    next_row = j
+            in_params_sorted.append(in_params_tmp[next_row])
+            previous_rows.append(next_row)
+        # old version with similarity calculated as difference in each time step.
+        # similarity_matrix = np.zeros((len(in_params_tmp), len(in_params)))
+        # if verbose:
+        #     print(f"Create similarity matrix for {out_p}")
+        # for i in range(len(in_params_tmp)):
+        #     for j in range(len(in_params_tmp)):
+        #         if i >= j:
+        #             continue
+        #         similarity_matrix[i, j] = np.sum(
+        #             np.abs( hist_in_params[out_p][in_params_tmp[i]] - hist_in_params[out_p][in_params_tmp[j]])
+        #         )
+        #         similarity_matrix[j, i] = similarity_matrix[i, j]
+        # # get the row with the best/smallest value and let the next row be the most similar one to the previous row
+        # best_row = 0
+        # best_value = -1
+        # if verbose:
+        #     print("Sort parameters according to similarity matrix")
+        # for i in range(len(in_params_tmp)):
+        #     for j in range(len(in_params_tmp)):
+        #         if i >= j:
+        #             continue
+        #         if best_value == -1:
+        #             best_value = similarity_matrix[i, j]
+        #             best_row = i
+        #         elif best_value > similarity_matrix[i, j]:
+        #             best_value = similarity_matrix[i, j]
+        #             best_row = i
+        # in_params_sorted = [in_params_tmp[best_row]]
+        # previous_rows = [best_row]
+        # if verbose:
+        #     print("Generate matrix for plotting")
+        # for i in range(len(in_params_tmp)-1):
+        #     next_row = 0
+        #     next_best_value = -1
+        #     for j in range(len(in_params_tmp)):
+        #         if j in previous_rows:
+        #             continue
+        #         if next_best_value == -1:
+        #             next_best_value = similarity_matrix[i, j]
+        #             next_row = j
+        #         elif next_best_value > similarity_matrix[i, j]:
+        #             next_best_value = similarity_matrix[i, j]
+        #             next_row = j
+        #     in_params_sorted.append(in_params_tmp[next_row])
+        #     previous_rows.append(next_row)
+
+        # found the correct order. Let's create a corresponding 2D-array and plot it
+        n_edges = len(edges_in_params[out_p][in_params_tmp[0]][:-1])
+        plot_matrix = np.zeros((len(in_params_tmp), n_edges))
+        for i, in_p in enumerate(in_params_sorted):
+            plot_matrix[i, :] = hist_in_params[out_p][in_p]
+        plot_matrix[plot_matrix == 0] = np.nan
+        ax = sns.heatmap(
+            plot_matrix,
+            cbar=True,
+            cmap="viridis",
+            norm=mpl_col.LogNorm(),
+            yticklabels=in_params_sorted,
+        )
+
+        if title is None:
+            title2 = f"Histogram for {out_p}"
+        else:
+            title2 = title
+        _ = ax.set_title(title2)
+        plt.tight_layout()
+        fig = ax.get_figure()
+        i = 0
+        store_path = filename.split(".")[0]
+        store_type = filename.split(".")[1]
+        save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+        while os.path.isfile(save):
+            i = i + 1
+            save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+        fig.savefig(save, dpi=300)
+        plt.clf()
+
+
 if __name__ == "__main__":
     import argparse
+    import pickle
 
     parser = argparse.ArgumentParser(
         description="""
-        Get statistics of the final, post-processed dataset.
+        Get statistics of a final, post-processed dataset with mean squared deviation and 
+        predicted mean squared deviation.
+        Or get statistics and plot histograms for files from a sensitivity analysis simulation along
+        trajectories, e.g., by using
+        python get_stats.py --file /project/meteo/w2w/Z2/Z2_data_gradients/ --out_file /path/to/pics/histogram.png 
+        The name of the plots will be changed automatically to store multiple plots.
+        Beware that creating the histogram may take a while. You can use 
+        --save_histogram /path/to/folder/
+        to store the histogram and edges to disk. 
+        Some statistics are done after plotting which may take a while as well.
         """
     )
     parser.add_argument(
         "--file",
         default="../data/vladiana_ensembles_postprocess/merged_independent.nc",
         help="""
-        Path to post-processed file.
+        Path to post-processed file or to a folder with many files from a sensitivity analysis simulation.
+        """,
+    )
+    parser.add_argument(
+        "--out_file",
+        default="../pics/histogram.png",
+        help="""
+        Path and name to store histogram plots if the input is a set of trajectories with a sensitivity analysis
+        simulation.
+        """,
+    )
+    parser.add_argument(
+        "--width",
+        default=24,
+        type=float,
+        help="""
+        Width in inches for histogram plots.
+        """,
+    )
+    parser.add_argument(
+        "--height",
+        default=12,
+        type=float,
+        help="""
+        Height in inches for histogram plots.
+        """,
+    )
+    parser.add_argument(
+        "--plot_type",
+        default="all",
+        help="""
+        Choose which plots to create. Options are
+        all: All plots.
+        hist_out: Histogram for output parameters.
+        hist_in: Histogram for all input parameters.
+        heat: Heatmap for all parameters.
+        none: No plots.
+        """,
+    )
+    parser.add_argument(
+        "--load_histogram",
+        default="no",
+        help="""
+        Load the histogram and edges with pickle from this path.
+        """,
+    )
+    parser.add_argument(
+        "--save_histogram",
+        default="no",
+        help="""
+        Store the histogram and edges with pickle to this path.
         """,
     )
     parser.add_argument(
@@ -1076,33 +1534,142 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    ds = xr.open_dataset(args.file, decode_times=False)
-    out_params, top20_list, top10_list, top20_sens_dic, top10_sens_dic = get_top_list(
-        ds, True, args.verbose
-    )
-    top_one_order_list, top_two_orders_list, top_three_orders_list = get_magnitude_list(
-        ds, out_params, True, args.verbose
-    )
+    if args.file.endswith("/"):
+        if args.plot_type != "none":
+            if args.load_histogram != "no":
+                file_path = args.load_histogram
+                if not file_path.endswith("/"):
+                    file_path += "/"
+                with open(file_path + "hist.pkl", "rb") as f:
+                    hist = pickle.load(f)
+                with open(file_path + "edges.pkl", "rb") as f:
+                    edges = pickle.load(f)
+                with open(file_path + "hist_in_params.pkl", "rb") as f:
+                    hist_in_params = pickle.load(f)
+                with open(file_path + "edges_in_params.pkl", "rb") as f:
+                    edges_in_params = pickle.load(f)
+            else:
+                hist, hist_in_params, edges, edges_in_params = get_histogram(args.file)
+            if args.save_histogram != "no":
+                file_path = args.save_histogram
+                if not file_path.endswith("/"):
+                    file_path += "/"
+                with open(file_path + "hist.pkl", "wb") as f:
+                    pickle.dump(hist, f)
+                with open(file_path + "edges.pkl", "wb") as f:
+                    pickle.dump(edges, f)
+                with open(file_path + "hist_in_params.pkl", "wb") as f:
+                    pickle.dump(hist_in_params, f)
+                with open(file_path + "edges_in_params.pkl", "wb") as f:
+                    pickle.dump(edges_in_params, f)
+            if args.plot_type == "all" or args.plot_type == "hist_out":
+                traj_plot_histogram_out(
+                    out_params=list(edges.keys()),
+                    filename=args.out_file,
+                    edges=edges,
+                    hist=hist,
+                    width=args.width,
+                    height=args.height,
+                    title=None,
+                    verbose=args.verbose,
+                )
+            if args.plot_type == "all" or args.plot_type == "hist_in":
+                traj_plot_histogram_inp(
+                    in_params=list(edges_in_params[list(edges.keys())[0]].keys()),
+                    filename=args.out_file,
+                    edges_in_params=edges_in_params,
+                    hist_in_params=hist_in_params,
+                    width=args.width,
+                    height=args.height,
+                    title=None,
+                    verbose=args.verbose,
+                )
+            if args.plot_type == "all" or args.plot_type == "heat":
+                plot_heatmap_traj(
+                    in_params=list(edges_in_params[list(edges.keys())[0]].keys()),
+                    filename=args.out_file,
+                    edges_in_params=edges_in_params,
+                    hist_in_params=hist_in_params,
+                    width=args.width,
+                    height=args.height,
+                    title=None,
+                    verbose=args.verbose,
+                )
+        print("########### Some statistics ###########")
+        files = [f for f in os.listdir(args.file) if os.path.isfile(args.file + f)]
+        ds = xr.open_dataset(args.file + files[0], decode_times=False, engine="netcdf4")
+        out_params = ds["Output_Parameter_ID"]
+        param_name = ["QV", "latent heat", "latent cool"]
+        in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
+        sums = {}
+        for f in tqdm(files):
+            ds = xr.open_dataset(
+                args.file + files[0], decode_times=False, engine="netcdf4"
+            )
+            for out_p, out_name in zip(out_params, param_name):
+                ds[in_params] = np.abs(ds[in_params])
+                df = (
+                    ds[in_params]
+                    .sel({"Output_Parameter_ID": out_p})
+                    .sum(dim=["trajectory", "time"], skipna=True)
+                    .to_dataframe()
+                    .reset_index()
+                )
+                df = df[in_params]
 
-    pd.set_option("display.max_rows", 100)
-    pd.set_option("display.max_columns", 10)
-    with pd.option_context(
-        "display.max_rows",
-        100,
-        "display.max_columns",
-        10,
-        "display.expand_frame_repr",
-        False,
-    ):
-        print_table_top_lists(
-            [top10_list, top20_list],
-            [top_one_order_list, top_two_orders_list, top_three_orders_list],
+                if out_name in sums.keys():
+                    sums[out_name] += df
+                else:
+                    sums[out_name] = df
+        top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic = traj_get_top_params(
+            sums, param_name, 10, 1
         )
+        print(f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}")
+        print(top_magn_set)
+        print("The parameters within a magnitude for each output Parameter:")
+        for out_p in top_magn_sens_dic.keys():
+            print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
+            print(top_magn_sens_dic[out_p])
+        print(f"No. of parameters within the top 10: {len(top10_set)}")
+        print(top10_set)
+        print("The top parameters 10 for each output Parameter:")
+        for out_p in top_sens_dic.keys():
+            print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
+            print(top_sens_dic[out_p])
+    else:
+        ds = xr.open_dataset(args.file, decode_times=False)
+        (
+            out_params,
+            top20_list,
+            top10_list,
+            top20_sens_dic,
+            top10_sens_dic,
+        ) = get_top_list(ds, True, args.verbose)
+        (
+            top_one_order_list,
+            top_two_orders_list,
+            top_three_orders_list,
+        ) = get_magnitude_list(ds, out_params, True, args.verbose)
 
-    print_unique_params(top10_sens_dic)
-    print_correlation_broad(ds, out_params)
-    print_correlation_mean(ds, out_params)
-    sort_key_list, table_dic = print_latex_tables(ds, 10, args.verbose)
-    print_variable_with_important_params(sort_key_list)
-    print_param_types(ds, table_dic)
-    print_large_impact_no_sens(ds)
+        pd.set_option("display.max_rows", 100)
+        pd.set_option("display.max_columns", 10)
+        with pd.option_context(
+            "display.max_rows",
+            100,
+            "display.max_columns",
+            10,
+            "display.expand_frame_repr",
+            False,
+        ):
+            print_table_top_lists(
+                [top10_list, top20_list],
+                [top_one_order_list, top_two_orders_list, top_three_orders_list],
+            )
+
+        print_unique_params(top10_sens_dic)
+        print_correlation_broad(ds, out_params)
+        print_correlation_mean(ds, out_params)
+        sort_key_list, table_dic = print_latex_tables(ds, 10, args.verbose)
+        print_variable_with_important_params(sort_key_list)
+        print_param_types(ds, table_dic)
+        print_large_impact_no_sens(ds)

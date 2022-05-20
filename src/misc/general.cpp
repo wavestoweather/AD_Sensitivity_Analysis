@@ -147,5 +147,10 @@ void print_segments(const std::vector<segment_t> &segments) {
         total_members *= pow(segment.n_members, segment.n_segments);
         i++;
     }
-    std::cout << "Total number of trajectories (worst case): " << total_members << "\n\n";
+    if (segments.size() > 0 && segments[0].method == 4) {
+        total_members = segments.size() + 1;
+        std::cout << "Total number of ensembles: " << total_members << "\n\n";
+    } else {
+        std::cout << "Total number of trajectories (worst case): " << total_members << "\n\n";
+    }
 }

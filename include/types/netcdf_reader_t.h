@@ -4,6 +4,8 @@
 #include <netcdf_par.h>
 
 #include <array>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "codi.hpp"
@@ -89,10 +91,10 @@ struct netcdf_reader_t {
 #ifdef MET3D
         double &start_time,
 #endif
-        const char *input_file,
+//        const char *input_file,
         const bool &checkpoint_flag,
         model_constants_t<float_t> &cc,
-        const int &simulation_mode,
+//        const int &simulation_mode,
         const double current_time,
         const reference_quantities_t &ref_quant);
 
@@ -234,6 +236,78 @@ struct netcdf_reader_t {
     };
 
     std::array<std::vector<double>, Par_idx::n_pars > buffer;
+#if defined B_EIGHT
+    std::unordered_map<std::string, const char*> const reader_names = {
+        {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
+        {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
+        {"QS", "QS"}, {"NCGRAUPEL", "QNG"}, {"NCICE", "QNI"},
+        {"NCSNOW", "QNS"}, {"NCHAIL", "QNH"}, {"NCCLOUD", "QNC"},
+        {"NCRAIN", "QNR"}, {"time", "time"}, {"lat", "lat"}, {"lon", "lon"},
+        {"time_rel", "time_after_asc_start"}, {"pressure", "p"}, {"T", "T"},
+        {"QI_IN", "QI_in"}, {"QS_IN", "QS_in"}, {"QR_IN", "QR_in"},
+        {"QG_IN", "QG_in"}, {"NI_IN", "QNI_in"}, {"NS_IN", "QNS_in"},
+        {"NR_IN", "QNR_in"}, {"NG_IN", "QNG_in"}, {"z", "z"}, {"w", "w"},
+        {"QH_IN", "QH_in"}, {"NH_IN", "QNH_in"},
+        {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}
+    };
+#elif defined WCB
+    std::unordered_map<std::string, const char*> const reader_names = {
+        {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
+        {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
+        {"QS", "QS"}, {"NCGRAUPEL", "NCGRAUPEL"}, {"NCICE", "NCICE"},
+        {"NCSNOW", "NCSNOW"}, {"NCHAIL", "NCHAIL"}, {"NCCLOUD", "NCCLOUD"}, {"NCRAIN", "NCRAIN"},
+        {"time", "ntim"}, {"lat", "lat"}, {"lon", "lon"},
+        {"time_rel", "time_rel"}, {"pressure", "P"}, {"T", "T"},
+        {"QI_IN", "QI_IN"}, {"QS_IN", "QS_IN"}, {"QR_IN", "QR_IN"},
+        {"QG_IN", "QG_IN"}, {"NI_IN", "NI_IN"}, {"NS_IN", "NS_IN"},
+        {"NR_IN", "NR_IN"}, {"NG_IN", "NG_IN"}, {"z", "z"}, {"w", "w"},
+        {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
+        {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "ntra"}, {"ensemble", "ensemble"}
+#elif defined WCB2
+    std::unordered_map<std::string, const char*> const reader_names = {
+        {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
+        {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
+        {"QS", "QS"}, {"NCGRAUPEL", "NCGRAUPEL"}, {"NCICE", "NCICE"},
+        {"NCSNOW", "NCSNOW"}, {"NCCLOUD", "NCCLOUD"}, {"NCRAIN", "NCRAIN"},
+        {"time", "time"}, {"lat", "latitude"}, {"lon", "longitude"},
+        {"time_rel", "time_rel"}, {"pressure", "P"}, {"T", "T"},
+        {"QI_IN", "QI_IN"}, {"QS_IN", "QS_IN"}, {"QR_IN", "QR_IN"},
+        {"QG_IN", "QG_IN"}, {"NI_IN", "NI_IN"}, {"NS_IN", "NS_IN"},
+        {"NR_IN", "NR_IN"}, {"NG_IN", "NG_IN"}, {"z", "z"}, {"w", "w"},
+        {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
+        {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"}
+    };
+#elif defined MET3D
+    std::unordered_map<std::string, const char*> const reader_names = {
+        {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
+        {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
+        {"QS", "QS"}, {"NCGRAUPEL", "NCGRAUPEL"}, {"NCICE", "NCICE"},
+        {"NCSNOW", "NCSNOW"}, {"NCCLOUD", "NCCLOUD"},
+        {"NCRAIN", "NCRAIN"}, {"NCHAIL", "NCHAIL"},
+        {"time", "time"}, {"lat", "lat"},
+        {"lon", "lon"}, {"time_rel", "time_after_ascent"},
+        {"pressure", "pressure"}, {"T", "T"},
+        {"QI_IN", "QI_IN"}, {"QS_IN", "QS_IN"}, {"QR_IN", "QR_IN"},
+        {"QG_IN", "QG_IN"}, {"NI_IN", "NI_IN"}, {"NS_IN", "NS_IN"},
+        {"NR_IN", "NR_IN"}, {"NG_IN", "NG_IN"}, {"z", "z"}, {"w", "w"},
+        {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
+        {"conv_400", "conv_400"}, {"conv_600", "conv_600"},
+        {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}
+    };
+#else
+    std::unordered_map<std::string, std::string> const reader_names = {
+        {"QV", "qv"}, {"QC", "qc"}, {"QR", "qr"},
+        {"qi", "qi"}, {"qg", "qg"}, {"qs", "qs"},
+        {"qh", "qh"}, {"time", "time"}, {"lat", "lat"}, {"lon", "lon"}, {"time_rel", "time_rel"}, {"pressure", "p"},
+        {"T", "t"}, {"z", "z"}, {"w", "w"},
+        {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"}
+    };
+#endif
 
     /**
      * Load variables from the netCDF file such that data can be loaded using

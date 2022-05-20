@@ -21,19 +21,9 @@ void particle_model_constants_t<codi::RealReverse>::register_input(
 
 
 template<>
-void particle_model_constants_t<codi::RealForwardVec<num_par_init> >::register_input(
-    codi::RealReverse::Tape &tape,
-    uint32_t &idx) {
-
-    // Nothing to be done for forward mode.
-}
-
-
-template<>
 void particle_model_constants_t<codi::RealReverse>::get_gradient(
     std::array<double, num_par> &out_vec,
-    uint32_t &idx,
-    const bool info) const {
+    uint32_t &idx) const {
 
     const uint32_t start_idx = idx;
     for (auto &c : this->constants) {
@@ -47,16 +37,6 @@ void particle_model_constants_t<codi::RealReverse>::get_gradient(
 }
 
 
-template<>
-void particle_model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradient(
-    std::array<double, num_par> &out_vec,
-    uint32_t &idx,
-    const bool info) const {
-
-    // Nothing to be done for forward mode
-}
-
-
 template<class float_t>
 int particle_model_constants_t<float_t>::from_json(
     const nlohmann::json& j) {
@@ -66,6 +46,8 @@ int particle_model_constants_t<float_t>::from_json(
         j.at("perturbed").get_to(perturbed);
         perturbed_idx.clear();
         for (auto const& pert : perturbed) {
+            if (pert.first >= this->constants.size())
+                err = MODEL_CONS_CHECKPOINT_ERR;
             this->constants[pert.first] = pert.second;
             perturbed_idx.push_back(pert.first);
         }

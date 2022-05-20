@@ -1,0 +1,19 @@
+{
+  "model_state_variable": [
+    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+    18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28
+  ],
+  "out_params": [
+    "drain_mu", "dk_r", "drho_vel", "da_HET", "dgraupel_a_vel", "drain_gamma", "drain_b_vel", "drain_alpha", "drain_min_x", "dsnow_b_geo", "dinv_z", "dgraupel_a_geo", "dgraupel_vsedi_max", "dice_vsedi_max", "drain_a_vel", "dsnow_vsedi_max", "dice_b_geo", "dice_a_geo", "dsnow_b_vel", "dgraupel_b_geo", "dp_sat_melt", "dD_rainfrz_gh", "drain_a_geo", "dgraupel_b_vel", "drain_b_geo", "dice_b_vel", "drain_nu", "drain_beta",
+    "dw",
+    "db_ccn_1",
+    "db_ccn_3",
+    "dc_ccn_2",
+    "dc_ccn_1",
+    "dc_ccn_3",
+    "db_ccn_2",
+    "dp_ccn", "dh_ccn_1", "dh_ccn_2", "dh_ccn_3",
+    "dg_ccn_1", "dg_ccn_2", "dg_ccn_3",
+    "di_ccn_1", "di_ccn_2", "dhande_ccn_fac"
+  ]
+}

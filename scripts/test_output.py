@@ -316,6 +316,94 @@ def test_nan_dim(ds, verbose):
     return err
 
 
+def test_saturation(ds, recalc, verbose):
+    """
+    Test if there are time steps which are over saturated for each trajectory.
+    Calculates the saturation if necessary.
+    Careful! Some datafiles may use the unit "percentage" when in fact, it is not percentage for "S".
+    You may have to recalculate the saturation in those cases.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset with trajectory data.
+    recalc : bool
+        Recalculate the saturation.
+    verbose : bool
+        If true: print all over saturations for each trajectory. Otherwise print only
+        the results.
+
+    Returns
+    -------
+    Number of trajectories and time steps with over saturation.
+    """
+    print("~*~*~*~Testing over saturation in each trajectory~*~*~*~")
+    err = 0
+    err_traj = 0
+
+    def sat_p_water(T):
+        p_sat_low_temp = 610.78
+        p_sat_const_a = 17.2693882
+        p_sat_const_b = 35.86
+        T_sat_low_temp = 273.15
+        return p_sat_low_temp * np.exp(
+            p_sat_const_a * (T - T_sat_low_temp) / (T - p_sat_const_b)
+        )
+
+    def calc_saturation(p, qv, T):
+        R_universal = 8.3144598
+        M_w = 0.018015265
+        M_a = 0.02896546
+        R_a = R_universal / M_a
+        R_v = R_universal / M_w
+        Epsilon = R_a / R_v
+        return (p * qv) / ((Epsilon + qv) * sat_p_water(T))
+
+    def is_oversat(p, qv, T):
+        return calc_saturation(p, qv, T) > 1
+
+    n_traj = len(ds["trajectory"])
+    if "S" not in ds:
+        recalc = True
+    si_unit = 1
+    sat_unit = 1
+    if "S" in ds and not recalc:
+        if ds["S"].attrs["units"] == "percentage":
+            sat_unit = 100
+    if ds["pressure"].attrs["units"] == "hPa":
+        si_unit = 100
+    for i in range(n_traj):
+        ds_t = ds.isel({"trajectory": i})
+        if recalc:
+            if "pressure" in ds_t:
+                err_tmp = np.sum(
+                    is_oversat(si_unit * ds_t["pressure"], ds_t["QV"], ds_t["T"])
+                ).item()
+            else:
+                err_tmp = np.sum(
+                    is_oversat(si_unit * ds_t["p"], ds_t["QV"], ds_t["T"])
+                ).item()
+        else:
+            err_tmp = np.sum((np.asarray(ds_t["S"]) > sat_unit))
+        if err_tmp > 0:
+            err_traj += 1
+            if verbose:
+                n = len(ds_t["time"]) * len(ds_t["ensemble"])
+                print(
+                    f"{Warning}There are {err_tmp} ({(err_tmp/n):2.2f}%) over saturated steps in trajectory {i}{ColourReset}"
+                )
+        err += err_tmp
+    if err > 0:
+        print(
+            f"{Error}Failed: Over saturation detected for {err_traj} of {n_traj} trajectories.{ColourReset}\n"
+        )
+    else:
+        print(
+            f"{Success}No over saturation for all {n_traj} trajectories detected.{ColourReset}\n"
+        )
+    return err, err_traj
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -389,6 +477,21 @@ if __name__ == "__main__":
         """,
     )
     parser.add_argument(
+        "--test_saturation",
+        action="store_true",
+        help="""
+        Test over saturation in the dataset for all trajectories (not dimensions). 
+        """,
+    )
+    parser.add_argument(
+        "--calc_saturation",
+        action="store_true",
+        help="""
+        During test for over saturation in the dataset for all trajectories (not dimensions):
+        Recalculate the saturation.
+        """,
+    )
+    parser.add_argument(
         "--verbosity",
         type=int,
         default=0,
@@ -416,12 +519,16 @@ if __name__ == "__main__":
         if args.test_nan_vars:
             errors += test_nan_col(ds, (args.verbosity > 3))
         errors += test_sizes(ds, args.allowed_perc, args.verbosity)
+        if args.test_saturation:
+            _, err_traj = test_saturation(ds, args.calc_saturation, args.verbosity)
+            errors += err_traj
         return errors
 
     err = 0
     if args.input[-1] == "/":
-        n = len(os.listdir(args.input))
-        for i, f in enumerate(os.listdir(args.input)):
+        files = [f for f in os.listdir(args.input) if os.path.isfile(args.input + f)]
+        n = len(files)
+        for i, f in enumerate(files):
             n_files += 1
             print(f"{Status}~*~*~*~Parsing {f} {i+1}/{n}~*~*~*~{ColourReset}")
             ds = load_dataset(args.input + f)
