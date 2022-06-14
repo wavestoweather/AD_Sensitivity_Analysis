@@ -70,7 +70,7 @@ struct particle_model_constants_t{
      *
      * @param title Name of particle
      */
-    void print(const std::string &title, std::ostream &os=std::cout);
+    void print(const std::string &title, std::ostream &os = std::cout);
 
     int from_json(const nlohmann::json& j);
 };

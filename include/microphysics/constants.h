@@ -534,7 +534,7 @@ enum class Cons_idx: uint32_t{
 #endif
 #if defined(B_EIGHT)
     p_ccn,
-    h_ccn_1, h_ccn_2, // h_ccn_3,
+    h_ccn_1, h_ccn_2,
     g_ccn_1, g_ccn_2, g_ccn_3,
     i_ccn_1, i_ccn_2,
     hande_ccn_fac,

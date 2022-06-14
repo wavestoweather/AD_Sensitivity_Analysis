@@ -223,7 +223,7 @@ void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradients(
     for (uint32_t ii = 0 ; ii < num_comp ; ii++) {
         if (trace_check(ii, true)) {
             double ref_value = 1.0;
-            switch(ii) {
+            switch (ii) {
                 case p_idx:
                     ref_value = ref_quant.pref;
                     break;
@@ -268,7 +268,7 @@ void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradients(
                 default:
                     ref_value = 1.0;
             }
-            this->get_gradient(y_diff[ii], y_single_new, ii);
+            this->get_gradient(y_diff[ii], y_single_new, ii, ref_value);
         }
     }
 }
@@ -279,7 +279,7 @@ void model_constants_t<codi::RealReverse>::get_gradients(
     std::vector<codi::RealReverse> &y_single_new,
     std::vector< std::array<double, num_par > > &y_diff,
     codi::RealReverse::Tape &tape,
-    const reference_quantities_t &ref_quant))  {
+    const reference_quantities_t &ref_quant)  {
 
     for (uint32_t ii = 0 ; ii < num_comp ; ii++) {
         if (trace_check(ii, true)) {
@@ -315,7 +315,7 @@ void model_constants_t<codi::RealReverse>::get_gradients(
         std::cout << "get_gradients after tape evaluate\n" << std::flush;
 #endif
         double ref_value = 1.0;
-        switch(ii) {
+        switch (ii) {
             case p_idx:
                 ref_value = ref_quant.pref;
                 break;

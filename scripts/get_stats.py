@@ -1030,7 +1030,9 @@ def traj_get_top_params(dict_of_df, param_name, n, orders):
     return top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic
 
 
-def get_histogram(file_path, in_params=None, out_params=None, n_bins=100, additional_params=None):
+def get_histogram(
+    file_path, in_params=None, out_params=None, n_bins=100, additional_params=None
+):
     """
 
     Parameters
@@ -1159,7 +1161,6 @@ def get_histogram(file_path, in_params=None, out_params=None, n_bins=100, additi
         if additional_params is not None:
             for out_p in tqdm(additional_params, leave=False):
                 hist_tmp, _ = np.histogram(ds[out_p], edges[out_p])
-
 
     return hist, hist_in_params, edges, edges_in_params
 

@@ -36,7 +36,7 @@ void netcdf_reader_t::load_vars() {
             &nvars,
             NULL,
             NULL));
-    for (int i=0; i<nvars; ++i) {
+    for (int i=0; i < nvars; ++i) {
         char name[NC_MAX_NAME + 1];
         SUCCESS_OR_DIE(
             nc_inq_varname(
@@ -316,7 +316,7 @@ void netcdf_reader_t::buffer_params(
     countp2.push_back(n_timesteps_buffer + additional_buffer);
 #endif
     for (int i=0; i < Par_idx::n_pars; i++) {
-        if (!asc600_bool and i == Par_idx::asc600) continue;
+        if (!asc600_bool && i == Par_idx::asc600) continue;
         if (i == Par_idx::ascent || i == Par_idx::lat || i == Par_idx::lon) {
             SUCCESS_OR_DIE(
                 nc_get_vara_double(

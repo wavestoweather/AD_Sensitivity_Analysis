@@ -349,7 +349,7 @@ struct model_constants_t {
      * Print all parameters that are being tracked with algorithmic
      * differentiation.
      */
-    void print(std::ostream &os=std::cout);
+    void print(std::ostream &os = std::cout);
 
     /**
      * Check if a certain model state variable or model parameter
