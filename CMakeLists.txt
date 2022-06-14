@@ -244,23 +244,14 @@ find_package(Boost 1.62 REQUIRED)
 
 message("~~~ zlib")
 message(STATUS "Make sure this is the same zlib library that is used by HDF5")
-find_package(ZLIB)
-# Hack if for some reason it is not found in the usual directories
-if( NOT ${ZLIB_FOUND} )
-    message(WARNING "Did not find zlib. Looking at different directories now.")
-    find_package(ZLIB PATHS ${HDF5_DIR})
-    if( "${ZLIB_INCLUDE_DIR}" STREQUAL "" )
-        message(ERROR "Did not find zlib!")
-    endif()
-    message(STATUS "Found zlib include: ${ZLIB_INCLUDE_DIR}")
-    include_directories (${ZLIB_INCLUDE_DIR})
-    if( "${ZLIB_LIBRARIES}" STREQUAL "" )
-        # Hack if for some reason this is still empty
-        string(REPLACE "include" "lib" ZLIB_LIBRARIES ${ZLIB_INCLUDE_DIR})
-        set(ZLIB_LIBRARIES "${ZLIB_LIBRARIES}/libaec.a;${ZLIB_LIBRARIES}/libsz.a;${ZLIB_LIBRARIES}/libz.a")
-    endif()
+find_package(ZLIB PATHS ${HDF5_DIR})
+message(STATUS "Found zlib include: ${ZLIB_INCLUDE_DIR}")
+include_directories (${ZLIB_INCLUDE_DIR})
+if( "${ZLIB_LIBRARIES}" STREQUAL "" )
+    # Hack if for some reason this is still empty
+    string(REPLACE "include" "lib" ZLIB_LIBRARIES ${ZLIB_INCLUDE_DIR})
+    set(ZLIB_LIBRARIES "${ZLIB_LIBRARIES}/libaec.a;${ZLIB_LIBRARIES}/libsz.a;${ZLIB_LIBRARIES}/libz.a")
 endif()
-set(targets "${targets};${ZLIB_LIBRARIES}")
 
 message("~~~ Zip")
 find_library(Zip_LIBRARIES NAMES zip)
@@ -273,67 +264,43 @@ else()
     message("~~~ AEC")
     find_library(AEC_LIBRARIES NAMES aec)
     message(STATUS "Found AEC: ${AEC_LIBRARIES}")
-    set(targets "${targets};${Zip_LIBRARIES};${AEC_LIBRARIES}")
 endif()
 
 message("~~~ CURL")
 find_package(CURL REQUIRED)
-set(targets "${targets};${CURL_LIBRARIES}")
 
 message("~~~ PnetCDF")
 find_package(PnetCDF)
 include_directories (${PNETCDF_INCLUDE_DIR})
-if( PnetCDF_FOUND )
-    set(targets "${targets};${PNETCDF_LIBRARIES}")
-endif()
 
 message("~~~ NetCDF")
 set(NETCDF "Yes")
 find_package(NetCDF)
 if( NetCDF_FOUND )
     include_directories (${NETCDF_INCLUDE_DIR})
-    # message(STATUS "Found NetCDF include: ${NETCDF_INCLUDE_DIR}")
-    set(targets "${targets};${NETCDF_LIBRARIES}")
+    message(STATUS "Found NetCDF include: ${NETCDF_INCLUDE_DIR}")
 else()
     message(FATAL_ERROR
 "
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CMake was not able to find your NetCDF installation (maybe it wasn't build using CMake).
-Please define NETCDF_DIR pointing to your installation as environment variable.
-Make sure that -lnetcdf can be used by your compiler.
+Please define NETCDF_INCLUDE_DIR pointing to your installation. Make sure
+that -lnetcdf can be used by your compiler.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ")
 endif()
 
 message("~~~ HDF5")
-# I usually prefer the Config mode for CMake to look for HDF5 but for our supercomputer
-# I have to use the module mode, whereas I want to use Config mode for my
-# local machine and my docker container.
-# set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
-set(HDF5_HINT ${HDF5_DIR})
-find_package(HDF5)
-# Hack if for some reason it is not found in the usual directories
-if (NOT ${HDF5_FOUND} )
-    message(WARNING "Could not find HDF5. Looking at other directories.")
-    find_package(HDF5 REQUIRED PATHS ${HDF5_DIR})
-    include_directories (${HDF5_INCLUDE_DIR})
-    message(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIR}")
-    if( "${HDF5_LIBRARIES}" STREQUAL "" )
-        # Hack if for some reason this is still empty
-        string(REPLACE "include" "lib" HDF5_LIBRARIES ${HDF5_INCLUDE_DIR})
-        set(HDF5_LIBRARIES "${HDF5_LIBRARIES}/libhdf5_hl.a;${HDF5_LIBRARIES}/libhdf5.a")
-    endif()
-else()
-    # Add high level library that are hard to find with CMake for some reason
-    if( "${HDF5_HL_LIBRARIES}" STREQUAL "" )
-        list(GET HDF5_INCLUDE_DIR 0 HEAD)
-        string(REPLACE "include" "lib" HDF5_HL_LIBRARIES ${HEAD})
-        set(HDF5_HL_LIBRARIES "${HDF5_HL_LIBRARIES}/libhdf5_hl.a;${HDF5_HL_LIBRARIES}/libhdf5.a")
-    endif()
-    set(targets "${targets};${HDF5_HL_LIBRARIES}")
-endif()
+find_package(HDF5 REQUIRED PATHS ${HDF5_DIR})
+include_directories (${HDF5_INCLUDE_DIR})
+message(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIR}")
 message(STATUS "HDF5 Version: ${HDF5_VERSION}")
-set(targets "${targets};${HDF5_LIBRARIES}")
+if( "${HDF5_LIBRARIES}" STREQUAL "" )
+    # Hack if for some reason this is still empty
+    string(REPLACE "include" "lib" HDF5_LIBRARIES ${HDF5_INCLUDE_DIR})
+    set(HDF5_LIBRARIES "${HDF5_LIBRARIES}/libhdf5_tools.a;${HDF5_LIBRARIES}/libhdf5_hl.a;${HDF5_LIBRARIES}/libhdf5.a")
+endif()
+
 
 message("~~~ CoDiPack")
 find_package(CoDiPack)
