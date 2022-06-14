@@ -90,8 +90,6 @@ In case the CMake does not find a specific library, you can specify them like th
 ```
 cmake .. -DNETCDF_INCLUDE_DIR=<path/to/netcdf/include/> -DCODIPACK_INCLUDEDIR=<path/to/codipack/include/> -DHDF5_DIR=<path/to/hdf5/> -DCMAKE_BUILD_TYPE=release
 ```
-You may change the target for timing the microphysics with `-DTARGET=timing` if you wish to check the penalty cost of executing AD at every time step for varying amounts of model state variables and model parameters.
-
 You can add `-DCOMPRESS_OUTPUT:BOOL=ON` to write compressed output with zlib. You need for this HDF5 v1.10.2 or higher. Compression is only supported for sensitivity analysis but not for ensemble simulations at the moment.
 
 Running a simulation
@@ -198,10 +196,6 @@ python plot_simulation_example.py \
     --backend bokeh
 ```
 
-`timing.sh` generates a comma separated output on the terminal with the run time for a
-simulation and the number of tracked parameters and model state variables. Be aware
-that you have to have compiled the program with target `timing` first!
-
 At last you can plot all input data, which may take a while the first time, with
 ```
 python plot_cosmo.py \
@@ -261,7 +255,7 @@ to
 ```C++
 #elif defined(RK4) || defined(MY_MICROPHYSICS)
 ```
-Otherwise you need to add additional lines of code, such as:
+Otherwise, you need to add additional lines of code, such as:
 ```C++
 #elif defined(MY_MICROPHYSICS)
     my_RK4_step(..);
