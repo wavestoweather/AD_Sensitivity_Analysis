@@ -26,6 +26,30 @@ netcdf_reader_t::netcdf_reader_t(
 void netcdf_reader_t::load_vars() {
     varid.resize(Par_idx::n_pars);
     varid_once.resize(Par_once_idx::n_pars_once);
+
+    int nvars = 0;
+    asc600_bool = false;
+    SUCCESS_OR_DIE(
+        nc_inq(
+            ncid,
+            NULL,
+            &nvars,
+            NULL,
+            NULL));
+    for (int i=0; i < nvars; ++i) {
+        char name[NC_MAX_NAME + 1];
+        SUCCESS_OR_DIE(
+            nc_inq_varname(
+                ncid,
+                i,
+                name));
+        if (std::strcmp(name, "asc600") == 0) {
+            asc600_bool = true;
+            varid[Par_idx::asc600] = i;
+            break;
+        }
+    }
+
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -292,6 +316,7 @@ void netcdf_reader_t::buffer_params(
     countp2.push_back(n_timesteps_buffer + additional_buffer);
 #endif
     for (int i=0; i < Par_idx::n_pars; i++) {
+        if (!asc600_bool && i == Par_idx::asc600) continue;
         if (i == Par_idx::ascent || i == Par_idx::lat || i == Par_idx::lon) {
             SUCCESS_OR_DIE(
                 nc_get_vara_double(

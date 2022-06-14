@@ -503,7 +503,7 @@ void run_substeps(
         if ( (input.simulation_mode == create_train_set && cc.ensemble_id == 0)
              || (input.simulation_mode == limited_time_ensembles && cc.traj_id == 0)
              || (input.simulation_mode != create_train_set && input.simulation_mode != limited_time_ensembles) )
-            cc.get_gradients(y_single_new, y_diff, tape);
+            cc.get_gradients(y_single_new, y_diff, tape, ref_quant);
 #ifdef DEVELOP
         std::cout << "got gradients\n";
 #endif
@@ -625,7 +625,7 @@ void run_substeps(
         if ( (input.simulation_mode == create_train_set && cc.ensemble_id == 0)
              || (input.simulation_mode == limited_time_ensembles && cc.traj_id == 0)
              || (input.simulation_mode != create_train_set && input.simulation_mode != limited_time_ensembles) )
-            cc.get_gradients(y_single_new, y_diff);
+            cc.get_gradients(y_single_new, y_diff, ref_quant);
 
         // Time update
         time_new = (sub + (t+cc.done_steps)*cc.num_sub_steps)*cc.dt;

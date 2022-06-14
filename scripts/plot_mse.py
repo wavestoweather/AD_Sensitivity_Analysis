@@ -1295,8 +1295,12 @@ if __name__ == "__main__":
                 store_path=args.store_path,
                 title=args.title + " for " + param_title_names[out_p],
                 xlabel=args.xlabel,
-                ylabel=args.ylabel + " " + parse_word(out_p),
-                twinlabel=args.twinlabel,
+                ylabel=args.ylabel
+                + " "
+                + parse_word(out_p)
+                + " "
+                + get_unit(out_p, brackets=True),
+                twinlabel=args.twinlabel + " " + get_unit(out_p, brackets=True),
                 logy=args.logy,
                 width=args.width,
                 height=args.height,

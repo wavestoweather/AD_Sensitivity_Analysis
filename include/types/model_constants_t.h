@@ -2,11 +2,10 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 
-// #include <boost/property_tree/ptree.hpp>
-// #include <boost/property_tree/json_parser.hpp>
 #include <nlohmann/json.hpp>
 
 #include "codi.hpp"
@@ -252,7 +251,8 @@ struct model_constants_t {
      */
     void get_gradients(
         std::vector<float_t> &y_single_new,
-        std::vector< std::array<double, num_par > > &y_diff) const;
+        std::vector< std::array<double, num_par > > &y_diff,
+        const reference_quantities_t &ref_quant) const;
 
     /**
      * Register output on tape, evaluate it, get all gradients and
@@ -261,7 +261,8 @@ struct model_constants_t {
     void get_gradients(
         std::vector<float_t> &y_single_new,
         std::vector< std::array<double, num_par > > &y_diff,
-        codi::RealReverse::Tape &tape);
+        codi::RealReverse::Tape &tape,
+        const reference_quantities_t &ref_quant);
 
     /**
      * Get the gradients of all its members. You need to register them on a
@@ -272,10 +273,12 @@ struct model_constants_t {
     void get_gradient(
         std::array<double, num_par> &out_vec,
         std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
-        uint32_t ii) const;
+        uint32_t ii,
+        const double &ref_value) const;
 
     void get_gradient(
-        std::array<double, num_par> &out_vec) const;
+        std::array<double, num_par> &out_vec,
+        const double &ref_value) const;
 
 
 #if defined(RK4_ONE_MOMENT)
@@ -346,7 +349,7 @@ struct model_constants_t {
      * Print all parameters that are being tracked with algorithmic
      * differentiation.
      */
-    void print();
+    void print(std::ostream &os = std::cout);
 
     /**
      * Check if a certain model state variable or model parameter
