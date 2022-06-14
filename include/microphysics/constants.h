@@ -60,10 +60,9 @@ typedef bool(*track_func)(const int&, const bool&);
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
 #if defined(B_EIGHT)
-#define num_par 476 /*!< Formerly (56*6+124+18) */
+#define num_par (56*6+124+18)
 #else
-/*!< Number of gradients. 56 for each particle + model constants + initial conditions (fromerly (56*6+134+18)) */
-#define num_par 482
+#define num_par (56*6+134+18)  /*!< Number of gradients. 56 for each particle + model constants + initial conditions */
 #endif
 
 #endif
@@ -126,29 +125,11 @@ typedef bool(*track_func)(const int&, const bool&);
  */
 #define grid_sensitivity 3
 /**
- * Input data is a single trajectory. Perturbed ensembles are started according
+ * Input data is a sinlge trajectory. Perturbed ensembles are started according
  * to the ensemble configuration file.
  * The output contains sensitivities.
  */
 #define limited_time_ensembles 4
-/**
- * Old:
- * Create a training set according to the configuration file. The output file contains
- * impact matrices M_ix, where x is the time in minutes until the impact is evaluated
- * and a prediction matrix M_px.
- * Variable perturbed_val gives the perturbed value(s), perturbed_param names the perturbed parameter(s).
- * Variable output parameter gives the names of the output parameters and the order at which those are
- * stored for M_i and M_x.
- *
- * New:
- * Input data are trajectories with one ensemble. Sensitivities are stored for
- * ensemble 0 (not perturbed trajectories). Additionally variables are stored
- * for each ensemble which parameter has been perturbed and by how much.
- *
- */
-#define create_train_set 5
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Random generators
@@ -164,8 +145,8 @@ extern bool trace;
 #if defined(TRACE_TIME)
 // Relative to ascent time
 extern double trace_time;
-const double trace_start = 0;
-const double trace_end = 180;
+const double trace_start = -1000;
+const double trace_end = 3500;
 #endif
 
 #if defined(RK4_ONE_MOMENT)
@@ -236,11 +217,10 @@ const std::vector<std::string> output_grad_idx = {
     "dc_ccn_1", "dc_ccn_2", "dc_ccn_3", "dc_ccn_4",
     "dd_ccn_1", "dd_ccn_2", "dd_ccn_3", "dd_ccn_4",
 #if defined(B_EIGHT)
-    "dp_ccn", "dh_ccn_1", "dh_ccn_2",
+    "dp_ccn", "dh_ccn_1", "dh_ccn_2", "dh_ccn_3",
     "dg_ccn_1", "dg_ccn_2", "dg_ccn_3",
     "di_ccn_1", "di_ccn_2", "dhande_ccn_fac",
 #endif
-    "dD_br_threshold", "dk_br", "dD_br", "dc_br",
     // Rain
     "drain_a_geo", "drain_b_geo", "drain_min_x", "drain_min_x_act",
     "drain_min_x_nuc_homo", "drain_min_x_nuc_hetero", "drain_min_x_melt",
@@ -534,7 +514,7 @@ enum class Cons_idx: uint32_t{
 #endif
 #if defined(B_EIGHT)
     p_ccn,
-    h_ccn_1, h_ccn_2,
+    h_ccn_1, h_ccn_2, h_ccn_3,
     g_ccn_1, g_ccn_2, g_ccn_3,
     i_ccn_1, i_ccn_2,
     hande_ccn_fac,
@@ -601,7 +581,7 @@ std::unordered_map<std::string, Cons_idx> const table_param = {
 #endif
 #if defined(B_EIGHT)
     {"p_ccn", Cons_idx::p_ccn}, {"h_ccn_1", Cons_idx::h_ccn_1},
-    {"h_ccn_2", Cons_idx::h_ccn_2},
+    {"h_ccn_2", Cons_idx::h_ccn_2}, {"h_ccn_3", Cons_idx::h_ccn_3},
     {"g_ccn_1", Cons_idx::g_ccn_1}, {"g_ccn_2", Cons_idx::g_ccn_2},
     {"g_ccn_3", Cons_idx::g_ccn_3}, {"i_ccn_1", Cons_idx::i_ccn_1},
     {"i_ccn_2", Cons_idx::i_ccn_2}, {"hande_ccn_fac", Cons_idx::hande_ccn_fac},
@@ -1477,6 +1457,12 @@ const double h_ccn_1 = 250;
 const double h_ccn_2 = 7;
 
 /**
+ * Used during CCN activation from A. Miltenberger.
+ * The number of nuclei that can be activated.
+ */
+const double h_ccn_3 = 257;
+
+/**
  * Exponent used during CCN activation from A. Miltenberger.
  */
 const double g_ccn_1 = 800;
@@ -1527,12 +1513,12 @@ const double M_w = 0.018015265;
 const double M_a = 0.02896546;
 
 /**
- * Gas constant for water vapor, unit: \f$\text{J}/\text{K}/\text{kg}\f$
+ * Gas constant for water vapor, unit: J/(kg*K)
  */
 const double R_v = R_universal/M_w;  //  461.51 in ICON
 
 /**
- * Gas constant for dry air, unit: \f$\text{J}/\text{K}/\text{kg}\f$
+ * Gas constant for dry air, unit: J/(kg*K)
  */
 const double R_a = R_universal/M_a;
 
@@ -1926,18 +1912,6 @@ extern uint32_t auto_type;
  */
 const std::vector<double> a_ccn = {183230691.161, 0.10147358938,
                                 -0.2922395814, 229189886.226};
-#if defined(B_EIGHT)
-/**
- * CCN activation after Hande et al (2016) and modified by Annette Miltenberger
- */
-const std::vector<double> b_ccn = {3.46281429, 1.74926665e-04,
-                                   -2.85967514e-01, 0};
-/**
- * CCN activation after Hande et al (2016) and modified by Annette Miltenberger
- */
-const std::vector<double> c_ccn = {2.72664755, 1.12852352e-03,
-                                   1.50069026, 0};
-#else
 /**
  * ccn_activation_hdcp2 after Hande et al (2016)
  */
@@ -1948,7 +1922,6 @@ const std::vector<double> b_ccn = {0.0001984051994, 4.473190485e-05,
  */
 const std::vector<double> c_ccn = {16.2420263911, 3.22011836758,
                                 13.8499423719, 16.2461600644};
-#endif
 /**
  * ccn_activation_hdcp2 after Hande et al (2016)
  */

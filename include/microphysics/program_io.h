@@ -10,10 +10,9 @@
 #include <string>
 #include <vector>
 
-// #include <boost/property_tree/ptree.hpp>
-// #include <boost/property_tree/json_parser.hpp>
-// #include <boost/property_tree/xml_parser.hpp>
-#include <nlohmann/json.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 #include "codi.hpp"
 
 #include "include/misc/error.h"
@@ -28,7 +27,7 @@
 
 #include "include/misc/general.h"
 
-// namespace pt = boost::property_tree;
+namespace pt = boost::property_tree;
 
 /** @defgroup io Input/Output Functions
  * Functions to load data and setup and initialize structs.
@@ -48,36 +47,19 @@ void load_ens_config(
     input_parameters_t &input,
     const reference_quantities_t &ref_quant) {
 
-    std::ifstream i(filename);
-    nlohmann::json config;
-    i >> config;
+    pt::ptree pt;
+    boost::property_tree::read_json(filename, pt);
     std::string ens_desc;
     cc.max_n_trajs = 0;
-    if (config.find("segments") != config.end()) {
-        for (const auto &s_config : config["segments"]) {
-            segment_t s;
-            s.from_json(s_config, cc);
-            segments.push_back(s);
-            if (s.n_members > cc.max_n_trajs)
-                cc.max_n_trajs = s.n_members;
-            if (s.activated)
-                s.perturb(cc, ref_quant, input, ens_desc);
-        }
+    for (auto &it : pt.get_child("segments")) {
+        segment_t segment;
+        SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
+        segments.push_back(segment);
+        if (segment.n_members > cc.max_n_trajs)
+            cc.max_n_trajs = segment.n_members;
+        if (segment.activated)
+            segment.perturb(cc, ref_quant, input, ens_desc);
     }
-
-    // pt::ptree pt;
-    // boost::property_tree::read_json(filename, pt);
-    // std::string ens_desc;
-    // cc.max_n_trajs = 0;
-    // for (auto &it : pt.get_child("segments")) {
-    //     segment_t segment;
-    //     SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
-    //     segments.push_back(segment);
-    //     if (segment.n_members > cc.max_n_trajs)
-    //         cc.max_n_trajs = segment.n_members;
-    //     if (segment.activated)
-    //         segment.perturb(cc, ref_quant, input, ens_desc);
-    // }
     cc.ens_desc += ens_desc;
     if (input.n_ensembles != 0) {
         cc.n_ensembles = input.n_ensembles;

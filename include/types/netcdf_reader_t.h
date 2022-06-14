@@ -4,8 +4,6 @@
 #include <netcdf_par.h>
 
 #include <array>
-#include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "codi.hpp"
@@ -18,7 +16,6 @@ struct netcdf_reader_t {
     uint64_t n_ensembles;
     uint64_t n_trajectories;
     // double dlon, dlat;
-    bool start_time_idx_given; /*!< True if start_time_idx is given by the user. */
     uint64_t start_time_idx; /*!< The start time index. */
     uint64_t start_time_idx_original; /*!< The initial start time index. */
     uint64_t time_idx; /*!< Current index to read from netcdf file. */
@@ -59,8 +56,7 @@ struct netcdf_reader_t {
 
     /**
      * Set dimids of this object and set the maximum amount of trajectories and
-     * ensembles in cc. Sets pressure in reference quantities. Default is 1e5
-     * for Pa, otherwise hPa with 1e3 is possible as well.
+     * ensembles in cc.
      *
      * @param input_file Path to file to read
      * @param cc Model constants with number of ensembles and trajectories on return
@@ -91,10 +87,10 @@ struct netcdf_reader_t {
 #ifdef MET3D
         double &start_time,
 #endif
-//        const char *input_file,
+        const char *input_file,
         const bool &checkpoint_flag,
         model_constants_t<float_t> &cc,
-//        const int &simulation_mode,
+        const int &simulation_mode,
         const double current_time,
         const reference_quantities_t &ref_quant);
 
@@ -139,11 +135,9 @@ struct netcdf_reader_t {
     bool get_slan_600(const uint32_t &t) const {return (buffer[Par_idx::slan_600][
         t%buffer[Par_idx::slan_600].size()] > 0.5);}
 #endif
+
 #endif
-    bool get_asc600(const uint32_t &t) const {return (buffer[Par_idx::asc600][
-        t%buffer[Par_idx::asc600].size()] > 0.5);}
     uint32_t get_traj_idx() const {return traj_idx;}
-    bool asc600_avail() const {return asc600_bool;}
 
  private:
     std::vector<int> startp, countp;
@@ -155,9 +149,7 @@ struct netcdf_reader_t {
     uint32_t traj_idx; /*!< Index of trajectory to read from. */
     uint32_t ens_idx; /*!< Index of ensemble to read from. */
     bool already_open; /*!< Is the netCDF file already open? */
-    uint32_t n_subs; /*!< Time step size of model from file / size of this model. */
-    double pascal_conv; /*!< Convert pressure to Pa even if it is stored as hPa. */
-    bool asc600_bool; /*!< Does a variable called asc600 exist? To be removed once load_vars() is improved. */
+    uint32_t n_subs; /*!< Time step size of model from file / size of this model . */
 
     /**
      * ID for dimensions of output file.
@@ -203,7 +195,6 @@ struct netcdf_reader_t {
         q_turb,
     #endif
 #endif
-        asc600,
         n_pars
     };
     enum Dim_idx {
@@ -240,78 +231,6 @@ struct netcdf_reader_t {
     };
 
     std::array<std::vector<double>, Par_idx::n_pars > buffer;
-#if defined B_EIGHT
-    std::unordered_map<std::string, const char*> const reader_names = {
-        {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
-        {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
-        {"QS", "QS"}, {"NCGRAUPEL", "QNG"}, {"NCICE", "QNI"},
-        {"NCSNOW", "QNS"}, {"NCHAIL", "QNH"}, {"NCCLOUD", "QNC"},
-        {"NCRAIN", "QNR"}, {"time", "time"}, {"lat", "lat"}, {"lon", "lon"},
-        {"time_rel", "time_after_asc_start"}, {"pressure", "p"}, {"T", "T"},
-        {"QI_IN", "QI_in"}, {"QS_IN", "QS_in"}, {"QR_IN", "QR_in"},
-        {"QG_IN", "QG_in"}, {"NI_IN", "QNI_in"}, {"NS_IN", "QNS_in"},
-        {"NR_IN", "QNR_in"}, {"NG_IN", "QNG_in"}, {"z", "z"}, {"w", "w"},
-        {"QH_IN", "QH_in"}, {"NH_IN", "QNH_in"},
-        {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
-    };
-#elif defined WCB
-    std::unordered_map<std::string, const char*> const reader_names = {
-        {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
-        {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
-        {"QS", "QS"}, {"NCGRAUPEL", "NCGRAUPEL"}, {"NCICE", "NCICE"},
-        {"NCSNOW", "NCSNOW"}, {"NCHAIL", "NCHAIL"}, {"NCCLOUD", "NCCLOUD"}, {"NCRAIN", "NCRAIN"},
-        {"time", "ntim"}, {"lat", "lat"}, {"lon", "lon"},
-        {"time_rel", "time_rel"}, {"pressure", "P"}, {"T", "T"},
-        {"QI_IN", "QI_IN"}, {"QS_IN", "QS_IN"}, {"QR_IN", "QR_IN"},
-        {"QG_IN", "QG_IN"}, {"NI_IN", "NI_IN"}, {"NS_IN", "NS_IN"},
-        {"NR_IN", "NR_IN"}, {"NG_IN", "NG_IN"}, {"z", "z"}, {"w", "w"},
-        {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
-        {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "ntra"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
-#elif defined WCB2
-    std::unordered_map<std::string, const char*> const reader_names = {
-        {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
-        {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
-        {"QS", "QS"}, {"NCGRAUPEL", "NCGRAUPEL"}, {"NCICE", "NCICE"},
-        {"NCSNOW", "NCSNOW"}, {"NCCLOUD", "NCCLOUD"}, {"NCRAIN", "NCRAIN"},
-        {"time", "time"}, {"lat", "latitude"}, {"lon", "longitude"},
-        {"time_rel", "time_rel"}, {"pressure", "P"}, {"T", "T"},
-        {"QI_IN", "QI_IN"}, {"QS_IN", "QS_IN"}, {"QR_IN", "QR_IN"},
-        {"QG_IN", "QG_IN"}, {"NI_IN", "NI_IN"}, {"NS_IN", "NS_IN"},
-        {"NR_IN", "NR_IN"}, {"NG_IN", "NG_IN"}, {"z", "z"}, {"w", "w"},
-        {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
-        {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
-    };
-#elif defined MET3D
-    std::unordered_map<std::string, const char*> const reader_names = {
-        {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
-        {"QI", "QI"}, {"QG", "QG"}, {"QH", "QH"},
-        {"QS", "QS"}, {"NCGRAUPEL", "NCGRAUPEL"}, {"NCICE", "NCICE"},
-        {"NCSNOW", "NCSNOW"}, {"NCCLOUD", "NCCLOUD"},
-        {"NCRAIN", "NCRAIN"}, {"NCHAIL", "NCHAIL"},
-        {"time", "time"}, {"lat", "lat"},
-        {"lon", "lon"}, {"time_rel", "time_after_ascent"},
-        {"pressure", "pressure"}, {"T", "T"},
-        {"QI_IN", "QI_IN"}, {"QS_IN", "QS_IN"}, {"QR_IN", "QR_IN"},
-        {"QG_IN", "QG_IN"}, {"NI_IN", "NI_IN"}, {"NS_IN", "NS_IN"},
-        {"NR_IN", "NR_IN"}, {"NG_IN", "NG_IN"}, {"z", "z"}, {"w", "w"},
-        {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
-        {"conv_400", "conv_400"}, {"conv_600", "conv_600"},
-        {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
-    };
-#else
-    std::unordered_map<std::string, std::string> const reader_names = {
-        {"QV", "qv"}, {"QC", "qc"}, {"QR", "qr"},
-        {"qi", "qi"}, {"qg", "qg"}, {"qs", "qs"},
-        {"qh", "qh"}, {"time", "time"}, {"lat", "lat"}, {"lon", "lon"}, {"time_rel", "time_rel"}, {"pressure", "p"},
-        {"T", "t"}, {"z", "z"}, {"w", "w"},
-        {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
-    };
-#endif
 
     /**
      * Load variables from the netCDF file such that data can be loaded using

@@ -57,17 +57,22 @@ void checkpoint_t::create_checkpoint(
     const input_parameters_t &input,
     const double &current_time) {
     // First we add the ensemble configuration
-    checkpoint["segments"] = segments;
+    pt::ptree segment_tree;
+
+    for (auto &s : segments)
+        s.put(segment_tree);
+
+    checkpoint.add_child("segments", segment_tree);
     // configuration from input_parameters_t
-    input.to_json(checkpoint["input"], current_time);
+    input.put(checkpoint, current_time);
     // Model constants
-    checkpoint["model constants"] = cc;
+    cc.put(checkpoint);
     // Current status of y
-    std::map<uint32_t, double> param_map;
+    pt::ptree output_parameters;
     for (uint32_t i=0; i < num_comp; i++) {
-        param_map[i] = y[i].getValue();
+        output_parameters.put(std::to_string(i), y[i].getValue());
     }
-    checkpoint["Output Parameters"] = param_map;
+    checkpoint.add_child("Output Parameters", output_parameters);
 }
 
 template<class float_t>
@@ -75,25 +80,37 @@ int checkpoint_t::load_checkpoint(
     model_constants_t<float_t> &cc,
     std::vector<double> &y,
     std::vector<segment_t> &segments,
-    input_parameters_t &input) {
+    input_parameters_t &input,
+    const reference_quantities_t &ref_quant) {
     if (checkpoint.empty()) return CHECKPOINT_LOAD_ERR;
     // Parse the input parameters
-    input = checkpoint["input"];
+    SUCCESS_OR_DIE(input.from_pt(checkpoint));
+    cc.setup_model_constants(input, ref_quant);
     // Parse the model constants
-    cc.from_json(checkpoint["model constants"]);
-    cc.setup_dependent_model_constants();
+    SUCCESS_OR_DIE(cc.from_pt(checkpoint));
+
     // Parse the segments and store which parameters had been perturbed
+    // in ens_descr
     std::string ens_desc;
     segments.clear();
-    for (const auto &s_config : checkpoint["segments"]) {
-        segment_t s;
-        s.from_json(s_config, cc);
-        segments.push_back(s);
+    for (auto &it : checkpoint.get_child("segments")) {
+        segment_t segment;
+        SUCCESS_OR_DIE(segment.from_pt(it.second, cc));
+
+        if (segment.activated) {
+            std::cout << cc.traj_id << "load perturb\n";
+            segment.perturb(cc, ref_quant, input, ens_desc);
+        }
+        segments.push_back(segment);
     }
     cc.ens_desc += ens_desc;
-    std::map<uint32_t, double> param_map = checkpoint["Output Parameters"];
-    for (auto const& i : param_map) {
-        y[i.first] = i.second;
+    for (auto &it : checkpoint.get_child("Output Parameters")) {
+        try {
+            y[std::stoi(it.first)] = std::stod(it.second.data());
+        } catch (const std::out_of_range& e) {
+            // out_of_range means underflow with some libraries
+            y[std::stoi(it.first)] = 0;
+        }
     }
     return 0;
 }
@@ -104,8 +121,9 @@ int checkpoint_t::load_checkpoint(
     std::vector<double> &y,
     std::vector<segment_t> &segments,
     input_parameters_t &input,
+    const reference_quantities_t &ref_quant,
     output_handle_t &out_handler) {
-    int err = this->load_checkpoint(cc, y, segments, input);
+    int err = this->load_checkpoint(cc, y, segments, input, ref_quant);
     out_handler.flushed_snapshots = cc.done_steps;
     out_handler.traj = cc.traj_id;
     out_handler.ens = cc.ensemble_id;
@@ -118,24 +136,71 @@ int checkpoint_t::load_checkpoint(
     model_constants_t<float_t> &cc,
     std::vector<double> &y,
     std::vector<segment_t> &segments,
-    input_parameters_t &input) {
-    std::ifstream i(filename);
-    i >> checkpoint;
-    return this->load_checkpoint(cc, y, segments, input);
+    input_parameters_t &input,
+    const reference_quantities_t &ref_quant) {
+    boost::property_tree::read_json(filename, checkpoint);
+    return this->load_checkpoint(cc, y, segments, input, ref_quant);
+}
+
+template<class float_t>
+void checkpoint_t::write_checkpoint(
+    std::string &filename,
+    model_constants_t<float_t> &cc,
+    const std::vector<float_t> &y,
+    std::vector<segment_t> &segments,
+    const input_parameters_t &input,
+    const double &current_time) {
+    this->create_checkpoint(cc, y, segments, input, current_time);
+    this->write_checkpoint(filename, cc, segments);
+}
+
+template<class float_t>
+void checkpoint_t::write_checkpoint(
+    std::string &filename,
+    model_constants_t<float_t> &cc,
+    std::vector<segment_t> &segments) {
+    if (checkpoint.empty()) {
+        return;
+    }
+    uint64_t i = 0;
+    std::string actual_filename = filename + "/checkpoint_id" + cc.id + "_0000.json";
+    while (exists(actual_filename)) {
+        i++;
+        if (i < 10)
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_000" + std::to_string(i) + ".json";
+        else if (i < 100)
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_00" + std::to_string(i) + ".json";
+        else if (i < 1000)
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_0" + std::to_string(i) + ".json";
+        else
+            actual_filename = filename + "/checkpoint_id" + cc.id + "_" + std::to_string(i) + ".json";
+    }
+    std::fstream outstream(actual_filename, std::ios::out);
+    filename = actual_filename;
+    pt::write_json(outstream, checkpoint);
+    outstream.close();
+    // deactivate all segments, so we know, another instance is going
+    // to process this
+    for (auto &s : segments)
+        s.deactivate(true);
+    cc.ensemble_id++;
 }
 
 void checkpoint_t::print_checkpoint() {
     if (checkpoint.empty()) {
         return;
     }
-    std::cout << checkpoint;
+    pt::write_json(std::cout, checkpoint);
 }
 
 void checkpoint_t::send_checkpoint(
     const int send_id) {
     MPI_Request request;
-    std::string s = checkpoint.dump();
-
+    std::stringstream ss;
+    pt::json_parser::write_json(ss, checkpoint);
+    std::string s = ss.str();
+    // std::cout << "send checkpoint to " << send_id
+    //     << " with size " << s.size() << "\n" << s << "\n";
     SUCCESS_OR_DIE(
         MPI_Isend(
             s.c_str(),
@@ -175,24 +240,25 @@ bool checkpoint_t::receive_checkpoint() {
             CHECKPOINT_MESSAGE,
             MPI_COMM_WORLD,
             MPI_STATUS_IGNORE));
-    std::istringstream stream(std::string(buff, count));
+    // std::string s(buff, count);
+    // delete [] buff;
 
+    boost::iostreams::stream<boost::iostreams::array_source> stream(
+        buff, count);
     try {
-        checkpoint.clear();
-        stream >> checkpoint;
+        pt::read_json(stream, checkpoint);
     } catch (...) {
         std::cout << "receive checkpoint failed: \n"
-        << buff << "\ncount: " << count << "\n"
-        << "from " << status.MPI_SOURCE << "\n";
+        << buff << "\ncount: " << count << "\n";
     }
     delete [] buff;
     return got_something;
 }
 
+
 bool checkpoint_t::checkpoint_available() const {
     return !checkpoint.empty();
 }
-
 
 template checkpoint_t::checkpoint_t<codi::RealReverse>(
     model_constants_t<codi::RealReverse>&,
@@ -244,42 +310,64 @@ template void checkpoint_t::create_checkpoint<codi::RealForwardVec<num_par_init>
     const input_parameters_t&,
     const double&);
 
+template void checkpoint_t::write_checkpoint<codi::RealReverse>(
+    std::string&,
+    model_constants_t<codi::RealReverse>&,
+    const std::vector<codi::RealReverse>&,
+    std::vector<segment_t>&,
+    const input_parameters_t&,
+    const double&);
+
+template void checkpoint_t::write_checkpoint<codi::RealForwardVec<num_par_init> >(
+    std::string&,
+    model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const std::vector<codi::RealForwardVec<num_par_init> >&,
+    std::vector<segment_t>&,
+    const input_parameters_t&,
+    const double&);
+
 template int checkpoint_t::load_checkpoint<codi::RealReverse>(
     const std::string&,
     model_constants_t<codi::RealReverse>&,
     std::vector<double>&,
     std::vector<segment_t>&,
-    input_parameters_t&);
+    input_parameters_t&,
+    const reference_quantities_t&);
 
 template int checkpoint_t::load_checkpoint<codi::RealReverse>(
     model_constants_t<codi::RealReverse>&,
     std::vector<double>&,
     std::vector<segment_t>&,
     input_parameters_t&,
+    const reference_quantities_t&,
     output_handle_t&);
 
 template int checkpoint_t::load_checkpoint<codi::RealReverse>(
     model_constants_t<codi::RealReverse>&,
     std::vector<double>&,
     std::vector<segment_t>&,
-    input_parameters_t&);
+    input_parameters_t&,
+    const reference_quantities_t&);
 
 template int checkpoint_t::load_checkpoint<codi::RealForwardVec<num_par_init> >(
     const std::string&,
     model_constants_t<codi::RealForwardVec<num_par_init> >&,
     std::vector<double>&,
     std::vector<segment_t>&,
-    input_parameters_t&);
+    input_parameters_t&,
+    const reference_quantities_t&);
 
 template int checkpoint_t::load_checkpoint<codi::RealForwardVec<num_par_init> >(
     model_constants_t<codi::RealForwardVec<num_par_init> >&,
     std::vector<double>&,
     std::vector<segment_t>&,
     input_parameters_t&,
+    const reference_quantities_t&,
     output_handle_t&);
 
 template int checkpoint_t::load_checkpoint<codi::RealForwardVec<num_par_init> >(
     model_constants_t<codi::RealForwardVec<num_par_init> >&,
     std::vector<double>&,
     std::vector<segment_t>&,
-    input_parameters_t&);
+    input_parameters_t&,
+    const reference_quantities_t&);

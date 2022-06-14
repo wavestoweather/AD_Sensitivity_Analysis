@@ -1,16 +1,14 @@
 #pragma once
 
-#include <iostream>
 #include <string>
 #include <vector>
 
-#include <nlohmann/json.hpp>
-
+#include <boost/property_tree/ptree.hpp>
 #include "codi.hpp"
 
 #include "include/microphysics/constants.h"
-#include "include/misc/error.h"
 
+namespace pt = boost::property_tree;
 
 /**
  * Struct to hold all model constants regarding particles that we want to
@@ -51,9 +49,9 @@ struct particle_model_constants_t{
     void get_gradient(
         std::array<double, num_par> &out_vec,
         uint32_t &idx,
-        const double &ref_value) const;
+        const bool info = false) const;
 
-    // void put(pt::ptree &ptree, const std::string &type_name) const;
+    void put(pt::ptree &ptree, const std::string &type_name) const;
 
     /**
      * Set any perturbed parameter from the property tree.
@@ -63,17 +61,12 @@ struct particle_model_constants_t{
      *
      * @returns Errorcode
      */
-    // int from_pt(pt::ptree &ptree);
+    int from_pt(pt::ptree &ptree);
 
     /**
      * Print the constants used for this particle.
      *
      * @param title Name of particle
      */
-    void print(const std::string &title, std::ostream &os = std::cout);
-
-    int from_json(const nlohmann::json& j);
+    void print(const std::string &title);
 };
-
-template<class float_t>
-void to_json(nlohmann::json& j, const particle_model_constants_t<float_t>& p);

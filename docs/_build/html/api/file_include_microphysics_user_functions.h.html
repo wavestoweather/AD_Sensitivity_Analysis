@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
         <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
         <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
@@ -35,8 +35,6 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -83,7 +81,7 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -92,11 +90,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Example Results</span></p>
+<p class="caption"><span class="caption-text">Example Results</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Full C++ Documentation</span></p>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
 </ul>
@@ -186,16 +184,13 @@
 <div class="section" id="includes">
 <h2>Includes<a class="headerlink" href="#includes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">algorithm</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">cmath</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">codi.hpp</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">include/microphysics/constants.h</span></code> (<a class="reference internal" href="file_include_microphysics_constants.h.html#file-include-microphysics-constants-h"><span class="std std-ref">File constants.h</span></a>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">include/microphysics/physical_parameterizations.h</span></code> (<a class="reference internal" href="file_include_microphysics_physical_parameterizations.h.html#file-include-microphysics-physical-parameterizations-h"><span class="std std-ref">File physical_parameterizations.h</span></a>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">include/misc/error.h</span></code> (<a class="reference internal" href="file_include_misc_error.h.html#file-include-misc-error-h"><span class="std std-ref">File error.h</span></a>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">include/types/model_constants_t.h</span></code> (<a class="reference internal" href="file_include_types_model_constants_t.h.html#file-include-types-model-constants-t-h"><span class="std std-ref">File model_constants_t.h</span></a>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">include/types/reference_quantities_t.h</span></code> (<a class="reference internal" href="file_include_types_reference_quantities_t.h.html#file-include-types-reference-quantities-t-h"><span class="std std-ref">File reference_quantities_t.h</span></a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">constants.h</span></code> (<a class="reference internal" href="file_include_microphysics_constants.h.html#file-include-microphysics-constants-h"><span class="std std-ref">File constants.h</span></a>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">math.h</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">physical_parameterizations.h</span></code> (<a class="reference internal" href="file_include_microphysics_physical_parameterizations.h.html#file-include-microphysics-physical-parameterizations-h"><span class="std std-ref">File physical_parameterizations.h</span></a>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tgmath.h</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">types.h</span></code> (<a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">vector</span></code></p></li>
 </ul>
 </div>
@@ -210,39 +205,42 @@
 <div class="section" id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="function_group__ufunc_1ga11499b81f16cdd3ffacd6ae95042b262.html#exhale-function-group-ufunc-1ga11499b81f16cdd3ffacd6ae95042b262"><span class="std std-ref">Template Function auto_conversion_kb</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga785399fceb6a957a140647fa393b1e4a.html#exhale-function-group-ufunc-1ga785399fceb6a957a140647fa393b1e4a"><span class="std std-ref">Template Function auto_conversion_sb</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1gab9edb21d9b17436d0f79a3cdf85c2959.html#exhale-function-group-ufunc-1gab9edb21d9b17436d0f79a3cdf85c2959"><span class="std std-ref">Template Function ccn_act_hande</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga3da0a94b45d2bc49f36dccf8fcbb6805.html#exhale-function-group-ufunc-1ga3da0a94b45d2bc49f36dccf8fcbb6805"><span class="std std-ref">Template Function cloud_freeze_hom</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1gad5191ff6941123758c0c29f9ae49f646.html#exhale-function-group-ufunc-1gad5191ff6941123758c0c29f9ae49f646"><span class="std std-ref">Template Function evaporation</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga0dd64dbcb3b78c22fae1cb1391dbda08.html#exhale-function-group-ufunc-1ga0dd64dbcb3b78c22fae1cb1391dbda08"><span class="std std-ref">Template Function graupel_hail_conv</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga9e8b8eedfc3ed565427d08f758d73b24.html#exhale-function-group-ufunc-1ga9e8b8eedfc3ed565427d08f758d73b24"><span class="std std-ref">Template Function graupel_melting</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga3237346783d6546b8454b35b95a71591.html#exhale-function-group-ufunc-1ga3237346783d6546b8454b35b95a71591"><span class="std std-ref">Template Function hail_collision</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1gab24b416a811051fbda6aecfa62f54916.html#exhale-function-group-ufunc-1gab24b416a811051fbda6aecfa62f54916"><span class="std std-ref">Template Function hail_melting</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga2d025c656acd1e26957945d58aa1f17d.html#exhale-function-group-ufunc-1ga2d025c656acd1e26957945d58aa1f17d"><span class="std std-ref">Template Function ice_activation_phillips</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga3c32a879ed465f43252061cfe62d0bd5.html#exhale-function-group-ufunc-1ga3c32a879ed465f43252061cfe62d0bd5"><span class="std std-ref">Template Function ice_melting</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga1348cc10db2c96e11a414ae3cfbfec31.html#exhale-function-group-ufunc-1ga1348cc10db2c96e11a414ae3cfbfec31"><span class="std std-ref">Template Function ice_nuc_hom</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga0b3dc285a7fb4e29bb13e55ca38ee732.html#exhale-function-group-ufunc-1ga0b3dc285a7fb4e29bb13e55ca38ee732"><span class="std std-ref">Template Function ice_riming</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga7cc8fcdb5c0ae6a63c6bd1e8a0faf646.html#exhale-function-group-ufunc-1ga7cc8fcdb5c0ae6a63c6bd1e8a0faf646"><span class="std std-ref">Template Function ice_self_collection</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1gac77534e0ca29a726f276ac2bc67cdd09.html#exhale-function-group-ufunc-1gac77534e0ca29a726f276ac2bc67cdd09"><span class="std std-ref">Template Function particle_cloud_riming</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1gafafe031861f5b873d04bcaabfe1b64ec.html#exhale-function-group-ufunc-1gafafe031861f5b873d04bcaabfe1b64ec"><span class="std std-ref">Template Function particle_collection</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga7892a65a16b9118b7bdf5acd8f53f029.html#exhale-function-group-ufunc-1ga7892a65a16b9118b7bdf5acd8f53f029"><span class="std std-ref">Template Function particle_particle_collection</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga7fdc24cf2fcc6e890043048f007a5f33.html#exhale-function-group-ufunc-1ga7fdc24cf2fcc6e890043048f007a5f33"><span class="std std-ref">Template Function particle_rain_riming</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1gab327a048fa750ec15916155ccff168e9.html#exhale-function-group-ufunc-1gab327a048fa750ec15916155ccff168e9"><span class="std std-ref">Template Function rain_evaporation_sb</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga6400205cfaacfa71424a8296af14a203.html#exhale-function-group-ufunc-1ga6400205cfaacfa71424a8296af14a203"><span class="std std-ref">Template Function rain_freeze</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga648777090d467ccb9c4e1b37dac56b5a.html#exhale-function-group-ufunc-1ga648777090d467ccb9c4e1b37dac56b5a"><span class="std std-ref">Template Function rain_self_collection_sb</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga73511891d2d279b150966ed2d8f452ee.html#exhale-function-group-ufunc-1ga73511891d2d279b150966ed2d8f452ee"><span class="std std-ref">Template Function RHS_SB</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1gafd8094b8f007a0f86d1ef783cd4199c4.html#exhale-function-group-ufunc-1gafd8094b8f007a0f86d1ef783cd4199c4"><span class="std std-ref">Template Function riming_cloud_core</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga54a72f0b20abc6df5a0d9e78c1b5a5bc.html#exhale-function-group-ufunc-1ga54a72f0b20abc6df5a0d9e78c1b5a5bc"><span class="std std-ref">Template Function riming_rain_core</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1gac9c075657ff0eb221c31de9faba87b4a.html#exhale-function-group-ufunc-1gac9c075657ff0eb221c31de9faba87b4a"><span class="std std-ref">Template Function saturation_adjust</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga9b3e1ddad652cbab80a39e89854c75fe.html#exhale-function-group-ufunc-1ga9b3e1ddad652cbab80a39e89854c75fe"><span class="std std-ref">Template Function saturation_adjust_legacy</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1gaa2f72dcebf341067572b0306c74b7b05.html#exhale-function-group-ufunc-1gaa2f72dcebf341067572b0306c74b7b05"><span class="std std-ref">Template Function sedimentation_explicit</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga8d6afa7542f9be8b554944e84b817ec6.html#exhale-function-group-ufunc-1ga8d6afa7542f9be8b554944e84b817ec6"><span class="std std-ref">Template Function snow_melting</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga625167a4154ee9c0f34ff424681b4dd0.html#exhale-function-group-ufunc-1ga625167a4154ee9c0f34ff424681b4dd0"><span class="std std-ref">Template Function snow_riming</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga9bceb2b3e3eb350dda667d54dbde3402.html#exhale-function-group-ufunc-1ga9bceb2b3e3eb350dda667d54dbde3402"><span class="std std-ref">Template Function snow_self_collection</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga15565411d1f159ce0580d31928a28471.html#exhale-function-group-ufunc-1ga15565411d1f159ce0580d31928a28471"><span class="std std-ref">Function trunc(codi::RealReverse)</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1ga0c49179aa9c20a8f6b4b6953bf887605.html#exhale-function-group-ufunc-1ga0c49179aa9c20a8f6b4b6953bf887605"><span class="std std-ref">Function trunc(codi::RealForwardVec&lt;num_par_init&gt;)</span></a></p></li>
-<li><p><a class="reference internal" href="function_group__ufunc_1gac0347b48baa9c825785c1d418ef34ba1.html#exhale-function-group-ufunc-1gac0347b48baa9c825785c1d418ef34ba1"><span class="std std-ref">Template Function vapor_dep_relaxation</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga753185e5b6b3aa7a53c8abab7aa8cd97.html#exhale-function-group-ufunc-1ga753185e5b6b3aa7a53c8abab7aa8cd97"><span class="std std-ref">Template Function auto_conversion_kb</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gae2a4ba5d38a726d6d79c93b21b9ff764.html#exhale-function-group-ufunc-1gae2a4ba5d38a726d6d79c93b21b9ff764"><span class="std std-ref">Template Function auto_conversion_sb</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga915515dda7da332262a0ec0840697174.html#exhale-function-group-ufunc-1ga915515dda7da332262a0ec0840697174"><span class="std std-ref">Template Function ccn_act_hande</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga26ed2175e4e5b89e13d2e162b6a1cdfc.html#exhale-function-group-ufunc-1ga26ed2175e4e5b89e13d2e162b6a1cdfc"><span class="std std-ref">Template Function ccn_act_seifert</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gaa395b3302791f6fc670780d895c88f2b.html#exhale-function-group-ufunc-1gaa395b3302791f6fc670780d895c88f2b"><span class="std std-ref">Template Function cloud_freeze_hom</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gaff639b6ef7e600e55107622158f3d538.html#exhale-function-group-ufunc-1gaff639b6ef7e600e55107622158f3d538"><span class="std std-ref">Template Function evaporation</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga2edb69dc32ef945a1dcfd9fb83204634.html#exhale-function-group-ufunc-1ga2edb69dc32ef945a1dcfd9fb83204634"><span class="std std-ref">Template Function graupel_hail_conv</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga44105174636599764f574b87e138f89d.html#exhale-function-group-ufunc-1ga44105174636599764f574b87e138f89d"><span class="std std-ref">Template Function graupel_melting</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga88a61ac260bf479ead4cb965990fc5b5.html#exhale-function-group-ufunc-1ga88a61ac260bf479ead4cb965990fc5b5"><span class="std std-ref">Template Function hail_collision</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gaac3e0a796e19f83589caa7b0f82cf4f3.html#exhale-function-group-ufunc-1gaac3e0a796e19f83589caa7b0f82cf4f3"><span class="std std-ref">Template Function hail_melting</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga337079e81563bc31d61bb0b985569003.html#exhale-function-group-ufunc-1ga337079e81563bc31d61bb0b985569003"><span class="std std-ref">Template Function ice_activation_hande</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga7c1e935ac3f97172e087d96da71da882.html#exhale-function-group-ufunc-1ga7c1e935ac3f97172e087d96da71da882"><span class="std std-ref">Template Function ice_activation_phillips</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gaaaeb4b32935fa301c8d23ea0d1c93d6e.html#exhale-function-group-ufunc-1gaaaeb4b32935fa301c8d23ea0d1c93d6e"><span class="std std-ref">Template Function ice_melting</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga1a5c0d75c9cf0ac56a03490deebc99b6.html#exhale-function-group-ufunc-1ga1a5c0d75c9cf0ac56a03490deebc99b6"><span class="std std-ref">Template Function ice_nuc_hom</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gae83fae1edd67e34513d7abeb06af3616.html#exhale-function-group-ufunc-1gae83fae1edd67e34513d7abeb06af3616"><span class="std std-ref">Template Function ice_riming</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga7d9faec3eda3375ebdcce82554c2dca4.html#exhale-function-group-ufunc-1ga7d9faec3eda3375ebdcce82554c2dca4"><span class="std std-ref">Template Function ice_self_collection</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga810c0a9e328bae2f1502f88eb8f9821a.html#exhale-function-group-ufunc-1ga810c0a9e328bae2f1502f88eb8f9821a"><span class="std std-ref">Template Function particle_cloud_riming</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gaee193476fc437b42639d73ed62dfae2d.html#exhale-function-group-ufunc-1gaee193476fc437b42639d73ed62dfae2d"><span class="std std-ref">Template Function particle_collection</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gace42c68f06a6a71cd5bdd9c68f214e1f.html#exhale-function-group-ufunc-1gace42c68f06a6a71cd5bdd9c68f214e1f"><span class="std std-ref">Template Function particle_particle_collection</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga7865c1c02644d6d3ae3c25943c2efbd6.html#exhale-function-group-ufunc-1ga7865c1c02644d6d3ae3c25943c2efbd6"><span class="std std-ref">Template Function particle_rain_riming</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga74f4767c3eb70af6864d67470a7c773b.html#exhale-function-group-ufunc-1ga74f4767c3eb70af6864d67470a7c773b"><span class="std std-ref">Function Press_Temp</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gac93325864febf4f0a082a9bd8f9ae555.html#exhale-function-group-ufunc-1gac93325864febf4f0a082a9bd8f9ae555"><span class="std std-ref">Template Function rain_evaporation_sb</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gad65088f5f27aa745b08809cc283a2ddb.html#exhale-function-group-ufunc-1gad65088f5f27aa745b08809cc283a2ddb"><span class="std std-ref">Template Function rain_freeze</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gadb2646f93dcb6ee4fddace473bdd46b4.html#exhale-function-group-ufunc-1gadb2646f93dcb6ee4fddace473bdd46b4"><span class="std std-ref">Template Function rain_self_collection_sb</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga5dfd51c04214ff3227afe95328647e9b.html#exhale-function-group-ufunc-1ga5dfd51c04214ff3227afe95328647e9b"><span class="std std-ref">Function RHS</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga73c076cb5896ea8efa5a7862e7bc59b7.html#exhale-function-group-ufunc-1ga73c076cb5896ea8efa5a7862e7bc59b7"><span class="std std-ref">Function RHS_SB</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga8043dc2967f77e92fff28f362a310af9.html#exhale-function-group-ufunc-1ga8043dc2967f77e92fff28f362a310af9"><span class="std std-ref">Function RHS_SB_no_ice</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gaa20cc3671e1ecc8d2e2016d7f212bb13.html#exhale-function-group-ufunc-1gaa20cc3671e1ecc8d2e2016d7f212bb13"><span class="std std-ref">Template Function riming_cloud_core</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga026305f29df9964ea1d4cc4dc3a16100.html#exhale-function-group-ufunc-1ga026305f29df9964ea1d4cc4dc3a16100"><span class="std std-ref">Template Function riming_rain_core</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gab722a6f4148d75ab7131821f18c6de4d.html#exhale-function-group-ufunc-1gab722a6f4148d75ab7131821f18c6de4d"><span class="std std-ref">Template Function saturation_adjust</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga41fb2a120504f6a0c936112fd2def98f.html#exhale-function-group-ufunc-1ga41fb2a120504f6a0c936112fd2def98f"><span class="std std-ref">Template Function sedimentation_explicit</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga50341cde21d552d960a638a2f36ad75d.html#exhale-function-group-ufunc-1ga50341cde21d552d960a638a2f36ad75d"><span class="std std-ref">Template Function snow_melting</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gad179382e28465d82546fe733f3f44d46.html#exhale-function-group-ufunc-1gad179382e28465d82546fe733f3f44d46"><span class="std std-ref">Template Function snow_riming</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gabbbaa255863c8af060117d79d82ee3ba.html#exhale-function-group-ufunc-1gabbbaa255863c8af060117d79d82ee3ba"><span class="std std-ref">Template Function snow_self_collection</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1ga15565411d1f159ce0580d31928a28471.html#exhale-function-group-ufunc-1ga15565411d1f159ce0580d31928a28471"><span class="std std-ref">Function trunc</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__ufunc_1gadebf5b56ee7a77b2460282d4c686dceb.html#exhale-function-group-ufunc-1gadebf5b56ee7a77b2460282d4c686dceb"><span class="std std-ref">Template Function vapor_dep_relaxation</span></a></p></li>
 </ul>
 </div>
 </div>

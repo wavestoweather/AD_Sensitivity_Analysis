@@ -82,8 +82,6 @@ def differ(x, axis, hPa, debug=False):
     -------
     Array of bools where start of ascend is marked with true.
     """
-    if isinstance(axis, tuple):
-        axis = axis[0]
     if debug:
         print("x")
         print(np.shape(x))
@@ -213,8 +211,6 @@ def differ_slan(x, axis, hPa, min_window):
     -------
     Array of bools where start of ascend is marked with true.
     """
-    if isinstance(axis, tuple):
-        axis = axis[0]
     window_size = len(x[0][0][0])
     ascent = np.argmax(x, axis=axis) < np.argmin(x, axis=3)
     amount = np.max(x, axis=axis) - np.min(x, axis=axis) >= hPa * 100
@@ -324,54 +320,6 @@ def add_norm_time(df, norm_col, group, columns=None, flag=None):
 
     def reducer(x, col):
         mini = x.loc[x[flag] == True][col].min()
-        x[col] = x[col] - mini
-        return x
-
-    normed = df_flagged.groupby([group]).apply(reducer, norm_col)
-    df["time_after_ascent"] = normed[norm_col]
-    return df
-
-
-def add_norm_time_all(df, norm_col, group, columns=None):
-    """
-    Return a view that consists only of entries that are flagged.
-    Those are normed along norm_col such that every entry for every
-    trajectory starts at norm_col==0. columns is a list of
-    columns that the returned view shall have.
-    if columns is None, take all columns. If flag is None, take all trajectories.
-
-    Parameters
-    ----------
-    df : pandas.Dataframe
-        Dataframe with columns norm_col, group and flag at minimum.
-    norm_col : string
-        Column where the minimum value where flag is true is substracted from.
-        Usually it is "time"
-    group : string
-        Column for grouping operation, i.e. "trajectory".
-    columns : list of string
-        List of columns that the returned view shall have. If None is given,
-        return all columns.
-    flag : string
-        Column with bools, i.e. start of an ascend.
-
-    Returns
-    -------
-    pandas.Dataframe with added "time_after_ascent".
-    """
-    if columns is None:
-        df_flagged = df.copy()
-    else:
-        df_flagged = df[columns + [flag] + [norm_col] + [group]]
-
-    def reducer(x, col):
-        mini = x.loc[x["conv_400"] == True][col].min()
-        if np.isnan(mini):
-            mini = x.loc[x["conv_600"] == True][col].min()
-        if np.isnan(mini):
-            mini = x.loc[x["slan_400"] == True][col].min()
-        if np.isnan(mini):
-            mini = x.loc[x["slan_600"] == True][col].min()
         x[col] = x[col] - mini
         return x
 

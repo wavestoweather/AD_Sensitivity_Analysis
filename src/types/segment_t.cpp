@@ -28,8 +28,7 @@ void segment_t::add_value(
     value = v;
 }
 
-            // this->params = j["params"].get<std::vector<param_t> >();;
-            // j.at("params").get_to(this->params);
+
 void segment_t::add_value_name(
     std::string n) {
     if (method == impact_change) {
@@ -97,14 +96,13 @@ void segment_t::add_amount(
 
 
 int segment_t::check() {
-    if (n_members == 1 && method != Method::full_perturbation)
+    if (n_members == 1)
         err = N_MEMBERS_CONFIG_ERR;
-    else if (n_segments < 0 && method != Method::full_perturbation)
+    else if (n_segments < 0)
         err = N_SEGMENTS_CONFIG_ERR;
     else if (value_name == -1
             && method != Method::impact_change
-            && method != Method::repeated_time
-            && method != Method::full_perturbation)
+            && method != Method::repeated_time)
         err = VALUE_NAME_CONFIG_ERR;
     else if (method == -1)
         err = METHOD_CONFIG_ERR;
@@ -154,11 +152,11 @@ int segment_t::check() {
 
 template<class float_t>
 bool segment_t::perturb_check(
-//    const model_constants_t<float_t> &cc,
+    const model_constants_t<float_t> &cc,
     const std::vector< std::array<double, num_par > > &gradients,
     const std::vector<float_t> &y,
     const double timestep) {
-    if (n_segments == 0 || method == full_perturbation)
+    if (n_segments == 0)
         return false;
     int idx;
     switch (method) {
@@ -242,9 +240,6 @@ bool segment_t::perturb_check(
             }
             return false;
         }
-        default: {
-            return false;
-        }
     }
     return false;
 }
@@ -269,7 +264,7 @@ void segment_t::perturb(
     input_parameters_t &input,
     std::string &descr) {
     // Sanity check if had been done already
-    if (n_segments == 0 && method != full_perturbation)
+    if (n_segments == 0)
         return;
     // Change the number of time steps if a fixed duration is given
     if (duration != 0) {
@@ -285,9 +280,8 @@ void segment_t::perturb(
         p.perturb(cc);
         descr += p.get_name() + " ";
     }
-    // When perturbing is done, deactivate
-    if (method != full_perturbation)
-        deactivate();
+    // When perturbing is done, deativate
+    deactivate();
 }
 
 
@@ -301,74 +295,78 @@ void segment_t::reset_variables(
     }
 }
 
-void to_json(
-    nlohmann::json& j,
-    const segment_t& s) {
-    if ((s.err != 0 || s.n_segments < 1) && !s.activated)
+
+void segment_t::put(
+    pt::ptree &ptree) const {
+    if ((err != 0 || n_segments < 1) && !activated)
         return;
-    if (!isnan(s.value)) {
-        j["when_value"] = s.value;
+    pt::ptree segment;
+    if (!isnan(value)) {
+        segment.put("when_value", value);
     }
-    if (s.value_name != -1) {
-        j["when_name"] = s.tree_strings.find("when_name")->second;
+    if (value_name != -1) {
+        segment.put("when_name", tree_strings.find("when_name")->second);
     }
-    if (s.out_param != -1) {
-        j["when_sens"] = s.tree_strings.find("when_sens")->second;
+    if (out_param != -1) {
+        segment.put("when_sens", tree_strings.find("when_sens")->second);
     }
-    if (s.n_segments != 1) {
-        j["when_counter"] = s.n_segments;
+    if (n_segments != 1) {
+        segment.put("when_counter", n_segments);
     }
-    if (s.method != s.value_method) {
-        j["when_method"] = s.tree_strings.find("when_method")->second;
+    if (method != value_method) {
+        segment.put("when_method",  tree_strings.find("when_method")->second);
     }
-    if (s.n_members != 1) {
-        j["amount"] = s.n_members;
+    if (n_members != 1) {
+        segment.put("amount", n_members);
     }
-    if (s.activated) {
-        j["activated"] = true;
+    if (activated) {
+        segment.put("activated", true);
     }
-    if (s.duration > 0) {
-        j["duration"] = s.duration;
+    if (duration > 0) {
+        segment.put("duration", duration);
     }
-    j["params"] = s.params;
+    pt::ptree param_tree;
+    for (auto &p : params)
+        p.put(param_tree);
+    segment.add_child("params", param_tree);
+    ptree.push_back(std::make_pair("", segment));
 }
 
 
 template<class float_t>
-void segment_t::from_json(
-    const nlohmann::json& j,
+int segment_t::from_pt(
+    pt::ptree &ptree,
     model_constants_t<float_t> &cc) {
-
-    for (auto &it : j.items()) {
-        auto first = it.key();
+    int err = 0;
+    for (auto &it : ptree) {
+        auto first = it.first;
         if (first == "when_value") {
-            this->add_value(static_cast<double>(it.value()));
+            add_value(it.second.get_value<double>());
         } else if (first == "when_name") {
-            this->add_value_name(static_cast<std::string>(it.value()));
+            add_value_name(it.second.get_value<std::string>());
         } else if (first == "amount") {
-            this->add_amount(static_cast<uint32_t>(it.value()));
+            add_amount(it.second.get_value<uint32_t>());
         } else if (first == "when_method") {
-            this->add_method(static_cast<std::string>(it.value()));
+            add_method(it.second.get_value<std::string>());
         } else if (first == "when_counter") {
-            this->add_counter(static_cast<uint32_t>(it.value()));
+            add_counter(it.second.get_value<uint32_t>());
         } else if (first == "when_sens") {
-            this->add_out_param(static_cast<std::string>(it.value()));
+            add_out_param(it.second.get_value<std::string>());
         } else if (first == "activated") {
-            this->activated = static_cast<bool>(it.value());
+            activated = it.second.get_value<bool>();
         } else if (first == "duration") {
-            this->add_duration(static_cast<double>(it.value()));
+            add_duration(it.second.get_value<double>());
         } else if (first == "params") {
-            this->params.clear();
-            for (const auto &p_config : j["params"]) {
-                param_t p;
-                SUCCESS_OR_DIE(p.from_json(p_config, cc));
-                this->params.push_back(p);
+            for (auto &param_it : ptree.get_child(first)) {
+                param_t param;
+                err = param.from_pt(param_it.second, cc);
+                add_param(param);
             }
-            // for (auto &param : this->params) SUCCESS_OR_DIE(param.check_name(cc));
         } else {
-            SUCCESS_OR_DIE(SEGMENTS_CHECKPOINT_ERR);
+            err = SEGMENTS_CHECKPOINT_ERR;
         }
     }
+    return err;
 }
 
 double segment_t::limit_duration() const {
@@ -379,13 +377,13 @@ double segment_t::limit_duration() const {
 }
 
 template bool segment_t::perturb_check<codi::RealReverse>(
-//    const model_constants_t<codi::RealReverse>&,
+    const model_constants_t<codi::RealReverse>&,
     const std::vector< std::array<double, num_par > >&,
     const std::vector<codi::RealReverse>&,
     const double);
 
 template bool segment_t::perturb_check<codi::RealForwardVec<num_par_init> >(
-//    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
+    const model_constants_t<codi::RealForwardVec<num_par_init> >&,
     const std::vector< std::array<double, num_par > >&,
     const std::vector<codi::RealForwardVec<num_par_init> >&,
     const double);
@@ -408,10 +406,8 @@ template void segment_t::reset_variables<codi::RealReverse>(
 template void segment_t::reset_variables<codi::RealForwardVec<num_par_init> >(
     model_constants_t<codi::RealForwardVec<num_par_init> >&);
 
-template void segment_t::from_json<codi::RealReverse>(
-    const nlohmann::json&,
-    model_constants_t<codi::RealReverse>&);
+template int segment_t::from_pt<codi::RealReverse>(
+    pt::ptree&, model_constants_t<codi::RealReverse>&);
 
-template void segment_t::from_json<codi::RealForwardVec<num_par_init> >(
-    const nlohmann::json&,
-    model_constants_t<codi::RealForwardVec<num_par_init> >&);
+template int segment_t::from_pt<codi::RealForwardVec<num_par_init> >(
+    pt::ptree&, model_constants_t<codi::RealForwardVec<num_par_init> >&);

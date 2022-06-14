@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
         <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
         <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
@@ -35,8 +35,6 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -85,7 +83,7 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ufunc.html">User Functions</a></li>
@@ -94,11 +92,11 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Custom Types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="general.html">General Functions</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Example Results</span></p>
+<p class="caption"><span class="caption-text">Example Results</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Full C++ Documentation</span></p>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">C++ API</a></li>
 </ul>
@@ -167,10 +165,70 @@
             
   <div class="section" id="custom-types">
 <h1>Custom Types<a class="headerlink" href="#custom-types" title="Permalink to this headline">¶</a></h1>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>doxygengroup: Cannot find namespace “types” in doxygen xml output for project “AD” from directory: ./doxyoutput/xml</p>
-</div>
+<dl class="group">
+<dt>
+<span class="target" id="group__types"></span><em>group</em> <code class="sig-name descname">types</code></dt>
+<dd><p>Various types for storing model constants, reading data from netCDF files and lookup tables used in Icon. </p>
+<dl class="cpp struct">
+<dt id="_CPPv422reference_quantities_t">
+<span id="_CPPv322reference_quantities_t"></span><span id="_CPPv222reference_quantities_t"></span><span id="reference_quantities_t"></span><span class="target" id="structreference__quantities__t"></span><em class="property">struct </em><code class="sig-name descname">reference_quantities_t</code><br /></dt>
+<dd><em>#include &lt;types.h&gt;</em><p>Struct to hold all reference values. </p>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt id="_CPPv426particle_model_constants_t">
+<span id="_CPPv326particle_model_constants_t"></span><span id="_CPPv226particle_model_constants_t"></span><span id="particle_model_constants_t"></span><span class="target" id="structparticle__model__constants__t"></span><em class="property">struct </em><code class="sig-name descname">particle_model_constants_t</code><br /></dt>
+<dd><em>#include &lt;types.h&gt;</em><p>Struct to hold all model constants regarding particles that we want to know the gradients using AD of. Has getter and register functions for codi::RealReverse for its members. </p>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt id="_CPPv428collection_model_constants_t">
+<span id="_CPPv328collection_model_constants_t"></span><span id="_CPPv228collection_model_constants_t"></span><span id="collection_model_constants_t"></span><span class="target" id="structcollection__model__constants__t"></span><em class="property">struct </em><code class="sig-name descname">collection_model_constants_t</code><br /></dt>
+<dd><em>#include &lt;types.h&gt;</em><p>Struct to hold model constants for particle collection that we <em>usually</em> are not interested in regarding their influence on the overall model. It is stored within a struct <a class="reference internal" href="#structmodel__constants__t"><span class="std std-ref">model_constants_t</span></a> for different collisions such as hail and ice collection or ice and rain riming. </p>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt id="_CPPv47table_t">
+<span id="_CPPv37table_t"></span><span id="_CPPv27table_t"></span><span id="table_t"></span><span class="target" id="structtable__t"></span><em class="property">struct </em><code class="sig-name descname">table_t</code><br /></dt>
+<dd><em>#include &lt;types.h&gt;</em><p>A 4D lookup table on a grid used in ICON. </p>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt id="_CPPv413gamma_table_t">
+<span id="_CPPv313gamma_table_t"></span><span id="_CPPv213gamma_table_t"></span><span id="gamma_table_t"></span><span class="target" id="structgamma__table__t"></span><em class="property">struct </em><code class="sig-name descname">gamma_table_t</code><br /></dt>
+<dd><em>#include &lt;types.h&gt;</em><p>A lookup table for the lower incomplete gamma function from ICON mo_2mom_mcrph_util.f90 at incgfct_lower_lookupcreate: <div class="math">
+<p><img src="../_images/math/896dcf6c98a8505dfeecf415528f8f76801d0abf.png" alt="\text{int}(0)(x) \exp(-t) t^{a-1} \text{d}t"/></p>
+</div></p>
+<p>with constant a from x=0 to the 99.5% value of the normalized incomplete gamma function. This 99.5 % - value has been fitted with high accuracy as function of a in the range a in [0;20], but can safely be applied also to higher values of a. (Fit created with the matlab-program “gamma_unvoll_lower_lookup.m” by Ulrich Blahak, 2008/11/13).</p>
+<p>The last value in the table corresponds to x = infinity, so that during the reconstruction of incgfct-values from the table, the x-value can safely be truncated at the maximum table x-value. </p>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt id="_CPPv417model_constants_t">
+<span id="_CPPv317model_constants_t"></span><span id="_CPPv217model_constants_t"></span><span id="model_constants_t"></span><span class="target" id="structmodel__constants__t"></span><em class="property">struct </em><code class="sig-name descname">model_constants_t</code><br /></dt>
+<dd><em>#include &lt;types.h&gt;</em><p>Structure for constants of a model. Includes particle constants as well. </p>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt id="_CPPv415nc_parameters_t">
+<span id="_CPPv315nc_parameters_t"></span><span id="_CPPv215nc_parameters_t"></span><span id="nc_parameters_t"></span><span class="target" id="structnc__parameters__t"></span><em class="property">struct </em><code class="sig-name descname">nc_parameters_t</code><br /></dt>
+<dd><em>#include &lt;types.h&gt;</em><p>Structure to collect all nc parameters. </p>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt id="_CPPv413global_args_t">
+<span id="_CPPv313global_args_t"></span><span id="_CPPv213global_args_t"></span><span id="global_args_t"></span><span class="target" id="structglobal__args__t"></span><em class="property">struct </em><code class="sig-name descname">global_args_t</code><br /></dt>
+<dd><em>#include &lt;types.h&gt;</em><p>Helper structure to handle command line arguments. </p>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt id="_CPPv418input_parameters_t">
+<span id="_CPPv318input_parameters_t"></span><span id="_CPPv218input_parameters_t"></span><span id="input_parameters_t"></span><span class="target" id="structinput__parameters__t"></span><em class="property">struct </em><code class="sig-name descname">input_parameters_t</code><br /></dt>
+<dd><em>#include &lt;types.h&gt;</em><p>Structure to collect all input parameters. </p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 

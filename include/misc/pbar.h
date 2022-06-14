@@ -85,32 +85,20 @@ class ProgressBar {
         time = time + std::to_string(static_cast<int>(dt_total)%60) + "s ";
         int window_width = get_console_width();
         // Get average amount of steps per second
-        double dt_step = round(current_step/dt_total);
+        uint64_t dt_step = round(current_step/dt_total);
         std::stringstream right_side;
         right_side << std::fixed << std::setprecision(3) << description
                    << ": " << current_step << "/"
                    << end_step_string << time << "(";
         if (dt_step > 1e6) {
-            right_side << static_cast<int>(dt_step/1e6) << "MHz)";
+            right_side << dt_step/1e6 << "MHz)";
         } else if (dt_step > 1e3) {
-            right_side << static_cast<int>(dt_step/1e3) << "kHz)";
+            right_side << dt_step/1e3 << "kHz)";
         } else {
-            right_side << static_cast<int>(dt_step) << "Hz)";
+            right_side << dt_step << "Hz)";
         }
         std::string right_string = right_side.str();
-
-        // Get estimated remaining time "Rem. xxmin xxs"
-        uint64_t rem_time = (end_step - current_step)/dt_step;
-        std::string rem_string = " Rem. ";
-        if (rem_time >= 3600)
-            rem_string = rem_string + std::to_string(static_cast<int>(rem_time/3600)) + "h ";
-        if (rem_time >= 60)
-            rem_string = rem_string + std::to_string(static_cast<int>(rem_time%3600/60)) + "min ";
-        rem_string = rem_string + std::to_string(static_cast<int>(rem_time%60)) + "s";
-
-        // Check how long the bar can be
-        if (right_string.length()+1+rem_string.length() > desc_width)
-            desc_width = right_string.length() + rem_string.length();
+        if (right_string.length()+1 > desc_width) desc_width = right_string.length();
         // Get the progressbar
         int bar_width_max = window_width-desc_width-1;
         double current_box = static_cast<double>(current_step)/static_cast<double>(end_step) * bar_width_max;
@@ -126,8 +114,15 @@ class ProgressBar {
         // the rest
         for (int i=0; i < bar_width_max-bar_width; i++) bar += bars[0];
         bar += right_pad;
-
-        *out << bar << right_string << rem_string << "\r" << std::flush;
+        // Get estimated remaining time "Rem. xxmin xxs"
+        uint64_t rem_time = (end_step - current_step)/dt_step;
+        std::string rem_string = " Rem. ";
+        if (rem_time >= 3600)
+            rem_string = rem_string + std::to_string(static_cast<int>(rem_time/3600)) + "h ";
+        if (rem_time >= 60)
+            rem_string = rem_string + std::to_string(static_cast<int>(rem_time%3600/60)) + "min ";
+        rem_string = rem_string + std::to_string(static_cast<int>(rem_time%60)) + "s";
+        *out << bar << right_string << rem_string << "    \r" << std::flush;
 #endif
 #endif
     }

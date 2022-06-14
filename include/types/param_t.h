@@ -7,13 +7,12 @@
 #include <unordered_map>
 #include <utility>
 
-// #include <boost/property_tree/ptree.hpp>
-#include <nlohmann/json.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include "include/misc/error.h"
 #include "include/types/model_constants_t.h"
 
-// namespace pt = boost::property_tree;
+namespace pt = boost::property_tree;
 
 struct param_t{
     double mean;
@@ -59,15 +58,10 @@ struct param_t{
 
     int check();
 
-    // void put(pt::ptree &ptree) const;
-
-    // template<class float_t>
-    // int from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc);
-    template<class float_t>
-    int from_json(const nlohmann::json& j,  model_constants_t<float_t> &cc);
+    void put(pt::ptree &ptree) const;
 
     template<class float_t>
-    int check_name(model_constants_t<float_t> &cc);
+    int from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc);
 
     template<class float_t>
     void perturb(model_constants_t<float_t> &cc) const;
@@ -76,8 +70,4 @@ struct param_t{
     void reset(model_constants_t<float_t> &cc) const;
 
     std::string get_name() const;
-    int get_idx() const {return name;}
 };
-
-void to_json(nlohmann::json& j, const param_t& p);
-// void from_json(const nlohmann::json& j, param_t &p);

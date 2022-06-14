@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Template Struct collection_model_constants_t &mdash; Process and Plot Scripts 1 documentation</title>
+  <title>Struct collection_model_constants_t &mdash; Process and Plot Scripts 1 documentation</title>
   
 
   
@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
         <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
         <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
@@ -35,13 +35,11 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Struct gamma_table_t" href="structgamma__table__t.html" />
-    <link rel="prev" title="Struct checkpoint_t" href="structcheckpoint__t.html" /> 
+    <link rel="prev" title="Namespace netCDF" href="namespace_netCDF.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -85,7 +83,7 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -94,11 +92,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Example Results</span></p>
+<p class="caption"><span class="caption-text">Example Results</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Full C++ Documentation</span></p>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
 </ul>
@@ -148,7 +146,7 @@
         
           <li><a href="library_root.html">C++ API</a> &raquo;</li>
         
-      <li>Template Struct collection_model_constants_t</li>
+      <li>Struct collection_model_constants_t</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -167,87 +165,87 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="template-struct-collection-model-constants-t">
-<span id="exhale-struct-structcollection-model-constants-t"></span><h1>Template Struct collection_model_constants_t<a class="headerlink" href="#template-struct-collection-model-constants-t" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="struct-collection-model-constants-t">
+<span id="exhale-struct-structcollection-model-constants-t"></span><h1>Struct collection_model_constants_t<a class="headerlink" href="#struct-collection-model-constants-t" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
-<li><p>Defined in <a class="reference internal" href="file_include_types_collection_model_constants_t.h.html#file-include-types-collection-model-constants-t-h"><span class="std std-ref">File collection_model_constants_t.h</span></a></p></li>
+<li><p>Defined in <a class="reference internal" href="file_include_microphysics_types.h.html#file-include-microphysics-types-h"><span class="std std-ref">File types.h</span></a></p></li>
 </ul>
 <div class="section" id="struct-documentation">
 <h2>Struct Documentation<a class="headerlink" href="#struct-documentation" title="Permalink to this headline">¶</a></h2>
 <dl class="cpp struct">
-<dt class="sig sig-object cpp" id="_CPPv4I0E28collection_model_constants_t">
-<span id="_CPPv3I0E28collection_model_constants_t"></span><span id="_CPPv2I0E28collection_model_constants_t"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">float_t</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structcollection__model__constants__t"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">collection_model_constants_t</span></span></span><a class="headerlink" href="#_CPPv4I0E28collection_model_constants_t" title="Permalink to this definition">¶</a><br /></dt>
-<dd><p>Struct to hold model constants for particle collection that we <em>usually</em> are not interested in regarding their influence on the overall model. It is stored within a struct <a class="reference internal" href="structmodel__constants__t.html#structmodel__constants__t"><span class="std std-ref">model_constants_t</span></a> for different collisions such as hail and ice collection or ice and rain riming. </p>
+<dt id="_CPPv428collection_model_constants_t">
+<span id="_CPPv328collection_model_constants_t"></span><span id="_CPPv228collection_model_constants_t"></span><span id="collection_model_constants_t"></span><span class="target" id="structcollection__model__constants__t"></span><em class="property">struct </em><code class="sig-name descname">collection_model_constants_t</code><a class="headerlink" href="#_CPPv428collection_model_constants_t" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Struct to hold model constants for particle collection that we <em>usually</em> are not interested in regarding their influence on the overall model. It is stored within a struct <a class="reference internal" href="../groups/types.html#structmodel__constants__t"><span class="std std-ref">model_constants_t</span></a> for different collisions such as hail and ice collection or ice and rain riming. </p>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric">Public Members</p>
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10delta_n_aaE">
-<span id="_CPPv3N28collection_model_constants_t10delta_n_aaE"></span><span id="_CPPv2N28collection_model_constants_t10delta_n_aaE"></span><span id="collection_model_constants_t::delta_n_aa__float_t"></span><span class="target" id="structcollection__model__constants__t_1a0d0647729dc5a72b683d9bd3b5684212"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">delta_n_aa</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_n_aaE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10delta_n_aaE">
+<span id="_CPPv3N28collection_model_constants_t10delta_n_aaE"></span><span id="_CPPv2N28collection_model_constants_t10delta_n_aaE"></span><span id="collection_model_constants_t::delta_n_aa__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1adc34f5bf05ce4dfb30fb6e6f1b2550ce"></span>codi::RealReverse <code class="sig-name descname">delta_n_aa</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_n_aaE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10delta_n_abE">
-<span id="_CPPv3N28collection_model_constants_t10delta_n_abE"></span><span id="_CPPv2N28collection_model_constants_t10delta_n_abE"></span><span id="collection_model_constants_t::delta_n_ab__float_t"></span><span class="target" id="structcollection__model__constants__t_1ad9327ff19b98fc1ba6cabe232dc91db2"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">delta_n_ab</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_n_abE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10delta_n_abE">
+<span id="_CPPv3N28collection_model_constants_t10delta_n_abE"></span><span id="_CPPv2N28collection_model_constants_t10delta_n_abE"></span><span id="collection_model_constants_t::delta_n_ab__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a2b5d8a47ae6394787d635e61ac5ca800"></span>codi::RealReverse <code class="sig-name descname">delta_n_ab</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_n_abE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10delta_n_bbE">
-<span id="_CPPv3N28collection_model_constants_t10delta_n_bbE"></span><span id="_CPPv2N28collection_model_constants_t10delta_n_bbE"></span><span id="collection_model_constants_t::delta_n_bb__float_t"></span><span class="target" id="structcollection__model__constants__t_1a198d86f42d4a3a155e7b13f5108300af"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">delta_n_bb</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_n_bbE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10delta_n_bbE">
+<span id="_CPPv3N28collection_model_constants_t10delta_n_bbE"></span><span id="_CPPv2N28collection_model_constants_t10delta_n_bbE"></span><span id="collection_model_constants_t::delta_n_bb__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a6d32dd81e9a44c29eede4b893c77d6f9"></span>codi::RealReverse <code class="sig-name descname">delta_n_bb</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_n_bbE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10delta_q_aaE">
-<span id="_CPPv3N28collection_model_constants_t10delta_q_aaE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_aaE"></span><span id="collection_model_constants_t::delta_q_aa__float_t"></span><span class="target" id="structcollection__model__constants__t_1ab927681ac0e4b8d75a05dc5a7f3c498a"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">delta_q_aa</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_aaE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10delta_q_aaE">
+<span id="_CPPv3N28collection_model_constants_t10delta_q_aaE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_aaE"></span><span id="collection_model_constants_t::delta_q_aa__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a0c730e7688c06f872082d5ad4422cfcf"></span>codi::RealReverse <code class="sig-name descname">delta_q_aa</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_aaE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10delta_q_abE">
-<span id="_CPPv3N28collection_model_constants_t10delta_q_abE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_abE"></span><span id="collection_model_constants_t::delta_q_ab__float_t"></span><span class="target" id="structcollection__model__constants__t_1ab75d25ae59020456c5d7aa9232b4b3cc"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">delta_q_ab</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_abE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10delta_q_abE">
+<span id="_CPPv3N28collection_model_constants_t10delta_q_abE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_abE"></span><span id="collection_model_constants_t::delta_q_ab__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1ae3ede633d600d6a1c3bfcebb7eef6108"></span>codi::RealReverse <code class="sig-name descname">delta_q_ab</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_abE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10delta_q_bbE">
-<span id="_CPPv3N28collection_model_constants_t10delta_q_bbE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_bbE"></span><span id="collection_model_constants_t::delta_q_bb__float_t"></span><span class="target" id="structcollection__model__constants__t_1a811f8cfbfe1751d79cc908fdfe6d15c6"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">delta_q_bb</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_bbE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10delta_q_bbE">
+<span id="_CPPv3N28collection_model_constants_t10delta_q_bbE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_bbE"></span><span id="collection_model_constants_t::delta_q_bb__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a440b72d2fb9e06505208d53ea9f8fb35"></span>codi::RealReverse <code class="sig-name descname">delta_q_bb</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_bbE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10delta_q_baE">
-<span id="_CPPv3N28collection_model_constants_t10delta_q_baE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_baE"></span><span id="collection_model_constants_t::delta_q_ba__float_t"></span><span class="target" id="structcollection__model__constants__t_1a8276c1de00433409370005ebc6b7c08f"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">delta_q_ba</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_baE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10delta_q_baE">
+<span id="_CPPv3N28collection_model_constants_t10delta_q_baE"></span><span id="_CPPv2N28collection_model_constants_t10delta_q_baE"></span><span id="collection_model_constants_t::delta_q_ba__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a305b2cba86bd241077744a1d45cdee12"></span>codi::RealReverse <code class="sig-name descname">delta_q_ba</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10delta_q_baE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10theta_n_aaE">
-<span id="_CPPv3N28collection_model_constants_t10theta_n_aaE"></span><span id="_CPPv2N28collection_model_constants_t10theta_n_aaE"></span><span id="collection_model_constants_t::theta_n_aa__float_t"></span><span class="target" id="structcollection__model__constants__t_1ac2561b0338436dc08fedb402dd8bb1b0"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">theta_n_aa</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_n_aaE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10theta_n_aaE">
+<span id="_CPPv3N28collection_model_constants_t10theta_n_aaE"></span><span id="_CPPv2N28collection_model_constants_t10theta_n_aaE"></span><span id="collection_model_constants_t::theta_n_aa__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a755eefd3946e25e95b21d2293f4e7172"></span>codi::RealReverse <code class="sig-name descname">theta_n_aa</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_n_aaE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10theta_n_abE">
-<span id="_CPPv3N28collection_model_constants_t10theta_n_abE"></span><span id="_CPPv2N28collection_model_constants_t10theta_n_abE"></span><span id="collection_model_constants_t::theta_n_ab__float_t"></span><span class="target" id="structcollection__model__constants__t_1a6e434e383ce67475e8b5e586e3d1d586"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">theta_n_ab</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_n_abE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10theta_n_abE">
+<span id="_CPPv3N28collection_model_constants_t10theta_n_abE"></span><span id="_CPPv2N28collection_model_constants_t10theta_n_abE"></span><span id="collection_model_constants_t::theta_n_ab__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a7118408ad8f018859fd98027a0001ae2"></span>codi::RealReverse <code class="sig-name descname">theta_n_ab</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_n_abE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10theta_n_bbE">
-<span id="_CPPv3N28collection_model_constants_t10theta_n_bbE"></span><span id="_CPPv2N28collection_model_constants_t10theta_n_bbE"></span><span id="collection_model_constants_t::theta_n_bb__float_t"></span><span class="target" id="structcollection__model__constants__t_1aadc8a82ee234b5ebcd868cbd94cdce4a"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">theta_n_bb</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_n_bbE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10theta_n_bbE">
+<span id="_CPPv3N28collection_model_constants_t10theta_n_bbE"></span><span id="_CPPv2N28collection_model_constants_t10theta_n_bbE"></span><span id="collection_model_constants_t::theta_n_bb__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a070730c489fbd5f27608f85f70d94037"></span>codi::RealReverse <code class="sig-name descname">theta_n_bb</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_n_bbE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10theta_q_aaE">
-<span id="_CPPv3N28collection_model_constants_t10theta_q_aaE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_aaE"></span><span id="collection_model_constants_t::theta_q_aa__float_t"></span><span class="target" id="structcollection__model__constants__t_1a3b3c0d5f428d898f65dc61a07236f15b"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">theta_q_aa</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_aaE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10theta_q_aaE">
+<span id="_CPPv3N28collection_model_constants_t10theta_q_aaE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_aaE"></span><span id="collection_model_constants_t::theta_q_aa__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a0528f831999d9be9ce41b3dfc9c409cf"></span>codi::RealReverse <code class="sig-name descname">theta_q_aa</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_aaE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10theta_q_abE">
-<span id="_CPPv3N28collection_model_constants_t10theta_q_abE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_abE"></span><span id="collection_model_constants_t::theta_q_ab__float_t"></span><span class="target" id="structcollection__model__constants__t_1a6a2c77357806dbd627dfd706ebb5492a"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">theta_q_ab</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_abE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10theta_q_abE">
+<span id="_CPPv3N28collection_model_constants_t10theta_q_abE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_abE"></span><span id="collection_model_constants_t::theta_q_ab__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1ad9987fbcb089e999e5f1ab8ecc9fee5d"></span>codi::RealReverse <code class="sig-name descname">theta_q_ab</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_abE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10theta_q_bbE">
-<span id="_CPPv3N28collection_model_constants_t10theta_q_bbE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_bbE"></span><span id="collection_model_constants_t::theta_q_bb__float_t"></span><span class="target" id="structcollection__model__constants__t_1a975dca9375990c8d5fd3ad420de420cf"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">theta_q_bb</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_bbE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10theta_q_bbE">
+<span id="_CPPv3N28collection_model_constants_t10theta_q_bbE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_bbE"></span><span id="collection_model_constants_t::theta_q_bb__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a8ad5ec31814f6af6f9d0140f973f2b2e"></span>codi::RealReverse <code class="sig-name descname">theta_q_bb</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_bbE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N28collection_model_constants_t10theta_q_baE">
-<span id="_CPPv3N28collection_model_constants_t10theta_q_baE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_baE"></span><span id="collection_model_constants_t::theta_q_ba__float_t"></span><span class="target" id="structcollection__model__constants__t_1a858a706006c35dfb6ad9c834248a2780"></span><a class="reference internal" href="#_CPPv4I0E28collection_model_constants_t" title="collection_model_constants_t::float_t"><span class="n"><span class="pre">float_t</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">theta_q_ba</span></span></span><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_baE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N28collection_model_constants_t10theta_q_baE">
+<span id="_CPPv3N28collection_model_constants_t10theta_q_baE"></span><span id="_CPPv2N28collection_model_constants_t10theta_q_baE"></span><span id="collection_model_constants_t::theta_q_ba__codi::RealReverse"></span><span class="target" id="structcollection__model__constants__t_1a8739819024e5faa7b7bcc97bd0bb984c"></span>codi::RealReverse <code class="sig-name descname">theta_q_ba</code><a class="headerlink" href="#_CPPv4N28collection_model_constants_t10theta_q_baE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 </div>
@@ -267,7 +265,7 @@
         <a href="structgamma__table__t.html" class="btn btn-neutral float-right" title="Struct gamma_table_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="structcheckpoint__t.html" class="btn btn-neutral float-left" title="Struct checkpoint_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="namespace_netCDF.html" class="btn btn-neutral float-left" title="Namespace netCDF" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

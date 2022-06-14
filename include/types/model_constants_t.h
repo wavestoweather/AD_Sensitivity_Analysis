@@ -1,13 +1,11 @@
 #pragma once
 
 #include <algorithm>
-#include <fstream>
-#include <iostream>
 #include <string>
 #include <vector>
 
-#include <nlohmann/json.hpp>
-
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include "codi.hpp"
 
 #include "include/misc/error.h"
@@ -19,7 +17,7 @@
 #include "include/types/reference_quantities_t.h"
 #include "include/types/table_t.h"
 
-// namespace pt = boost::property_tree;
+namespace pt = boost::property_tree;
 
 /**
  * Structure for constants of a model. Includes particle constants as well.
@@ -35,7 +33,6 @@ struct model_constants_t {
      *  Running id for the ensembles starting from this instance.
      */
     uint64_t ensemble_id;
-    int rank;
 
     /**
      * Running id for the trajectory in this ensemble.
@@ -251,8 +248,7 @@ struct model_constants_t {
      */
     void get_gradients(
         std::vector<float_t> &y_single_new,
-        std::vector< std::array<double, num_par > > &y_diff,
-        const reference_quantities_t &ref_quant) const;
+        std::vector< std::array<double, num_par > > &y_diff) const;
 
     /**
      * Register output on tape, evaluate it, get all gradients and
@@ -261,8 +257,7 @@ struct model_constants_t {
     void get_gradients(
         std::vector<float_t> &y_single_new,
         std::vector< std::array<double, num_par > > &y_diff,
-        codi::RealReverse::Tape &tape,
-        const reference_quantities_t &ref_quant);
+        codi::RealReverse::Tape &tape) const;
 
     /**
      * Get the gradients of all its members. You need to register them on a
@@ -272,14 +267,20 @@ struct model_constants_t {
      */
     void get_gradient(
         std::array<double, num_par> &out_vec,
-        std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
-        uint32_t ii,
-        const double &ref_value) const;
+        std::vector<float_t> &y_single_new,
+        uint32_t ii) const;
 
-    void get_gradient(
-        std::array<double, num_par> &out_vec,
-        const double &ref_value) const;
+    /**
+     * Put any perturbed parameter to a property tree.
+     * This will compare the parameters to the constants
+     * available in constants.h, assuming this is only called during
+     * checkpoint writing.
+     *
+     * @params ptree Property tree, where a tree "model_constants" is being added.
+     */
+    void put(pt::ptree &ptree) const;
 
+    int from_pt(pt::ptree &ptree);
 
 #if defined(RK4_ONE_MOMENT)
     /**
@@ -313,32 +314,11 @@ struct model_constants_t {
     void setup_cloud_autoconversion(particle_model_constants_t<float_t> &pc);
 
     /**
-     * Setup all model constants and gamma tables including dependent constants.
-     * @param input
-     * @param ref_quant
+     * Setup model constants and gamma tables.
      */
     void setup_model_constants(
         const input_parameters_t &input,
         const reference_quantities_t &ref_quant);
-
-    /**
-     * Setup dependent variables.
-     *
-     * @param ref_quant
-     */
-    void setup_dependent_model_constants();
-
-    /**
-     * Set the uncertainty for every parameter with a default value of 10% of each parameter.
-     */
-    void set_uncertainty();
-
-    /**
-     * Set the uncertainty for every parameter with scale * parameter value, i.e., scale = 0.1 results in
-     * 10% of each parameter.
-     * @param scale
-     */
-    void set_uncertainty(double scale);
 
     /**
      * Set time step from input netcdf file.
@@ -349,7 +329,7 @@ struct model_constants_t {
      * Print all parameters that are being tracked with algorithmic
      * differentiation.
      */
-    void print(std::ostream &os = std::cout);
+    void print();
 
     /**
      * Check if a certain model state variable or model parameter
@@ -357,9 +337,7 @@ struct model_constants_t {
      *
      * @param idx Index of the model state variable or model parameter
      *              to check.
-     * @param state_param   0: idx is a model parameter
-     *                      1: idx is a model state variable
-     *                      2: idx is an initial condition
+     * @param state_param If true: idx is a model state variable
      */
     bool trace_check(const int &idx, const int state_param) const;
 
@@ -370,22 +348,6 @@ struct model_constants_t {
      */
     void load_configuration(const std::string &filename);
 
-    /**
-     * Return the values of all perturbed parameters.
-     *
-     * @return Vector with perturbed values of model parameters.
-     */
-#ifdef OUT_DOUBLE
-    void get_perturbed_info(
-        std::vector<double> &p_values,
-        std::vector<uint64_t> &p_idx) const;
-#else
-    void get_perturbed_info(
-        std::vector<float> &perturbed,
-        std::vector<uint64_t> &param_idx) const;
-#endif
-
-
 //  private:
     /**
      * Used to switch on or off certain trackings.
@@ -393,9 +355,4 @@ struct model_constants_t {
     uint64_t track_state;
     uint64_t track_ic;
     std::vector<uint64_t> track_param;
-
-    int from_json(const nlohmann::json &j);
 };
-
-template<class float_t>
-void to_json(nlohmann::json& j, const model_constants_t<float_t>& cc);

@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
         <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
         <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
     
@@ -35,8 +35,6 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
@@ -83,7 +81,7 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Grouped C++ Documentation</span></p>
+              <p class="caption"><span class="caption-text">Grouped C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../groups/rk.html">Runge-Kutta 4</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/ufunc.html">User Functions</a></li>
@@ -92,11 +90,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../groups/types.html">Custom Types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../groups/general.html">General Functions</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Example Results</span></p>
+<p class="caption"><span class="caption-text">Example Results</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../results/traj0.html">Example Results for a Single Trajectory</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Full C++ Documentation</span></p>
+<p class="caption"><span class="caption-text">Full C++ Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="library_root.html">C++ API</a></li>
 </ul>
@@ -166,14 +164,14 @@
   <div class="section" id="program-listing-for-file-implicit-euler-h">
 <span id="program-listing-file-include-microphysics-implicit-euler-h"></span><h1>Program Listing for File implicit_euler.h<a class="headerlink" href="#program-listing-for-file-implicit-euler-h" title="Permalink to this headline">¶</a></h1>
 <p>↰ <a class="reference internal" href="file_include_microphysics_implicit_euler.h.html#file-include-microphysics-implicit-euler-h"><span class="std std-ref">Return to documentation for file</span></a> (<code class="docutils literal notranslate"><span class="pre">include/microphysics/implicit_euler.h</span></code>)</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#pragma once</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#ifndef IMPLICIT_EULER_H</span>
+<span class="cp">#define IMPLICIT_EULER_H</span>
 
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;codi.hpp&quot;</span><span class="cp"></span>
 
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;codi.hpp&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;constants.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;user_functions.h&quot;</span><span class="cp"></span>
 
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;include/microphysics/constants.h&quot;</span><span class="cp"></span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;include/microphysics/user_functions.h&quot;</span><span class="cp"></span>
 
 
 <span class="c1">// =============================================================================</span>
@@ -189,19 +187,21 @@
 <span class="c1">// y1-y1</span>
 <span class="c1">// for two given vectors y1 and y2.</span>
 <span class="c1">//</span>
-<span class="kr">inline</span><span class="w"> </span><span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span><span class="w"> </span><span class="nf">compute_diff_length_square</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span><span class="w"> </span><span class="n">y1</span><span class="p">[],</span><span class="w"></span>
-<span class="w">    </span><span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span><span class="w"> </span><span class="n">y2</span><span class="p">[],</span><span class="w"></span>
-<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_comp</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="kr">inline</span> <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">compute_diff_length_square</span><span class="p">(</span> <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">y1</span><span class="p">[],</span>
+                             <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">y2</span><span class="p">[],</span>
+                             <span class="k">const</span> <span class="kt">int</span> <span class="n">num_comp</span> <span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">result</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
 
-<span class="w">    </span><span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">;</span><span class="w"></span>
+  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">num_comp</span> <span class="p">;</span> <span class="n">ii</span><span class="o">++</span><span class="p">){</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">+</span> <span class="p">(</span><span class="n">y1</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">-</span><span class="n">y2</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">y1</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">-</span><span class="n">y2</span><span class="p">[</span><span class="n">ii</span><span class="p">]);</span>
+  <span class="p">}</span>
 
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">ii</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">ii</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_comp</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">ii</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">y1</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">-</span><span class="n">y2</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">y1</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">-</span><span class="n">y2</span><span class="p">[</span><span class="n">ii</span><span class="p">]);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+  <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span> <span class="c1">// End of method &quot;compute_diff_length_square&quot;</span>
 
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+
+
 
 <span class="c1">// This method computes a single step using the implicit method of</span>
 <span class="c1">// Euler for the ODE</span>
@@ -213,57 +213,73 @@
 <span class="c1">// fixed-point iteration. This has the drawback, that the method</span>
 <span class="c1">// should _NOT_ be used for stiff equations.</span>
 <span class="c1">//</span>
-<span class="kt">void</span><span class="w"> </span><span class="nf">implicit_euler_step</span><span class="p">(</span><span class="w"></span>
-<span class="w">    </span><span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span><span class="w"> </span><span class="n">ynew</span><span class="p">[],</span><span class="w"></span>
-<span class="w">    </span><span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span><span class="w"> </span><span class="n">yold</span><span class="p">[],</span><span class="w"></span>
-<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_comp</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">reference_quantities_t</span><span class="o">&amp;</span><span class="w"> </span><span class="n">ref</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">model_constants_t</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="kt">void</span> <span class="n">implicit_euler_step</span><span class="p">(</span> <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">ynew</span><span class="p">[],</span>
+              <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">yold</span><span class="p">[],</span>
+              <span class="k">const</span> <span class="kt">int</span> <span class="n">num_comp</span><span class="p">,</span>
+              <span class="k">const</span> <span class="n">reference_quantities_t</span><span class="o">&amp;</span> <span class="n">ref</span><span class="p">,</span>
+              <span class="n">model_constants_t</span><span class="o">&amp;</span> <span class="n">cc</span><span class="p">)</span>
+<span class="p">{</span>
 
-<span class="w">    </span><span class="c1">// Define the tolerance</span>
-<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">TOL_square</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0e-8</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0e-8</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span><span class="w"> </span><span class="n">err_square</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0e10</span><span class="p">;</span><span class="w"></span>
+  <span class="c1">// Define the tolerance</span>
+  <span class="k">const</span> <span class="kt">double</span> <span class="n">TOL_square</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0e-8</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0e-8</span><span class="p">);</span>
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">err_square</span> <span class="o">=</span> <span class="mf">1.0e10</span><span class="p">;</span>
 
-<span class="w">    </span><span class="c1">// Define the temporary variables</span>
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span><span class="o">&gt;</span><span class="w"> </span><span class="n">yit</span><span class="p">(</span><span class="n">num_comp</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span><span class="o">&gt;</span><span class="w"> </span><span class="n">k</span><span class="p">(</span><span class="n">num_comp</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">    </span><span class="c1">// Evaluate the RHS to get f(yold)</span>
-<span class="w">    </span><span class="n">RHS</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">yold</span><span class="p">,</span><span class="w"> </span><span class="n">num_comp</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">,</span><span class="w"> </span><span class="n">cc</span><span class="p">);</span><span class="w"></span>
-
-<span class="w">    </span><span class="c1">// Compute the first guess</span>
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">ii</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">ii</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_comp</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">ii</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">yit</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">yold</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cc</span><span class="p">.</span><span class="n">dt_half</span><span class="o">*</span><span class="n">k</span><span class="p">[</span><span class="n">ii</span><span class="p">];</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
+  <span class="c1">// Define the temporary variables</span>
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">yit</span><span class="p">[</span><span class="n">num_comp</span><span class="p">];</span>
+  <span class="n">codi</span><span class="o">::</span><span class="n">RealReverse</span> <span class="n">k</span><span class="p">[</span><span class="n">num_comp</span><span class="p">];</span>
+  <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 
 
-<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">err_square</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">TOL_square</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="c1">// Safety measure</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">10000</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">WARNING: Reached the maximal step count for the fixed-point iteration!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span><span class="w"></span>
-<span class="w">            </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
-<span class="w">        </span><span class="n">count</span><span class="o">++</span><span class="p">;</span><span class="w"></span>
+  <span class="c1">// Evaluate the RHS to get f(yold)</span>
+  <span class="n">RHS</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">yold</span><span class="p">,</span> <span class="n">num_comp</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">cc</span><span class="p">);</span>
 
-<span class="w">        </span><span class="c1">// Compute the new iterate</span>
-<span class="w">        </span><span class="n">RHS</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">yit</span><span class="p">,</span><span class="w"> </span><span class="n">num_comp</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="p">,</span><span class="w"> </span><span class="n">cc</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">ii</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">ii</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_comp</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">ii</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">            </span><span class="n">ynew</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">yold</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cc</span><span class="p">.</span><span class="n">dt_half</span><span class="o">*</span><span class="n">k</span><span class="p">[</span><span class="n">ii</span><span class="p">];</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
+  <span class="c1">// Compute the first guess</span>
+  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">num_comp</span> <span class="p">;</span> <span class="n">ii</span><span class="o">++</span><span class="p">){</span>
+    <span class="n">yit</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">yold</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">+</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt_half</span><span class="o">*</span><span class="n">k</span><span class="p">[</span><span class="n">ii</span><span class="p">];</span>
+  <span class="p">}</span>
 
-<span class="w">        </span><span class="c1">// Compute the error</span>
-<span class="w">        </span><span class="n">err_square</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compute_diff_length_square</span><span class="p">(</span><span class="n">ynew</span><span class="p">,</span><span class="w"> </span><span class="n">yit</span><span class="p">,</span><span class="w"> </span><span class="n">num_comp</span><span class="p">);</span><span class="w"></span>
 
-<span class="w">        </span><span class="c1">//</span>
-<span class="w">        </span><span class="c1">// Swap the contents of vectors yit and ynew</span>
-<span class="w">        </span><span class="c1">// NOTE: This operation could be done using pointers. BUT: is it also possible with AD?</span>
-<span class="w">        </span><span class="c1">//</span>
-<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">ii</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">ii</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num_comp</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">ii</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">            </span><span class="n">yit</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ynew</span><span class="p">[</span><span class="n">ii</span><span class="p">];</span><span class="w"></span>
-<span class="w">        </span><span class="p">}</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+  <span class="k">while</span><span class="p">(</span> <span class="n">err_square</span> <span class="o">&gt;</span> <span class="n">TOL_square</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">// Safety measure</span>
+      <span class="k">if</span><span class="p">(</span><span class="n">count</span> <span class="o">&gt;</span> <span class="mi">10000</span><span class="p">){</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">WARNING: Reached the maximal step count for the fixed-point iteration!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+    <span class="k">break</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="n">count</span><span class="o">++</span><span class="p">;</span>
+
+      <span class="c1">// Compute the new iterate</span>
+      <span class="n">RHS</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">yit</span><span class="p">,</span> <span class="n">num_comp</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">cc</span><span class="p">);</span>
+      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">num_comp</span> <span class="p">;</span> <span class="n">ii</span><span class="o">++</span><span class="p">){</span>
+    <span class="n">ynew</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">yold</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">+</span> <span class="n">cc</span><span class="p">.</span><span class="n">dt_half</span><span class="o">*</span><span class="n">k</span><span class="p">[</span><span class="n">ii</span><span class="p">];</span>
+      <span class="p">}</span>
+
+      <span class="c1">// Compute the error</span>
+      <span class="n">err_square</span> <span class="o">=</span> <span class="n">compute_diff_length_square</span><span class="p">(</span><span class="n">ynew</span><span class="p">,</span> <span class="n">yit</span><span class="p">,</span> <span class="n">num_comp</span><span class="p">);</span>
+
+      <span class="c1">//</span>
+      <span class="c1">// Swap the contents of vectors yit and ynew</span>
+      <span class="c1">// NOTE: This operation could be done using pointers. BUT: is it also possible with AD?</span>
+      <span class="c1">//</span>
+      <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">num_comp</span> <span class="p">;</span> <span class="n">ii</span><span class="o">++</span><span class="p">){</span>
+    <span class="n">yit</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">ynew</span><span class="p">[</span><span class="n">ii</span><span class="p">];</span>
+      <span class="p">}</span>
+
+
+    <span class="p">}</span>
+
+
+<span class="p">}</span> <span class="c1">// End of method implicit_euler_step</span>
+
+
+
+
+
+
+
+
+
+<span class="cp">#endif</span>
 </pre></div>
 </div>
 </div>

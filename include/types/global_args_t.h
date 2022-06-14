@@ -98,7 +98,9 @@ struct global_args_t {
      */
     int parse_arguments(
         const int argc,
-        char* const * argv);
+        char* const * argv,
+        const int &rank,
+        const int &n_processes);
     /**
      * Display a help message on how to use this program.
      */

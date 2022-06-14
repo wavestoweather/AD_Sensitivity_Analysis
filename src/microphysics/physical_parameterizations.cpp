@@ -121,19 +121,19 @@ void init_particle_collection_1(
     particle_model_constants_t<float_t> &pc1,
     particle_model_constants_t<float_t> &pc2,
     collection_model_constants_t<float_t> &c) {
-    c.delta_n_aa = coll_delta_11(pc1, 0);
+    c.delta_n_aa = coll_delta_11(pc1, pc2, 0);
     c.delta_n_ab = coll_delta_12(pc1, pc2, 0);
-    c.delta_n_bb = coll_delta_22(pc2, 0);
-    c.delta_q_aa = coll_delta_11(pc1, 0);
+    c.delta_n_bb = coll_delta_22(pc1, pc2, 0);
+    c.delta_q_aa = coll_delta_11(pc1, pc2, 0);
     c.delta_q_ab = coll_delta_12(pc1, pc2, 1);
-    c.delta_q_bb = coll_delta_22(pc2, 1);
+    c.delta_q_bb = coll_delta_22(pc1, pc2, 1);
 
-    c.theta_n_aa = coll_theta_11(pc1, 0);
+    c.theta_n_aa = coll_theta_11(pc1, pc2, 0);
     c.theta_n_ab = coll_theta_12(pc1, pc2, 0);
-    c.theta_n_bb = coll_theta_22(pc2, 0);
-    c.theta_q_aa = coll_theta_11(pc1, 0);
+    c.theta_n_bb = coll_theta_22(pc1, pc2, 0);
+    c.theta_q_aa = coll_theta_11(pc1, pc2, 0);
     c.theta_q_ab = coll_theta_12(pc1, pc2, 1);
-    c.theta_q_bb = coll_theta_22(pc2, 1);
+    c.theta_q_bb = coll_theta_22(pc1, pc2, 1);
 }
 
 /**
@@ -150,21 +150,21 @@ void init_particle_collection_2(
     particle_model_constants_t<float_t> &pc1,
     particle_model_constants_t<float_t> &pc2,
     collection_model_constants_t<float_t> &c) {
-    c.delta_n_aa = coll_delta_11(pc1, 0);
+    c.delta_n_aa = coll_delta_11(pc1, pc2, 0);
     c.delta_n_ab = coll_delta_12(pc1, pc2, 0);
-    c.delta_n_bb = coll_delta_22(pc2, 0);
-    c.delta_q_aa = coll_delta_11(pc1, 1);
+    c.delta_n_bb = coll_delta_22(pc1, pc2, 0);
+    c.delta_q_aa = coll_delta_11(pc1, pc2, 1);
     c.delta_q_ab = coll_delta_12(pc1, pc2, 1);
     c.delta_q_ba = coll_delta_12(pc2, pc1, 1);
-    c.delta_q_bb = coll_delta_22(pc2, 1);
+    c.delta_q_bb = coll_delta_22(pc1, pc2, 1);
 
-    c.theta_n_aa = coll_theta_11(pc1, 0);
+    c.theta_n_aa = coll_theta_11(pc1, pc2, 0);
     c.theta_n_ab = coll_theta_12(pc1, pc2, 0);
-    c.theta_n_bb = coll_theta_22(pc2, 0);
-    c.theta_q_aa = coll_theta_11(pc1, 1);
+    c.theta_n_bb = coll_theta_22(pc1, pc2, 0);
+    c.theta_q_aa = coll_theta_11(pc1, pc2, 1);
     c.theta_q_ab = coll_theta_12(pc1, pc2, 1);
     c.theta_q_ba = coll_theta_12(pc2, pc1, 1);
-    c.theta_q_bb = coll_theta_22(pc2, 1);
+    c.theta_q_bb = coll_theta_22(pc1, pc2, 1);
 }
 
 

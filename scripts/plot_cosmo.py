@@ -421,6 +421,52 @@ def plot_line(
         else:
             img = area_plot * line_plots
 
+    # else:
+    # img_other = df_group.loc[df_group["type"].isin(other_types)].hvplot.scatter(
+    #     x=x_axis,
+    #     y=y,
+    #     by=by,
+    #     color=cmap_values,
+    #     datashade=False,
+    #     size=scatter_size,
+    #     legend=False,
+    #     width=width,
+    #     height=height,
+    # )
+
+    # img = (
+    #     df_group.hvplot.scatter(
+    #         x=x_axis,
+    #         y=y,
+    #         by=by,
+    #         cmap=cmap,
+    #         label=None,
+    #         ylabel=latexify.parse_word(y).upper()
+    #         + " "
+    #         + latexify.get_unit(y, True),
+    #         xlabel=latexify.parse_word(x_axis).upper(),
+    #         datashade=datashade,
+    #         width=width,
+    #         height=height,
+    #         dynamic=False,
+    #         ylim=(
+    #             min_y - del_y * lim_multiplier,
+    #             max_y + del_y * lim_multiplier,
+    #         ),
+    #         xlim=(min_x, max_x),
+    #         dynspread=datashade,
+    #         yticks=yticks,
+    #         xticks=xticks,
+    #         grid=True,
+    #         legend=False,
+    #     )
+    #     * img_other
+    # )
+    # img = img * overlay * img_other
+    # # img = img.opts(
+    # #     fontscale=fontscale,
+    # # )
+
     if backend == "matplotlib":
         img = img.opts(
             show_grid=True,
@@ -722,8 +768,11 @@ def plot_scatter(
             * img_other
         )
         img = img * overlay * img_other
+        # img = img.opts(
+        #     fontscale=fontscale,
+        # )
 
-    if show_legend:
+    if show_legend:  # and backend != "bokeh":
         img = img * overlay
 
     if backend == "matplotlib":
@@ -731,6 +780,7 @@ def plot_scatter(
             show_grid=True,
             fontscale=fontscale,
             fig_inches=fig_inches,
+            # title=title,
         )
     else:
         img = img.opts(
@@ -917,6 +967,7 @@ def plot_map(
         save = plot_path + "_" + "{:03d}".format(i)
     renderer = hv.Store.renderers[backend].instance(fig="png", dpi=300)
     renderer.save(img, save)
+    # hv.save(img, save, fmt="png")
     return img
 
 
@@ -1031,6 +1082,8 @@ if __name__ == "__main__":
     if args.data_path[-3:] == ".h5":
         if args.verbosity > 0:
             print(f"Loading HDF5 file from {args.data_path}")
+        # store = pd.HDFStore(args.data_path)
+        # df = store["df"]
         df = pd.read_hdf(args.data_path)
     else:
         df, pollon, pollat = load_data(args.data_path, args.traj_type, args.verbosity)
@@ -1138,22 +1191,22 @@ if __name__ == "__main__":
         datashade=True,
     )
 
-    if args.verbosity > 1:
-        print("Plotting color coded pressure on a map with limited time")
-    _ = plot_map(
-        df=df.loc[
-            (df["time_after_ascent"] >= -2800) & (df["time_after_ascent"] <= 26000)
-        ],
-        color_code="pressure_hPa",
-        pollon=pollon,
-        pollat=pollat,
-        store_path=args.store_path,
-        width=args.width,
-        height=args.height,
-        title="Convective Trajectories and Pressure",
-        tiles="EsriNatGeo",
-        s=1,
-        alpha=1,
-        datashade=False,
-        color_label="Pressure [hPa]",
-    )
+    # if args.verbosity > 1:
+    #     print("Plotting color coded pressure on a map with limited time")
+    # _ = plot_map(
+    #     df=df.loc[
+    #         (df["time_after_ascent"] >= -2800) & (df["time_after_ascent"] <= 26000)
+    #     ],
+    #     color_code="pressure_hPa",
+    #     pollon=pollon,
+    #     pollat=pollat,
+    #     store_path=args.store_path,
+    #     width=args.width,
+    #     height=args.height,
+    #     title="Convective Trajectories and Pressure",
+    #     tiles="EsriNatGeo",
+    #     s=1,
+    #     alpha=1,
+    #     datashade=False,
+    #     color_label="Pressure [hPa]",
+    # )

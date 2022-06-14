@@ -4,8 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include <nlohmann/json.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include "include/misc/error.h"
 #include "include/microphysics/constants.h"
@@ -14,6 +13,7 @@
 #include "include/types/param_t.h"
 #include "include/types/reference_quantities_t.h"
 
+namespace pt = boost::property_tree;
 
 struct segment_t {
     std::vector<param_t> params;
@@ -27,7 +27,7 @@ struct segment_t {
     int value_name;
     int value_name_sig; /*<! Which parameter had the most significant impact so far >*/
     int out_param; /*<! Which output parameter in case of sensitivity methods >*/
-    int n_segments;
+    uint32_t n_segments;
     uint32_t err;
     uint32_t old_sign;
     double duration; /*<! Maximum duration integration time for this ensemble >*/
@@ -41,12 +41,11 @@ struct segment_t {
     const double tol = 1e-5;
 
     enum Method {
-        impact_change, sign_flip, value_method, repeated_time, full_perturbation
+        impact_change, sign_flip, value_method, repeated_time
     };
     std::unordered_map<std::string, Method> const table_method = {
         {"impact_change", Method::impact_change}, {"sign_flip", Method::sign_flip},
-        {"value", Method::value_method}, {"repeated_time", Method::repeated_time},
-        {"full_perturbation", Method::full_perturbation}
+        {"value", Method::value_method}, {"repeated_time", Method::repeated_time}
     };
     int method;
     enum Param {
@@ -390,7 +389,7 @@ struct segment_t {
      */
     template<class float_t>
     bool perturb_check(
-//        const model_constants_t<float_t> &cc,
+        const model_constants_t<float_t> &cc,
         const std::vector< std::array<double, num_par > > &gradients,
         const std::vector<float_t> &y,
         const double timestep);
@@ -414,22 +413,14 @@ struct segment_t {
     template<class float_t>
     void reset_variables(model_constants_t<float_t> &cc);
 
-    // void put(pt::ptree &ptree) const;
-
-    // void to_json(nlohmann::json& j) const;
-
-    /**
-     * Used to read from a checkpoint file.
-     */
-    template<class float_t>
-    void from_json(const nlohmann::json& j, model_constants_t<float_t> &cc);
+    void put(pt::ptree &ptree) const;
 
     /**
      * Used to read from a checkpoint file where the mean for the gaussians
      * to draw from is given.
      */
-    // template<class float_t>
-    // int from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc);
+    template<class float_t>
+    int from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc);
 
     /**
      * Get the number of seconds that the ensenmble shall run.
@@ -438,5 +429,3 @@ struct segment_t {
      */
     double limit_duration() const;
 };
-
-void to_json(nlohmann::json& j, const segment_t& s);

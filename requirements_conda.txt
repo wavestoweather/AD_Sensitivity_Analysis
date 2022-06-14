@@ -18,4 +18,3 @@ holoviews==1.13.2
 hvplot==0.5.2
 iris==2.4.0
 geoviews==1.8.1
-doxygen==1.8.13

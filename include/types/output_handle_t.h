@@ -12,13 +12,13 @@
 #include <string>
 #include <vector>
 
-#include <nlohmann/json.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include "include/misc/error.h"
 #include "include/types/model_constants_t.h"
 #include "include/types/netcdf_reader_t.h"
 #include "include/types/reference_quantities_t.h"
-#include "include/types/segment_t.h"
 
 struct output_handle_t{
     uint64_t n_snapshots;  // number of buffered snapshots
@@ -30,15 +30,10 @@ struct output_handle_t{
     // Tracking either initial conditions or model parameters.
     // Both at the same time is not possible (or rather would take too long)
     bool track_ic;
-#ifdef COMPRESS_OUTPUT
-    int n_processes;
-#endif
 #ifdef OUT_DOUBLE
     const double FILLVALUE = std::numeric_limits<double>::quiet_NaN();
-    const nc_type NC_FLOAT_T = NC_DOUBLE;
 #else
     const float FILLVALUE = std::numeric_limits<float>::quiet_NaN();
-    const nc_type NC_FLOAT_T = NC_FLOAT;
 #endif
 
     std::string filetype;
@@ -48,15 +43,16 @@ struct output_handle_t{
     // each array = one column
     // slow index: num_comp
 #ifdef OUT_DOUBLE
-    std::array<std::vector<double>, num_comp+num_par+5+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
+    std::array<std::vector<double>, num_comp+num_par+4+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
 #else
-    std::array<std::vector<float>, num_comp+num_par+5+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
+    std::array<std::vector<float>, num_comp+num_par+4+static_cast<uint32_t>(Init_cons_idx::n_items) > output_buffer;
 #endif
 #if !defined B_EIGHT
-    std::array<std::vector<unsigned char>, 5 > output_buffer_flags;
+    std::array<std::vector<unsigned char>, 4 > output_buffer_flags;
 #else
-    std::array<std::vector<unsigned char>, 1 > output_buffer_flags;
+    std::array<std::vector<unsigned char>, 0 > output_buffer_flags;
 #endif
+    // std::array<std::vector<std::string>, 1 > output_buffer_str;
     std::array<std::vector<uint64_t>, 2 > output_buffer_int;
     /**
      * ID for dimensions of output file.
@@ -67,6 +63,8 @@ struct output_handle_t{
      */
     std::vector<int> varid;
 
+    uint64_t n_ens;
+    uint64_t n_trajs;
     uint64_t n_trajs_file;
     uint64_t traj;
     uint64_t ens;
@@ -89,21 +87,7 @@ struct output_handle_t{
      */
     int simulation_mode;
 
-    /**
-     * For simulation mode create_train_set:
-     * Idx in the output array for each parameter that can potentially be perturbed.
-     * Values of -1 indicate that an output index has not been set.
-     */
-    std::vector<int> perturbed_idx;
-    std::vector<std::string> perturbed_names;
-    uint64_t n_perturbed_params;
-#ifdef OUT_DOUBLE
-    std::vector<double> unperturbed_vals;
-#else
-    std::vector<float> unperturbed_vals;
-#endif
     enum Dim_idx {
-        perturb_param_dim,
         out_param_dim,
         ensemble_dim,
         trajectory_dim,
@@ -161,13 +145,9 @@ struct output_handle_t{
         slan_400,
         slan_600,
 #endif
-        asc600,
         step,
         phase,
 
-        perturbed,  // the dimension
-        perturbation_value,
-//        perturbed_param,
         // We do not clutter the gradient values here
         // The index is given by n_vars + i
         n_vars
@@ -180,8 +160,7 @@ struct output_handle_t{
         time_ascent_buf = num_comp,
         lat_buf = num_comp+1,
         lon_buf = num_comp+2,
-        perturb_buf = num_comp+3,
-        n_buffer = num_comp+4
+        n_buffer = num_comp+3
         // We do not clutter the gradient values here
         // The index is given by n_buffer + i
     };
@@ -193,44 +172,21 @@ struct output_handle_t{
         const std::string filetype,
         const std::string filename,
         const model_constants_t<float_t> &cc,
-//        const reference_quantities_t &ref_quant,
+        const reference_quantities_t &ref_quant,
         const std::string in_filename,
         const uint32_t write_index,
         const uint32_t snapshot_index,
         const int &rank,
         const int &simulation_mode,
         const bool &initial_cond,
-#ifdef COMPRESS_OUTPUT
-        const int &n_processes,
-#endif
         const double delay_out_time = 0);
-
-    template<class float_t>
-    output_handle_t(
-        const std::string filetype,
-        const std::string filename,
-        const model_constants_t<float_t> &cc,
-//        const reference_quantities_t &ref_quant,
-        const std::string in_filename,
-        const uint32_t write_index,
-        const uint32_t snapshot_index,
-        const int &rank,
-        const int &simulation_mode,
-        const bool &initial_cond,
-#ifdef COMPRESS_OUTPUT
-        const int &n_processes,
-#endif
-        const double delay_out_time,
-        const std::vector<segment_t> &segments);
-
-    ~output_handle_t() {nc_close(ncid);}
 
     template<class float_t>
     void setup(
         const std::string filetype,
         const std::string filename,
         const model_constants_t<float_t> &cc,
-//        const reference_quantities_t &ref_quant,
+        const reference_quantities_t &ref_quant,
         const std::string in_filename,
         const uint32_t write_index,
         const uint32_t snapshot_index,
@@ -281,16 +237,12 @@ struct output_handle_t{
         const uint32_t snapshot_index);
 
     /**
-     * Write the buffered data to disk or call certain functions for collective
-     * access of the data if needed.
+     * Write the buffered data to disk.
      *
      * @param cc
-     * @param no_flush If true: do not really flush anything and just call
-     *                 the flushing routines, which is needed if compression
-     *                 is enabled.
      */
     template<class float_t>
-    bool flush_buffer(const model_constants_t<float_t> &cc, bool no_flush = false);
+    void flush_buffer(const model_constants_t<float_t> &cc);
 
     /**
      * Buffer the current data  (model state and gradients) and
@@ -310,79 +262,4 @@ struct output_handle_t{
         const uint32_t snapshot_index,
         const bool last_step,
         const reference_quantities_t &ref_quant);
-
- private:
-    /**
-     * Setup and define variables for gradients in the NetCDF-file. This method sets
-     * mode create_train_set: only an Out_Parameter_ID, a trajectory, and a time dimension for
-     * the gradients.
-     * mode limited_time_ens: only an Out_Parameter_ID, a trajectory, and a time dimension for
-     * the gradients
-     * else: an ensemble, trajectory and time dimension and an Out_Parameter_ID dimension if needed for
-     * the gradients. Calls define_var_gradients().
-     *
-     * @param cc
-     */
-    template<class float_t>
-    void setup_gradients(const model_constants_t<float_t> &cc);
-
-    /**
-     * Define the variables for gradients in the NetCDF-file.
-     *
-     * @param cc
-     * @param dim_pointer Pointer to vector with all dim_ids.
-     * @param n_dims Number of dimensions (=length of vector dim_pointer is pointing to).
-     */
-    template<class float_t>
-    void define_var_gradients(
-        const model_constants_t<float_t> &cc,
-        const int *dim_pointer,
-        const int &n_dims);
-
-    /**
-     * Define all variables for the NetCDF-file.
-     *
-     * @param cc
-     */
-    template<class float_t>
-    void define_vars(const model_constants_t<float_t> &cc);
-
-    template<class float_t>
-    void set_attributes(
-        const model_constants_t<float_t> &cc,
-        const std::string in_filename);
-
-    /**
-     * In theory, one can apply compression
-     * but this needs HDF5 >=1.10.2 (and Lustre).
-     * Needs netcdf-c >= 4.7.4
-     * All variables must be written in collective mode.
-     * Perturbed simulations do not work with compression enabled!
-     *
-     * @param cc
-     */
-    template<class float_t>
-    void set_compression(const model_constants_t<float_t> &cc);
-
-    /**
-     * Write the values for the dimensions.
-     *
-     * @param cc
-     * @param delay_out_time
-     */
-    template<class float_t>
-    void write_dimension_values(
-        const model_constants_t<float_t> &cc,
-        const double delay_out_time);
-
-    /**
-     * Open the recently created output file and prepare it for parallel writes.
-     *
-     * @param cc
-     * @param file_string
-     */
-    template<class float_t>
-    void set_parallel_access(
-        const model_constants_t<float_t> &cc,
-        const std::string file_string);
 };

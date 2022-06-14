@@ -1,5 +1,3 @@
-from typing import Union
-
 import holoviews as hv
 import itertools
 import numpy as np
@@ -7,11 +5,7 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 import os.path
 import pandas as pd
-
-try:
-    from progressbar import progressbar as pb
-except:
-    from tqdm import tqdm as pb
+from progressbar import progressbar as pb
 from timeit import default_timer as timer
 import warnings
 import xarray as xr
@@ -211,12 +205,7 @@ def load_dataset(
                 not_perturbed_path = path + "_notPerturbed.nc_wcb"
             if not os.path.isfile(not_perturbed_path):
                 not_perturbed_path = path + in_params[0][1::] + ".nc_wcb"
-            if not os.path.isfile(not_perturbed_path):
-                not_perturbed_path = path + in_params[0][1::] + ".nc"
-            if not os.path.isfile(not_perturbed_path):
-                not_perturbed_path = (
-                    path + in_params[0][1::] + "_" + path.split("/")[-2] + ".nc"
-                )
+
             val_df = load_sensitivity(
                 not_perturbed_path, out_params, param_names, in_params, par_dim_name
             )
@@ -253,12 +242,6 @@ def load_dataset(
             not_perturbed_path = path + "_notPerturbed.nc_wcb"
         if not os.path.isfile(not_perturbed_path):
             not_perturbed_path = path + in_params[0][1::] + ".nc_wcb"
-        if not os.path.isfile(not_perturbed_path):
-            not_perturbed_path = path + in_params[0][1::] + ".nc"
-        if not os.path.isfile(not_perturbed_path):
-            not_perturbed_path = (
-                path + in_params[0][1::] + "_" + path.split("/")[-2] + ".nc"
-            )
 
         if verbosity > 1:
             print(f"Loading from {not_perturbed_path} for index {traj_idx}")
@@ -281,10 +264,6 @@ def load_dataset(
                     load_path = path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb"
                     if not os.path.isfile(load_path):
                         load_path = path + in_p[1::] + ".nc_wcb"
-                    if not os.path.isfile(load_path):
-                        load_path = path + in_p[1::] + ".nc"
-                    if not os.path.isfile(load_path):
-                        load_path = path + in_p[1::] + "_" + path.split("/")[-2] + ".nc"
                     ds = xr.open_dataset(
                         load_path,
                         decode_times=False,
@@ -304,10 +283,6 @@ def load_dataset(
                     load_path = path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb"
                     if not os.path.isfile(load_path):
                         load_path = path + in_p[1::] + ".nc_wcb"
-                    if not os.path.isfile(load_path):
-                        load_path = path + in_p[1::] + ".nc"
-                    if not os.path.isfile(load_path):
-                        load_path = path + in_p[1::] + "_" + path.split("/")[-2] + ".nc"
                     ds = xr.open_dataset(
                         load_path,
                         decode_times=False,
@@ -442,6 +417,25 @@ def parse_load(
                     )
                 traj_offset += n_trajs
             data = data.where(data["time_after_ascent"] >= min_time, drop=True)
+            # Quick fix: gradients need to be scaled with
+            # reference quantities.
+            def change(x):
+                if x.name == "Not Perturbed Value":
+                    return x
+                elif x.name == "Mean Squared Error":
+                    return x
+                elif x.name == "Predicted Error":
+                    return x*1.0e-6
+                return x*1.0e-6*1.0e-6
+            out_ps = ['QC', 'QR', 'QV', 'QI', 'QS',
+                      'QG', 'QH', 'QI_OUT', 'QS_OUT', 'QR_OUT',
+                      'QG_OUT', 'QH_OUT']
+            data_new = data.sel({"Output Parameter": out_ps}).copy()
+            data_new = data_new.map(change, keep_attrs=True)
+            out_ps_2 = ['NCCLOUD', 'NCRAIN', 'NCICE', 'NCSNOW',
+                        'NCGRAUPEL', 'NCHAIL', 'NI_OUT', 'NS_OUT',
+                        'NR_OUT', 'NG_OUT', 'NH_OUT']
+            data = data.sel({"Output Parameter": out_ps_2}).merge(data_new)
         else:  # numpy arrays with training data
             for i in range(len(paths)):
                 paths[i] = data_path + paths[i]
@@ -736,13 +730,13 @@ def combine_predictions(df, def_ver=True, jum_ver=False, acc_ver=False, how=Fals
             if final_pred is None:
                 final_pred = df["detected_segment_jump"]
             else:
-                final_pred = Union[final_pred, df["detected_segment_jump"]]
+                final_pred = final_pred | df["detected_segment_jump"]
 
         if acc_ver:
             if final_pred is None:
                 final_pred = df["detected_segment_acc"]
             else:
-                final_pred = Union[final_pred, df["detected_segment_acc"]]
+                final_pred = final_pred | df["detected_segment_acc"]
     return final_pred
 
 
@@ -3586,7 +3580,6 @@ if __name__ == "__main__":
                 "Not tracked" in in_params_notation_mapping[in_p][0]
                 or "Not used" in in_params_notation_mapping[in_p][0]
                 or "one-moment warm physics" in in_params_notation_mapping[in_p][0]
-                or "dependent" == in_params_notation_mapping[in_p][3]
             ):
                 # or in_p in physical_params):
                 continue
@@ -3669,10 +3662,6 @@ if __name__ == "__main__":
     if args.store_appended_data is not None:
         comp = dict(zlib=True, complevel=9)
         encoding = {var: comp for var in data.data_vars}
-        index = store_appended_data.rfind("/")
-        store_path = store_appended_data[:index]
-        if not os.path.isdir(store_path):
-            os.mkdir(store_path)
         data.to_netcdf(
             path=f"{store_appended_data}",
             encoding=encoding,

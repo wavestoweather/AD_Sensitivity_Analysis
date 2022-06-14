@@ -88,17 +88,17 @@ void RK4_step_2_sb_ice(
     RHS_SB(k, yold, ref, cc, cc.dt_sixth, fixed);  // k = k1
 
     for (int ii = 0 ; ii < num_comp ; ii++) {
-// #if defined(TRACE_ENV)
-//         if (trace && ii == T_idx)
-//             std::cout << "RK1, yold[T] = " << yold[ii]
-//                       << "\nk[T] = " << k[ii]
-//                       << "\nk[T] prime = " << k[ii]*ref.Tref
-//                       << "\nk[T] prime time = " << k[ii]*ref.Tref*cc.dt_half
-//                       << "\ndT = " << yold[ii] + cc.dt_half*k[ii]
-//                       << "\ndT Result = " << cc.dt_sixth*k[ii]
-//                       << "\ndT prime Result = " << cc.dt_sixth*k[ii]*ref.Tref
-//                       << "\n";
-// #endif
+#ifdef TRACE_ENV
+        if (trace && ii == T_idx)
+            std::cout << "RK1, yold[T] = " << yold[ii]
+                      << "\nk[T] = " << k[ii]
+                      << "\nk[T] prime = " << k[ii]*ref.Tref
+                      << "\nk[T] prime time = " << k[ii]*ref.Tref*cc.dt_half
+                      << "\ndT = " << yold[ii] + cc.dt_half*k[ii]
+                      << "\ndT Result = " << cc.dt_sixth*k[ii]
+                      << "\ndT prime Result = " << cc.dt_sixth*k[ii]*ref.Tref
+                      << "\n";
+#endif
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii];  // y_0 + (dt/2)*k1 for k2
         ynew[ii] += cc.dt_sixth*k[ii];  // Add k1-part to the result
     }
@@ -114,17 +114,17 @@ void RK4_step_2_sb_ice(
     RHS_SB(k, ytmp, ref, cc, cc.dt_third, fixed);  // k = k2
 
     for (int ii = 0 ; ii < num_comp ; ii++) {
-// #if defined(TRACE_ENV)
-//         if (trace && ii == T_idx)
-//             std::cout << "RK2, yold[T] = " << yold[ii]
-//                       << "\nk[T] = " << k[ii]
-//                       << "\nk[T] prime = " << k[ii]*ref.Tref
-//                       << "\nk[T] prime time = " << k[ii]*ref.Tref*cc.dt_half
-//                       << "\ndT = " << yold[ii] + cc.dt_half*k[ii]
-//                       << "\ndT Result = " << cc.dt_third*k[ii]
-//                       << "\ndT prime Result = " << cc.dt_third*k[ii]*ref.Tref
-//                       << "\n";
-// #endif
+#ifdef TRACE_ENV
+        if (trace && ii == T_idx)
+            std::cout << "RK2, yold[T] = " << yold[ii]
+                      << "\nk[T] = " << k[ii]
+                      << "\nk[T] prime = " << k[ii]*ref.Tref
+                      << "\nk[T] prime time = " << k[ii]*ref.Tref*cc.dt_half
+                      << "\ndT = " << yold[ii] + cc.dt_half*k[ii]
+                      << "\ndT Result = " << cc.dt_third*k[ii]
+                      << "\ndT prime Result = " << cc.dt_third*k[ii]*ref.Tref
+                      << "\n";
+#endif
         ytmp[ii] = yold[ii] + cc.dt_half*k[ii];  // y_0 + (dt/2)*k2 for k3
         ynew[ii] += cc.dt_third*k[ii];  // Add k2-part to the result
     }
@@ -140,17 +140,17 @@ void RK4_step_2_sb_ice(
     RHS_SB(k, ytmp, ref, cc, cc.dt_third, fixed);  // k = k3
 
     for (int ii = 0 ; ii < num_comp ; ii++) {
-// #if defined(TRACE_ENV)
-//         if (trace && ii == T_idx)
-//             std::cout << "RK3, yold[T] = " << yold[ii]
-//                       << "\nk[T] = " << k[ii]
-//                       << "\nk[T] prime = " << k[ii]*ref.Tref
-//                       << "\nk[T] prime time = " << k[ii]*ref.Tref*cc.dt
-//                       << "\ndT = " << yold[ii] + cc.dt*k[ii]
-//                       << "\ndT Result = " << cc.dt_third*k[ii]
-//                       << "\ndT prime Result = " << cc.dt_third*k[ii]*ref.Tref
-//                       << "\n";
-// #endif
+#ifdef TRACE_ENV
+        if (trace && ii == T_idx)
+            std::cout << "RK3, yold[T] = " << yold[ii]
+                      << "\nk[T] = " << k[ii]
+                      << "\nk[T] prime = " << k[ii]*ref.Tref
+                      << "\nk[T] prime time = " << k[ii]*ref.Tref*cc.dt
+                      << "\ndT = " << yold[ii] + cc.dt*k[ii]
+                      << "\ndT Result = " << cc.dt_third*k[ii]
+                      << "\ndT prime Result = " << cc.dt_third*k[ii]*ref.Tref
+                      << "\n";
+#endif
         ytmp[ii] = yold[ii] + cc.dt*k[ii];  // y_0 + dt*k3 for k4
         ynew[ii] += cc.dt_third*k[ii];  // Add k3-part to the result
     }
@@ -166,14 +166,14 @@ void RK4_step_2_sb_ice(
     RHS_SB(k, ytmp, ref, cc, cc.dt_sixth, fixed);  // k = k4
 
     for (int ii = 0 ; ii < num_comp ; ii++) {
-// #if defined(TRACE_ENV)
-//         if (trace && ii == T_idx)
-//             std::cout << "RK4, k[T] = " << k[ii]
-//                       << "\nk[T] prime = " << k[ii]*ref.Tref
-//                       << "\ndT Result = " << cc.dt_sixth*k[ii]
-//                       << "\ndT prime Result = " << cc.dt_sixth*k[ii]*ref.Tref
-//                       << "\n";
-// #endif
+#ifdef TRACE_ENV
+        if (trace && ii == T_idx)
+            std::cout << "RK4, k[T] = " << k[ii]
+                        << "\nk[T] prime = " << k[ii]*ref.Tref
+                      << "\ndT Result = " << cc.dt_sixth*k[ii]
+                      << "\ndT prime Result = " << cc.dt_sixth*k[ii]*ref.Tref
+                      << "\n";
+#endif
         ynew[ii] += cc.dt_sixth*k[ii];
     }
     set_limits(ynew, ref, cc);

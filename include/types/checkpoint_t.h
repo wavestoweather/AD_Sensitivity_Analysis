@@ -7,7 +7,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include <nlohmann/json.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include "include/misc/error.h"
 #include "include/misc/general.h"
@@ -18,9 +21,11 @@
 #include "include/types/output_handle_t.h"
 #include "include/types/reference_quantities_t.h"
 
+namespace pt = boost::property_tree;
+
 struct checkpoint_t {
  private:
-    nlohmann::json checkpoint;
+    pt::ptree checkpoint;
 
  public:
     checkpoint_t();
@@ -64,7 +69,8 @@ struct checkpoint_t {
         model_constants_t<float_t> &cc,
         std::vector<double> &y,
         std::vector<segment_t> &segments,
-        input_parameters_t &input);
+        input_parameters_t &input,
+        const reference_quantities_t &ref_quant);
     /**
      * Same as above with an already loaded checkpoint instead of reading a
      * file.
@@ -74,7 +80,8 @@ struct checkpoint_t {
         model_constants_t<float_t> &cc,
         std::vector<double> &y,
         std::vector<segment_t> &segments,
-        input_parameters_t &input);
+        input_parameters_t &input,
+        const reference_quantities_t &ref_quant);
     /**
      * Same as above with an already loaded checkpoint instead of reading a
      * file and adjusting time steps for flushing output.
@@ -85,11 +92,30 @@ struct checkpoint_t {
         std::vector<double> &y,
         std::vector<segment_t> &segments,
         input_parameters_t &input,
+        const reference_quantities_t &ref_quant,
         output_handle_t &out_handler);
 
     /**
-     * Print the checkpoint to std::out. For debugging purpose.
+     * Store all data in a property tree and write it as a json file to disk.
      */
+    template<class float_t>
+    void write_checkpoint(
+        std::string &filename,
+        model_constants_t<float_t> &cc,
+        const std::vector<float_t> &y,
+        std::vector<segment_t> &segments,
+        const input_parameters_t &input,
+        const double &current_time);
+    /**
+     * Write checkpoint to disk as a json file. A property tree must have been
+     * created before or nothing will be written.
+     */
+    template<class float_t>
+    void write_checkpoint(
+        std::string &filename,
+        model_constants_t<float_t> &cc,
+        std::vector<segment_t> &segments);
+
     void print_checkpoint();
 
     /**
@@ -102,6 +128,10 @@ struct checkpoint_t {
      */
     bool receive_checkpoint();
 
+    // /**
+    //  * Getter for the underlying property tree
+    //  */
+    // pt::ptree get_checkpoint();
     /**
      * Check if a checkpoint had been stored already.
      */
