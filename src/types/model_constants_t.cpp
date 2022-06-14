@@ -65,15 +65,11 @@ void model_constants_t<codi::RealReverse>::register_input(
     std::cout << "register input of at most " << static_cast<int>(Cons_idx::n_items)
               << " vs size " << this->constants.size() << "\n";
 #endif
-//    if (traj_id == 0)
-//        std::cout << "Cons_idx " << static_cast<int>(Cons_idx::n_items) << " -- " << this->constants.size() << "\n";
     for (uint32_t i=0; i<static_cast<int>(Cons_idx::n_items); i++) {
         if (trace_check(i, false)) {
 #ifdef DEVELOP
             std::cout << "register input " << i << "\n";
 #endif
-//            if (traj_id == 0)
-//            std::cout << "register " << i << "\n";
             tape.registerInput(this->constants[i]);
         }
     }
@@ -130,7 +126,8 @@ template<>
 void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradient(
     std::array<double, num_par> &out_vec,
     std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
-    uint32_t ii) const {
+    uint32_t ii,
+    const double &ref_value) const {
 #ifdef DEVELOP
     std::cout << "get_gradient real_forward\n";
 #endif
@@ -138,7 +135,7 @@ void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradient(
     for (int i=0; i<static_cast<int>(Init_cons_idx::n_items); ++i) {
         if (trace_check(i, 2)) {
             out_vec[i + offset] = y_single_new[ii].getGradient()[i]
-                * uncertainty[i + static_cast<uint32_t>(Cons_idx::n_items)];
+                * uncertainty[i + static_cast<uint32_t>(Cons_idx::n_items)] * ref_value;
         }
     }
 }
@@ -146,7 +143,8 @@ void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradient(
 
 template<>
 void model_constants_t<codi::RealReverse>::get_gradient(
-    std::array<double, num_par> &out_vec) const {
+    std::array<double, num_par> &out_vec,
+    const double &ref_value) const {
 #ifdef DEVELOP
     std::cout << "get_gradient items = " << static_cast<int>(Cons_idx::n_items)
               << " out_vec: " << out_vec.size() << " constants " << this->constants.size()
@@ -154,10 +152,7 @@ void model_constants_t<codi::RealReverse>::get_gradient(
 #endif
     for (int i=0; i<static_cast<int>(Cons_idx::n_items); ++i)
         if (trace_check(i, false)) {
-            out_vec[i] = this->constants[i].getGradient() * uncertainty[i];
-//            if (traj_id == 0)
-//                std::cout << "i " << i << " unc " << uncertainty[i]
-//                    << " grad " << this->constants[i].getGradient() << "\n";
+            out_vec[i] = this->constants[i].getGradient() * uncertainty[i] * ref_value;
         }
 
     uint32_t idx = static_cast<uint32_t>(Cons_idx::n_items);
@@ -165,13 +160,13 @@ void model_constants_t<codi::RealReverse>::get_gradient(
     std::cout << "get_gradient idx = " << idx << "\n";
 #endif
     if (local_num_par == num_par) {
-        this->rain.get_gradient(out_vec, idx);
-        this->cloud.get_gradient(out_vec, idx);
+        this->rain.get_gradient(out_vec, idx, ref_value);
+        this->cloud.get_gradient(out_vec, idx, ref_value);
 #if defined(RK4ICE)
-        this->graupel.get_gradient(out_vec, idx);
-        this->hail.get_gradient(out_vec, idx);
-        this->ice.get_gradient(out_vec, idx);
-        this->snow.get_gradient(out_vec, idx);
+        this->graupel.get_gradient(out_vec, idx, ref_value);
+        this->hail.get_gradient(out_vec, idx, ref_value);
+        this->ice.get_gradient(out_vec, idx, ref_value);
+        this->snow.get_gradient(out_vec, idx, ref_value);
 #endif
 #ifdef DEVELOP
         std::cout << "local_num_par == num_par\n";
@@ -180,38 +175,38 @@ void model_constants_t<codi::RealReverse>::get_gradient(
         uint32_t start_idx = idx;
         for (auto &c : this->rain.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient() * this->rain.uncertainty[idx-start_idx];
+                out_vec[idx] = c.getGradient() * this->rain.uncertainty[idx-start_idx] * ref_value;
             idx++;
         }
         start_idx = idx;
         for (auto &c : this->cloud.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient() * this->cloud.uncertainty[idx-start_idx];
+                out_vec[idx] = c.getGradient() * this->cloud.uncertainty[idx-start_idx] * ref_value;
             idx++;
         }
 #if defined(RK4ICE)
         start_idx = idx;
         for (auto &c : this->graupel.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient() * this->graupel.uncertainty[idx-start_idx];
+                out_vec[idx] = c.getGradient() * this->graupel.uncertainty[idx-start_idx] * ref_value;
             idx++;
         }
         start_idx = idx;
         for (auto &c : this->hail.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient() * this->hail.uncertainty[idx-start_idx];
+                out_vec[idx] = c.getGradient() * this->hail.uncertainty[idx-start_idx] * ref_value;
             idx++;
         }
         start_idx = idx;
         for (auto &c : this->ice.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient() * this->ice.uncertainty[idx-start_idx];
+                out_vec[idx] = c.getGradient() * this->ice.uncertainty[idx-start_idx] * ref_value;
             idx++;
         }
         start_idx = idx;
         for (auto &c : this->snow.constants) {
             if (trace_check(idx, false))
-                out_vec[idx] = c.getGradient() * this->snow.uncertainty[idx-start_idx];
+                out_vec[idx] = c.getGradient() * this->snow.uncertainty[idx-start_idx] * ref_value;
             idx++;
         }
 #endif
@@ -222,10 +217,57 @@ void model_constants_t<codi::RealReverse>::get_gradient(
 template<>
 void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradients(
     std::vector<codi::RealForwardVec<num_par_init> > &y_single_new,
-    std::vector< std::array<double, num_par > > &y_diff) const {
+    std::vector< std::array<double, num_par > > &y_diff,
+    const reference_quantities_t &ref_quant) const {
 
     for (uint32_t ii = 0 ; ii < num_comp ; ii++) {
         if (trace_check(ii, true)) {
+            double ref_value = 1.0;
+            switch(ii) {
+                case p_idx:
+                    ref_value = ref_quant.pref;
+                    break;
+                case T_idx:
+                    ref_value = ref_quant.Tref;
+                    break;
+                case w_idx:
+                    ref_value = ref_quant.wref;
+                    break;
+                case qv_idx:
+                case qc_idx:
+                case qr_idx:
+                case qs_idx:
+                case qi_idx:
+                case qg_idx:
+                case qh_idx:
+                case qr_out_idx:
+                case qi_out_idx:
+                case qs_out_idx:
+                case qg_out_idx:
+                case qh_out_idx:
+                    ref_value = ref_quant.qref;
+                    break;
+                case Nc_idx:
+                case Nr_idx:
+                case Ns_idx:
+                case Ni_idx:
+                case Ng_idx:
+                case Nh_idx:
+                case Nr_out_idx:
+                case Ns_out_idx:
+                case Ni_out_idx:
+                case Ng_out_idx:
+                case Nh_out_idx:
+                case depo_idx:
+                case sub_idx:
+                    ref_value = ref_quant.Nref;
+                    break;
+                case z_idx:
+                    ref_value = ref_quant.zref;
+                    break;
+                default:
+                    ref_value = 1.0;
+            }
             this->get_gradient(y_diff[ii], y_single_new, ii);
         }
     }
@@ -236,7 +278,8 @@ template<>
 void model_constants_t<codi::RealReverse>::get_gradients(
     std::vector<codi::RealReverse> &y_single_new,
     std::vector< std::array<double, num_par > > &y_diff,
-    codi::RealReverse::Tape &tape)  {
+    codi::RealReverse::Tape &tape,
+    const reference_quantities_t &ref_quant))  {
 
     for (uint32_t ii = 0 ; ii < num_comp ; ii++) {
         if (trace_check(ii, true)) {
@@ -244,7 +287,6 @@ void model_constants_t<codi::RealReverse>::get_gradients(
         std::cout << "register Output " << ii << "\n";
 #endif
             tape.registerOutput(y_single_new[ii]);
-//            tape.evaluate();
         }
     }
 #ifdef DEVELOP
@@ -272,9 +314,53 @@ void model_constants_t<codi::RealReverse>::get_gradients(
 #ifdef DEVELOP
         std::cout << "get_gradients after tape evaluate\n" << std::flush;
 #endif
-//        if (traj_id == 0)
-//            std::cout << "ii " << ii << " --- " << y_single_new[ii] << "\n";
-        this->get_gradient(y_diff[ii]);
+        double ref_value = 1.0;
+        switch(ii) {
+            case p_idx:
+                ref_value = ref_quant.pref;
+                break;
+            case T_idx:
+                ref_value = ref_quant.Tref;
+                break;
+            case w_idx:
+                ref_value = ref_quant.wref;
+                break;
+            case qv_idx:
+            case qc_idx:
+            case qr_idx:
+            case qs_idx:
+            case qi_idx:
+            case qg_idx:
+            case qh_idx:
+            case qr_out_idx:
+            case qi_out_idx:
+            case qs_out_idx:
+            case qg_out_idx:
+            case qh_out_idx:
+                ref_value = ref_quant.qref;
+                break;
+            case Nc_idx:
+            case Nr_idx:
+            case Ns_idx:
+            case Ni_idx:
+            case Ng_idx:
+            case Nh_idx:
+            case Nr_out_idx:
+            case Ns_out_idx:
+            case Ni_out_idx:
+            case Ng_out_idx:
+            case Nh_out_idx:
+            case depo_idx:
+            case sub_idx:
+                ref_value = ref_quant.Nref;
+                break;
+            case z_idx:
+                ref_value = ref_quant.zref;
+                break;
+            default:
+                ref_value = 1.0;
+        }
+        this->get_gradient(y_diff[ii], ref_value);
         tape.clearAdjoints();
     }
 

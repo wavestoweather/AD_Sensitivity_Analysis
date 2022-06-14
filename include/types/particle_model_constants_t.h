@@ -50,7 +50,8 @@ struct particle_model_constants_t{
      */
     void get_gradient(
         std::array<double, num_par> &out_vec,
-        uint32_t &idx) const;
+        uint32_t &idx,
+        const double &ref_value) const;
 
     // void put(pt::ptree &ptree, const std::string &type_name) const;
 
