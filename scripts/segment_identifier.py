@@ -425,16 +425,38 @@ def parse_load(
                 elif x.name == "Mean Squared Error":
                     return x
                 elif x.name == "Predicted Error":
-                    return x*1.0e-6
-                return x*1.0e-6*1.0e-6
-            out_ps = ['QC', 'QR', 'QV', 'QI', 'QS',
-                      'QG', 'QH', 'QI_OUT', 'QS_OUT', 'QR_OUT',
-                      'QG_OUT', 'QH_OUT']
+                    return x * 1.0e-6
+                return x * 1.0e-6 * 1.0e-6
+
+            out_ps = [
+                "QC",
+                "QR",
+                "QV",
+                "QI",
+                "QS",
+                "QG",
+                "QH",
+                "QI_OUT",
+                "QS_OUT",
+                "QR_OUT",
+                "QG_OUT",
+                "QH_OUT",
+            ]
             data_new = data.sel({"Output Parameter": out_ps}).copy()
             data_new = data_new.map(change, keep_attrs=True)
-            out_ps_2 = ['NCCLOUD', 'NCRAIN', 'NCICE', 'NCSNOW',
-                        'NCGRAUPEL', 'NCHAIL', 'NI_OUT', 'NS_OUT',
-                        'NR_OUT', 'NG_OUT', 'NH_OUT']
+            out_ps_2 = [
+                "NCCLOUD",
+                "NCRAIN",
+                "NCICE",
+                "NCSNOW",
+                "NCGRAUPEL",
+                "NCHAIL",
+                "NI_OUT",
+                "NS_OUT",
+                "NR_OUT",
+                "NG_OUT",
+                "NH_OUT",
+            ]
             data = data.sel({"Output Parameter": out_ps_2}).merge(data_new)
         else:  # numpy arrays with training data
             for i in range(len(paths)):
