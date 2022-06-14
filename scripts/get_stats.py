@@ -984,13 +984,125 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    ds = xr.open_dataset(args.file, decode_times=False)
-    out_params, top20_list, top10_list, top20_sens_dic, top10_sens_dic = get_top_list(
-        ds, True, args.verbose
-    )
-    top_one_order_list, top_two_orders_list, top_three_orders_list = get_magnitude_list(
-        ds, out_params, True, args.verbose
-    )
+    if args.file.endswith("/"):
+        if args.plot_type != "none":
+            if args.load_histogram != "no":
+                file_path = args.load_histogram
+                if not file_path.endswith("/"):
+                    file_path += "/"
+                with open(file_path + "hist.pkl", "rb") as f:
+                    hist = pickle.load(f)
+                with open(file_path + "edges.pkl", "rb") as f:
+                    edges = pickle.load(f)
+                with open(file_path + "hist_in_params.pkl", "rb") as f:
+                    hist_in_params = pickle.load(f)
+                with open(file_path + "edges_in_params.pkl", "rb") as f:
+                    edges_in_params = pickle.load(f)
+            else:
+                hist, hist_in_params, edges, edges_in_params = get_histogram(
+                    args.file,
+                    additional_params=args.additional_hist_params,
+                )
+            if args.save_histogram != "no":
+                file_path = args.save_histogram
+                if not file_path.endswith("/"):
+                    file_path += "/"
+                with open(file_path + "hist.pkl", "wb") as f:
+                    pickle.dump(hist, f)
+                with open(file_path + "edges.pkl", "wb") as f:
+                    pickle.dump(edges, f)
+                with open(file_path + "hist_in_params.pkl", "wb") as f:
+                    pickle.dump(hist_in_params, f)
+                with open(file_path + "edges_in_params.pkl", "wb") as f:
+                    pickle.dump(edges_in_params, f)
+            if args.plot_type == "all" or args.plot_type == "hist_out":
+                traj_plot_histogram_out(
+                    out_params=list(edges.keys()),
+                    filename=args.out_file,
+                    edges=edges,
+                    hist=hist,
+                    width=args.width,
+                    height=args.height,
+                    title=None,
+                    verbose=args.verbose,
+                )
+            if args.plot_type == "all" or args.plot_type == "hist_in":
+                traj_plot_histogram_inp(
+                    in_params=list(edges_in_params[list(edges.keys())[0]].keys()),
+                    filename=args.out_file,
+                    edges_in_params=edges_in_params,
+                    hist_in_params=hist_in_params,
+                    width=args.width,
+                    height=args.height,
+                    title=None,
+                    verbose=args.verbose,
+                )
+            if args.plot_type == "all" or args.plot_type == "heat":
+                plot_heatmap_traj(
+                    in_params=list(edges_in_params[list(edges.keys())[0]].keys()),
+                    filename=args.out_file,
+                    edges_in_params=edges_in_params,
+                    hist_in_params=hist_in_params,
+                    width=args.width,
+                    height=args.height,
+                    title=None,
+                    verbose=args.verbose,
+                )
+        print("########### Some statistics ###########")
+        files = [f for f in os.listdir(args.file) if os.path.isfile(args.file + f)]
+        ds = xr.open_dataset(args.file + files[0], decode_times=False, engine="netcdf4")
+        out_params = ds["Output_Parameter_ID"]
+        param_name = ["QV", "latent heat", "latent cool"]
+        in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
+        sums = {}
+        for f in tqdm(files):
+            ds = xr.open_dataset(
+                args.file + files[0], decode_times=False, engine="netcdf4"
+            )
+            for out_p, out_name in zip(out_params, param_name):
+                ds[in_params] = np.abs(ds[in_params])
+                df = (
+                    ds[in_params]
+                    .sel({"Output_Parameter_ID": out_p})
+                    .sum(dim=["trajectory", "time"], skipna=True)
+                    .to_dataframe()
+                    .reset_index()
+                )
+                df = df[in_params]
+
+                if out_name in sums.keys():
+                    sums[out_name] += df
+                else:
+                    sums[out_name] = df
+        top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic = traj_get_top_params(
+            sums, param_name, 10, 1
+        )
+        print(f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}")
+        print(top_magn_set)
+        print("The parameters within a magnitude for each output Parameter:")
+        for out_p in top_magn_sens_dic.keys():
+            print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
+            print(top_magn_sens_dic[out_p])
+        print(f"No. of parameters within the top 10: {len(top10_set)}")
+        print(top10_set)
+        print("The top parameters 10 for each output Parameter:")
+        for out_p in top_sens_dic.keys():
+            print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
+            print(top_sens_dic[out_p])
+    else:
+        ds = xr.open_dataset(args.file, decode_times=False)
+        (
+            out_params,
+            top20_list,
+            top10_list,
+            top20_sens_dic,
+            top10_sens_dic,
+        ) = get_top_list(ds, True, args.verbose)
+        (
+            top_one_order_list,
+            top_two_orders_list,
+            top_three_orders_list,
+        ) = get_magnitude_list(ds, out_params, True, args.verbose)
 
         pd.set_option("display.max_rows", 100)
         pd.set_option("display.max_columns", 10)
