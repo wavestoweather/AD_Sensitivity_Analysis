@@ -139,11 +139,9 @@ struct netcdf_reader_t {
     bool get_slan_600(const uint32_t &t) const {return (buffer[Par_idx::slan_600][
         t%buffer[Par_idx::slan_600].size()] > 0.5);}
 #endif
+
 #endif
-    bool get_asc600(const uint32_t &t) const {return (buffer[Par_idx::asc600][
-        t%buffer[Par_idx::asc600].size()] > 0.5);}
     uint32_t get_traj_idx() const {return traj_idx;}
-    bool asc600_avail() const {return asc600_bool;}
 
  private:
     std::vector<int> startp, countp;
@@ -155,9 +153,8 @@ struct netcdf_reader_t {
     uint32_t traj_idx; /*!< Index of trajectory to read from. */
     uint32_t ens_idx; /*!< Index of ensemble to read from. */
     bool already_open; /*!< Is the netCDF file already open? */
-    uint32_t n_subs; /*!< Time step size of model from file / size of this model. */
+    uint32_t n_subs; /*!< Time step size of model from file / size of this model . */
     double pascal_conv; /*!< Convert pressure to Pa even if it is stored as hPa. */
-    bool asc600_bool; /*!< Does a variable called asc600 exist? To be removed once load_vars() is improved. */
 
     /**
      * ID for dimensions of output file.
@@ -203,7 +200,6 @@ struct netcdf_reader_t {
         q_turb,
     #endif
 #endif
-        asc600,
         n_pars
     };
     enum Dim_idx {
@@ -253,7 +249,7 @@ struct netcdf_reader_t {
         {"NR_IN", "QNR_in"}, {"NG_IN", "QNG_in"}, {"z", "z"}, {"w", "w"},
         {"QH_IN", "QH_in"}, {"NH_IN", "QNH_in"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}
     };
 #elif defined WCB
     std::unordered_map<std::string, const char*> const reader_names = {
@@ -268,7 +264,7 @@ struct netcdf_reader_t {
         {"NR_IN", "NR_IN"}, {"NG_IN", "NG_IN"}, {"z", "z"}, {"w", "w"},
         {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "ntra"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "ntra"}, {"ensemble", "ensemble"}
 #elif defined WCB2
     std::unordered_map<std::string, const char*> const reader_names = {
         {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
@@ -282,7 +278,7 @@ struct netcdf_reader_t {
         {"NR_IN", "NR_IN"}, {"NG_IN", "NG_IN"}, {"z", "z"}, {"w", "w"},
         {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"}
     };
 #elif defined MET3D
     std::unordered_map<std::string, const char*> const reader_names = {
@@ -300,7 +296,7 @@ struct netcdf_reader_t {
         {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"},
         {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}
     };
 #else
     std::unordered_map<std::string, std::string> const reader_names = {
@@ -309,7 +305,7 @@ struct netcdf_reader_t {
         {"qh", "qh"}, {"time", "time"}, {"lat", "lat"}, {"lon", "lon"}, {"time_rel", "time_rel"}, {"pressure", "p"},
         {"T", "t"}, {"z", "z"}, {"w", "w"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"}
     };
 #endif
 

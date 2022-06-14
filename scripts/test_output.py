@@ -188,20 +188,20 @@ def test_sizes(ds, threshold, verbosity):
         error_larger = np.sum(masked_greater.mask)
         if error_larger > 0 and verbosity >= 3:
             print(
-                f"{Warning}{ty} ({q}): too big: {error_larger} or {error_larger*100/n_steps:2.2f}% of the time{ColourReset}"
+                f"{Warning}{ty}: too big: {error_larger} or {error_larger*100/n_steps:2.2f}% of the time{ColourReset}"
             )
         error_smaller = np.sum(masked_less.mask)
         if error_smaller > 0 and verbosity >= 3:
             print(
-                f"{Warning}{ty} ({q}): too small {error_smaller} or {error_smaller*100/n_steps:2.2f}% of the time{ColourReset}"
+                f"{Warning}{ty}: too small {error_smaller} or {error_smaller*100/n_steps:2.2f}% of the time{ColourReset}"
             )
         if (error_larger + error_smaller) / n_steps * 100 >= threshold:
             if verbosity > 0:
                 print(
-                    f"{Warning}{ty} ({q}): too big: {error_larger} or {error_larger*100/n_steps:2.2f}% of the time{ColourReset}"
+                    f"{Warning}{ty}: too big: {error_larger} or {error_larger*100/n_steps:2.2f}% of the time{ColourReset}"
                 )
                 print(
-                    f"{Warning}{ty} ({q}): too small {error_smaller} or {error_smaller*100/n_steps:2.2f}% of the time{ColourReset}"
+                    f"{Warning}{ty}: too small {error_smaller} or {error_smaller*100/n_steps:2.2f}% of the time{ColourReset}"
                 )
             return 1
         return 0
