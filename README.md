@@ -9,7 +9,7 @@ We recommend an [anaconda](https://www.anaconda.com/) environment for which you 
 use `requirements_conda.txt`. Either way, `requirements_pip.txt` with pip is needed
 as well to create a documentation.
 
-We also provide a docker image `mahieronymus/ad_sensitivity:2.0` with all necessary prerequisites installed. 
+We also provide a docker image `mahieronymus/ad_sensitivity:2.3` with all necessary prerequisites installed. 
 
 
 

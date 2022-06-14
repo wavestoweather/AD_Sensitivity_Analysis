@@ -251,7 +251,6 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
                 3,
                 &dimid[Dim_idx::ensemble_dim],
                 &varid[i]));
-
     // gradients
     setup_gradients(cc);
 
@@ -293,6 +292,7 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::slan_600]));
 #endif
+
     SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "lat",
@@ -1823,6 +1823,13 @@ void output_handle_t::buffer(
     output_buffer_flags[3][n_snapshots] = netcdf_reader.get_slan_600(t);
 #endif
 #endif
+    if (netcdf_reader.asc600_avail()) {
+#if !defined(B_EIGHT)
+        output_buffer_flags[4][n_snapshots] = netcdf_reader.get_asc600(t);
+#else
+        output_buffer_flags[1][n_snapshots] = netcdf_reader.get_asc600(t);
+#endif
+    }
     // Value of perturbed parameter
     if (this->simulation_mode == create_train_set) {
         std::vector<float> perturbed;
@@ -1958,6 +1965,14 @@ bool output_handle_t::flush_buffer(
             nc_put_vara(
                 ncid,
                 varid[Var_idx::conv_400+i],
+                startp.data(),
+                countp.data(),
+                output_buffer_flags[i].data()));
+#else
+        SUCCESS_OR_DIE(
+            nc_put_vara(
+                ncid,
+                varid[Var_idx::asc600+i],
                 startp.data(),
                 countp.data(),
                 output_buffer_flags[i].data()));

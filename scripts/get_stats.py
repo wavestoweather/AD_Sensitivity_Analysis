@@ -1670,7 +1670,7 @@ if __name__ == "__main__":
         print(f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}")
         print(top_magn_set)
         print("The parameters within a magnitude for each output Parameter:")
-        for out_p in tgit rebase origin/mainop_magn_sens_dic.keys():
+        for out_p in top_magn_sens_dic.keys():
             print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
             print(top_magn_sens_dic[out_p])
         print(f"No. of parameters within the top 10: {len(top10_set)}")

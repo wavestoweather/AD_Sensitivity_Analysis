@@ -23,7 +23,8 @@ void particle_model_constants_t<codi::RealReverse>::register_input(
 template<>
 void particle_model_constants_t<codi::RealReverse>::get_gradient(
     std::array<double, num_par> &out_vec,
-    uint32_t &idx) const {
+    uint32_t &idx,
+    const double &ref_value) const {
 
     const uint32_t start_idx = idx;
     for (auto &c : this->constants) {
@@ -31,7 +32,7 @@ void particle_model_constants_t<codi::RealReverse>::get_gradient(
         std::cout << "get_gradient particle size uncert = " << uncertainty.size()
                   << " idx: " << idx << " start_idx: " << start_idx << " diff " << idx - start_idx << "\n";
 #endif
-        out_vec[idx] = c.getGradient() * uncertainty[idx-start_idx];
+        out_vec[idx] = c.getGradient() * uncertainty[idx-start_idx] * ref_value;
         idx++;
     }
 }
@@ -58,16 +59,17 @@ int particle_model_constants_t<float_t>::from_json(
 
 template<class float_t>
 void particle_model_constants_t<float_t>::print(
-    const std::string &title) {
+    const std::string &title,
+    std::ostream &os) {
 #ifdef SILENT_MODE
     return;
 #endif
 
-    std::cout << title << "\n";
+    os << title << "\n";
     for (auto const &t : table_particle_param) {
-        std::cout << t.first << " = " << get_at(this->constants, t.second) << "\n";
+        os << t.first << " = " << get_at(this->constants, t.second) << "\n";
     }
-    std::cout << std::endl << std::flush;
+    os << std::endl << std::flush;
 }
 
 

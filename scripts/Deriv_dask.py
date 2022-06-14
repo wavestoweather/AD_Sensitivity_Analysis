@@ -3393,15 +3393,12 @@ class Deriv_dask:
                     )
                 else:
                     if log_x:
-                        min_x = (
-                            np.min(mse_df[sens_key])
-                            - np.abs(np.min(mse_df[sens_key])) / 10
-                        )
+                        min_x = np.min(mse_df[sens_key])
                         max_x = np.max(mse_df[sens_key])
-                        if max_x > 0:
-                            max_x = max_x + 2
-                        else:
-                            max_x = 2
+
+                        delta_x = (max_x - min_x) / 20
+                        max_x += delta_x
+                        min_x -= delta_x
                     else:
                         delta_x = np.max(mse_df[sens_key]) - np.min(mse_df[sens_key])
                         min_x = np.min(mse_df[sens_key]) - delta_x / 10
@@ -3605,14 +3602,12 @@ class Deriv_dask:
             if log_x:
                 if kind == "paper":
                     tmp_df = mse_df.loc[mse_df["Output Parameter"] == out_params[0]]
-                    min_x = (
-                        np.min(tmp_df[sens_key]) - np.abs(np.min(tmp_df[sens_key])) / 10
-                    )
-                    max_x = np.max(tmp_df[sens_key])
-                    if max_x > 0:
-                        max_x = max_x + 2
-                    else:
-                        max_x = 2
+                    min_x = np.min(mse_df[sens_key])
+                    max_x = np.max(mse_df[sens_key])
+
+                    delta_x = (max_x - min_x) / 20
+                    max_x += delta_x
+                    min_x -= delta_x
                 else:
                     min_x = (
                         np.min(mse_df[sens_key]) - np.abs(np.min(mse_df[sens_key])) / 7
