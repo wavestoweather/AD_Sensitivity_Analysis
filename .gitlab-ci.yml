@@ -1,4 +1,4 @@
-image: "mahieronymus/ad_sensitivity:2.02"
+image: "mahieronymus/ad_sensitivity:2.01"
 
 stages:
  - Static Analysis Python
