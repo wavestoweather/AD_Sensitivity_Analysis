@@ -2,11 +2,10 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 
-// #include <boost/property_tree/ptree.hpp>
-// #include <boost/property_tree/json_parser.hpp>
 #include <nlohmann/json.hpp>
 
 #include "codi.hpp"
@@ -346,7 +345,7 @@ struct model_constants_t {
      * Print all parameters that are being tracked with algorithmic
      * differentiation.
      */
-    void print();
+    void print(std::ostream &os=std::cout);
 
     /**
      * Check if a certain model state variable or model parameter

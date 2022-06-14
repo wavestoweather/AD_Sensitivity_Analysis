@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -68,7 +69,7 @@ struct particle_model_constants_t{
      *
      * @param title Name of particle
      */
-    void print(const std::string &title);
+    void print(const std::string &title, std::ostream &os=std::cout);
 
     int from_json(const nlohmann::json& j);
 };

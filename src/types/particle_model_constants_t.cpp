@@ -58,16 +58,17 @@ int particle_model_constants_t<float_t>::from_json(
 
 template<class float_t>
 void particle_model_constants_t<float_t>::print(
-    const std::string &title) {
+    const std::string &title,
+    std::ostream &os) {
 #ifdef SILENT_MODE
     return;
 #endif
 
-    std::cout << title << "\n";
+    os << title << "\n";
     for (auto const &t : table_particle_param) {
-        std::cout << t.first << " = " << get_at(this->constants, t.second) << "\n";
+        os << t.first << " = " << get_at(this->constants, t.second) << "\n";
     }
-    std::cout << std::endl << std::flush;
+    os << std::endl << std::flush;
 }
 
 

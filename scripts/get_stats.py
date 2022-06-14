@@ -182,7 +182,7 @@ def get_magnitude_list(ds, out_params, print_out=True, verbose=True):
             f"Number of distinct parameters by taking the top 3 orders of magnitude: {len(top_three_orders_list)}"
         )
         print("Parameters within the top order of magnitude:")
-        print(top_two_orders_list)
+        print(top_one_order_list)
     return top_one_order_list, top_two_orders_list, top_three_orders_list
 
 
@@ -1030,7 +1030,7 @@ def traj_get_top_params(dict_of_df, param_name, n, orders):
     return top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic
 
 
-def get_histogram(file_path, in_params=None, out_params=None, n_bins=100):
+def get_histogram(file_path, in_params=None, out_params=None, n_bins=100, additional_params=None):
     """
 
     Parameters
@@ -1060,6 +1060,7 @@ def get_histogram(file_path, in_params=None, out_params=None, n_bins=100):
     param_name = []
     for idx in out_params:
         param_name.append(latexify.param_id_map[idx.values])
+
     min_max = {}
     min_max_in_params = {}
     for out_p in param_name:
@@ -1090,6 +1091,17 @@ def get_histogram(file_path, in_params=None, out_params=None, n_bins=100):
                         min_max_in_params[out_name][in_p][1] = max_p
                 else:
                     min_max_in_params[out_name][in_p] = [min_p, max_p]
+        if additional_params is not None:
+            for out_p in tqdm(additional_params, leave=False):
+                min_p = np.min(ds[out_p]).values
+                max_p = np.max(ds[out_p]).values
+                if out_p in min_max.keys():
+                    if min_p < min_max[out_p][0]:
+                        min_max[out_p][0] = min_p
+                    if max_p > min_max[out_p][1]:
+                        min_max[out_p][1] = max_p
+                else:
+                    min_max[out_p] = [min_p, max_p]
 
     edges = {}
     edges_in_params = {}
@@ -1113,6 +1125,13 @@ def get_histogram(file_path, in_params=None, out_params=None, n_bins=100):
                     min_max_in_params[out_p][in_p][1] + delta / 2,
                     delta,
                 )
+    if additional_params is not None:
+        for out_p in tqdm(additional_params, leave=False):
+            delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
+            edges[out_p] = np.arange(
+                min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
+            )
+
     hist = {}
     hist_in_params = {}
     for f in tqdm(files):
@@ -1137,12 +1156,23 @@ def get_histogram(file_path, in_params=None, out_params=None, n_bins=100):
                     hist_in_params[out_name][in_p] += hist_tmp
                 else:
                     hist_in_params[out_name][in_p] = hist_tmp
+        if additional_params is not None:
+            for out_p in tqdm(additional_params, leave=False):
+                hist_tmp, _ = np.histogram(ds[out_p], edges[out_p])
+
 
     return hist, hist_in_params, edges, edges_in_params
 
 
 def traj_plot_histogram_out(
-    out_params, filename, edges, hist, width=24, height=12, title=None, verbose=False
+    out_params,
+    filename,
+    edges,
+    hist,
+    width=24,
+    height=12,
+    title=None,
+    verbose=False,
 ):
     """
     Giuen histograms from a sensitivity analysis with multiple trajectories, plot the histogram of an output parameter,
@@ -1512,6 +1542,15 @@ if __name__ == "__main__":
         """,
     )
     parser.add_argument(
+        "--additional_hist_params",
+        type=str,
+        nargs="+",
+        default=[],
+        help="""
+        Additional parameters to create a histogram for, such as pressure or asc600. 
+        """,
+    )
+    parser.add_argument(
         "--load_histogram",
         default="no",
         help="""
@@ -1549,7 +1588,10 @@ if __name__ == "__main__":
                 with open(file_path + "edges_in_params.pkl", "rb") as f:
                     edges_in_params = pickle.load(f)
             else:
-                hist, hist_in_params, edges, edges_in_params = get_histogram(args.file)
+                hist, hist_in_params, edges, edges_in_params = get_histogram(
+                    args.file,
+                    additional_params=args.additional_hist_params,
+                )
             if args.save_histogram != "no":
                 file_path = args.save_histogram
                 if not file_path.endswith("/"):

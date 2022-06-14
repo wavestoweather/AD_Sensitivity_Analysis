@@ -611,7 +611,6 @@ void model_constants_t<float_t>::setup_model_constants(
     this->constants[static_cast<int>(Cons_idx::p_ccn)] = p_ccn;
     this->constants[static_cast<int>(Cons_idx::h_ccn_1)] = h_ccn_1;
     this->constants[static_cast<int>(Cons_idx::h_ccn_2)] = h_ccn_2;
-    this->constants[static_cast<int>(Cons_idx::h_ccn_3)] = h_ccn_3;
     this->constants[static_cast<int>(Cons_idx::g_ccn_1)] = g_ccn_1;
     this->constants[static_cast<int>(Cons_idx::g_ccn_2)] = g_ccn_2;
     this->constants[static_cast<int>(Cons_idx::g_ccn_3)] = g_ccn_3;
@@ -1079,18 +1078,18 @@ void model_constants_t<float_t>::set_dt(
     }
 
 template<class float_t>
-void model_constants_t<float_t>::print() {
+void model_constants_t<float_t>::print(std::ostream &os) {
 #ifdef SILENT_MODE
     return;
 #endif
-  std::cout << "\nModel constants:\n"
+  os << "\nModel constants:\n"
         << "----------------\n"
         << "Code for tracking model states = " << this->track_state << "\n"
         << "Codes for tracking model parameters = ";
     for (auto const &t : track_param) {
-        std::cout << t << ", ";
+        os << t << ", ";
     }
-    std::cout << "\nCode for tracking initial conditions = " << this->track_ic << "\n"
+    os << "\nCode for tracking initial conditions = " << this->track_ic << "\n"
         << "Final integration time = " << this->t_end_prime << " seconds\n"
         << "Nondimensional final integration time = " << this->t_end << "\n"
         << "Timestep = " << this->dt_prime << " seconds\n"
@@ -1103,9 +1102,9 @@ void model_constants_t<float_t>::print() {
         << "e2_scale = " << this->e2_scale << "\n"
         << "d_scale = " << this->d_scale << "\n";
     for (auto const &t : table_param) {
-        std::cout << t.first << " = " << get_at(this->constants, t.second) << "\n";
+        os << t.first << " = " << get_at(this->constants, t.second) << "\n";
     }
-    std::cout << std::endl << std::flush;
+    os << std::endl << std::flush;
 }
 
 
