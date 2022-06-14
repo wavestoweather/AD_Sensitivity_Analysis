@@ -291,15 +291,34 @@ that -lnetcdf can be used by your compiler.
 endif()
 
 message("~~~ HDF5")
-find_package(HDF5 REQUIRED PATHS ${HDF5_DIR})
-include_directories (${HDF5_INCLUDE_DIR})
-message(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIR}")
-message(STATUS "HDF5 Version: ${HDF5_VERSION}")
-if( "${HDF5_LIBRARIES}" STREQUAL "" )
-    # Hack if for some reason this is still empty
-    string(REPLACE "include" "lib" HDF5_LIBRARIES ${HDF5_INCLUDE_DIR})
-    set(HDF5_LIBRARIES "${HDF5_LIBRARIES}/libhdf5_tools.a;${HDF5_LIBRARIES}/libhdf5_hl.a;${HDF5_LIBRARIES}/libhdf5.a")
+# I usually prefer the Config mode for CMake to look for HDF5 but for our supercomputer
+# I have to use the module mode, whereas I want to use Config mode for my
+# local machine and my docker container.
+# set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
+set(HDF5_HINT ${HDF5_DIR})
+find_package(HDF5)
+# Hack if for some reason it is not found in the usual directories
+if (NOT ${HDF5_FOUND} )
+    message(WARNING "Could not find HDF5. Looking at other directories.")
+    find_package(HDF5 REQUIRED PATHS ${HDF5_DIR})
+    include_directories (${HDF5_INCLUDE_DIR})
+    message(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIR}")
+    if( "${HDF5_LIBRARIES}" STREQUAL "" )
+        # Hack if for some reason this is still empty
+        string(REPLACE "include" "lib" HDF5_LIBRARIES ${HDF5_INCLUDE_DIR})
+        set(HDF5_LIBRARIES "${HDF5_LIBRARIES}/libhdf5_hl.a;${HDF5_LIBRARIES}/libhdf5.a")
+    endif()
+else()
+    # Add high level library that are hard to find with CMake for some reason
+    if( "${HDF5_HL_LIBRARIES}" STREQUAL "" )
+        list(GET HDF5_INCLUDE_DIR 0 HEAD)
+        string(REPLACE "include" "lib" HDF5_HL_LIBRARIES ${HEAD})
+        set(HDF5_HL_LIBRARIES "${HDF5_HL_LIBRARIES}/libhdf5_hl.a;${HDF5_HL_LIBRARIES}/libhdf5.a")
+    endif()
+    set(targets "${targets};${HDF5_HL_LIBRARIES}")
 endif()
+message(STATUS "HDF5 Version: ${HDF5_VERSION}")
+set(targets "${targets};${HDF5_LIBRARIES}")
 
 
 message("~~~ CoDiPack")
