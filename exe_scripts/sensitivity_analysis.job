@@ -13,7 +13,7 @@
 
 ############################### This is the one and only script needed to run
 # run with
-# sbatch -t 1-10:00:00 create_train_set.job Z2_wcb_trajs_20161003_19 Z2_wcb_trajs_20161003_20
+# sbatch -t 1-10:00:00 sensitivity_analysis.job Z2_wcb_trajs_20161003_19 Z2_wcb_trajs_20161003_20
 ############################### Expected run time
 #Time with one node: 00-01:15:00 dd:hh:mm for Z2_wcb_trajs_20161003_19.nc with roughly 3.391801802083333 GB output file
 #Time with one node: 00-01:12:00 dd:hh:mm for Z2_wcb_trajs_20161003_20.nc with roughly 3.277936017361111 GB output file
@@ -65,7 +65,7 @@ SAVEDPWD=$(pwd)
 export AD_SIM_HOME=/localscratch/${SLURM_JOB_ID}
 SAVE_INPUTFILEPATH=/lustre/project/m2_zdvresearch/mahieron/data/Z2_data_compressed/
 INPUT_FILEPATH="${AD_SIM_HOME}/data/"
-SAVE_OUTPUTPATH="/lustre/project/m2_zdvresearch/mahieron/Z2_data_sensitivity/"
+SAVE_OUTPUTPATH="/lustre/project/m2_jgu-w2w/mahieron/Z2_data_gradients/"
 OUTPUT_PATH="${AD_SIM_HOME}/output/"
 SAVE_TRACK_FILE="${SAVEDPWD}/configs/b8_config_many.json"
 
