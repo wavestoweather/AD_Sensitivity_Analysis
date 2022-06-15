@@ -126,7 +126,7 @@ python plot_mse.py \
     --max_time 7500 \
     --out_parameter QR
 ```
-Or for snow:
+Or for snow with a specific parameter:
 ```
 python plot_mse.py \
     --data_path ../data/vladiana_ensembles_postprocess/predictions.nc \
@@ -143,7 +143,8 @@ python plot_mse.py \
     --n_model_params 1 \
     --max_time 7500 \
     --min_time 2500 \
-    --out_parameter QS
+    --out_parameter QS \
+    --in_parameter drain_b_geo
 ```
 Plots that show the correlation between AD-estimated and ensemble-estimated
 devation for all model state variables at once can be generated with:
@@ -200,7 +201,8 @@ python plot_simulation_example.py \
 simulation and the number of tracked parameters and model state variables. Be aware
 that you have to have compiled the program with target `timing` first!
 
-At last you can plot all input data, which may take a while the first time, with
+At last you can plot all input data, which may take a while the first time. First, you need to download
+and extract it. The script `exe_scripts/download_additional_data.sh` does this for you. Then you can plot the data with
 ```
 python plot_cosmo.py \
     --pollon 160 \
@@ -208,18 +210,18 @@ python plot_cosmo.py \
     --traj_type conv \
     --store_path ../pics/cosmo_ \
     --verbosity 3 \
-    --store_data ../data/all_conv.h5 \
+    --store_data ../data/all.h5 \
     --data_path ../data/vladiana_complete/
 ```
-This creates a file `data/all_conv.h5` which may be used for additional plots
+This creates a file `data/all.h5` which may be used for additional plots
 that can be generated faster.
 You can then exchange
 ```
---store_data ../data/all_conv.h5
+--store_data ../data/all.h5
 ```
 with
 ```
---data_path ../data/all_conv.h5
+--data_path ../data/all.h5
 ```
 
 
