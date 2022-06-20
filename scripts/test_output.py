@@ -3,6 +3,8 @@ import numpy as np
 import os
 import xarray as xr
 
+from physics_t import physics_t
+
 ColourReset = "\033[0m"
 Warning = "\033[93m"
 Success = "\033[92m"
@@ -404,6 +406,231 @@ def test_saturation(ds, recalc, verbose):
     return err, err_traj
 
 
+def test_phases(ds, recalc):
+    """
+    For each phase, print the amount of trajectories that have at least one time step with this phase.
+    ALso prints the percentage and number of time steps for each phase over all trajectories.
+    Calculates the phases if necessary.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset with trajectory data.
+    recalc : bool
+        Recalculate the phases.
+
+    Returns
+    -------
+    Number of trajectories without any warm phase.
+    """
+    err = 0
+    n_total_timesteps = len(ds["trajectory"]) * len(ds["time"])
+    n_trajectories = len(ds["trajectory"])
+
+    def add_phase(ds):
+        phase_col = np.full(
+            (len(ds["ensemble"]), len(ds["trajectory"]), len(ds["time"])),
+            "             ",
+        )
+
+        def warm(ds):
+            return (
+                (ds["QC"] > 0)
+                | (ds["QC"] > 0)
+                | (ds["NCCLOUD"] > 0)
+                | (ds["NCRAIN"] > 0)
+            )
+
+        def cold(ds):
+            return (
+                (ds["QG"] > 0)
+                | (ds["QH"] > 0)
+                | (ds["NCGRAUPEL"] > 0)
+                | (ds["NCHAIL"] > 0)
+                | (ds["QI"] > 0)
+                | (ds["QS"] > 0)
+                | (ds["NCICE"] > 0)
+                | (ds["NCSNOW"] > 0)
+            )
+
+        def warm_phase(ds):
+            return (warm(ds)) & (~cold(ds))
+
+        def cold_phase(ds):
+            return (~warm(ds)) & (cold(ds))
+
+        def mixed_phase(ds):
+            return (warm(ds)) & (cold(ds))
+
+        def neutral_phase(ds):
+            return (~warm(ds)) & (~cold(ds))
+
+        phase_col[np.where(warm_phase(ds))] = "warm phase   "
+        phase_col[np.where(cold_phase(ds))] = "ice phase    "
+        phase_col[np.where(mixed_phase(ds))] = "mixed phase  "
+        phase_col[np.where(neutral_phase(ds))] = "neutral phase"
+        ds["phase"] = (("ensemble", "trajectory", "time"), phase_col)
+        return ds
+
+    if "phase" not in ds or recalc:
+        ds = add_phase(ds)
+
+    n_data = {phase.item(): 0 for phase in np.unique(ds["phase"])}
+    n_trajs = {phase.item(): 0 for phase in np.unique(ds["phase"])}
+
+    for phase in np.unique(ds["phase"]):
+        n = np.sum(ds["phase"] == phase)
+        n_data[phase] += n.values.item()
+
+        n_per_traj = (ds["phase"] == phase).sum(axis=2)
+        zero_times = (n_per_traj == 0).sum()
+        n_trajs[phase] += (n_trajectories - zero_times).values.item()
+
+    for phase in n_data.keys():
+        if phase == "warm phase" or phase == "warm phase   " or phase == 0:
+            perc = n_trajs[phase] / n_trajectories
+            if n_trajs[phase] < n_trajectories:
+                print(
+                    f"{Error}Failed: {phase} occurs only in {n_trajs[phase]} / {n_trajectories} trajectories ({perc*100:2.2f}%){ColourReset}\n"
+                )
+            else:
+                print(
+                    f"{Success}{phase} occurs in {n_trajs[phase]} / {n_trajectories} trajectories ({perc*100:2.2f}%){ColourReset}\n"
+                )
+        else:
+            perc = n_trajs[phase] / n_trajectories
+            print(
+                f"{phase} occurs in {n_trajs[phase]} / {n_trajectories} trajectories ({perc*100:2.2f}%)\n"
+            )
+        perc = n_data[phase] / n_total_timesteps
+        print(
+            f"{phase} occurs in {n_data[phase]} / {n_total_timesteps} time steps ({perc*100:2.2f}%)\n"
+        )
+    return err
+
+
+def test_graupel_melting(physics, T, qg, Ng, verbose=False):
+    """
+    Test graupel melting for different inputs. Graupel should be melting completely in these cases.
+
+    Parameters
+    ----------
+    physics : physics_t
+    T : float
+        The maximum temperature for testing.
+    qg : float
+        The maximum power of 10 to use for graupel mass.
+    Ng : float
+        The maximum power of 10 to use for graupel number.
+    verbose : bool
+        If true: print whenever a test case fails. Otherwise print only the overall amount of fails.
+
+    Returns
+    -------
+    The amount of failed test cases.
+    """
+    err = 0
+    n_tests = 0
+    res = np.zeros(physics.get_num_comp(), dtype=np.float64)
+    gradients = np.zeros(
+        physics.get_num_comp() * physics.get_num_par(), dtype=np.float64
+    )
+    for N_i in np.arange(4, Ng, 1):
+        Ng_i = 10 ** N_i
+        for q_i in np.arange(-10.0, qg, 0.5):
+            qg_i = 10 ** q_i
+            for T_i in np.arange(280.0, T, 0.5):
+                physics.graupel_melting(T_i, qg_i, Ng_i, res, gradients)
+                n_tests += 1
+                if (
+                    res[physics.index_dic["qg"]] >= 1e-20
+                    or res[physics.index_dic["Ng"]] >= 1
+                ):
+                    qg_left = res[physics.index_dic["qg"]]
+                    Ng_left = res[physics.index_dic["Ng"]]
+                    err += 1
+                    if verbose:
+                        print(
+                            f"{Error}Failed: With input T={T_i}, qg={qg_i*1e-6}, Ng={Ng_i}, there is  "
+                            f"qg={qg_left} and Ng={Ng_left} left over.{ColourReset}\n"
+                        )
+    if err == 0:
+        print(f"{Success}Graupel melting looks good for all {n_tests} tests.\n")
+    else:
+        print(
+            f"{Error}Failed: Graupel not completely melted for {err} of {n_tests} tests.{ColourReset}\n"
+        )
+    return err
+
+
+def test_ccn_act_akm(physics, w, T, qv, qc, verbose=False):
+    """
+    Test if the mass is preserved and if the variation for different ascend velocities is large enough.
+
+    Parameters
+    ----------
+    physics : physics_t
+    w : float
+        Maximum ascend velocity in meters per second.
+    T : float
+        The maximum temperature for testing.
+    qv : float
+        Amount of water vapor (times 1e6).
+    qc : float
+        Initial amount of cloud mass in 10**qc*1e-6
+    verbose : bool
+        If true: print whenever a test case fails. Otherwise print only the overall amount of fails.
+
+    Returns
+    -------
+    The amount of failed test cases.
+    """
+    Nc = 1
+    err = 0
+    n_tests = 0
+    res = np.zeros(physics.get_num_comp(), dtype=np.float64)
+    gradients = np.zeros(
+        physics.get_num_comp() * physics.get_num_par(), dtype=np.float64
+    )
+    delta_w = (w - 0.05) / 11
+    for i in np.arange(0.01, 1, 0.01):
+        qc_list = []
+        for w_i in np.arange(0.05, w, delta_w):
+            physics.ccn_act_hande_akm(i, w_i, T, qv, 10 ** qc, Nc, res, gradients)
+            qc_list.append(res[physics.index_dic["qc"]])
+            n_tests += 1
+            difference = (
+                qv * 1e-6
+                + 10 ** qc * 1e-6
+                - res[physics.index_dic["qv"]]
+                - res[physics.index_dic["qc"]]
+            )
+            if difference >= 5e-20:
+                err += 1
+                if verbose:
+                    print(
+                        f"{Error}Failed: With input T={T}, w={w_i}, qv={qv*1e-6}, p={i*1e5}. "
+                        f"There is a difference of mass of {difference}.{ColourReset}\n"
+                    )
+        n_tests += 1
+        for qc_l in qc_list:
+            if qc_list.count(qc_l) > 1:
+                err += 1
+                if verbose:
+                    print(
+                        f"{Error}Failed: With input T={T}, qv={qv*1e-6}, p={i*1e5}. "
+                        f"There is not enough variation of qc w.r.t. to w.{ColourReset}\n"
+                    )
+                break
+    if err == 0:
+        print(f"{Success}CCN activation (akm) looks good for all {n_tests} tests.\n")
+    else:
+        print(
+            f"{Error}Failed: CCN activation (akm) failed {err} of {n_tests} tests.{ColourReset}\n"
+        )
+    return err
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -419,7 +646,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--input",
         type=str,
-        required=True,
+        default=None,
         help="""
         Path to the NetCDF-file. If the given path is a folder of files, all
         files will be used sequentially.
@@ -492,6 +719,31 @@ if __name__ == "__main__":
         """,
     )
     parser.add_argument(
+        "--test_phases",
+        action="store_true",
+        help="""
+        Test if all trajectories have at least once a warm phase. Prints the percentages for all other phases as well. 
+        """,
+    )
+    parser.add_argument(
+        "--calc_phases",
+        action="store_true",
+        help="""
+        Recalculate the phases of each trajectory.
+        """,
+    )
+    parser.add_argument(
+        "--test_physics",
+        type=str,
+        default="no",
+        help="""
+        The path of the Python interface library.
+        Run (some) tests using the Python interface. Makes rudimentary
+        checks on different microphysical processes with a timestep of
+        30 seconds.
+        """,
+    )
+    parser.add_argument(
         "--verbosity",
         type=int,
         default=0,
@@ -503,6 +755,7 @@ if __name__ == "__main__":
         dimensions. Verbosity 3 prints in addition the amount of non-physical
         hydrometeor sizes even if those are below the given threshold. Verbosity 4
         prints in addition each error in the NaN test for variables (columns).
+        Verbosity 5 prints every error for the physics tests.
         """,
     )
     args = parser.parse_args()
@@ -522,31 +775,78 @@ if __name__ == "__main__":
         if args.test_saturation:
             _, err_traj = test_saturation(ds, args.calc_saturation, args.verbosity)
             errors += err_traj
+        if args.test_phases:
+            errors += test_phases(ds, args.calc_phases)
         return errors
 
-    err = 0
-    if args.input[-1] == "/":
-        files = [f for f in os.listdir(args.input) if os.path.isfile(args.input + f)]
-        n = len(files)
-        for i, f in enumerate(files):
+    if args.input is not None:
+        err = 0
+        if args.input[-1] == "/":
+            files = [
+                f for f in os.listdir(args.input) if os.path.isfile(args.input + f)
+            ]
+            n = len(files)
+            for i, f in enumerate(files):
+                n_files += 1
+                print(f"{Status}~*~*~*~Parsing {f} {i+1}/{n}~*~*~*~{ColourReset}")
+                ds = load_dataset(args.input + f)
+                err += parse_ds(ds, args.output_path + f.split(".")[0] + "_")
+        else:
             n_files += 1
-            print(f"{Status}~*~*~*~Parsing {f} {i+1}/{n}~*~*~*~{ColourReset}")
-            ds = load_dataset(args.input + f)
-            err += parse_ds(ds, args.output_path + f.split(".")[0] + "_")
-    else:
-        n_files += 1
-        ds = load_dataset(args.input)
-        output_path = args.output_path
-        if output_path[-1] != "/":
-            output_path += "/"
-        err += parse_ds(ds, output_path)
-    if err == 0:
-        print(f"\n{Success}No errors occured for {n_files} files.{ColourReset}")
-    if not args.allow_failure and err > 0:
-        raise Exception(
-            f"{Error}Failed: {err} errors occured during testing for {n_files} files. Check the output!{ColourReset}"
+            ds = load_dataset(args.input)
+            output_path = args.output_path
+            if output_path[-1] != "/":
+                output_path += "/"
+            err += parse_ds(ds, output_path)
+
+        if err == 0:
+            print(f"\n{Success}No errors occured for {n_files} files.{ColourReset}")
+        if not args.allow_failure and err > 0:
+            raise Exception(
+                f"{Error}Failed: {err} errors occured during testing for {n_files} files. Check the output!{ColourReset}"
+            )
+        elif err > 0:
+            print(
+                f"{Error}Failed: {err} errors occured during testing for {n_files} files. Check the output!{ColourReset}"
+            )
+
+    if args.test_physics != "no":
+        err = 0
+        n_processes = 0
+        physics = physics_t(lib_path=args.test_physics)
+        physics.setup_model_constants(30.0, 0.1)
+        print(f"{Status}~*~*~*~Testing graupel melting~*~*~*~{ColourReset}")
+        tmp = test_graupel_melting(
+            physics=physics,
+            T=285,
+            qg=2,
+            Ng=8,
+            verbose=(args.verbosity > 4),
         )
-    elif err > 0:
-        print(
-            f"{Error}Failed: {err} errors occured during testing for {n_files} files. Check the output!{ColourReset}"
+        if tmp > 0:
+            n_processes += 1
+        err += tmp
+
+        print(f"{Status}~*~*~*~Testing CCN activation (akm)~*~*~*~{ColourReset}")
+        tmp = test_ccn_act_akm(
+            physics=physics,
+            w=3,
+            T=270,
+            qv=1e2,
+            qc=-6,
+            verbose=(args.verbosity > 4),
         )
+        if tmp > 0:
+            n_processes += 1
+        err += tmp
+
+        if err == 0:
+            print(f"\n{Success}No errors occured for all physics tests.{ColourReset}")
+        if not args.allow_failure and err > 0:
+            raise Exception(
+                f"{Error}Failed: {err} errors occured during testing for {n_processes} processes.{ColourReset}"
+            )
+        elif err > 0:
+            print(
+                f"{Error}Failed: {err} errors occured during testing for {n_processes} processes.{ColourReset}"
+            )
