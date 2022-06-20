@@ -5,6 +5,7 @@
 #include <include/microphysics/program_io.h>
 
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include <fstream>
@@ -23,7 +24,7 @@ struct physics_t {
     double uncertainty_scale;
 
  public:
-    physics_t(std::string table_path="dmin_wetgrowth_lookup.dat");
+    explicit physics_t(std::string table_path = "dmin_wetgrowth_lookup.dat");
 
     void set_limits(
         std::vector<codi::RealReverse> &y,
