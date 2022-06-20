@@ -193,8 +193,12 @@ def print_unique_params(top_sens_dic):
     ----------
     top_sens_dic
 
+    Returns
+    -------
+    String of all printed statements
     """
-    print("\nParameters that appear only for a single output variable\n")
+    text = "\nParameters that appear only for a single output variable\n"
+    print(text)
     unique_list = []
     unique_pairing = []
     not_unique_list = []
@@ -212,6 +216,8 @@ def print_unique_params(top_sens_dic):
                 del unique_pairing[idx[0][0]]
     for pair in unique_pairing:
         print(pair)
+        text += f"{pair}\n"
+    return text
 
 
 def print_correlation_broad(ds, out_params):
@@ -223,8 +229,12 @@ def print_correlation_broad(ds, out_params):
     ds :
     out_params :
 
+    Returns
+    -------
+    String of all printed statements
     """
-    print(f"\nCorrelation with all data\n")
+    text = f"\nCorrelation with all data\n"
+    print(text)
 
     def get_corr(df, kind):
         return df[["Predicted Squared Error", "Mean Squared Error"]].corr(kind)[
@@ -232,21 +242,26 @@ def print_correlation_broad(ds, out_params):
         ][1]
 
     def print_corr(df):
+        global text
         spearman = get_corr(df, "spearman")
         pearson = get_corr(df, "pearson")
         kendall = get_corr(df, "kendall")
+        text += f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}\n"
         print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
         df = df.loc[df["Predicted Squared Error"] != 0]
         n = len(np.unique(df["Input Parameter"]))
+        text += f"Correlation without zero parameters; total of {n} parameters"
         print(f"Correlation without zero parameters; total of {n} parameters")
         spearman = get_corr(df, "spearman")
         pearson = get_corr(df, "pearson")
         kendall = get_corr(df, "kendall")
+        text += f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}"
         print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
 
     df = ds.to_dataframe().reset_index()
     print_corr(df)
 
+    text += "\nFor each output variable type individually\n"
     print("\nFor each output variable type individually\n")
 
     second_moment = ["QV", "QC", "QR", "QS", "QG", "QH", "QI"]
@@ -254,29 +269,36 @@ def print_correlation_broad(ds, out_params):
     second_sed = ["QR_OUT", "QG_OUT", "QH_OUT", "QI_OUT", "QS_OUT"]
     first_sed = ["NR_OUT", "NG_OUT", "NH_OUT", "NI_OUT", "NS_OUT"]
 
+    text += "##################First Moment (Number Count)"
     print("##################First Moment (Number Count)")
     df = ds.sel({"Output Parameter": first_moment}).to_dataframe().reset_index()
     print_corr(df)
 
+    text += "##################Second Moment (Mixing Ratio)"
     print("##################Second Moment (Mixing Ratio)")
     df = ds.sel({"Output Parameter": second_moment}).to_dataframe().reset_index()
     print_corr(df)
 
+    text += "##################First Moment Sedimentation (Number Count)"
     print("##################First Moment Sedimentation (Number Count)")
     df = ds.sel({"Output Parameter": first_sed}).to_dataframe().reset_index()
     print_corr(df)
 
+    text += "##################Second Moment Sedimentation (Mixing Ratio)"
     print("##################Second Moment Sedimentation (Mixing Ratio)")
     df = ds.sel({"Output Parameter": second_sed}).to_dataframe().reset_index()
     print_corr(df)
 
+    text += "\nFor each output variable individually\n"
     print("\nFor each output variable individually\n")
 
     for out_p in out_params:
         out_p = out_p
+        text += f"##################{out_p}"
         print(f"##################{out_p}")
         df = ds.sel({"Output Parameter": [out_p]}).to_dataframe().reset_index()
         print_corr(df)
+    return text
 
 
 def print_correlation_mean(ds, out_params):
@@ -287,12 +309,14 @@ def print_correlation_mean(ds, out_params):
     ds
     out_params
 
+    Returns
+    -------
+    String of all printed statements
     """
-    print(
-        "\nInstead of looking at correlations within time steps and trajectories individually, "
-    )
-    print("take the mean of those and look at the correlation\n")
-    print(f"\nCorrelation with all data\n")
+    text = "\nInstead of looking at correlations within time steps and trajectories individually, "
+    text += "take the mean of those and look at the correlation\n"
+    text += f"\nCorrelation with all data\n"
+    print(text)
 
     def get_corr(df, kind):
         return df[["Predicted Squared Error", "Mean Squared Error"]].corr(kind)[
@@ -303,13 +327,17 @@ def print_correlation_mean(ds, out_params):
         spearman = get_corr(df, "spearman")
         pearson = get_corr(df, "pearson")
         kendall = get_corr(df, "kendall")
+        global text
+        text += f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}"
         print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
         df = df.loc[df["Predicted Squared Error"] != 0]
         n = len(np.unique(df["Input Parameter"]))
+        text += f"Correlation without zero parameters; total of {n} parameters"
         print(f"Correlation without zero parameters; total of {n} parameters")
         spearman = get_corr(df, "spearman")
         pearson = get_corr(df, "pearson")
         kendall = get_corr(df, "kendall")
+        text += f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}"
         print(f"Spearman: {spearman}, Kendall: {kendall}, Pearson: {pearson}")
 
     df = (
@@ -319,9 +347,11 @@ def print_correlation_mean(ds, out_params):
     )
     print_corr(df)
 
+    text += "\nFor each output variable individually\n"
     print("\nFor each output variable individually\n")
     for out_p in out_params:
         out_p = out_p
+        text += f"##################{out_p}"
         print(f"##################{out_p}")
         df = (
             ds.sel({"Output Parameter": [out_p]})
@@ -331,6 +361,7 @@ def print_correlation_mean(ds, out_params):
         )
         print_corr(df)
 
+    text += "\nCorrelation taking different number of top parameters\n"
     print("\nCorrelation taking different number of top parameters\n")
     df = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
@@ -339,6 +370,7 @@ def print_correlation_mean(ds, out_params):
     )
     tuples = []
     for n in [10, 20, 50, 100, 150, 200]:
+        text += f"##############n={n}#################"
         print(f"##############n={n}#################")
         param_list = []
         for out_p in out_params:
@@ -351,18 +383,20 @@ def print_correlation_mean(ds, out_params):
         param_set = set(param_list)
         df_tmp = df.loc[df["Input Parameter"].isin(param_set)]
         i = len(np.unique(df_tmp["Input Parameter"]))
+        text += f"Correlation with zero parameters; total of {i} parameters\n"
+        df_tmp2 = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
+            "Predicted Squared Error"
+        ][1]
+        text += f"{df_tmp2}"
         print(f"Correlation with zero parameters; total of {i} parameters")
-        print(
-            df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-                "Predicted Squared Error"
-            ][1]
-        )
+        print(df_tmp2)
         pearson = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr(
             "pearson"
         )["Predicted Squared Error"][1]
         kendall = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr(
             "kendall"
         )["Predicted Squared Error"][1]
+        text += f"Pearson: {pearson}, Kendall: {kendall}"
         print(f"Pearson: {pearson}, Kendall: {kendall}")
         tuples.append(
             (
@@ -373,14 +407,17 @@ def print_correlation_mean(ds, out_params):
             )
         )
     for t in tuples:
+        text += f"n={t[0]}, r={t[1]:1.3f}"
         print(f"n={t[0]}, r={t[1]:1.3f}")
 
+    text += "\nCorrelation only for the 75th percentile\n"
     print("\nCorrelation only for the 75th percentile\n")
     params = []
     for out_p in out_params:
         out_p = out_p
         if "NH_OUT" == out_p or "QH_OUT" == out_p:
             continue
+        text += f"##################{out_p}\n"
         print(f"##################{out_p}")
         df = (
             ds.sel({"Output Parameter": [out_p]})
@@ -392,10 +429,12 @@ def print_correlation_mean(ds, out_params):
         df = df.loc[df["Predicted Squared Error"] >= quan]
         n = len(np.unique(df["Input Parameter"]))
         params.extend(np.unique(df["Input Parameter"]))
+        text += f"Correlation only with 75th percentile; total of {n} parameters\n"
         print(f"Correlation only with 75th percentile; total of {n} parameters")
         r_2 = df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
             "Predicted Squared Error"
         ][1]
+        text += f"{r_2}"
         print(r_2)
         pearson = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
             "Predicted Squared Error"
@@ -403,8 +442,10 @@ def print_correlation_mean(ds, out_params):
         kendall = df[["Predicted Squared Error", "Mean Squared Error"]].corr("kendall")[
             "Predicted Squared Error"
         ][1]
+        text += f"Pearson: {pearson}, Kendall: {kendall}"
         print(f"Pearson: {pearson}, Kendall: {kendall}")
     params = list(set(params))
+    text += f"Number of parameters: {len(params)}"
     print(f"Number of parameters: {len(params)}")
     df_tmp = (
         ds.sel({"Input Parameter": params})
@@ -415,8 +456,9 @@ def print_correlation_mean(ds, out_params):
     r = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
         "Predicted Squared Error"
     ][1]
+    text += f"Correlation for all predicted errors with ensemble errors: {r}"
     print(f"Correlation for all predicted errors with ensemble errors: {r}")
-
+    text += f"\nCreate Latex table with Spearman correlations\n"
     print(f"\nCreate Latex table with Spearman correlations\n")
     table_corr = r"""
 \begin{table}[hbt]
@@ -454,7 +496,9 @@ def print_correlation_mean(ds, out_params):
     \label{tab:validate:correlation}
 \end{table}"""
     print(table_corr)
+    text += table_corr
 
+    text += f"\nCreate Latex table with Pearson correlations\n"
     print(f"\nCreate Latex table with Pearson correlations\n")
     table_corr = r"""
 \begin{table}[hbt]
@@ -492,6 +536,8 @@ def print_correlation_mean(ds, out_params):
     \label{tab:correlation_pearson}
 \end{table}"""
     print(table_corr)
+    text += table_corr
+    return text
 
 
 def print_latex_tables(ds, top=10, verbose=True):
@@ -507,9 +553,10 @@ def print_latex_tables(ds, top=10, verbose=True):
 
     Returns
     -------
-    sort_key_list, table_dic
+    sort_key_list, table_dic, the printed statements
     """
-    print("\nBuild Latex tables\n")
+    text = "\nBuild Latex tables\n"
+    print(text)
     tmp_df = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
         .to_dataframe()
@@ -696,6 +743,8 @@ def print_latex_tables(ds, top=10, verbose=True):
     top_10_table += sedi_latex[:-2] + " $ \\\\"
     top_10_table += "\n\t\\end{tabular} \n \t\\caption{} \n"
     top_10_table += "\t\\label{tab:} \n \\end{table} \n"
+    text += "\nThe table of top 10 parameters for each state variable:\n"
+    text += top_10_table
     print("\nThe table of top 10 parameters for each state variable:\n")
     print(top_10_table)
 
@@ -706,6 +755,7 @@ def print_latex_tables(ds, top=10, verbose=True):
     if verbose:
         print(f"There are {len(table_dic)} different input parameters")
 
+    text += "\nAppendix table of top parameters\n"
     print("\nAppendix table of top parameters\n")
     tmp_sort = sorted(sort_key_list, key=lambda x: (x[2], x[0]), reverse=True)
     sort_dic_long_table = {}
@@ -724,44 +774,41 @@ def print_latex_tables(ds, top=10, verbose=True):
             sort_dic_short_table[state_variable2] = [(sens, key, l_string)]
         else:
             sort_dic_short_table[state_variable2].append((sens, key, l_string))
-    print("\\bgroup")
-    print(
-        "\\def\\arraystretch{1.2} %  1 is the default, we want it slightly larger such that exponents are easier to read"
-    )
-    print("\\begin{tabularx}{\\linewidth}{@{}lccX@{}}")
-    print(
-        "\t\\textbf{Model Param.}  & \\textbf{MSD} & \\textbf{Predicted MSD} & \\textbf{Parameter Description}"
-    )
-    print("\t\\endhead")
+    table_text = "\\bgroup\n"
+    table_text += "\\def\\arraystretch{1.2} %  1 is the default, we want it slightly larger such that exponents are easier to read\n"
+    table_text += "\\begin{tabularx}{\\linewidth}{@{}lccX@{}}\n"
+    table_text += "\t\\textbf{Model Param.}  & \\textbf{MSD} & \\textbf{Predicted MSD} & \\textbf{Parameter Description}\n"
+    table_text += "\t\\endhead\n"
     i = 0
     for state_variable in latexify_state.keys():
         if state_variable not in sort_dic_long_table:
             continue
-        print(
+        table_text += (
             "\t\t\\hline \\multicolumn{4}{c}{"
             + latexify.parse_word(state_variable).title()
-            + "}\t \\\\ \\hline"
+            + "}\t \\\\ \\hline\n"
         )
         for _, _, s in sort_dic_long_table[state_variable]:
-            print("\t\t", end="")
-            print(s)
+            table_text += "\t\t"
+            table_text += f"{s}"
             i += 1
-
-    print("\t", end="")
+    table_text += "\t"
     top_str = "ten"
     if top != 10:
         top_str = str(top)
-    print(
+    table_text += (
         r"\caption{This is the set of parameters if we gather the "
         + top_str
         + r" most important ones for each model state variable. The predicted MSD is defined in Equation~\ref{eq:identification:msd_predict}, where we only show the highest predicted MSD among all mass densities unless the parameter did not have an impact on mass densities. In that case, the predicted deviation on number density and precipitation is considered. There are $ "
         + str(i)
         + r" $ different parameters in total.}"
     )
-    print("\t\\label{tab:important_params}")
-    print("\\end{tabularx}")
-    print("\\egroup")
-    return sort_key_list, table_dic
+    table_text += "\t\\label{tab:important_params}\n"
+    table_text += "\\end{tabularx}\n"
+    table_text += "\\egroup\n"
+    text += table_text
+    print(table_text)
+    return sort_key_list, table_dic, text
 
 
 def print_variable_with_important_params(sort_key_list):
@@ -771,11 +818,12 @@ def print_variable_with_important_params(sort_key_list):
     ----------
     sort_key_list
 
-
+    Returns
+    -------
+    String of all printed statements
     """
-    print(
-        "\nWhich model state variable has the most parameters with a high influence?\n"
-    )
+    text = "\nWhich model state variable has the most parameters with a high influence?\n"
+    print(text)
     state_counts = {}
     for sens, key, state_variable, desc in sort_key_list:
         if state_variable not in state_counts:
@@ -784,6 +832,8 @@ def print_variable_with_important_params(sort_key_list):
             state_counts[state_variable] += 1
     for state_variable in state_counts:
         print(f"{state_variable}: {state_counts[state_variable]}")
+        text += f"{state_variable}: {state_counts[state_variable]}"
+    return text
 
 
 def print_param_types(ds, table_dic):
@@ -794,9 +844,12 @@ def print_param_types(ds, table_dic):
     ds
     table_dic
 
-
+    Returns
+    -------
+    String of all printed statements
     """
-    print("\nHow many type of parameters are there?\n")
+    text = "\nHow many type of parameters are there?\n"
+    print(text)
     geo_count = 0
     vel_count = 0
     misc_count = 0
@@ -873,6 +926,19 @@ def print_param_types(ds, table_dic):
         f"There are {art_thresh_count} artificial threshold parameters (total: {total_art_thresh_count})"
     )
     print(f"There are {else_group_count} not determined parameters in terms of groups")
+    text += f"There are {total_parameters} many parameters\n"
+    text += f"There are {geo_count} geometric parameters\n"
+    text += f"There are {vel_count} velocity parameters\n"
+    text += f"There are {misc_count} misc. parameters\n"
+    text += f"There are {exp_count} exponents\n"
+    text += f"There are {coeff_count} coefficients\n"
+    text += f"There are {else_count} not determined parameters in terms of coefficient or exponent\n"
+    text += f"There are {phys_count} physical parameters (total: {total_phys_count})\n"
+    text += f"There are {phys_var_count} physical parameters with a high variability (total: {total_phys_var_count})\n"
+    text += f"There are {art_count} artificial parameters (total: {total_art_count})\n"
+    text += f"There are {art_thresh_count} artificial threshold parameters (total: {total_art_thresh_count})\n"
+    text += f"There are {else_group_count} not determined parameters in terms of groups\n"
+    return text
 
 
 def print_large_impact_no_sens(ds, top=50):
@@ -883,10 +949,12 @@ def print_large_impact_no_sens(ds, top=50):
     ds :
     top :
 
+    Returns
+    -------
+    String of all printed statements
     """
-    print(
-        f"\nWhich parameters had a large influence (>{top}) despite showing no sensitivity?\n"
-    )
+    text = f"\nWhich parameters had a large influence (>{top}) despite showing no sensitivity?\n"
+    print(text)
     tmp_df = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
         .to_dataframe()
@@ -904,6 +972,7 @@ def print_large_impact_no_sens(ds, top=50):
     for out_p in out_params:
         out_p = out_p
         print(f"########################### {out_p} ########################")
+        text += f"########################### {out_p} ########################"
         df = tmp_df.loc[tmp_df["Output Parameter"] == out_p]
         df2 = tmp_df2.loc[tmp_df2["Output Parameter"] == out_p]
         nlargest50 = df2.nlargest(top, error_key)[
@@ -911,12 +980,14 @@ def print_large_impact_no_sens(ds, top=50):
         ]
         min_sens = nlargest50[error_key].min()
         df_3 = df.loc[df[error_key] >= min_sens]
+        text += f"sort by {error_key} with errors > {min_sens}"
+        df_tmp_2 = df_3.nlargest(20, error_key)[
+            ["Input Parameter", error_key, "Predicted Squared Error"]
+        ]
+        text += f"{df_tmp_2}"
         print(f"sort by {error_key} with errors > {min_sens}")
-        print(
-            df_3.nlargest(20, error_key)[
-                ["Input Parameter", error_key, "Predicted Squared Error"]
-            ]
-        )
+        print(df_tmp_2)
+    return text
 
 
 def print_table_top_lists(top_n_lists, top_orders_lists):
@@ -927,8 +998,12 @@ def print_table_top_lists(top_n_lists, top_orders_lists):
     top_n_lists
     top_orders_lists
 
+    Returns
+    -------
+    String of all printed statements
     """
     print("\nTable with all parameters for each top variant\n")
+    text = "\nTable with all parameters for each top variant\n"
     dict_tops = {}
     max_length = 0
     for i, t in enumerate(top_n_lists):
@@ -948,6 +1023,8 @@ def print_table_top_lists(top_n_lists, top_orders_lists):
             )
     df = pd.DataFrame(dict_tops)
     print(df)
+    text += f"{df}"
+    return text
 
 
 def traj_get_sum_derivatives(file_path):
@@ -1484,6 +1561,7 @@ def plot_heatmap_traj(
 if __name__ == "__main__":
     import argparse
     import pickle
+    from latexify import *
 
     parser = argparse.ArgumentParser(
         description="""
@@ -1511,7 +1589,7 @@ if __name__ == "__main__":
         default="../pics/histogram.png",
         help="""
         Path and name to store histogram plots if the input is a set of trajectories with a sensitivity analysis
-        simulation.
+        simulation. Exchanges the ending with 'txt' and stores the results of any statistics in there unless it is 'none'.
         """,
     )
     parser.add_argument(
@@ -1677,18 +1755,60 @@ if __name__ == "__main__":
         top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic = traj_get_top_params(
             sums, param_name, 10, 1
         )
-        print(f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}")
-        print(top_magn_set)
-        print("The parameters within a magnitude for each output Parameter:")
+        text = f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}"
+        text += f"{top_magn_set}"
+        text += "The parameters within a magnitude for each output Parameter:"
         for out_p in top_magn_sens_dic.keys():
-            print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
-            print(top_magn_sens_dic[out_p])
-        print(f"No. of parameters within the top 10: {len(top10_set)}")
-        print(top10_set)
-        print("The top parameters 10 for each output Parameter:")
+            text += f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*"
+            for param in top_magn_sens_dic[out_p]:
+                try:
+                    text += f"{param}: {in_params_notation_mapping[param][0]}"
+                except:
+                    text += f"{param}"
+            text += "\n"
+        text += f"No. of parameters within the top 10: {len(top10_set)}"
+        text += f"{top10_set}"
+        text += "The top parameters 10 for each output Parameter:"
         for out_p in top_sens_dic.keys():
-            print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
-            print(top_sens_dic[out_p])
+            text += f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*"
+            text += f"{top_sens_dic[out_p]}"
+            for param in top_sens_dic[out_p]:
+                try:
+                    text += f"{param}: {in_params_notation_mapping[param][0]}"
+                except:
+                    text += f"{param}"
+            text += "\n"
+
+        # print(f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}")
+        # print(top_magn_set)
+        # print("The parameters within a magnitude for each output Parameter:")
+        # for out_p in top_magn_sens_dic.keys():
+        #     print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
+        #     for param in top_magn_sens_dic[out_p]:
+        #         try:
+        #             print(f"{param}: {in_params_notation_mapping[param][0]}")
+        #         except:
+        #             print(param)
+        #     print()
+        # print(f"No. of parameters within the top 10: {len(top10_set)}")
+        # print(top10_set)
+        # print("The top parameters 10 for each output Parameter:")
+        # for out_p in top_sens_dic.keys():
+        #     print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
+        #     print(top_sens_dic[out_p])
+        #     for param in top_sens_dic[out_p]:
+        #         try:
+        #             print(f"{param}: {in_params_notation_mapping[param][0]}")
+        #         except:
+        #             print(param)
+        #     print()
+        print(text)
+        if args.out_file != "none":
+            filename = args.out_file
+            ending = filename.split(".")[-1]
+            filename = filename[0:-len(ending)-1] + ".txt"
+            with open(filename, "w+") as f:
+                f.write(text)
     else:
         ds = xr.open_dataset(args.file, decode_times=False)
         (
@@ -1706,6 +1826,7 @@ if __name__ == "__main__":
 
         pd.set_option("display.max_rows", 100)
         pd.set_option("display.max_columns", 10)
+
         with pd.option_context(
             "display.max_rows",
             100,
@@ -1714,15 +1835,22 @@ if __name__ == "__main__":
             "display.expand_frame_repr",
             False,
         ):
-            print_table_top_lists(
+            text = print_table_top_lists(
                 [top10_list, top20_list],
                 [top_one_order_list, top_two_orders_list, top_three_orders_list],
             )
 
-        print_unique_params(top10_sens_dic)
-        print_correlation_broad(ds, out_params)
-        print_correlation_mean(ds, out_params)
-        sort_key_list, table_dic = print_latex_tables(ds, 10, args.verbose)
-        print_variable_with_important_params(sort_key_list)
-        print_param_types(ds, table_dic)
-        print_large_impact_no_sens(ds)
+        text += print_unique_params(top10_sens_dic)
+        text += print_correlation_broad(ds, out_params)
+        text += print_correlation_mean(ds, out_params)
+        sort_key_list, table_dic, text_tmp = print_latex_tables(ds, 10, args.verbose)
+        text += text_tmp
+        text += print_variable_with_important_params(sort_key_list)
+        text += print_param_types(ds, table_dic)
+        text += print_large_impact_no_sens(ds)
+        if args.out_file != "none":
+            filename = args.out_file
+            ending = filename.split(".")[-1]
+            filename = filename[0:-len(ending)-1] + ".txt"
+            with open(filename, "w+") as f:
+                f.write(text)
