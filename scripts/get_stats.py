@@ -1755,28 +1755,28 @@ if __name__ == "__main__":
         top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic = traj_get_top_params(
             sums, param_name, 10, 1
         )
-        text = f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}"
-        text += f"{top_magn_set}"
-        text += "The parameters within a magnitude for each output Parameter:"
+        text = f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}\n"
+        text += f"{top_magn_set}\n"
+        text += "The parameters within a magnitude for each output Parameter:\n"
         for out_p in top_magn_sens_dic.keys():
-            text += f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*"
+            text += f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*\n"
             for param in top_magn_sens_dic[out_p]:
                 try:
-                    text += f"{param}: {in_params_notation_mapping[param][0]}"
+                    text += f"{param}: {in_params_notation_mapping[param][0]}\n"
                 except:
-                    text += f"{param}"
+                    text += f"{param}\n"
             text += "\n"
-        text += f"No. of parameters within the top 10: {len(top10_set)}"
-        text += f"{top10_set}"
-        text += "The top parameters 10 for each output Parameter:"
+        text += f"No. of parameters within the top 10: {len(top10_set)}\n"
+        text += f"{top10_set}\n"
+        text += "The top parameters 10 for each output Parameter:\n"
         for out_p in top_sens_dic.keys():
-            text += f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*"
-            text += f"{top_sens_dic[out_p]}"
+            text += f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*\n"
+            text += f"{top_sens_dic[out_p]}\n"
             for param in top_sens_dic[out_p]:
                 try:
-                    text += f"{param}: {in_params_notation_mapping[param][0]}"
+                    text += f"{param}: {in_params_notation_mapping[param][0]}\n"
                 except:
-                    text += f"{param}"
+                    text += f"{param}\n"
             text += "\n"
 
         # print(f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}")
