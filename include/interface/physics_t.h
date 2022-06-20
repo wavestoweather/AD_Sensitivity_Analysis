@@ -23,7 +23,7 @@ struct physics_t {
     double uncertainty_scale;
 
  public:
-    physics_t();
+    physics_t(std::string table_path="dmin_wetgrowth_lookup.dat");
 
     void set_limits(
         std::vector<codi::RealReverse> &y,
@@ -78,7 +78,7 @@ struct physics_t {
 };
 
 extern "C" {
-    physics_t* physics_t_new() {return new physics_t();}
+    physics_t* physics_t_new(char* table_path) {return new physics_t(table_path);}
     int physics_t_get_num_comp(physics_t* phys) {return phys->get_num_comp();}
     int physics_t_get_num_par(physics_t* phys) {return phys->get_num_par();}
     void physics_t_set_ref_quants(

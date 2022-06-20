@@ -1,6 +1,6 @@
 #include <include/interface/physics_t.h>
 
-physics_t::physics_t() : cc("", false) {
+physics_t::physics_t(std::string table_path) : cc("", false) {
     yold.resize(num_comp);
     ynew.resize(num_comp);
     ytmp.resize(num_comp);
@@ -8,7 +8,7 @@ physics_t::physics_t() : cc("", false) {
     gradients_.resize(num_comp + static_cast<uint32_t>(Init_cons_idx::n_items));
     set_ref_quants(1.0e-6, 1.0e5, 1.0, 1.0, 1.0, 1.0, 1.0);
     setup_model_constants(30.0, 0.1);
-    load_lookup_table(cc.ltabdminwgg);
+    load_lookup_table(cc.ltabdminwgg, table_path);
     for (auto &y : yold) y = 0;
 }
 
@@ -262,12 +262,12 @@ void physics_t::py_ccn_act_hande_akm(
                                   get_at(cc.constants, Cons_idx::p_sat_const_b),
                                   get_at(cc.constants, Cons_idx::Epsilon));
 
-    yold[p_idx] /= ref_quant.pref;
-    yold[w_idx] /= ref_quant.wref;
-    yold[T_idx] /= ref_quant.Tref;
-    yold[qv_idx] /= ref_quant.qref;
-    yold[qc_idx] /= ref_quant.qref;
-    yold[Nc_idx] /= ref_quant.Nref;
+    ynew[p_idx] /= ref_quant.pref;
+    ynew[w_idx] /= ref_quant.wref;
+    ynew[T_idx] /= ref_quant.Tref;
+    ynew[qv_idx] /= ref_quant.qref;
+    ynew[qc_idx] /= ref_quant.qref;
+    ynew[Nc_idx] /= ref_quant.Nref;
     // Get the gradients
     cc.get_gradients(ynew, gradients_, tape, ref_quant);
 
