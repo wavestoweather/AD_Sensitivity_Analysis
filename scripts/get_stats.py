@@ -1211,7 +1211,7 @@ def traj_plot_histogram_out(
         # fig = ax.fig
         i = 0
         store_type = filename.split(".")[-1]
-        store_path = filename[0:-len(store_type)-1]
+        store_path = filename[0 : -len(store_type) - 1]
         save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
         while os.path.isfile(save):
             i = i + 1
@@ -1221,7 +1221,7 @@ def traj_plot_histogram_out(
         plt.clf()
 
     if isinstance(out_params, list):
-        for out_p in out_params:
+        for out_p in tqdm(out_params):
             plot_hist(out_p, title)
     else:
         plot_hist(out_params, title)
@@ -1298,7 +1298,7 @@ def traj_plot_histogram_inp(
 
         i = 0
         store_type = filename.split(".")[-1]
-        store_path = filename[0:-len(store_type)-1]
+        store_path = filename[0 : -len(store_type) - 1]
         save = store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
         while os.path.isfile(save):
             i = i + 1
@@ -1309,7 +1309,7 @@ def traj_plot_histogram_inp(
 
     out_params = list(edges_in_params.keys())
     if isinstance(in_params, list):
-        for in_p in in_params:
+        for in_p in tqdm(in_params):
             plot_hist(out_params, in_p, title)
     else:
         plot_hist(out_params, in_params, title)
@@ -1351,7 +1351,7 @@ def plot_heatmap_traj(
     sns.set(rc={"figure.figsize": (width, height)})
     # sort the histogram by a simple similarity metric. It is not perfect but better than random.
     out_params = list(edges_in_params.keys())
-    for out_p in out_params:
+    for out_p in tqdm(out_params):
         in_params_tmp = []
         for in_p in in_params:
             if in_p in hist_in_params[out_p]:
@@ -1472,7 +1472,7 @@ def plot_heatmap_traj(
         fig = ax.get_figure()
         i = 0
         store_type = filename.split(".")[-1]
-        store_path = filename[0:-len(store_type)-1]
+        store_path = filename[0 : -len(store_type) - 1]
         save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
         while os.path.isfile(save):
             i = i + 1
@@ -1609,7 +1609,9 @@ if __name__ == "__main__":
                 with open(file_path + "edges_in_params.pkl", "wb") as f:
                     pickle.dump(edges_in_params, f)
             if args.plot_type == "all" or args.plot_type == "hist_out":
-                print("########### Plot histograms for model state variables ###########")
+                print(
+                    "########### Plot histograms for model state variables ###########"
+                )
                 traj_plot_histogram_out(
                     out_params=list(edges.keys()),
                     filename=args.out_file,
@@ -1655,7 +1657,9 @@ if __name__ == "__main__":
             ds = xr.open_dataset(
                 args.file + files[0], decode_times=False, engine="netcdf4"
             )
-            for out_p, out_name in zip(out_params, param_name):
+            for out_p, out_name in tqdm(
+                zip(out_params, param_name), leave=False, total=len(out_params)
+            ):
                 ds[in_params] = np.abs(ds[in_params])
                 df = (
                     ds[in_params]
