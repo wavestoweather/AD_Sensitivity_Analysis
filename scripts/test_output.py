@@ -531,10 +531,17 @@ def test_graupel_melting(physics, T, qg, Ng, verbose=False):
     """
     err = 0
     n_tests = 0
+    err_mass = 0
     res = np.zeros(physics.get_num_comp(), dtype=np.float64)
     gradients = np.zeros(
         physics.get_num_comp() * physics.get_num_par(), dtype=np.float64
     )
+    threshold = 1e-20
+    threshold_n = 1
+    max_error = 0.0
+    max_error_n = 0.0
+    mass_threshold = 5e-20
+    mass_error = 0.0
     for N_i in np.arange(4, Ng, 1):
         Ng_i = 10 ** N_i
         for q_i in np.arange(-10.0, qg, 0.5):
@@ -542,9 +549,20 @@ def test_graupel_melting(physics, T, qg, Ng, verbose=False):
             for T_i in np.arange(280.0, T, 0.5):
                 physics.graupel_melting(T_i, qg_i, Ng_i, res, gradients)
                 n_tests += 1
+                mass_diff = (
+                    qg_i * 1e-6
+                    - res[physics.index_dic["qg"]]
+                    - res[physics.index_dic["qr"]]
+                )
+                if np.abs(mass_diff) > np.abs(mass_error):
+                    mass_error = mass_diff
+                if max_error_n < res[physics.index_dic["Ng"]]:
+                    max_error_n = res[physics.index_dic["Ng"]]
+                if max_error < res[physics.index_dic["qg"]]:
+                    max_error = res[physics.index_dic["qg"]]
                 if (
-                    res[physics.index_dic["qg"]] >= 1e-20
-                    or res[physics.index_dic["Ng"]] >= 1
+                    res[physics.index_dic["qg"]] >= threshold
+                    or res[physics.index_dic["Ng"]] >= threshold_n
                 ):
                     qg_left = res[physics.index_dic["qg"]]
                     Ng_left = res[physics.index_dic["Ng"]]
@@ -554,13 +572,42 @@ def test_graupel_melting(physics, T, qg, Ng, verbose=False):
                             f"{Error}Failed: With input T={T_i}, qg={qg_i*1e-6}, Ng={Ng_i}, there is  "
                             f"qg={qg_left} and Ng={Ng_left} left over.{ColourReset}\n"
                         )
-    if err == 0:
+                if np.abs(mass_diff) >= mass_threshold:
+                    err_mass += 1
+                    if verbose:
+                        print(
+                            f"{Error}Failed: With input T={T_i}, qg={qg_i*1e-6}, Ng={Ng_i}, there is  "
+                            f"a mass difference of {mass_diff}.{ColourReset}\n"
+                        )
+
+    if np.abs(max_error) > 0 and err == 0:
+        print(
+            f"{Warning}Graupel mass of {max_error} did not melt. The threshold for this process is {threshold} {ColourReset}"
+        )
+    if np.abs(max_error_n) > 0 and err == 0:
+        print(
+            f"{Warning}Graupel number of {max_error_n} did not melt. The threshold for this process is {threshold_n} {ColourReset}"
+        )
+    if np.abs(mass_error) > 0 and err_mass == 0:
+        print(
+            f"{Warning}A mass difference of {mass_error} occurred. The threshold for this process is {mass_threshold} {ColourReset}"
+        )
+    if err == 0 and err_mass == 0:
         print(f"{Success}Graupel melting looks good for all {n_tests} tests.\n")
-    else:
+    elif err_mass == 0:
         print(
             f"{Error}Failed: Graupel not completely melted for {err} of {n_tests} tests.{ColourReset}\n"
         )
-    return err
+    elif err == 0:
+        print(
+            f"{Error}Failed: A mass difference occurred for {err_mass} of {n_tests} tests.{ColourReset}\n"
+        )
+    else:
+        print(
+            f"{Error}Failed: Graupel not completely melted for {err} of {n_tests} tests and "
+            f"a mass difference occured for {err_mass} of {n_tests} tests.{ColourReset}\n"
+        )
+    return err + err_mass
 
 
 def test_ccn_act_akm(physics, w, T, qv, qc, verbose=False):
@@ -593,6 +640,9 @@ def test_ccn_act_akm(physics, w, T, qv, qc, verbose=False):
         physics.get_num_comp() * physics.get_num_par(), dtype=np.float64
     )
     delta_w = (w - 0.05) / 11
+    max_difference = 0.0
+    diff_error = False
+    threshold = 5e-20
     for i in np.arange(0.01, 1, 0.01):
         qc_list = []
         for w_i in np.arange(0.05, w, delta_w):
@@ -605,13 +655,16 @@ def test_ccn_act_akm(physics, w, T, qv, qc, verbose=False):
                 - res[physics.index_dic["qv"]]
                 - res[physics.index_dic["qc"]]
             )
-            if difference >= 5e-20:
+            if difference >= threshold:
                 err += 1
+                diff_error = True
                 if verbose:
                     print(
                         f"{Error}Failed: With input T={T}, w={w_i}, qv={qv*1e-6}, p={i*1e5}. "
                         f"There is a difference of mass of {difference}.{ColourReset}\n"
                     )
+            if np.abs(difference) > np.abs(max_difference):
+                max_difference = difference
         n_tests += 1
         for qc_l in qc_list:
             if qc_list.count(qc_l) > 1:
@@ -622,6 +675,10 @@ def test_ccn_act_akm(physics, w, T, qv, qc, verbose=False):
                         f"There is not enough variation of qc w.r.t. to w.{ColourReset}\n"
                     )
                 break
+    if not diff_error and np.abs(max_difference) > 0.0:
+        print(
+            f"{Warning}A mass difference of {max_difference} occurred. The threshold for this process is {threshold} {ColourReset}"
+        )
     if err == 0:
         print(f"{Success}CCN activation (akm) looks good for all {n_tests} tests.\n")
     else:
@@ -800,14 +857,14 @@ if __name__ == "__main__":
             err += parse_ds(ds, output_path)
 
         if err == 0:
-            print(f"\n{Success}No errors occured for {n_files} files.{ColourReset}")
+            print(f"\n{Success}No errors occured for {n_files} file(s).{ColourReset}")
         if not args.allow_failure and err > 0:
             raise Exception(
-                f"{Error}Failed: {err} errors occured during testing for {n_files} files. Check the output!{ColourReset}"
+                f"{Error}Failed: {err} errors occured during testing for {n_files} file(s). Check the output!{ColourReset}"
             )
         elif err > 0:
             print(
-                f"{Error}Failed: {err} errors occured during testing for {n_files} files. Check the output!{ColourReset}"
+                f"{Error}Failed: {err} errors occured during testing for {n_files} file(s). Check the output!{ColourReset}"
             )
 
     if args.test_physics != "no":
