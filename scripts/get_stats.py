@@ -1210,8 +1210,8 @@ def traj_plot_histogram_out(
         fig = ax.get_figure()
         # fig = ax.fig
         i = 0
-        store_path = filename.split(".")[0]
-        store_type = filename.split(".")[1]
+        store_type = filename.split(".")[-1]
+        store_path = filename[0:-len(store_type)-1]
         save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
         while os.path.isfile(save):
             i = i + 1
@@ -1297,8 +1297,8 @@ def traj_plot_histogram_inp(
         plt.tight_layout()
 
         i = 0
-        store_path = filename.split(".")[0]
-        store_type = filename.split(".")[1]
+        store_type = filename.split(".")[-1]
+        store_path = filename[0:-len(store_type)-1]
         save = store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
         while os.path.isfile(save):
             i = i + 1
@@ -1471,8 +1471,8 @@ def plot_heatmap_traj(
         plt.tight_layout()
         fig = ax.get_figure()
         i = 0
-        store_path = filename.split(".")[0]
-        store_type = filename.split(".")[1]
+        store_type = filename.split(".")[-1]
+        store_path = filename[0:-len(store_type)-1]
         save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
         while os.path.isfile(save):
             i = i + 1
@@ -1577,6 +1577,7 @@ if __name__ == "__main__":
     if args.file.endswith("/"):
         if args.plot_type != "none":
             if args.load_histogram != "no":
+                print("########### Load histograms ###########")
                 file_path = args.load_histogram
                 if not file_path.endswith("/"):
                     file_path += "/"
@@ -1589,11 +1590,13 @@ if __name__ == "__main__":
                 with open(file_path + "edges_in_params.pkl", "rb") as f:
                     edges_in_params = pickle.load(f)
             else:
+                print("########### Calculate histograms ###########")
                 hist, hist_in_params, edges, edges_in_params = get_histogram(
                     args.file,
                     additional_params=args.additional_hist_params,
                 )
             if args.save_histogram != "no":
+                print("########### Store histograms ###########")
                 file_path = args.save_histogram
                 if not file_path.endswith("/"):
                     file_path += "/"
@@ -1606,6 +1609,7 @@ if __name__ == "__main__":
                 with open(file_path + "edges_in_params.pkl", "wb") as f:
                     pickle.dump(edges_in_params, f)
             if args.plot_type == "all" or args.plot_type == "hist_out":
+                print("########### Plot histograms for model state variables ###########")
                 traj_plot_histogram_out(
                     out_params=list(edges.keys()),
                     filename=args.out_file,
@@ -1617,6 +1621,7 @@ if __name__ == "__main__":
                     verbose=args.verbose,
                 )
             if args.plot_type == "all" or args.plot_type == "hist_in":
+                print("########### Plot histograms for model parameters ###########")
                 traj_plot_histogram_inp(
                     in_params=list(edges_in_params[list(edges.keys())[0]].keys()),
                     filename=args.out_file,
@@ -1628,6 +1633,7 @@ if __name__ == "__main__":
                     verbose=args.verbose,
                 )
             if args.plot_type == "all" or args.plot_type == "heat":
+                print("########### Plot heatmaps ###########")
                 plot_heatmap_traj(
                     in_params=list(edges_in_params[list(edges.keys())[0]].keys()),
                     filename=args.out_file,
