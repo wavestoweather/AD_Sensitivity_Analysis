@@ -1027,6 +1027,51 @@ def print_table_top_lists(top_n_lists, top_orders_lists):
     return text
 
 
+def print_top_parameters(top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic):
+    """
+
+    Parameters
+    ----------
+    top_magn_set : Set
+        Set of parameters within one order of magnitude.
+    top10_set : Set
+        Set of top 10 parameters for each model state variable.
+    top_magn_sens_dic : Dictionary
+        Dictionary of model state variables with a list of parameters within one order of magnitude.
+    top_sens_dic : Dictionary
+        Dictionary of model state variables with a list of top 10 parameters for each.
+
+    Returns
+    -------
+    String of all printed statements
+    """
+    text = f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}\n"
+    text += f"{top_magn_set}\n"
+    text += "The parameters within a magnitude for each output Parameter:\n"
+    for out_p in top_magn_sens_dic.keys():
+        text += f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*\n"
+        for param in top_magn_sens_dic[out_p]:
+            try:
+                text += f"{param}: {in_params_notation_mapping[param][0]}\n"
+            except:
+                text += f"{param}\n"
+        text += "\n"
+    text += f"No. of parameters within the top 10: {len(top10_set)}\n"
+    text += f"{top10_set}\n"
+    text += "The top parameters 10 for each output Parameter:\n"
+    for out_p in top_sens_dic.keys():
+        text += f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*\n"
+        text += f"{top_sens_dic[out_p]}\n"
+        for param in top_sens_dic[out_p]:
+            try:
+                text += f"{param}: {in_params_notation_mapping[param][0]}\n"
+            except:
+                text += f"{param}\n"
+        text += "\n"
+    print(text)
+    return text
+
+
 def traj_get_sum_derivatives(file_path):
     """
 
@@ -1733,7 +1778,7 @@ if __name__ == "__main__":
         sums = {}
         for f in tqdm(files):
             ds = xr.open_dataset(
-                args.file + files[0], decode_times=False, engine="netcdf4"
+                args.file + f, decode_times=False, engine="netcdf4"
             )
             for out_p, out_name in tqdm(
                 zip(out_params, param_name), leave=False, total=len(out_params)
@@ -1755,54 +1800,7 @@ if __name__ == "__main__":
         top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic = traj_get_top_params(
             sums, param_name, 10, 1
         )
-        text = f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}\n"
-        text += f"{top_magn_set}\n"
-        text += "The parameters within a magnitude for each output Parameter:\n"
-        for out_p in top_magn_sens_dic.keys():
-            text += f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*\n"
-            for param in top_magn_sens_dic[out_p]:
-                try:
-                    text += f"{param}: {in_params_notation_mapping[param][0]}\n"
-                except:
-                    text += f"{param}\n"
-            text += "\n"
-        text += f"No. of parameters within the top 10: {len(top10_set)}\n"
-        text += f"{top10_set}\n"
-        text += "The top parameters 10 for each output Parameter:\n"
-        for out_p in top_sens_dic.keys():
-            text += f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*\n"
-            text += f"{top_sens_dic[out_p]}\n"
-            for param in top_sens_dic[out_p]:
-                try:
-                    text += f"{param}: {in_params_notation_mapping[param][0]}\n"
-                except:
-                    text += f"{param}\n"
-            text += "\n"
-
-        # print(f"No. of parameters within magnitude of 10**1: {len(top_magn_set)}")
-        # print(top_magn_set)
-        # print("The parameters within a magnitude for each output Parameter:")
-        # for out_p in top_magn_sens_dic.keys():
-        #     print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
-        #     for param in top_magn_sens_dic[out_p]:
-        #         try:
-        #             print(f"{param}: {in_params_notation_mapping[param][0]}")
-        #         except:
-        #             print(param)
-        #     print()
-        # print(f"No. of parameters within the top 10: {len(top10_set)}")
-        # print(top10_set)
-        # print("The top parameters 10 for each output Parameter:")
-        # for out_p in top_sens_dic.keys():
-        #     print(f"~*~*~*~*~*~* {out_p} ~*~*~*~*~*~*")
-        #     print(top_sens_dic[out_p])
-        #     for param in top_sens_dic[out_p]:
-        #         try:
-        #             print(f"{param}: {in_params_notation_mapping[param][0]}")
-        #         except:
-        #             print(param)
-        #     print()
-        print(text)
+        text = print_top_parameters(top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic)
         if args.out_file != "none":
             filename = args.out_file
             ending = filename.split(".")[-1]
