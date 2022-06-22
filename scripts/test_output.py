@@ -5,6 +5,8 @@ import xarray as xr
 
 from physics_t import physics_t
 
+from tqdm import tqdm
+
 ColourReset = "\033[0m"
 Warning = "\033[93m"
 Success = "\033[92m"
@@ -473,13 +475,27 @@ def test_phases(ds, recalc):
         ds[col_name] = (("ensemble", "trajectory", "time"), phase_col)
         return ds
 
+    def rename_phase(ds):
+        phase_col = np.full(
+            (len(ds["ensemble"]), len(ds["trajectory"]), len(ds["time"])),
+            "             ",
+        )
+        phase_col[np.where(ds["phase"] == 0)] = "warm phase   "
+        phase_col[np.where(ds["phase"] == 2)] = "ice phase    "
+        phase_col[np.where(ds["phase"] == 1)] = "mixed phase  "
+        phase_col[np.where(ds["phase"] == 3)] = "neutral phase"
+        ds["phase"] = (("ensemble", "trajectory", "time"), phase_col)
+        return ds
+
     if "phase" not in ds or recalc:
         ds = add_phase(ds)
+    else:
+        ds = rename_phase(ds)
 
     if not recalc:
         ds = add_phase(ds, "phase_reference")
         err += np.sum(ds["phase"] != ds["phase_reference"]).values.item()
-
+        print(ds[["phase", "phase_reference"]])
         if err == 0:
             print(
                 f"{Success}Phases are correct for all {n_total_timesteps} time steps{ColourReset}\n"
@@ -493,7 +509,7 @@ def test_phases(ds, recalc):
     n_data = {phase.item(): 0 for phase in np.unique(ds["phase"])}
     n_trajs = {phase.item(): 0 for phase in np.unique(ds["phase"])}
 
-    for phase in np.unique(ds["phase"]):
+    for phase in tqdm(np.unique(ds["phase"])):
         n = np.sum(ds["phase"] == phase)
         n_data[phase] += n.values.item()
 
@@ -501,7 +517,7 @@ def test_phases(ds, recalc):
         zero_times = (n_per_traj == 0).sum()
         n_trajs[phase] += (n_trajectories - zero_times).values.item()
 
-    for phase in n_data.keys():
+    for phase in tqdm(n_data.keys()):
         if phase == "warm phase" or phase == "warm phase   " or phase == 0:
             perc = n_trajs[phase] / n_trajectories
             if n_trajs[phase] < n_trajectories:

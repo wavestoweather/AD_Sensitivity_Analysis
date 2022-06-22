@@ -1092,14 +1092,14 @@ void output_handle_t::set_attributes(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
-    const uint64_t FILLINT = 0;
-    SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::step],
-            _FillValue,
-            NC_UINT64,
-            1,
-            &FILLINT));
+//    const uint64_t FILLINT = 0;
+//    SUCCESS_OR_DIE(nc_put_att(
+//            ncid,
+//            varid[Var_idx::step],
+//            _FillValue,
+//            NC_UINT64,
+//            1,
+//            &FILLINT));
     SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::phase],
@@ -1124,13 +1124,13 @@ void output_handle_t::set_attributes(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
-    SUCCESS_OR_DIE(nc_put_att(
-            ncid,
-            varid[Var_idx::phase],
-            _FillValue,
-            NC_UINT64,
-            1,
-            &FILLINT));
+//    SUCCESS_OR_DIE(nc_put_att(
+//            ncid,
+//            varid[Var_idx::phase],
+//            _FillValue,
+//            NC_UINT64,
+//            1,
+//            &FILLINT));
 }
 
 
