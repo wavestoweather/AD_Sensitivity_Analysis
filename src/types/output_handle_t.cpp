@@ -1860,14 +1860,14 @@ void output_handle_t::buffer(
     // phase, 0: warm phase, 1: mixed phase, 2: ice phase,
     // 3: only water vapor or nothing at all
     uint64_t current_phase = 3;
-    if (y_single_new[qi_idx] > 0 || y_single_new[qs_idx] > 0
-        || y_single_new[qh_idx] > 0 || y_single_new[qg_idx] > 0
-        || y_single_new[Ni_idx] > 0 || y_single_new[Ns_idx] > 0
-        || y_single_new[Nh_idx] > 0 || y_single_new[Ng_idx] > 0) {
+    if (y_single_new[qi_idx] * ref_quant.qref > 1e-14 || y_single_new[qs_idx] * ref_quant.qref > 1e-14
+        || y_single_new[qh_idx] * ref_quant.qref > 1e-14 || y_single_new[qg_idx] * ref_quant.qref > 1e-14
+        || y_single_new[Ni_idx] * ref_quant.Nref > 0.9999 || y_single_new[Ns_idx] * ref_quant.Nref > 0.9999
+        || y_single_new[Nh_idx] * ref_quant.Nref > 0.9999 || y_single_new[Ng_idx] * ref_quant.Nref > 0.9999) {
         current_phase = 2;
     }
-    if (y_single_new[qc_idx] > 0 || y_single_new[qr_idx] > 0
-        || y_single_new[Nc_idx] > 0 || y_single_new[Nr_idx] > 0) {
+    if (y_single_new[qc_idx] * ref_quant.qref > 0 || y_single_new[qr_idx] * ref_quant.qref > 0
+        || y_single_new[Nc_idx] * ref_quant.Nref > 0 || y_single_new[Nr_idx] * ref_quant.Nref > 0) {
         current_phase = (current_phase == 2) ? 1 : 0;
     }
     output_buffer_int[1][n_snapshots] = current_phase;

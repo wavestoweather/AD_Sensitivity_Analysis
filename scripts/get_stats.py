@@ -1,3 +1,4 @@
+import copy
 import math
 import matplotlib.pyplot as plt
 import matplotlib.colors as mpl_col
@@ -384,9 +385,9 @@ def print_correlation_mean(ds, out_params):
         df_tmp = df.loc[df["Input Parameter"].isin(param_set)]
         i = len(np.unique(df_tmp["Input Parameter"]))
         text += f"Correlation with zero parameters; total of {i} parameters\n"
-        df_tmp2 = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
-            "Predicted Squared Error"
-        ][1]
+        df_tmp2 = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr(
+            "spearman"
+        )["Predicted Squared Error"][1]
         text += f"{df_tmp2}"
         print(f"Correlation with zero parameters; total of {i} parameters")
         print(df_tmp2)
@@ -822,7 +823,9 @@ def print_variable_with_important_params(sort_key_list):
     -------
     String of all printed statements
     """
-    text = "\nWhich model state variable has the most parameters with a high influence?\n"
+    text = (
+        "\nWhich model state variable has the most parameters with a high influence?\n"
+    )
     print(text)
     state_counts = {}
     for sens, key, state_variable, desc in sort_key_list:
@@ -937,7 +940,9 @@ def print_param_types(ds, table_dic):
     text += f"There are {phys_var_count} physical parameters with a high variability (total: {total_phys_var_count})\n"
     text += f"There are {art_count} artificial parameters (total: {total_art_count})\n"
     text += f"There are {art_thresh_count} artificial threshold parameters (total: {total_art_thresh_count})\n"
-    text += f"There are {else_group_count} not determined parameters in terms of groups\n"
+    text += (
+        f"There are {else_group_count} not determined parameters in terms of groups\n"
+    )
     return text
 
 
@@ -1603,6 +1608,380 @@ def plot_heatmap_traj(
         plt.clf()
 
 
+def get_sums(file_path, store_path=None):
+    """
+    Calculate the sum for all gradients over all time steps and trajectories.
+
+    Parameters
+    ----------
+    file_path : string
+        Path to NetCDF-files with trajectories from a sensitivity analysis simulation.
+
+    Returns
+    -------
+    Dictionary with model state variables as keys and the sums for each gradients as pandas.DataFrame
+    """
+    files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+    ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+    out_params = ds["Output_Parameter_ID"]
+    param_name = []
+    for out_p in out_params:
+        param_name.append(latexify.param_id_map[out_p])
+    in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
+    sums = {}
+    for f in tqdm(files):
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        for out_p, out_name in tqdm(
+            zip(out_params, param_name), leave=False, total=len(out_params)
+        ):
+            ds[in_params] = np.abs(ds[in_params])
+            df = (
+                ds[in_params]
+                .sel({"Output_Parameter_ID": out_p})
+                .sum(dim=["trajectory", "time"], skipna=True)
+                .to_dataframe()
+                .reset_index()
+            )
+            df = df[in_params]
+
+            if out_name in sums.keys():
+                sums[out_name] += df
+            else:
+                sums[out_name] = df
+    if store_path is not None and store_path != "no":
+        with open(store_path + "_sums.pkl", "wb") as f:
+            pickle.dump(sums, f)
+    return sums
+
+
+def get_sums_phase(file_path, store_path=None):
+    """
+    Calculate the sum for all gradients over all time steps and trajectories for each phase.
+
+    Parameters
+    ----------
+    file_path : string
+        Path to NetCDF-files with trajectories from a sensitivity analysis simulation.
+
+    Returns
+    -------
+    Dictionary with phase + model state variables as keys and the sums for each gradients as pandas.DataFrame
+    """
+    files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+    ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+    out_params = ds["Output_Parameter_ID"]
+    param_name = []
+    for out_p in out_params:
+        param_name.append(latexify.param_id_map[out_p])
+    phases = np.unique(ds["phase"])
+    in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
+    sums = {}
+    for f in tqdm(files):
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        for out_p, out_name in tqdm(
+            zip(out_params, param_name), leave=False, total=len(out_params)
+        ):
+            ds[in_params] = np.abs(ds[in_params])
+            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            for phase in phases:
+                idx = np.where(ds_tmp["phase"] == phase)
+                dic = {in_p: None for in_p in in_params}
+                for in_p in in_params:
+                    dic[in_p] = [np.nansum(ds_tmp[in_p].values[idx])]
+                if phase + " " + out_name in sums.keys():
+                    sums[phase + " " + out_name] += pd.DataFrame(dic)
+                else:
+                    sums[phase + " " + out_name] = pd.DataFrame(dic)
+    if store_path is not None and store_path != "no":
+        with open(store_path + "_sums_phase.pkl", "wb") as f:
+            pickle.dump(sums, f)
+    return sums
+
+
+def get_cov_matrix(input_filepath, in_params=None, filepath=None):
+    """
+
+    Parameters
+    ----------
+    input_filepath
+    in_params
+    filepath
+
+    Returns
+    -------
+
+    """
+    files = [
+        f for f in os.listdir(input_filepath) if os.path.isfile(input_filepath + f)
+    ]
+    ds = xr.open_dataset(
+        input_filepath + files[0], decode_times=False, engine="netcdf4"
+    )
+    if in_params is None:
+        in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
+    out_params = ds["Output_Parameter_ID"]
+    param_name = []
+    for out_p in out_params:
+        param_name.append(latexify.param_id_map[out_p])
+    all_params = param_name + in_params
+    n = len(all_params)
+    means = {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
+    cov = {out_p: np.zeros((n, n), dtype=np.float64) for out_p in param_name}
+    n_total = {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
+    for f in tqdm(files):
+        ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
+            all_params
+        ]
+        for out_p, out_name in tqdm(
+            zip(out_params, param_name), leave=False, total=len(out_params)
+        ):
+            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            means_tmp = ds_tmp.mean(skipna=True)
+            count_tmp = (~np.isnan(ds_tmp)).sum()
+            for p in means[out_name]:
+                if n_total[out_name][p] > 0:
+                    n_new = count_tmp[p].values.item() + n_total[out_name][p]
+                    means[out_name][p] = (
+                        means[out_name][p] * n_total[out_name][p] / n_new
+                        + means_tmp[p].values.item()
+                        * count_tmp[p].values.item()
+                        / n_new
+                    )
+                    n_total[out_name][p] = n_new
+                else:
+                    n_total[out_name][p] = count_tmp[p].values.item()
+                    means[out_name][p] = means_tmp[p].values.item()
+
+    n_total = {out_p: {p: 0.0 for p in all_params} for out_p in param_name}
+    for f in tqdm(files):
+        ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
+            all_params
+        ]
+        for out_p, out_name in tqdm(
+            zip(out_params, param_name), leave=False, total=len(out_params)
+        ):
+            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            count_tmp = (~np.isnan(ds_tmp)).sum()
+            for i, p in enumerate(means[out_name]):
+                if n_total[out_name][p] > 0:
+                    n_add = count_tmp[p].values.item()
+                    n_new = n_add + n_total[out_name][p]
+                    for i2, p2 in enumerate(means[out_name]):
+                        cov_tmp = np.nanmean(
+                            (ds_tmp[p].values - means[out_name][p])
+                            * (ds_tmp[p2].values - means[out_name][p2])
+                        )
+                        cov[out_name][i, i2] = (
+                            cov[out_name][i, i2] * n_total[out_name][p] / n_new
+                            + cov_tmp * n_add / n_new
+                        )
+                    n_total[out_name][p] = n_new
+                else:
+                    n_new = count_tmp[p].values.item() + n_total[out_name][p]
+                    for i2, p2 in enumerate(means[out_name]):
+                        cov[out_name][i, i2] = np.nanmean(
+                            (ds_tmp[p].values - means[out_name][p])
+                            * (ds_tmp[p2].values - means[out_name][p2])
+                        )
+                    n_total[out_name][p] = n_new
+    if filepath is not None and filepath != "no":
+        with open(filepath + "_means.pkl", "wb") as f:
+            pickle.dump(means, f)
+        with open(filepath + "_covariance_matrix.pkl", "wb") as f:
+            pickle.dump(cov, f)
+    return means, cov
+
+
+def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
+    """
+
+    Parameters
+    ----------
+    input_filepath
+    in_params
+    filepath
+
+    Returns
+    -------
+
+    """
+    files = [
+        f for f in os.listdir(input_filepath) if os.path.isfile(input_filepath + f)
+    ]
+    ds = xr.open_dataset(
+        input_filepath + files[0], decode_times=False, engine="netcdf4"
+    )
+    if in_params is None:
+        in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
+    out_params = ds["Output_Parameter_ID"]
+    param_name = []
+    for out_p in out_params:
+        param_name.append(latexify.param_id_map[out_p])
+    phases = np.unique(ds["phase"])
+    all_params = param_name + in_params
+    n = len(all_params)
+    means = {
+        phase: {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
+        for phase in phases
+    }
+    cov = {
+        phase: {out_p: np.zeros((n, n), dtype=np.float64) for out_p in param_name}
+        for phase in phases
+    }
+    n_total = {
+        phase: {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
+        for phase in phases
+    }
+    for f in tqdm(files):
+        ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
+            all_params + ["phase"]
+        ]
+        for out_p, out_name in tqdm(
+            zip(out_params, param_name), leave=False, total=len(out_params)
+        ):
+            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            for phase in phases:
+                idx = np.where(ds_tmp["phase"] == phase)
+                for p in means[phase][out_name]:
+                    mean_tmp = np.nanmean(ds_tmp[p].values[idx])
+                    count_tmp = np.sum((~np.isnan(ds_tmp[p].values[idx])))
+                    if n_total[phase][out_name][p] > 0:
+                        n_new = count_tmp + n_total[phase][out_name][p]
+                        means[phase][out_name][p] = (
+                            means[phase][out_name][p]
+                            * n_total[phase][out_name][p]
+                            / n_new
+                            + mean_tmp * count_tmp / n_new
+                        )
+                        n_total[phase][out_name][p] = n_new
+                    else:
+                        n_total[phase][out_name][p] = count_tmp
+                        means[phase][out_name][p] = mean_tmp
+
+    n_total = {
+        phase: {out_p: {p: 0.0 for p in all_params} for out_p in param_name}
+        for phase in phases
+    }
+    for f in tqdm(files):
+        ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
+            all_params + ["phase"]
+        ]
+        for out_p, out_name in tqdm(
+            zip(out_params, param_name), leave=False, total=len(out_params)
+        ):
+            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            for phase in phases:
+                idx = np.where(ds_tmp["phase"] == phase)
+                for i, p in enumerate(means[phase][out_name]):
+                    count_tmp = np.sum((~np.isnan(ds_tmp[p].values[idx])))
+                    if n_total[phase][out_name][p] > 0:
+                        n_add = count_tmp
+                        n_new = n_add + n_total[phase][out_name][p]
+                        for i2, p2 in enumerate(means[phase][out_name]):
+                            cov_tmp = np.nanmean(
+                                (ds_tmp[p].values[idx] - means[phase][out_name][p])
+                                * (ds_tmp[p2].values[idx] - means[phase][out_name][p2])
+                            )
+                            cov[phase][out_name][i, i2] = (
+                                cov[phase][out_name][i, i2]
+                                * n_total[phase][out_name][p]
+                                / n_new
+                                + cov_tmp * n_add / n_new
+                            )
+                        n_total[phase][out_name][p] = n_new
+                    else:
+                        n_new = count_tmp + n_total[phase][out_name][p]
+                        for i2, p2 in enumerate(means[phase][out_name]):
+                            cov[phase][out_name][i, i2] = np.nanmean(
+                                (ds_tmp[p].values[idx] - means[phase][out_name][p])
+                                * (ds_tmp[p2].values[idx] - means[phase][out_name][p2])
+                            )
+                        n_total[phase][out_name][p] = n_new
+    if filepath is not None and filepath != "no":
+        with open(filepath + "_means_phases.pkl", "wb") as f:
+            pickle.dump(means, f)
+        with open(filepath + "_covariance_matrix_phases.pkl", "wb") as f:
+            pickle.dump(cov, f)
+    return means, cov
+
+
+def plot_heatmap(
+    data_in,
+    out_param,
+    names,
+    in_params=None,
+    plot_type="all",
+    norm=None,
+    title=None,
+    filename=None,
+    width=30,
+    height=16,
+):
+    """
+
+    Parameters
+    ----------
+    data_in
+    out_param
+    names
+    in_params
+    plot_type
+    norm
+    title
+    filename
+    width
+    height
+
+    Returns
+    -------
+
+    """
+    sns.set(rc={"figure.figsize": (width, height)})
+    data = copy.deepcopy(data_in[out_param])
+    if in_params is not None and len(in_params) < np.shape(data_in[out_param])[0]:
+        idx = []
+        names = np.asarray(list(names))
+        for in_p in in_params:
+            idx.append(np.where(names == in_p)[0][0])
+        idx = np.asarray(idx)
+        data = data[idx]
+        data = data[:, idx]
+        names = names[idx]
+    if plot_type == "negative":
+        data[np.where(data >= 0)] = np.nan
+    elif plot_type == "positive":
+        data[np.where(data < 0)] = np.nan
+    if norm is not None and plot_type != "positive":
+        data = np.abs(data)
+    g = sns.heatmap(
+        data=data,
+        cmap="viridis",
+        norm=norm,
+        cbar=True,
+        yticklabels=names,
+        xticklabels=names,
+        annot=True,
+        fmt="1.2e",
+    )
+    if title is None:
+        title_ = f"Heatmap of Covariance (Gradients for {out_param})"
+    else:
+        title_ = title
+    _ = g.set_title(title_)
+    plt.tight_layout()
+    fig = g.get_figure()
+    if filename is not None:
+        i = 0
+        store_type = filename.split(".")[-1]
+        store_path = filename[0 : -len(store_type) - 1]
+        save = store_path + "_{:03d}.".format(i) + store_type
+        while os.path.isfile(save):
+            i = i + 1
+            save = store_path + "_{:03d}.".format(i) + store_type
+        fig.savefig(save, dpi=300)
+    return g
+
+
 if __name__ == "__main__":
     import argparse
     import pickle
@@ -1662,6 +2041,8 @@ if __name__ == "__main__":
         hist_out: Histogram for output parameters.
         hist_in: Histogram for all input parameters.
         heat: Heatmap for all parameters.
+        cov_heat: Heatmap of covariance matrix.
+        cov_heat_phases: Heatmap of covariance matrix for each phase.
         none: No plots.
         """,
     )
@@ -1686,6 +2067,22 @@ if __name__ == "__main__":
         default="no",
         help="""
         Store the histogram and edges with pickle to this path.
+        """,
+    )
+    parser.add_argument(
+        "--save_statistics",
+        default="no",
+        help="""
+        Store the covariance matrix and means to this path. This includes the matrix with and without
+        phases. Also store the sums for all gradients to this path.
+        """,
+    )
+    parser.add_argument(
+        "--load_statistics",
+        default="no",
+        help="""
+        Load the covariance matrix and means from this path. This includes the matrix with and without
+        phases. Also load the sums for all gradients from this path.
         """,
     )
     parser.add_argument(
@@ -1721,8 +2118,6 @@ if __name__ == "__main__":
             if args.save_histogram != "no":
                 print("########### Store histograms ###########")
                 file_path = args.save_histogram
-                if not file_path.endswith("/"):
-                    file_path += "/"
                 with open(file_path + "hist.pkl", "wb") as f:
                     pickle.dump(hist, f)
                 with open(file_path + "edges.pkl", "wb") as f:
@@ -1731,6 +2126,7 @@ if __name__ == "__main__":
                     pickle.dump(hist_in_params, f)
                 with open(file_path + "edges_in_params.pkl", "wb") as f:
                     pickle.dump(edges_in_params, f)
+
             if args.plot_type == "all" or args.plot_type == "hist_out":
                 print(
                     "########### Plot histograms for model state variables ###########"
@@ -1769,44 +2165,163 @@ if __name__ == "__main__":
                     title=None,
                     verbose=args.verbose,
                 )
-        print("########### Some statistics ###########")
-        files = [f for f in os.listdir(args.file) if os.path.isfile(args.file + f)]
-        ds = xr.open_dataset(args.file + files[0], decode_times=False, engine="netcdf4")
-        out_params = ds["Output_Parameter_ID"]
-        param_name = ["QV", "latent heat", "latent cool"]
-        in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
-        sums = {}
-        for f in tqdm(files):
-            ds = xr.open_dataset(
-                args.file + f, decode_times=False, engine="netcdf4"
-            )
-            for out_p, out_name in tqdm(
-                zip(out_params, param_name), leave=False, total=len(out_params)
-            ):
-                ds[in_params] = np.abs(ds[in_params])
-                df = (
-                    ds[in_params]
-                    .sel({"Output_Parameter_ID": out_p})
-                    .sum(dim=["trajectory", "time"], skipna=True)
-                    .to_dataframe()
-                    .reset_index()
-                )
-                df = df[in_params]
 
-                if out_name in sums.keys():
-                    sums[out_name] += df
-                else:
-                    sums[out_name] = df
+        if args.load_statistics != "no":
+            print("########### Load matrix ###########")
+            file_path = args.load_statistics
+            with open(file_path + "_sums.pkl", "rb") as f:
+                sums = pickle.load(f)
+            with open(file_path + "_sums_phase.pkl", "rb") as f:
+                sums_phase = pickle.load(f)
+            with open(file_path + "_means.pkl", "rb") as f:
+                means = pickle.load(f)
+            with open(file_path + "_covariance_matrix.pkl", "rb") as f:
+                cov = pickle.load(f)
+            with open(file_path + "_means_phases.pkl", "rb") as f:
+                means_phase = pickle.load(f)
+            with open(file_path + "_covariance_matrix_phases.pkl", "rb") as f:
+                cov_phase = pickle.load(f)
+            print("########### Some statistics ###########")
+        else:
+            print("########### Some statistics ###########")
+            sums = get_sums(args.file, args.load_statistics)
+            sums_phase = get_sums_phase(args.file, args.load_statistics)
+
         top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic = traj_get_top_params(
-            sums, param_name, 10, 1
+            sums, sums.keys(), 10, 1
         )
-        text = print_top_parameters(top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic)
+        (
+            top_magn_set_phase,
+            top10_set_phase,
+            top_magn_sens_dic_phase,
+            top_sens_dic_phase,
+        ) = traj_get_top_params(sums_phase, sums_phase.keys(), 10, 1)
+        text = print_top_parameters(
+            top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic
+        )
+        text += "\n########### With Phases ###########\n"
+        text += print_top_parameters(
+            top_magn_set_phase,
+            top10_set_phase,
+            top_magn_sens_dic_phase,
+            top_sens_dic_phase,
+        )
         if args.out_file != "none":
             filename = args.out_file
             ending = filename.split(".")[-1]
-            filename = filename[0:-len(ending)-1] + ".txt"
+            filename = filename[0 : -len(ending) - 1] + ".txt"
             with open(filename, "w+") as f:
                 f.write(text)
+
+        if args.plot_type == "all" or args.plot_type == "cov_heat":
+            means, cov = get_cov_matrix(
+                args.file,
+                in_params=list(top_magn_set),
+                filepath="data/all",
+            )
+        if args.plot_type == "all" or args.plot_type == "cov_heat_phases":
+            means_phase, cov_phase = get_cov_matrix_phase(
+                args.file,
+                in_params=list(top_magn_set_phase),
+                filepath="data/phase_",
+            )
+
+        store_type = args.out_file.split(".")[-1]
+        store_path = args.out_file[0 : -len(store_type) - 1]
+        if args.plot_type == "all" or args.plot_type == "cov_heat":
+            for out_p in cov:
+                _ = plot_heatmap(
+                    data_in=cov,
+                    out_param=out_p,
+                    names=list(means[out_p].keys()),
+                    title=f"Heatmap of Covariance (Gradients for {out_p})",
+                    plot_type="all",
+                    norm=mpl_col.LogNorm(),
+                    filename=f"{store_path}_{out_p}_all_log.{store_type}",
+                    width=args.width,
+                    height=args.height,
+                )
+                _ = plot_heatmap(
+                    data_in=cov,
+                    out_param=out_p,
+                    names=list(means[out_p].keys()),
+                    title=f"Heatmap of Covariance (Gradients for {out_p})",
+                    plot_type="all",
+                    filename=f"{store_path}_{out_p}_all.{store_type}",
+                    width=args.width,
+                    height=args.height,
+                )
+                _ = plot_heatmap(
+                    data_in=cov,
+                    out_param=out_p,
+                    names=list(means[out_p].keys()),
+                    in_params=top_magn_sens_dic[out_p],
+                    title=f"Heatmap of Covariance (Gradients for {out_p})",
+                    plot_type="all",
+                    norm=mpl_col.LogNorm(),
+                    filename=f"{store_path}_{out_p}_some_log.{store_type}",
+                    width=args.width,
+                    height=args.height,
+                )
+                _ = plot_heatmap(
+                    data_in=cov,
+                    out_param=out_p,
+                    names=list(means[out_p].keys()),
+                    in_params=top_magn_sens_dic[out_p],
+                    title=f"Heatmap of Covariance (Gradients for {out_p})",
+                    plot_type="all",
+                    filename=f"{store_path}_{out_p}_some.{store_type}",
+                    width=args.width,
+                    height=args.height,
+                )
+        if args.plot_type == "all" or args.plot_type == "cov_heat_phases":
+            for phase in cov_phase:
+                phase_strip = phase.strip()
+                for out_p in cov_phase[phase]:
+                    _ = plot_heatmap(
+                        data_in=cov_phase[phase],
+                        out_param=out_p,
+                        names=list(means_phase[phase][out_p].keys()),
+                        title=f"({phase_strip}) Heatmap of Covariance (Gradients for {out_p})",
+                        plot_type="all",
+                        norm=mpl_col.LogNorm(),
+                        filename=f"{store_path}_{phase_strip}_{out_p}_all_log.{store_type}",
+                        width=args.width,
+                        height=args.height,
+                    )
+                    _ = plot_heatmap(
+                        data_in=cov_phase[phase],
+                        out_param=out_p,
+                        names=list(means_phase[phase][out_p].keys()),
+                        title=f"({phase_strip}) Heatmap of Covariance (Gradients for {out_p})",
+                        plot_type="all",
+                        filename=f"{store_path}_{phase_strip}_{out_p}_all.{store_type}",
+                        width=args.width,
+                        height=args.height,
+                    )
+                    _ = plot_heatmap(
+                        data_in=cov_phase[phase],
+                        out_param=out_p,
+                        names=means_phase[phase][out_p].keys(),
+                        in_params=top_magn_sens_dic_phase[phase + " " + out_p],
+                        title=f"({phase_strip}) Heatmap of Covariance (Gradients for {out_p})",
+                        plot_type="all",
+                        norm=mpl_col.LogNorm(),
+                        filename=f"{store_path}_{phase_strip}_{out_p}_some_log.{store_type}",
+                        width=args.width,
+                        height=args.height,
+                    )
+                    _ = plot_heatmap(
+                        data_in=cov_phase[phase],
+                        out_param=out_p,
+                        names=means_phase[phase][out_p].keys(),
+                        in_params=top_magn_sens_dic_phase[phase + " " + out_p],
+                        title=f"({phase_strip}) Heatmap of Covariance (Gradients for {out_p})",
+                        plot_type="all",
+                        filename=f"{store_path}_{phase_strip}_{out_p}_some.{store_type}",
+                        width=args.width,
+                        height=args.height,
+                    )
     else:
         ds = xr.open_dataset(args.file, decode_times=False)
         (
@@ -1849,6 +2364,6 @@ if __name__ == "__main__":
         if args.out_file != "none":
             filename = args.out_file
             ending = filename.split(".")[-1]
-            filename = filename[0:-len(ending)-1] + ".txt"
+            filename = filename[0 : -len(ending) - 1] + ".txt"
             with open(filename, "w+") as f:
                 f.write(text)

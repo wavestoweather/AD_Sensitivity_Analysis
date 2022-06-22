@@ -2,7 +2,11 @@ from multiprocessing import Pool
 import numpy as np
 import os
 import pandas as pd
-from progressbar import progressbar as pb
+
+try:
+    from tqdm import tqdm
+except:
+    from progressbar import progressbar as tqdm
 import sys
 import xarray as xr
 
@@ -280,7 +284,7 @@ def reduce_errors(
 
     for rt in ratio_types:
         for op in output_params:
-            for i in pb(range(len(model_params))):
+            for i in tqdm(range(len(model_params))):
                 mp = model_params[i]
                 tmp_df = mse_df.loc[
                     (mse_df["Ratio Type"] == rt)

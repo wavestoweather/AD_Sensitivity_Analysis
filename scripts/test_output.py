@@ -411,6 +411,7 @@ def test_phases(ds, recalc):
     For each phase, print the amount of trajectories that have at least one time step with this phase.
     ALso prints the percentage and number of time steps for each phase over all trajectories.
     Calculates the phases if necessary.
+    If recalc is false, tests if the phases are correct.
 
     Parameters
     ----------
@@ -427,7 +428,7 @@ def test_phases(ds, recalc):
     n_total_timesteps = len(ds["trajectory"]) * len(ds["time"])
     n_trajectories = len(ds["trajectory"])
 
-    def add_phase(ds):
+    def add_phase(ds, col_name="phase"):
         phase_col = np.full(
             (len(ds["ensemble"]), len(ds["trajectory"]), len(ds["time"])),
             "             ",
@@ -443,14 +444,14 @@ def test_phases(ds, recalc):
 
         def cold(ds):
             return (
-                (ds["QG"] > 0)
-                | (ds["QH"] > 0)
-                | (ds["NCGRAUPEL"] > 0)
-                | (ds["NCHAIL"] > 0)
-                | (ds["QI"] > 0)
-                | (ds["QS"] > 0)
-                | (ds["NCICE"] > 0)
-                | (ds["NCSNOW"] > 0)
+                (ds["QG"] > 1e-14)
+                | (ds["QH"] > 1e-14)
+                | (ds["NCGRAUPEL"] > 0.9999)
+                | (ds["NCHAIL"] > 0.9999)
+                | (ds["QI"] > 1e-14)
+                | (ds["QS"] > 1e-14)
+                | (ds["NCICE"] > 0.9999)
+                | (ds["NCSNOW"] > 0.9999)
             )
 
         def warm_phase(ds):
@@ -469,11 +470,25 @@ def test_phases(ds, recalc):
         phase_col[np.where(cold_phase(ds))] = "ice phase    "
         phase_col[np.where(mixed_phase(ds))] = "mixed phase  "
         phase_col[np.where(neutral_phase(ds))] = "neutral phase"
-        ds["phase"] = (("ensemble", "trajectory", "time"), phase_col)
+        ds[col_name] = (("ensemble", "trajectory", "time"), phase_col)
         return ds
 
     if "phase" not in ds or recalc:
         ds = add_phase(ds)
+
+    if not recalc:
+        ds = add_phase(ds, "phase_reference")
+        err += np.sum(ds["phase"] != ds["phase_reference"]).values.item()
+
+        if err == 0:
+            print(
+                f"{Success}Phases are correct for all {n_total_timesteps} time steps{ColourReset}\n"
+            )
+        else:
+            perc = err / n_total_timesteps
+            print(
+                f"{Error}Phases are not correct in {err} / {n_total_timesteps} time steps ({perc*100:2.2f}%){ColourReset}\n"
+            )
 
     n_data = {phase.item(): 0 for phase in np.unique(ds["phase"])}
     n_trajs = {phase.item(): 0 for phase in np.unique(ds["phase"])}
@@ -493,6 +508,7 @@ def test_phases(ds, recalc):
                 print(
                     f"{Error}Failed: {phase} occurs only in {n_trajs[phase]} / {n_trajectories} trajectories ({perc*100:2.2f}%){ColourReset}\n"
                 )
+                err += 1
             else:
                 print(
                     f"{Success}{phase} occurs in {n_trajs[phase]} / {n_trajectories} trajectories ({perc*100:2.2f}%){ColourReset}\n"
@@ -779,7 +795,7 @@ if __name__ == "__main__":
         "--test_phases",
         action="store_true",
         help="""
-        Test if all trajectories have at least once a warm phase. Prints the percentages for all other phases as well. 
+        Test if all trajectories have at least once a warm phase. Prints the percentages for all other phases as well.  Also tests if the phases are correct.
         """,
     )
     parser.add_argument(
