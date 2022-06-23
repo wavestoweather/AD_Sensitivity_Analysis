@@ -468,10 +468,14 @@ def test_phases(ds, recalc):
         def neutral_phase(ds):
             return (~warm(ds)) & (~cold(ds))
 
+        def nan_phase(ds):
+            return np.isnan(ds["QV"])
+
         phase_col[np.where(warm_phase(ds))] = "warm phase   "
         phase_col[np.where(cold_phase(ds))] = "ice phase    "
         phase_col[np.where(mixed_phase(ds))] = "mixed phase  "
         phase_col[np.where(neutral_phase(ds))] = "neutral phase"
+        phase_col[np.where(nan_phase(ds))] = "nan"
         ds[col_name] = (("ensemble", "trajectory", "time"), phase_col)
         return ds
 
@@ -484,6 +488,15 @@ def test_phases(ds, recalc):
         phase_col[np.where(ds["phase"] == 2)] = "ice phase    "
         phase_col[np.where(ds["phase"] == 1)] = "mixed phase  "
         phase_col[np.where(ds["phase"] == 3)] = "neutral phase"
+        phase_col[
+            np.where(
+                (ds["phase"] != 3)
+                & (ds["phase"] != 2)
+                & (ds["phase"] != 1)
+                & (ds["phase"] != 0)
+                & (ds["phase"] != 3)
+            )
+        ] = "nan"
         ds["phase"] = (("ensemble", "trajectory", "time"), phase_col)
         return ds
 
@@ -495,7 +508,6 @@ def test_phases(ds, recalc):
     if not recalc:
         ds = add_phase(ds, "phase_reference")
         err += np.sum(ds["phase"] != ds["phase_reference"]).values.item()
-        print(ds[["phase", "phase_reference"]])
         if err == 0:
             print(
                 f"{Success}Phases are correct for all {n_total_timesteps} time steps{ColourReset}\n"
@@ -505,6 +517,8 @@ def test_phases(ds, recalc):
             print(
                 f"{Error}Phases are not correct in {err} / {n_total_timesteps} time steps ({perc*100:2.2f}%){ColourReset}\n"
             )
+            df = ds.to_dataframe()
+            df2 = df.loc[df["phase"] != df["phase_reference"]]
 
     n_data = {phase.item(): 0 for phase in np.unique(ds["phase"])}
     n_trajs = {phase.item(): 0 for phase in np.unique(ds["phase"])}
