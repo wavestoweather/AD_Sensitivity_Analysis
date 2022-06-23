@@ -1869,7 +1869,7 @@ void output_handle_t::buffer(
     if (output_buffer[qc_idx][n_snapshots] > 0 || output_buffer[qr_idx][n_snapshots] > 0
         || output_buffer[Nc_idx][n_snapshots] > 0 || output_buffer[Nr_idx][n_snapshots] > 0) {
         current_phase = (current_phase == 2) ? 1 : 0;
-    }perturbed[i];
+    }
     output_buffer_int[1][n_snapshots] = current_phase;
     n_snapshots++;
 }
