@@ -5,6 +5,7 @@ import matplotlib.colors as mpl_col
 import numpy as np
 import os
 import pandas as pd
+import pickle
 
 try:
     from tqdm import tqdm
@@ -1626,7 +1627,7 @@ def get_sums(file_path, store_path=None):
     out_params = ds["Output_Parameter_ID"]
     param_name = []
     for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p])
+        param_name.append(latexify.param_id_map[out_p.values.item()])
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
     for f in tqdm(files):
@@ -1672,7 +1673,7 @@ def get_sums_phase(file_path, store_path=None):
     out_params = ds["Output_Parameter_ID"]
     param_name = []
     for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p])
+        param_name.append(latexify.param_id_map[out_p.values.item()])
     phases = np.unique(ds["phase"])
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
@@ -1722,7 +1723,7 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None):
     out_params = ds["Output_Parameter_ID"]
     param_name = []
     for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p])
+        param_name.append(latexify.param_id_map[out_p.values.item()])
     all_params = param_name + in_params
     n = len(all_params)
     means = {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
@@ -1819,7 +1820,7 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
     out_params = ds["Output_Parameter_ID"]
     param_name = []
     for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p])
+        param_name.append(latexify.param_id_map[out_p.values.item()])
     phases = np.unique(ds["phase"])
     all_params = param_name + in_params
     n = len(all_params)
@@ -2005,7 +2006,6 @@ def plot_heatmap(
 
 if __name__ == "__main__":
     import argparse
-    import pickle
     from latexify import *
 
     parser = argparse.ArgumentParser(
