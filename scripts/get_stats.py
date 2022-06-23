@@ -1741,13 +1741,14 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None):
             for p in means[out_name]:
                 if n_total[out_name][p] > 0:
                     n_new = count_tmp[p].values.item() + n_total[out_name][p]
-                    means[out_name][p] = (
-                        means[out_name][p] * n_total[out_name][p] / n_new
-                        + means_tmp[p].values.item()
-                        * count_tmp[p].values.item()
-                        / n_new
-                    )
-                    n_total[out_name][p] = n_new
+                    if n_new > 0:
+                        means[out_name][p] = (
+                            means[out_name][p] * n_total[out_name][p] / n_new
+                            + means_tmp[p].values.item()
+                            * count_tmp[p].values.item()
+                            / n_new
+                        )
+                        n_total[out_name][p] = n_new
                 else:
                     n_total[out_name][p] = count_tmp[p].values.item()
                     means[out_name][p] = means_tmp[p].values.item()
@@ -1766,24 +1767,26 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None):
                 if n_total[out_name][p] > 0:
                     n_add = count_tmp[p].values.item()
                     n_new = n_add + n_total[out_name][p]
-                    for i2, p2 in enumerate(means[out_name]):
-                        cov_tmp = np.nanmean(
-                            (ds_tmp[p].values - means[out_name][p])
-                            * (ds_tmp[p2].values - means[out_name][p2])
-                        )
-                        cov[out_name][i, i2] = (
-                            cov[out_name][i, i2] * n_total[out_name][p] / n_new
-                            + cov_tmp * n_add / n_new
-                        )
-                    n_total[out_name][p] = n_new
+                    if n_new > 0:
+                        for i2, p2 in enumerate(means[out_name]):
+                            cov_tmp = np.nanmean(
+                                (ds_tmp[p].values - means[out_name][p])
+                                * (ds_tmp[p2].values - means[out_name][p2])
+                            )
+                            cov[out_name][i, i2] = (
+                                cov[out_name][i, i2] * n_total[out_name][p] / n_new
+                                + cov_tmp * n_add / n_new
+                            )
+                        n_total[out_name][p] = n_new
                 else:
                     n_new = count_tmp[p].values.item() + n_total[out_name][p]
-                    for i2, p2 in enumerate(means[out_name]):
-                        cov[out_name][i, i2] = np.nanmean(
-                            (ds_tmp[p].values - means[out_name][p])
-                            * (ds_tmp[p2].values - means[out_name][p2])
-                        )
-                    n_total[out_name][p] = n_new
+                    if n_new > 0:
+                        for i2, p2 in enumerate(means[out_name]):
+                            cov[out_name][i, i2] = np.nanmean(
+                                (ds_tmp[p].values - means[out_name][p])
+                                * (ds_tmp[p2].values - means[out_name][p2])
+                            )
+                        n_total[out_name][p] = n_new
     if filepath is not None and filepath != "no":
         with open(filepath + "_means.pkl", "wb") as f:
             pickle.dump(means, f)
@@ -1847,13 +1850,14 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
                     count_tmp = np.sum((~np.isnan(ds_tmp[p].values[idx])))
                     if n_total[phase][out_name][p] > 0:
                         n_new = count_tmp + n_total[phase][out_name][p]
-                        means[phase][out_name][p] = (
-                            means[phase][out_name][p]
-                            * n_total[phase][out_name][p]
-                            / n_new
-                            + mean_tmp * count_tmp / n_new
-                        )
-                        n_total[phase][out_name][p] = n_new
+                        if n_new > 0:
+                            means[phase][out_name][p] = (
+                                means[phase][out_name][p]
+                                * n_total[phase][out_name][p]
+                                / n_new
+                                + mean_tmp * count_tmp / n_new
+                            )
+                            n_total[phase][out_name][p] = n_new
                     else:
                         n_total[phase][out_name][p] = count_tmp
                         means[phase][out_name][p] = mean_tmp
@@ -1877,26 +1881,34 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
                     if n_total[phase][out_name][p] > 0:
                         n_add = count_tmp
                         n_new = n_add + n_total[phase][out_name][p]
-                        for i2, p2 in enumerate(means[phase][out_name]):
-                            cov_tmp = np.nanmean(
-                                (ds_tmp[p].values[idx] - means[phase][out_name][p])
-                                * (ds_tmp[p2].values[idx] - means[phase][out_name][p2])
-                            )
-                            cov[phase][out_name][i, i2] = (
-                                cov[phase][out_name][i, i2]
-                                * n_total[phase][out_name][p]
-                                / n_new
-                                + cov_tmp * n_add / n_new
-                            )
-                        n_total[phase][out_name][p] = n_new
+                        if n_new > 0:
+                            for i2, p2 in enumerate(means[phase][out_name]):
+                                cov_tmp = np.nanmean(
+                                    (ds_tmp[p].values[idx] - means[phase][out_name][p])
+                                    * (
+                                        ds_tmp[p2].values[idx]
+                                        - means[phase][out_name][p2]
+                                    )
+                                )
+                                cov[phase][out_name][i, i2] = (
+                                    cov[phase][out_name][i, i2]
+                                    * n_total[phase][out_name][p]
+                                    / n_new
+                                    + cov_tmp * n_add / n_new
+                                )
+                            n_total[phase][out_name][p] = n_new
                     else:
                         n_new = count_tmp + n_total[phase][out_name][p]
-                        for i2, p2 in enumerate(means[phase][out_name]):
-                            cov[phase][out_name][i, i2] = np.nanmean(
-                                (ds_tmp[p].values[idx] - means[phase][out_name][p])
-                                * (ds_tmp[p2].values[idx] - means[phase][out_name][p2])
-                            )
-                        n_total[phase][out_name][p] = n_new
+                        if n_new > 0:
+                            for i2, p2 in enumerate(means[phase][out_name]):
+                                cov[phase][out_name][i, i2] = np.nanmean(
+                                    (ds_tmp[p].values[idx] - means[phase][out_name][p])
+                                    * (
+                                        ds_tmp[p2].values[idx]
+                                        - means[phase][out_name][p2]
+                                    )
+                                )
+                            n_total[phase][out_name][p] = n_new
     if filepath is not None and filepath != "no":
         with open(filepath + "_means_phases.pkl", "wb") as f:
             pickle.dump(means, f)
@@ -1939,6 +1951,8 @@ def plot_heatmap(
     sns.set(rc={"figure.figsize": (width, height)})
     data = copy.deepcopy(data_in[out_param])
     if in_params is not None and len(in_params) < np.shape(data_in[out_param])[0]:
+        if len(in_params) == 0:
+            return
         idx = []
         names = np.asarray(list(names))
         for in_p in in_params:
@@ -1953,33 +1967,40 @@ def plot_heatmap(
         data[np.where(data < 0)] = np.nan
     if norm is not None and plot_type != "positive":
         data = np.abs(data)
-    g = sns.heatmap(
-        data=data,
-        cmap="viridis",
-        norm=norm,
-        cbar=True,
-        yticklabels=names,
-        xticklabels=names,
-        annot=True,
-        fmt="1.2e",
-    )
-    if title is None:
-        title_ = f"Heatmap of Covariance (Gradients for {out_param})"
-    else:
-        title_ = title
-    _ = g.set_title(title_)
-    plt.tight_layout()
-    fig = g.get_figure()
-    if filename is not None:
-        i = 0
-        store_type = filename.split(".")[-1]
-        store_path = filename[0 : -len(store_type) - 1]
-        save = store_path + "_{:03d}.".format(i) + store_type
-        while os.path.isfile(save):
-            i = i + 1
+    try:
+        g = sns.heatmap(
+            data=data,
+            cmap="viridis",
+            norm=norm,
+            cbar=True,
+            yticklabels=names,
+            xticklabels=names,
+            annot=(len(names) <= 20),
+            fmt="1.2e",
+        )
+        if title is None:
+            title_ = f"Heatmap of Covariance (Gradients for {out_param})"
+        else:
+            title_ = title
+        _ = g.set_title(title_)
+        plt.tight_layout()
+        fig = g.get_figure()
+        if filename is not None:
+            i = 0
+            store_type = filename.split(".")[-1]
+            store_path = filename[0 : -len(store_type) - 1]
             save = store_path + "_{:03d}.".format(i) + store_type
-        fig.savefig(save, dpi=300)
-    return g
+            while os.path.isfile(save):
+                i = i + 1
+                save = store_path + "_{:03d}.".format(i) + store_type
+            fig.savefig(save, dpi=300)
+        return g
+    except:
+        if filename is not None:
+            print(f"Cannot create plot for {filename} ({out_param})")
+        else:
+            print(f"Cannot create plot for {out_param}")
+        return None
 
 
 if __name__ == "__main__":
@@ -2184,8 +2205,8 @@ if __name__ == "__main__":
             print("########### Some statistics ###########")
         else:
             print("########### Some statistics ###########")
-            sums = get_sums(args.file, args.load_statistics)
-            sums_phase = get_sums_phase(args.file, args.load_statistics)
+            sums = get_sums(args.file, args.save_statistics)
+            sums_phase = get_sums_phase(args.file, args.save_statistics)
 
         top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic = traj_get_top_params(
             sums, sums.keys(), 10, 1
@@ -2213,23 +2234,28 @@ if __name__ == "__main__":
             with open(filename, "w+") as f:
                 f.write(text)
 
-        if args.plot_type == "all" or args.plot_type == "cov_heat":
+        if (
+            args.plot_type == "all" or args.plot_type == "cov_heat"
+        ) and args.load_statistics == "no":
             means, cov = get_cov_matrix(
                 args.file,
                 in_params=list(top_magn_set),
-                filepath="data/all",
+                filepath=args.save_statistics,
             )
-        if args.plot_type == "all" or args.plot_type == "cov_heat_phases":
+        if (
+            args.plot_type == "all" or args.plot_type == "cov_heat_phases"
+        ) and args.load_statistics == "no":
             means_phase, cov_phase = get_cov_matrix_phase(
                 args.file,
                 in_params=list(top_magn_set_phase),
-                filepath="data/phase_",
+                filepath=args.save_statistics,
             )
 
         store_type = args.out_file.split(".")[-1]
         store_path = args.out_file[0 : -len(store_type) - 1]
         if args.plot_type == "all" or args.plot_type == "cov_heat":
-            for out_p in cov:
+            print("########### Plot Covariance Matrix ###########")
+            for out_p in tqdm(cov):
                 _ = plot_heatmap(
                     data_in=cov,
                     out_param=out_p,
@@ -2241,6 +2267,7 @@ if __name__ == "__main__":
                     width=args.width,
                     height=args.height,
                 )
+                plt.clf()
                 _ = plot_heatmap(
                     data_in=cov,
                     out_param=out_p,
@@ -2251,6 +2278,7 @@ if __name__ == "__main__":
                     width=args.width,
                     height=args.height,
                 )
+                plt.clf()
                 _ = plot_heatmap(
                     data_in=cov,
                     out_param=out_p,
@@ -2263,6 +2291,7 @@ if __name__ == "__main__":
                     width=args.width,
                     height=args.height,
                 )
+                plt.clf()
                 _ = plot_heatmap(
                     data_in=cov,
                     out_param=out_p,
@@ -2274,10 +2303,14 @@ if __name__ == "__main__":
                     width=args.width,
                     height=args.height,
                 )
+                plt.clf()
         if args.plot_type == "all" or args.plot_type == "cov_heat_phases":
-            for phase in cov_phase:
+            print("########### Plot Covariance Matrix with Phases ###########")
+            for phase in tqdm(cov_phase):
+                if "neutral" in phase:
+                    continue
                 phase_strip = phase.strip()
-                for out_p in cov_phase[phase]:
+                for out_p in tqdm(cov_phase[phase], leave=False):
                     _ = plot_heatmap(
                         data_in=cov_phase[phase],
                         out_param=out_p,
@@ -2289,6 +2322,7 @@ if __name__ == "__main__":
                         width=args.width,
                         height=args.height,
                     )
+                    plt.clf()
                     _ = plot_heatmap(
                         data_in=cov_phase[phase],
                         out_param=out_p,
@@ -2299,6 +2333,7 @@ if __name__ == "__main__":
                         width=args.width,
                         height=args.height,
                     )
+                    plt.clf()
                     _ = plot_heatmap(
                         data_in=cov_phase[phase],
                         out_param=out_p,
@@ -2311,6 +2346,7 @@ if __name__ == "__main__":
                         width=args.width,
                         height=args.height,
                     )
+                    plt.clf()
                     _ = plot_heatmap(
                         data_in=cov_phase[phase],
                         out_param=out_p,
@@ -2322,6 +2358,7 @@ if __name__ == "__main__":
                         width=args.width,
                         height=args.height,
                     )
+                    plt.clf()
     else:
         ds = xr.open_dataset(args.file, decode_times=False)
         (
