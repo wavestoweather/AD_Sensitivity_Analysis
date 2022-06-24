@@ -1116,7 +1116,7 @@ void output_handle_t::set_attributes(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
-    const uint64_t FILLINT = 0;
+    const uint64_t FILLINT = -1;
     SUCCESS_OR_DIE(nc_put_att(
             ncid,
             varid[Var_idx::step],
