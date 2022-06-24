@@ -292,7 +292,13 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::slan_600]));
 #endif
-
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "asc600",
+            NC_BYTE,
+            3,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::asc600]));
     SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "lat",
@@ -1076,6 +1082,24 @@ void output_handle_t::set_attributes(
 #endif
     SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
+            varid[Var_idx::asc600],
+            "long_name",
+            strlen("600hPa ascent"),
+            "600hPa ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::asc600],
+            "standard_name",
+            strlen("600hPa_ascent"),
+            "600hPa_ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::asc600],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
             varid[Var_idx::step],
             "long_name",
             strlen("simulation step"),
@@ -1092,14 +1116,14 @@ void output_handle_t::set_attributes(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
-//    const uint64_t FILLINT = 0;
-//    SUCCESS_OR_DIE(nc_put_att(
-//            ncid,
-//            varid[Var_idx::step],
-//            _FillValue,
-//            NC_UINT64,
-//            1,
-//            &FILLINT));
+    const uint64_t FILLINT = 0;
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::step],
+            _FillValue,
+            NC_UINT64,
+            1,
+            &FILLINT));
     SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
             varid[Var_idx::phase],
@@ -1124,13 +1148,13 @@ void output_handle_t::set_attributes(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
-//    SUCCESS_OR_DIE(nc_put_att(
-//            ncid,
-//            varid[Var_idx::phase],
-//            _FillValue,
-//            NC_UINT64,
-//            1,
-//            &FILLINT));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::phase],
+            _FillValue,
+            NC_UINT64,
+            1,
+            &FILLINT));
 }
 
 
@@ -1143,7 +1167,6 @@ void output_handle_t::set_compression(const model_constants_t<float_t> &cc) {
         || this->simulation_mode == trajectory_sensitivity
         || this->simulation_mode == grid_sensitivity
         || this->simulation_mode == create_train_set) {
-        // Compressing this is buggy
         for (uint32_t i=0; i < Var_idx::n_vars; ++i) {
             // This does not work on scalars; we need to filter those out
             if ((local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param)) &&
@@ -1457,6 +1480,11 @@ void output_handle_t::set_parallel_access(
             "slan_600",
             &varid[Var_idx::slan_600]));
 #endif
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "asc600",
+            &varid[Var_idx::asc600]));
 #ifdef DEVELOP
     std::cout << "get lat\n" << std::flush;
 #endif
@@ -1709,9 +1737,6 @@ void output_handle_t::buffer_gradient(
             for (uint64_t j=0; j < num_par-num_par_init; j++)  // gradient of input parameter j
                 if (cc.trace_check(j, false)) {
                     if (n_snapshots%snapshot_index == 0) {
-//                        if (traj == 0 and n_snapshots == 1)
-//                            std::cout << output_grad_idx.size() << " state " << i
-//                            << " param " << j << " grad " << y_diff[i][j]/snapshot_index << "\n";
                         output_buffer[Buffer_idx::n_buffer+j][comp_idx*total_snapshots + n_snapshots] =
                             y_diff[i][j]/snapshot_index;
                     } else {

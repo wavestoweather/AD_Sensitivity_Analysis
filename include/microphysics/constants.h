@@ -22,7 +22,7 @@ typedef bool(*track_func)(const int&, const bool&);
 #define p_idx 0             /*!< Pressure index */
 #define T_idx 1             /*!< Temperature index */
 #define w_idx 2             /*!< Vertical acceleration index */
-#define S_idx 3             /*!< Satruation index */
+#define S_idx 3             /*!< Saturation index */
 #define qc_idx 4            /*!< Cloud droplet mixing ratio index */
 #define qr_idx 5            /*!< Rain droplet mixing ratio index */
 #define qv_idx 6            /*!< Water vapor mixing ratio index */
