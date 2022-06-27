@@ -79,9 +79,9 @@ def get_top_list(ds, print_out=True, verbose=True):
         out_p = out_p
         df = (
             ds.sel({"Output Parameter": [out_p]})
-            .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-            .to_dataframe()
-            .reset_index()
+                .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+                .to_dataframe()
+                .reset_index()
         )
         # Skip those that did not appear
         if np.max(df["Predicted Squared Error"]) == 0:
@@ -139,9 +139,9 @@ def get_magnitude_list(ds, out_params, print_out=True, verbose=True):
         out_p = out_p
         df = (
             ds.sel({"Output Parameter": [out_p]})
-            .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-            .to_dataframe()
-            .reset_index()
+                .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+                .to_dataframe()
+                .reset_index()
         )
         # Skip those that did not appear
         if np.max(df["Predicted Squared Error"]) == 0:
@@ -344,8 +344,8 @@ def print_correlation_mean(ds, out_params):
 
     df = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-        .to_dataframe()
-        .reset_index()
+            .to_dataframe()
+            .reset_index()
     )
     print_corr(df)
 
@@ -357,9 +357,9 @@ def print_correlation_mean(ds, out_params):
         print(f"##################{out_p}")
         df = (
             ds.sel({"Output Parameter": [out_p]})
-            .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-            .to_dataframe()
-            .reset_index()
+                .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+                .to_dataframe()
+                .reset_index()
         )
         print_corr(df)
 
@@ -367,8 +367,8 @@ def print_correlation_mean(ds, out_params):
     print("\nCorrelation taking different number of top parameters\n")
     df = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-        .to_dataframe()
-        .reset_index()
+            .to_dataframe()
+            .reset_index()
     )
     tuples = []
     for n in [10, 20, 50, 100, 150, 200]:
@@ -423,9 +423,9 @@ def print_correlation_mean(ds, out_params):
         print(f"##################{out_p}")
         df = (
             ds.sel({"Output Parameter": [out_p]})
-            .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-            .to_dataframe()
-            .reset_index()
+                .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+                .to_dataframe()
+                .reset_index()
         )
         quan = df["Predicted Squared Error"].quantile(q=0.75)
         df = df.loc[df["Predicted Squared Error"] >= quan]
@@ -451,9 +451,9 @@ def print_correlation_mean(ds, out_params):
     print(f"Number of parameters: {len(params)}")
     df_tmp = (
         ds.sel({"Input Parameter": params})
-        .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-        .to_dataframe()
-        .reset_index()
+            .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+            .to_dataframe()
+            .reset_index()
     )
     r = df_tmp[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
         "Predicted Squared Error"
@@ -472,9 +472,9 @@ def print_correlation_mean(ds, out_params):
         out_p = out_p
         df = (
             ds.sel({"Output Parameter": [out_p]})
-            .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-            .to_dataframe()
-            .reset_index()
+                .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+                .to_dataframe()
+                .reset_index()
         )
         r = df[["Predicted Squared Error", "Mean Squared Error"]].corr("spearman")[
             "Predicted Squared Error"
@@ -484,14 +484,14 @@ def print_correlation_mean(ds, out_params):
             "Predicted Squared Error"
         ][1]
         table_corr += (
-            "\t\t"
-            + latexify.parse_word(out_p).title().replace(" Of ", " of ")
-            + "\t\t& $ "
-            + f"{r_2:1.3f}"
-            + " $ & $ "
-            + f"{r:1.3f} $ "
-            + r"\\"
-            + "\n"
+                "\t\t"
+                + latexify.parse_word(out_p).title().replace(" Of ", " of ")
+                + "\t\t& $ "
+                + f"{r_2:1.3f}"
+                + " $ & $ "
+                + f"{r:1.3f} $ "
+                + r"\\"
+                + "\n"
         )
     table_corr += r"""    \end{tabular}
     \caption{}
@@ -512,9 +512,9 @@ def print_correlation_mean(ds, out_params):
         out_p = out_p
         df = (
             ds.sel({"Output Parameter": [out_p]})
-            .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-            .to_dataframe()
-            .reset_index()
+                .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+                .to_dataframe()
+                .reset_index()
         )
         r = df[["Predicted Squared Error", "Mean Squared Error"]].corr("pearson")[
             "Predicted Squared Error"
@@ -524,14 +524,14 @@ def print_correlation_mean(ds, out_params):
             "Predicted Squared Error"
         ][1]
         table_corr += (
-            "\t\t"
-            + latexify.parse_word(out_p).title().replace(" Of ", " of ")
-            + "\t\t& $ "
-            + f"{r_2:1.3f}"
-            + " $ & $ "
-            + f"{r:1.3f} $ "
-            + r"\\"
-            + "\n"
+                "\t\t"
+                + latexify.parse_word(out_p).title().replace(" Of ", " of ")
+                + "\t\t& $ "
+                + f"{r_2:1.3f}"
+                + " $ & $ "
+                + f"{r:1.3f} $ "
+                + r"\\"
+                + "\n"
         )
     table_corr += r"""    \end{tabular}
     \caption{}
@@ -561,8 +561,8 @@ def print_latex_tables(ds, top=10, verbose=True):
     print(text)
     tmp_df = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-        .to_dataframe()
-        .reset_index()
+            .to_dataframe()
+            .reset_index()
     )
 
     table_dic = {}
@@ -635,23 +635,23 @@ def print_latex_tables(ds, top=10, verbose=True):
             i += 1
             if "OUT" in out_p:
                 sedi_latex += (
-                    latexify.parse_word(row["Input Parameter"])
-                    .replace("$", "")
-                    .replace("\partial", "")
-                    + ", "
+                        latexify.parse_word(row["Input Parameter"])
+                        .replace("$", "")
+                        .replace("\partial", "")
+                        + ", "
                 )
             else:
                 top_10_table += (
-                    latexify.parse_word(row["Input Parameter"])
-                    .replace("$", "")
-                    .replace("\partial", "")
-                    + ", "
+                        latexify.parse_word(row["Input Parameter"])
+                        .replace("$", "")
+                        .replace("\partial", "")
+                        + ", "
                 )
             found = False
             for val, param, state_var, l_string in sort_key_list:
                 if param == row["Input Parameter"] and (
-                    val < row["Predicted Squared Error"]
-                    or ("N" in state_var and "N" not in out_p)
+                        val < row["Predicted Squared Error"]
+                        or ("N" in state_var and "N" not in out_p)
                 ):
                     if "N" not in state_var and "N" in out_p:
                         break
@@ -690,17 +690,17 @@ def print_latex_tables(ds, top=10, verbose=True):
                         return f"$ {err:2.2f} $"
 
                 long_string = (
-                    latexify.parse_word(row["Input Parameter"]).replace("\partial", "")
-                    + " & "
-                    + latex_my_number(row["Mean Squared Error"])
-                    + " & "
-                    + latex_my_number(row["Predicted Squared Error"])
-                    + " & "
-                    + "\\textbf{"
-                    + group.title()
-                    + "}: "
-                    + latexify.in_params_descr_dic[row["Input Parameter"]]
-                    + " \\\\ "
+                        latexify.parse_word(row["Input Parameter"]).replace("\partial", "")
+                        + " & "
+                        + latex_my_number(row["Mean Squared Error"])
+                        + " & "
+                        + latex_my_number(row["Predicted Squared Error"])
+                        + " & "
+                        + "\\textbf{"
+                        + group.title()
+                        + "}: "
+                        + latexify.in_params_descr_dic[row["Input Parameter"]]
+                        + " \\\\ "
                 )
                 if out_p not in long_table_dic:
                     long_table_dic[out_p] = [long_string]
@@ -716,21 +716,21 @@ def print_latex_tables(ds, top=10, verbose=True):
                 )
 
                 table_dic[row["Input Parameter"]] = (
-                    "$ \displaystyle "
-                    + latexify_state[out_p]
-                    + latexify.parse_word(row["Input Parameter"]).replace("$", "")
-                    + r"} $ & "
-                    + latex_my_number(row["Mean Squared Error"])
-                    #                 + f"$ {row.MSE:1.2e} $"
-                    + " & "
-                    + latex_my_number(row["Predicted Squared Error"])
-                    #                 + f"$ {row.Sensitivity:1.2e} $"
-                    + " & "
-                    + "\\textbf{"
-                    + group.title()
-                    + "}: "
-                    + latexify.in_params_descr_dic[row["Input Parameter"]]
-                    + " \\\\ "
+                        "$ \displaystyle "
+                        + latexify_state[out_p]
+                        + latexify.parse_word(row["Input Parameter"]).replace("$", "")
+                        + r"} $ & "
+                        + latex_my_number(row["Mean Squared Error"])
+                        #                 + f"$ {row.MSE:1.2e} $"
+                        + " & "
+                        + latex_my_number(row["Predicted Squared Error"])
+                        #                 + f"$ {row.Sensitivity:1.2e} $"
+                        + " & "
+                        + "\\textbf{"
+                        + group.title()
+                        + "}: "
+                        + latexify.in_params_descr_dic[row["Input Parameter"]]
+                        + " \\\\ "
                 )
         if "OUT" not in out_p:
             top_10_table = top_10_table[:-2] + " $ \\\\ \n"
@@ -786,9 +786,9 @@ def print_latex_tables(ds, top=10, verbose=True):
         if state_variable not in sort_dic_long_table:
             continue
         table_text += (
-            "\t\t\\hline \\multicolumn{4}{c}{"
-            + latexify.parse_word(state_variable).title()
-            + "}\t \\\\ \\hline\n"
+                "\t\t\\hline \\multicolumn{4}{c}{"
+                + latexify.parse_word(state_variable).title()
+                + "}\t \\\\ \\hline\n"
         )
         for _, _, s in sort_dic_long_table[state_variable]:
             table_text += "\t\t"
@@ -799,11 +799,11 @@ def print_latex_tables(ds, top=10, verbose=True):
     if top != 10:
         top_str = str(top)
     table_text += (
-        r"\caption{This is the set of parameters if we gather the "
-        + top_str
-        + r" most important ones for each model state variable. The predicted MSD is defined in Equation~\ref{eq:identification:msd_predict}, where we only show the highest predicted MSD among all mass densities unless the parameter did not have an impact on mass densities. In that case, the predicted deviation on number density and precipitation is considered. There are $ "
-        + str(i)
-        + r" $ different parameters in total.}"
+            r"\caption{This is the set of parameters if we gather the "
+            + top_str
+            + r" most important ones for each model state variable. The predicted MSD is defined in Equation~\ref{eq:identification:msd_predict}, where we only show the highest predicted MSD among all mass densities unless the parameter did not have an impact on mass densities. In that case, the predicted deviation on number density and precipitation is considered. There are $ "
+            + str(i)
+            + r" $ different parameters in total.}"
     )
     table_text += "\t\\label{tab:important_params}\n"
     table_text += "\\end{tabularx}\n"
@@ -881,13 +881,13 @@ def print_param_types(ds, table_dic):
             else_count += 1
 
         if (
-            "physical" in table_dic[key].lower()
-            and not "high variability" in table_dic[key].lower()
+                "physical" in table_dic[key].lower()
+                and not "high variability" in table_dic[key].lower()
         ):
             phys_count += 1
         elif (
-            "artificial" in table_dic[key].lower()
-            and not "threshold" in table_dic[key].lower()
+                "artificial" in table_dic[key].lower()
+                and not "threshold" in table_dic[key].lower()
         ):
             art_count += 1
         elif "physical" in table_dic[key].lower():
@@ -963,14 +963,14 @@ def print_large_impact_no_sens(ds, top=50):
     print(text)
     tmp_df = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-        .to_dataframe()
-        .reset_index()
+            .to_dataframe()
+            .reset_index()
     )
     tmp_df = tmp_df.loc[tmp_df["Predicted Squared Error"] == 0]
     tmp_df2 = (
         ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-        .to_dataframe()
-        .reset_index()
+            .to_dataframe()
+            .reset_index()
     )
     tmp_df2 = tmp_df2.loc[tmp_df2["Predicted Squared Error"] != 0]
     error_key = "Mean Squared Error"
@@ -1107,10 +1107,10 @@ def traj_get_sum_derivatives(file_path):
             ds[in_params] = np.abs(ds[in_params])
             df = (
                 ds[in_params]
-                .sel({"Output_Parameter_ID": out_p})
-                .sum(dim=["trajectory", "time"], skipna=True)
-                .to_dataframe()
-                .reset_index()
+                    .sel({"Output_Parameter_ID": out_p})
+                    .sum(dim=["trajectory", "time"], skipna=True)
+                    .to_dataframe()
+                    .reset_index()
             )
             df = df[in_params]
 
@@ -1146,7 +1146,7 @@ def traj_get_top_params(dict_of_df, param_name, n, orders):
         max_order = np.max(tmp_df[0])
         top_magn_sens_dic[out_name] = tmp_df[
             tmp_df[0] >= max_order / (10 ** orders)
-        ].T.columns.values
+            ].T.columns.values
 
     tmp = []
     tmp2 = []
@@ -1159,7 +1159,7 @@ def traj_get_top_params(dict_of_df, param_name, n, orders):
 
 
 def get_sum_wrt(
-    file_path, wrt, in_params=None, out_params=None, n_bins=100, additional_params=None
+        file_path, wrt, in_params=None, out_params=None, n_bins=100, additional_params=None
 ):
     """
 
@@ -1208,7 +1208,7 @@ def get_sum_wrt(
 
 
 def get_histogram(
-    file_path, in_params=None, out_params=None, n_bins=100, additional_params=None
+        file_path, in_params=None, out_params=None, n_bins=100, additional_params=None
 ):
     """
 
@@ -1257,7 +1257,7 @@ def get_histogram(
         else:
             min_max[out_name] = [min_p, max_p]
         for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(param_name)
+                zip(out_params, param_name), leave=False, total=len(param_name)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
             for in_p in tqdm(in_params, leave=False):
@@ -1292,8 +1292,8 @@ def get_histogram(
         edges_in_params[out_p] = {}
         for in_p in in_params:
             delta = (
-                min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
-            ) / n_bins
+                            min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
+                    ) / n_bins
             if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][1]:
                 continue
             else:
@@ -1301,7 +1301,7 @@ def get_histogram(
                     min_max_in_params[out_p][in_p][0],
                     min_max_in_params[out_p][in_p][1] + delta / 2,
                     delta,
-                )
+                    )
     if additional_params is not None:
         for out_p in tqdm(additional_params, leave=False):
             delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
@@ -1314,7 +1314,7 @@ def get_histogram(
     for f in tqdm(files):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
         for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(param_name)
+                zip(out_params, param_name), leave=False, total=len(param_name)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
             hist_tmp, _ = np.histogram(ds[out_name], edges[out_name])
@@ -1341,14 +1341,14 @@ def get_histogram(
 
 
 def traj_plot_histogram_out(
-    out_params,
-    filename,
-    edges,
-    hist,
-    width=24,
-    height=12,
-    title=None,
-    verbose=False,
+        out_params,
+        filename,
+        edges,
+        hist,
+        width=24,
+        height=12,
+        title=None,
+        verbose=False,
 ):
     """
     Giuen histograms from a sensitivity analysis with multiple trajectories, plot the histogram of an output parameter,
@@ -1405,14 +1405,14 @@ def traj_plot_histogram_out(
 
 
 def traj_plot_histogram_inp(
-    in_params,
-    filename,
-    edges_in_params,
-    hist_in_params,
-    width=24,
-    height=12,
-    title=None,
-    verbose=False,
+        in_params,
+        filename,
+        edges_in_params,
+        hist_in_params,
+        width=24,
+        height=12,
+        title=None,
+        verbose=False,
 ):
     """
     Giuen histograms from a sensitivity analysis with multiple trajectories, plot three histograms per image with
@@ -1493,14 +1493,14 @@ def traj_plot_histogram_inp(
 
 
 def plot_heatmap_traj(
-    in_params,
-    filename,
-    edges_in_params,
-    hist_in_params,
-    width=24,
-    height=24,
-    title=None,
-    verbose=False,
+        in_params,
+        filename,
+        edges_in_params,
+        hist_in_params,
+        width=24,
+        height=24,
+        title=None,
+        verbose=False,
 ):
     """
     Giuen histograms from a sensitivity analysis with multiple trajectories, plot a heatmap "model parameters" over
@@ -1681,14 +1681,14 @@ def get_sums(file_path, store_path=None):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
         ds[in_params] = np.abs(ds[in_params])
         for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(out_params)
+                zip(out_params, param_name), leave=False, total=len(out_params)
         ):
             df = (
                 ds[in_params]
-                .sel({"Output_Parameter_ID": out_p})
-                .sum(dim=["trajectory", "time"], skipna=True)
-                .to_dataframe()
-                .reset_index()
+                    .sel({"Output_Parameter_ID": out_p})
+                    .sum(dim=["trajectory", "time"], skipna=True)
+                    .to_dataframe()
+                    .reset_index()
             )
             df = df[in_params]
 
@@ -1727,19 +1727,35 @@ def get_sums_phase(file_path, store_path=None):
     for f in tqdm(files):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
         ds[in_params] = np.abs(ds[in_params])
+        if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+            ds["phase"] = ds["phase"].astype(np.uint64)
         for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(out_params)
+                zip(out_params, param_name), leave=False, total=len(out_params)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
             for phase in phases:
                 idx = np.where(ds_tmp["phase"] == phase)
                 dic = {in_p: None for in_p in in_params}
+                if isinstance(phase, str):
+                    phase_name = phase
+                else:
+                    phase_name = "nan"
+                    if phase == 0:
+                        phase_name = "warm phase"
+                    elif phase == 1:
+                        phase_name = "mixed phase"
+                    elif phase == 2:
+                        phase_name = "ice phase"
+                    elif phase == 3:
+                        phase_name ="neutral phase"
+                    else:
+                        continue
                 for in_p in in_params:
                     dic[in_p] = [np.nansum(ds_tmp[in_p].values[idx])]
-                if phase + " " + out_name in sums.keys():
-                    sums[phase + " " + out_name] += pd.DataFrame(dic)
+                if phase_name + " " + out_name in sums.keys():
+                    sums[phase_name + " " + out_name] += pd.DataFrame(dic)
                 else:
-                    sums[phase + " " + out_name] = pd.DataFrame(dic)
+                    sums[phase_name + " " + out_name] = pd.DataFrame(dic)
     if store_path is not None and store_path != "no":
         with open(store_path + "_sums_phase.pkl", "wb") as f:
             pickle.dump(sums, f)
@@ -1781,7 +1797,7 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None):
             all_params
         ]
         for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(out_params)
+                zip(out_params, param_name), leave=False, total=len(out_params)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
             means_tmp = ds_tmp.mean(skipna=True)
@@ -1793,10 +1809,10 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None):
                     n_new = count_tmp[p].values.item() + n_total[out_name][p]
                     if n_new > 0:
                         means[out_name][p] = (
-                            means[out_name][p] * n_total[out_name][p] / n_new
-                            + means_tmp[p].values.item()
-                            * count_tmp[p].values.item()
-                            / n_new
+                                means[out_name][p] * n_total[out_name][p] / n_new
+                                + means_tmp[p].values.item()
+                                * count_tmp[p].values.item()
+                                / n_new
                         )
                         n_total[out_name][p] = n_new
                 else:
@@ -1809,7 +1825,7 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None):
             all_params
         ]
         for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(out_params)
+                zip(out_params, param_name), leave=False, total=len(out_params)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
             count_tmp = (~np.isnan(ds_tmp)).sum()
@@ -1826,8 +1842,8 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None):
                                 * (ds_tmp[p2].values - means[out_name][p2])
                             )
                             cov[out_name][i, i2] = (
-                                cov[out_name][i, i2] * n_total[out_name][p] / n_new
-                                + cov_tmp * n_add / n_new
+                                    cov[out_name][i, i2] * n_total[out_name][p] / n_new
+                                    + cov_tmp * n_add / n_new
                             )
                         n_total[out_name][p] = n_new
                 else:
@@ -1890,9 +1906,11 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
     for f in tqdm(files):
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
             all_params + ["phase"]
-        ]
+            ]
+        if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+            ds["phase"] = ds["phase"].astype(np.uint64)
         for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(out_params)
+                zip(out_params, param_name), leave=False, total=len(out_params)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
 
@@ -1910,10 +1928,10 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
                         n_new = count_tmp + n_total[phase][out_name][p]
                         if n_new > 0:
                             means[phase][out_name][p] = (
-                                means[phase][out_name][p]
-                                * n_total[phase][out_name][p]
-                                / n_new
-                                + mean_tmp * count_tmp / n_new
+                                    means[phase][out_name][p]
+                                    * n_total[phase][out_name][p]
+                                    / n_new
+                                    + mean_tmp * count_tmp / n_new
                             )
                             n_total[phase][out_name][p] = n_new
                     else:
@@ -1927,9 +1945,9 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
     for f in tqdm(files):
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
             all_params + ["phase"]
-        ]
+            ]
         for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(out_params)
+                zip(out_params, param_name), leave=False, total=len(out_params)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
             for phase in tqdm(phases, leave=False):
@@ -1949,15 +1967,15 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
                                 cov_tmp = np.nanmean(
                                     p_variance
                                     * (
-                                        ds_tmp[p2].values[idx]
-                                        - means[phase][out_name][p2]
+                                            ds_tmp[p2].values[idx]
+                                            - means[phase][out_name][p2]
                                     )
                                 )
                                 cov[phase][out_name][i, i2] = (
-                                    cov[phase][out_name][i, i2]
-                                    * n_total[phase][out_name][p]
-                                    / n_new
-                                    + cov_tmp * n_add / n_new
+                                        cov[phase][out_name][i, i2]
+                                        * n_total[phase][out_name][p]
+                                        / n_new
+                                        + cov_tmp * n_add / n_new
                                 )
                             n_total[phase][out_name][p] = n_new
                     else:
@@ -1967,8 +1985,8 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
                                 cov[phase][out_name][i, i2] = np.nanmean(
                                     p_variance
                                     * (
-                                        ds_tmp[p2].values[idx]
-                                        - means[phase][out_name][p2]
+                                            ds_tmp[p2].values[idx]
+                                            - means[phase][out_name][p2]
                                     )
                                 )
                             n_total[phase][out_name][p] = n_new
@@ -1981,16 +1999,16 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
 
 
 def plot_heatmap(
-    data_in,
-    out_param,
-    names,
-    in_params=None,
-    plot_type="all",
-    norm=None,
-    title=None,
-    filename=None,
-    width=30,
-    height=16,
+        data_in,
+        out_param,
+        names,
+        in_params=None,
+        plot_type="all",
+        norm=None,
+        title=None,
+        filename=None,
+        width=30,
+        height=16,
 ):
     """
 
@@ -2186,11 +2204,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.file.endswith("/"):
         if (
-            args.plot_type == "all"
-            or args.plot_type == "hist_out"
-            or args.plot_type == "hist_in"
-            or args.plot_type == "heat"
-            or args.save_histogram != "no"
+                args.plot_type == "all"
+                or args.plot_type == "hist_out"
+                or args.plot_type == "hist_in"
+                or args.plot_type == "heat"
+                or args.save_histogram != "no"
         ):
             if args.load_histogram != "no":
                 print("########### Load histograms ###########")
@@ -2313,7 +2331,7 @@ if __name__ == "__main__":
                 f.write(text)
 
         if (
-            args.plot_type == "all" or args.plot_type == "cov_heat"
+                args.plot_type == "all" or args.plot_type == "cov_heat"
         ) and args.load_covariance == "no":
             print("########### Calculate covariance matrix ###########")
             means, cov = get_cov_matrix(
@@ -2322,7 +2340,7 @@ if __name__ == "__main__":
                 filepath=args.save_statistics,
             )
         if (
-            args.plot_type == "all" or args.plot_type == "cov_heat_phases"
+                args.plot_type == "all" or args.plot_type == "cov_heat_phases"
         ) and args.load_covariance == "no":
             print("########### Calculate covariance matrix with phases ###########")
             means_phase, cov_phase = get_cov_matrix_phase(
@@ -2458,12 +2476,12 @@ if __name__ == "__main__":
         pd.set_option("display.max_columns", 10)
 
         with pd.option_context(
-            "display.max_rows",
-            100,
-            "display.max_columns",
-            10,
-            "display.expand_frame_repr",
-            False,
+                "display.max_rows",
+                100,
+                "display.max_columns",
+                10,
+                "display.expand_frame_repr",
+                False,
         ):
             text = print_table_top_lists(
                 [top10_list, top20_list],
