@@ -1247,19 +1247,20 @@ def get_histogram(
 
     for f in tqdm(files):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
-        min_p = np.min(ds[out_name]).values
-        max_p = np.max(ds[out_name]).values
-        if out_name in min_max.keys():
-            if min_p < min_max[out_name][0]:
-                min_max[out_name][0] = min_p
-            if max_p > min_max[out_name][1]:
-                min_max[out_name][1] = max_p
-        else:
-            min_max[out_name] = [min_p, max_p]
+
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(param_name)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            min_p = np.min(ds_tmp[out_name]).values
+            max_p = np.max(ds_tmp[out_name]).values
+            if out_name in min_max.keys():
+                if min_p < min_max[out_name][0]:
+                    min_max[out_name][0] = min_p
+                if max_p > min_max[out_name][1]:
+                    min_max[out_name][1] = max_p
+            else:
+                min_max[out_name] = [min_p, max_p]
             for in_p in tqdm(in_params, leave=False):
                 min_p = np.min(ds_tmp[in_p]).values
                 max_p = np.max(ds_tmp[in_p]).values
@@ -1336,6 +1337,10 @@ def get_histogram(
         if additional_params is not None:
             for out_p in tqdm(additional_params, leave=False):
                 hist_tmp, _ = np.histogram(ds[out_p], edges[out_p])
+                if out_p in hist:
+                    hist[out_p] += hist_tmp
+                else:
+                    hist[out_p] = hist_tmp
 
     return hist, hist_in_params, edges, edges_in_params
 
@@ -1721,7 +1726,7 @@ def get_sums_phase(file_path, store_path=None):
     param_name = []
     for out_p in out_params:
         param_name.append(latexify.param_id_map[out_p.values.item()])
-    phases = np.unique(ds["phase"])
+    phases = ["warm phase", "mixed phase", "ice phase", "neutral phase"]
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
     for f in tqdm(files):
@@ -1733,29 +1738,18 @@ def get_sums_phase(file_path, store_path=None):
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
-            for phase in phases:
-                idx = np.where(ds_tmp["phase"] == phase)
-                dic = {in_p: None for in_p in in_params}
-                if isinstance(phase, str):
-                    phase_name = phase
+            for phase_i, phase in enumerate(phases):
+                if ds_tmp["phase"].dtype == str:
+                    idx = np.where(ds_tmp["phase"] == phase)
                 else:
-                    phase_name = "nan"
-                    if phase == 0:
-                        phase_name = "warm phase"
-                    elif phase == 1:
-                        phase_name = "mixed phase"
-                    elif phase == 2:
-                        phase_name = "ice phase"
-                    elif phase == 3:
-                        phase_name = "neutral phase"
-                    else:
-                        continue
+                    idx = np.where(ds_tmp["phase"] == phase_i)
+                dic = {in_p: None for in_p in in_params}
                 for in_p in in_params:
                     dic[in_p] = [np.nansum(ds_tmp[in_p].values[idx])]
-                if phase_name + " " + out_name in sums.keys():
-                    sums[phase_name + " " + out_name] += pd.DataFrame(dic)
+                if phase + " " + out_name in sums.keys():
+                    sums[phase + " " + out_name] += pd.DataFrame(dic)
                 else:
-                    sums[phase_name + " " + out_name] = pd.DataFrame(dic)
+                    sums[phase + " " + out_name] = pd.DataFrame(dic)
     if store_path is not None and store_path != "no":
         with open(store_path + "_sums_phase.pkl", "wb") as f:
             pickle.dump(sums, f)
@@ -1802,8 +1796,6 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
             means_tmp = ds_tmp.mean(skipna=True)
             count_tmp = (~np.isnan(ds_tmp)).sum()
-            if count_tmp == 0:
-                continue
             for p in means[out_name]:
                 if n_total[out_name][p] > 0:
                     n_new = count_tmp[p].values.item() + n_total[out_name][p]
@@ -1829,8 +1821,6 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None):
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
             count_tmp = (~np.isnan(ds_tmp)).sum()
-            if count_tmp == 0:
-                continue
             for i, p in enumerate(means[out_name]):
                 if n_total[out_name][p] > 0:
                     n_add = count_tmp[p].values.item()
@@ -1888,7 +1878,7 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
     param_name = []
     for out_p in out_params:
         param_name.append(latexify.param_id_map[out_p.values.item()])
-    phases = np.unique(ds["phase"])
+    phases = ["warm phase", "mixed phase", "ice phase", "neutral phase"]
     all_params = param_name + in_params
     n = len(all_params)
     means = {
@@ -1914,10 +1904,11 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
 
-            for phase in tqdm(phases, leave=False):
-                if phase != "ice phase    ":
-                    continue
-                idx = np.where(ds_tmp["phase"] == phase)
+            for phase_i, phase in enumerate(tqdm(phases, leave=False)):
+                if ds_tmp["phase"].dtype == str:
+                    idx = np.where(ds_tmp["phase"] == phase)
+                else:
+                    idx = np.where(ds_tmp["phase"] == phase_i)
                 for p in tqdm(means[phase][out_name], leave=False):
                     count_tmp = np.sum((~np.isnan(ds_tmp[p].values[idx])))
                     if count_tmp == 0:
@@ -1946,14 +1937,17 @@ def get_cov_matrix_phase(input_filepath, in_params=None, filepath=None):
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
             all_params + ["phase"]
         ]
+        if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+            ds["phase"] = ds["phase"].astype(np.uint64)
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
-            for phase in tqdm(phases, leave=False):
-                if phase != "ice phase    ":
-                    continue
-                idx = np.where(ds_tmp["phase"] == phase)
+            for phase_i, phase in enumerate(tqdm(phases, leave=False)):
+                if ds_tmp["phase"].dtype == str:
+                    idx = np.where(ds_tmp["phase"] == phase)
+                else:
+                    idx = np.where(ds_tmp["phase"] == phase_i)
                 for i, p in enumerate(tqdm(means[phase][out_name], leave=False)):
                     count_tmp = np.sum((~np.isnan(ds_tmp[p].values[idx])))
                     if count_tmp == 0:
