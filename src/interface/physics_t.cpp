@@ -139,7 +139,6 @@ void physics_t::set_ref_quants(
         const double zref,
         const double Nref,
         const double timeref) {
-
     ref_quant.qref = qref;
     ref_quant.pref = pref;
     ref_quant.wref = wref;
