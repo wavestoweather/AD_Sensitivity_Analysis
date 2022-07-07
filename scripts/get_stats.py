@@ -2050,7 +2050,7 @@ def plot_heatmap(
             cbar=True,
             yticklabels=names,
             xticklabels=names,
-            annot=(len(names) <= 20),
+            annot=((len(names) <= 20) and (width > 19)),
             fmt="1.2e",
         )
         if title is None:

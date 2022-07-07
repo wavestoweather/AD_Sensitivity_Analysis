@@ -13,24 +13,123 @@ physics_t::physics_t(std::string table_path) : cc("", false) {
 }
 
 
-void physics_t::set_ref_quants(
-    const double qref,
-    const double pref,
-    const double wref,
-    const double Tref,
-    const double zref,
-    const double Nref,
-    const double timeref) {
+codi::RealReverse::Tape& physics_t::prepare_call() {
+    codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
+    tape.setActive();
+    cc.register_input(tape);
+    cc.setup_dependent_model_constants();
 
-    ref_quant.qref = qref;
-    ref_quant.pref = pref;
-    ref_quant.wref = wref;
-    ref_quant.Tref = Tref;
-    ref_quant.zref = zref;
-    ref_quant.Nref = Nref;
-    ref_quant.tref = timeref;
+    yold[T_idx] *= ref_quant.Tref;
+    yold[p_idx] *= ref_quant.pref;
+    yold[w_idx] *= ref_quant.wref;
+    yold[qg_idx] *= ref_quant.qref;
+    yold[Ng_idx] *= ref_quant.Nref;
+    yold[qr_idx] *= ref_quant.qref;
+    yold[Nr_idx] *= ref_quant.Nref;
+    yold[qc_idx] *= ref_quant.qref;
+    yold[Nc_idx] *= ref_quant.Nref;
+    yold[qs_idx] *= ref_quant.qref;
+    yold[Ns_idx] *= ref_quant.Nref;
+    yold[qi_idx] *= ref_quant.qref;
+    yold[Ni_idx] *= ref_quant.Nref;
+    yold[qh_idx] *= ref_quant.qref;
+    yold[Nh_idx] *= ref_quant.Nref;
+    yold[qv_idx] *= ref_quant.qref;
+
+    codi::RealReverse p_prime = yold[p_idx];
+    codi::RealReverse T_prime = yold[T_idx];
+    codi::RealReverse qv_prime = yold[qv_idx];
+    yold[S_idx] = convert_qv_to_S(
+            p_prime,
+            T_prime,
+            qv_prime,
+            get_at(cc.constants, Cons_idx::p_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_a),
+            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_b),
+            get_at(cc.constants, Cons_idx::Epsilon));
+
+    codi::RealReverse rho_inter = log(compute_rhoh(p_prime, T_prime, yold[S_idx],
+                                         get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                                         get_at(cc.constants, Cons_idx::p_sat_const_a),
+                                         get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                                         get_at(cc.constants, Cons_idx::p_sat_const_b),
+                                         get_at(cc.constants, Cons_idx::R_a),
+                                         get_at(cc.constants, Cons_idx::R_v)) / get_at(cc.constants, Cons_idx::rho_0));
+    cc.cloud.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+            exp(-get_at(cc.constants, Cons_idx::rho_vel_c) * rho_inter);
+    cc.rain.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+            exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
+    cc.graupel.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+            exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
+    cc.hail.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+            exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
+    cc.ice.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+            exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
+    cc.snow.constants[static_cast<int>(Particle_cons_idx::rho_v)] =
+            exp(-get_at(cc.constants, Cons_idx::rho_vel) * rho_inter);
+    return tape;
 }
 
+void physics_t::finish_call(
+    codi::RealReverse::Tape& tape,
+    double *res,
+    double *gradients) {
+
+    auto T_prime = ynew[T_idx];
+    auto p_prime = ynew[p_idx];
+    auto qv_prime = ynew[qv_idx];
+    ynew[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime,
+                                  get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                                  get_at(cc.constants, Cons_idx::p_sat_const_a),
+                                  get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                                  get_at(cc.constants, Cons_idx::p_sat_const_b),
+                                  get_at(cc.constants, Cons_idx::Epsilon));
+
+    ynew[T_idx] /= ref_quant.Tref;
+    ynew[p_idx] /= ref_quant.pref;
+    ynew[w_idx] /= ref_quant.wref;
+    ynew[qg_idx] /= ref_quant.qref;
+    ynew[Ng_idx] /= ref_quant.Nref;
+    ynew[qr_idx] /= ref_quant.qref;
+    ynew[Nr_idx] /= ref_quant.Nref;
+    ynew[qc_idx] /= ref_quant.qref;
+    ynew[Nc_idx] /= ref_quant.Nref;
+    ynew[qs_idx] /= ref_quant.qref;
+    ynew[Ns_idx] /= ref_quant.Nref;
+    ynew[qi_idx] /= ref_quant.qref;
+    ynew[Ni_idx] /= ref_quant.Nref;
+    ynew[qh_idx] /= ref_quant.qref;
+    ynew[Nh_idx] /= ref_quant.Nref;
+    ynew[qv_idx] /= ref_quant.qref;
+
+    // Get the gradients
+    cc.get_gradients(ynew, gradients_, tape, ref_quant);
+
+    for (auto ii = 0 ; ii < num_comp; ii++) {
+        for (auto i = 0; i < num_par; i++) {
+            gradients[i + ii*num_par] = gradients_[ii][i];
+        }
+    }
+    // copy results
+    res[p_idx] = ynew[p_idx].getValue() * ref_quant.pref;
+    res[w_idx] = ynew[w_idx].getValue() * ref_quant.wref;
+    res[T_idx] = ynew[T_idx].getValue() * ref_quant.Tref;
+    res[qg_idx] = ynew[qg_idx].getValue() * ref_quant.qref;
+    res[Ng_idx] = ynew[Ng_idx].getValue() * ref_quant.Nref;
+    res[qr_idx] = ynew[qr_idx].getValue() * ref_quant.qref;
+    res[Nr_idx] = ynew[Nr_idx].getValue() * ref_quant.Nref;
+    res[qv_idx] = ynew[qv_idx].getValue() * ref_quant.qref;
+    res[qc_idx] = ynew[qc_idx].getValue() * ref_quant.qref;
+    res[Nc_idx] = ynew[Nc_idx].getValue() * ref_quant.Nref;
+    res[qs_idx] = ynew[qs_idx].getValue() * ref_quant.qref;
+    res[Ns_idx] = ynew[Ns_idx].getValue() * ref_quant.Nref;
+    res[qi_idx] = ynew[qi_idx].getValue() * ref_quant.qref;
+    res[Ni_idx] = ynew[Ni_idx].getValue() * ref_quant.Nref;
+    res[qh_idx] = ynew[qh_idx].getValue() * ref_quant.qref;
+    res[Nh_idx] = ynew[Nh_idx].getValue() * ref_quant.Nref;
+    res[S_idx] = ynew[S_idx].getValue();
+}
 
 void physics_t::setup_model_constants(
     const double dt_prime,
@@ -125,7 +224,6 @@ void physics_t::py_ccn_act_hande_akm(
     std::ofstream of;
     of.open("physics_t.log");
 #endif
-    // Does it make any difference if we use that before or after registering the  data?
     for (auto &y : yold) y = 0;
     yold[p_idx] = p;
     yold[w_idx] = w;
@@ -152,31 +250,7 @@ void physics_t::py_ccn_act_hande_akm(
 #endif
     const double EPSILON = 1.0e-20;
 
-    codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
-    tape.setActive();
-    cc.register_input(tape);
-
-    yold[p_idx] *= ref_quant.pref;
-    yold[w_idx] *= ref_quant.wref;
-    yold[T_idx] *= ref_quant.Tref;
-    yold[qv_idx] *= ref_quant.qref;
-    yold[qc_idx] *= ref_quant.qref;
-    yold[Nc_idx] *= ref_quant.Nref;
-
-    cc.setup_dependent_model_constants();
-
-    codi::RealReverse p_prime = yold[p_idx];
-    codi::RealReverse T_prime = yold[T_idx];
-    codi::RealReverse qv_prime = yold[qv_idx];
-    yold[S_idx] = convert_qv_to_S(
-            p_prime,
-            T_prime,
-            qv_prime,
-            get_at(cc.constants, Cons_idx::p_sat_low_temp),
-            get_at(cc.constants, Cons_idx::p_sat_const_a),
-            get_at(cc.constants, Cons_idx::T_sat_low_temp),
-            get_at(cc.constants, Cons_idx::p_sat_const_b),
-            get_at(cc.constants, Cons_idx::Epsilon));
+    codi::RealReverse::Tape& tape = prepare_call();
 #ifdef DEVELOP
     of << "yold:\n"
        << "p: " << yold[p_idx]
@@ -251,39 +325,7 @@ void physics_t::py_ccn_act_hande_akm(
     }
     set_limits(ynew, cc);
 
-    // Explicit calculation of saturation
-    T_prime = ynew[T_idx];
-    p_prime = ynew[p_idx];
-    qv_prime = ynew[qv_idx];
-    ynew[S_idx] = convert_qv_to_S(p_prime, T_prime, qv_prime,
-                                  get_at(cc.constants, Cons_idx::p_sat_low_temp),
-                                  get_at(cc.constants, Cons_idx::p_sat_const_a),
-                                  get_at(cc.constants, Cons_idx::T_sat_low_temp),
-                                  get_at(cc.constants, Cons_idx::p_sat_const_b),
-                                  get_at(cc.constants, Cons_idx::Epsilon));
-
-    ynew[p_idx] /= ref_quant.pref;
-    ynew[w_idx] /= ref_quant.wref;
-    ynew[T_idx] /= ref_quant.Tref;
-    ynew[qv_idx] /= ref_quant.qref;
-    ynew[qc_idx] /= ref_quant.qref;
-    ynew[Nc_idx] /= ref_quant.Nref;
-    // Get the gradients
-    cc.get_gradients(ynew, gradients_, tape, ref_quant);
-
-    for (auto ii = 0 ; ii < num_comp; ii++) {
-        for (auto i = 0; i < num_par; i++) {
-            gradients[i + ii*num_par] = gradients_[ii][i];
-        }
-    }
-    // copy results
-    res[p_idx] = ynew[p_idx].getValue() * ref_quant.pref;
-    res[w_idx] = ynew[w_idx].getValue() * ref_quant.wref;
-    res[T_idx] = ynew[T_idx].getValue() * ref_quant.Tref;
-    res[qv_idx] = ynew[qv_idx].getValue() * ref_quant.qref;
-    res[qc_idx] = ynew[qc_idx].getValue() * ref_quant.qref;
-    res[Nc_idx] = ynew[Nc_idx].getValue() * ref_quant.Nref;
-    res[S_idx] = ynew[S_idx].getValue();
+    finish_call(tape, res, gradients);
 #ifdef DEVELOP
     of << "Test end\n";
     of << "p: " << res[p_idx]
@@ -309,14 +351,7 @@ void physics_t::py_graupel_melting(
     yold[qg_idx] = qg;
     yold[Ng_idx] = Ng;
 
-    codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
-    tape.setActive();
-    cc.register_input(tape);
-    cc.setup_dependent_model_constants();
-
-    yold[T_idx] *= ref_quant.Tref;
-    yold[qg_idx] *= ref_quant.qref;
-    yold[Ng_idx] *= ref_quant.Nref;
+    codi::RealReverse::Tape& tape = prepare_call();
 
     // RK4
     for (auto &kv : k) kv = 0;
@@ -362,24 +397,80 @@ void physics_t::py_graupel_melting(
     }
     set_limits(ynew, cc);
 
-    ynew[T_idx] /= ref_quant.Tref;
-    ynew[qg_idx] /= ref_quant.qref;
-    ynew[Ng_idx] /= ref_quant.Nref;
-    ynew[qr_idx] /= ref_quant.qref;
-    ynew[Nr_idx] /= ref_quant.Nref;
+    finish_call(tape, res, gradients);
+}
 
-    // Get the gradients
-    cc.get_gradients(ynew, gradients_, tape, ref_quant);
 
-    for (auto ii = 0 ; ii < num_comp; ii++) {
-        for (auto i = 0; i < num_par; i++) {
-            gradients[i + ii*num_par] = gradients_[ii][i];
-        }
+void physics_t::py_saturation_adjust(
+    const double p,
+    const double T,
+    const double qv,
+    const double qc,
+    double *res,
+    double *gradients) {
+
+    for (auto &y : yold) y = 0;
+    yold[p_idx] = p;
+    yold[T_idx] = T;
+    yold[qv_idx] = qv;
+    yold[qc_idx] = qc;
+
+    codi::RealReverse::Tape& tape = prepare_call();
+
+    // RK4
+    for (auto &kv : k) kv = 0;
+    for (int ii = 0 ; ii < num_comp ; ii++)
+        ynew[ii] = yold[ii];
+    saturation_adjust(yold[T_idx], yold[p_idx],
+                      yold[qv_idx], yold[qc_idx], k, cc);
+    compute_nondimensional_effects(
+            k, yold[p_idx]/ref_quant.pref, yold[w_idx]/ref_quant.wref, yold[w_idx],
+            yold[T_idx]/ref_quant.Tref, yold[qv_idx]/ref_quant.qref, yold[qv_idx]);
+    k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
+                 + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
+    for (int ii = 0 ; ii < num_comp ; ii++) {
+        ytmp[ii] = yold[ii] + cc.dt_half*k[ii];  // y_0 + (dt/2)*k1 for k2
+        ynew[ii] += cc.dt_sixth*k[ii];  // Add k1-part to the result
     }
-    // copy results
-    res[T_idx] = ynew[T_idx].getValue() * ref_quant.Tref;
-    res[qg_idx] = ynew[qg_idx].getValue() * ref_quant.qref;
-    res[Ng_idx] = ynew[Ng_idx].getValue() * ref_quant.Nref;
-    res[qr_idx] = ynew[qr_idx].getValue() * ref_quant.qref;
-    res[Nr_idx] = ynew[Nr_idx].getValue() * ref_quant.Nref;
+    set_limits(ytmp, cc);
+
+    // k, ytmp, dt_third
+    for (auto &kv : k) kv = 0;
+    saturation_adjust(ytmp[T_idx], ytmp[p_idx],
+                      ytmp[qv_idx], ytmp[qc_idx], k, cc);
+    compute_nondimensional_effects(
+            k, ytmp[p_idx]/ref_quant.pref, ytmp[w_idx]/ref_quant.wref, ytmp[w_idx],
+            ytmp[T_idx]/ref_quant.Tref, ytmp[qv_idx]/ref_quant.qref, ytmp[qv_idx]);
+    for (int ii = 0 ; ii < num_comp ; ii++) {
+        ytmp[ii] = yold[ii] + cc.dt_half*k[ii];  // y_0 + (dt/2)*k2 for k3
+        ynew[ii] += cc.dt_third*k[ii];  // Add k2-part to the result
+    }
+    set_limits(ytmp, cc);
+
+    for (auto &kv : k) kv = 0;
+    // k, ytmp, dt_third
+    saturation_adjust(ytmp[T_idx], ytmp[p_idx],
+                      ytmp[qv_idx], ytmp[qc_idx], k, cc);
+    compute_nondimensional_effects(
+            k, ytmp[p_idx]/ref_quant.pref, ytmp[w_idx]/ref_quant.wref, ytmp[w_idx],
+            ytmp[T_idx]/ref_quant.Tref, ytmp[qv_idx]/ref_quant.qref, ytmp[qv_idx]);
+    for (int ii = 0 ; ii < num_comp ; ii++) {
+        ytmp[ii] = yold[ii] + cc.dt_half*k[ii];  // y_0 + (dt/2)*k2 for k3
+        ynew[ii] += cc.dt_third*k[ii];  // Add k2-part to the result
+    }
+    set_limits(ytmp, cc);
+
+    for (auto &kv : k) kv = 0;
+    // dt_sixth
+    saturation_adjust(ytmp[T_idx], ytmp[p_idx],
+                      ytmp[qv_idx], ytmp[qc_idx], k, cc);
+    compute_nondimensional_effects(
+            k, ytmp[p_idx]/ref_quant.pref, ytmp[w_idx]/ref_quant.wref, ytmp[w_idx],
+            ytmp[T_idx]/ref_quant.Tref, ytmp[qv_idx]/ref_quant.qref, ytmp[qv_idx]);
+    for (int ii = 0 ; ii < num_comp ; ii++) {
+        ynew[ii] += cc.dt_sixth*k[ii];
+    }
+    set_limits(ynew, cc);
+
+    finish_call(tape, res, gradients);
 }

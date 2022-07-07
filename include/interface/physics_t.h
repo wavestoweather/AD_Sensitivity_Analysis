@@ -60,6 +60,13 @@ struct physics_t {
 
     void setup_model_constants();
 
+    codi::RealReverse::Tape& prepare_call();
+
+    void finish_call(
+        codi::RealReverse::Tape& tape,
+        double *res,
+        double *gradients);
+
     void py_ccn_act_hande_akm(
         const double p,
         const double w,
@@ -74,6 +81,14 @@ struct physics_t {
         const double T,
         const double qg,
         const double Ng,
+        double *res,
+        double *gradients);
+
+    void py_saturation_adjust(
+        const double p,
+        const double T,
+        const double qv,
+        const double qc,
         double *res,
         double *gradients);
 };
@@ -115,5 +130,13 @@ extern "C" {
         double Ng,
         double *res,
         double *gradients) {phys->py_graupel_melting(T, qg, Ng, res, gradients);}
+    void physics_t_py_saturation_adjust(
+        physics_t* phys,
+        double p,
+        double T,
+        double qv,
+        double qc,
+        double *res,
+        double *gradients) {phys->py_saturation_adjust(p, T, qv, qc, res, gradients);}
 }
 
