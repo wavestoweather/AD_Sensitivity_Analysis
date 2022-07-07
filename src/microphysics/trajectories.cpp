@@ -45,7 +45,6 @@ void parse_args(
     const int &argc,
     char* const * argv,
     const int &rank,
-//    const int &n_processes,
     input_parameters_t &input,
     global_args_t &global_args,
     reference_quantities_t &ref_quant) {
@@ -371,7 +370,7 @@ void finish_last_step(
                 get_at(cc.constants, Cons_idx::Epsilon))
             << ", QC: " << qc_prime << "\n";
 #endif
-    std::vector<float_t> res(7);
+    std::vector<float_t> res(num_comp);
     for (auto& r : res) r = 0;
     saturation_adjust(
         T_prime,
@@ -387,6 +386,8 @@ void finish_last_step(
     // negative qc due to rounding errors with ref_quant.qref.
     y_single_new[qc_idx] = (y_single_new[qc_idx] < 0) ? 0 : y_single_new[qc_idx];
     y_single_new[T_idx] += res[T_idx]/ref_quant.Tref;
+    y_single_new[lat_cool_idx] += res[lat_cool_idx];
+    y_single_new[lat_heat_idx] += res[lat_heat_idx];
     p_prime = y_single_new[p_idx]*ref_quant.pref;
     T_prime = y_single_new[T_idx]*ref_quant.Tref;
     qv_prime = y_single_new[qv_idx]*ref_quant.qref;
