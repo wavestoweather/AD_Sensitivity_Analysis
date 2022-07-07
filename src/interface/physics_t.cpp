@@ -131,6 +131,24 @@ void physics_t::finish_call(
     res[S_idx] = ynew[S_idx].getValue();
 }
 
+void physics_t::set_ref_quants(
+        const double qref,
+        const double pref,
+        const double wref,
+        const double Tref,
+        const double zref,
+        const double Nref,
+        const double timeref) {
+
+    ref_quant.qref = qref;
+    ref_quant.pref = pref;
+    ref_quant.wref = wref;
+    ref_quant.Tref = Tref;
+    ref_quant.zref = zref;
+    ref_quant.Nref = Nref;
+    ref_quant.tref = timeref;
+}
+
 void physics_t::setup_model_constants(
     const double dt_prime,
     const double uncertainty_perc) {
