@@ -728,10 +728,8 @@ void netcdf_reader_t::init_netcdf(
 #ifdef MET3D
     double &start_time,
 #endif
-//    const char *input_file,
     const bool &checkpoint_flag,
     model_constants_t<float_t> &cc,
-//    const int &simulation_mode,
     const double current_time,
     const reference_quantities_t &ref_quant) {
     std::vector<size_t> startp, countp;

@@ -17,7 +17,6 @@
 struct netcdf_reader_t {
     uint64_t n_ensembles;
     uint64_t n_trajectories;
-    // double dlon, dlat;
     bool start_time_idx_given; /*!< True if start_time_idx is given by the user. */
     uint64_t start_time_idx; /*!< The start time index. */
     uint64_t start_time_idx_original; /*!< The initial start time index. */
@@ -91,10 +90,8 @@ struct netcdf_reader_t {
 #ifdef MET3D
         double &start_time,
 #endif
-//        const char *input_file,
         const bool &checkpoint_flag,
         model_constants_t<float_t> &cc,
-//        const int &simulation_mode,
         const double current_time,
         const reference_quantities_t &ref_quant);
 

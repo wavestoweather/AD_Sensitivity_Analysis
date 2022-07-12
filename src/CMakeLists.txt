@@ -41,6 +41,12 @@ if( TARGET )
         set_property(TARGET test_tape PROPERTY CXX_STANDARD_REQUIRED ON)
         target_link_libraries(test_tap ${targets} nlohmann_json::nlohmann_json)
     endif()
+    if( "${TARGET}" MATCHES "reader_test" )
+        add_executable(reader_test ${TYPES_SRCS} tests/reader_test.cpp)
+        set_property(TARGET reader_test PROPERTY CXX_STANDARD 17)
+        set_property(TARGET reader_test PROPERTY CXX_STANDARD_REQUIRED ON)
+        target_link_libraries(reader_test ${targets} nlohmann_json::nlohmann_json)
+    endif()
     if( "${TARGET}" MATCHES "python_interface" )
         set(TYPES_SRCS
                 microphysics/constants.cpp
@@ -57,7 +63,6 @@ if( TARGET )
                 types/task_scheduler_t.cpp
                 misc/general.cpp
                 )
-#        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
         add_library(python_interface MODULE ${TYPES_SRCS} interface/physics_t.cpp)
         set_property(TARGET python_interface PROPERTY CXX_STANDARD 17)

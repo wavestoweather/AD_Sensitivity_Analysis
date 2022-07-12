@@ -1852,7 +1852,7 @@ void output_handle_t::buffer(
 #if !defined(B_EIGHT)
         output_buffer_flags[4][n_snapshots] = netcdf_reader.get_asc600(t);
 #else
-        output_buffer_flags[1][n_snapshots] = netcdf_reader.get_asc600(t);
+        output_buffer_flags[0][n_snapshots] = netcdf_reader.get_asc600(t);
 #endif
     }
     // Value of perturbed parameter
@@ -1951,7 +1951,6 @@ bool output_handle_t::flush_buffer(
 #endif
     for (uint64_t i=0; i < num_comp; i++) {
 #if defined(DEVELOP)
-//        if (i >= 12 && i < 21) continue;
         std::cout << "traj: " << traj << " at " << flushed_snapshots
                   << " i: " << i << "/" << num_comp
                   << " output_size: " << output_buffer[i].size()
@@ -1994,7 +1993,7 @@ bool output_handle_t::flush_buffer(
                 output_buffer_flags[i].data()));
 #else
         SUCCESS_OR_DIE(
-            nc_put_vara(
+                nc_put_vara(
                 ncid,
                 varid[Var_idx::asc600+i],
                 startp.data(),
@@ -2246,6 +2245,13 @@ bool output_handle_t::flush_buffer(
         } else {
             // Compressed output: No strided output needed
             // No compression: No strided output needed
+#ifdef DEVELOP
+#ifdef COMPRESS_OUTPUT
+            std::cout << "No strided output needed for compressed gradients\n";
+#else
+            std::cout << "No strided output needed for gradients\n";
+#endif
+#endif
             if (!track_ic) {
                 for (uint64_t j=0; j < num_par-num_par_init; j++) {
                     if (cc.trace_check(j, false)) {
@@ -2286,6 +2292,9 @@ bool output_handle_t::flush_buffer(
     } else {
         // Compression doesn't work in the simulation mode limited_time_ensemble with
         // strided writes. We have to do that manually.
+#ifdef DEVELOP
+        std::cout << "Mode: limited_time_ensemble with manual strides\n";
+#endif
         std::vector<size_t> startp2, countp2;
         startp2.push_back(0);
         if (no_flush || cc.traj_id != 0) {
@@ -2344,6 +2353,9 @@ bool output_handle_t::flush_buffer(
     } else if (cc.traj_id == 0) {
         // no compression: limited_time_ensembles with and without strided output
         // Only traj_id = 0 writes gradients
+#ifdef DEVELOP
+        std::cout << "No compression for limited_time_ensembles\n";
+#endif
         std::vector<size_t> startp2, countp2;
         startp2.push_back(0);
         if (no_flush) {
@@ -2422,6 +2434,9 @@ bool output_handle_t::flush_buffer(
             }
         }
     }
+#endif
+#ifdef DEVELOP
+    std::cout << "flushing done\n";
 #endif
     if (!no_flush) flushed_snapshots += n_snapshots;
     n_snapshots = 0;
