@@ -1,6 +1,7 @@
 from bokeh.models import Range1d, LinearAxis, GlyphRenderer
 import holoviews as hv
 from holoviews import opts
+import hvplot.pandas
 import matplotlib
 import numpy as np
 import os
@@ -460,6 +461,7 @@ def plot_mse(
         inf_val=inf_val,
         legend_pos=legend_pos,
         corr_line=corr_line,
+        plot_types=plot_types,
     )
 
 
@@ -893,7 +895,7 @@ if __name__ == "__main__":
         action="store_true",
         help="""
         If true: Plot input parameter types in different colors.
-        Types means here wether a parameter is physical or rather artificial.
+        Types means here if a parameter is physical or rather artificial.
         """,
     )
     parser.add_argument(

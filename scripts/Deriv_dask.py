@@ -3624,10 +3624,14 @@ class Deriv_dask:
                 cmap = plt.get_cmap("tab10")
                 colors = {}
                 cmap_values = []
-                for i, rt in enumerate(np.unique(mse_df["Ratio Type"])):
-                    colors[rt] = matplotlib.colors.to_hex(cmap(i)[0:-1])
-                    cmap_values.append(colors[rt])
-                by_col = "Ratio Type"
+                if "Ratio Type" in mse_df:
+                    for i, rt in enumerate(np.unique(mse_df["Ratio Type"])):
+                        colors[rt] = matplotlib.colors.to_hex(cmap(i)[0:-1])
+                        cmap_values.append(colors[rt])
+                    by_col = "Ratio Type"
+                else:
+                    by_col = None
+                    cmap_values.append(matplotlib.colors.to_hex(cmap(0)[0:-1]))
             else:
                 cmap_values = []
                 colors = {}

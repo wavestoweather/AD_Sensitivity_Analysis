@@ -1789,6 +1789,8 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None, only_asc600=Fa
         in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     out_params = ds["Output_Parameter_ID"]
     param_name = []
+    if only_asc600:
+        param_name.append("asc600")
     for out_p in out_params:
         param_name.append(latexify.param_id_map[out_p.values.item()])
     all_params = param_name + in_params
@@ -1892,6 +1894,8 @@ def get_cov_matrix_phase(
         in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     out_params = ds["Output_Parameter_ID"]
     param_name = []
+    if only_asc600:
+        param_name.append("asc600")
     for out_p in out_params:
         param_name.append(latexify.param_id_map[out_p.values.item()])
     phases = ["warm phase", "mixed phase", "ice phase", "neutral phase"]
