@@ -1403,7 +1403,7 @@ def get_histogram_cond(
             ds = xr.open_dataset(
                 file_path + files[0], decode_times=False, engine="netcdf4"
             )
-        out_params = ds["Output_Parameter_ID"]
+        out_params = list(ds["Output_Parameter_ID"])
     for cond in conditional_hist:
         if cond not in out_params:
             out_params.append(cond)
