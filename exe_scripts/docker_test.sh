@@ -64,7 +64,7 @@ if [ -f "${OUTPUT_PATH}${FILENAME}.nc" ]
 then
     rm "${OUTPUT_PATH}${FILENAME}.nc"
 fi
-echo "
+
 mpirun -n ${NTASKS} build/bin/./trajectories \
 -w ${WRITE_INDEX} \
 -a ${AUTO_TYPE} \
@@ -80,4 +80,3 @@ mpirun -n ${NTASKS} build/bin/./trajectories \
 -l ${INPUT_FILENAME} \
 -s ${TRACK_FILE} \
 -u ${WARM_UP}
-"
