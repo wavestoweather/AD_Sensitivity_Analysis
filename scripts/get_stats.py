@@ -8,7 +8,7 @@ import pandas as pd
 import pickle
 
 try:
-    from tqdm import tqdm
+    from tqdm.notebook import tqdm
 except:
     from progressbar import progressbar as tqdm
 import seaborn as sns
@@ -1496,7 +1496,9 @@ def get_histogram_cond(
             ):
                 ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
                 hist_tmp, _, _ = np.histogram2d(
-                    ds[cond], ds[out_name], [edges[cond], edges[out_name]]
+                    ds[cond].values.flatten(),
+                    ds[out_name].values.flatten(),
+                    [edges[cond], edges[out_name]],
                 )
                 if out_name in hist:
                     hist[out_name] += hist_tmp
@@ -1507,8 +1509,8 @@ def get_histogram_cond(
                     if in_p not in edges_in_params[out_name]:
                         continue
                     hist_tmp, _, _ = np.histogram2d(
-                        ds_tmp[cond],
-                        ds_tmp[in_p],
+                        ds_tmp[cond].values.flatten(),
+                        ds_tmp[in_p].values.flatten(),
                         [edges[cond], edges_in_params[out_name][in_p]],
                     )
                     if in_p in hist_in_params[out_name]:
@@ -1519,7 +1521,9 @@ def get_histogram_cond(
                 if out_p == cond:
                     continue
                 hist_tmp, _, _ = np.histogram2d(
-                    ds[cond], ds[out_p], [edges[cond], edges[out_p]]
+                    ds[cond].values.flatten(),
+                    ds[out_p].values.flatten(),
+                    [edges[cond], edges[out_p]],
                 )
                 if out_p in hist:
                     hist[out_p] += hist_tmp
