@@ -1403,10 +1403,10 @@ def get_histogram_cond(
             ds = xr.open_dataset(
                 file_path + files[0], decode_times=False, engine="netcdf4"
             )
-        out_params = list(ds["Output_Parameter_ID"])
+        out_params = ds["Output_Parameter_ID"]
     for cond in conditional_hist:
-        if cond not in out_params:
-            out_params.append(cond)
+        if cond not in additional_params:
+            additional_params.append(cond)
 
     param_name = []
     for idx in out_params:
@@ -1519,6 +1519,8 @@ def get_histogram_cond(
                         hist_in_params[out_name][in_p] = hist_tmp
             if additional_params is not None:
                 for out_p in tqdm(additional_params, leave=False):
+                    if out_p == cond:
+                        continue
                     hist_tmp, _, _ = np.histogram2d(
                         ds[cond], ds[out_p], [edges[cond], edges[out_p]]
                     )
