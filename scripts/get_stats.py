@@ -16,14 +16,18 @@ import xarray as xr
 
 try:
     from Deriv_dask import Deriv_dask
-    from latexify import in_params_dic, physical_params
+    from latexify import in_params_dic, physical_params, in_params_notation_mapping
     from plot_mse import load_and_append, reduce_df
     from segment_identifier import d_unnamed
     from create_mse import load_and_append
     import latexify as latexify
 except:
     from scripts.Deriv_dask import Deriv_dask
-    from scripts.latexify import in_params_dic, physical_params
+    from scripts.latexify import (
+        in_params_dic,
+        physical_params,
+        in_params_notation_mapping,
+    )
     from scripts.plot_mse import load_and_append, reduce_df
     from scripts.segment_identifier import d_unnamed
     from scripts.create_mse import load_and_append
@@ -974,9 +978,10 @@ def print_large_impact_no_sens(ds, top=50):
     )
     tmp_df2 = tmp_df2.loc[tmp_df2["Predicted Squared Error"] != 0]
     error_key = "Mean Squared Error"
+    out_params = tmp_df["Output Parameter"]
 
     for out_p in out_params:
-        out_p = out_p
+        out_p = out_p.item()
         print(f"########################### {out_p} ########################")
         text += f"########################### {out_p} ########################"
         df = tmp_df.loc[tmp_df["Output Parameter"] == out_p]
@@ -1223,6 +1228,8 @@ def get_histogram(
     in_params
     out_params
     n_bins
+    additional_params=None,
+    only_asc600
 
     Returns
     -------
@@ -1348,7 +1355,183 @@ def get_histogram(
                 else:
                     hist[out_p] = hist_tmp
 
-    return hist, hist_in_params, edges, edges_in_params
+    return {
+        "hist_out_params": hist,
+        "hist_in_params": hist_in_params,
+        "edges_out_params": edges,
+        "edges_in_params": edges_in_params,
+    }
+
+
+def get_histogram_cond(
+    file_path,
+    in_params=None,
+    out_params=None,
+    conditional_hist=[],
+    n_bins=100,
+    additional_params=None,
+    only_asc600=False,
+):
+    """
+    Get a 2D histogram where 'cond' is the parameter for which the edges are calculated. The final 2D histogram
+    is the count for values that are in the bin defined by 'cond' and in the bin calculated
+    from in_params or out_params.
+
+    Parameters
+    ----------
+    file_path
+    in_params
+    out_params
+    cond : string
+        The model state variable (aka output parameter) for which additional edges shall be calculated.
+    n_bins
+    additional_params=None,
+    only_asc600
+
+    Returns
+    -------
+
+    """
+    files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+    ds = None
+    if in_params is None:
+        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+        in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
+
+    if out_params is None:
+        if ds is None:
+            ds = xr.open_dataset(
+                file_path + files[0], decode_times=False, engine="netcdf4"
+            )
+        out_params = ds["Output_Parameter_ID"]
+    for cond in conditional_hist:
+        if cond not in out_params:
+            out_params.append(cond)
+
+    param_name = []
+    for idx in out_params:
+        param_name.append(latexify.param_id_map[idx.values])
+
+    min_max = {}
+    min_max_in_params = {}
+    for out_p in param_name:
+        min_max_in_params[out_p] = {}
+
+    for f in tqdm(files):
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        if only_asc600:
+            ds = ds.where(ds["asc600"] == 1)
+        for out_p, out_name in tqdm(
+            zip(out_params, param_name), leave=False, total=len(param_name)
+        ):
+            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            min_p = np.min(ds_tmp[out_name]).values
+            max_p = np.max(ds_tmp[out_name]).values
+            if out_name in min_max.keys():
+                if min_p < min_max[out_name][0]:
+                    min_max[out_name][0] = min_p
+                if max_p > min_max[out_name][1]:
+                    min_max[out_name][1] = max_p
+            else:
+                min_max[out_name] = [min_p, max_p]
+            for in_p in tqdm(in_params, leave=False):
+                min_p = np.min(ds_tmp[in_p]).values
+                max_p = np.max(ds_tmp[in_p]).values
+                if in_p in min_max_in_params[out_name]:
+                    if min_p < min_max_in_params[out_name][in_p][0]:
+                        min_max_in_params[out_name][in_p][0] = min_p
+                    if max_p > min_max_in_params[out_name][in_p][1]:
+                        min_max_in_params[out_name][in_p][1] = max_p
+                else:
+                    min_max_in_params[out_name][in_p] = [min_p, max_p]
+        if additional_params is not None:
+            for out_p in tqdm(additional_params, leave=False):
+                min_p = np.min(ds[out_p]).values
+                max_p = np.max(ds[out_p]).values
+                if out_p in min_max.keys():
+                    if min_p < min_max[out_p][0]:
+                        min_max[out_p][0] = min_p
+                    if max_p > min_max[out_p][1]:
+                        min_max[out_p][1] = max_p
+                else:
+                    min_max[out_p] = [min_p, max_p]
+
+    edges = {}
+    edges_in_params = {}
+    for out_p in param_name:
+        delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
+        edges[out_p] = np.arange(
+            min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
+        )
+        edges_in_params[out_p] = {}
+        for in_p in in_params:
+            delta = (
+                min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
+            ) / n_bins
+            if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][1]:
+                continue
+            else:
+                edges_in_params[out_p][in_p] = np.arange(
+                    min_max_in_params[out_p][in_p][0],
+                    min_max_in_params[out_p][in_p][1] + delta / 2,
+                    delta,
+                )
+    if additional_params is not None:
+        for out_p in tqdm(additional_params, leave=False):
+            delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
+            edges[out_p] = np.arange(
+                min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
+            )
+
+    hist_conditional = {
+        "edges_out_params": edges,
+        "edges_in_params": edges_in_params,
+    }
+
+    for f in tqdm(files):
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        for cond in tqdm(conditional_hist, leave=False):
+            hist = {}
+            hist_in_params = {}
+            for out_p, out_name in tqdm(
+                zip(out_params, param_name), leave=False, total=len(param_name)
+            ):
+                ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+                hist_tmp, _, _ = np.histogram2d(
+                    ds[cond], ds[out_name], [edges[cond], edges[out_name]]
+                )
+                if out_name in hist:
+                    hist[out_name] += hist_tmp
+                else:
+                    hist[out_name] = hist_tmp
+                    hist_in_params[out_name] = {}
+                for in_p in tqdm(in_params, leave=False):
+                    if in_p not in edges_in_params[out_name]:
+                        continue
+                    hist_tmp, _, _ = np.histogram2d(
+                        ds_tmp[cond],
+                        ds_tmp[in_p],
+                        [edges[cond], edges_in_params[out_name][in_p]],
+                    )
+                    if in_p in hist_in_params[out_name]:
+                        hist_in_params[out_name][in_p] += hist_tmp
+                    else:
+                        hist_in_params[out_name][in_p] = hist_tmp
+            if additional_params is not None:
+                for out_p in tqdm(additional_params, leave=False):
+                    hist_tmp, _, _ = np.histogram2d(
+                        ds[cond], ds[out_p], [edges[cond], edges[out_p]]
+                    )
+                    if out_p in hist:
+                        hist[out_p] += hist_tmp
+                    else:
+                        hist[out_p] = hist_tmp
+            hist_conditional[cond] = {
+                "hist_out_params": hist,
+                "hist_in_params": hist_in_params,
+            }
+
+    return hist_conditional
 
 
 def traj_plot_histogram_out(
@@ -1394,7 +1577,6 @@ def traj_plot_histogram_out(
         _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
         _ = ax.set_title(title)
         fig = ax.get_figure()
-        # fig = ax.fig
         i = 0
         store_type = filename.split(".")[-1]
         store_path = filename[0 : -len(store_type) - 1]
@@ -1789,8 +1971,9 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None, only_asc600=Fa
         in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     out_params = ds["Output_Parameter_ID"]
     param_name = []
+    more_params = []
     if only_asc600:
-        param_name.append("asc600")
+        more_params.append("asc600")
     for out_p in out_params:
         param_name.append(latexify.param_id_map[out_p.values.item()])
     all_params = param_name + in_params
@@ -1800,7 +1983,7 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None, only_asc600=Fa
     n_total = {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
     for f in tqdm(files):
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
-            all_params
+            all_params + more_params
         ]
         if only_asc600:
             ds = ds.where(ds["asc600"] == 1)
@@ -1828,7 +2011,7 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None, only_asc600=Fa
     n_total = {out_p: {p: 0.0 for p in all_params} for out_p in param_name}
     for f in tqdm(files):
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
-            all_params
+            all_params + more_params
         ]
         if only_asc600:
             ds = ds.where(ds["asc600"] == 1)
@@ -1894,8 +2077,9 @@ def get_cov_matrix_phase(
         in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     out_params = ds["Output_Parameter_ID"]
     param_name = []
+    more_params = ["phase"]
     if only_asc600:
-        param_name.append("asc600")
+        more_params.append("asc600")
     for out_p in out_params:
         param_name.append(latexify.param_id_map[out_p.values.item()])
     phases = ["warm phase", "mixed phase", "ice phase", "neutral phase"]
@@ -1915,7 +2099,7 @@ def get_cov_matrix_phase(
     }
     for f in tqdm(files):
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
-            all_params + ["phase"]
+            all_params + more_params
         ]
         if only_asc600:
             ds = ds.where(ds["asc600"] == 1)
@@ -1957,7 +2141,7 @@ def get_cov_matrix_phase(
     }
     for f in tqdm(files):
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
-            all_params + ["phase"]
+            all_params + more_params
         ]
         if only_asc600:
             ds = ds.where(ds["asc600"] == 1)
@@ -2016,7 +2200,7 @@ def get_cov_matrix_phase(
     return means, cov
 
 
-def plot_heatmap(
+def plot_heatmap_cov(
     data_in,
     out_param,
     names,
@@ -2029,6 +2213,7 @@ def plot_heatmap(
     height=16,
 ):
     """
+    Plot a heatmap of a covariance matrix.
 
     Parameters
     ----------
@@ -2102,6 +2287,90 @@ def plot_heatmap(
         return None
 
 
+def plot_heatmap_histogram(
+    hist_conditional,
+    in_params,
+    out_params,
+    conditions,
+    title=None,
+    filename=None,
+    width=17,
+    height=16,
+    verbose=False,
+):
+    """
+    Plot 2D histogram.
+
+    Parameters
+    ----------
+    hist_conditional
+    in_params : list of strings
+    out_params : list of strings
+    title
+    filename
+    width
+    height
+
+    Returns
+    -------
+
+    """
+    sns.set(rc={"figure.figsize": (width, height)})
+
+    def plot_hist(hist2d, x_name, y_name, x_ticks, y_ticks, title=None):
+        if title is None:
+            title = f"Histograms for {latexify.parse_word(x_name)} and {latexify.parse_word(y_name)}"
+        if verbose:
+            print(f"Plotting histogram for {x_name}, {y_name}")
+
+        ax = sns.heatmap(
+            hist2d,
+            cmap="viridis",
+            cbar=True,
+            square=True,
+        )
+        x_labels = [f"{tick:1.1e}" for tick in x_ticks]
+        _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
+        y_labels = [f"{tick:1.1e}" for tick in y_ticks]
+        _ = ax.set_yticklabels(y_labels)
+        _ = ax.set_title(title)
+        plt.xlabel(latexify.parse_word(x_name))
+        plt.ylabel(latexify.parse_word(y_name))
+        fig = ax.get_figure()
+        i = 0
+        store_type = filename.split(".")[-1]
+        store_path = filename[0 : -len(store_type) - 1]
+        save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+        while os.path.isfile(save):
+            i = i + 1
+            save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+        plt.tight_layout()
+        fig.savefig(save, dpi=300)
+        plt.clf()
+
+    for c in tqdm(conditions):
+        for in_p in tqdm(in_params, leave=False):
+            plot_hist(
+                hist_conditional[c]["hist_in_params"][in_p],
+                c,
+                in_p,
+                hist_conditional["edges_out_params"][c][:-1],
+                hist_conditional["edges_in_params"][in_p][:-1],
+                title,
+            )
+        for out_p in tqdm(out_params, leave=False):
+            plot_hist(
+                hist_conditional[c]["hist_out_params"][out_p],
+                c,
+                out_p,
+                hist_conditional["edges_out_params"][c][:-1],
+                hist_conditional["edges_out_params"][out_p][:-1],
+                title,
+            )
+    if verbose:
+        print("All plots finished!")
+
+
 if __name__ == "__main__":
     import argparse
     from latexify import *
@@ -2173,6 +2442,15 @@ if __name__ == "__main__":
         """,
     )
     parser.add_argument(
+        "--conditional_hist",
+        type=str,
+        nargs="+",
+        default=[],
+        help="""
+        Calculate 2D histograms, where the "x-axis" is given by "conditional_hist".
+        """,
+    )
+    parser.add_argument(
         "--additional_hist_params",
         type=str,
         nargs="+",
@@ -2240,32 +2518,44 @@ if __name__ == "__main__":
                 file_path = args.load_histogram
                 if not file_path.endswith("/"):
                     file_path += "/"
-                with open(file_path + "hist.pkl", "rb") as f:
-                    hist = pickle.load(f)
-                with open(file_path + "edges.pkl", "rb") as f:
-                    edges = pickle.load(f)
-                with open(file_path + "hist_in_params.pkl", "rb") as f:
-                    hist_in_params = pickle.load(f)
-                with open(file_path + "edges_in_params.pkl", "rb") as f:
-                    edges_in_params = pickle.load(f)
+                if len(args.conditional_hist) == 0:
+                    with open(file_path + "all_hist.pkl", "rb") as f:
+                        all_hist = pickle.load(f)
+                    hist = all_hist["hist_out_params"]
+                    hist_in_params = all_hist["hist_in_params"]
+                    edges = all_hist["edges_out_params"]
+                    edges_in_params = all_hist["edges_in_params"]
+                else:
+                    with open(file_path + "hist_conditional.pkl", "rb") as f:
+                        hist_conditional = pickle.load(f)
             else:
                 print("########### Calculate histograms ###########")
-                hist, hist_in_params, edges, edges_in_params = get_histogram(
-                    args.file,
-                    additional_params=args.additional_hist_params,
-                    only_asc600=args.only_asc600,
-                )
+                if len(args.conditional_hist) == 0:
+                    all_hist = get_histogram(
+                        args.file,
+                        additional_params=args.additional_hist_params,
+                        only_asc600=args.only_asc600,
+                    )
+                    hist = all_hist["hist_out_params"]
+                    hist_in_params = all_hist["hist_in_params"]
+                    edges = all_hist["edges_out_params"]
+                    edges_in_params = all_hist["edges_in_params"]
+                else:
+                    hist_conditional = get_histogram_cond(
+                        args.file,
+                        cond=args.conditional_hist,
+                        additional_params=args.additional_hist_params,
+                        only_asc600=args.only_asc600,
+                    )
             if args.save_histogram != "no":
                 print("########### Store histograms ###########")
                 file_path = args.save_histogram
-                with open(file_path + "hist.pkl", "wb") as f:
-                    pickle.dump(hist, f)
-                with open(file_path + "edges.pkl", "wb") as f:
-                    pickle.dump(edges, f)
-                with open(file_path + "hist_in_params.pkl", "wb") as f:
-                    pickle.dump(hist_in_params, f)
-                with open(file_path + "edges_in_params.pkl", "wb") as f:
-                    pickle.dump(edges_in_params, f)
+                if len(args.conditional_hist) == 0:
+                    with open(file_path + "all_hist.pkl", "wb") as f:
+                        pickle.dump(all_hist, f)
+                else:
+                    with open(file_path + "hist_conditional.pkl", "wb") as f:
+                        pickle.dump(hist_conditional, f)
 
             if args.plot_type == "all" or args.plot_type == "hist_out":
                 print(
@@ -2390,7 +2680,7 @@ if __name__ == "__main__":
         if args.plot_type == "all" or args.plot_type == "cov_heat":
             print("########### Plot covariance matrix ###########")
             for out_p in tqdm(cov):
-                _ = plot_heatmap(
+                _ = plot_heatmap_cov(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
@@ -2402,7 +2692,7 @@ if __name__ == "__main__":
                     height=args.height,
                 )
                 plt.clf()
-                _ = plot_heatmap(
+                _ = plot_heatmap_cov(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
@@ -2413,7 +2703,7 @@ if __name__ == "__main__":
                     height=args.height,
                 )
                 plt.clf()
-                _ = plot_heatmap(
+                _ = plot_heatmap_cov(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
@@ -2426,7 +2716,7 @@ if __name__ == "__main__":
                     height=args.height,
                 )
                 plt.clf()
-                _ = plot_heatmap(
+                _ = plot_heatmap_cov(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
@@ -2445,7 +2735,7 @@ if __name__ == "__main__":
                     continue
                 phase_strip = phase.strip()
                 for out_p in tqdm(cov_phase[phase], leave=False):
-                    _ = plot_heatmap(
+                    _ = plot_heatmap_cov(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=list(means_phase[phase][out_p].keys()),
@@ -2457,7 +2747,7 @@ if __name__ == "__main__":
                         height=args.height,
                     )
                     plt.clf()
-                    _ = plot_heatmap(
+                    _ = plot_heatmap_cov(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=list(means_phase[phase][out_p].keys()),
@@ -2468,7 +2758,7 @@ if __name__ == "__main__":
                         height=args.height,
                     )
                     plt.clf()
-                    _ = plot_heatmap(
+                    _ = plot_heatmap_cov(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=means_phase[phase][out_p].keys(),
@@ -2481,7 +2771,7 @@ if __name__ == "__main__":
                         height=args.height,
                     )
                     plt.clf()
-                    _ = plot_heatmap(
+                    _ = plot_heatmap_cov(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=means_phase[phase][out_p].keys(),
