@@ -1369,7 +1369,7 @@ def get_histogram_cond(
     out_params=None,
     conditional_hist=[],
     n_bins=100,
-    additional_params=None,
+    additional_params=[],
     only_asc600=False,
 ):
     """
@@ -1444,17 +1444,16 @@ def get_histogram_cond(
                         min_max_in_params[out_name][in_p][1] = max_p
                 else:
                     min_max_in_params[out_name][in_p] = [min_p, max_p]
-        if additional_params is not None:
-            for out_p in tqdm(additional_params, leave=False):
-                min_p = np.min(ds[out_p]).values
-                max_p = np.max(ds[out_p]).values
-                if out_p in min_max.keys():
-                    if min_p < min_max[out_p][0]:
-                        min_max[out_p][0] = min_p
-                    if max_p > min_max[out_p][1]:
-                        min_max[out_p][1] = max_p
-                else:
-                    min_max[out_p] = [min_p, max_p]
+        for out_p in tqdm(additional_params, leave=False):
+            min_p = np.min(ds[out_p]).values
+            max_p = np.max(ds[out_p]).values
+            if out_p in min_max.keys():
+                if min_p < min_max[out_p][0]:
+                    min_max[out_p][0] = min_p
+                if max_p > min_max[out_p][1]:
+                    min_max[out_p][1] = max_p
+            else:
+                min_max[out_p] = [min_p, max_p]
 
     edges = {}
     edges_in_params = {}
@@ -1476,12 +1475,11 @@ def get_histogram_cond(
                     min_max_in_params[out_p][in_p][1] + delta / 2,
                     delta,
                 )
-    if additional_params is not None:
-        for out_p in tqdm(additional_params, leave=False):
-            delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
-            edges[out_p] = np.arange(
-                min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
-            )
+    for out_p in tqdm(additional_params, leave=False):
+        delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
+        edges[out_p] = np.arange(
+            min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
+        )
 
     hist_conditional = {
         "edges_out_params": edges,
@@ -1517,17 +1515,16 @@ def get_histogram_cond(
                         hist_in_params[out_name][in_p] += hist_tmp
                     else:
                         hist_in_params[out_name][in_p] = hist_tmp
-            if additional_params is not None:
-                for out_p in tqdm(additional_params, leave=False):
-                    if out_p == cond:
-                        continue
-                    hist_tmp, _, _ = np.histogram2d(
-                        ds[cond], ds[out_p], [edges[cond], edges[out_p]]
-                    )
-                    if out_p in hist:
-                        hist[out_p] += hist_tmp
-                    else:
-                        hist[out_p] = hist_tmp
+            for out_p in tqdm(additional_params, leave=False):
+                if out_p == cond:
+                    continue
+                hist_tmp, _, _ = np.histogram2d(
+                    ds[cond], ds[out_p], [edges[cond], edges[out_p]]
+                )
+                if out_p in hist:
+                    hist[out_p] += hist_tmp
+                else:
+                    hist[out_p] = hist_tmp
             hist_conditional[cond] = {
                 "hist_out_params": hist,
                 "hist_in_params": hist_in_params,
