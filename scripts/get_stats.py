@@ -8,7 +8,7 @@ import pandas as pd
 import pickle
 
 try:
-    from tqdm.notebook import tqdm
+    from tqdm import tqdm
 except:
     from progressbar import progressbar as tqdm
 import seaborn as sns
@@ -1489,8 +1489,11 @@ def get_histogram_cond(
     for f in tqdm(files):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
         for cond in tqdm(conditional_hist, leave=False):
-            hist = {}
-            hist_in_params = {}
+            if cond not in hist_conditional:
+                hist_conditional[cond] = {
+                    "hist_out_params": {},
+                    "hist_in_params": {},
+                }
             for out_p, out_name in tqdm(
                 zip(out_params, param_name), leave=False, total=len(param_name)
             ):
@@ -1500,11 +1503,11 @@ def get_histogram_cond(
                     ds[out_name].values.flatten(),
                     [edges[cond], edges[out_name]],
                 )
-                if out_name in hist:
-                    hist[out_name] += hist_tmp
+                if out_name in hist_conditional[cond]["hist_out_params"]:
+                    hist_conditional[cond]["hist_out_params"][out_name] += hist_tmp
                 else:
-                    hist[out_name] = hist_tmp
-                    hist_in_params[out_name] = {}
+                    hist_conditional[cond]["hist_out_params"][out_name] = hist_tmp
+                    hist_conditional[cond]["hist_in_params"][out_name] = {}
                 for in_p in tqdm(in_params, leave=False):
                     if in_p not in edges_in_params[out_name]:
                         continue
@@ -1513,10 +1516,14 @@ def get_histogram_cond(
                         ds_tmp[in_p].values.flatten(),
                         [edges[cond], edges_in_params[out_name][in_p]],
                     )
-                    if in_p in hist_in_params[out_name]:
-                        hist_in_params[out_name][in_p] += hist_tmp
+                    if in_p in hist_conditional[cond]["hist_in_params"][out_name]:
+                        hist_conditional[cond]["hist_in_params"][out_name][
+                            in_p
+                        ] += hist_tmp
                     else:
-                        hist_in_params[out_name][in_p] = hist_tmp
+                        hist_conditional[cond]["hist_in_params"][out_name][
+                            in_p
+                        ] = hist_tmp
             for out_p in tqdm(additional_params, leave=False):
                 if out_p == cond:
                     continue
@@ -1525,14 +1532,10 @@ def get_histogram_cond(
                     ds[out_p].values.flatten(),
                     [edges[cond], edges[out_p]],
                 )
-                if out_p in hist:
-                    hist[out_p] += hist_tmp
+                if out_p in hist_conditional[cond]["hist_out_params"]:
+                    hist_conditional[cond]["hist_out_params"][out_p] += hist_tmp
                 else:
-                    hist[out_p] = hist_tmp
-            hist_conditional[cond] = {
-                "hist_out_params": hist,
-                "hist_in_params": hist_in_params,
-            }
+                    hist_conditional[cond]["hist_out_params"][out_p] = hist_tmp
 
     return hist_conditional
 
@@ -2322,46 +2325,61 @@ def plot_heatmap_histogram(
 
     def plot_hist(hist2d, x_name, y_name, x_ticks, y_ticks, title=None):
         if title is None:
-            title = f"Histograms for {latexify.parse_word(x_name)} and {latexify.parse_word(y_name)}"
+            # title = f"Histograms for {latexify.parse_word(x_name)} and {latexify.parse_word(y_name)}"
+            title = f"Histograms for {x_name} and {y_name}"
         if verbose:
             print(f"Plotting histogram for {x_name}, {y_name}")
-
-        ax = sns.heatmap(
-            hist2d,
-            cmap="viridis",
-            cbar=True,
-            square=True,
-        )
+        try:
+            ax = sns.heatmap(
+                np.transpose(
+                    hist2d
+                ),  # np.histogram2d uses the first dimension for the x-axis
+                cmap="viridis",
+                cbar=True,
+                square=True,
+                norm=mpl_col.LogNorm(),
+            )
+        except:
+            print(f"Plotting for {x_name}, {y_name} failed")
+            return
+        ax.set_xticks(range(np.shape(hist2d)[0]))
+        ax.set_yticks(range(np.shape(hist2d)[1]))
         x_labels = [f"{tick:1.1e}" for tick in x_ticks]
         _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
         y_labels = [f"{tick:1.1e}" for tick in y_ticks]
         _ = ax.set_yticklabels(y_labels)
         _ = ax.set_title(title)
-        plt.xlabel(latexify.parse_word(x_name))
-        plt.ylabel(latexify.parse_word(y_name))
+
+        plt.xlabel(x_name)
+        plt.ylabel(y_name)
+        # plt.xlabel(latexify.parse_word(x_name))
+        # plt.ylabel(latexify.parse_word(y_name))
         fig = ax.get_figure()
         i = 0
         store_type = filename.split(".")[-1]
         store_path = filename[0 : -len(store_type) - 1]
-        save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+        save = (
+            store_path + "_" + x_name + "_" + y_name + "_{:03d}.".format(i) + store_type
+        )
         while os.path.isfile(save):
             i = i + 1
-            save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+            save = (
+                store_path
+                + "_"
+                + x_name
+                + "_"
+                + y_name
+                + "_{:03d}.".format(i)
+                + store_type
+            )
         plt.tight_layout()
         fig.savefig(save, dpi=300)
         plt.clf()
 
     for c in tqdm(conditions):
-        for in_p in tqdm(in_params, leave=False):
-            plot_hist(
-                hist_conditional[c]["hist_in_params"][in_p],
-                c,
-                in_p,
-                hist_conditional["edges_out_params"][c][:-1],
-                hist_conditional["edges_in_params"][in_p][:-1],
-                title,
-            )
         for out_p in tqdm(out_params, leave=False):
+            if c == out_p:
+                continue
             plot_hist(
                 hist_conditional[c]["hist_out_params"][out_p],
                 c,
@@ -2370,6 +2388,20 @@ def plot_heatmap_histogram(
                 hist_conditional["edges_out_params"][out_p][:-1],
                 title,
             )
+        # Sensitivities are p w.r.t. in_p
+        for p in tqdm(list(hist_conditional["edges_in_params"]), leave=False):
+            for in_p in tqdm(in_params, leave=False):
+                if in_p not in hist_conditional[c]["hist_in_params"][p]:
+                    continue
+                plot_hist(
+                    hist_conditional[c]["hist_in_params"][p][in_p],
+                    c,
+                    in_p,
+                    hist_conditional["edges_out_params"][c][:-1],
+                    hist_conditional["edges_in_params"][p][in_p][:-1],
+                    title,
+                )
+
     if verbose:
         print("All plots finished!")
 
@@ -2441,6 +2473,7 @@ if __name__ == "__main__":
         heat: Heatmap for all parameters.
         cov_heat: Heatmap of covariance matrix.
         cov_heat_phases: Heatmap of covariance matrix for each phase.
+        2D_hist : 2D histogram (heatmap) where the x-axis is determined by conditional_hist.
         none: No plots.
         """,
     )
@@ -2451,6 +2484,7 @@ if __name__ == "__main__":
         default=[],
         help="""
         Calculate 2D histograms, where the "x-axis" is given by "conditional_hist".
+        If "load_histogram" is set, you may use "all" to use all available parameters for the x-axis given by the dataset.
         """,
     )
     parser.add_argument(
@@ -2514,6 +2548,7 @@ if __name__ == "__main__":
             or args.plot_type == "hist_out"
             or args.plot_type == "hist_in"
             or args.plot_type == "heat"
+            or args.plot_type == "2D_hist"
             or args.save_histogram != "no"
         ):
             if args.load_histogram != "no":
@@ -2676,6 +2711,31 @@ if __name__ == "__main__":
                 in_params=list(top_magn_set_phase),
                 filepath=args.save_statistics,
                 only_asc600=args.only_asc600,
+            )
+
+        if len(args.conditional_hist) != 0 and (
+            args.plot_type == "all" or args.plot_type == "2D_hist"
+        ):
+            print("########### Plot 2D histogram ###########")
+            if args.conditional_hist[0] == "all":
+                conds = list(hist_conditional.keys())
+                conditions = []
+                for c in conds:
+                    if c != "edges_in_params" and c != "edges_out_params":
+                        conditions.append(c)
+            else:
+                conditions = args.conditional_hist
+            wrt_params = list(hist_conditional["edges_in_params"].keys())
+            plot_heatmap_histogram(
+                hist_conditional,
+                in_params=list(
+                    hist_conditional["edges_in_params"][wrt_params[0]].keys()
+                ),
+                out_params=list(hist_conditional["edges_out_params"].keys()),
+                conditions=conditions,
+                title=None,
+                filename=args.out_file,
+                verbose=args.verbose,
             )
 
         store_type = args.out_file.split(".")[-1]
