@@ -8,7 +8,7 @@ import pandas as pd
 import pickle
 
 try:
-    from tqdm import tqdm
+    from tqdm.auto import tqdm
 except:
     from progressbar import progressbar as tqdm
 import seaborn as sns
@@ -2323,12 +2323,18 @@ def plot_heatmap_histogram(
     """
     sns.set(rc={"figure.figsize": (width, height)})
 
-    def plot_hist(hist2d, x_name, y_name, x_ticks, y_ticks, title=None):
+    def plot_hist(hist2d, x_name, y_name, x_ticks, y_ticks, title=None, p=None):
         if title is None:
             # title = f"Histograms for {latexify.parse_word(x_name)} and {latexify.parse_word(y_name)}"
-            title = f"Histograms for {x_name} and {y_name}"
+            if p is None:
+                title = f"Histograms for {y_name} over {x_name}"
+            else:
+                title = f"Histograms for d {p}/{y_name} over {x_name}"
         if verbose:
-            print(f"Plotting histogram for {x_name}, {y_name}")
+            if p is None:
+                print(f"Plotting histogram for {x_name}, {y_name}")
+            else:
+                print(f"Plotting histogram for {x_name}, d {p}/{y_name}")
         try:
             ax = sns.heatmap(
                 np.transpose(
@@ -2358,11 +2364,7 @@ def plot_heatmap_histogram(
         i = 0
         store_type = filename.split(".")[-1]
         store_path = filename[0 : -len(store_type) - 1]
-        save = (
-            store_path + "_" + x_name + "_" + y_name + "_{:03d}.".format(i) + store_type
-        )
-        while os.path.isfile(save):
-            i = i + 1
+        if p is None:
             save = (
                 store_path
                 + "_"
@@ -2372,6 +2374,42 @@ def plot_heatmap_histogram(
                 + "_{:03d}.".format(i)
                 + store_type
             )
+        else:
+            save = (
+                store_path
+                + "_"
+                + x_name
+                + "_"
+                + p
+                + "_wrt_"
+                + y_name
+                + "_{:03d}.".format(i)
+                + store_type
+            )
+        while os.path.isfile(save):
+            i = i + 1
+            if p is None:
+                save = (
+                    store_path
+                    + "_"
+                    + x_name
+                    + "_"
+                    + y_name
+                    + "_{:03d}.".format(i)
+                    + store_type
+                )
+            else:
+                save = (
+                    store_path
+                    + "_"
+                    + x_name
+                    + "_"
+                    + p
+                    + "_wrt_"
+                    + y_name
+                    + "_{:03d}.".format(i)
+                    + store_type
+                )
         plt.tight_layout()
         fig.savefig(save, dpi=300)
         plt.clf()
@@ -2400,6 +2438,7 @@ def plot_heatmap_histogram(
                     hist_conditional["edges_out_params"][c][:-1],
                     hist_conditional["edges_in_params"][p][in_p][:-1],
                     title,
+                    p,
                 )
 
     if verbose:
@@ -2564,6 +2603,8 @@ if __name__ == "__main__":
                     edges = all_hist["edges_out_params"]
                     edges_in_params = all_hist["edges_in_params"]
                 else:
+                    if args.only_asc600:
+                        file_path += "asc600_"
                     with open(file_path + "hist_conditional.pkl", "rb") as f:
                         hist_conditional = pickle.load(f)
             else:
