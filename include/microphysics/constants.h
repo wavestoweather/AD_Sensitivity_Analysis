@@ -2735,5 +2735,26 @@ const uint32_t n_lookup = 2000;
 const uint32_t n_lookup_highres = 10000;
 const uint32_t n_lookup_hr_dummy = 10;
 
+#ifdef RK4ICE
+/**
+ * Threshold for determining if a phase is an ice or mixed phase for cold hydrometeors.
+ */
+const double ice_q_phase_threshold = 0.0;
+
+/**
+ * Threshold for determining if a phase is an ice or mixed phase for cold hydrometeors.
+ */
+const double ice_n_phase_threshold = 0.0;
+
+/**
+ * Threshold for determining if a phase is a warm or mixed phase for cloud and rain droplets.
+ */
+const double warm_q_phase_threshold = 0.0;
+
+/**
+ * Threshold for determining if a phase is an ice or mixed phase for cloud and rain droplets.
+ */
+const double warm_n_phase_threshold = 0.0;
+#endif
 
 /** @} */  // end of group constants

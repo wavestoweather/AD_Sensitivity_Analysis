@@ -275,7 +275,9 @@ struct output_handle_t{
         const uint32_t sub,
         const uint32_t t,
         const reference_quantities_t &ref_quant,
-        const uint32_t snapshot_index);
+        const uint32_t snapshot_index,
+        const bool previous_step_with_warm,
+        const bool previous_step_with_ice = false);
 
     /**
      * Write the buffered data to disk or call certain functions for collective
@@ -306,7 +308,9 @@ struct output_handle_t{
         const uint32_t write_index,
         const uint32_t snapshot_index,
         const bool last_step,
-        const reference_quantities_t &ref_quant);
+        const reference_quantities_t &ref_quant,
+        const bool previous_step_with_warm,
+        const bool previous_step_with_ice = false);
 
  private:
     /**

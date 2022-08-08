@@ -408,6 +408,30 @@ void finish_last_step(
 #endif
 }
 
+
+template<class float_t>
+void determine_phase_start(
+    const std::vector<float_t> &y_single_old,
+    bool &previous_step_with_ice,
+    bool &previous_step_with_warm) {
+
+    previous_step_with_ice = false;
+#if defined(RK4ICE)
+    if (y_single_old[qi_idx] > ice_q_phase_threshold || y_single_old[Ni_idx] > ice_n_phase_threshold
+        || y_single_old[qg_in_idx] > ice_q_phase_threshold || y_single_old[Ng_idx] > ice_n_phase_threshold
+        || y_single_old[qs_idx] > ice_q_phase_threshold || y_single_old[Ns_idx] > ice_n_phase_threshold
+        || y_single_old[qh_idx] > ice_q_phase_threshold || y_single_old[Nh_idx]  > ice_n_phase_threshold) {
+        previous_step_with_ice = true;
+    }
+#endif
+    previous_step_with_warm = false;
+    if (y_single_old[qc_idx] > warm_q_phase_threshold || y_single_old[qr_idx] > warm_q_phase_threshold
+        || y_single_old[Nc_idx] > warm_n_phase_threshold || y_single_old[Nr_idx] > warm_n_phase_threshold ) {
+        previous_step_with_warm = true;
+    }
+}
+
+
 void run_substeps(
     input_parameters_t &input,
     const reference_quantities_t &ref_quant,
@@ -454,6 +478,10 @@ void run_substeps(
         y_single_old[Ni_idx] += inflow[Ni_in_idx]/cc.num_sub_steps;
         y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
         y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
+    #if defined(B_EIGHT)
+        y_single_old[qh_idx] += inflow[qh_in_idx]/cc.num_sub_steps;
+        y_single_old[Nh_idx] += inflow[Nh_in_idx]/cc.num_sub_steps;
+    #endif
     #endif
 #endif
 #if defined MET3D && defined TURBULENCE
@@ -514,12 +542,14 @@ void run_substeps(
 #ifdef DEVELOP
             std::cout << "process_step\n";
 #endif
+            bool previous_step_with_ice, previous_step_with_warm;
+            determine_phase_start(y_single_old, previous_step_with_ice, previous_step_with_warm);
             // TODO(mahieron): what if delay_out_time is not a multiple of dt_prime?
             out_handler.process_step(cc, netcdf_reader, y_single_new, y_diff,
                 sub, t,
                 input.write_index,
                 input.snapshot_index,
-                last_step, ref_quant);
+                last_step, ref_quant, previous_step_with_warm, previous_step_with_ice);
         }
         // Interchange old and new for next step
         time_old = time_new;
@@ -587,6 +617,10 @@ void run_substeps(
         y_single_old[Ni_idx] += inflow[Ni_in_idx]/cc.num_sub_steps;
         y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
         y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
+    #if defined(B_EIGHT)
+        y_single_old[qh_idx] += inflow[qh_in_idx]/cc.num_sub_steps;
+        y_single_old[Nh_idx] += inflow[Nh_in_idx]/cc.num_sub_steps;
+    #endif
     #endif
 #endif
 #if defined MET3D && defined TURBULENCE
@@ -632,11 +666,14 @@ void run_substeps(
         time_new = (sub + (t+cc.done_steps)*cc.num_sub_steps)*cc.dt;
         if (time_new >= delay_out_time) {
             // TODO(mahieron): what if delay_out_time is not a multiple of dt_prime?
+            bool previous_step_with_ice, previous_step_with_warm;
+            determine_phase_start(y_single_old, previous_step_with_ice, previous_step_with_warm);
+
             out_handler.process_step(cc, netcdf_reader, y_single_new, y_diff,
                 sub, t,
                 input.write_index,
                 input.snapshot_index,
-                last_step, ref_quant);
+                last_step, ref_quant, previous_step_with_warm, previous_step_with_ice);
         }
         // Interchange old and new for next step
         time_old = time_new;
@@ -1022,7 +1059,9 @@ void limited_time_ensemble_simulation(
             0,
             0,
             ref_quant,
-            input.snapshot_index);
+            input.snapshot_index,
+            false,
+            false);
 
         pbar.set_current_step(pbar_counter);
         pbar.progress();
