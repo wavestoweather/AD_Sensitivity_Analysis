@@ -1219,6 +1219,7 @@ def get_histogram(
     n_bins=100,
     additional_params=None,
     only_asc600=False,
+    inoutflow_time=-1,
 ):
     """
 
@@ -1230,6 +1231,7 @@ def get_histogram(
     n_bins
     additional_params=None,
     only_asc600
+    inoutflow_time
 
     Returns
     -------
@@ -1259,7 +1261,15 @@ def get_histogram(
 
     for f in tqdm(files):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
-        if only_asc600:
+        if inoutflow_time > 0:
+            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+            ds_flow = ds_flow.rolling(
+                time=inoutflow_time * 2,  # once for inflow, another for outflow
+                min_periods=1,
+                center=True,
+            ).reduce(np.nanmax)
+            ds = ds.where(ds_flow == 1)
+        elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(param_name)
@@ -1327,6 +1337,16 @@ def get_histogram(
     hist_in_params = {}
     for f in tqdm(files):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        if inoutflow_time > 0:
+            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+            ds_flow = ds_flow.rolling(
+                time=inoutflow_time * 2,  # once for inflow, another for outflow
+                min_periods=1,
+                center=True,
+            ).reduce(np.nanmax)
+            ds = ds.where(ds_flow == 1)
+        elif only_asc600:
+            ds = ds.where(ds["asc600"] == 1)
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(param_name)
         ):
@@ -1371,6 +1391,7 @@ def get_histogram_cond(
     n_bins=100,
     additional_params=[],
     only_asc600=False,
+    inoutflow_time=-1,
 ):
     """
     Get a 2D histogram where 'cond' is the parameter for which the edges are calculated. The final 2D histogram
@@ -1382,7 +1403,7 @@ def get_histogram_cond(
     file_path
     in_params
     out_params
-    cond : string
+    conditional_hist : string
         The model state variable (aka output parameter) for which additional edges shall be calculated.
     n_bins
     additional_params=None,
@@ -1419,7 +1440,15 @@ def get_histogram_cond(
 
     for f in tqdm(files):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
-        if only_asc600:
+        if inoutflow_time > 0:
+            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+            ds_flow = ds_flow.rolling(
+                time=inoutflow_time * 2,  # once for inflow, another for outflow
+                min_periods=1,
+                center=True,
+            ).reduce(np.nanmax)
+            ds = ds.where(ds_flow == 1)
+        elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(param_name)
@@ -1488,6 +1517,16 @@ def get_histogram_cond(
 
     for f in tqdm(files):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        if inoutflow_time > 0:
+            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+            ds_flow = ds_flow.rolling(
+                time=inoutflow_time * 2,  # once for inflow, another for outflow
+                min_periods=1,
+                center=True,
+            ).reduce(np.nanmax)
+            ds = ds.where(ds_flow == 1)
+        elif only_asc600:
+            ds = ds.where(ds["asc600"] == 1)
         for cond in tqdm(conditional_hist, leave=False):
             if cond not in hist_conditional:
                 hist_conditional[cond] = {
@@ -2499,6 +2538,14 @@ if __name__ == "__main__":
         action="store_true",
         help="""
         Consider only time steps during the fastest ascent.
+        """,
+    )
+    parser.add_argument(
+        "--inoutflow_time",
+        default=-1,
+        type=int,
+        help="""
+        Consider only time steps during the fastest ascent and within the given range before (inflow) and after (outflow) of the fastest ascent.
         """,
     )
     parser.add_argument(
