@@ -1894,7 +1894,12 @@ def plot_heatmap_traj(
         plt.clf()
 
 
-def get_sums(file_path, store_path=None, only_asc600=False):
+def get_sums(
+    file_path,
+    store_path=None,
+    only_asc600=False,
+    inoutflow_time=-1,
+):
     """
     Calculate the sum for all gradients over all time steps and trajectories.
 
@@ -1917,7 +1922,15 @@ def get_sums(file_path, store_path=None, only_asc600=False):
     sums = {}
     for f in tqdm(files):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
-        if only_asc600:
+        if inoutflow_time > 0:
+            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+            ds_flow = ds_flow.rolling(
+                time=inoutflow_time * 2,  # once for inflow, another for outflow
+                min_periods=1,
+                center=True,
+            ).reduce(np.nanmax)
+            ds = ds.where(ds_flow == 1)
+        elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         ds[in_params] = np.abs(ds[in_params])
         for out_p, out_name in tqdm(
@@ -1942,7 +1955,12 @@ def get_sums(file_path, store_path=None, only_asc600=False):
     return sums
 
 
-def get_sums_phase(file_path, store_path=None, only_asc600=False):
+def get_sums_phase(
+    file_path,
+    store_path=None,
+    only_asc600=False,
+    inoutflow_time=-1,
+):
     """
     Calculate the sum for all gradients over all time steps and trajectories for each phase.
 
@@ -1966,7 +1984,15 @@ def get_sums_phase(file_path, store_path=None, only_asc600=False):
     sums = {}
     for f in tqdm(files):
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
-        if only_asc600:
+        if inoutflow_time > 0:
+            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+            ds_flow = ds_flow.rolling(
+                time=inoutflow_time * 2,  # once for inflow, another for outflow
+                min_periods=1,
+                center=True,
+            ).reduce(np.nanmax)
+            ds = ds.where(ds_flow == 1)
+        elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         ds[in_params] = np.abs(ds[in_params])
         if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
@@ -1993,7 +2019,13 @@ def get_sums_phase(file_path, store_path=None, only_asc600=False):
     return sums
 
 
-def get_cov_matrix(input_filepath, in_params=None, filepath=None, only_asc600=False):
+def get_cov_matrix(
+    input_filepath,
+    in_params=None,
+    filepath=None,
+    only_asc600=False,
+    inoutflow_time=-1,
+):
     """
 
     Parameters
@@ -2017,7 +2049,7 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None, only_asc600=Fa
     out_params = ds["Output_Parameter_ID"]
     param_name = []
     more_params = []
-    if only_asc600:
+    if only_asc600 or inoutflow_time > 0:
         more_params.append("asc600")
     for out_p in out_params:
         param_name.append(latexify.param_id_map[out_p.values.item()])
@@ -2030,7 +2062,15 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None, only_asc600=Fa
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
             all_params + more_params
         ]
-        if only_asc600:
+        if inoutflow_time > 0:
+            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+            ds_flow = ds_flow.rolling(
+                time=inoutflow_time * 2,  # once for inflow, another for outflow
+                min_periods=1,
+                center=True,
+            ).reduce(np.nanmax)
+            ds = ds.where(ds_flow == 1)
+        elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
@@ -2058,7 +2098,15 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None, only_asc600=Fa
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
             all_params + more_params
         ]
-        if only_asc600:
+        if inoutflow_time > 0:
+            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+            ds_flow = ds_flow.rolling(
+                time=inoutflow_time * 2,  # once for inflow, another for outflow
+                min_periods=1,
+                center=True,
+            ).reduce(np.nanmax)
+            ds = ds.where(ds_flow == 1)
+        elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
@@ -2098,7 +2146,11 @@ def get_cov_matrix(input_filepath, in_params=None, filepath=None, only_asc600=Fa
 
 
 def get_cov_matrix_phase(
-    input_filepath, in_params=None, filepath=None, only_asc600=False
+    input_filepath,
+    in_params=None,
+    filepath=None,
+    only_asc600=False,
+    inoutflow_time=-1,
 ):
     """
 
@@ -2123,7 +2175,7 @@ def get_cov_matrix_phase(
     out_params = ds["Output_Parameter_ID"]
     param_name = []
     more_params = ["phase"]
-    if only_asc600:
+    if only_asc600 or inoutflow_time > 0:
         more_params.append("asc600")
     for out_p in out_params:
         param_name.append(latexify.param_id_map[out_p.values.item()])
@@ -2146,7 +2198,15 @@ def get_cov_matrix_phase(
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
             all_params + more_params
         ]
-        if only_asc600:
+        if inoutflow_time > 0:
+            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+            ds_flow = ds_flow.rolling(
+                time=inoutflow_time * 2,  # once for inflow, another for outflow
+                min_periods=1,
+                center=True,
+            ).reduce(np.nanmax)
+            ds = ds.where(ds_flow == 1)
+        elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
             ds["phase"] = ds["phase"].astype(np.uint64)
@@ -2188,7 +2248,15 @@ def get_cov_matrix_phase(
         ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
             all_params + more_params
         ]
-        if only_asc600:
+        if inoutflow_time > 0:
+            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+            ds_flow = ds_flow.rolling(
+                time=inoutflow_time * 2,  # once for inflow, another for outflow
+                min_periods=1,
+                center=True,
+            ).reduce(np.nanmax)
+            ds = ds.where(ds_flow == 1)
+        elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
             ds["phase"] = ds["phase"].astype(np.uint64)
