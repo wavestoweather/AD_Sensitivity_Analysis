@@ -1126,7 +1126,7 @@ def traj_get_sum_derivatives(file_path):
     return sums, param_name
 
 
-def traj_get_top_params(dict_of_df, param_name, n, orders):
+def traj_get_top_params(dict_of_df, param_name, n, orders, get_values=False):
     """
 
     Parameters
@@ -1137,6 +1137,9 @@ def traj_get_top_params(dict_of_df, param_name, n, orders):
         Get the top n parameters for each tracked model state variable
     orders : int or float
         Get the parameters within orders many orders of magnitude for each tracked model state variable
+    get_values : bool
+        Return names paired with values.
+
     Returns
     -------
     Set of parameters within the given order of magnitude, set of top n parameters,
@@ -1146,9 +1149,11 @@ def traj_get_top_params(dict_of_df, param_name, n, orders):
     top_magn_sens_dic = {}
 
     for out_name in param_name:
-        top_sens_dic[out_name] = dict_of_df[out_name].T.nlargest(n, 0).T.columns.values
         tmp_df = dict_of_df[out_name].T
         max_order = np.max(tmp_df[0])
+        if max_order == 0:
+            continue
+        top_sens_dic[out_name] = dict_of_df[out_name].T.nlargest(n, 0).T.columns.values
         top_magn_sens_dic[out_name] = tmp_df[
             tmp_df[0] >= max_order / (10 ** orders)
         ].T.columns.values
@@ -1156,8 +1161,9 @@ def traj_get_top_params(dict_of_df, param_name, n, orders):
     tmp = []
     tmp2 = []
     for out_name in param_name:
-        tmp.extend(top_magn_sens_dic[out_name])
-        tmp2.extend(top_sens_dic[out_name])
+        if out_name in top_magn_sens_dic:
+            tmp.extend(top_magn_sens_dic[out_name])
+            tmp2.extend(top_sens_dic[out_name])
     top_magn_set = set(tmp)
     top10_set = set(tmp2)
     return top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic

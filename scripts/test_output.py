@@ -430,6 +430,27 @@ def test_phases(ds, recalc):
     n_total_timesteps = len(ds["trajectory"]) * len(ds["time"])
     n_trajectories = len(ds["trajectory"])
 
+    ice_q_phase_threshold = 0.0
+    ice_n_phase_threshold = 0.0
+    warm_q_phase_threshold = 0.0
+    warm_n_phase_threshold = 0.0
+    # Extract used thresholds from C++-code
+    current_dir = os.getcwd()
+    if "/scripts" == current_dir[-8::]:
+        constants_path = current_dir + "/../include/microphysics/constants.h"
+    else:
+        constants_path = current_dir + "/include/microphysics/constants.h"
+    with open(constants_path, "r") as constants_f:
+        for line in constants_f:
+            if "ice_q_phase_threshold" in line:
+                ice_q_phase_threshold = float(line.split(" = ")[-1].replace(";", ""))
+            if "ice_n_phase_threshold" in line:
+                ice_n_phase_threshold = float(line.split(" = ")[-1].replace(";", ""))
+            if "warm_q_phase_threshold" in line:
+                warm_q_phase_threshold = float(line.split(" = ")[-1].replace(";", ""))
+            if "warm_n_phase_threshold" in line:
+                warm_n_phase_threshold = float(line.split(" = ")[-1].replace(";", ""))
+
     def add_phase(ds, col_name="phase"):
         phase_col = np.full(
             (len(ds["ensemble"]), len(ds["trajectory"]), len(ds["time"])),
@@ -438,22 +459,22 @@ def test_phases(ds, recalc):
 
         def warm(ds):
             return (
-                (ds["QC"] > 0)
-                | (ds["QC"] > 0)
-                | (ds["NCCLOUD"] > 0)
-                | (ds["NCRAIN"] > 0)
+                (ds["QC"] > warm_q_phase_threshold)
+                | (ds["QR"] > warm_q_phase_threshold)
+                | (ds["NCCLOUD"] > warm_n_phase_threshold)
+                | (ds["NCRAIN"] > warm_n_phase_threshold)
             )
 
         def cold(ds):
             return (
-                (ds["QG"] > 1e-14)
-                | (ds["QH"] > 1e-14)
-                | (ds["NCGRAUPEL"] > 0.9999)
-                | (ds["NCHAIL"] > 0.9999)
-                | (ds["QI"] > 1e-14)
-                | (ds["QS"] > 1e-14)
-                | (ds["NCICE"] > 0.9999)
-                | (ds["NCSNOW"] > 0.9999)
+                (ds["QG"] > ice_q_phase_threshold)
+                | (ds["QH"] > ice_q_phase_threshold)
+                | (ds["NCGRAUPEL"] > warm_n_phase_threshold)
+                | (ds["NCHAIL"] > warm_n_phase_threshold)
+                | (ds["QI"] > ice_q_phase_threshold)
+                | (ds["QS"] > ice_q_phase_threshold)
+                | (ds["NCICE"] > warm_n_phase_threshold)
+                | (ds["NCSNOW"] > warm_n_phase_threshold)
             )
 
         def warm_phase(ds):
