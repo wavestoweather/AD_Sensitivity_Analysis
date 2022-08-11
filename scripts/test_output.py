@@ -469,12 +469,12 @@ def test_phases(ds, recalc):
             return (
                 (ds["QG"] > ice_q_phase_threshold)
                 | (ds["QH"] > ice_q_phase_threshold)
-                | (ds["NCGRAUPEL"] > warm_n_phase_threshold)
-                | (ds["NCHAIL"] > warm_n_phase_threshold)
+                | (ds["NCGRAUPEL"] > ice_n_phase_threshold)
+                | (ds["NCHAIL"] > ice_n_phase_threshold)
                 | (ds["QI"] > ice_q_phase_threshold)
                 | (ds["QS"] > ice_q_phase_threshold)
-                | (ds["NCICE"] > warm_n_phase_threshold)
-                | (ds["NCSNOW"] > warm_n_phase_threshold)
+                | (ds["NCICE"] > ice_n_phase_threshold)
+                | (ds["NCSNOW"] > ice_n_phase_threshold)
             )
 
         def warm_phase(ds):
