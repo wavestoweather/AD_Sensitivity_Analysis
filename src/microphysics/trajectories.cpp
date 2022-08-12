@@ -418,7 +418,7 @@ void determine_phase_start(
     previous_step_with_ice = false;
 #if defined(RK4ICE)
     if (y_single_old[qi_idx] > ice_q_phase_threshold || y_single_old[Ni_idx] > ice_n_phase_threshold
-        || y_single_old[qg_in_idx] > ice_q_phase_threshold || y_single_old[Ng_idx] > ice_n_phase_threshold
+        || y_single_old[qg_idx] > ice_q_phase_threshold || y_single_old[Ng_idx] > ice_n_phase_threshold
         || y_single_old[qs_idx] > ice_q_phase_threshold || y_single_old[Ns_idx] > ice_n_phase_threshold
         || y_single_old[qh_idx] > ice_q_phase_threshold || y_single_old[Nh_idx]  > ice_n_phase_threshold) {
         previous_step_with_ice = true;
