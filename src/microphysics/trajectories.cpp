@@ -981,7 +981,7 @@ void limited_time_ensemble_simulation(
     // The progressbar here is just an estimate since the members
     // are distributed dynamically
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
-    uint64_t sims_for_r0 = (netcdf_reader.n_ensembles*netcdf_reader.n_trajectories + n_processes-1)/n_processes;
+    uint64_t sims_for_r0 = (netcdf_reader.n_ensembles + n_processes-1)/n_processes;
 
     uint64_t steps_members = 0;
     for (auto &s : segments) {

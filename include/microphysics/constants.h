@@ -60,10 +60,10 @@ typedef bool(*track_func)(const int&, const bool&);
 #elif defined(RK4ICE) || defined(RK4NOICE)
 #define num_comp 33         /*!< Number of output elements of a model */
 #if defined(B_EIGHT)
-#define num_par 476 /*!< Formerly (56*6+124+18) */
+#define num_par 473
 #else
 /*!< Number of gradients. 56 for each particle + model constants + initial conditions (fromerly (56*6+134+18)) */
-#define num_par 482
+#define num_par 464
 #endif
 
 #endif
@@ -2739,12 +2739,12 @@ const uint32_t n_lookup_hr_dummy = 10;
 /**
  * Threshold for determining if a phase is an ice or mixed phase for cold hydrometeors.
  */
-const double ice_q_phase_threshold = 0.0;
+const double ice_q_phase_threshold = 1e-14;
 
 /**
  * Threshold for determining if a phase is an ice or mixed phase for cold hydrometeors.
  */
-const double ice_n_phase_threshold = 0.0;
+const double ice_n_phase_threshold = 0.9999;
 
 /**
  * Threshold for determining if a phase is a warm or mixed phase for cloud and rain droplets.

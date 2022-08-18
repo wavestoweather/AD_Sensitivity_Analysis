@@ -30,7 +30,7 @@ model_constants_t<float_t>::model_constants_t(
 
         if ( track_initial_cond ) {
             track_ic = -1;
-            local_ic_par = static_cast<uint32_t>(Init_cons_idx::n_items);
+            local_ic_par = static_cast<int>(Init_cons_idx::n_items);
             // Tracking initial conditions and model parameters is not
             // possible. Hence we set local_num_par.
             local_num_par = local_ic_par;
@@ -46,7 +46,7 @@ model_constants_t<float_t>::model_constants_t(
 
 template<>
 void model_constants_t<codi::RealForwardVec<num_par_init> >::register_input() {
-    for (uint32_t i=0; i<static_cast<int>(Init_cons_idx::n_items); i++)
+    for (int i=0; i<static_cast<int>(Init_cons_idx::n_items); i++)
         if (trace_check(i, 2))
             this->initial_conditions[i].gradient()[i] = 1;
 }
@@ -65,7 +65,7 @@ void model_constants_t<codi::RealReverse>::register_input(
     std::cout << "register input of at most " << static_cast<int>(Cons_idx::n_items)
               << " vs size " << this->constants.size() << "\n";
 #endif
-    for (uint32_t i=0; i<static_cast<int>(Cons_idx::n_items); i++) {
+    for (int i=0; i<static_cast<int>(Cons_idx::n_items); i++) {
         if (trace_check(i, false)) {
 #ifdef DEVELOP
             std::cout << "register input " << i << "\n";
@@ -73,7 +73,6 @@ void model_constants_t<codi::RealReverse>::register_input(
             tape.registerInput(this->constants[i]);
         }
     }
-
     uint32_t offset = static_cast<uint32_t>(Cons_idx::n_items);
     if (local_num_par == num_par) {
         this->rain.register_input(tape, offset);

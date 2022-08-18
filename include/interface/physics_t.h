@@ -91,6 +91,43 @@ struct physics_t {
         const double qc,
         double *res,
         double *gradients);
+
+    void py_riming_ice(
+        const double qc,
+        const double Nc,
+        const double qi,
+        const double Ni,
+        const double qr,
+        const double Nr,
+        const double T,
+        double *res,
+        double *gradients);
+
+    void py_riming_snow(
+        const double qc,
+        const double Nc,
+        const double qs,
+        const double Ns,
+        const double qr,
+        const double Nr,
+        const double T,
+        double *res,
+        double *gradients);
+
+    void py_riming_with_depo(
+        const double qv,
+        const double qc,
+        const double Nc,
+        const double qi,
+        const double Ni,
+        const double qs,
+        const double Ns,
+        const double qr,
+        const double Nr,
+        const double T,
+        const double p,
+        double *res,
+        double *gradients);
 };
 
 extern "C" {
@@ -138,5 +175,42 @@ extern "C" {
         double qc,
         double *res,
         double *gradients) {phys->py_saturation_adjust(p, T, qv, qc, res, gradients);}
+    void physics_t_py_riming_ice(
+        physics_t* phys,
+        double qc,
+        double Nc,
+        double qi,
+        double Ni,
+        double qr,
+        double Nr,
+        double T,
+        double *res,
+        double *gradients) {phys->py_riming_ice(qc, Nc, qi, Ni, qr, Nr, T, res, gradients);}
+    void physics_t_py_riming_snow(
+        physics_t* phys,
+        double qc,
+        double Nc,
+        double qs,
+        double Ns,
+        double qr,
+        double Nr,
+        double T,
+        double *res,
+        double *gradients) {phys->py_riming_snow(qc, Nc, qs, Ns, qr, Nr, T, res, gradients);}
+    void physics_t_py_riming_with_depo(
+        physics_t* phys,
+        double qv,
+        double qc,
+        double Nc,
+        double qi,
+        double Ni,
+        double qs,
+        double Ns,
+        double qr,
+        double Nr,
+        double T,
+        double p,
+        double *res,
+        double *gradients) {phys->py_riming_with_depo(qv, qc, Nc, qi, Ni, qs, Ns, qr, Nr, T, p, res, gradients);}
 }
 

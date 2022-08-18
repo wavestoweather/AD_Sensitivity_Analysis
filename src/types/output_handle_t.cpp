@@ -28,6 +28,7 @@ output_handle_t::output_handle_t(
 #ifdef COMPRESS_OUTPUT
     this->n_processes = n_processes;
 #endif
+    n_perturbed_params = 0;
     this->setup(filetype, filename, cc,
                 in_filename, write_index, snapshot_index,
                 rank, delay_out_time);
@@ -59,6 +60,7 @@ output_handle_t::output_handle_t(
 #ifdef COMPRESS_OUTPUT
     this->n_processes = n_processes;
 #endif
+    n_perturbed_params = 0;
     if (simulation_mode == create_train_set && segments.size() > 0) {
         uint64_t param_size = cc.constants.size()
             + cc.cloud.constants.size() + cc.rain.constants.size()
@@ -72,7 +74,6 @@ output_handle_t::output_handle_t(
         // output file.
         // Get the idx of the parameter and its first occurrence in the segments.
         // Some parameters might be perturbed in multiple ensembles.
-        n_perturbed_params = 0;
         for (const auto &s : segments) {
             // Get all parameters that shall be perturbed and their index.
             // Is it already in perturbed_idx? Then skip it.
@@ -1173,12 +1174,12 @@ void output_handle_t::set_compression(const model_constants_t<float_t> &cc) {
               (n_perturbed_params > 1 || i != static_cast<int>(Var_idx::perturbed)))
                 if (simulation_mode == create_train_set || i != static_cast<int>(Var_idx::perturbation_value) )
                     // This could be a version for szip
-    //                         SUCCESS_OR_DIE(
-    //                             nc_def_var_szip(
-    //                                 ncid,
-    //                                 varid[i],
-    //                                 NC_SZIP_NN,
-    //                                 8));  // pixels per block
+                    //                         SUCCESS_OR_DIE(
+                    //                             nc_def_var_szip(
+                    //                                 ncid,
+                    //                                 varid[i],
+                    //                                 NC_SZIP_NN,
+                    //                                 8));  // pixels per block
                     // zlib version
                     SUCCESS_OR_DIE(
                             nc_def_var_deflate(
