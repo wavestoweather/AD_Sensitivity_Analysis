@@ -523,12 +523,15 @@ int netcdf_reader_t::read_buffer(
                 cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
             } else {
                 // Here we need to find the next valid w value again
+                // Unfortunately, some datasets may fill w with zeros instead of NaNs
+                // therefore we check if pressure is NaN as well.
 #ifdef DEVELOP
                 std::cout << " test 2\n";
 #endif
                 uint32_t j = 1;
                 while (time_idx+j <= n_timesteps_in && j < 11
-                    && std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j])) {
+                    && (std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j])
+                    || std::isnan(buffer[Par_idx::pressure][time_buffer_idx+j]))) {
                     j++;
                 }
 #ifdef DEVELOP
