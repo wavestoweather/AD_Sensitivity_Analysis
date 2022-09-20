@@ -201,6 +201,7 @@ struct netcdf_reader_t {
     #endif
 #endif
         asc600,
+        dom_i,
         n_pars
     };
     enum Dim_idx {
@@ -250,7 +251,8 @@ struct netcdf_reader_t {
         {"NR_IN", "QNR_in"}, {"NG_IN", "QNG_in"}, {"z", "z"}, {"w", "w"},
         {"QH_IN", "QH_in"}, {"NH_IN", "QNH_in"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"},
+        {"asc600", "asc600"}, {"DOM_i", "DOM_i"}
     };
 #elif defined WCB
     std::unordered_map<std::string, const char*> const reader_names = {
@@ -265,7 +267,8 @@ struct netcdf_reader_t {
         {"NR_IN", "NR_IN"}, {"NG_IN", "NG_IN"}, {"z", "z"}, {"w", "w"},
         {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "ntra"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "ntra"}, {"ensemble", "ensemble"},
+        {"asc600", "asc600"}, {"DOM_i", "DOM_i"}
 #elif defined WCB2
     std::unordered_map<std::string, const char*> const reader_names = {
         {"QV", "QV"}, {"QC", "QC"}, {"QR", "QR"},
@@ -279,7 +282,8 @@ struct netcdf_reader_t {
         {"NR_IN", "NR_IN"}, {"NG_IN", "NG_IN"}, {"z", "z"}, {"w", "w"},
         {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"},
+        {"asc600", "asc600"}, {"DOM_i", "DOM_i"}
     };
 #elif defined MET3D
     std::unordered_map<std::string, const char*> const reader_names = {
@@ -297,7 +301,8 @@ struct netcdf_reader_t {
         {"QH_IN", "QH_IN"}, {"NH_IN", "NH_IN"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"},
         {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "trajectory"}, {"ensemble", "ensemble"},
+        {"asc600", "asc600"}, {"DOM_i", "DOM_i"}
     };
 #else
     std::unordered_map<std::string, std::string> const reader_names = {
@@ -306,7 +311,8 @@ struct netcdf_reader_t {
         {"qh", "qh"}, {"time", "time"}, {"lat", "lat"}, {"lon", "lon"}, {"time_rel", "time_rel"}, {"pressure", "p"},
         {"T", "t"}, {"z", "z"}, {"w", "w"},
         {"conv_400", "conv_400"}, {"conv_600", "conv_600"}, {"slan_400", "slan_400"}, {"slan_600", "slan_600"},
-        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"}, {"asc600", "asc600"}
+        {"Q_TURBULENCE", "Q_TURBULENCE"}, {"trajectory", "id"}, {"ensemble", "ensemble"},
+        {"asc600", "asc600"}, {"DOM_i", "DOM_i"}
     };
 #endif
 
@@ -324,4 +330,14 @@ struct netcdf_reader_t {
      *                  simulation units
      */
     void buffer_params(const reference_quantities_t &ref_quant);
+ private:
+    bool dom_i_bool = false;
+    bool check_invalid_buffer(
+        const std::vector<double> &buffer_var,
+        const uint32_t idx) const;
+
+    bool check_invalid_buffer_lonlat(
+        const std::vector<double> &buffer_var,
+        const uint32_t t,
+        const uint32_t idx) const;
 };
