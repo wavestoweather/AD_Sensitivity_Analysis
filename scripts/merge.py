@@ -1,35 +1,42 @@
 import numpy as np
 import xarray as xr
 from timeit import default_timer as timer
-import sys
 from glob import glob
 import progressbar as pb
 
 
 if __name__ == "__main__":
     import argparse
+    import textwrap
 
     parser = argparse.ArgumentParser(
-        description="""
-        Merge multiple outputs from simulations into one NetCDF-file.
-        Those simulations are typically single trajectories per file
-        with all their sensitivities. Stores the merged dataset with zlib
-        compression of level 9.
-        """
+        description=textwrap.dedent(
+            """\
+            Merge multiple outputs from simulations into one NetCDF-file.
+            Those simulations are typically single trajectories per file
+            with all their sensitivities. Stores the merged dataset with zlib
+            compression of level 9.
+            """
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "--input_path",
         required=True,
-        help="""
-        Path to files ending with ".nc_wcb".
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to files ending with ".nc_wcb".
+            """
+        ),
     )
     parser.add_argument(
         "--output_path",
         required=True,
-        help="""
-        Path with name to store the merged dataset.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path with name to store the merged dataset.
+            """
+        ),
     )
     args = parser.parse_args()
 

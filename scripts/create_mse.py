@@ -2,12 +2,7 @@ from multiprocessing import Pool
 import numpy as np
 import os
 import pandas as pd
-
-try:
-    from tqdm import tqdm
-except:
-    from progressbar import progressbar as tqdm
-import sys
+from tqdm.auto import tqdm
 import xarray as xr
 
 try:
@@ -337,145 +332,175 @@ def reduce_errors(
 
 if __name__ == "__main__":
     import argparse
+    import textwrap
 
     parser = argparse.ArgumentParser(
-        description="""
-        Load ensemble NetCDF-files and calculate the errors
-        and reduced predicted errors and store them to disk. This is used to
-        prepare data to find any correlations and for plotting.
-        In order to find the correct errors, a file with "_notPerturbed.nc_wcb"
-        must be present in the given path.
-        """,
+        description=textwrap.dedent(
+            """\
+            Load ensemble NetCDF-files and calculate the errors
+            and reduced predicted errors and store them to disk. This is used to
+            prepare data to find any correlations and for plotting.
+            In order to find the correct errors, a file with "_notPerturbed.nc_wcb"
+            must be present in the given path.
+            """
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "--error_kind",
         default="mse",
-        help="""
-        How to reduce the error from ensembles.
-        mse: Calculate mean squared error
-        maxse: Calculate maximum squared error
-        nozeromse: Calculate mean squared error ignoring time steps
-            where all simulations have zero values.
-        sum : Cumulative squared error
-        me : Mean error
-        mae : Mean absolute error
-        """,
+        help=textwrap.dedent(
+            """\
+            How to reduce the error from ensembles.
+            mse: Calculate mean squared error
+            maxse: Calculate maximum squared error
+            nozeromse: Calculate mean squared error ignoring time steps
+                where all simulations have zero values.
+            sum : Cumulative squared error
+            me : Mean error
+            mae : Mean absolute error
+            """
+        ),
     )
     parser.add_argument(
         "--sens_kind",
         default="squared_mean",
-        help="""
-        How to reduce the predicted error from sensitivities over all time
-        steps along a trajectory.
-        max : Max error
-        mean : Mean error
-        squared_mean : Squared mean error
-        """,
+        help=textwrap.dedent(
+            """\
+            How to reduce the predicted error from sensitivities over all time
+            steps along a trajectory.
+            max : Max error
+            mean : Mean error
+            squared_mean : Squared mean error
+            """
+        ),
     )
     parser.add_argument(
         "--reduce_func",
         default="mean",
-        help="""
-        Function for reducing each error from all trajectories. Possible
-        options are:
-        max: Max error
-        mean: Mean error
-        min: Min error
-        """,
+        help=textwrap.dedent(
+            """\
+            Function for reducing each error from all trajectories. Possible
+            options are:
+            max: Max error
+            mean: Mean error
+            min: Min error
+            """
+        ),
     )
     parser.add_argument(
         "--filetype",
         default="netcdf",
-        help="""
-        Store the result either as comma separated file with "csv" or
-        as NetCDF file with "netcdf".
-        """,
+        help=textwrap.dedent(
+            """\
+            Store the result either as comma separated file with "csv" or
+            as NetCDF file with "netcdf".
+            """
+        ),
     )
     parser.add_argument(
         "--path",
         default="/data/project/wcb/netcdf/perturbed_ensembles/conv_600_0_traj_t000000_p001/",
-        help="""
-        Path to perturbed ensembles. Somewhere must be a file with
-        "_notPerturbed.nc_wcb" in its name.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to perturbed ensembles. Somewhere must be a file with
+            "_notPerturbed.nc_wcb" in its name.
+            """
+        ),
     )
     parser.add_argument(
         "--store_path",
         default="../data/stats/",
-        help="""
-        Path to store the resulting statistics.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to store the resulting statistics.
+            """
+        ),
     )
     parser.add_argument(
         "--n_trajs",
         type=int,
         required=True,
-        help="""
-        Number of trajectories in the given path for which ensembles have been
-        started.
-        """,
+        help=textwrap.dedent(
+            """\
+            Number of trajectories in the given path for which ensembles have been
+            started.
+            """
+        ),
     )
     parser.add_argument(
         "--filename",
         type=str,
         required=True,
-        help="""
-        Name of the file where trajectories and subsequent ensembles are
-        stored.
-        """,
+        help=textwrap.dedent(
+            """\
+            Name of the file where trajectories and subsequent ensembles are
+            stored.
+            """
+        ),
     )
     parser.add_argument(
         "--save_intermediate",
         action="store_true",
-        help="""
-        Save intermediate results in a subdirectory "tmp" within the path
-        specified by "store_path" and do not remove them.
-        """,
+        help=textwrap.dedent(
+            """\
+            Save intermediate results in a subdirectory "tmp" within the path
+            specified by "store_path" and do not remove them.
+            """
+        ),
     )
     parser.add_argument(
         "--n_cpus",
         type=int,
         default=6,
-        help="""
-        Number of processes that process data in parallel.
-        """,
+        help=textwrap.dedent(
+            """\
+            Number of processes that process data in parallel.
+            """
+        ),
     )
     parser.add_argument(
         "--ratio_type",
         type=str,
         default="adjusted",
-        help="""
-        "vanilla": Use the derivative ratio in the file.
-        "adjusted": Can be added to any to any type below where the sensitivity
-        is adjusted to the parameter value such that perturbing this value by a
-        certain percentage gives an approximation of the resulting error/difference
-        for any given hydrometeor.
-        "per_timestep": Use the highest derivative per timestep as denominator.
-        "window": Use the highest derivative in the given window by min_x and max_x.
-        "per_xaxis": Use the highest derivative per x_axis value. If x_axis is "timestep"
-        it is the same as "per_timestep".
-        "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
-        derivative but per output parameter. (that *should* be the vanilla version)
-        "x_weighted": Append this to any ratio type to use the inverse of the
-        output parameter value as weight. Only works with "x_per_out_param".
-        """,
+        help=textwrap.dedent(
+            """\
+            "vanilla": Use the derivative ratio in the file.
+            "adjusted": Can be added to any to any type below where the sensitivity
+            is adjusted to the parameter value such that perturbing this value by a
+            certain percentage gives an approximation of the resulting error/difference
+            for any given hydrometeor.
+            "per_timestep": Use the highest derivative per timestep as denominator.
+            "window": Use the highest derivative in the given window by min_x and max_x.
+            "per_xaxis": Use the highest derivative per x_axis value. If x_axis is "timestep"
+            it is the same as "per_timestep".
+            "x_per_out_param": Replace 'x' with any other option than "vanilla". Use the highest
+            derivative but per output parameter. (that *should* be the vanilla version)
+            "x_weighted": Append this to any ratio type to use the inverse of the
+            output parameter value as weight. Only works with "x_per_out_param".
+            """
+        ),
     )
     parser.add_argument(
         "--no_reduction",
         action="store_true",
-        help="""
-        Only save intermediate results and exit without further reduction.
-        """,
+        help=textwrap.dedent(
+            """\
+            Only save intermediate results and exit without further reduction.
+            """
+        ),
     )
     parser.add_argument(
         "--load_intermediate_files",
         type=str,
         nargs="+",
         default=[],
-        help="""
-        In case intermediate files have been created before, you can define
-        each separately and load these instead of calculating the errors again.
-        """,
+        help=textwrap.dedent(
+            """\
+            In case intermediate files have been created before, you can define
+            each separately and load these instead of calculating the errors again.
+            """
+        ),
     )
     args = parser.parse_args()
 

@@ -2428,7 +2428,7 @@ in_params_numeric_value_dic = {
 # What about spherical parameters?
 in_params_notation_mapping = {
     "dg_ccn_1": [
-        "Parameter for calculating CCN concentration during CCN activation",
+        "Parameter for calculating CCN concentration during CCN activation using a formulation by Miltenberger et al.",
         "",
         "",
         "independent",

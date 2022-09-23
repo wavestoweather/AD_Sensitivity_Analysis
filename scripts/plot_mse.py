@@ -864,227 +864,279 @@ def plot_time_evolution(
 
 if __name__ == "__main__":
     import argparse
+    import textwrap
 
     parser = argparse.ArgumentParser(
-        description="""
-        Plot either mean squared deviation/error from perturbation over mean
-        predicted deviation/error calculated via the sensitivity where the predicted
-        axis is at most 1 such that plots for particle numbers are not entirely
-        correct. Or plot the model state variable and predicted squared error
-        over time.
-        """
+        description=textwrap.dedent(
+            """\
+            Plot either mean squared deviation/error from perturbation over mean
+            predicted deviation/error calculated via the sensitivity where the predicted
+            axis is at most 1 such that plots for particle numbers are not entirely
+            correct. Or plot the model state variable and predicted squared error
+            over time.
+            """
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "--data_path",
         type=str,
         required=True,
-        help="""
-        Path to dataframe as NetCDF-file which had been created via create_mse.py.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to dataframe as NetCDF-file which had been created via create_mse.py.
+            """
+        ),
     )
     parser.add_argument(
         "--add_zero_sens",
         action="store_true",
-        help="""
-        Add sensitivities of value zero to the far left and mark it with
-        negative infinity.
-        """,
+        help=textwrap.dedent(
+            """\
+            Add sensitivities of value zero to the far left and mark it with
+            negative infinity.
+            """
+        ),
     )
     parser.add_argument(
         "--plot_types",
         action="store_true",
-        help="""
-        If true: Plot input parameter types in different colors.
-        Types means here if a parameter is physical or rather artificial.
-        """,
+        help=textwrap.dedent(
+            """\
+            If true: Plot input parameter types in different colors.
+            Types means here if a parameter is physical or rather artificial.
+            """
+        ),
     )
     parser.add_argument(
         "--out_parameter",
         type=str,
         nargs="+",
         default=[],
-        help="""
-        Output parameter to plot for. Default plots all that are available
-        in the dataframe in a separate plot. If you want a plot with all
-        datapoints in one plot, use "all_at_once".
-        """,
+        help=textwrap.dedent(
+            """\
+            Output parameter to plot for. Default plots all that are available
+            in the dataframe in a separate plot. If you want a plot with all
+            datapoints in one plot, use "all_at_once".
+            """
+        ),
     )
     parser.add_argument(
         "--backend",
         default="matplotlib",
-        help="""
-        Choose a backend for plotting. Options are:
-        matplotlib: Most plots should be fine with it.
-        bokeh: Recommended.
-        """,
+        help=textwrap.dedent(
+            """\
+            Choose a backend for plotting. Options are:
+            matplotlib: Most plots should be fine with it.
+            bokeh: Recommended.
+            """
+        ),
     )
     parser.add_argument(
         "--store_path",
         default="../pics/correlation",
         type=str,
-        help="""
-        Path to store the generated images.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to store the generated images.
+            """
+        ),
     )
     parser.add_argument(
         "--confidence",
         type=float,
         default=None,
-        help="""
-        Plot a confidence ellipse around each sample with confidence
-        between 0 and 1. If none is given, no ellipse will be plotted.
-        """,
+        help=textwrap.dedent(
+            """\
+            Plot a confidence ellipse around each sample with confidence
+            between 0 and 1. If none is given, no ellipse will be plotted.
+            """
+        ),
     )
     parser.add_argument(
         "--xlabel",
         default="Predicted Log MSD",
         type=str,
-        help="""
-        Alternative label for x-axis.
-        """,
+        help=textwrap.dedent(
+            """\
+            Alternative label for x-axis.
+            """
+        ),
     )
     parser.add_argument(
         "--ylabel",
         default="True Log MSD",
         type=str,
-        help="""
-        Alternative label for y-axis. If plot_variant is "time_plot", then
-        " [out_parameter]" is added.
-        """,
+        help=textwrap.dedent(
+            """\
+            Alternative label for y-axis. If plot_variant is "time_plot", then
+            " [out_parameter]" is added.
+            """
+        ),
     )
     parser.add_argument(
         "--title",
         default="True Deviation vs Prediction",
         type=str,
-        help="""
-        Title for the plot where " for [out_param]" is added.
-        """,
+        help=textwrap.dedent(
+            """\
+            Title for the plot where " for [out_param]" is added.
+            """
+        ),
     )
     parser.add_argument(
         "--width",
         default=900,
         type=int,
-        help="""
-        Width of plot in pixels.
-        """,
+        help=textwrap.dedent(
+            """\
+            Width of plot in pixels.
+            """
+        ),
     )
     parser.add_argument(
         "--height",
         default=900,
         type=int,
-        help="""
-        Height of plot in pixels.
-        """,
+        help=textwrap.dedent(
+            """\
+            Height of plot in pixels.
+            """
+        ),
     )
     parser.add_argument(
         "--set_zero",
         default=None,
         type=float,
-        help="""
-        If plot_variant is "correlation".
-        Set any predicted squared errors with this value or lower to zero.
-        This makes the plots easier to look at, when only a single parameter
-        has a predicted error of 1e-200 or less.
-        """,
+        help=textwrap.dedent(
+            """\
+            If plot_variant is "correlation".
+            Set any predicted squared errors with this value or lower to zero.
+            This makes the plots easier to look at, when only a single parameter
+            has a predicted error of 1e-200 or less.
+            """
+        ),
     )
     parser.add_argument(
         "--plot_variant",
         default="correlation",
         type=str,
-        help="""
-        Plot either correlation plots with true deviation over predicted
-        deviation by perturbing a parameter with "correlation",
-        "correlation_hist" to add histograms on each axis,
-        "histogram" for
-        plotting the histogram of true and predicted deviations or
-        use "time_plot" to plot (a single or mean) trajectory and
-        the predicted deviation over time with the actual model
-        state variable.
-        """,
+        help=textwrap.dedent(
+            """\
+            Plot either correlation plots with true deviation over predicted
+            deviation by perturbing a parameter with "correlation",
+            "correlation_hist" to add histograms on each axis,
+            "histogram" for
+            plotting the histogram of true and predicted deviations or
+            use "time_plot" to plot (a single or mean) trajectory and
+            the predicted deviation over time with the actual model
+            state variable.
+            """
+        ),
     )
     parser.add_argument(
         "--traj",
         type=int,
         default=-1,
-        help="""
-        If plot_type is "time_plot", the trajectory with this index will
-        be plotted. If a value below zero is given, plot the mean of all.
-        """,
+        help=textwrap.dedent(
+            """\
+            If plot_type is "time_plot", the trajectory with this index will
+            be plotted. If a value below zero is given, plot the mean of all.
+            """
+        ),
     )
     parser.add_argument(
         "--in_parameter",
         type=str,
         nargs="+",
         default=[],
-        help="""
-        If plot_type is "time_plot", then plot the predicted deviation
-        for those model parameters. If none are given, plot the top ten
-        most influential parameters for each model state parameter.
-        This plots all those predictions in one plot.
-        """,
+        help=textwrap.dedent(
+            """\
+            If plot_type is "time_plot", then plot the predicted deviation
+            for those model parameters. If none are given, plot the top ten
+            most influential parameters for each model state parameter.
+            This plots all those predictions in one plot.
+            """
+        ),
     )
     parser.add_argument(
         "--logy",
         action="store_true",
-        help="""
-        If plot_type is "time_plot", plot the y-axis as log10.
-        """,
+        help=textwrap.dedent(
+            """\
+            If plot_type is "time_plot", plot the y-axis as log10.
+            """
+        ),
     )
     parser.add_argument(
         "--twinlabel",
         default="Predicted Squared Error",
         type=str,
-        help="""
-        Only if plot_type is "time_plot". Label for the twin axis.
-        """,
+        help=textwrap.dedent(
+            """\
+            Only if plot_type is "time_plot". Label for the twin axis.
+            """
+        ),
     )
     parser.add_argument(
         "--logtwin",
         action="store_true",
-        help="""
-        If plot_type is "time_plot", plot the twin-axis as log10.
-        """,
+        help=textwrap.dedent(
+            """\
+            If plot_type is "time_plot", plot the twin-axis as log10.
+            """
+        ),
     )
     parser.add_argument(
         "--n_model_params",
         type=int,
         default=5,
-        help="""
-        If plot_type is "time_plot", plot this many model parameters.
-        """,
+        help=textwrap.dedent(
+            """\
+            If plot_type is "time_plot", plot this many model parameters.
+            """
+        ),
     )
     parser.add_argument(
         "--min_time",
         type=float,
         default=None,
-        help="""
-        If plot_type is "time_plot", use this as start point for the plot
-        as in time after ascent.
-        """,
+        help=textwrap.dedent(
+            """\
+            If plot_type is "time_plot", use this as start point for the plot
+            as in time after ascent.
+            """
+        ),
     )
     parser.add_argument(
         "--max_time",
         type=float,
         default=None,
-        help="""
-        If plot_type is "time_plot", use this as last point for the plot
-        as in time after ascent.
-        """,
+        help=textwrap.dedent(
+            """\
+            If plot_type is "time_plot", use this as last point for the plot
+            as in time after ascent.
+            """
+        ),
     )
     parser.add_argument(
         "--legend_pos",
         type=str,
         default="bottom_right",
-        help="""
-        Define the position of the legend for most plots.
-        """,
+        help=textwrap.dedent(
+            """\
+            Define the position of the legend for most plots.
+            """
+        ),
     )
     parser.add_argument(
         "--corr_line",
         action="store_true",
-        help="""
-        Add a dashed line for a 1-to-1 map of the data.
-        """,
+        help=textwrap.dedent(
+            """\
+            Add a dashed line for a 1-to-1 map of the data.
+            """
+        ),
     )
     args = parser.parse_args()
     ds = xr.open_dataset(args.data_path, decode_times=False, engine="netcdf4")
@@ -1115,7 +1167,7 @@ if __name__ == "__main__":
         "QI_OUT": "QI_OUT",
         "QG_OUT": "QG_OUT",
         "QH_OUT": "QH_OUT",
-        "NR_OUT": "NR_OUT",
+        "NR_OUT": "Precipitation of Rain Droplets",
         "NS_OUT": "NS_OUT",
         "NI_OUT": "NI_OUT",
         "NG_OUT": "NG_OUT",
@@ -1287,6 +1339,9 @@ if __name__ == "__main__":
                 # nothing to see here
                 continue
             print(f"Plotting for {out_p}")
+            print(df_tmp.columns)
+            df_tmp["Not Perturbed Value"] = df_tmp["Not Perturbed Value"] * -1
+            df_tmp["Predicted Error"] = df_tmp["Predicted Error"] * -1
             plot_time_evolution(
                 df=df_tmp,
                 backend=args.backend,

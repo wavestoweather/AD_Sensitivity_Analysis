@@ -757,130 +757,160 @@ def test_ccn_act_akm(physics, w, T, qv, qc, verbose=False):
 
 if __name__ == "__main__":
     import argparse
+    import textwrap
 
     parser = argparse.ArgumentParser(
-        description="""
-        Test a given NetCDF-file for possible errors, such as hydrometeors that
-        are too large or too small, get the distribution of values, check for NaNs
-        in the coordinates (dimensions). Works only for trajectories. Trajectories
-        are made via interpolation of gridpoints, hence some unphysical
-        hydrometeors can occur.
-        """
+        description=textwrap.dedent(
+            """\
+            Test a given NetCDF-file for possible errors, such as hydrometeors that
+            are too large or too small, get the distribution of values, check for NaNs
+            in the coordinates (dimensions). Works only for trajectories. Trajectories
+            are made via interpolation of gridpoints, hence some unphysical
+            hydrometeors can occur.
+            """
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "--input",
         type=str,
         default=None,
-        help="""
-        Path to the NetCDF-file. If the given path is a folder of files, all
-        files will be used sequentially.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to the NetCDF-file. If the given path is a folder of files, all
+            files will be used sequentially.
+            """
+        ),
     )
     parser.add_argument(
         "--output_path",
         type=str,
         default="../pics/tests/",
-        help="""
-        Path for plotting distributions and different variables if 'plot' is true.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path for plotting distributions and different variables if 'plot' is true.
+            """
+        ),
     )
     parser.add_argument(
         "--plot",
         action="store_true",
-        help="""
-        Plot distributions and different variables to 'output_folder'.
-        """,
+        help=textwrap.dedent(
+            """\
+            Plot distributions and different variables to 'output_folder'.
+            """
+        ),
     )
     parser.add_argument(
         "--allow_failure",
         action="store_true",
-        help="""
-        The program shall not return an errorcode if the dataset is suspicious.
-        An errorcode is helpful for gitlab CI.
-        """,
+        help=textwrap.dedent(
+            """\
+            The program shall not return an errorcode if the dataset is suspicious.
+            An errorcode is helpful for gitlab CI.
+            """
+        ),
     )
     parser.add_argument(
         "--allowed_perc",
         type=float,
         default=13.0,
-        help=""""
-        The amount of hydrometeors that are allowed to be outside of normal,
-        physical values. Interpolation can lead to that. Usually either cloud droplets
-        or ice crystals have values of 8 or 12 percent. Other hydrometeors may be
-        as low as 2 percent.
-        """,
+        help=textwrap.dedent(
+            """\
+            The amount of hydrometeors that are allowed to be outside of normal,
+            physical values. Interpolation can lead to that. Usually either cloud droplets
+            or ice crystals have values of 8 or 12 percent. Other hydrometeors may be
+            as low as 2 percent.
+            """
+        ),
     )
     parser.add_argument(
         "--test_nan_dims",
         action="store_true",
-        help="""
-        Test NaNs in the dataset for all dimensions. This should not happen and
-        usually indicates a problem with the data.
-        """,
+        help=textwrap.dedent(
+            """\
+            Test NaNs in the dataset for all dimensions. This should not happen and
+            usually indicates a problem with the data.
+            """
+        ),
     )
     parser.add_argument(
         "--test_nan_vars",
         action="store_true",
-        help="""
-        Test NaNs in the dataset for all variables (not dimensions). This can
-        happen, when a trajectory stops early, i.e., because it "crashed" into a
-        mountain.
-        """,
+        help=textwrap.dedent(
+            """\
+            Test NaNs in the dataset for all variables (not dimensions). This can
+            happen, when a trajectory stops early, i.e., because it "crashed" into a
+            mountain.
+            """
+        ),
     )
     parser.add_argument(
         "--test_saturation",
         action="store_true",
-        help="""
-        Test over saturation in the dataset for all trajectories (not dimensions). 
-        """,
+        help=textwrap.dedent(
+            """\
+            Test over saturation in the dataset for all trajectories (not dimensions). 
+            """
+        ),
     )
     parser.add_argument(
         "--calc_saturation",
         action="store_true",
-        help="""
-        During test for over saturation in the dataset for all trajectories (not dimensions):
-        Recalculate the saturation.
-        """,
+        help=textwrap.dedent(
+            """\
+            During test for over saturation in the dataset for all trajectories (not dimensions):
+            Recalculate the saturation.
+            """
+        ),
     )
     parser.add_argument(
         "--test_phases",
         action="store_true",
-        help="""
-        Test if all trajectories have at least once a warm phase. Prints the percentages for all other phases as well.  Also tests if the phases are correct.
-        """,
+        help=textwrap.dedent(
+            """\
+            Test if all trajectories have at least once a warm phase. Prints the percentages for all other phases as well.  Also tests if the phases are correct.
+            """
+        ),
     )
     parser.add_argument(
         "--calc_phases",
         action="store_true",
-        help="""
-        Recalculate the phases of each trajectory.
-        """,
+        help=textwrap.dedent(
+            """\
+            Recalculate the phases of each trajectory.
+            """
+        ),
     )
     parser.add_argument(
         "--test_physics",
         type=str,
         default="no",
-        help="""
-        The path of the Python interface library.
-        Run (some) tests using the Python interface. Makes rudimentary
-        checks on different microphysical processes with a timestep of
-        30 seconds.
-        """,
+        help=textwrap.dedent(
+            """\
+            The path of the Python interface library.
+            Run (some) tests using the Python interface. Makes rudimentary
+            checks on different microphysical processes with a timestep of
+            30 seconds.
+            """
+        ),
     )
     parser.add_argument(
         "--verbosity",
         type=int,
         default=0,
-        help="""
-        Control the amount of outputs. Verbosity 0 prints only results of
-        tests. Verbosity 1 prints in addition each error in the tests for non-physical
-        hydrometeor sizes and which variables are being plotted (if any).
-        Verbosity 2 prints in addition each error in the NaN test for
-        dimensions. Verbosity 3 prints in addition the amount of non-physical
-        hydrometeor sizes even if those are below the given threshold. Verbosity 4
-        prints in addition each error in the NaN test for variables (columns).
-        Verbosity 5 prints every error for the physics tests.
-        """,
+        help=textwrap.dedent(
+            """\
+            Control the amount of outputs. Verbosity 0 prints only results of
+            tests. Verbosity 1 prints in addition each error in the tests for non-physical
+            hydrometeor sizes and which variables are being plotted (if any).
+            Verbosity 2 prints in addition each error in the NaN test for
+            dimensions. Verbosity 3 prints in addition the amount of non-physical
+            hydrometeor sizes even if those are below the given threshold. Verbosity 4
+            prints in addition each error in the NaN test for variables (columns).
+            Verbosity 5 prints every error for the physics tests.
+            """
+        ),
     )
     args = parser.parse_args()
 
