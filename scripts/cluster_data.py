@@ -6,12 +6,35 @@ from tqdm.auto import tqdm
 import xarray as xr
 
 
-def load_data(file_path, x, only_asc600=False, inoutflow_time=-1):
+def load_data(file_path, x, only_asc600=False, inoutflow_time=-1, verbose=False):
+    """
+    Load multiple NetCDF-files as xarray.Dataset, filter them if necessary and concatenate all
+    data useful for other steps.
+
+    Parameters
+    ----------
+    file_path : string
+        Path to trajectories from a sensitivity analysis.
+    x : string
+        Model state variable or model parameter for calculating the clusters.
+    only_asc600 : bool
+        Consider only time steps during the fastest 600 hPa ascent.
+    inoutflow_time : int
+        Consider only time steps during the fastest 600 hPa ascent and this many timesteps before
+        and after the ascent (in- and outflow).
+    verbose : bool
+        If true, get more output.
+
+    Returns
+    -------
+    xarray.Dataset with concatenated values for all trajectories. Includes a new dimension 'file' to
+    backtrack any results to the correct file and trajectory.
+    """
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
     files = np.sort(files)
     param_ids = None
     list_of_arrays = []
-    for f in tqdm(files):
+    for f in tqdm(files) if verbose else files:
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
             [x, "asc600", "phase"]
         ]
@@ -36,24 +59,47 @@ def load_data(file_path, x, only_asc600=False, inoutflow_time=-1):
 
 
 def get_average(data):
+    """
+    Calculate the average over all time steps.
+
+    Parameters
+    ----------
+    data : xarray.Dataset
+        A dataset loaded with 'load_data()' although any dataset with a coordinate 'time' works as well.
+
+    Returns
+    -------
+    xarray.Dataset where the 'time' coordinate is ditched and averages are calculated.
+    """
     return data.mean(dim="time", skipna=True, keep_attrs=True)
 
 
-def get_cluster(data, k, tol=1e-4, x=None, param_names=None):
+def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
     """
+    Calculate clusters using k-means for the variable 'x'.
 
     Parameters
     ----------
     data : xarray.Dataset or xarray.DataArray
         A dataset of trajectories from a sensitivity simulation or one column of the set.
-    tol : float
+        Must be a dataset with coordinates 'trajectory' and 'file', i.e., loaded using 'load_data()'.
     k : int
+        Number of clusters for k-means.
+    tol : float
+        From scikit-learn.org: Relative tolerance with regards to Frobenius norm of the difference
+        in the cluster centers of two consecutive iterations to declare convergence.
     x : string
-    out_params : list of strings
+        The model state variable or model parameter to create clusters for.
+    param_names : list of strings
+        If 'x' is a model parameter, then calculate clusters for each sensitivity of a model state variable towards 'x'.
+    verbose : bool
+        If true, get more output.
 
     Returns
     -------
-    sklearn.cluster.Kmeans of the array or a dictionary of output parameter names and the clusters for each.
+    A pandas.DataFrame with 'cluster' of type KMeans, 'trajectory', and the column defined using 'x'
+    or data.name if 'data' is a xarray.DataArray.
+    If the cluster is done for sensitivities (model parameters), then the coordinate 'Output Parameter' is added.
 
     """
     if x is not None and isinstance(data, xr.Dataset):
@@ -64,17 +110,19 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None):
         avg_name = "avg " + data.name
 
     shape = (len(data_array["file"]) * len(data_array["trajectory"]), 1)
-
+    if verbose:
+        print("Calculate the cluster")
     if param_names is not None:
         kmeans_dic = {
             "clusters": np.asarray([]),
             avg_name: np.asarray([]),
-            "param": np.asarray([]),
+            "Output Parameter": np.asarray([]),
             "trajectory": np.asarray([]),
             "file": np.asarray([]),
         }
-        traj_offset = 0
-        for i, out_p in enumerate(param_names):
+        for i, out_p in (
+            tqdm(enumerate(param_names)) if verbose else enumerate(param_names)
+        ):
             fit_data = data_array.sel({"Output_Parameter_ID": i}).values
             fit_data = np.reshape(fit_data, shape)
             kmeans_dic[out_p] = [
@@ -86,7 +134,9 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None):
             clusters = KMeans(n_clusters=k, tol=tol, random_state=42).fit_predict(
                 fit_data[~np.isnan(fit_data[:, 0])]
             )
-            kmeans_dic["param"] = np.append(kmeans_dic["param"], out_p)
+            kmeans_dic["Output Parameter"] = np.append(
+                kmeans_dic["Output Parameter"], out_p
+            )
             trajectory = data_array["trajectory"]
             for _ in range(len(data_array["file"]) - 1):
                 trajectory = np.append(trajectory, data_array["trajectory"])
@@ -110,7 +160,11 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None):
             fit_data[~np.isnan(fit_data[:, 0])]
         )
         trajectory = data_array["trajectory"]
-        for _ in range(len(data_array["file"]) - 1):
+        for _ in (
+            tqdm(range(len(data_array["file"]) - 1))
+            if verbose
+            else range(len(data_array["file"]) - 1)
+        ):
             trajectory = np.append(trajectory, data_array["trajectory"])
         filenames = np.repeat(data_array["file"].values, len(data_array["trajectory"]))
         return pd.DataFrame.from_dict(
@@ -132,9 +186,36 @@ def plot_cluster_data(
     height=12,
     log_scale=(False, False),
     palette="tab10",
-    **kwargs
+    **kwargs,
 ):
+    """
+    Use seaborn to create either a scatter plot or a histogram of all datapoints and their cluster in a different color.
 
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        A pandas.DataFrame with 'cluster' of type KMeans, 'trajectory', and the column defined in 'x' and 'y'.
+    x : string
+        The column of 'data' for the x-axis for the plots.
+    y : string or None
+        If plot_type == 'scatter': The column of 'data' for the y-axis for the scatter plot.
+    plot_type : string
+        Use 'histplot' for a histogram and 'scatter' for a scatter plot.
+    width : int
+        Width of the plot in pixels.
+    height : int
+        Height of the plot in pixels.
+    log_scale : tuple of bool
+        If true, the x- and/or y-axis are plotted using a log-scale.
+    palette : string
+        Palette for cluster colors.
+    kwargs : dictionary
+        Arguments passed down to matplotlib plotting functions.
+
+    Returns
+    -------
+    matplotlib.axes.Axes created using seaborn plot function.
+    """
     sns.set(rc={"figure.figsize": (width, height)})
 
     if plot_type == "histplot":
@@ -144,10 +225,12 @@ def plot_cluster_data(
             hue="cluster",
             palette=palette,
             log_scale=log_scale,
-            **kwargs
+            **kwargs,
         )
     elif plot_type == "scatter":
-        g = sns.scatterplot(data=data, x=x, y=y, hue="cluster", palette=palette)
+        g = sns.scatterplot(
+            data=data, x=x, y=y, hue="cluster", palette=palette, **kwargs
+        )
         if log_scale[0]:
             g.set_xscale("log")
         if log_scale[1]:
@@ -156,6 +239,22 @@ def plot_cluster_data(
 
 
 def get_traj_near_center(data, x, n=1):
+    """
+    Extract the number and filenames for trajectories closest to the cluster centers.
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        DataFrame with clusters from 'get_cluster()'.
+    x : string
+        Variable that has been used for calculating the clusters. Usually starts with 'avg '.
+    n : int
+        The number of trajectories to extract for each cluster center.
+
+    Returns
+    -------
+    np.array of pandas.DataFrame with the closest trajectories where each DataFrame is for a different cluster center.
+    """
     centers = []
     for cluster in np.unique(data["cluster"]):
         centers.append(np.mean(data.loc[data["cluster"] == cluster][x]))
@@ -166,14 +265,42 @@ def get_traj_near_center(data, x, n=1):
     return traj_centers
 
 
-def extract_trajs(centers, file_path, store_path, only_asc600=False, inoutflow_time=-1):
+def extract_trajs(
+    centers, file_path, store_path, only_asc600=False, inoutflow_time=-1, verbose=False
+):
+    """
+    Given trajectories from 'get_traj_near_center()', extract the original data from the complete dataset and merge them
+    to a new dataset. The new dataset includes 'cluster' to identify the affiliation of each trajectory.
+
+    Parameters
+    ----------
+    centers : np.array of pandas.DataFrame
+        For each cluster one pandas.DataFrame with the trajectories closest to the cluster center.
+    file_path : string
+        Path to trajectories from a sensitivity analysis.
+    store_path : string
+        Filepath or filepath and name to store the merged dataset as NetCDF-file.
+    only_asc600 : bool
+        Consider only time steps during the fastest 600 hPa ascent.
+    inoutflow_time : int
+        Consider only time steps during the fastest 600 hPa ascent and this many timesteps before
+        and after the ascent (in- and outflow).
+    verbose : bool
+        If true, get more output.
+    """
     ds_list = []
     traj_enum = 0
     cluster = 0
     min_time = None
     max_time = None
-    for center_df in tqdm(centers):
-        for idx, row in tqdm(center_df.iterrows(), leave=False, total=len(center_df)):
+    if verbose:
+        print("Load the files to check for the time ranges for the final file")
+    for center_df in tqdm(centers) if verbose else centers:
+        for idx, row in (
+            tqdm(center_df.iterrows(), leave=False, total=len(center_df))
+            if verbose
+            else tqdm(center_df.iterrows(), leave=False, total=len(center_df))
+        ):
             f = row["file"]
             ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
             tmp_min = ds["time"].min()
@@ -183,9 +310,13 @@ def extract_trajs(centers, file_path, store_path, only_asc600=False, inoutflow_t
             if max_time is None or max_time < tmp_max:
                 max_time = tmp_max
 
-    for center_df in tqdm(centers):
+    for center_df in tqdm(centers) if verbose else centers:
         data_arrays = []
-        for idx, row in tqdm(center_df.iterrows(), leave=False, total=len(center_df)):
+        for idx, row in (
+            tqdm(center_df.iterrows(), leave=False, total=len(center_df))
+            if verbose
+            else center_df.iterrows()
+        ):
             traj = row["trajectory"]
             f = row["file"]
             ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
@@ -338,11 +469,22 @@ def extract_trajs(centers, file_path, store_path, only_asc600=False, inoutflow_t
             )
         )
         cluster += 1
+    if verbose:
+        print("Concatenating the final list")
     ds = xr.concat(ds_list, dim="trajectory", join="outer", combine_attrs="override")
+    if store_path[-1] != "/" and "." not in store_path:
+        # We assume store_path is just a path without a proper filename.
+        filename = store_path + "/" + "cluster_extracted_trajectories.nc"
+    elif store_path[-1] == "/":
+        filename = store_path + "cluster_extracted_trajectories.nc"
+    else:
+        filename = store_path
+    if verbose:
+        print(f"Storing the extracted trajectories to {filename}")
     comp = dict(zlib=True, complevel=9)
     encoding = {var: comp for var in ds.data_vars}
     ds.to_netcdf(
-        path=store_path + "cluster_merged.nc",
+        path=filename,
         encoding=encoding,
         compute=True,
         engine="netcdf4",
@@ -445,6 +587,78 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--logx",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+            Plot the x-axis using log-scale.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--logy",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+            Plot the y-axis using log-scale.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--plot_type",
+        type=str,
+        default="histplot",
+        choices=["histplot", "scatter"],
+        help=textwrap.dedent(
+            """\
+            You may choose different kind of plots.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--extract_n_trajs",
+        type=int,
+        default=0,
+        help=textwrap.dedent(
+            """\
+            Extract the given number of trajectories for each cluster center from the complete dataset 
+            that are close to the centers.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--extract_store_path",
+        type=str,
+        default=None,
+        help=textwrap.dedent(
+            """\
+            The path (optional: and the name) to store the extracted trajectories. 
+            """
+        ),
+    )
+    parser.add_argument(
+        "--extracted_trajs_complete",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+            If this option is set, then 'only_asc600' and 'inoutflow_time' are ignored for the extracted trajectories.
+            This does not change the clusters.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--sens_model_states",
+        default=None,
+        type=str,
+        nargs="+",
+        help=textwrap.dedent(
+            """\
+            If --cluster_var is a sensitivity (model parameter), then you may define the model state variable here 
+            to calculate and plot only averages and their clusters regarding these model state variables.
+            """
+        ),
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help=textwrap.dedent(
@@ -455,3 +669,67 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    data = load_data(
+        file_path=args.file_path,
+        x=args.cluster_var,
+        only_asc600=args.only_asc600,
+        inoutflow_time=args.inoutflow_time,
+        verbose=args.verbose,
+    )
+    data = get_average(
+        data
+    )  # We don't need the original dataset with all individual time steps anymore.
+    clusters = get_cluster(
+        data=data,
+        k=args.k,
+        x=args.cluster_var,
+        param_names=args.sens_model_states,
+        verbose=args.verbose,
+    )
+    if args.plot_type == "histplot":
+        plot = plot_cluster_data(
+            data=clusters,
+            x=f"avg {args.cluster_var}",
+            plot_type=args.plot_type,
+            log_scale=(args.logx, args.logy),
+            width=args.width,
+            height=args.height,
+            **{
+                "multiple": "stack"
+            },  # For demonstration purpose, we add another keyword like that.
+        )
+    else:
+        plot = plot_cluster_data(
+            data=clusters,
+            x=f"avg {args.cluster_var}",
+            plot_type=args.plot_type,
+            log_scale=(args.logx, args.logy),
+            width=args.width,
+            height=args.height,
+        )
+    plot.get_figure().savefig(args.out_file, dpi=300)
+    # It would be nice to see the trajectories near the center in a separate file
+    if args.extract_n_trajs > 0 and args.extract_store_path is not None:
+        if args.verbose:
+            print("Get the trajectory indices near the center")
+        centers = get_traj_near_center(
+            data=clusters,
+            x=f"avg {args.cluster_var}",
+            n=args.extract_n_trajs,
+        )
+        if args.extracted_trajs_complete:
+            extract_trajs(
+                centers=centers,
+                file_path=args.file_path,
+                store_path=args.extract_store_path,
+                verbose=args.verbose,
+            )
+        else:
+            extract_trajs(
+                centers=centers,
+                file_path=args.file_path,
+                store_path=args.extract_store_path,
+                only_asc600=args.only_asc600,
+                inoutflow_time=args.inoutflow_time,
+                verbose=args.verbose,
+            )

@@ -1,7 +1,6 @@
 import warnings
 
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
-# warnings.filterwarnings('ignore')
 
 import itertools
 import holoviews as hv
@@ -27,6 +26,21 @@ def filter_trajectories(
     min_pressure=None,
     max_pressure=None,
 ):
+    """
+
+    Parameters
+    ----------
+    ds
+    only_asc600
+    sens_model_state_ids
+    inoutflow_time
+    min_pressure
+    max_pressure
+
+    Returns
+    -------
+
+    """
     if inoutflow_time > 0 and "asc600" in ds:
         ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
         ds_flow = ds_flow.rolling(
@@ -58,6 +72,25 @@ def load_lon_lat_time(
     delta_time=None,
     verbose=False,
 ):
+    """
+
+    Parameters
+    ----------
+    file_path
+    sens_model_states
+    only_asc600
+    inoutflow_time
+    min_pressure
+    max_pressure
+    n_lons
+    n_lats
+    delta_time
+    verbose
+
+    Returns
+    -------
+
+    """
     if verbose:
         print("Get the longitude, latitude and time values to create gridded data.")
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
@@ -145,6 +178,31 @@ def load_counts_means(
     verbose=False,
     process_file=None,
 ):
+    """
+
+    Parameters
+    ----------
+    file_path
+    variables
+    additional_vars
+    lons
+    delta_lon
+    lats
+    delta_lat
+    sens_model_states
+    only_asc600
+    inoutflow_time
+    min_pressure
+    max_pressure
+    pressure_levels
+    time_levels
+    verbose
+    process_file
+
+    Returns
+    -------
+
+    """
     if verbose:
         print(
             "Calculating the mean and number of occurrences at each grid point in this function."
@@ -387,6 +445,33 @@ def load_min_max_variance(
     verbose=False,
     process_file=None,
 ):
+    """
+
+    Parameters
+    ----------
+    file_path
+    variables
+    additional_vars
+    lons
+    delta_lon
+    lats
+    delta_lat
+    means
+    counts
+    sens_model_states
+    only_asc600
+    inoutflow_time
+    min_pressure
+    max_pressure
+    pressure_levels
+    time_levels
+    verbose
+    process_file
+
+    Returns
+    -------
+
+    """
     if verbose:
         print(
             "Calculating minimum, maximum and variance of the variables in this function."
@@ -674,6 +759,28 @@ def to_Dataset(
     variance,
     verbose,
 ):
+    """
+
+    Parameters
+    ----------
+    file_path
+    lons
+    lats
+    pressure_levels
+    time_levels
+    delta_time
+    sens_model_states
+    counts
+    means
+    mins
+    maxs
+    variance
+    verbose
+
+    Returns
+    -------
+
+    """
     if verbose:
         print("Setting up dimensions and coordinates for xarray.Dataset")
     dataset_dic = {}
@@ -797,6 +904,27 @@ def load_data(
     n_lats=100,
     verbose=False,
 ):
+    """
+
+    Parameters
+    ----------
+    file_path
+    variables
+    sens_model_states
+    only_asc600
+    inoutflow_time
+    min_pressure
+    max_pressure
+    pressure_levels
+    delta_time
+    n_lons
+    n_lats
+    verbose
+
+    Returns
+    -------
+
+    """
     lons, delta_lon, lats, delta_lat, time_levels = load_lon_lat_time(
         file_path=file_path,
         sens_model_states=sens_model_states,
@@ -867,6 +995,20 @@ def load_data(
 
 
 def plot_heatmap(ds, col, fig_size=250, aspect=1, cmap="viridis"):
+    """
+
+    Parameters
+    ----------
+    ds
+    col
+    fig_size
+    aspect
+    cmap
+
+    Returns
+    -------
+
+    """
     x = "longitude"
     y = "latitude"
     return hv.Image((ds[x], ds[y], ds[col]), datatype=["grid"]).opts(
@@ -892,7 +1034,8 @@ if __name__ == "__main__":
             """\
             Load data from a sensitivity simulation and calculate column-wise mean, maximum, variance of
             any given parameter or sensitivity.
-            Can optionally set minimum and maximum height via --min_pressure or --max_pressure to exclude certain heights.
+            Can optionally set minimum and maximum height via --min_pressure or 
+            --max_pressure to exclude certain heights.
             Can include a density map of trajectories, phases and filter by phases. 
             """
         ),
@@ -1111,7 +1254,8 @@ if __name__ == "__main__":
             """\
             Calculate only the given step. Previous steps must be loaded using --load_calculated!
             All options except 'all' and 'merge_counts_means' store only *.pkl files for further processing.
-            The 'merge_*' options merge all results calculated using the respective steps for different files with --process_file. 
+            The 'merge_*' options merge all results calculated 
+            using the respective steps for different files with --process_file. 
             """
         ),
     )
@@ -1121,7 +1265,10 @@ if __name__ == "__main__":
         type=int,
         help=textwrap.dedent(
             """\
-            If multiple files in --file_path are present, you can define which file shall be processed using an integer from 0  to n-1, whith n the number of files. This is useful if the script is run in parallel for multiple files. Makes only sense with --calculate_only and the options 'only_counts_means' or 'only_min_max_variance'.
+            If multiple files in --file_path are present, you can define which file shall be processed using an integer 
+            from 0  to n-1, whith n the number of files. This is useful if the script is run in parallel 
+            for multiple files. Makes only sense with --calculate_only 
+            and the options 'only_counts_means' or 'only_min_max_variance'.
             """
         ),
     )
@@ -1449,34 +1596,74 @@ if __name__ == "__main__":
             else:
                 filename = file_tmp[0]
             filetype = file_tmp[-1]
-            if "Output Parameter" in ds[var].coords:
-                if args.sens_model_states is not None:
-                    plot = plot_heatmap(
-                        ds=ds.sel({"Output Parameter": args.sens_model_states}),
-                        col=var,
-                        fig_size=args.width / 10,
-                        aspect=args.width / args.height,
-                    )
-                    hv.save(
-                        plot, f"{filename}_d{args.sens_model_states}_{var}.{filetype}"
-                    )
-                else:
-                    for s in ds["Output Parameter"]:
+            if "pressure" in ds[var].coords:
+                for p in ds["pressure"]:
+                    if "Output Parameter" in ds[var].coords:
+                        if args.sens_model_states is not None:
+                            plot = plot_heatmap(
+                                ds=ds.sel(
+                                    {
+                                        "Output Parameter": args.sens_model_states,
+                                        "pressure": p,
+                                    }
+                                ),
+                                col=var,
+                                fig_size=args.width / 10,
+                                aspect=args.width / args.height,
+                            )
+                            hv.save(
+                                plot,
+                                f"{filename}_d{args.sens_model_states}_{var}_{p//100}.{filetype}",
+                            )
+                        else:
+                            for s in ds["Output Parameter"]:
+                                plot = plot_heatmap(
+                                    ds=ds.sel({"Output Parameter": s, "pressure": p}),
+                                    col=var,
+                                    fig_size=args.width / 10,
+                                    aspect=args.width / args.height,
+                                )
+                                hv.save(
+                                    plot, f"{filename}_d{s}_{var}_{p//100}.{filetype}"
+                                )
+                    else:
                         plot = plot_heatmap(
-                            ds=ds.sel({"Output Parameter": s}),
+                            ds=ds.sel({"pressure": p}),
                             col=var,
                             fig_size=args.width / 10,
                             aspect=args.width / args.height,
                         )
-                        hv.save(plot, f"{filename}_d{s}_{var}.{filetype}")
+                        hv.save(plot, f"{filename}_{var}_{p//100}.{filetype}")
             else:
-                plot = plot_heatmap(
-                    ds=ds,
-                    col=var,
-                    fig_size=args.width / 10,
-                    aspect=args.width / args.height,
-                )
-                hv.save(plot, f"{filename}_{var}.{filetype}")
+                if "Output Parameter" in ds[var].coords:
+                    if args.sens_model_states is not None:
+                        plot = plot_heatmap(
+                            ds=ds.sel({"Output Parameter": args.sens_model_states}),
+                            col=var,
+                            fig_size=args.width / 10,
+                            aspect=args.width / args.height,
+                        )
+                        hv.save(
+                            plot,
+                            f"{filename}_d{args.sens_model_states}_{var}.{filetype}",
+                        )
+                    else:
+                        for s in ds["Output Parameter"]:
+                            plot = plot_heatmap(
+                                ds=ds.sel({"Output Parameter": s}),
+                                col=var,
+                                fig_size=args.width / 10,
+                                aspect=args.width / args.height,
+                            )
+                            hv.save(plot, f"{filename}_d{s}_{var}.{filetype}")
+                else:
+                    plot = plot_heatmap(
+                        ds=ds,
+                        col=var,
+                        fig_size=args.width / 10,
+                        aspect=args.width / args.height,
+                    )
+                    hv.save(plot, f"{filename}_{var}.{filetype}")
 
         if isinstance(args.var, str):
             handle_plot(ds, args.var, args)
