@@ -72,7 +72,7 @@ def load_lon_lat_time(
                 np.argwhere(np.asarray(param_id_map) == state).item()
             )
     # Get the limits on lon and lat
-    for f in tqdm(files):
+    for f in tqdm(files) if verbose else files:
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
             ["lon", "lat", "asc600", "pressure"]
         ]
@@ -197,7 +197,7 @@ def load_counts_means(
     if process_file is not None:
         files = [files[process_file]]
     counts = np.zeros(var_shapes)
-    for f in tqdm(files):
+    for f in tqdm(files) if verbose else files:
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
             additional_vars + variables
         ]
@@ -246,10 +246,14 @@ def load_counts_means(
         # Get the actual values and calculate the mean at the end
         lo_idx = 0
         la_idx = 0
-        for la, lo in tqdm(
-            itertools.product(lats[:-1], lons[:-1]),
-            total=n_lons * n_lats,
-            leave=False,
+        for la, lo in (
+            tqdm(
+                itertools.product(lats[:-1], lons[:-1]),
+                total=n_lons * n_lats,
+                leave=False,
+            )
+            if verbose
+            else itertools.product(lats[:-1], lons[:-1])
         ):
             if pressure_levels is not None and n_times > 1:
                 raise NotImplementedError(
@@ -327,7 +331,11 @@ def load_counts_means(
         print("Divide the sum to get the expected value (here: the mean)")
     lo_idx = 0
     la_idx = 0
-    for _, _ in tqdm(itertools.product(lats[:-1], lons[:-1]), total=n_lons * n_lats):
+    for _, _ in (
+        tqdm(itertools.product(lats[:-1], lons[:-1]), total=n_lons * n_lats)
+        if verbose
+        else itertools.product(lats[:-1], lons[:-1])
+    ):
         for v in sums:
             if pressure_levels is not None and n_times > 1:
                 raise NotImplementedError(
@@ -451,7 +459,7 @@ def load_min_max_variance(
     files = np.sort(files)
     if process_file is not None:
         files = [files[process_file]]
-    for f in tqdm(files):
+    for f in tqdm(files) if verbose else files:
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
             additional_vars + variables
         ]
@@ -466,10 +474,14 @@ def load_min_max_variance(
 
         lo_idx = 0
         la_idx = 0
-        for la, lo in tqdm(
-            itertools.product(lats[:-1], lons[:-1]),
-            total=n_lons * n_lats,
-            leave=False,
+        for la, lo in (
+            tqdm(
+                itertools.product(lats[:-1], lons[:-1]),
+                total=n_lons * n_lats,
+                leave=False,
+            )
+            if verbose
+            else itertools.product(lats[:-1], lons[:-1])
         ):
 
             if pressure_levels is not None and n_times > 1:
@@ -611,7 +623,11 @@ def load_min_max_variance(
         print("Divide the sum to get the expected value (here: the variance)")
     lo_idx = 0
     la_idx = 0
-    for _, _ in tqdm(itertools.product(lons[:-1], lats[:-1]), total=n_lons * n_lats):
+    for _, _ in (
+        tqdm(itertools.product(lons[:-1], lats[:-1]), total=n_lons * n_lats)
+        if verbose
+        else itertools.product(lons[:-1], lats[:-1])
+    ):
         for v in variance:
             if pressure_levels is not None and n_times > 1:
                 raise NotImplementedError(
@@ -1225,7 +1241,7 @@ if __name__ == "__main__":
         means = None
         pressure_levels = None
         variables = None
-        for filename in tqdm(files):
+        for filename in tqdm(files) if args.verbose else files:
             with open(args.load_calculated + filename, "rb") as f:
                 data = pickle.load(f)
                 if counts is not None:
@@ -1334,7 +1350,7 @@ if __name__ == "__main__":
             means = data["means"]
             pressure_levels = data["pressure_levels"]
             variables = data["variables"]
-        for filename in tqdm(files):
+        for filename in tqdm(files) if args.verbose else files:
             with open(args.load_calculated + filename, "rb") as f:
                 data = pickle.load(f)
                 if mins is not None:
