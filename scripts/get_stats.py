@@ -2466,7 +2466,7 @@ def plot_heatmap_histogram(
         x_labels = [f"{tick:1.1e}" for tick in x_ticks]
         _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
         y_labels = [f"{tick:1.1e}" for tick in y_ticks]
-        _ = ax.set_yticklabels(y_labels)
+        _ = ax.set_yticklabels(y_labels, rotation=0)
         _ = ax.set_title(title)
 
         plt.xlabel(x_name)
@@ -2558,195 +2558,16 @@ def plot_heatmap_histogram(
         print("All plots finished!")
 
 
-if __name__ == "__main__":
-    import argparse
-    import textwrap
+def main(args):
+    """
+    Handle the plotting routines for different data inputs and plots.
 
-    from latexify import *
+    Parameters
+    ----------
+    args : arparse.ArgumentParser or any class with the same members
+        A number of arguments to handle loading and plotting.
 
-    parser = argparse.ArgumentParser(
-        description=textwrap.dedent(
-            """\
-            Get statistics of a final, post-processed dataset with mean squared deviation and 
-            predicted mean squared deviation.
-            Or get statistics and plot histograms for files from a sensitivity analysis simulation along
-            trajectories, e.g., by using
-            python get_stats.py --file /project/meteo/w2w/Z2/Z2_data_gradients/ --out_file /path/to/pics/histogram.png 
-            The name of the plots will be changed automatically to store multiple plots.
-            Beware that creating the histogram may take a while. You can use 
-            --save_histogram /path/to/folder/
-            to store the histogram and edges to disk. 
-            Some statistics are done after plotting which may take a while as well.
-            """
-        ),
-        formatter_class=argparse.RawTextHelpFormatter,
-    )
-    parser.add_argument(
-        "--file",
-        default="../data/vladiana_ensembles_postprocess/merged_independent.nc",
-        help=textwrap.dedent(
-            """\
-            Path to post-processed file or to a folder with many files from a sensitivity analysis simulation.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--from_processed",
-        action="store_true",
-        help=textwrap.dedent(
-            """\
-            If true, then --file points to a post-processed file, otherwise --file points either to 
-            a folder with statistics or with results from a sensitivity analysis.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--out_file",
-        default="../pics/histogram.png",
-        help=textwrap.dedent(
-            """\
-            Path and name to store histogram plots if the input is a set of trajectories with a sensitivity analysis
-            simulation. Exchanges the ending with 'txt' and stores the results of any statistics in there unless it is 'none'.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--width",
-        default=24,
-        type=float,
-        help=textwrap.dedent(
-            """\
-            Width in inches for histogram plots.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--height",
-        default=12,
-        type=float,
-        help=textwrap.dedent(
-            """\
-            Height in inches for histogram plots.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--only_asc600",
-        action="store_true",
-        help=textwrap.dedent(
-            """\
-            Consider only time steps during the fastest ascent.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--inoutflow_time",
-        default=-1,
-        type=int,
-        help=textwrap.dedent(
-            """\
-            Consider only time steps during the fastest ascent and within the given range before (inflow) and after (outflow) of the fastest ascent.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--plot_type",
-        default="all",
-        help=textwrap.dedent(
-            """\
-            Choose which plots to create. Options are
-            all: All plots.
-            hist_out: Histogram for output parameters.
-            hist_in: Histogram for all input parameters.
-            heat: Heatmap for all parameters.
-            cov_heat: Heatmap of covariance matrix.
-            cov_heat_phases: Heatmap of covariance matrix for each phase.
-            2D_hist : 2D histogram (heatmap) where the x-axis is determined by conditional_hist.
-            none: No plots.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--conditional_hist",
-        type=str,
-        nargs="+",
-        default=[],
-        help=textwrap.dedent(
-            """\
-            Calculate 2D histograms, where the "x-axis" is given by "conditional_hist".
-            If "load_histogram" is set, you may use "all" to use all available parameters for the x-axis given by the dataset.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--additional_hist_params",
-        type=str,
-        nargs="+",
-        default=[],
-        help=textwrap.dedent(
-            """\
-            Additional parameters to create a histogram for, such as pressure or asc600. 
-            """
-        ),
-    )
-    parser.add_argument(
-        "--load_histogram",
-        default="no",
-        help=textwrap.dedent(
-            """\
-            Load the histogram and edges with pickle from this path.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--save_histogram",
-        default="no",
-        help=textwrap.dedent(
-            """\
-            Store the histogram and edges with pickle to this path.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--save_statistics",
-        default="no",
-        help=textwrap.dedent(
-            """\
-            Store the covariance matrix and means to this path. This includes the matrix with and without
-            phases. Also store the sums for all gradients to this path.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--load_statistics",
-        default="no",
-        help=textwrap.dedent(
-            """\
-            Load the sums for all gradients from this path.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--load_covariance",
-        default="no",
-        help=textwrap.dedent(
-            """\
-            Load the covariance matrix and means from this path. This includes the matrix with and without
-            phases. 
-            """
-        ),
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help=textwrap.dedent(
-            """\
-            More output, i.e., in each intermediate step for building tables.
-            """
-        ),
-    )
-
-    args = parser.parse_args()
+    """
     if not args.from_processed:
         if (
             args.plot_type == "all"
@@ -3050,7 +2871,7 @@ if __name__ == "__main__":
                     )
                     plt.clf()
     else:
-        ds = xr.open_dataset(args.file, decode_times=False)
+        ds = xr.open_dataset(args.file, decode_times=False, engine="netcdf4")
         (
             out_params,
             top20_list,
@@ -3094,3 +2915,195 @@ if __name__ == "__main__":
             filename = filename[0 : -len(ending) - 1] + ".txt"
             with open(filename, "w+") as f:
                 f.write(text)
+
+
+if __name__ == "__main__":
+    import argparse
+    import textwrap
+
+    from latexify import *
+
+    parser = argparse.ArgumentParser(
+        description=textwrap.dedent(
+            """\
+            Get statistics of a final, post-processed dataset with mean squared deviation and 
+            predicted mean squared deviation.
+            Or get statistics and plot histograms for files from a sensitivity analysis simulation along
+            trajectories, e.g., by using
+            python get_stats.py --file /project/meteo/w2w/Z2/Z2_data_gradients/ --out_file /path/to/pics/histogram.png 
+            The name of the plots will be changed automatically to store multiple plots.
+            Beware that creating the histogram may take a while. You can use 
+            --save_histogram /path/to/folder/
+            to store the histogram and edges to disk. 
+            Some statistics are done after plotting which may take a while as well.
+            """
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "--file",
+        default="../data/vladiana_ensembles_postprocess/merged_independent.nc",
+        help=textwrap.dedent(
+            """\
+            Path to post-processed file or to a folder with many files from a sensitivity analysis simulation.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--from_processed",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+            If true, then --file points to a post-processed file, otherwise --file points either to 
+            a folder with statistics or with results from a sensitivity analysis.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--out_file",
+        default="../pics/histogram.png",
+        help=textwrap.dedent(
+            """\
+            Path and name to store histogram plots if the input is a set of trajectories with a sensitivity analysis
+            simulation. Exchanges the ending with 'txt' and stores the results of any statistics in there unless it is 'none'.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--width",
+        default=24,
+        type=float,
+        help=textwrap.dedent(
+            """\
+            Width in inches for histogram plots.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--height",
+        default=12,
+        type=float,
+        help=textwrap.dedent(
+            """\
+            Height in inches for histogram plots.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--only_asc600",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+            Consider only time steps during the fastest ascent.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--inoutflow_time",
+        default=-1,
+        type=int,
+        help=textwrap.dedent(
+            """\
+            Consider only time steps during the fastest ascent and within the given range before (inflow) and after (outflow) of the fastest ascent.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--plot_type",
+        default="all",
+        help=textwrap.dedent(
+            """\
+            Choose which plots to create. Options are
+            all: All plots.
+            hist_out: Histogram for output parameters.
+            hist_in: Histogram for all input parameters.
+            heat: Heatmap for all parameters.
+            cov_heat: Heatmap of covariance matrix.
+            cov_heat_phases: Heatmap of covariance matrix for each phase.
+            2D_hist : 2D histogram (heatmap) where the x-axis is determined by conditional_hist.
+            none: No plots.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--conditional_hist",
+        type=str,
+        nargs="+",
+        default=[],
+        help=textwrap.dedent(
+            """\
+            Calculate 2D histograms, where the "x-axis" is given by "conditional_hist".
+            If "load_histogram" is set, you may use "all" to use all available parameters for the x-axis given by the dataset.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--additional_hist_params",
+        type=str,
+        nargs="+",
+        default=[],
+        help=textwrap.dedent(
+            """\
+            Additional parameters to create a histogram for, such as pressure or asc600. 
+            """
+        ),
+    )
+    parser.add_argument(
+        "--load_histogram",
+        default="no",
+        help=textwrap.dedent(
+            """\
+            Load the histogram and edges with pickle from this path.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--save_histogram",
+        default="no",
+        help=textwrap.dedent(
+            """\
+            Store the histogram and edges with pickle to this path.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--save_statistics",
+        default="no",
+        help=textwrap.dedent(
+            """\
+            Store the covariance matrix and means to this path. This includes the matrix with and without
+            phases. Also store the sums for all gradients to this path.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--load_statistics",
+        default="no",
+        help=textwrap.dedent(
+            """\
+            Load the sums for all gradients from this path.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--load_covariance",
+        default="no",
+        help=textwrap.dedent(
+            """\
+            Load the covariance matrix and means from this path. This includes the matrix with and without
+            phases. 
+            """
+        ),
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+            More output, i.e., in each intermediate step for building tables.
+            """
+        ),
+    )
+
+    args = parser.parse_args()
+    main(args)
