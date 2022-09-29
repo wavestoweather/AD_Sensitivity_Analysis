@@ -230,7 +230,7 @@ def load_counts_means(
     elif pressure_levels is not None:
         var_shapes = (n_times, n_press, n_lats, n_lons)
         sens_shapes = (len(sens_model_state_ids), n_times, n_press, n_lats, n_lons)
-    elif time_levels is not None:
+    elif time_levels is not None and n_times > 1:
         var_shapes = (n_times, n_lats, n_lons)
         sens_shapes = (len(sens_model_state_ids), n_times, n_lats, n_lons)
     else:
@@ -289,7 +289,7 @@ def load_counts_means(
                     bins=(lats, lons),
                 )
                 counts[0, i] += counts_tmp.T
-        elif time_levels is not None:
+        elif time_levels is not None and n_times > 1:
             raise NotImplementedError(
                 "Integrating for specific time levels is not yet supported"
             )
@@ -353,7 +353,7 @@ def load_counts_means(
                                 )
                                 sens_idx += 1
 
-            elif time_levels is not None:
+            elif time_levels is not None and n_times > 1:
                 raise NotImplementedError(
                     "Integrating for specific time levels is not yet supported"
                 )
@@ -409,7 +409,7 @@ def load_counts_means(
                         sums[v][:, 0, p_i, la_idx, lo_idx] /= counts[
                             0, p_i, la_idx, lo_idx
                         ]
-            elif time_levels is not None:
+            elif time_levels is not None and n_times > 1:
                 raise NotImplementedError(
                     "Integrating for specific time levels is not yet supported"
                 )
@@ -482,7 +482,7 @@ def load_min_max_variance(
         n_press = len(pressure_levels) - 1
     else:
         n_press = 0
-    if time_levels is not None:
+    if time_levels is not None :
         n_times = len(time_levels) - 1
     else:
         n_times = 1
@@ -503,7 +503,7 @@ def load_min_max_variance(
         n_sens = len(sens_model_state_ids) * n_var
         var_shapes = (n_times, n_press, n_lats, n_lons)
         sens_shapes = (len(sens_model_state_ids), n_times, n_press, n_lats, n_lons)
-    elif time_levels is not None:
+    elif time_levels is not None and n_times > 1:
         n_var = n_times * n_lons * n_lats
         n_sens = len(sens_model_state_ids) * n_var
         var_shapes = (n_times, n_lats, n_lons)
@@ -642,7 +642,7 @@ def load_min_max_variance(
                                     ]
                                 )
                                 sens_idx += 1
-            elif time_levels is not None:
+            elif time_levels is not None and n_times > 1:
                 raise NotImplementedError(
                     "Integrating for specific time levels is not yet supported"
                 )
@@ -728,7 +728,7 @@ def load_min_max_variance(
                         variance[v][:, 0, p_i, la_idx, lo_idx] /= counts[
                             0, p_i, la_idx, lo_idx
                         ]
-            elif time_levels is not None:
+            elif time_levels is not None and n_times > 1:
                 raise NotImplementedError(
                     "Integrating for specific time levels is not yet supported"
                 )
