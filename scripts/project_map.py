@@ -482,7 +482,7 @@ def load_min_max_variance(
         n_press = len(pressure_levels) - 1
     else:
         n_press = 0
-    if time_levels is not None :
+    if time_levels is not None:
         n_times = len(time_levels) - 1
     else:
         n_times = 1
@@ -1377,35 +1377,78 @@ if __name__ == "__main__":
         with open(args.store_calculated + filename, "wb") as f:
             pickle.dump(data, f)
     elif args.calculate_only == "merge_counts_means":
+        # There are two ways to do that.
+        # a: all files are in a single folder and have counts and means
+        # for the same variables
+        # b: all files are distributed in different folders where each folder
+        # is the name of a variable dimension and within each folder
+        # are multiple files just as in a
         files = [
             f
             for f in os.listdir(args.load_calculated)
             if os.path.isfile(args.load_calculated + f)
             and f.startswith("counts_means_")
         ]
-        files = np.sort(files)
-        counts = None
-        means = None
-        pressure_levels = None
-        variables = None
-        for filename in tqdm(files) if args.verbose else files:
-            with open(args.load_calculated + filename, "rb") as f:
-                data = pickle.load(f)
-                if counts is not None:
-                    old_count = counts.copy()
-                    loaded_counts = data["counts"]
-                    loaded_means = data["means"]
-                    counts += data["counts"]
-                    for key in means:
-                        means[key] = (
-                            means[key] * old_count / counts
-                            + loaded_means[key] * loaded_counts / counts
-                        )
+
+        def do_the_merge(files, filepath, leave=False):
+            files = np.sort(files)
+            means = None
+            counts = None
+            variables = None
+            pressure_levels = None
+            for filename in tqdm(files, leave=leave) if args.verbose else files:
+                with open(filepath + filename, "rb") as f:
+                    data = pickle.load(f)
+                    if counts is not None:
+                        old_count = counts.copy()
+                        loaded_counts = data["counts"]
+                        loaded_means = data["means"]
+                        counts += data["counts"]
+                        for key in means:
+                            means[key] = (
+                                means[key] * old_count / counts
+                                + loaded_means[key] * loaded_counts / counts
+                            )
+                    else:
+                        counts = data["counts"]
+                        means = data["means"]
+                        variables = data["variables"]
+                        pressure_levels = data["pressure_levels"]
+            return means, variables, counts, pressure_levels
+
+        if len(files) == 0:
+            # This is approach b with multiple folders
+            folders = [
+                f
+                for f in os.listdir(args.load_calculated)
+                if os.path.isdir(args.load_calculated + f)
+            ]
+            folders = np.sort(folders)
+            counts = None
+            pressure_levels = None
+            variables = []
+            means = None
+            for dir in tqdm(folders) if args.verbose else folders:
+                filepath = args.load_calculated + dir + "/"
+                files = [
+                    f
+                    for f in os.listdir(filepath)
+                    if os.path.isfile(filepath + f) and f.startswith("counts_means_")
+                ]
+                if counts is None:
+                    means, tmp_variables, counts, pressure_levels = do_the_merge(
+                        files, filepath
+                    )
                 else:
-                    counts = data["counts"]
-                    means = data["means"]
-                    pressure_levels = data["pressure_levels"]
-                    variables = data["variables"]
+                    tmp_means, tmp_variables, _, _ = do_the_merge(files, filepath)
+                    for key in tmp_means:
+                        means[key] = tmp_means[key]
+                variables.extend(tmp_variables)
+        else:
+            means, variables, counts, pressure_levels = do_the_merge(
+                files, args.load_calculated, True
+            )
+
         if args.verbose:
             print("########### Store counts and means ###########")
         data = {
@@ -1443,7 +1486,23 @@ if __name__ == "__main__":
             counts = data["counts"]
             means = data["means"]
             pressure_levels = data["pressure_levels"]
-            variables = data["variables"]
+            if isinstance(args.var, str):
+                if args.var not in data["variables"]:
+                    raise ValueError(
+                        f"You asked for variable {args.var} which is not "
+                        + f"present in {args.load_calculated}counts_means.pkl"
+                    )
+                variables = [args.var]
+            elif args.var is None:
+                variables = data["variables"]
+            else:
+                variables = args.var
+                for var in variables:
+                    if var not in data["variables"]:
+                        raise ValueError(
+                            f"You asked for variable {var} which is not "
+                            + f"present in {args.load_calculated}counts_means.pkl"
+                        )
         additional_vars = ["lon", "lat", "asc600", "phase"]
         if "pressure" not in variables:
             additional_vars.append("pressure")
