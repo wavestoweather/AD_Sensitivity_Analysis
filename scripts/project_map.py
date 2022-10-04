@@ -288,7 +288,8 @@ def load_counts_means(
                     .values.flatten(),
                     bins=(lats, lons),
                 )
-                counts[0, i] += counts_tmp.T
+
+                counts[0, i] += counts_tmp
         elif time_levels is not None and n_times > 1:
             raise NotImplementedError(
                 "Integrating for specific time levels is not yet supported"
@@ -299,7 +300,7 @@ def load_counts_means(
                 x=ds["lat"].values.flatten(),
                 bins=(lats, lons),
             )
-            counts += counts_tmp.T
+            counts += counts_tmp
 
         # Get the actual values and calculate the mean at the end
         lo_idx = 0
@@ -1342,6 +1343,7 @@ if __name__ == "__main__":
             max_pressure = data["max_pressure"]
             inoutflow_time = data["inoutflow_time"]
         additional_vars = ["lon", "lat", "asc600", "phase"]
+
         if "pressure" not in args.var:
             additional_vars.append("pressure")
         counts, means = load_counts_means(
@@ -1540,34 +1542,67 @@ if __name__ == "__main__":
         with open(args.store_calculated + filename, "wb") as f:
             pickle.dump(data, f)
     elif args.calculate_only == "merge_min_max_variance":
+        # There are two ways to do that.
+        # a: all files are in a single folder and have counts and means
+        # for the same variables
+        # b: all files are distributed in different folders where each folder
+        # is the name of a variable dimension and within each folder
+        # are multiple files just as in a
         files = [
             f
             for f in os.listdir(args.load_calculated)
             if os.path.isfile(args.load_calculated + f)
             and f.startswith("min_max_variances_")
         ]
-        files = np.sort(files)
-        mins = None
-        maxs = None
-        variance = None
-        with open(args.load_calculated + "counts_means.pkl", "rb") as f:
-            data = pickle.load(f)
-            counts = data["counts"]
-            means = data["means"]
-            pressure_levels = data["pressure_levels"]
-            variables = data["variables"]
-        for filename in tqdm(files) if args.verbose else files:
-            with open(args.load_calculated + filename, "rb") as f:
-                data = pickle.load(f)
-                if mins is not None:
-                    for key in mins:
-                        mins[key] = np.minimum(mins[key], data["mins"][key])
-                        maxs[key] = np.maximum(maxs[key], data["maxs"][key])
-                        variance[key] += data["variance"][key]
+
+        def do_the_merge(files, filepath, leave=False):
+            files = np.sort(files)
+            mins = None
+            maxs = None
+            variance = None
+            for filename in tqdm(files, leave=leave) if args.verbose else files:
+                with open(filepath + filename, "rb") as f:
+                    data = pickle.load(f)
+                    if mins is not None:
+                        for key in mins:
+                            mins[key] = np.minimum(mins[key], data["mins"][key])
+                            maxs[key] = np.maximum(maxs[key], data["maxs"][key])
+                            variance[key] += data["variance"][key]
+                    else:
+                        mins = data["mins"]
+                        maxs = data["maxs"]
+                        variance = data["variance"]
+            return mins, maxs, variance
+
+        if len(files) == 0:
+            # This is approach b with multiple folders
+            folders = [
+                f
+                for f in os.listdir(args.load_calculated)
+                if os.path.isdir(args.load_calculated + f)
+            ]
+            folders = np.sort(folders)
+            mins = None
+            maxs = None
+            variance = None
+            for dir in tqdm(folders) if args.verbose else folders:
+                filepath = args.load_calculated + dir + "/"
+                files = [
+                    f
+                    for f in os.listdir(filepath)
+                    if os.path.isfile(filepath + f)
+                    and f.startswith("min_max_variances_")
+                ]
+                if mins is None:
+                    mins, maxs, variance = do_the_merge(files, filepath)
                 else:
-                    mins = data["mins"]
-                    maxs = data["maxs"]
-                    variance = data["variance"]
+                    tmp_mins, tmp_maxs, tmp_variance = do_the_merge(files, filepath)
+                    for key in tmp_mins:
+                        mins[key] = tmp_mins[key]
+                        maxs[key] = tmp_maxs[key]
+                        variance[key] = tmp_variance[key]
+        else:
+            mins, maxs, variance = do_the_merge(files, args.load_calculated, True)
         if args.verbose:
             print("########### Store minimums, maximums and variances ###########")
         data = {
@@ -1587,6 +1622,11 @@ if __name__ == "__main__":
                 time_levels = data["time_levels"]
                 delta_time = data["delta_time"]
                 sens_model_states = data["sens_model_states"]
+            with open(args.load_calculated + "counts_means.pkl", "rb") as f:
+                data = pickle.load(f)
+                pressure_levels = data["pressure_levels"]
+                counts = data["counts"]
+                means = data["means"]
             ds = to_Dataset(
                 file_path=args.file_path,
                 lons=lons,
