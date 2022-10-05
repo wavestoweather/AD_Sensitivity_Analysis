@@ -1,6 +1,6 @@
 import warnings
 
-warnings.simplefilter(action="ignore", category=RuntimeWarning)
+# warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
 import itertools
 import holoviews as hv
@@ -254,6 +254,8 @@ def load_counts_means(
     files = np.sort(files)
     if process_file is not None:
         files = [files[process_file]]
+        if verbose:
+            print(f"Processing {files[0]}")
     counts = np.zeros(var_shapes)
     for f in tqdm(files) if verbose else files:
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
