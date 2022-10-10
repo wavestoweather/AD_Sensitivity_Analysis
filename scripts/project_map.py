@@ -1,6 +1,6 @@
 import warnings
 
-# warnings.simplefilter(action="ignore", category=RuntimeWarning)
+warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
 import itertools
 import holoviews as hv
@@ -258,6 +258,7 @@ def load_counts_means(
             print(f"Processing {files[0]}")
     counts = np.zeros(var_shapes)
     for f in tqdm(files) if verbose else files:
+        print(f)
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
             additional_vars + variables
         ]
@@ -1407,8 +1408,10 @@ if __name__ == "__main__":
                         old_count = counts.copy()
                         loaded_counts = data["counts"]
                         loaded_means = data["means"]
-                        counts += data["counts"]
+                        loaded_counts[np.isnan(loaded_counts)] = 0
+                        counts += loaded_counts
                         for key in means:
+                            loaded_means[key][np.isnan(loaded_means[key])] = 0
                             means[key] = (
                                 means[key] * old_count / counts
                                 + loaded_means[key] * loaded_counts / counts
@@ -1418,6 +1421,9 @@ if __name__ == "__main__":
                         means = data["means"]
                         variables = data["variables"]
                         pressure_levels = data["pressure_levels"]
+                    counts[np.isnan(counts)] = 0
+                    for key in means:
+                        means[key][np.isnan(means[key])] = 0
             return means, variables, counts, pressure_levels
 
         if len(files) == 0:
@@ -1567,13 +1573,17 @@ if __name__ == "__main__":
                     data = pickle.load(f)
                     if mins is not None:
                         for key in mins:
-                            mins[key] = np.minimum(mins[key], data["mins"][key])
-                            maxs[key] = np.maximum(maxs[key], data["maxs"][key])
-                            variance[key] += data["variance"][key]
+                            loaded_var = data["variance"][key]
+                            loaded_var[np.isnan(loaded_var)] = 0
+                            mins[key] = np.fmin(mins[key], data["mins"][key])
+                            maxs[key] = np.fmax(maxs[key], data["maxs"][key])
+                            variance[key] += loaded_var
                     else:
                         mins = data["mins"]
                         maxs = data["maxs"]
                         variance = data["variance"]
+                        for key in variance:
+                            variance[key][np.isnan(variance[key])] = 0
             return mins, maxs, variance
 
         if len(files) == 0:
@@ -1605,6 +1615,15 @@ if __name__ == "__main__":
                         variance[key] = tmp_variance[key]
         else:
             mins, maxs, variance = do_the_merge(files, args.load_calculated, True)
+        # During the merge, any NaNs are replaced with for the variance.
+        # We need to plug in the NaNs where no data is available.
+        with open(args.load_calculated + "counts_means.pkl") as f:
+            data_cm = pickle.load(f)
+        for key in variance:
+            variance[key][data_cm["counts"] == 0] = np.NaN
+            # While not *necessary* it is consistent to do that for min and max too
+            mins[key][data_cm["counts"] == 0] = np.NaN
+            maxs[key][data_cm["counts"] == 0] = np.NaN
         if args.verbose:
             print("########### Store minimums, maximums and variances ###########")
         data = {
@@ -1615,6 +1634,9 @@ if __name__ == "__main__":
         with open(args.store_calculated + "min_max_variances.pkl", "wb") as f:
             pickle.dump(data, f)
         if args.file_path is not None:
+            pressure_levels = data_cm["pressure_levels"]
+            counts = data_cm["counts"]
+            means = data_cm["means"]
             with open(args.load_calculated + "lon_lat_time.pkl", "rb") as f:
                 data = pickle.load(f)
                 lons = data["lons"]
@@ -1624,11 +1646,7 @@ if __name__ == "__main__":
                 time_levels = data["time_levels"]
                 delta_time = data["delta_time"]
                 sens_model_states = data["sens_model_states"]
-            with open(args.load_calculated + "counts_means.pkl", "rb") as f:
-                data = pickle.load(f)
-                pressure_levels = data["pressure_levels"]
-                counts = data["counts"]
-                means = data["means"]
+
             ds = to_Dataset(
                 file_path=args.file_path,
                 lons=lons,
