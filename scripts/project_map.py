@@ -1617,13 +1617,19 @@ if __name__ == "__main__":
             mins, maxs, variance = do_the_merge(files, args.load_calculated, True)
         # During the merge, any NaNs are replaced with for the variance.
         # We need to plug in the NaNs where no data is available.
-        with open(args.load_calculated + "counts_means.pkl") as f:
+        with open(args.load_calculated + "counts_means.pkl", "rb") as f:
             data_cm = pickle.load(f)
         for key in variance:
-            variance[key][data_cm["counts"] == 0] = np.NaN
-            # While not *necessary* it is consistent to do that for min and max too
-            mins[key][data_cm["counts"] == 0] = np.NaN
-            maxs[key][data_cm["counts"] == 0] = np.NaN
+            if key[0] != "d" or key == "deposition":
+                variance[key][data_cm["counts"] == 0] = np.NaN
+                # While not *necessary* it is consistent to do that for min and max too
+                mins[key][data_cm["counts"] == 0] = np.NaN
+                maxs[key][data_cm["counts"] == 0] = np.NaN
+            else:
+                variance[key][:, data_cm["counts"] == 0] = np.NaN
+                # While not *necessary* it is consistent to do that for min and max too
+                mins[key][:, data_cm["counts"] == 0] = np.NaN
+                maxs[key][:, data_cm["counts"] == 0] = np.NaN
         if args.verbose:
             print("########### Store minimums, maximums and variances ###########")
         data = {
