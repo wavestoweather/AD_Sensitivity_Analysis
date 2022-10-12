@@ -3,6 +3,7 @@ import warnings
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
 import os
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from sklearn.cluster import KMeans
@@ -612,7 +613,7 @@ if __name__ == "__main__":
         "--plot_type",
         type=str,
         default="histplot",
-        choices=["histplot", "scatter", "none"],
+        choices=["histplot", "scatter", "both", "none"],
         help=textwrap.dedent(
             """\
             You may choose different kind of plots.
@@ -690,11 +691,11 @@ if __name__ == "__main__":
         param_names=args.sens_model_states,
         verbose=args.verbose,
     )
-    if args.plot_type == "histplot":
+    if args.plot_type == "histplot" or args.plot_type == "both":
         plot = plot_cluster_data(
             data=clusters,
             x=f"avg {args.cluster_var}",
-            plot_type=args.plot_type,
+            plot_type="histplot",
             log_scale=(args.logx, args.logy),
             width=args.width,
             height=args.height,
@@ -702,15 +703,27 @@ if __name__ == "__main__":
                 "multiple": "stack"
             },  # For demonstration purpose, we add another keyword like that.
         )
-    elif args.plot_type == "scatter":
+        if args.plot_type == "both":
+            out_file = args.out_file.split(".pn")[0] + "_histogr.png"
+        else:
+            out_file = args.out_file
+        plot.get_figure().savefig(out_file, dpi=300)
+
+    if args.plot_type == "scatter" or args.plot_type == "both":
         plot = plot_cluster_data(
             data=clusters,
-            x=f"avg {args.cluster_var}",
-            plot_type=args.plot_type,
+            x="trajectory",
+            y=f"avg {args.cluster_var}",
+            plot_type="scatter",
             log_scale=(args.logx, args.logy),
             width=args.width,
             height=args.height,
         )
+        if args.plot_type == "both":
+            out_file = args.out_file.split(".pn")[0] + "_scatter.png"
+        else:
+            out_file = args.out_file
+        plot.get_figure().savefig(out_file, dpi=300)
     if args.plot_type == "histplot" or args.plot_type == "scatter":
         plot.get_figure().savefig(args.out_file, dpi=300)
     # It would be nice to see the trajectories near the center in a separate file
