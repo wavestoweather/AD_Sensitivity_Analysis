@@ -1,3 +1,7 @@
+import warnings
+
+warnings.simplefilter(action="ignore", category=RuntimeWarning)
+
 import os
 import pandas as pd
 import seaborn as sns
@@ -509,7 +513,7 @@ if __name__ == "__main__":
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
-        "--file",
+        "--file_path",
         default="../data/vladiana_ensembles/",
         help=textwrap.dedent(
             """\
@@ -608,7 +612,7 @@ if __name__ == "__main__":
         "--plot_type",
         type=str,
         default="histplot",
-        choices=["histplot", "scatter"],
+        choices=["histplot", "scatter", "none"],
         help=textwrap.dedent(
             """\
             You may choose different kind of plots.
@@ -698,7 +702,7 @@ if __name__ == "__main__":
                 "multiple": "stack"
             },  # For demonstration purpose, we add another keyword like that.
         )
-    else:
+    elif args.plot_type == "scatter":
         plot = plot_cluster_data(
             data=clusters,
             x=f"avg {args.cluster_var}",
@@ -707,7 +711,8 @@ if __name__ == "__main__":
             width=args.width,
             height=args.height,
         )
-    plot.get_figure().savefig(args.out_file, dpi=300)
+    if args.plot_type == "histplot" or args.plot_type == "scatter":
+        plot.get_figure().savefig(args.out_file, dpi=300)
     # It would be nice to see the trajectories near the center in a separate file
     if args.extract_n_trajs > 0 and args.extract_store_path is not None:
         if args.verbose:
