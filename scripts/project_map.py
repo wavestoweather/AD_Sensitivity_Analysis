@@ -57,6 +57,11 @@ def filter_trajectories(
         ds = ds.where(ds["pressure"] <= max_pressure)
     if len(sens_model_state_ids) > 0 and "Output_Parameter_ID" in ds:
         ds = ds.sel({"Output_Parameter_ID": sens_model_state_ids})
+    # There seems to be a bug with some output data where the longitude
+    # and latitude happen to be zero when the trajectory is already finished.
+    # Since this is far away from our domain, we can savely delete that-
+    ds["lon"] = ds["lon"].where(ds["lon"] != 0)
+    ds["lat"] = ds["lat"].where(ds["lat"] != 0)
     return ds
 
 
@@ -258,7 +263,6 @@ def load_counts_means(
             print(f"Processing {files[0]}")
     counts = np.zeros(var_shapes)
     for f in tqdm(files) if verbose else files:
-        print(f)
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
             additional_vars + variables
         ]

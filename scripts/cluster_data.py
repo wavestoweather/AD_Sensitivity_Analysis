@@ -10,6 +10,11 @@ from sklearn.cluster import KMeans
 from tqdm.auto import tqdm
 import xarray as xr
 
+try:
+    from latexify import param_id_map
+except:
+    from scripts.latexify import param_id_map
+
 
 def load_data(file_path, x, only_asc600=False, inoutflow_time=-1, verbose=False):
     """
@@ -54,7 +59,7 @@ def load_data(file_path, x, only_asc600=False, inoutflow_time=-1, verbose=False)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         if param_ids is None and x[0] == "d":
-            param_ids = ds["Output_parameter_ID"]
+            param_ids = ds["Output_Parameter_ID"]
         # fill values where
         data = ds[x].dropna("time", how="all")
         data = data.expand_dims({"file": [f]})
@@ -119,28 +124,18 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
         print("Calculate the cluster")
     if param_names is not None:
         kmeans_dic = {
-            "clusters": np.asarray([]),
+            "cluster": np.asarray([]),
             avg_name: np.asarray([]),
             "Output Parameter": np.asarray([]),
             "trajectory": np.asarray([]),
             "file": np.asarray([]),
         }
-        for i, out_p in (
-            tqdm(enumerate(param_names)) if verbose else enumerate(param_names)
-        ):
+        for out_p in tqdm(param_names) if verbose else param_names:
+            i = np.argwhere(np.asarray(param_id_map) == out_p).item()
             fit_data = data_array.sel({"Output_Parameter_ID": i}).values
             fit_data = np.reshape(fit_data, shape)
-            kmeans_dic[out_p] = [
-                fit_data[~np.isnan(fit_data[:, 0])],
-                KMeans(n_clusters=k, tol=tol, random_state=42).fit_predict(
-                    fit_data[~np.isnan(fit_data[:, 0])]
-                ),
-            ]
             clusters = KMeans(n_clusters=k, tol=tol, random_state=42).fit_predict(
                 fit_data[~np.isnan(fit_data[:, 0])]
-            )
-            kmeans_dic["Output Parameter"] = np.append(
-                kmeans_dic["Output Parameter"], out_p
             )
             trajectory = data_array["trajectory"]
             for _ in range(len(data_array["file"]) - 1):
@@ -148,13 +143,17 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
             filenames = np.repeat(
                 data_array["file"].values, len(data_array["trajectory"])
             )
+            out_p_array = np.repeat(out_p, shape[0])
+            kmeans_dic["Output Parameter"] = np.append(
+                kmeans_dic["Output Parameter"], out_p_array[~np.isnan(fit_data[:, 0])]
+            )
             kmeans_dic["file"] = np.append(
                 kmeans_dic["file"], filenames[~np.isnan(fit_data[:, 0])]
             )
             kmeans_dic["trajectory"] = np.append(
                 kmeans_dic["trajectory"], trajectory[~np.isnan(fit_data[:, 0])]
             )
-            kmeans_dic["clusters"] = np.append(kmeans_dic["clusters"], clusters)
+            kmeans_dic["cluster"] = np.append(kmeans_dic["cluster"], clusters)
             kmeans_dic[avg_name] = np.append(
                 kmeans_dic[avg_name], fit_data[~np.isnan(fit_data[:, 0])].flatten()
             )
@@ -477,6 +476,7 @@ def extract_trajs(
     if verbose:
         print("Concatenating the final list")
     ds = xr.concat(ds_list, dim="trajectory", join="outer", combine_attrs="override")
+    ds["cluster"] = ds["cluster"].where(~np.isnan(ds["pressure"]))
     if store_path[-1] != "/" and "." not in store_path:
         # We assume store_path is just a path without a proper filename.
         filename = store_path + "/" + "cluster_extracted_trajectories.nc"
@@ -707,7 +707,8 @@ if __name__ == "__main__":
             out_file = args.out_file.split(".pn")[0] + "_histogr.png"
         else:
             out_file = args.out_file
-        plot.get_figure().savefig(out_file, dpi=300)
+        plot.get_figure().savefig(out_file, dpi=300, bbox_inches="tight")
+        plot.clear()
 
     if args.plot_type == "scatter" or args.plot_type == "both":
         plot = plot_cluster_data(
@@ -723,9 +724,8 @@ if __name__ == "__main__":
             out_file = args.out_file.split(".pn")[0] + "_scatter.png"
         else:
             out_file = args.out_file
-        plot.get_figure().savefig(out_file, dpi=300)
-    if args.plot_type == "histplot" or args.plot_type == "scatter":
-        plot.get_figure().savefig(args.out_file, dpi=300)
+        plot.get_figure().savefig(out_file, dpi=300, bbox_inches="tight")
+
     # It would be nice to see the trajectories near the center in a separate file
     if args.extract_n_trajs > 0 and args.extract_store_path is not None:
         if args.verbose:
