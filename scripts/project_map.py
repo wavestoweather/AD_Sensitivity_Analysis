@@ -883,6 +883,9 @@ def to_Dataset(
         ds[f"Var {v}"].attrs = ds_tmp[v].attrs
         ds[f"Mean {v}"].attrs = ds_tmp[v].attrs
 
+    # Zero values in latitude and longitudes is considered garbage values, so we delete that.
+    ds["lat"] = ds["lat"].where(ds["lat"] != 0)
+    ds["lon"] = ds["lon"].where(ds["lon"] != 0)
     ds["lon"].attrs = ds_tmp["lon"].attrs
     ds["lat"].attrs = ds_tmp["lat"].attrs
     if "pressure" in ds:

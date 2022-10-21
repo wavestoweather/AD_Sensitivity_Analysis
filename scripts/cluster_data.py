@@ -270,7 +270,13 @@ def get_traj_near_center(data, x, n=1):
 
 
 def extract_trajs(
-    centers, file_path, store_path, only_asc600=False, inoutflow_time=-1, verbose=False
+    centers,
+    file_path,
+    store_path,
+    only_asc600=False,
+    inoutflow_time=-1,
+    traj_abs=False,
+    verbose=False,
 ):
     """
     Given trajectories from 'get_traj_near_center()', extract the original data from the complete dataset and merge them
@@ -289,6 +295,8 @@ def extract_trajs(
     inoutflow_time : int
         Consider only time steps during the fastest 600 hPa ascent and this many timesteps before
         and after the ascent (in- and outflow).
+    traj_abs : bool
+        Take the absolute values for sensitivities.
     verbose : bool
         If true, get more output.
     """
@@ -477,6 +485,9 @@ def extract_trajs(
         print("Concatenating the final list")
     ds = xr.concat(ds_list, dim="trajectory", join="outer", combine_attrs="override")
     ds["cluster"] = ds["cluster"].where(~np.isnan(ds["pressure"]))
+    if traj_abs:
+        for col in ds:
+            ds[col] = np.abs(ds[col])
     if store_path[-1] != "/" and "." not in store_path:
         # We assume store_path is just a path without a proper filename.
         filename = store_path + "/" + "cluster_extracted_trajectories.nc"
@@ -652,6 +663,16 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--extracted_trajs_abs",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+          If this option is set, store sensitivities as absolute values.
+          This is useful for plotting trajectories in Met3D with a log-scale.
+          """
+        ),
+    )
+    parser.add_argument(
         "--sens_model_states",
         default=None,
         type=str,
@@ -740,6 +761,7 @@ if __name__ == "__main__":
                 centers=centers,
                 file_path=args.file_path,
                 store_path=args.extract_store_path,
+                traj_abs=args.extracted_trajs_abs,
                 verbose=args.verbose,
             )
         else:
@@ -749,5 +771,6 @@ if __name__ == "__main__":
                 store_path=args.extract_store_path,
                 only_asc600=args.only_asc600,
                 inoutflow_time=args.inoutflow_time,
+                traj_abs=args.extracted_trajs_abs,
                 verbose=args.verbose,
             )

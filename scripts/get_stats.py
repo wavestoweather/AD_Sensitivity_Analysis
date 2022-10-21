@@ -2,6 +2,7 @@ import copy
 import math
 import matplotlib.pyplot as plt
 import matplotlib.colors as mpl_col
+from matplotlib.figure import Figure
 import numpy as np
 import os
 import pandas as pd
@@ -1590,6 +1591,7 @@ def traj_plot_histogram_out(
     filename,
     edges,
     hist,
+    log=False,
     width=24,
     height=12,
     title=None,
@@ -1609,43 +1611,73 @@ def traj_plot_histogram_out(
         Edges for the histogram. Keys must be in out_params.
     hist : Dictionary of list-like of int
         Number of entries for each bin. Keys must be in out_params.
+    log : bool
+        Plot the y-axis using log-scale.
     width : float
         Width in inches
     height : float
         Height in inches
     title : string
         Title of the histogram. If none is given, a title will be generated.
+
+    Returns
+    -------
+    If filename is given, returns None. If filename is None, returns the matplotlib.figure.Figure with the plot drawn onto it.
     """
     sns.set(rc={"figure.figsize": (width, height)})
+    if filename is None:
+        sns.set()
+        fig = Figure()
+        ax = fig.subplots()
+    else:
+        fig = None
+        ax = None
 
-    def plot_hist(out_p, title=None):
+    def plot_hist(out_p, title=None, ax=None):
         if title is None:
             title = f"Histogram for {latexify.parse_word(out_p)}"
         if verbose:
             print(f"Plotting histogram for {out_p}")
-        ax = sns.barplot(x=edges[out_p][:-1], y=hist[out_p], color="seagreen")
-        x_labels = [f"{tick:1.1e}" for tick in edges[out_p][:-1]]
+        ticks_offset = 1
+        if width < 24 and width > 5:
+            ticks_offset = 24 // (width - 5)
+        elif width <= 5:
+            ticks_offset = 6
+        if ax is None:
+            ax = sns.barplot(
+                x=edges[out_p][:-1], y=hist[out_p], log=log, color="seagreen"
+            )
+        else:
+            sns.barplot(
+                x=edges[out_p][:-1], y=hist[out_p], log=log, color="seagreen", ax=ax
+            )
+        x_labels = [f"{tick:1.1e}" for tick in edges[out_p][:-1:ticks_offset]]
+        x_ticks = np.arange(0, len(edges[out_p]) - 1, ticks_offset)
+        ax.set(xticks=x_ticks)
         _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
         _ = ax.set_title(title)
-        fig = ax.get_figure()
-        i = 0
-        store_type = filename.split(".")[-1]
-        store_path = filename[0 : -len(store_type) - 1]
-        save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
-        while os.path.isfile(save):
-            i = i + 1
+
+        if filename is not None:
+            plt.tight_layout()
+            i = 0
+            store_type = filename.split(".")[-1]
+            store_path = filename[0 : -len(store_type) - 1]
             save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
-        plt.tight_layout()
-        fig.savefig(save, dpi=300)
-        plt.clf()
+            while os.path.isfile(save):
+                i = i + 1
+                save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+            fig = ax.get_figure()
+            fig.savefig(save, dpi=300)
+            plt.clf()
 
     if isinstance(out_params, list):
         for out_p in tqdm(out_params):
-            plot_hist(out_p, title)
+            plot_hist(out_p, title, None)
     else:
-        plot_hist(out_params, title)
+        plot_hist(out_params, title, ax)
     if verbose:
         print("All plots finished!")
+    return fig
 
 
 def traj_plot_histogram_inp(
@@ -1653,6 +1685,8 @@ def traj_plot_histogram_inp(
     filename,
     edges_in_params,
     hist_in_params,
+    log=False,
+    font_scale=None,
     width=24,
     height=12,
     title=None,
@@ -1673,23 +1707,48 @@ def traj_plot_histogram_inp(
         Edges for the histogram. First keys are output parameters, second keys must be in in_params.
     hist_in_params : Dictionary of dictionary list-like of int
         Number of entries for each bin. First keys are output parameters, second keys must be in in_params.
+    log : bool
+        Plot the y-axis using log-scale.
+    font_scale : float
+        Scale the fontsize for the title, labels and ticks.
     width : float
         Width in inches
     height : float
         Height in inches
     title : string
         Title of the histogram. If none is given, a title will be generated.
+
+    Returns
+    -------
+    If filename is given, returns None. If filename is None, returns the matplotlib.figure.Figure with the plot drawn onto it.
     """
     sns.set(rc={"figure.figsize": (width, height)})
+    out_params = list(edges_in_params.keys())
+    if filename is None:
+        sns.set()
+        fig = Figure()
+        axs = fig.subplots(
+            nrows=len(out_params),
+            ncols=1,
+        )
+    else:
+        fig = None
+        axs = None
 
-    def plot_hist(out_params, in_p, title=None):
+    def plot_hist(out_params, in_p, title=None, axs=None):
 
         if len(out_params) != 3:
             print("The number of output params should be three.")
             print("Future versions will support varying numbers.")
-        ax1 = plt.subplot(311)
-        ax2 = plt.subplot(312)
-        ax3 = plt.subplot(313)
+        if axs is None:
+            ax1 = plt.subplot(311)
+            ax2 = plt.subplot(312)
+            ax3 = plt.subplot(313)
+
+        else:
+            ax1 = axs[0]
+            ax2 = axs[1]
+            ax3 = axs[2]
         if verbose:
             print(f"Plotting histogram w.r.t. {in_p}")
 
@@ -1704,36 +1763,57 @@ def traj_plot_histogram_inp(
                 color="seagreen",
                 ax=ax,
             )
-            ax_t.set_yscale("log")
-            x_labels = [f"{tick:1.1e}" for tick in edges_in_params[out_p][in_p][:-1]]
+            if log:
+                ax_t.set_yscale("log")
+            ticks_offset = 1
+            if width < 24 and width > 5:
+                ticks_offset = 24 // (width - 5)
+            elif width <= 5:
+                ticks_offset = 6
+            x_labels = [
+                f"{tick:1.1e}"
+                for tick in edges_in_params[out_p][in_p][:-1:ticks_offset]
+            ]
+            x_ticks = np.arange(
+                0, len(edges_in_params[out_p][in_p][:-1]) - 1, ticks_offset
+            )
+            ax_t.set(xticks=x_ticks)
             _ = ax_t.set_xticklabels(x_labels, rotation=45, ha="right")
-            _ = ax_t.set_title(title)
+            if font_scale is None:
+                _ = ax_t.set_title(title)
+            else:
+                ax_t.tick_params(
+                    axis="both", which="major", labelsize=int(10 * font_scale)
+                )
+                _ = ax_t.set_title(title, fontsize=int(12 * font_scale))
 
         create_fig(ax1, out_params[0], in_p, title)
         create_fig(ax2, out_params[1], in_p, title)
         create_fig(ax3, out_params[2], in_p, title)
 
-        plt.tight_layout()
-
-        i = 0
-        store_type = filename.split(".")[-1]
-        store_path = filename[0 : -len(store_type) - 1]
-        save = store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
-        while os.path.isfile(save):
-            i = i + 1
+        if filename is not None:
+            plt.tight_layout()
+            i = 0
+            store_type = filename.split(".")[-1]
+            store_path = filename[0 : -len(store_type) - 1]
             save = store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
-        plt.savefig(save, dpi=300)
+            while os.path.isfile(save):
+                i = i + 1
+                save = store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
+            plt.savefig(save, dpi=300)
+            plt.clf()
+        else:
+            fig.tight_layout(h_pad=1)
 
-        plt.clf()
-
-    out_params = list(edges_in_params.keys())
     if isinstance(in_params, list):
         for in_p in tqdm(in_params):
-            plot_hist(out_params, in_p, title)
+            plot_hist(out_params, in_p, title, axs)
     else:
-        plot_hist(out_params, in_params, title)
+        plot_hist(out_params, in_params, title, axs)
+
     if verbose:
         print("All plots finished!")
+    return fig
 
 
 def plot_heatmap_traj(
@@ -2432,40 +2512,67 @@ def plot_heatmap_histogram(
 
     Returns
     -------
-
+    If filename is given, returns None. If filename is None, returns the matplotlib.figure.Figure with the plot drawn onto it.
     """
     sns.set(rc={"figure.figsize": (width, height)})
+    if filename is None:
+        sns.set()
+        fig = Figure()
+        ax = fig.subplots()
+    else:
+        fig = None
+        ax = None
 
-    def plot_hist(hist2d, x_name, y_name, x_ticks, y_ticks, title=None, p=None):
+    def plot_hist(
+        hist2d, x_name, y_name, x_ticks, y_ticks, title=None, p=None, ax=None
+    ):
         if title is None:
             # title = f"Histograms for {latexify.parse_word(x_name)} and {latexify.parse_word(y_name)}"
             if p is None:
-                title = f"Histograms for {y_name} over {x_name}"
+                title = f"Histogram for {y_name} over {x_name}"
             else:
-                title = f"Histograms for d {p}/{y_name} over {x_name}"
+                title = f"Histogram for d {p}/{y_name} over {x_name}"
         if verbose:
             if p is None:
                 print(f"Plotting histogram for {x_name}, {y_name}")
             else:
                 print(f"Plotting histogram for {x_name}, d {p}/{y_name}")
         try:
-            ax = sns.heatmap(
-                np.transpose(
-                    hist2d
-                ),  # np.histogram2d uses the first dimension for the x-axis
-                cmap="viridis",
-                cbar=True,
-                square=True,
-                norm=mpl_col.LogNorm(),
-            )
+            if ax is None:
+                ax = sns.heatmap(
+                    np.transpose(
+                        hist2d
+                    ),  # np.histogram2d uses the first dimension for the x-axis
+                    cmap="viridis",
+                    cbar=True,
+                    square=True,
+                    norm=mpl_col.LogNorm(),
+                )
+            else:
+                _ = sns.heatmap(
+                    np.transpose(
+                        hist2d
+                    ),  # np.histogram2d uses the first dimension for the x-axis
+                    cmap="viridis",
+                    cbar=True,
+                    square=True,
+                    norm=mpl_col.LogNorm(),
+                    ax=ax,
+                )
         except:
             print(f"Plotting for {x_name}, {y_name} failed")
             return
-        ax.set_xticks(range(np.shape(hist2d)[0]))
-        ax.set_yticks(range(np.shape(hist2d)[1]))
-        x_labels = [f"{tick:1.1e}" for tick in x_ticks]
+        if width < 24 and width > 5:
+            ticks_offset = 24 // (width - 5)
+        elif width <= 5:
+            ticks_offset = 6
+        x_ticks_location = np.arange(0, np.shape(hist2d)[0], ticks_offset)
+        ax.set_xticks(x_ticks_location)
+        y_ticks_location = np.arange(0, np.shape(hist2d)[1], ticks_offset)
+        ax.set_yticks(y_ticks_location)
+        x_labels = [f"{x_ticks[i]:1.1e}" for i in x_ticks_location]
         _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
-        y_labels = [f"{tick:1.1e}" for tick in y_ticks]
+        y_labels = [f"{y_ticks[i]:1.1e}" for i in y_ticks_location]
         _ = ax.set_yticklabels(y_labels, rotation=0)
         _ = ax.set_title(title)
 
@@ -2473,34 +2580,12 @@ def plot_heatmap_histogram(
         plt.ylabel(y_name)
         # plt.xlabel(latexify.parse_word(x_name))
         # plt.ylabel(latexify.parse_word(y_name))
-        fig = ax.get_figure()
-        i = 0
-        store_type = filename.split(".")[-1]
-        store_path = filename[0 : -len(store_type) - 1]
-        if p is None:
-            save = (
-                store_path
-                + "_"
-                + x_name
-                + "_"
-                + y_name
-                + "_{:03d}.".format(i)
-                + store_type
-            )
-        else:
-            save = (
-                store_path
-                + "_"
-                + x_name
-                + "_"
-                + p
-                + "_wrt_"
-                + y_name
-                + "_{:03d}.".format(i)
-                + store_type
-            )
-        while os.path.isfile(save):
-            i = i + 1
+        plt.tight_layout()
+        if filename is not None:
+            fig = ax.get_figure()
+            i = 0
+            store_type = filename.split(".")[-1]
+            store_path = filename[0 : -len(store_type) - 1]
             if p is None:
                 save = (
                     store_path
@@ -2523,9 +2608,60 @@ def plot_heatmap_histogram(
                     + "_{:03d}.".format(i)
                     + store_type
                 )
-        plt.tight_layout()
-        fig.savefig(save, dpi=300)
-        plt.clf()
+            while os.path.isfile(save):
+                i = i + 1
+                if p is None:
+                    save = (
+                        store_path
+                        + "_"
+                        + x_name
+                        + "_"
+                        + y_name
+                        + "_{:03d}.".format(i)
+                        + store_type
+                    )
+                else:
+                    save = (
+                        store_path
+                        + "_"
+                        + x_name
+                        + "_"
+                        + p
+                        + "_wrt_"
+                        + y_name
+                        + "_{:03d}.".format(i)
+                        + store_type
+                    )
+            fig.savefig(save, dpi=300)
+            plt.clf()
+
+    if filename is None:
+        c = conditions
+        if in_params is None or in_params == "None":
+            out_p = out_params
+            plot_hist(
+                hist_conditional[c]["hist_out_params"][out_p],
+                c,
+                out_p,
+                hist_conditional["edges_out_params"][c][:-1],
+                hist_conditional["edges_out_params"][out_p][:-1],
+                title,
+                ax=ax,
+            )
+        else:
+            p = out_params
+            in_p = in_params
+            plot_hist(
+                hist_conditional[c]["hist_in_params"][p][in_p],
+                c,
+                in_p,
+                hist_conditional["edges_out_params"][c][:-1],
+                hist_conditional["edges_in_params"][p][in_p][:-1],
+                title,
+                p,
+                ax=ax,
+            )
+        return fig
 
     for c in tqdm(conditions):
         for out_p in tqdm(out_params, leave=False):
@@ -2556,6 +2692,7 @@ def plot_heatmap_histogram(
 
     if verbose:
         print("All plots finished!")
+    return None
 
 
 def main(args):
@@ -2635,8 +2772,12 @@ def main(args):
                 )
             if args.plot_type == "all" or args.plot_type == "hist_in":
                 print("########### Plot histograms for model parameters ###########")
+                if len(args.in_params) == 0:
+                    in_params_plot = list(edges_in_params[list(edges.keys())[0]].keys())
+                else:
+                    in_params_plot = args.in_params
                 traj_plot_histogram_inp(
-                    in_params=list(edges_in_params[list(edges.keys())[0]].keys()),
+                    in_params=in_params_plot,
                     filename=args.out_file,
                     edges_in_params=edges_in_params,
                     hist_in_params=hist_in_params,
@@ -2647,8 +2788,12 @@ def main(args):
                 )
             if args.plot_type == "all" or args.plot_type == "heat":
                 print("########### Plot heatmaps ###########")
+                if len(args.in_params) == 0:
+                    in_params_plot = list(edges_in_params[list(edges.keys())[0]].keys())
+                else:
+                    in_params_plot = args.in_params
                 plot_heatmap_traj(
-                    in_params=list(edges_in_params[list(edges.keys())[0]].keys()),
+                    in_params=in_params_plot,
                     filename=args.out_file,
                     edges_in_params=edges_in_params,
                     hist_in_params=hist_in_params,
@@ -2681,14 +2826,16 @@ def main(args):
         if args.load_covariance != "no":
             print("########### Load covariance matrix ###########")
             file_path = args.load_covariance
-            with open(file_path + "_means.pkl", "rb") as f:
-                means = pickle.load(f)
-            with open(file_path + "_covariance_matrix.pkl", "rb") as f:
-                cov = pickle.load(f)
-            with open(file_path + "_means_phases.pkl", "rb") as f:
-                means_phase = pickle.load(f)
-            with open(file_path + "_covariance_matrix_phases.pkl", "rb") as f:
-                cov_phase = pickle.load(f)
+            if args.plot_type == "cov_heat" or args.plot_type == "all":
+                with open(file_path + "_means.pkl", "rb") as f:
+                    means = pickle.load(f)
+                with open(file_path + "_covariance_matrix.pkl", "rb") as f:
+                    cov = pickle.load(f)
+            if args.plot_type == "cov_heat_phases" or args.plot_type == "all":
+                with open(file_path + "_means_phases.pkl", "rb") as f:
+                    means_phase = pickle.load(f)
+                with open(file_path + "_covariance_matrix_phases.pkl", "rb") as f:
+                    cov_phase = pickle.load(f)
 
         top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic = traj_get_top_params(
             sums, sums.keys(), 10, 1
@@ -2725,6 +2872,7 @@ def main(args):
                 in_params=list(top_magn_set),
                 filepath=args.save_statistics,
                 only_asc600=args.only_asc600,
+                inoutflow_time=args.inoutflow_time,
             )
         if (
             args.plot_type == "all" or args.plot_type == "cov_heat_phases"
@@ -2735,6 +2883,7 @@ def main(args):
                 in_params=list(top_magn_set_phase),
                 filepath=args.save_statistics,
                 only_asc600=args.only_asc600,
+                inoutflow_time=args.inoutflow_time,
             )
 
         if len(args.conditional_hist) != 0 and (
@@ -3022,6 +3171,17 @@ if __name__ == "__main__":
             cov_heat_phases: Heatmap of covariance matrix for each phase.
             2D_hist : 2D histogram (heatmap) where the x-axis is determined by conditional_hist.
             none: No plots.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--in_params",
+        default=[],
+        narg="+",
+        type=str,
+        help=textwrap.dedent(
+            """\
+            During plotting of 'hist_in' and 'heat': plot only the given model parameters. If none are given, plot using all model parameters available.
             """
         ),
     )
