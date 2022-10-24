@@ -328,6 +328,8 @@ def plot_cluster_data_interactive(data):
             in_params.append(col)
     in_params = list(set(in_params))
     out_params = list(set(out_params))
+    if len(out_params) == 0:
+        out_params = ["Not available"]
     out_param_x = pn.widgets.RadioButtonGroup(
         name="Output Parameter (if any) for the x-axis",
         value=out_params[0],
