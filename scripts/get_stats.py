@@ -2575,9 +2575,10 @@ def plot_heatmap_histogram(
         y_labels = [f"{y_ticks[i]:1.1e}" for i in y_ticks_location]
         _ = ax.set_yticklabels(y_labels, rotation=0)
         _ = ax.set_title(title)
-
-        plt.xlabel(x_name)
-        plt.ylabel(y_name)
+        ax.set_xlabel(x_name)
+        ax.set_ylabel(y_name)
+        # plt.xlabel(x_name)
+        # plt.ylabel(y_name)
         # plt.xlabel(latexify.parse_word(x_name))
         # plt.ylabel(latexify.parse_word(y_name))
         plt.tight_layout()

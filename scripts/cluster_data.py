@@ -2,9 +2,11 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
-import os
+from matplotlib.figure import Figure
 import numpy as np
+import os
 import pandas as pd
+import panel as pn
 import seaborn as sns
 from sklearn.cluster import KMeans
 from tqdm.auto import tqdm
@@ -25,8 +27,8 @@ def load_data(file_path, x, only_asc600=False, inoutflow_time=-1, verbose=False)
     ----------
     file_path : string
         Path to trajectories from a sensitivity analysis.
-    x : string
-        Model state variable or model parameter for calculating the clusters.
+    x : string or list of strings
+        Model state variable(s) or model parameter(s) for calculating the clusters.
     only_asc600 : bool
         Consider only time steps during the fastest 600 hPa ascent.
     inoutflow_time : int
@@ -44,10 +46,13 @@ def load_data(file_path, x, only_asc600=False, inoutflow_time=-1, verbose=False)
     files = np.sort(files)
     param_ids = None
     list_of_arrays = []
+    if isinstance(x, str):
+        vars = [x, "asc600", "phase"]
+    else:
+        vars = [v for v in x] + ["asc600", "phase"]
+
     for f in tqdm(files) if verbose else files:
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            [x, "asc600", "phase"]
-        ]
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[vars]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -98,8 +103,9 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
     tol : float
         From scikit-learn.org: Relative tolerance with regards to Frobenius norm of the difference
         in the cluster centers of two consecutive iterations to declare convergence.
-    x : string
-        The model state variable or model parameter to create clusters for.
+    x : string (needed if data is xarray.Dataset) or list of string
+        The model state variable or model parameter to create clusters for. If multiple variables or parameters shall
+        be considered, then x must be a list of strings.
     param_names : list of strings
         If 'x' is a model parameter, then calculate clusters for each sensitivity of a model state variable towards 'x'.
     verbose : bool
@@ -112,56 +118,108 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
     If the cluster is done for sensitivities (model parameters), then the coordinate 'Output Parameter' is added.
 
     """
+    avg_name_list = None
+    data_array = None
+    n_features = 1
     if x is not None and isinstance(data, xr.Dataset):
-        data_array = data[x]
-        avg_name = "avg " + x
+        if isinstance(x, str) and param_names is None:
+            # A single model state
+            data_array = data[x]
+            avg_name = f"avg {x}"
+        elif isinstance(x, str):
+            # A single parameter but for multiple model states
+            avg_name_list = []
+            n_features = len(param_names)
+            for p in param_names:
+                avg_name_list.append(f"avg d{p}/{x}")
+        elif param_names is None:
+            # Multiple model states and no model parameter
+            n_features = len(x)
+            avg_name_list = [f"avg {v}" for v in x]
+        else:
+            # Multiple model states and at least one model parameter
+            avg_name_list = []
+            for v in x:
+                if v[0] == "d" and v != "deposition":
+                    for p in param_names:
+                        avg_name_list.append(f"avg d{p}/{v}")
+                else:
+                    avg_name_list.append(f"avg {v}")
+            n_features = len(avg_name_list)
     else:
         data_array = data
         avg_name = "avg " + data.name
-
-    shape = (len(data_array["file"]) * len(data_array["trajectory"]), 1)
+    # n_samples, n_features
+    n_samples = len(data["file"]) * len(data["trajectory"])
+    shape = (n_samples, n_features)
     if verbose:
         print("Calculate the cluster")
-    if param_names is not None:
+
+    def get_fit_data():
+        fit_data = np.zeros(shape)
+        for i in range(n_features):
+            name = avg_name_list[i]
+            if "/" in name:
+                # Model parameter
+                out_p = name.split("/")[0][5:]
+                in_p = name.split("/")[1]
+                param_i = np.argwhere(np.asarray(param_id_map) == out_p).item()
+                fit_data[:, i] = np.reshape(
+                    data[in_p].sel({"Output_Parameter_ID": param_i}).values, n_samples
+                )
+            else:
+                # Model state
+                state_name = name[4:]
+                fit_data[:, i] = np.reshape(data[state_name].values, n_samples)
+        fit_mask = None
+        for i in range(n_features):
+            if fit_mask is not None:
+                fit_mask = ~np.isnan(fit_data[:, i]) & fit_mask
+            else:
+                fit_mask = ~np.isnan(fit_data[:, i])
+        fit_data_normed = fit_data.copy()
+        for i in range(n_features):
+            fit_data_normed[:, i] = fit_data_normed[:, i] / np.linalg.norm(
+                fit_data_normed[fit_mask, i]
+            )
+        return fit_data, fit_data_normed, fit_mask
+
+    def ndim_cluster(fit_data, fit_data_normed, fit_mask):
         kmeans_dic = {
             "cluster": np.asarray([]),
-            avg_name: np.asarray([]),
-            "Output Parameter": np.asarray([]),
             "trajectory": np.asarray([]),
             "file": np.asarray([]),
         }
-        for out_p in tqdm(param_names) if verbose else param_names:
-            i = np.argwhere(np.asarray(param_id_map) == out_p).item()
-            fit_data = data_array.sel({"Output_Parameter_ID": i}).values
-            fit_data = np.reshape(fit_data, shape)
-            clusters = KMeans(n_clusters=k, tol=tol, random_state=42).fit_predict(
-                fit_data[~np.isnan(fit_data[:, 0])]
-            )
-            trajectory = data_array["trajectory"]
-            for _ in range(len(data_array["file"]) - 1):
-                trajectory = np.append(trajectory, data_array["trajectory"])
-            filenames = np.repeat(
-                data_array["file"].values, len(data_array["trajectory"])
-            )
-            out_p_array = np.repeat(out_p, shape[0])
-            kmeans_dic["Output Parameter"] = np.append(
-                kmeans_dic["Output Parameter"], out_p_array[~np.isnan(fit_data[:, 0])]
-            )
-            kmeans_dic["file"] = np.append(
-                kmeans_dic["file"], filenames[~np.isnan(fit_data[:, 0])]
-            )
-            kmeans_dic["trajectory"] = np.append(
-                kmeans_dic["trajectory"], trajectory[~np.isnan(fit_data[:, 0])]
-            )
-            kmeans_dic["cluster"] = np.append(kmeans_dic["cluster"], clusters)
-            kmeans_dic[avg_name] = np.append(
-                kmeans_dic[avg_name], fit_data[~np.isnan(fit_data[:, 0])].flatten()
+        for name in avg_name_list:
+            kmeans_dic[name] = np.asarray([])
+        clusters = KMeans(n_clusters=k, tol=tol, random_state=42).fit_predict(
+            fit_data_normed[fit_mask, :]
+        )
+        trajectory = data["trajectory"]
+        for _ in range(len(data["file"]) - 1):
+            trajectory = np.append(trajectory, data["trajectory"])
+        filenames = np.repeat(data["file"].values, len(data["trajectory"]))
+        kmeans_dic["file"] = np.append(kmeans_dic["file"], filenames[fit_mask])
+        kmeans_dic["trajectory"] = np.append(
+            kmeans_dic["trajectory"], trajectory[fit_mask]
+        )
+        kmeans_dic["cluster"] = np.append(kmeans_dic["cluster"], clusters)
+        for i in range(n_features):
+            name = avg_name_list[i]
+            kmeans_dic[name] = np.append(
+                kmeans_dic[name], fit_data[fit_mask, i].flatten()
             )
         return pd.DataFrame.from_dict(kmeans_dic)
-    else:
+
+    if param_names is not None:
+        fit_data, fit_data_normed, fit_mask = get_fit_data()
+        return ndim_cluster(fit_data, fit_data_normed, fit_mask)
+
+    elif n_features == 1:
         fit_data = np.reshape(data_array.values, shape)
+        fit_data_normed = fit_data / np.linalg.norm(fit_data)
         clusters = KMeans(n_clusters=k, tol=tol, random_state=42).fit_predict(
-            fit_data[~np.isnan(fit_data[:, 0])]
+            fit_data_normed[~np.isnan(fit_data[:, 0])]
         )
         trajectory = data_array["trajectory"]
         for _ in (
@@ -179,6 +237,9 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
                 "file": filenames[~np.isnan(fit_data[:, 0])],
             }
         )
+    else:
+        fit_data, fit_data_normed, fit_mask = get_fit_data()
+        return ndim_cluster(fit_data, fit_data_normed, fit_mask)
 
 
 def plot_cluster_data(
@@ -240,6 +301,178 @@ def plot_cluster_data(
         if log_scale[1]:
             g.set_yscale("log")
         return g
+
+
+def plot_cluster_data_interactive(data):
+    """
+    Calling this function from a Jupyter notebook allows to visualize the cluster association with different
+    dimensions. Make sure to call pn.extension() from your notebook first.
+
+    Parameters
+    ----------
+    data
+
+    Returns
+    -------
+
+    """
+    out_params = []
+    in_params = []
+    for col in data:
+        if "/" in col:
+            out_params.append(col.split("/")[0][5:])
+            in_params.append(col.split("/")[1])
+        elif "avg " in col:
+            in_params.append(col[4:])
+        else:
+            in_params.append(col)
+    in_params = list(set(in_params))
+    out_params = list(set(out_params))
+    out_param_x = pn.widgets.RadioButtonGroup(
+        name="Output Parameter (if any) for the x-axis",
+        value=out_params[0],
+        options=out_params,
+        button_type="primary",
+    )
+    in_param_x = pn.widgets.Select(
+        name="Model parameter or model state for the x-axis",
+        value=in_params[0],
+        options=in_params,
+        button_type="default",
+    )
+    out_param_y = pn.widgets.RadioButtonGroup(
+        name="Output Parameter (if any) for the y-axis",
+        value=out_params[0],
+        options=out_params,
+        button_type="primary",
+    )
+    in_param_y = pn.widgets.Select(
+        name="Model parameter or model state for the y-axis",
+        value=in_params[1],
+        options=in_params,
+        button_type="default",
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    logx_plot = pn.widgets.Toggle(
+        name="Use log-scale for the x-axis",
+        value=False,
+        button_type="success",
+    )
+    logy_plot = pn.widgets.Toggle(
+        name="Use log-scale for the y-axis",
+        value=False,
+        button_type="success",
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=2,
+        step=0.1,
+        value=0.7,
+    )
+
+    def get_plot(
+        data,
+        in_p_x,
+        out_p_x,
+        in_p_y,
+        out_p_y,
+        logx,
+        logy,
+        width,
+        height,
+        font_scale,
+        title,
+    ):
+        if in_p_x == in_p_y and out_p_x == out_p_y:
+            return
+        sns.set(rc={"figure.figsize": (width, height)})
+        fig = Figure()
+        ax = fig.subplots()
+        if in_p_x[0] == "d" and in_p_x != "deposition":
+            x = f"avg d{out_p_x}/{in_p_x}"
+        elif in_p_x != "cluster" and in_p_x != "trajectory" and in_p_x != "file":
+            x = f"avg {in_p_x}"
+        else:
+            x = in_p_x
+        if in_p_y[0] == "d" and in_p_y != "deposition":
+            y = f"avg d{out_p_y}/{in_p_y}"
+        elif in_p_y != "cluster" and in_p_y != "trajectory" and in_p_y != "file":
+            y = f"avg {in_p_y}"
+        else:
+            y = in_p_y
+        sns.scatterplot(
+            data=data,
+            x=x,
+            y=y,
+            hue="cluster",
+            palette="tab10",
+            ax=ax,
+        )
+        if logx:
+            ax.set_xscale("log")
+        if logy:
+            ax.set_yscale("log")
+        ax.tick_params(
+            axis="both",
+            which="major",
+            labelsize=int(10 * font_scale),
+        )
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+        return fig
+
+    plot_pane = pn.panel(
+        pn.bind(
+            get_plot,
+            data=data,
+            in_p_x=in_param_x,
+            out_p_x=out_param_x,
+            in_p_y=in_param_y,
+            out_p_y=out_param_y,
+            logx=logx_plot,
+            logy=logy_plot,
+            width=width_slider,
+            height=height_slider,
+            font_scale=font_slider,
+            title=title_widget,
+        ),
+    ).servable()
+
+    return pn.Column(
+        pn.Row(
+            out_param_x,
+            in_param_x,
+            logx_plot,
+        ),
+        pn.Row(
+            out_param_y,
+            in_param_y,
+            logy_plot,
+        ),
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+        ),
+        plot_pane,
+    )
 
 
 def get_traj_near_center(data, x, n=1):
@@ -583,7 +816,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--cluster_var",
-        default="w",
+        default=None,
+        type=str,
+        nargs="+",
+        required=True,
         help=textwrap.dedent(
             """\
             Cluster w.r.t. this variable.
@@ -713,39 +949,42 @@ if __name__ == "__main__":
         verbose=args.verbose,
     )
     if args.plot_type == "histplot" or args.plot_type == "both":
-        plot = plot_cluster_data(
-            data=clusters,
-            x=f"avg {args.cluster_var}",
-            plot_type="histplot",
-            log_scale=(args.logx, args.logy),
-            width=args.width,
-            height=args.height,
-            **{
-                "multiple": "stack"
-            },  # For demonstration purpose, we add another keyword like that.
-        )
-        if args.plot_type == "both":
-            out_file = args.out_file.split(".pn")[0] + "_histogr.png"
-        else:
-            out_file = args.out_file
-        plot.get_figure().savefig(out_file, dpi=300, bbox_inches="tight")
-        plot.clear()
+        for c in args.cluster_var:
+            plot = plot_cluster_data(
+                data=clusters,
+                x=f"avg {c}",
+                plot_type="histplot",
+                log_scale=(args.logx, args.logy),
+                width=args.width,
+                height=args.height,
+                **{
+                    "multiple": "stack"
+                },  # For demonstration purpose, we add another keyword like that.
+            )
+            if args.plot_type == "both":
+                out_file = args.out_file.split(".pn")[0] + f"_{c}_histogr.png"
+            else:
+                out_file = args.out_file.split(".pn")[0] + f"_{c}.png"
+
+            plot.get_figure().savefig(out_file, dpi=300, bbox_inches="tight")
+            plot.clear()
 
     if args.plot_type == "scatter" or args.plot_type == "both":
-        plot = plot_cluster_data(
-            data=clusters,
-            x="trajectory",
-            y=f"avg {args.cluster_var}",
-            plot_type="scatter",
-            log_scale=(args.logx, args.logy),
-            width=args.width,
-            height=args.height,
-        )
-        if args.plot_type == "both":
-            out_file = args.out_file.split(".pn")[0] + "_scatter.png"
-        else:
-            out_file = args.out_file
-        plot.get_figure().savefig(out_file, dpi=300, bbox_inches="tight")
+        for c in args.cluster_var:
+            plot = plot_cluster_data(
+                data=clusters,
+                x="trajectory",
+                y=f"avg {c}",
+                plot_type="scatter",
+                log_scale=(args.logx, args.logy),
+                width=args.width,
+                height=args.height,
+            )
+            if args.plot_type == "both":
+                out_file = args.out_file.split(".pn")[0] + f"_{c}_scatter.png"
+            else:
+                out_file = args.args.out_file.split(".pn")[0] + f"_{c}.png"
+            plot.get_figure().savefig(out_file, dpi=300, bbox_inches="tight")
 
     # It would be nice to see the trajectories near the center in a separate file
     if args.extract_n_trajs > 0 and args.extract_store_path is not None:
