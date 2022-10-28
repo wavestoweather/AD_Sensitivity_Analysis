@@ -2,11 +2,17 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
+import hvplot.xarray  # noqa
 import itertools
 import holoviews as hv
 from holoviews import opts
+from matplotlib.colors import SymLogNorm, NoNorm
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import numpy as np
 import os
+import panel as pn
+import seaborn as sns
 from tqdm.auto import tqdm
 import xarray as xr
 
@@ -16,6 +22,7 @@ except:
     from latexify import param_id_map
 
 hv.extension("matplotlib")
+pn.extension()
 
 
 def filter_trajectories(
@@ -1007,6 +1014,8 @@ def load_data(
 
 def plot_heatmap(ds, col, fig_size=250, aspect=1, cmap="viridis"):
     """
+    An easy and fast way to plot a given column along latitude and
+    longitude.
 
     Parameters
     ----------
@@ -1018,7 +1027,7 @@ def plot_heatmap(ds, col, fig_size=250, aspect=1, cmap="viridis"):
 
     Returns
     -------
-
+    holoviews.Image
     """
     x = "longitude"
     y = "latitude"
@@ -1030,6 +1039,300 @@ def plot_heatmap(ds, col, fig_size=250, aspect=1, cmap="viridis"):
         xlabel=x,
         ylabel=y,
         clabel=col,
+    )
+
+
+def plot_2dmap_interactive(ds):
+    """
+    Calling this function from a Jupyter notebook allows to visualize the
+    2d maps at different heights for all available columns in ds.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+
+    Returns
+    -------
+
+    """
+    sns.set_style("darkgrid")
+
+    pressure = pn.widgets.FloatSlider(
+        name="pressure",
+        start=ds["pressure"].min().values.item(),
+        end=ds["pressure"].max().values.item(),
+        step=(ds["pressure"].values[1] - ds["pressure"].values[0]),
+        value=ds["pressure"].values[-4],
+    )
+    out_param = pn.widgets.RadioButtonGroup(
+        name="Output Parameter",
+        value=ds["Output Parameter"].values[0],
+        options=list(ds["Output Parameter"].values),
+        button_type="primary",
+    )
+    kind_param = pn.widgets.RadioButtonGroup(
+        name="Kind",
+        value="Mean",
+        options=["Mean", "Min", "Max", "Var"],
+        button_type="primary",
+    )
+    in_params = []
+    for col in ds:
+        if "Mean " in col:
+            in_params.append(col[5:])
+    if "counts" in ds:
+        in_params.append("counts")
+    in_params.sort()
+    in_param = pn.widgets.Select(
+        name="Color according to",
+        value=in_params[-1],
+        options=in_params,
+    )
+    color_map = pn.widgets.Select(
+        name="Colormap",
+        value="RdBu",
+        options=["RdBu", "viridis", "blues"],
+    )
+    fix = pn.widgets.Toggle(
+        name="Fix colorbar over all levels",
+        button_type="success",
+    )
+    static = pn.widgets.StaticText(name="Min, Max Values", value="")
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    log_plot = pn.widgets.Toggle(
+        name="Use log colorbar",
+        value=True,
+        button_type="success",
+    )
+    log_threshold_slider = pn.widgets.FloatSlider(
+        name="Log Threshold (set to zero for automatic estimation)",
+        start=-25,
+        end=0,
+        value=0,
+        step=1,
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=2,
+        step=0.1,
+        value=0.7,
+    )
+
+    def plot_me(
+        o_p,
+        i_p,
+        k_p,
+        p,
+        c,
+        fix,
+        log_plot,
+        width,
+        height,
+        lthresh,
+        title,
+        font_scale,
+        save,
+        save_path,
+    ):
+        if title == "":
+            title = None
+        if i_p == "counts":
+            ds_tmp = ds.isel({"time": 0})[i_p]
+        elif i_p[0] == "d" and i_p != "deposition":
+            ds_tmp = ds.isel({"time": 0}).sel({"Output Parameter": o_p})[f"{k_p} {i_p}"]
+        else:
+            ds_tmp = ds.isel({"time": 0})[f"{k_p} {i_p}"]
+        mini = ds_tmp.min().values.item()
+        maxi = ds_tmp.max().values.item()
+        if lthresh == 0:
+            linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
+        else:
+            linthresh = 10 ** lthresh
+        if i_p == "counts":
+            ds_tmp = ds[i_p].isel({"time": 0}).sel({"pressure": p})
+        elif i_p[0] == "d" and i_p != "deposition":
+            ds_tmp = (
+                ds[f"{k_p} {i_p}"]
+                .isel({"time": 0})
+                .sel({"Output Parameter": o_p, "pressure": p})
+            )
+        else:
+            ds_tmp = ds[f"{k_p} {i_p}"].isel({"time": 0}).sel({"pressure": p})
+        min_local = np.nanmin(ds_tmp)
+        max_local = np.nanmax(ds_tmp)
+        static.value = f"({mini:.2e}, {maxi:.2e}); at {p/100} hPa: ({min_local:.2e}, {max_local:.2e})"
+        fig = Figure(
+            figsize=(width, height),
+        )
+        ax = fig.subplots()
+        if fix:
+            if np.abs(mini) > maxi:
+                maxi = np.abs(mini)
+            else:
+                mini = -maxi
+            if log_plot:
+                ds_tmp.plot(
+                    x="lat",
+                    y="lon",
+                    cmap=c,
+                    norm=SymLogNorm(
+                        linthresh=linthresh,
+                        vmin=mini,
+                        vmax=maxi,
+                        base=10,
+                    ),
+                    ax=ax,
+                )
+            else:
+                ds_tmp.plot(
+                    x="lat",
+                    y="lon",
+                    cmap=c,
+                    vmin=mini,
+                    vmax=maxi,
+                    ax=ax,
+                )
+            _ = ax.set_title(title, fontsize=int(12 * font_scale))
+            ax.tick_params(
+                axis="both",
+                which="major",
+                labelsize=int(10 * font_scale),
+            )
+            ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
+            ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
+            ax.yaxis.grid(True, which="major")
+            ax.xaxis.grid(True, which="major")
+            cbar = ax.collections[-1].colorbar
+            cbarax = cbar.ax
+            cbarax.tick_params(labelsize=int(10 * font_scale))
+            cbar.set_label(
+                label=f"{k_p} {i_p}",
+                fontsize=int(11 * font_scale),
+            )
+        else:
+            if log_plot:
+                if lthresh == 0:
+                    linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
+                else:
+                    linthresh = 10 ** lthresh
+
+                ds_tmp.plot(
+                    x="lat",
+                    y="lon",
+                    cmap=c,
+                    norm=SymLogNorm(
+                        linthresh=linthresh,
+                        base=10,
+                    ),
+                    ax=ax,
+                )
+            else:
+                ds_tmp.plot(
+                    x="lat",
+                    y="lon",
+                    cmap=c,
+                    ax=ax,
+                )
+            _ = ax.set_title(title, fontsize=int(12 * font_scale))
+            ax.tick_params(
+                axis="both",
+                which="major",
+                labelsize=int(10 * font_scale),
+            )
+            ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
+            ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
+            ax.yaxis.grid(True, which="major")
+            ax.xaxis.grid(True, which="major")
+            cbar = ax.collections[-1].colorbar
+            cbarax = cbar.ax
+            cbarax.tick_params(labelsize=int(10 * font_scale))
+            cbar.set_label(
+                label=f"{k_p} {i_p}",
+                fontsize=int(11 * font_scale),
+            )
+        if save:
+            try:
+                ax.figure.savefig(save_path, bbox_inches="tight", dpi=300)
+            except:
+                save_to_field.value = (
+                    f"Could not save to {save_path}. Did you forget the filetype?"
+                )
+                pass
+            save_path = None
+            save = False
+        return fig
+
+    plot_pane = pn.panel(
+        pn.bind(
+            plot_me,
+            o_p=out_param,
+            i_p=in_param,
+            k_p=kind_param,
+            p=pressure,
+            c=color_map,
+            fix=fix,
+            log_plot=log_plot,
+            width=width_slider,
+            height=height_slider,
+            lthresh=log_threshold_slider,
+            title=title_widget,
+            font_scale=font_slider,
+            save=save_button,
+            save_path=save_to_field,
+        ),
+    ).servable()
+
+    return pn.Column(
+        "# Plot Grid",
+        static,
+        pressure,
+        kind_param,
+        out_param,
+        pn.Row(
+            in_param,
+            color_map,
+        ),
+        pn.Row(
+            fix,
+            log_plot,
+        ),
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+        ),
+        log_threshold_slider,
+        pn.Row(
+            save_to_field,
+            save_button,
+        ),
+        title_widget,
+        plot_pane,
     )
 
 

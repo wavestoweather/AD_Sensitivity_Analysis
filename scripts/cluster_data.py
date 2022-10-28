@@ -3,12 +3,14 @@ import warnings
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
 import panel as pn
 import seaborn as sns
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, SpectralClustering
+from sklearn.preprocessing import StandardScaler
 from tqdm.auto import tqdm
 import xarray as xr
 
@@ -18,7 +20,9 @@ except:
     from scripts.latexify import param_id_map
 
 
-def load_data(file_path, x, only_asc600=False, inoutflow_time=-1, verbose=False):
+def load_data(
+    file_path, x, only_asc600=False, inoutflow_time=-1, phase=None, verbose=False
+):
     """
     Load multiple NetCDF-files as xarray.Dataset, filter them if necessary and concatenate all
     data useful for other steps.
@@ -34,6 +38,12 @@ def load_data(file_path, x, only_asc600=False, inoutflow_time=-1, verbose=False)
     inoutflow_time : int
         Consider only time steps during the fastest 600 hPa ascent and this many timesteps before
         and after the ascent (in- and outflow).
+    phase : int
+        Only use the given phase.
+        0: warm phase
+        1: mixed phase
+        2: ice phase
+        3: neutral phase
     verbose : bool
         If true, get more output.
 
@@ -65,10 +75,13 @@ def load_data(file_path, x, only_asc600=False, inoutflow_time=-1, verbose=False)
             ds = ds.where(ds["asc600"] == 1)
         if param_ids is None and x[0] == "d":
             param_ids = ds["Output_Parameter_ID"]
-        # fill values where
+
         data = ds[x].dropna("time", how="all")
         data = data.expand_dims({"file": [f]})
-        list_of_arrays.append(data)
+        if phase is not None:
+            data = data.where(ds["phase"] == phase)
+        if len(data["time"]) > 0:
+            list_of_arrays.append(data)
     data = xr.concat(list_of_arrays, dim="file", join="outer", combine_attrs="override")
     return data
 
@@ -89,7 +102,9 @@ def get_average(data):
     return data.mean(dim="time", skipna=True, keep_attrs=True)
 
 
-def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
+def get_cluster(
+    data, k, tol=1e-4, x=None, param_names=None, include_all_data=False, verbose=False
+):
     """
     Calculate clusters using k-means for the variable 'x'.
 
@@ -108,6 +123,8 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
         be considered, then x must be a list of strings.
     param_names : list of strings
         If 'x' is a model parameter, then calculate clusters for each sensitivity of a model state variable towards 'x'.
+    include_all_data : bool
+        Include all columns in data in the returned dataframe. Otherwise only include columns used for clustering.
     verbose : bool
         If true, get more output.
 
@@ -119,23 +136,60 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
 
     """
     avg_name_list = None
+    non_features_list = []
     data_array = None
     n_features = 1
     if x is not None and isinstance(data, xr.Dataset):
-        if isinstance(x, str) and param_names is None:
+        if isinstance(x, str) and param_names is None or len(x) == 1:
             # A single model state
             data_array = data[x]
             avg_name = f"avg {x}"
-        elif isinstance(x, str):
+            if include_all_data:
+                if "Output_Parameter_ID" in data:
+                    out_params = data["Output_Parameter_ID"].values
+                for col in data:
+                    if col != x:
+                        if col[0] == "d" and col != "deposition":
+                            for out_p in out_params:
+                                non_features_list.append(
+                                    [f"avg d{param_id_map[out_p]}/{col}", out_p, col]
+                                )
+                        else:
+                            non_features_list.append([f"avg {col}", None, col])
+        elif isinstance(x, str) or len(x) == 1:
             # A single parameter but for multiple model states
             avg_name_list = []
             n_features = len(param_names)
             for p in param_names:
                 avg_name_list.append(f"avg d{p}/{x}")
+            if include_all_data:
+                if "Output_Parameter_ID" in data:
+                    out_params = data["Output_Parameter_ID"].values
+                for col in data:
+                    if col != x:
+                        if col[0] == "d" and col != "deposition":
+                            for out_p in out_params:
+                                non_features_list.append(
+                                    [f"avg d{param_id_map[out_p]}/{col}", out_p, col]
+                                )
+                        else:
+                            non_features_list.append([f"avg {col}", None, col])
         elif param_names is None:
             # Multiple model states and no model parameter
             n_features = len(x)
             avg_name_list = [f"avg {v}" for v in x]
+            if include_all_data:
+                if "Output_Parameter_ID" in data:
+                    out_params = data["Output_Parameter_ID"].values
+                for col in data:
+                    if col not in x:
+                        if col[0] == "d" and col != "deposition":
+                            for out_p in out_params:
+                                non_features_list.append(
+                                    [f"avg d{param_id_map[out_p]}/{col}", out_p, col]
+                                )
+                        else:
+                            non_features_list.append([f"avg {col}", None, col])
         else:
             # Multiple model states and at least one model parameter
             avg_name_list = []
@@ -146,6 +200,18 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
                 else:
                     avg_name_list.append(f"avg {v}")
             n_features = len(avg_name_list)
+            if include_all_data:
+                if "Output_Parameter_ID" in data:
+                    out_params = data["Output_Parameter_ID"].values
+                for col in data:
+                    if col not in x:
+                        if col[0] == "d" and col != "deposition":
+                            for out_p in out_params:
+                                non_features_list.append(
+                                    [f"avg d{param_id_map[out_p]}/{col}", out_p, col]
+                                )
+                        else:
+                            non_features_list.append([f"avg {col}", None, col])
     else:
         data_array = data
         avg_name = "avg " + data.name
@@ -177,11 +243,8 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
                 fit_mask = ~np.isnan(fit_data[:, i]) & fit_mask
             else:
                 fit_mask = ~np.isnan(fit_data[:, i])
-        fit_data_normed = fit_data.copy()
-        for i in range(n_features):
-            fit_data_normed[:, i] = fit_data_normed[:, i] / np.linalg.norm(
-                fit_data_normed[fit_mask, i]
-            )
+        scaler = StandardScaler(copy=True, with_mean=True, with_std=True)
+        fit_data_normed = scaler.fit_transform(fit_data)
         return fit_data, fit_data_normed, fit_mask
 
     def ndim_cluster(fit_data, fit_data_normed, fit_mask):
@@ -190,8 +253,6 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
             "trajectory": np.asarray([]),
             "file": np.asarray([]),
         }
-        for name in avg_name_list:
-            kmeans_dic[name] = np.asarray([])
         clusters = KMeans(n_clusters=k, tol=tol, random_state=42).fit_predict(
             fit_data_normed[fit_mask, :]
         )
@@ -206,9 +267,18 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
         kmeans_dic["cluster"] = np.append(kmeans_dic["cluster"], clusters)
         for i in range(n_features):
             name = avg_name_list[i]
-            kmeans_dic[name] = np.append(
-                kmeans_dic[name], fit_data[fit_mask, i].flatten()
-            )
+            kmeans_dic[name] = fit_data[fit_mask, i].flatten()
+        if include_all_data:
+            for non_feat in non_features_list:
+                if non_feat[1] is None:
+                    tmp_arr = np.asarray(data[non_feat[2]].values).flatten()
+                else:
+                    tmp_arr = np.asarray(
+                        data.sel({"Output_Parameter_ID": non_feat[1]})[
+                            non_feat[2]
+                        ].values
+                    ).flatten()
+                kmeans_dic[non_feat[0]] = tmp_arr[fit_mask]
         return pd.DataFrame.from_dict(kmeans_dic)
 
     if param_names is not None:
@@ -217,7 +287,8 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
 
     elif n_features == 1:
         fit_data = np.reshape(data_array.values, shape)
-        fit_data_normed = fit_data / np.linalg.norm(fit_data)
+        scaler = StandardScaler(copy=True, with_mean=True, with_std=True)
+        fit_data_normed = scaler.fit_transform(fit_data)
         clusters = KMeans(n_clusters=k, tol=tol, random_state=42).fit_predict(
             fit_data_normed[~np.isnan(fit_data[:, 0])]
         )
@@ -229,14 +300,25 @@ def get_cluster(data, k, tol=1e-4, x=None, param_names=None, verbose=False):
         ):
             trajectory = np.append(trajectory, data_array["trajectory"])
         filenames = np.repeat(data_array["file"].values, len(data_array["trajectory"]))
-        return pd.DataFrame.from_dict(
-            {
-                "cluster": clusters,
-                "trajectory": trajectory[~np.isnan(fit_data[:, 0])],
-                avg_name: fit_data[~np.isnan(fit_data[:, 0])].flatten(),
-                "file": filenames[~np.isnan(fit_data[:, 0])],
-            }
-        )
+        kmeans_dic = {
+            "cluster": clusters,
+            "trajectory": trajectory[~np.isnan(fit_data[:, 0])],
+            avg_name: fit_data[~np.isnan(fit_data[:, 0])].flatten(),
+            "file": filenames[~np.isnan(fit_data[:, 0])],
+        }
+
+        if include_all_data:
+            for non_feat in non_features_list:
+                if non_feat[1] is None:
+                    tmp_arr = np.asarray(data[non_feat[2]].values).flatten()
+                else:
+                    tmp_arr = np.asarray(
+                        data.sel({"Output_Parameter_ID": non_feat[1]})[
+                            non_feat[2]
+                        ].values
+                    ).flatten()
+                kmeans_dic[non_feat[0]] = tmp_arr[~np.isnan(fit_data[:, 0])]
+        return pd.DataFrame.from_dict(kmeans_dic)
     else:
         fit_data, fit_data_normed, fit_mask = get_fit_data()
         return ndim_cluster(fit_data, fit_data_normed, fit_mask)
@@ -327,7 +409,9 @@ def plot_cluster_data_interactive(data):
         else:
             in_params.append(col)
     in_params = list(set(in_params))
+    in_params.sort()
     out_params = list(set(out_params))
+    out_params.sort()
     if len(out_params) == 0:
         out_params = ["Not available"]
     out_param_x = pn.widgets.RadioButtonGroup(
@@ -340,7 +424,6 @@ def plot_cluster_data_interactive(data):
         name="Model parameter or model state for the x-axis",
         value=in_params[0],
         options=in_params,
-        button_type="default",
     )
     out_param_y = pn.widgets.RadioButtonGroup(
         name="Output Parameter (if any) for the y-axis",
@@ -352,7 +435,6 @@ def plot_cluster_data_interactive(data):
         name="Model parameter or model state for the y-axis",
         value=in_params[1],
         options=in_params,
-        button_type="default",
     )
     width_slider = pn.widgets.IntSlider(
         name="Width in inches",
@@ -389,6 +471,13 @@ def plot_cluster_data_interactive(data):
         step=0.1,
         value=0.7,
     )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
 
     def get_plot(
         data,
@@ -402,9 +491,10 @@ def plot_cluster_data_interactive(data):
         height,
         font_scale,
         title,
+        save_path,
+        save,
     ):
-        if in_p_x == in_p_y and out_p_x == out_p_y:
-            return
+
         sns.set(rc={"figure.figsize": (width, height)})
         fig = Figure()
         ax = fig.subplots()
@@ -420,24 +510,65 @@ def plot_cluster_data_interactive(data):
             y = f"avg {in_p_y}"
         else:
             y = in_p_y
-        sns.scatterplot(
-            data=data,
-            x=x,
-            y=y,
-            hue="cluster",
-            palette="tab10",
-            ax=ax,
+        histogram = (in_p_x == in_p_y and out_p_x == out_p_y) or (
+            in_p_x == in_p_y and "/" not in x
         )
-        if logx:
-            ax.set_xscale("log")
-        if logy:
-            ax.set_yscale("log")
+        if histogram:
+            palette = "tab10"
+            if len(set(data["cluster"])) > 10:
+                palette = "tab20"
+            sns.histplot(
+                data=data,
+                x=x,
+                hue="cluster",
+                palette=palette,
+                multiple="stack",
+                bins=100,
+                log_scale=(logx, logy),
+                ax=ax,
+            )
+        else:
+            sns.scatterplot(
+                data=data,
+                x=x,
+                y=y,
+                hue="cluster",
+                palette="tab10",
+                ax=ax,
+            )
+        if logx and not histogram:
+            if np.nanmin(data[x]) < 0:
+                linthresh = np.nanmin(np.abs(data[x].where(data[x] != 0)))
+                ax.set_xscale("symlog", linthresh=linthresh)
+            else:
+                ax.set_xscale("log")
+        if logy and not histogram:
+            if np.nanmin(data[y]) < 0:
+                linthresh = np.nanmin(np.abs(data[y].where(data[y] != 0)))
+                ax.set_yscale("symlog", linthresh=linthresh)
+            else:
+                ax.set_yscale("log")
         ax.tick_params(
             axis="both",
             which="major",
             labelsize=int(10 * font_scale),
         )
         _ = ax.set_title(title, fontsize=int(12 * font_scale))
+        ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
+        ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
+        legend = ax.get_legend()
+        legend.set_title("cluster", prop={"size": int(11 * font_scale)})
+        plt.setp(legend.get_texts(), fontsize=int(10 * font_scale))
+        if save:
+            try:
+                ax.figure.savefig(save_path, bbox_inches="tight", dpi=300)
+            except:
+                save_to_field.value = (
+                    f"Could not save to {save_path}. Did you forget the filetype?"
+                )
+                pass
+            save_path = None
+            save = False
         return fig
 
     plot_pane = pn.panel(
@@ -454,6 +585,8 @@ def plot_cluster_data_interactive(data):
             height=height_slider,
             font_scale=font_slider,
             title=title_widget,
+            save_path=save_to_field,
+            save=save_button,
         ),
     ).servable()
 
@@ -473,6 +606,11 @@ def plot_cluster_data_interactive(data):
             height_slider,
             font_slider,
         ),
+        pn.Row(
+            save_to_field,
+            save_button,
+        ),
+        title_widget,
         plot_pane,
     )
 

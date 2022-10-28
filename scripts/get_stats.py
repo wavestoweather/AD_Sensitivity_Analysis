@@ -6,6 +6,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import os
 import pandas as pd
+import panel as pn
 import pickle
 
 try:
@@ -13,6 +14,7 @@ try:
 except:
     from progressbar import progressbar as tqdm
 import seaborn as sns
+import sys
 import xarray as xr
 
 try:
@@ -1594,7 +1596,10 @@ def traj_plot_histogram_out(
     log=False,
     width=24,
     height=12,
+    font_scale=None,
     title=None,
+    save=True,
+    interactive=False,
     verbose=False,
 ):
     """
@@ -1617,15 +1622,23 @@ def traj_plot_histogram_out(
         Width in inches
     height : float
         Height in inches
+    font_scale : float
+        Scale the fontsize for the title, labels and ticks.
+    save : bool
+        Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
+    interactive : bool
+        Create a figure for interactive plotting.
     title : string
         Title of the histogram. If none is given, a title will be generated.
+    verbose : bool
+        Print some additional information.
 
     Returns
     -------
-    If filename is given, returns None. If filename is None, returns the matplotlib.figure.Figure with the plot drawn onto it.
+    If interactive == False, returns None. If interactive == True, returns the matplotlib.figure.Figure with the plot drawn onto it.
     """
     sns.set(rc={"figure.figsize": (width, height)})
-    if filename is None:
+    if interactive:
         sns.set()
         fig = Figure()
         ax = fig.subplots()
@@ -1655,20 +1668,34 @@ def traj_plot_histogram_out(
         x_ticks = np.arange(0, len(edges[out_p]) - 1, ticks_offset)
         ax.set(xticks=x_ticks)
         _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
-        _ = ax.set_title(title)
+        if font_scale is None:
+            _ = ax.set_title(title)
+            ax.set_ylabel(out_p)
+        else:
+            ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
+            _ = ax.set_title(title, fontsize=int(12 * font_scale))
+            ax.set_ylabel(f"# Entries", fontsize=int(11 * font_scale))
+            ax.set_xlabel(f"Bins of {out_p}", fontsize=int(11 * font_scale))
 
-        if filename is not None:
+        if filename is not None and save:
             plt.tight_layout()
-            i = 0
-            store_type = filename.split(".")[-1]
-            store_path = filename[0 : -len(store_type) - 1]
-            save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
-            while os.path.isfile(save):
-                i = i + 1
-                save = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
-            fig = ax.get_figure()
-            fig.savefig(save, dpi=300)
-            plt.clf()
+            try:
+                i = 0
+                store_type = filename.split(".")[-1]
+                store_path = filename[0 : -len(store_type) - 1]
+                save_name = store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+                while os.path.isfile(save_name):
+                    i = i + 1
+                    save_name = (
+                        store_path + "_" + out_p + "_{:03d}.".format(i) + store_type
+                    )
+                if not interactive:
+                    fig = ax.get_figure()
+                fig.savefig(save_name, dpi=300)
+            except:
+                print(f"Storing to {save_name} failed.", file=sys.stderr)
+            if not interactive:
+                plt.clf()
 
     if isinstance(out_params, list):
         for out_p in tqdm(out_params):
@@ -1677,6 +1704,10 @@ def traj_plot_histogram_out(
         plot_hist(out_params, title, ax)
     if verbose:
         print("All plots finished!")
+    if interactive:
+        # Just a failsafe to avoid repeating error messages with erroneous filepaths.
+        save = False
+        filename = None
     return fig
 
 
@@ -1690,6 +1721,8 @@ def traj_plot_histogram_inp(
     width=24,
     height=12,
     title=None,
+    save=True,
+    interactive=False,
     verbose=False,
 ):
     """
@@ -1717,14 +1750,18 @@ def traj_plot_histogram_inp(
         Height in inches
     title : string
         Title of the histogram. If none is given, a title will be generated.
+    save : bool
+        Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
+    interactive : bool
+        Create a figure for interactive plotting.
 
     Returns
     -------
-    If filename is given, returns None. If filename is None, returns the matplotlib.figure.Figure with the plot drawn onto it.
+    If interactive == False, returns None. If interactive == True, returns the matplotlib.figure.Figure with the plot drawn onto it.
     """
     sns.set(rc={"figure.figsize": (width, height)})
     out_params = list(edges_in_params.keys())
-    if filename is None:
+    if interactive:
         sns.set()
         fig = Figure()
         axs = fig.subplots(
@@ -1791,18 +1828,26 @@ def traj_plot_histogram_inp(
         create_fig(ax2, out_params[1], in_p, title)
         create_fig(ax3, out_params[2], in_p, title)
 
-        if filename is not None:
+        if filename is not None and save:
             plt.tight_layout()
-            i = 0
-            store_type = filename.split(".")[-1]
-            store_path = filename[0 : -len(store_type) - 1]
-            save = store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
-            while os.path.isfile(save):
-                i = i + 1
-                save = store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
-            plt.savefig(save, dpi=300)
-            plt.clf()
-        else:
+            try:
+                i = 0
+                store_type = filename.split(".")[-1]
+                store_path = filename[0 : -len(store_type) - 1]
+                save_name = store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
+                while os.path.isfile(save_name):
+                    i = i + 1
+                    save_name = (
+                        store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
+                    )
+                plt.savefig(save_name, dpi=300)
+            except:
+                print(f"Storing to {save_name} failed.", file=sys.stderr)
+            if not interactive:
+                plt.clf()
+        if interactive:
+            # The view in jupyter notebooks may be different from the stored one without
+            # the given padding.
             fig.tight_layout(h_pad=1)
 
     if isinstance(in_params, list):
@@ -1813,6 +1858,10 @@ def traj_plot_histogram_inp(
 
     if verbose:
         print("All plots finished!")
+    if interactive:
+        # Just a failsafe to avoid repeating error messages with erroneous filepaths.
+        save = False
+        filename = None
     return fig
 
 
@@ -2495,6 +2544,9 @@ def plot_heatmap_histogram(
     filename=None,
     width=17,
     height=16,
+    font_scale=None,
+    save=True,
+    interactive=False,
     verbose=False,
 ):
     """
@@ -2502,20 +2554,35 @@ def plot_heatmap_histogram(
 
     Parameters
     ----------
-    hist_conditional
+    hist_conditional :
+
     in_params : list of strings
+
     out_params : list of strings
-    title
-    filename
-    width
-    height
+
+    title : string
+        Title of the histogram. If none is given, a title will be generated.
+    filename : string
+        Path and name of the output file. If the file already exists, a number will be appended.
+    width : float
+        Width in inches
+    height : float
+        Height in inches
+    font_scale : float
+        Scale the fontsize for the title, labels and ticks.
+    save : bool
+        Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
+    interactive : bool
+        Create a figure for interactive plotting.
+    verbose : bool
+        Print some additional information.
 
     Returns
     -------
     If filename is given, returns None. If filename is None, returns the matplotlib.figure.Figure with the plot drawn onto it.
     """
     sns.set(rc={"figure.figsize": (width, height)})
-    if filename is None:
+    if interactive:
         sns.set()
         fig = Figure()
         ax = fig.subplots()
@@ -2574,7 +2641,11 @@ def plot_heatmap_histogram(
         _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
         y_labels = [f"{y_ticks[i]:1.1e}" for i in y_ticks_location]
         _ = ax.set_yticklabels(y_labels, rotation=0)
-        _ = ax.set_title(title)
+        if font_scale is None:
+            _ = ax.set_title(title)
+        else:
+            ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
+            _ = ax.set_title(title, fontsize=int(12 * font_scale))
         ax.set_xlabel(x_name)
         ax.set_ylabel(y_name)
         # plt.xlabel(x_name)
@@ -2582,37 +2653,14 @@ def plot_heatmap_histogram(
         # plt.xlabel(latexify.parse_word(x_name))
         # plt.ylabel(latexify.parse_word(y_name))
         plt.tight_layout()
-        if filename is not None:
+        if filename is not None and save:
             fig = ax.get_figure()
-            i = 0
-            store_type = filename.split(".")[-1]
-            store_path = filename[0 : -len(store_type) - 1]
-            if p is None:
-                save = (
-                    store_path
-                    + "_"
-                    + x_name
-                    + "_"
-                    + y_name
-                    + "_{:03d}.".format(i)
-                    + store_type
-                )
-            else:
-                save = (
-                    store_path
-                    + "_"
-                    + x_name
-                    + "_"
-                    + p
-                    + "_wrt_"
-                    + y_name
-                    + "_{:03d}.".format(i)
-                    + store_type
-                )
-            while os.path.isfile(save):
-                i = i + 1
+            try:
+                i = 0
+                store_type = filename.split(".")[-1]
+                store_path = filename[0 : -len(store_type) - 1]
                 if p is None:
-                    save = (
+                    save_name = (
                         store_path
                         + "_"
                         + x_name
@@ -2622,7 +2670,7 @@ def plot_heatmap_histogram(
                         + store_type
                     )
                 else:
-                    save = (
+                    save_name = (
                         store_path
                         + "_"
                         + x_name
@@ -2633,10 +2681,37 @@ def plot_heatmap_histogram(
                         + "_{:03d}.".format(i)
                         + store_type
                     )
-            fig.savefig(save, dpi=300)
-            plt.clf()
+                while os.path.isfile(save_name):
+                    i = i + 1
+                    if p is None:
+                        save_name = (
+                            store_path
+                            + "_"
+                            + x_name
+                            + "_"
+                            + y_name
+                            + "_{:03d}.".format(i)
+                            + store_type
+                        )
+                    else:
+                        save_name = (
+                            store_path
+                            + "_"
+                            + x_name
+                            + "_"
+                            + p
+                            + "_wrt_"
+                            + y_name
+                            + "_{:03d}.".format(i)
+                            + store_type
+                        )
+                fig.savefig(save_name, dpi=300)
+            except:
+                print(f"Storing to {save_name} failed.", file=sys.stderr)
+            if not interactive:
+                plt.clf()
 
-    if filename is None:
+    if interactive:
         c = conditions
         if in_params is None or in_params == "None":
             out_p = out_params
@@ -2662,6 +2737,8 @@ def plot_heatmap_histogram(
                 p,
                 ax=ax,
             )
+        save = False
+        filename = None
         return fig
 
     for c in tqdm(conditions):
@@ -3065,6 +3142,298 @@ def main(args):
             filename = filename[0 : -len(ending) - 1] + ".txt"
             with open(filename, "w+") as f:
                 f.write(text)
+
+
+def plot_traj_histogram_out_interactive(edges, hist):
+    """
+    Calling this function from a Jupyter notebook allows to visualize the
+    traj_plot_histogram_out interactively. Plots the histogram of an output parameter,
+    i.e., QV, latent_heat, latent_cool, etc.
+
+    Parameters
+    ----------
+    edges : Dictionary of list-like of float
+        Edges for the histogram. Keys must be in out_params.
+    hist : Dictionary of list-like of int
+        Number of entries for each bin. Keys must be in edges.
+
+    Returns
+    -------
+
+    """
+    out_param = pn.widgets.RadioButtonGroup(
+        name="Output Parameter",
+        value=list(edges.keys())[0],
+        options=list(edges.keys()),
+        button_type="primary",
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    log_plot = pn.widgets.Toggle(
+        name="Use log y-axis",
+        value=True,
+        button_type="success",
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=2,
+        step=0.1,
+        value=0.7,
+    )
+    plot_pane = pn.panel(
+        pn.bind(
+            traj_plot_histogram_out,
+            out_params=out_param,
+            filename=save_to_field,
+            edges=edges,
+            hist=hist,
+            log=log_plot,
+            width=width_slider,
+            height=height_slider,
+            title=title_widget,
+            save=save_button,
+            interactive=True,
+            font_scale=font_slider,
+            verbose=False,
+        ),
+    ).servable()
+
+    return pn.Column(
+        out_param,
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+            log_plot,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+        ),
+        title_widget,
+        plot_pane,
+    )
+
+
+def plot_traj_histogram_inp_interactive(
+    edges_in_params,
+    hist_in_params,
+):
+    """
+
+    Parameters
+    ----------
+    dges_in_params : Dictionary of dictionary list-like of float
+        Edges for the histogram. First keys are output parameters, second keys must be in in_params.
+    hist_in_params : Dictionary of dictionary list-like of int
+        Number of entries for each bin. First keys are output parameters, second keys must be in in_params.
+
+    Returns
+    -------
+
+    """
+    in_param = pn.widgets.Select(
+        name="Model Parameter",
+        value=list(edges_in_params[list(edges_in_params.keys())[0]].keys())[0],
+        options=list(edges_in_params[list(edges_in_params.keys())[0]].keys()),
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=2,
+        step=0.1,
+        value=0.7,
+    )
+    log_plot = pn.widgets.Toggle(
+        name="Use log y-axis",
+        value=True,
+        button_type="success",
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+
+    plot_pane = pn.panel(
+        pn.bind(
+            traj_plot_histogram_inp,
+            filename=save_to_field,
+            in_params=in_param,
+            edges_in_params=edges_in_params,
+            hist_in_params=hist_in_params,
+            log=log_plot,
+            width=width_slider,
+            height=height_slider,
+            title=None,
+            font_scale=font_slider,
+            save=save_button,
+            interactive=True,
+            verbose=False,
+        ),
+    ).servable()
+
+    return pn.Column(
+        in_param,
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+            log_plot,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+        ),
+        plot_pane,
+    )
+
+
+def plot_heatmap_histogram_interactive(hist_conditional):
+    """
+
+    Parameters
+    ----------
+    hist_conditional
+
+    Returns
+    -------
+
+    """
+    conds = list(hist_conditional.keys())
+    conditions = []
+    for c in conds:
+        if c != "edges_in_params" and c != "edges_out_params":
+            conditions.append(c)
+    wrt_params = list(hist_conditional["edges_in_params"].keys())
+    out_param = pn.widgets.RadioButtonGroup(
+        name="Output Parameter",
+        value=wrt_params[0],
+        options=wrt_params,
+        button_type="primary",
+    )
+    condition = pn.widgets.RadioButtonGroup(
+        name="X-Axis",
+        value=conditions[0],
+        options=conditions,
+        button_type="primary",
+    )
+    in_param = pn.widgets.Select(
+        name="Model Parameter (Y-Axis)",
+        value=list(hist_conditional["edges_in_params"][wrt_params[0]].keys())[0],
+        options=list(hist_conditional["edges_in_params"][wrt_params[0]].keys())
+        + ["None"],
+        button_type="default",
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=20,
+        step=1,
+        value=8,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=20,
+        step=1,
+        value=8,
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=2,
+        step=0.1,
+        value=0.7,
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+
+    plot_pane = pn.panel(
+        pn.bind(
+            plot_heatmap_histogram,
+            hist_conditional=hist_conditional,
+            filename=save_to_field,
+            in_params=in_param,
+            out_params=out_param,
+            conditions=condition,
+            width=width_slider,
+            height=height_slider,
+            font_scale=font_slider,
+            title=title_widget,
+            save=save_button,
+            interactive=True,
+            verbose=False,
+        ),
+    ).servable()
+
+    return pn.Column(
+        in_param,
+        "Model State (Y-Axis; for Sensitivities)",
+        out_param,
+        "X-Axis",
+        condition,
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+        ),
+        title_widget,
+        plot_pane,
+    )
 
 
 if __name__ == "__main__":
