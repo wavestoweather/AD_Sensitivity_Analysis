@@ -272,82 +272,102 @@ def load_data(
 
 if __name__ == "__main__":
     import argparse
+    import textwrap
 
     parser = argparse.ArgumentParser(
-        """
-        For comparison of cosmo simulation and our simulation.
-        Create scatter plots with temperature, specific humidity,
-        liquid hydrometeor content (qc+qr), cold hydrometeor content (qi+qs+qg+qh).
-        """,
+        description=textwrap.dedent(
+            """\
+            For comparison of cosmo simulation and our simulation.
+            Create scatter plots with temperature, specific humidity,
+            liquid hydrometeor content (qc+qr), cold hydrometeor content (qi+qs+qg+qh).
+            """
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "--data_cosmo_path",
         required=True,
         type=str,
-        help="""
-        Path to folder with NetCDF-files from a COSMO simulation.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to folder with NetCDF-files from a COSMO simulation.
+            """
+        ),
     )
     parser.add_argument(
         "--data_sim_path",
         required=True,
         type=str,
-        help="""
-        Path to folder with NetCDF-files from our simulation.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to folder with NetCDF-files from our simulation.
+            """
+        ),
     )
     parser.add_argument(
         "--store_path",
         type=str,
         default="../pics/cosmo_comparison_",
-        help="""
-        Path (and name) where to save images.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path (and name) where to save images.
+            """
+        ),
     )
     parser.add_argument(
         "--width",
         type=int,
         default=1200,
-        help="""
-        Width in pixels for the plot.
-        """,
+        help=textwrap.dedent(
+            """\
+            Width in pixels for the plot.
+            """
+        ),
     )
     parser.add_argument(
         "--height",
         type=int,
         default=800,
-        help="""
-        Height in pixels for the plot.
-        """,
+        help=textwrap.dedent(
+            """\
+            Height in pixels for the plot.
+            """
+        ),
     )
     parser.add_argument(
         "--traj",
         type=int,
         default=0,
-        help="""
-        Define the trajectory index of the files in data_cosmo_path.
-        """,
+        help=textwrap.dedent(
+            """\
+            Define the trajectory index of the files in data_cosmo_path.
+            """
+        ),
     )
     parser.add_argument(
         "--backend",
         default="matplotlib",
-        help="""
-        Choose a backend for plotting. Options are:
-        matplotlib: Most plots should be fine with it.
-        bokeh: Recommended.
-        """,
+        help=textwrap.dedent(
+            """\
+            Choose a backend for plotting. Options are:
+            matplotlib: Most plots should be fine with it.
+            bokeh: Recommended.
+            """
+        ),
     )
     parser.add_argument(
         "--verbosity",
         type=int,
         default=0,
-        help="""
-        Set verbosity level.
-        0: No output except for exceptions
-        1: Print loading statements
-        2: Print printing statements
-        3: Print additional statements
-        """,
+        help=textwrap.dedent(
+            """\
+            Set verbosity level.
+            0: No output except for exceptions
+            1: Print loading statements
+            2: Print printing statements
+            3: Print additional statements
+            """
+        ),
     )
 
     args = parser.parse_args()

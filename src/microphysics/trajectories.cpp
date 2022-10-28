@@ -45,7 +45,6 @@ void parse_args(
     const int &argc,
     char* const * argv,
     const int &rank,
-//    const int &n_processes,
     input_parameters_t &input,
     global_args_t &global_args,
     reference_quantities_t &ref_quant) {
@@ -371,7 +370,7 @@ void finish_last_step(
                 get_at(cc.constants, Cons_idx::Epsilon))
             << ", QC: " << qc_prime << "\n";
 #endif
-    std::vector<float_t> res(7);
+    std::vector<float_t> res(num_comp);
     for (auto& r : res) r = 0;
     saturation_adjust(
         T_prime,
@@ -387,6 +386,8 @@ void finish_last_step(
     // negative qc due to rounding errors with ref_quant.qref.
     y_single_new[qc_idx] = (y_single_new[qc_idx] < 0) ? 0 : y_single_new[qc_idx];
     y_single_new[T_idx] += res[T_idx]/ref_quant.Tref;
+    y_single_new[lat_cool_idx] += res[lat_cool_idx];
+    y_single_new[lat_heat_idx] += res[lat_heat_idx];
     p_prime = y_single_new[p_idx]*ref_quant.pref;
     T_prime = y_single_new[T_idx]*ref_quant.Tref;
     qv_prime = y_single_new[qv_idx]*ref_quant.qref;
@@ -406,6 +407,30 @@ void finish_last_step(
             << ", QC: " << y_single_new[qc_idx]*ref_quant.qref << "\n";
 #endif
 }
+
+
+template<class float_t>
+void determine_phase_start(
+    const std::vector<float_t> &y_single_old,
+    bool &previous_step_with_ice,
+    bool &previous_step_with_warm) {
+
+    previous_step_with_ice = false;
+#if defined(RK4ICE)
+    if (y_single_old[qi_idx] > ice_q_phase_threshold || y_single_old[Ni_idx] > ice_n_phase_threshold
+        || y_single_old[qg_idx] > ice_q_phase_threshold || y_single_old[Ng_idx] > ice_n_phase_threshold
+        || y_single_old[qs_idx] > ice_q_phase_threshold || y_single_old[Ns_idx] > ice_n_phase_threshold
+        || y_single_old[qh_idx] > ice_q_phase_threshold || y_single_old[Nh_idx]  > ice_n_phase_threshold) {
+        previous_step_with_ice = true;
+    }
+#endif
+    previous_step_with_warm = false;
+    if (y_single_old[qc_idx] > warm_q_phase_threshold || y_single_old[qr_idx] > warm_q_phase_threshold
+        || y_single_old[Nc_idx] > warm_n_phase_threshold || y_single_old[Nr_idx] > warm_n_phase_threshold ) {
+        previous_step_with_warm = true;
+    }
+}
+
 
 void run_substeps(
     input_parameters_t &input,
@@ -453,6 +478,10 @@ void run_substeps(
         y_single_old[Ni_idx] += inflow[Ni_in_idx]/cc.num_sub_steps;
         y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
         y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
+    #if defined(B_EIGHT)
+        y_single_old[qh_idx] += inflow[qh_in_idx]/cc.num_sub_steps;
+        y_single_old[Nh_idx] += inflow[Nh_in_idx]/cc.num_sub_steps;
+    #endif
     #endif
 #endif
 #if defined MET3D && defined TURBULENCE
@@ -513,12 +542,14 @@ void run_substeps(
 #ifdef DEVELOP
             std::cout << "process_step\n";
 #endif
+            bool previous_step_with_ice, previous_step_with_warm;
+            determine_phase_start(y_single_old, previous_step_with_ice, previous_step_with_warm);
             // TODO(mahieron): what if delay_out_time is not a multiple of dt_prime?
             out_handler.process_step(cc, netcdf_reader, y_single_new, y_diff,
                 sub, t,
                 input.write_index,
                 input.snapshot_index,
-                last_step, ref_quant);
+                last_step, ref_quant, previous_step_with_warm, previous_step_with_ice);
         }
         // Interchange old and new for next step
         time_old = time_new;
@@ -586,6 +617,10 @@ void run_substeps(
         y_single_old[Ni_idx] += inflow[Ni_in_idx]/cc.num_sub_steps;
         y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
         y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
+    #if defined(B_EIGHT)
+        y_single_old[qh_idx] += inflow[qh_in_idx]/cc.num_sub_steps;
+        y_single_old[Nh_idx] += inflow[Nh_in_idx]/cc.num_sub_steps;
+    #endif
     #endif
 #endif
 #if defined MET3D && defined TURBULENCE
@@ -631,11 +666,14 @@ void run_substeps(
         time_new = (sub + (t+cc.done_steps)*cc.num_sub_steps)*cc.dt;
         if (time_new >= delay_out_time) {
             // TODO(mahieron): what if delay_out_time is not a multiple of dt_prime?
+            bool previous_step_with_ice, previous_step_with_warm;
+            determine_phase_start(y_single_old, previous_step_with_ice, previous_step_with_warm);
+
             out_handler.process_step(cc, netcdf_reader, y_single_new, y_diff,
                 sub, t,
                 input.write_index,
                 input.snapshot_index,
-                last_step, ref_quant);
+                last_step, ref_quant, previous_step_with_warm, previous_step_with_ice);
         }
         // Interchange old and new for next step
         time_old = time_new;
@@ -734,9 +772,6 @@ int run_simulation(
 #if defined(TRACE_COMM_DEBUG) || defined(DEVELOP)
         std::cout << cc.rank << ", sim " << t << " / " << cc.num_steps - cc.done_steps - 1 << "\n" << std::flush;
 #endif
-//        if (cc.traj_id == 0)
-//            std::cout << "old " << y_single_old[9] << ", new "
-//                << y_single_new[9] << ", inflow " << inflow[qi_in_idx] << "\n";
         // Iterate over each substep
         run_substeps(input, ref_quant, t, cc, y_single_old,
             inflow, y_single_new, netcdf_reader, y_diff, out_handler,
@@ -946,7 +981,7 @@ void limited_time_ensemble_simulation(
     // The progressbar here is just an estimate since the members
     // are distributed dynamically
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
-    uint64_t sims_for_r0 = (netcdf_reader.n_ensembles*netcdf_reader.n_trajectories + n_processes-1)/n_processes;
+    uint64_t sims_for_r0 = (netcdf_reader.n_ensembles + n_processes-1)/n_processes;
 
     uint64_t steps_members = 0;
     for (auto &s : segments) {
@@ -1024,7 +1059,9 @@ void limited_time_ensemble_simulation(
             0,
             0,
             ref_quant,
-            input.snapshot_index);
+            input.snapshot_index,
+            false,
+            false);
 
         pbar.set_current_step(pbar_counter);
         pbar.progress();

@@ -28,6 +28,7 @@ output_handle_t::output_handle_t(
 #ifdef COMPRESS_OUTPUT
     this->n_processes = n_processes;
 #endif
+    n_perturbed_params = 0;
     this->setup(filetype, filename, cc,
                 in_filename, write_index, snapshot_index,
                 rank, delay_out_time);
@@ -59,6 +60,7 @@ output_handle_t::output_handle_t(
 #ifdef COMPRESS_OUTPUT
     this->n_processes = n_processes;
 #endif
+    n_perturbed_params = 0;
     if (simulation_mode == create_train_set && segments.size() > 0) {
         uint64_t param_size = cc.constants.size()
             + cc.cloud.constants.size() + cc.rain.constants.size()
@@ -72,7 +74,6 @@ output_handle_t::output_handle_t(
         // output file.
         // Get the idx of the parameter and its first occurrence in the segments.
         // Some parameters might be perturbed in multiple ensembles.
-        n_perturbed_params = 0;
         for (const auto &s : segments) {
             // Get all parameters that shall be perturbed and their index.
             // Is it already in perturbed_idx? Then skip it.
@@ -292,7 +293,13 @@ void output_handle_t::define_vars(const model_constants_t<float_t> &cc) {
             &dimid[Dim_idx::ensemble_dim],
             &varid[Var_idx::slan_600]));
 #endif
-
+    SUCCESS_OR_DIE(nc_def_var(
+            ncid,
+            "asc600",
+            NC_BYTE,
+            3,
+            &dimid[Dim_idx::ensemble_dim],
+            &varid[Var_idx::asc600]));
     SUCCESS_OR_DIE(nc_def_var(
             ncid,
             "lat",
@@ -1076,6 +1083,24 @@ void output_handle_t::set_attributes(
 #endif
     SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
+            varid[Var_idx::asc600],
+            "long_name",
+            strlen("600hPa ascent"),
+            "600hPa ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::asc600],
+            "standard_name",
+            strlen("600hPa_ascent"),
+            "600hPa_ascent"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::asc600],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
             varid[Var_idx::step],
             "long_name",
             strlen("simulation step"),
@@ -1092,7 +1117,7 @@ void output_handle_t::set_attributes(
             "auxiliary_data",
             strlen("yes"),
             "yes"));
-    const uint64_t FILLINT = 0;
+    const uint64_t FILLINT = -1;
     SUCCESS_OR_DIE(nc_put_att(
             ncid,
             varid[Var_idx::step],
@@ -1143,19 +1168,18 @@ void output_handle_t::set_compression(const model_constants_t<float_t> &cc) {
         || this->simulation_mode == trajectory_sensitivity
         || this->simulation_mode == grid_sensitivity
         || this->simulation_mode == create_train_set) {
-        // Compressing this is buggy
         for (uint32_t i=0; i < Var_idx::n_vars; ++i) {
             // This does not work on scalars; we need to filter those out
             if ((local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param)) &&
               (n_perturbed_params > 1 || i != static_cast<int>(Var_idx::perturbed)))
                 if (simulation_mode == create_train_set || i != static_cast<int>(Var_idx::perturbation_value) )
                     // This could be a version for szip
-    //                         SUCCESS_OR_DIE(
-    //                             nc_def_var_szip(
-    //                                 ncid,
-    //                                 varid[i],
-    //                                 NC_SZIP_NN,
-    //                                 8));  // pixels per block
+                    //                         SUCCESS_OR_DIE(
+                    //                             nc_def_var_szip(
+                    //                                 ncid,
+                    //                                 varid[i],
+                    //                                 NC_SZIP_NN,
+                    //                                 8));  // pixels per block
                     // zlib version
                     SUCCESS_OR_DIE(
                             nc_def_var_deflate(
@@ -1457,6 +1481,11 @@ void output_handle_t::set_parallel_access(
             "slan_600",
             &varid[Var_idx::slan_600]));
 #endif
+    SUCCESS_OR_DIE(
+        nc_inq_varid(
+            ncid,
+            "asc600",
+            &varid[Var_idx::asc600]));
 #ifdef DEVELOP
     std::cout << "get lat\n" << std::flush;
 #endif
@@ -1709,9 +1738,6 @@ void output_handle_t::buffer_gradient(
             for (uint64_t j=0; j < num_par-num_par_init; j++)  // gradient of input parameter j
                 if (cc.trace_check(j, false)) {
                     if (n_snapshots%snapshot_index == 0) {
-//                        if (traj == 0 and n_snapshots == 1)
-//                            std::cout << output_grad_idx.size() << " state " << i
-//                            << " param " << j << " grad " << y_diff[i][j]/snapshot_index << "\n";
                         output_buffer[Buffer_idx::n_buffer+j][comp_idx*total_snapshots + n_snapshots] =
                             y_diff[i][j]/snapshot_index;
                     } else {
@@ -1745,7 +1771,9 @@ void output_handle_t::buffer(
     const uint32_t sub,
     const uint32_t t,
     const reference_quantities_t &ref_quant,
-    const uint32_t snapshot_index) {
+    const uint32_t snapshot_index,
+    const bool previous_step_with_warm,
+    const bool previous_step_with_ice) {
 
     // output parameters
     for (uint64_t i=0; i < num_comp; i++) {
@@ -1827,7 +1855,7 @@ void output_handle_t::buffer(
 #if !defined(B_EIGHT)
         output_buffer_flags[4][n_snapshots] = netcdf_reader.get_asc600(t);
 #else
-        output_buffer_flags[1][n_snapshots] = netcdf_reader.get_asc600(t);
+        output_buffer_flags[0][n_snapshots] = netcdf_reader.get_asc600(t);
 #endif
     }
     // Value of perturbed parameter
@@ -1856,22 +1884,46 @@ void output_handle_t::buffer(
 
     // simulation step
     output_buffer_int[0][n_snapshots] = sub + t*cc.num_sub_steps;
-
     // phase, 0: warm phase, 1: mixed phase, 2: ice phase,
     // 3: only water vapor or nothing at all
+    // Thresholds removed and input from previous time step considered and precipitation considered
     uint64_t current_phase = 3;
-    if (y_single_new[qi_idx] > 0 || y_single_new[qs_idx] > 0
-        || y_single_new[qh_idx] > 0 || y_single_new[qg_idx] > 0
-        || y_single_new[Ni_idx] > 0 || y_single_new[Ns_idx] > 0
-        || y_single_new[Nh_idx] > 0 || y_single_new[Ng_idx] > 0) {
+#if defined(RK4ICE)
+    if (output_buffer[qi_idx][n_snapshots] > ice_q_phase_threshold
+        || output_buffer[qs_idx][n_snapshots] > ice_q_phase_threshold
+        || output_buffer[qh_idx][n_snapshots] > ice_q_phase_threshold
+        || output_buffer[qg_idx][n_snapshots] > ice_q_phase_threshold
+        || output_buffer[Ni_idx][n_snapshots] > ice_n_phase_threshold
+        || output_buffer[Ns_idx][n_snapshots] > ice_n_phase_threshold
+        || output_buffer[Nh_idx][n_snapshots] > ice_n_phase_threshold
+        || output_buffer[Ng_idx][n_snapshots]  > ice_n_phase_threshold || previous_step_with_ice) {
         current_phase = 2;
     }
-    if (y_single_new[qc_idx] > 0 || y_single_new[qr_idx] > 0
-        || y_single_new[Nc_idx] > 0 || y_single_new[Nr_idx] > 0) {
+#endif
+    if (output_buffer[qc_idx][n_snapshots] > warm_q_phase_threshold
+        || output_buffer[qr_idx][n_snapshots] > warm_q_phase_threshold
+        || output_buffer[Nc_idx][n_snapshots] > warm_n_phase_threshold
+        || output_buffer[Nr_idx][n_snapshots] > warm_n_phase_threshold || previous_step_with_warm) {
         current_phase = (current_phase == 2) ? 1 : 0;
     }
     output_buffer_int[1][n_snapshots] = current_phase;
 
+    // phase, 0: warm phase, 1: mixed phase, 2: ice phase,
+    // 3: only water vapor or nothing at all
+//    uint64_t current_phase = 3;
+#if defined(RK4ICE)
+//    if (output_buffer[qi_idx][n_snapshots] > 1e-14 || output_buffer[qs_idx][n_snapshots] > 1e-14
+//        || output_buffer[qh_idx][n_snapshots] > 1e-14 || output_buffer[qg_idx][n_snapshots] > 1e-14
+//        || output_buffer[Ni_idx][n_snapshots] > 0.9999 || output_buffer[Ns_idx][n_snapshots] > 0.9999
+//        || output_buffer[Nh_idx][n_snapshots] > 0.9999 || output_buffer[Ng_idx][n_snapshots]  > 0.9999) {
+//        current_phase = 2;
+//    }
+#endif
+//    if (output_buffer[qc_idx][n_snapshots] > 0 || output_buffer[qr_idx][n_snapshots] > 0
+//        || output_buffer[Nc_idx][n_snapshots] > 0 || output_buffer[Nr_idx][n_snapshots] > 0) {
+//        current_phase = (current_phase == 2) ? 1 : 0;
+//    }
+//    output_buffer_int[1][n_snapshots] = current_phase;
     n_snapshots++;
 }
 
@@ -1927,7 +1979,6 @@ bool output_handle_t::flush_buffer(
 #endif
     for (uint64_t i=0; i < num_comp; i++) {
 #if defined(DEVELOP)
-//        if (i >= 12 && i < 21) continue;
         std::cout << "traj: " << traj << " at " << flushed_snapshots
                   << " i: " << i << "/" << num_comp
                   << " output_size: " << output_buffer[i].size()
@@ -1970,7 +2021,7 @@ bool output_handle_t::flush_buffer(
                 output_buffer_flags[i].data()));
 #else
         SUCCESS_OR_DIE(
-            nc_put_vara(
+                nc_put_vara(
                 ncid,
                 varid[Var_idx::asc600+i],
                 startp.data(),
@@ -2222,6 +2273,13 @@ bool output_handle_t::flush_buffer(
         } else {
             // Compressed output: No strided output needed
             // No compression: No strided output needed
+#ifdef DEVELOP
+#ifdef COMPRESS_OUTPUT
+            std::cout << "No strided output needed for compressed gradients\n";
+#else
+            std::cout << "No strided output needed for gradients\n";
+#endif
+#endif
             if (!track_ic) {
                 for (uint64_t j=0; j < num_par-num_par_init; j++) {
                     if (cc.trace_check(j, false)) {
@@ -2262,6 +2320,9 @@ bool output_handle_t::flush_buffer(
     } else {
         // Compression doesn't work in the simulation mode limited_time_ensemble with
         // strided writes. We have to do that manually.
+#ifdef DEVELOP
+        std::cout << "Mode: limited_time_ensemble with manual strides\n";
+#endif
         std::vector<size_t> startp2, countp2;
         startp2.push_back(0);
         if (no_flush || cc.traj_id != 0) {
@@ -2320,6 +2381,9 @@ bool output_handle_t::flush_buffer(
     } else if (cc.traj_id == 0) {
         // no compression: limited_time_ensembles with and without strided output
         // Only traj_id = 0 writes gradients
+#ifdef DEVELOP
+        std::cout << "No compression for limited_time_ensembles\n";
+#endif
         std::vector<size_t> startp2, countp2;
         startp2.push_back(0);
         if (no_flush) {
@@ -2399,6 +2463,9 @@ bool output_handle_t::flush_buffer(
         }
     }
 #endif
+#ifdef DEVELOP
+    std::cout << "flushing done\n";
+#endif
     if (!no_flush) flushed_snapshots += n_snapshots;
     n_snapshots = 0;
     return true;
@@ -2416,12 +2483,14 @@ void output_handle_t::process_step(
     const uint32_t write_index,
     const uint32_t snapshot_index,
     const bool last_step,
-    const reference_quantities_t &ref_quant) {
+    const reference_quantities_t &ref_quant,
+    const bool previous_step_with_warm,
+    const bool previous_step_with_ice) {
 
     if ((0 == (sub + t*cc.num_sub_steps) % snapshot_index)
         || (t == cc.num_steps-1 && last_step)) {
         this->buffer(cc, netcdf_reader, y_single_new, y_diff, sub, t,
-            ref_quant, snapshot_index);
+            ref_quant, snapshot_index, previous_step_with_warm, previous_step_with_ice);
     } else if (this->simulation_mode != limited_time_ensembles || cc.traj_id == 0) {
         // Why do we have this case here? This would store gradients at every step.
         this->buffer_gradient(cc, y_diff, snapshot_index);
@@ -2586,7 +2655,9 @@ template void output_handle_t::buffer<codi::RealReverse>(
     const uint32_t,
     const uint32_t,
     const reference_quantities_t&,
-    const uint32_t);
+    const uint32_t,
+    const bool,
+    const bool);
 
 template void output_handle_t::buffer<codi::RealForwardVec<num_par_init> >(
     const model_constants_t<codi::RealForwardVec<num_par_init> >&,
@@ -2596,7 +2667,9 @@ template void output_handle_t::buffer<codi::RealForwardVec<num_par_init> >(
     const uint32_t,
     const uint32_t,
     const reference_quantities_t&,
-    const uint32_t);
+    const uint32_t,
+    const bool,
+    const bool);
 
 template bool output_handle_t::flush_buffer<codi::RealReverse>(
     const model_constants_t<codi::RealReverse>&, const bool);
@@ -2614,7 +2687,9 @@ template void output_handle_t::process_step<codi::RealReverse>(
     const uint32_t,
     const uint32_t,
     const bool,
-    const reference_quantities_t&);
+    const reference_quantities_t&,
+    const bool,
+    const bool);
 
 template void output_handle_t::process_step<codi::RealForwardVec<num_par_init> >(
     const model_constants_t<codi::RealForwardVec<num_par_init> >&,
@@ -2626,4 +2701,6 @@ template void output_handle_t::process_step<codi::RealForwardVec<num_par_init> >
     const uint32_t,
     const uint32_t,
     const bool,
-    const reference_quantities_t&);
+    const reference_quantities_t&,
+    const bool,
+    const bool);

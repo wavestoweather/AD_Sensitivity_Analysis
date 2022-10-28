@@ -9,9 +9,9 @@ import os.path
 import pandas as pd
 
 try:
-    from progressbar import progressbar as pb
+    from tqdm.auto import tqdm
 except:
-    from tqdm import tqdm as pb
+    from progressbar import progressbar as tqdm
 from timeit import default_timer as timer
 import warnings
 import xarray as xr
@@ -80,7 +80,11 @@ def rolling_window(a, window):
 
 
 def load_sensitivity(
-    path, out_params, param_names, in_params=["da_1"], par_dim_name="Output Parameter"
+    path,
+    out_params,
+    param_names,
+    in_params=["da_1"],
+    par_dim_name="Output Parameter",
 ):
     """
     Load the sensitivities from the unperturbed trajectory.
@@ -92,6 +96,9 @@ def load_sensitivity(
         trajectory with 'Output Parameter' as column.
     out_params: List of string
         List of output parameters to get sensitivities for.
+    time_integrated : bool
+        If true, calculate the time integrated sensitivities and model states.
+        Otherwise get the difference at each time step.
     in_params: List of string
         List of input parameters for the sensitivies.
     par_dim_name: String
@@ -139,6 +146,7 @@ def load_dataset(
     out_params,
     in_params,
     traj_list,
+    time_integrated=False,
     traj_offset=0,
     verbosity=0,
     par_dim_name="Output Parameter",
@@ -165,6 +173,9 @@ def load_dataset(
         List of input parameters to get MSE for.
     traj_list: List of int
         List of trajectory numbers to load or list of files.
+    time_integrated : bool
+        If true, calculate the time integrated sensitivities and model states.
+        Otherwise get the difference at each time step.
     traj_offset : int
         Offset for the new index of the trajectories.
     verbosity : int
@@ -177,12 +188,19 @@ def load_dataset(
         Also has output parameter values for not perturbed trajectory
     """
     trajectories = []
-    dim_order = (
-        "Output Parameter",
-        "Input Parameter",
-        "trajectory",
-        "time_after_ascent",
-    )
+    if time_integrated:
+        dim_order = (
+            "Output Parameter",
+            "Input Parameter",
+            "trajectory",
+        )
+    else:
+        dim_order = (
+            "Output Parameter",
+            "Input Parameter",
+            "trajectory",
+            "time_after_ascent",
+        )
     idx_offset = 0
     n_timesteps = 0
     time_after_ascent = None
@@ -202,7 +220,7 @@ def load_dataset(
         else:
             continue
 
-        if n_timesteps == 0:
+        if n_timesteps == 0 and not time_integrated:
             not_perturbed_path = path + "traj" + str(traj) + "_notPerturbed.nc_wcb"
             # I wasn't consistent with the way not perturbed parameters are stored
             if not os.path.isfile(not_perturbed_path):
@@ -218,7 +236,11 @@ def load_dataset(
                     path + in_params[0][1::] + "_" + path.split("/")[-2] + ".nc"
                 )
             val_df = load_sensitivity(
-                not_perturbed_path, out_params, param_names, in_params, par_dim_name
+                path=not_perturbed_path,
+                out_params=out_params,
+                param_names=param_names,
+                in_params=in_params,
+                par_dim_name=par_dim_name,
             )
             val_array = val_df.loc[{par_dim_name: out_params[0], "trajectory": 0}][
                 param_names[0]
@@ -231,12 +253,14 @@ def load_dataset(
             ).flatten()
         if one_iteration:
             break
-
-    mse = np.zeros((len(out_params), len(in_params), len(trajectories), n_timesteps))
-    predicted = np.zeros(
-        (len(out_params), len(in_params), len(trajectories), n_timesteps)
-    )
-    not_perturbed = np.zeros((len(out_params), len(trajectories), n_timesteps))
+    if time_integrated:
+        dims = (len(out_params), len(in_params), len(trajectories))
+    else:
+        dims = (len(out_params), len(in_params), len(trajectories), n_timesteps)
+    mse = np.zeros(dims)
+    predicted = np.zeros(dims)
+    if not time_integrated:
+        not_perturbed = np.zeros((len(out_params), len(trajectories), n_timesteps))
 
     for traj_idx, traj in enumerate(traj_list):
         if not os.path.isfile(path + traj) and not os.path.isfile(
@@ -270,13 +294,14 @@ def load_dataset(
         ]
         for out_idx, out_p in enumerate(out_params):
             out_p_name = param_names[out_idx]
-            val_array = val_only_df[out_p_name]
+            if not time_integrated:
+                val_array = val_only_df[out_p_name]
+                not_perturbed[out_idx, traj_idx - idx_offset, :] = np.asarray(
+                    val_array
+                ).flatten()
             sens_df = val_df.loc[{par_dim_name: out_p}][in_params]
-            not_perturbed[out_idx, traj_idx - idx_offset, :] = np.asarray(
-                val_array
-            ).flatten()
             if verbosity > 2:
-                for in_idx in pb(range(len(in_params))):
+                for in_idx in tqdm(range(len(in_params))):
                     in_p = in_params[in_idx]
                     load_path = path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb"
                     if not os.path.isfile(load_path):
@@ -293,12 +318,22 @@ def load_dataset(
                     ds = ds.loc[{"trajectory": ds["trajectory"][1::]}]
                     tmp1 = np.asarray(ds[out_p_name].load())
                     tmp2 = np.asarray(val_only_df[out_p_name])
-                    mse[out_idx, in_idx, traj_idx - idx_offset, :] = np.nanmean(
-                        (tmp1 - tmp2) ** 2, axis=1
-                    ).flatten()
-                    predicted[out_idx, in_idx, traj_idx - idx_offset, :] = np.asarray(
-                        sens_df[in_p]
-                    ).flatten()
+                    if time_integrated:
+                        tmp1_sum = np.nanmean(np.sum(tmp1, axis=1))
+                        tmp2_sum = np.nanmean(np.sum(tmp2, axis=1))
+                        mse[out_idx, in_idx, traj_idx - idx_offset] = (
+                            tmp1_sum - tmp2_sum
+                        ) ** 2
+                        predicted[out_idx, in_idx, traj_idx - idx_offset] = np.sum(
+                            np.asarray(sens_df[in_p])
+                        )
+                    else:
+                        mse[out_idx, in_idx, traj_idx - idx_offset, :] = np.nanmean(
+                            (tmp1 - tmp2) ** 2, axis=1
+                        ).flatten()
+                        predicted[
+                            out_idx, in_idx, traj_idx - idx_offset, :
+                        ] = np.asarray(sens_df[in_p]).flatten()
             else:
                 for in_idx, in_p in enumerate(in_params):
                     load_path = path + "traj" + str(traj) + "/" + in_p[1::] + ".nc_wcb"
@@ -316,38 +351,62 @@ def load_dataset(
                     ds = ds.loc[{"trajectory": ds["trajectory"][1::]}]
                     tmp1 = np.asarray(ds[out_p_name].load())
                     tmp2 = np.asarray(val_only_df[out_p_name])
-                    mse[out_idx, in_idx, traj_idx - idx_offset, :] = np.nanmean(
-                        (tmp1 - tmp2) ** 2, axis=1
-                    ).flatten()
-                    predicted[out_idx, in_idx, traj_idx - idx_offset, :] = np.asarray(
-                        sens_df[in_p]
-                    ).flatten()
+                    if time_integrated:
+                        tmp1_sum = np.nanmean(np.sum(tmp1, axis=1))
+                        tmp2_sum = np.nanmean(np.sum(tmp2, axis=1))
+                        mse[out_idx, in_idx, traj_idx - idx_offset] = (
+                            tmp1_sum - tmp2_sum
+                        ) ** 2
+                        predicted[out_idx, in_idx, traj_idx - idx_offset] = np.sum(
+                            np.asarray(sens_df[in_p])
+                        )
+                    else:
+                        mse[out_idx, in_idx, traj_idx - idx_offset, :] = np.nanmean(
+                            (tmp1 - tmp2) ** 2, axis=1
+                        ).flatten()
+                        predicted[
+                            out_idx, in_idx, traj_idx - idx_offset, :
+                        ] = np.asarray(sens_df[in_p]).flatten()
         if one_iteration:
             break
-
-    return xr.Dataset(
-        data_vars={
-            "Predicted Squared Error": (list(dim_order), predicted ** 2),
-            "Predicted Error": (list(dim_order), predicted),
-            "Mean Squared Error": (list(dim_order), mse),
-            "Not Perturbed Value": (
-                ["Output Parameter", "trajectory", "time_after_ascent"],
-                not_perturbed,
-            ),
-        },
-        coords={
-            "Output Parameter": param_names,
-            "Input Parameter": in_params,
-            "trajectory": trajectories,
-            "time_after_ascent": time_after_ascent,
-        },
-    )
+    if time_integrated:
+        return xr.Dataset(
+            data_vars={
+                "Predicted Squared Error": (list(dim_order), predicted ** 2),
+                "Predicted Error": (list(dim_order), predicted),
+                "Mean Squared Error": (list(dim_order), mse),
+            },
+            coords={
+                "Output Parameter": param_names,
+                "Input Parameter": in_params,
+                "trajectory": trajectories,
+            },
+        )
+    else:
+        return xr.Dataset(
+            data_vars={
+                "Predicted Squared Error": (list(dim_order), predicted ** 2),
+                "Predicted Error": (list(dim_order), predicted),
+                "Mean Squared Error": (list(dim_order), mse),
+                "Not Perturbed Value": (
+                    ["Output Parameter", "trajectory", "time_after_ascent"],
+                    not_perturbed,
+                ),
+            },
+            coords={
+                "Output Parameter": param_names,
+                "Input Parameter": in_params,
+                "trajectory": trajectories,
+                "time_after_ascent": time_after_ascent,
+            },
+        )
 
 
 def parse_load(
     data_path,
     out_params,
     all_params_list,
+    time_integrated=False,
     store_many_appended_data=None,
     load_on_the_fly=False,
     min_time=-1000,
@@ -367,6 +426,9 @@ def parse_load(
         List of output parameters.
     all_params_list : list of string
         List of all input params to get predicted errors for.
+    time_integrated : bool
+        If true, calculate the time integrated sensitivities and model states.
+        Otherwise get the difference at each time step.
     store_many_appended_data : string
         Store the appended input data to this path as NetCDF file for each appended
         version. Used mainly for debugging.
@@ -390,7 +452,8 @@ def parse_load(
         if verbosity > 1:
             print(f"Loading {data_path}")
         data = xr.open_dataset(data_path, decode_times=False, engine="netcdf4")
-        data = data.where(data["time_after_ascent"] >= min_time, drop=True)
+        if not time_integrated:
+            data = data.where(data["time_after_ascent"] >= min_time, drop=True)
     else:
         if verbosity > 1:
             print(f"Checking {data_path}")
@@ -417,6 +480,7 @@ def parse_load(
                     out_params=out_params,
                     in_params=all_params_list,
                     traj_list=traj_list,
+                    time_integrated=time_integrated,
                     traj_offset=traj_offset,
                     verbosity=verbosity,
                     par_dim_name="Output_Parameter_ID",
@@ -441,7 +505,8 @@ def parse_load(
                         mode="w",
                     )
                 traj_offset += n_trajs
-            data = data.where(data["time_after_ascent"] >= min_time, drop=True)
+            if not time_integrated:
+                data = data.where(data["time_after_ascent"] >= min_time, drop=True)
         else:  # numpy arrays with training data
             for i in range(len(paths)):
                 paths[i] = data_path + paths[i]
@@ -3216,309 +3281,370 @@ if __name__ == "__main__":
     import argparse
     from joblib import dump, load
     import os
-    import sys
+    import textwrap
 
     parser = argparse.ArgumentParser(
-        description="""
-        Using perturbed ensembles: Create random forests to predict
-        segments (start of deviations of ensembles from unperturbed trajectory)
-        based on predicted errors from algorithmic differentiation (AD).
-        """
+        description=textwrap.dedent(
+            """\
+            Using perturbed ensembles: Create random forests to predict
+            segments (start of deviations of ensembles from unperturbed trajectory)
+            based on predicted errors from algorithmic differentiation (AD).
+            """
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "--load_models",
         dest="model_path",
         default=None,
-        help="""
-        Path to random forest models that had been created earlier.
-        They are named as rand_forest_{max_features}_{seg_thresh:.1e}.joblid.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to random forest models that had been created earlier.
+            They are named as rand_forest_{max_features}_{seg_thresh:.1e}.joblid.
+            """
+        ),
     )
     parser.add_argument(
         "--store_models",
         default=None,
-        help="""
-        If a path is given, store models on disk
-        named as rand_forest_{max_features}_{seg_thresh:.1e}.joblid.
-        """,
+        help=textwrap.dedent(
+            """\
+            If a path is given, store models on disk
+            named as rand_forest_{max_features}_{seg_thresh:.1e}.joblid.
+            """
+        ),
     )
     parser.add_argument(
         "--train_subset",
         action="store_true",
-        help="""
-        Train the models on a small subset of the data. This may be
-        needed since stratifying the complete dataset can consume too much memory.
-        Using a random sample of the complete dataset leads to poor performance
-        since segment starts are rare and negative examples might be too
-        dominant without startification.
-        If 'no_split' is used, no stratification will be done and all
-        data defined by 'n_trajs' is used for training. Otherwise only
-        a quarter of 'n_trajs' is used for training but with stratification.
-        """,
+        help=textwrap.dedent(
+            """\
+            Train the models on a small subset of the data. This may be
+            needed since stratifying the complete dataset can consume too much memory.
+            Using a random sample of the complete dataset leads to poor performance
+            since segment starts are rare and negative examples might be too
+            dominant without startification.
+            If 'no_split' is used, no stratification will be done and all
+            data defined by 'n_trajs' is used for training. Otherwise only
+            a quarter of 'n_trajs' is used for training but with stratification.
+            """
+        ),
     )
     parser.add_argument(
         "--data_path",
         default="/data/project/wcb/netcdf/perturbed_ensembles/",
-        help="""
-        Path to folders with ensemble datasets or to single NetCDF file
-        with all data concatenated along 'trajectory' axis.
-        If a path to numpy arrays is given, it is assumed to be a training
-        or test set.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to folders with ensemble datasets or to single NetCDF file
+            with all data concatenated along 'trajectory' axis.
+            If a path to numpy arrays is given, it is assumed to be a training
+            or test set.
+            """
+        ),
     )
     parser.add_argument(
         "--min_threshold",
         type=float,
         default=-40,
-        help="""
-        Minimum threshold (power of 10) for classifying a time step in a
-        perturbed ensemble as a segment start.
-        """,
+        help=textwrap.dedent(
+            """\
+            Minimum threshold (power of 10) for classifying a time step in a
+            perturbed ensemble as a segment start.
+            """
+        ),
     )
     parser.add_argument(
         "--max_threshold",
         type=float,
         default=0,
-        help="""
-        Maximum threshold (power of 10) for classifying a time step in a
-        perturbed ensemble as a segment start.
-        """,
+        help=textwrap.dedent(
+            """\
+            Maximum threshold (power of 10) for classifying a time step in a
+            perturbed ensemble as a segment start.
+            """
+        ),
     )
     parser.add_argument(
         "--threshold_step",
         type=float,
         default=2,
-        help="""
-        Step size from minimum threshold to maximum threshold for
-        classifying a time step in a perturbed ensemble as a segment start.
-        """,
+        help=textwrap.dedent(
+            """\
+            Step size from minimum threshold to maximum threshold for
+            classifying a time step in a perturbed ensemble as a segment start.
+            """
+        ),
     )
     parser.add_argument(
         "--step_tol",
         type=int,
         default=8,
-        help="""
-        Tolerance for predicting a segment start in time steps. The
-        size of the resulting sliding window is step_tol*2+1.
-        """,
+        help=textwrap.dedent(
+            """\
+            Tolerance for predicting a segment start in time steps. The
+            size of the resulting sliding window is step_tol*2+1.
+            """
+        ),
     )
     parser.add_argument(
         "--n_estimators",
         type=int,
         default=100,
-        help="""
-        Number of estimators for the random forest.
-        """,
+        help=textwrap.dedent(
+            """\
+            Number of estimators for the random forest.
+            """
+        ),
     )
     parser.add_argument(
         "--n_trajs",
         type=int,
         default=10,
-        help="""
-        Number of trajectories that will be predicted using the trained models
-        at once. If 'train_subset' is set, then this is the number of
-        trajectories used for training the models.
-        """,
+        help=textwrap.dedent(
+            """\
+            Number of trajectories that will be predicted using the trained models
+            at once. If 'train_subset' is set, then this is the number of
+            trajectories used for training the models.
+            """
+        ),
     )
     parser.add_argument(
         "--store_name",
         default="prediction.nc",
-        help="""
-        Name of NetCDF file where results (confusion matrix) will be stored.
-        Must end with '.nc'!
-        """,
+        help=textwrap.dedent(
+            """\
+            Name of NetCDF file where results (confusion matrix) will be stored.
+            Must end with '.nc'!
+            """
+        ),
     )
     parser.add_argument(
         "--save_memory",
         action="store_true",
-        help="""
-        Save memory by splitting the dataset into a train and test set by
-        using the first trajectories as training set without stratification.
-        This can lead to poor performance of the models.
-        """,
+        help=textwrap.dedent(
+            """\
+            Save memory by splitting the dataset into a train and test set by
+            using the first trajectories as training set without stratification.
+            This can lead to poor performance of the models.
+            """
+        ),
     )
     parser.add_argument(
         "--no_split",
         action="store_true",
-        help="""
-        Do not split the dataset into a training and test set.
-        If 'train_subset' is used, then the subset defined by 'n_trajs' is
-        used for training. Otherwise the complete dataset is used for training.
-        Overrides 'save_memory'.
-        """,
+        help=textwrap.dedent(
+            """\
+            Do not split the dataset into a training and test set.
+            If 'train_subset' is used, then the subset defined by 'n_trajs' is
+            used for training. Otherwise the complete dataset is used for training.
+            Overrides 'save_memory'.
+            """
+        ),
     )
     parser.add_argument(
         "--store_many_appended_data",
         default=None,
-        help="""
-        Store the appended input data to this path as NetCDF file for each appended
-        version. Used mainly for debugging.
-        """,
+        help=textwrap.dedent(
+            """\
+            Store the appended input data to this path as NetCDF file for each appended
+            version. Used mainly for debugging.
+            """
+        ),
     )
     parser.add_argument(
         "--store_appended_data",
         default=None,
-        help="""
-        Store the final appended data to this path and name. Must end with
-        '.nc' for datasets. For training sets, '.nc' will be stripped away.
-        """,
+        help=textwrap.dedent(
+            """\
+            Store the final appended data to this path and name. Must end with
+            '.nc' for datasets. For training sets, '.nc' will be stripped away.
+            """
+        ),
     )
     parser.add_argument(
         "--only_append",
         action="store_true",
-        help="""
-        Only appending of data. Use 'store_appended_data' to define
-        a path and name.
-        """,
+        help=textwrap.dedent(
+            """\
+            Only appending of data. Use 'store_appended_data' to define
+            a path and name.
+            """
+        ),
     )
     parser.add_argument(
         "--only_training",
         action="store_true",
-        help="""
-        Only model training. Use 'store_models' to define a path to save the
-        models.
-        """,
+        help=textwrap.dedent(
+            """\
+            Only model training. Use 'store_models' to define a path to save the
+            models.
+            """
+        ),
     )
     parser.add_argument(
         "--create_trainset",
         action="store_true",
-        help="""
-        Create a trainingset with labels and store it at 'store_appended_data'
-        for training later.
-        """,
+        help=textwrap.dedent(
+            """\
+            Create a trainingset with labels and store it at 'store_appended_data'
+            for training later.
+            """
+        ),
     )
     parser.add_argument(
         "--predict_trainset",
         action="store_true",
-        help="""
-        Predict the training set created by 'create_trainset'.
-        """,
+        help=textwrap.dedent(
+            """\
+            Predict the training set created by 'create_trainset'.
+            """
+        ),
     )
     parser.add_argument(
         "--feature_split",
         default=["log2", "sqrt", 1.0],
         nargs="+",
-        help="""
-        A list of possible number of features for the best split
-        to train a model for.
-        From sklearn.ensemble.RandomForestClassifier:
-        The number of features to consider when looking for the best split:
-
-        If int, then consider max_features features at each split.
-        If float, then max_features is a fraction and
-            round(max_features * n_features) features are considered at each split.
-        If “auto”, then max_features=sqrt(n_features).
-        If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
-        If “log2”, then max_features=log2(n_features).
-        If None, then max_features=n_features.
-
-        Note: the search for a split does not stop until at least one valid
-        partition of the node samples is found, even if it requires to
-        effectively inspect more than max_features features.
-        """,
+        help=textwrap.dedent(
+            """\
+            A list of possible number of features for the best split
+            to train a model for.
+            From sklearn.ensemble.RandomForestClassifier:
+            The number of features to consider when looking for the best split:
+    
+            If int, then consider max_features features at each split.
+            If float, then max_features is a fraction and
+                round(max_features * n_features) features are considered at each split.
+            If “auto”, then max_features=sqrt(n_features).
+            If “sqrt”, then max_features=sqrt(n_features) (same as “auto”).
+            If “log2”, then max_features=log2(n_features).
+            If None, then max_features=n_features.
+    
+            Note: the search for a split does not stop until at least one valid
+            partition of the node samples is found, even if it requires to
+            effectively inspect more than max_features features.
+            """
+        ),
     )
     parser.add_argument(
         "--verbosity",
         type=int,
         default=0,
-        help="""
-        Set verbosity level.
-        0: No output except for exceptions
-        1: Print datasets
-        2: Print loading statements
-        3: Print building/training statements
-        4: Set verbosity of random forest to 2
-        5: Get predicted results for each entry
-        6: Get count for segment starts for every input parameter
-        """,
+        help=textwrap.dedent(
+            """\
+            Set verbosity level.
+            0: No output except for exceptions
+            1: Print datasets
+            2: Print loading statements
+            3: Print building/training statements
+            4: Set verbosity of random forest to 2
+            5: Get predicted results for each entry
+            6: Get count for segment starts for every input parameter
+            """
+        ),
     )
     parser.add_argument(
         "--max_depth",
         type=int,
         default=36,
-        help="""
-        From sklearn.ensemble.RandomForestClassifier:
-        The maximum depth of the tree. If None, then nodes are expanded until
-        all leaves are pure or until all leaves contain less than
-        min_samples_split (here: 2) samples.
-        """,
+        help=textwrap.dedent(
+            """\
+            From sklearn.ensemble.RandomForestClassifier:
+            The maximum depth of the tree. If None, then nodes are expanded until
+            all leaves are pure or until all leaves contain less than
+            min_samples_split (here: 2) samples.
+            """
+        ),
     )
     parser.add_argument(
         "--max_leaf_nodes",
         type=int,
         default=1000,
-        help="""
-        From sklearn.ensemble.RandomForestClassifier:
-        Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
-        defined as relative reduction in impurity. If None then unlimited
-        number of leaf nodes.
-        """,
+        help=textwrap.dedent(
+            """\
+            From sklearn.ensemble.RandomForestClassifier:
+            Grow trees with max_leaf_nodes in best-first fashion. Best nodes are
+            defined as relative reduction in impurity. If None then unlimited
+            number of leaf nodes.
+            """
+        ),
     )
     parser.add_argument(
         "--load_on_the_fly",
         action="store_true",
-        help="""
-        Load data and find the segments on the fly for predicting a dataset,
-        or load precalculated training or test set.
-        """,
+        help=textwrap.dedent(
+            """\
+            Load data and find the segments on the fly for predicting a dataset,
+            or load precalculated training or test set.
+            """
+        ),
     )
     parser.add_argument(
         "--classifier",
         type=str,
         default="random_forest",
-        help="""
-        Choose a classifier for prediction. Options are "random_forest"
-        and "adaboost". The latter ignores "max_leaf_nodes" and "max_depth" and
-        rather uses "learning_rate".
-        """,
+        help=textwrap.dedent(
+            """\
+            Choose a classifier for prediction. Options are "random_forest"
+            and "adaboost". The latter ignores "max_leaf_nodes" and "max_depth" and
+            rather uses "learning_rate".
+            """
+        ),
     )
     parser.add_argument(
         "--learning_rate",
         type=float,
         default=1.0,
-        help="""
-        From sklean.ensemble.AdaBoostClassifier:
-        Learning rate shrinks the contribution of each classifier by
-        "learning_rate". There is a trade-off between "learning_rate" and
-        "n_estimators".
-        """,
+        help=textwrap.dedent(
+            """\
+            From sklean.ensemble.AdaBoostClassifier:
+            Learning rate shrinks the contribution of each classifier by
+            "learning_rate". There is a trade-off between "learning_rate" and
+            "n_estimators".
+            """
+        ),
     )
     parser.add_argument(
         "--cooldown",
         type=int,
         default=0,
-        help="""
-        Minimum number of timesteps between last time the error threshold has
-        been met and the next time step. This is useful if the original data
-        is based on ensembles that start at every few time step which leads to
-        an error of zero until the divergence of the ensemble is high enough
-        again, resulting in a new segment start although it is just the
-        start of the ensemble.
-        """,
+        help=textwrap.dedent(
+            """\
+            Minimum number of timesteps between last time the error threshold has
+            been met and the next time step. This is useful if the original data
+            is based on ensembles that start at every few time step which leads to
+            an error of zero until the divergence of the ensemble is high enough
+            again, resulting in a new segment start although it is just the
+            start of the ensemble.
+            """
+        ),
     )
     parser.add_argument(
         "--independent_windows",
         action="store_true",
-        help="""
-        If true: count true positive predictions for each window independently.
-        This *should* be done when using stratified datasets.
-        If false: count detected segments within tolerance as true positive
-        predictions, ignoring multiple true labels for the same segment
-        and multiple true predictions. This is arguably closer to real life
-        usage of the model.
-        """,
+        help=textwrap.dedent(
+            """\
+            If true: count true positive predictions for each window independently.
+            This *should* be done when using stratified datasets.
+            If false: count detected segments within tolerance as true positive
+            predictions, ignoring multiple true labels for the same segment
+            and multiple true predictions. This is arguably closer to real life
+            usage of the model.
+            """
+        ),
     )
     parser.add_argument(
         "--in_params",
         nargs="+",
         default=[],
-        help="""
-        You can define a subset of input parameters that shall be used.
-        This is useful if the ensemble simulation was not run with
-        perturbing all parameters but only a few.
-        If none are given, i.e. this parameter is not used, all ensemble
-        simulations will be loaded.
-        """,
+        help=textwrap.dedent(
+            """\
+            You can define a subset of input parameters that shall be used.
+            This is useful if the ensemble simulation was not run with
+            perturbing all parameters but only a few.
+            If none are given, i.e. this parameter is not used, all ensemble
+            simulations will be loaded.
+            """
+        ),
     )
     parser.add_argument(
         "--out_params",
@@ -3549,10 +3675,22 @@ if __name__ == "__main__":
             "NH_OUT",
         ],
         type=str,
-        help="""
-        You can define a subset of output parameters
-        (aka model state variables or prognostic variables) that shall be used.
-        """,
+        help=textwrap.dedent(
+            """\
+            You can define a subset of output parameters
+            (aka model state variables or prognostic variables) that shall be used.
+            """
+        ),
+    )
+    parser.add_argument(
+        "--time_integrated",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+            If true, calculate the time integrated sensitivities and model states.
+            Otherwise get the difference at each time step.
+            """
+        ),
     )
 
     args = parser.parse_args()
@@ -3587,6 +3725,9 @@ if __name__ == "__main__":
                 or "Not used" in in_params_notation_mapping[in_p][0]
                 or "one-moment warm physics" in in_params_notation_mapping[in_p][0]
                 or "dependent" == in_params_notation_mapping[in_p][3]
+                or "formulation by Miltenberger et al."
+                in in_params_notation_mapping[in_p][0]
+                or "_ecoll_c" in in_p
             ):
                 # or in_p in physical_params):
                 continue
@@ -3648,6 +3789,7 @@ if __name__ == "__main__":
         data_path=args.data_path,
         out_params=out_params,
         all_params_list=all_params_list,
+        time_integrated=args.time_integrated,
         store_many_appended_data=args.store_many_appended_data,
         load_on_the_fly=args.load_on_the_fly,
         min_time=-1000,  # Ensembles actually start here

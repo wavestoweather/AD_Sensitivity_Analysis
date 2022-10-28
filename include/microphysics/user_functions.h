@@ -119,9 +119,16 @@ void saturation_adjust(
                 << "\n";
 #endif
 #else
-        res[qv_idx] = q_total - qv_prime;
-        res[qc_idx] = -qc_prime;
-        res[T_idx] = T_test - T_prime;
+        res[qv_idx] += q_total - qv_prime;
+        res[qc_idx] += -qc_prime;
+        res[T_idx] += T_test - T_prime;
+
+        float_t delta_q = -qc_prime;
+        float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_water_vapor<float_t>();
+        if (delta_q < 0.0)
+            res[lat_cool_idx] += delta_e;
+        else
+            res[lat_heat_idx] += delta_e;
 #if defined(TRACE_ENV) || defined(TRACE_QV) || defined(TRACE_QC)
         if (trace)
             std::cout << "traj: " << cc.traj_id << " saturation_adjust (out, new) dT "
@@ -197,8 +204,15 @@ void saturation_adjust(
         // I'm paranoid and this case should be in the other branch
         // of the if-clause.
         delta_q = (delta_q > q_total) ? q_total : delta_q;
-        res[qc_idx] = std::max(q_total - delta_q, 1.0e-20) - qc_prime;
-        res[qv_idx] = delta_q - qv_prime;
+        float_t delta_qc = std::max(q_total - delta_q, 1.0e-20) - qc_prime;
+        res[qc_idx] += delta_qc;
+        res[qv_idx] += delta_q - qv_prime;
+
+        float_t delta_e = latent_heat_evap(T_prime) * delta_qc / specific_heat_water_vapor<float_t>();
+        if (delta_qc < 0.0)
+            res[lat_cool_idx] += delta_e;
+        else
+            res[lat_heat_idx] += delta_e;
 #if defined(TRACE_ENV) || defined(TRACE_QV) || defined(TRACE_QC)
         if (trace)
             std::cout << "traj: " << cc.traj_id << " saturation_adjust (out, new, after Newton) dT "

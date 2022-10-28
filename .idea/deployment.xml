@@ -8,26 +8,27 @@
             <mapping deploy="/mnt/localscratch/data/Software/remote" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-python_interface" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_com-host" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_release_james_compress" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_vis" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_host" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_james" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_b8" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_compress" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_vis_line" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-phyton_interface" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james-host" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_james_compress" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_vis" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_release_james" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_debug_james" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_com_host" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_b8_host" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-phyton_interface" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_vis_host" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_vis_line" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james-host" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_host" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_vis" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_james" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-reader_test" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_com-host" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_release_james" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_com_host" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_b8" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_b8_host" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug_vis_host" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_debug_james" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-python_interface" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_vis" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-out_release_james_compress" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release_james_compress" />
           </excludedPaths>
         </serverdata>
       </paths>

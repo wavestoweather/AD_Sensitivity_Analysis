@@ -18,6 +18,7 @@ netcdf_reader_t::netcdf_reader_t(
             this->buffer[i].resize(this->n_timesteps_buffer);
         }
     }
+    std::fill(this->buffer[Par_idx::dom_i].begin(), this->buffer[Par_idx::dom_i].end(), 1);
     already_open = false;
     start_time_idx_given = false;
 }
@@ -49,7 +50,27 @@ void netcdf_reader_t::load_vars() {
             break;
         }
     }
-
+    dom_i_bool = false;
+    SUCCESS_OR_DIE(
+        nc_inq(
+            ncid,
+            NULL,
+            &nvars,
+            NULL,
+            NULL));
+    for (int i=0; i < nvars; ++i) {
+        char name[NC_MAX_NAME + 1];
+        SUCCESS_OR_DIE(
+            nc_inq_varname(
+                ncid,
+                i,
+                name));
+        if (std::strcmp(name, "DOM_i") == 0) {
+            dom_i_bool = true;
+            varid[Par_idx::dom_i] = i;
+            break;
+        }
+    }
     SUCCESS_OR_DIE(
         nc_inq_varid(
             ncid,
@@ -317,6 +338,7 @@ void netcdf_reader_t::buffer_params(
 #endif
     for (int i=0; i < Par_idx::n_pars; i++) {
         if (!asc600_bool && i == Par_idx::asc600) continue;
+        if (!dom_i_bool && i == Par_idx::dom_i) continue;
         if (i == Par_idx::ascent || i == Par_idx::lat || i == Par_idx::lon) {
             SUCCESS_OR_DIE(
                 nc_get_vara_double(
@@ -418,7 +440,8 @@ int netcdf_reader_t::read_buffer(
     // Set values from a given trajectory
     if ((step == 0 && !checkpoint_flag) || start_over_env) {
         uint32_t i = 0;
-        while (time_idx+i <= n_timesteps_in && std::isnan(buffer[Par_idx::pressure][time_buffer_idx+i])) {
+        while (check_invalid_buffer(buffer[Par_idx::pressure], i)) {
+//        while (time_idx+i <= n_timesteps_in && std::isnan(buffer[Par_idx::pressure][time_buffer_idx+i])) {
             i++;
             if (i == 11) {
 #ifdef TRUSTED_DATA
@@ -523,13 +546,18 @@ int netcdf_reader_t::read_buffer(
                 cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
             } else {
                 // Here we need to find the next valid w value again
+                // Unfortunately, some datasets may fill w with zeros instead of NaNs
+                // therefore we check if pressure is NaN as well.
 #ifdef DEVELOP
                 std::cout << " test 2\n";
 #endif
                 uint32_t j = 1;
-                while (time_idx+j <= n_timesteps_in && j < 11
-                    && std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j])) {
+                while (check_invalid_buffer(buffer[Par_idx::ascent], j)) {
+//                while (time_idx+j <= n_timesteps_in && j < 11
+//                    && (std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j])
+//                    || std::isnan(buffer[Par_idx::pressure][time_buffer_idx+j]))) {
                     j++;
+                    if (j == 11) break;
                 }
 #ifdef DEVELOP
                 std::cout << " test 3\n";
@@ -728,10 +756,8 @@ void netcdf_reader_t::init_netcdf(
 #ifdef MET3D
     double &start_time,
 #endif
-//    const char *input_file,
     const bool &checkpoint_flag,
     model_constants_t<float_t> &cc,
-//    const int &simulation_mode,
     const double current_time,
     const reference_quantities_t &ref_quant) {
     std::vector<size_t> startp, countp;
@@ -1146,15 +1172,14 @@ void netcdf_reader_t::read_initial_values(
 double netcdf_reader_t::get_lat(
     const uint32_t &t,
     const uint32_t &sub) const {
-    double latitude = buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]
-        + sub * (
-            buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+1]
-            - buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]) / n_subs;
-    if (!std::isnan(latitude)) return latitude;
-    uint32_t j = 2;
-    while (j < 11 && std::isnan(buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+j])) {
+
+    double lower, upper;
+    uint32_t j = 0;
+    while (check_invalid_buffer_lonlat(buffer[Par_idx::lat], t, j)) {
         j++;
     }
+    lower = buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+j];
+    uint32_t difference = j;
     if (j == 11) {
 #ifdef TRUSTED_DATA
         return buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)];
@@ -1167,45 +1192,91 @@ double netcdf_reader_t::get_lat(
         SUCCESS_OR_DIE(INPUT_NAN_ERR);
 #endif
     }
-    return buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]
-        + sub * (
-            buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+j]
-            - buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)]) / (n_subs*j);
+    j++;
+    while (check_invalid_buffer_lonlat(buffer[Par_idx::lat], t, j)) {
+        j++;
+    }
+    if (j >= 11) {
+#ifdef TRUSTED_DATA
+        return buffer[Par_idx::lat][t%(buffer[Par_idx::lat].size()-1)];
+#else
+        std::cerr  << "Error at trajectory index " << traj_idx
+                    << " and time index " << time_idx + t << ".\n"
+                    << "At leat one trajectory has more than 10 "
+                    << "consecutive time steps with NaNs in 'latitude'. Check "
+                    << "your dataset! Aborting now.\n";
+        SUCCESS_OR_DIE(INPUT_NAN_ERR);
+#endif
+    }
+    upper = buffer[Par_idx::lat][(t%(buffer[Par_idx::lat].size()-1))+j];
+    difference = j - difference;
+    return lower + sub * (upper - lower) / (n_subs*difference);
 }
 
 
 double netcdf_reader_t::get_lon(
     const uint32_t &t,
     const uint32_t &sub) const {
-    double longitude = buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]
-        + sub * (
-            buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+1]
-            - buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]) / n_subs;
-
-    if (!std::isnan(longitude)) return longitude;
-    uint32_t j = 2;
-    while (j < 11 && std::isnan(buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+j])) {
+    double lower, upper;
+    uint32_t j = 0;
+    while (check_invalid_buffer_lonlat(buffer[Par_idx::lon], t, j)) {
         j++;
     }
+    lower = buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+j];
+    uint32_t difference = j;
     if (j == 11) {
 #ifdef TRUSTED_DATA
-        return buffer[Par_idx::lat][t%(buffer[Par_idx::lon].size()-1)];
+        return buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)];
 #else
         std::cerr  << "Error at trajectory index " << traj_idx
                     << " and time index " << time_idx + t << ".\n"
                     << "At leat one trajectory has more than 10 "
-                    << "consecutive time steps with NaNs in 'longitude'. Check "
+                    << "consecutive time steps with NaNs in 'latitude'. Check "
                     << "your dataset! Aborting now.\n";
         SUCCESS_OR_DIE(INPUT_NAN_ERR);
 #endif
     }
-    return buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]
-        + sub * (
-            buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+j]
-            - buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)]) / (n_subs*j);
+    j++;
+    while (check_invalid_buffer_lonlat(buffer[Par_idx::lon], t, j)) {
+        j++;
+    }
+    if (j >= 11) {
+#ifdef TRUSTED_DATA
+        return buffer[Par_idx::lon][t%(buffer[Par_idx::lon].size()-1)];
+#else
+        std::cerr  << "Error at trajectory index " << traj_idx
+                    << " and time index " << time_idx + t << ".\n"
+                    << "At leat one trajectory has more than 10 "
+                    << "consecutive time steps with NaNs in 'latitude'. Check "
+                    << "your dataset! Aborting now.\n";
+        SUCCESS_OR_DIE(INPUT_NAN_ERR);
+#endif
+    }
+    upper = buffer[Par_idx::lon][(t%(buffer[Par_idx::lon].size()-1))+j];
+    difference = j - difference;
+    return lower + sub * (upper - lower) / (n_subs*difference);
 }
 
 
+bool netcdf_reader_t::check_invalid_buffer(
+    const std::vector<double> &buffer_var,
+    const uint32_t idx) const {
+
+    // if different domains are available, check the domain to skip invalid values as well.
+    return time_idx+idx <= n_timesteps_in
+        && (std::isnan(buffer_var[time_buffer_idx+idx]) || buffer[Par_idx::dom_i][time_buffer_idx+idx] == 0);
+}
+
+
+bool netcdf_reader_t::check_invalid_buffer_lonlat(
+    const std::vector<double> &buffer_var,
+    const uint32_t t,
+    const uint32_t idx) const {
+
+    return idx < 11
+        && (std::isnan(buffer_var[(t%(buffer_var.size()-1))+idx])
+            || buffer[Par_idx::dom_i][(t%(buffer_var.size()-1))+idx] == 0);
+}
 
 template int netcdf_reader_t::read_buffer<codi::RealReverse>(
     model_constants_t<codi::RealReverse>&,
@@ -1239,10 +1310,8 @@ template void netcdf_reader_t::init_netcdf<codi::RealReverse>(
 #ifdef MET3D
     double&,
 #endif
-//    const char*,
     const bool&,
     model_constants_t<codi::RealReverse>&,
-//    const int&,
     const double,
     const reference_quantities_t &);
 
@@ -1250,10 +1319,8 @@ template void netcdf_reader_t::init_netcdf<codi::RealForwardVec<num_par_init> >(
 #ifdef MET3D
     double&,
 #endif
-//    const char*,
     const bool&,
     model_constants_t<codi::RealForwardVec<num_par_init> >&,
-//    const int&,
     const double,
     const reference_quantities_t &);
 

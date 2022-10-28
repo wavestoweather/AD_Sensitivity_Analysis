@@ -5,6 +5,7 @@
 #include <include/microphysics/program_io.h>
 
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include <fstream>
@@ -23,7 +24,7 @@ struct physics_t {
     double uncertainty_scale;
 
  public:
-    physics_t();
+    explicit physics_t(std::string table_path = "dmin_wetgrowth_lookup.dat");
 
     void set_limits(
         std::vector<codi::RealReverse> &y,
@@ -59,6 +60,13 @@ struct physics_t {
 
     void setup_model_constants();
 
+    codi::RealReverse::Tape& prepare_call();
+
+    void finish_call(
+        codi::RealReverse::Tape& tape,
+        double *res,
+        double *gradients);
+
     void py_ccn_act_hande_akm(
         const double p,
         const double w,
@@ -75,10 +83,55 @@ struct physics_t {
         const double Ng,
         double *res,
         double *gradients);
+
+    void py_saturation_adjust(
+        const double p,
+        const double T,
+        const double qv,
+        const double qc,
+        double *res,
+        double *gradients);
+
+    void py_riming_ice(
+        const double qc,
+        const double Nc,
+        const double qi,
+        const double Ni,
+        const double qr,
+        const double Nr,
+        const double T,
+        double *res,
+        double *gradients);
+
+    void py_riming_snow(
+        const double qc,
+        const double Nc,
+        const double qs,
+        const double Ns,
+        const double qr,
+        const double Nr,
+        const double T,
+        double *res,
+        double *gradients);
+
+    void py_riming_with_depo(
+        const double qv,
+        const double qc,
+        const double Nc,
+        const double qi,
+        const double Ni,
+        const double qs,
+        const double Ns,
+        const double qr,
+        const double Nr,
+        const double T,
+        const double p,
+        double *res,
+        double *gradients);
 };
 
 extern "C" {
-    physics_t* physics_t_new() {return new physics_t();}
+    physics_t* physics_t_new(char* table_path) {return new physics_t(table_path);}
     int physics_t_get_num_comp(physics_t* phys) {return phys->get_num_comp();}
     int physics_t_get_num_par(physics_t* phys) {return phys->get_num_par();}
     void physics_t_set_ref_quants(
@@ -114,5 +167,50 @@ extern "C" {
         double Ng,
         double *res,
         double *gradients) {phys->py_graupel_melting(T, qg, Ng, res, gradients);}
+    void physics_t_py_saturation_adjust(
+        physics_t* phys,
+        double p,
+        double T,
+        double qv,
+        double qc,
+        double *res,
+        double *gradients) {phys->py_saturation_adjust(p, T, qv, qc, res, gradients);}
+    void physics_t_py_riming_ice(
+        physics_t* phys,
+        double qc,
+        double Nc,
+        double qi,
+        double Ni,
+        double qr,
+        double Nr,
+        double T,
+        double *res,
+        double *gradients) {phys->py_riming_ice(qc, Nc, qi, Ni, qr, Nr, T, res, gradients);}
+    void physics_t_py_riming_snow(
+        physics_t* phys,
+        double qc,
+        double Nc,
+        double qs,
+        double Ns,
+        double qr,
+        double Nr,
+        double T,
+        double *res,
+        double *gradients) {phys->py_riming_snow(qc, Nc, qs, Ns, qr, Nr, T, res, gradients);}
+    void physics_t_py_riming_with_depo(
+        physics_t* phys,
+        double qv,
+        double qc,
+        double Nc,
+        double qi,
+        double Ni,
+        double qs,
+        double Ns,
+        double qr,
+        double Nr,
+        double T,
+        double p,
+        double *res,
+        double *gradients) {phys->py_riming_with_depo(qv, qc, Nc, qi, Ni, qs, Ns, qr, Nr, T, p, res, gradients);}
 }
 

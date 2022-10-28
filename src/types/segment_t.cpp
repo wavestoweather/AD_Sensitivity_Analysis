@@ -154,7 +154,6 @@ int segment_t::check() {
 
 template<class float_t>
 bool segment_t::perturb_check(
-//    const model_constants_t<float_t> &cc,
     const std::vector< std::array<double, num_par > > &gradients,
     const std::vector<float_t> &y,
     const double timestep) {

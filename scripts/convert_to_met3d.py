@@ -914,44 +914,51 @@ def convert_wcb2(f, store_path, fl, ensemble):
 
 if __name__ == "__main__":
     import argparse
-    import sys
+    import textwrap
 
     parser = argparse.ArgumentParser(
-        description="""
-        Load a NetCDF-file stored in wcb2-style one after another, find those,
-        which are convective or slantwise given by flags,
-        mark the start of the ascend, make sedimentation and
-        inflow from above positive values (for consistency), add attributes
-        to the columns for Met3D support, add a column for the type of trajectory,
-        add ascend velocity, mixing ratio changes from turbulences and saturation.
-        Stores the converted NetCDF-file to "store_path" with zlib compression
-        of level 9.
-        """
+        description=textwrap.dedent(
+            """\
+            Load a NetCDF-file stored in wcb2-style one after another, find those,
+            which are convective or slantwise given by flags,
+            mark the start of the ascend, make sedimentation and
+            inflow from above positive values (for consistency), add attributes
+            to the columns for Met3D support, add a column for the type of trajectory,
+            add ascend velocity, mixing ratio changes from turbulences and saturation.
+            Stores the converted NetCDF-file to "store_path" with zlib compression
+            of level 9.
+            """
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "--path",
         default="/data/project/wcb/netcdf/vladiana",
-        # Slurm path "/lustre/project/m2_jgu-tapt/cosmo_output/vladiana/traj"
-        help="""
-        Path where one or more NetCDF-files in wcb2 style are stored.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path where one or more NetCDF-files in wcb2 style are stored.
+            """
+        ),
     )
     parser.add_argument(
         "--store_path",
         default="/data/project/wcb/netcdf/vladiana_met/",
-        # Slurm path "/lustre/project/m2_zdvresearch/mahieron/netcdf_vladiana"
-        help="""
-        Path where the converted files shall be stores
-        """,
+        help=textwrap.dedent(
+            """\
+            Path where the converted files shall be stores
+            """
+        ),
     )
     parser.add_argument(
         "--flags",
         default=["conv_400", "conv_600", "slan_400", "slan_600"],
         type=str,
         nargs="+",
-        help="""
-        Flags for the type of trajectories to look for.
-        """,
+        help=textwrap.dedent(
+            """\
+            Flags for the type of trajectories to look for.
+            """
+        ),
     )
     args = parser.parse_args()
 

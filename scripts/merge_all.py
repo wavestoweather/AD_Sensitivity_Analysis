@@ -254,63 +254,79 @@ def load_ensemble_datasets(data_path, verbosity=0):
 
 if __name__ == "__main__":
     import argparse
+    import textwrap
 
     parser = argparse.ArgumentParser(
-        description="""
-        Merge output of an ensemble to fewer NetCDF-files.
-        """
+        description=textwrap.dedent(
+            """\
+            Merge output of an ensemble to fewer NetCDF-files.
+            """
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "--data_path",
         default="/data/project/wcb/netcdf/perturbed_ensembles/",
-        help="""
-        Path to folders with ensemble datasets.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path to folders with ensemble datasets.
+            """
+        ),
     )
     parser.add_argument(
         "--store_path",
         default="/data/project/wcb/netcdf/perturbed_ensembles/",
-        help="""
-        Path where to store the merged files.
-        """,
+        help=textwrap.dedent(
+            """\
+            Path where to store the merged files.
+            """
+        ),
     )
     parser.add_argument(
         "--merge_multiple_ensembles",
         action="store_true",
-        help="""
-        if true: Merge multiple ensembles, each in a single NetCDF-file
-        of the form "d[param_name].nc_wcb" to a single file.
-        Otherwise merge outputs of a simulation to a single NetCDF-file of
-        the form "d[param_name].nc_wcb"
-        """,
+        help=textwrap.dedent(
+            """\
+            if true: Merge multiple ensembles, each in a single NetCDF-file
+            of the form "d[param_name].nc_wcb" to a single file.
+            Otherwise merge outputs of a simulation to a single NetCDF-file of
+            the form "d[param_name].nc_wcb"
+            """
+        ),
     )
     parser.add_argument(
         "--merge_input_files",
         action="store_true",
-        help="""
-        Merge multiple input NetCDF-files that are not results of our own
-        simulation. This is mainly used to merge the statistic datasets.
-        """,
+        help=textwrap.dedent(
+            """\
+            Merge multiple input NetCDF-files that are not results of our own
+            simulation. This is mainly used to merge the statistic datasets.
+            """
+        ),
     )
     parser.add_argument(
         "--complevel",
         default=9,
         type=int,
-        help="""
-        Compression level for zlib when storing files. Set to 0 if something
-        is off with other programs, i.e. Met3D can have problems with compression.
-        """,
+        help=textwrap.dedent(
+            """\
+            Compression level for zlib when storing files. Set to 0 if something
+            is off with other programs, i.e. Met3D can have problems with compression.
+            """
+        ),
     )
     parser.add_argument(
         "--verbosity",
         type=int,
         default=0,
-        help="""
-        Set verbosity.
-        0: No output
-        1: Get coarse time information
-        2: Get detailed time information
-        """,
+        help=textwrap.dedent(
+            """\
+            Set verbosity.
+            0: No output
+            1: Get coarse time information
+            2: Get detailed time information
+            """
+        ),
     )
     args = parser.parse_args()
 
