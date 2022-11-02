@@ -2894,11 +2894,13 @@ def main(args):
                 args.file,
                 args.save_statistics,
                 only_asc600=args.only_asc600,
+                inoutflow_time=args.inoutflow_time,
             )
             sums_phase = get_sums_phase(
                 args.file,
                 args.save_statistics,
                 only_asc600=args.only_asc600,
+                inoutflow_time=args.inoutflow_time,
             )
 
         if args.load_covariance != "no":
@@ -3547,7 +3549,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--in_params",
         default=[],
-        narg="+",
+        nargs="+",
         type=str,
         help=textwrap.dedent(
             """\
