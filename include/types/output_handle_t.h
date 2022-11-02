@@ -43,7 +43,7 @@ struct output_handle_t{
 
     std::string filetype;
     // for netCDF files and a vector for each column
-    // columns: output parameter + gradients + time_afer_ascent + type + flags
+    // columns: output parameter + gradients + time_after_ascent + type + flags
     // fast index: record
     // each array = one column
     // slow index: num_comp
