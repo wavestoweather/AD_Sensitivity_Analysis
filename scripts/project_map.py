@@ -130,7 +130,9 @@ def load_lon_lat_time(
         lat_name = "lat"
     # Get the limits on lon and lat
     for f in tqdm(files) if verbose else files:
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[additional_vars]
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+            additional_vars
+        ]
         ds = filter_trajectories(
             ds=ds,
             sens_model_state_ids=sens_model_state_ids,
@@ -986,7 +988,14 @@ def load_data(
         verbose=verbose,
     )
     if relative_lon_lat:
-        additional_vars = ["lon", "lat", "relative_lon", "relative_lat", "asc600", "phase"]
+        additional_vars = [
+            "lon",
+            "lat",
+            "relative_lon",
+            "relative_lat",
+            "asc600",
+            "phase",
+        ]
     else:
         additional_vars = ["lon", "lat", "asc600", "phase"]
     if "pressure" not in variables:
@@ -1703,7 +1712,14 @@ if __name__ == "__main__":
             inoutflow_time = data["inoutflow_time"]
             relative_lon_lat = data["relative_lon_lat"]
         if relative_lon_lat:
-            additional_vars = ["lon", "lat", "relative_lon", "relative_lat", "asc600", "phase"]
+            additional_vars = [
+                "lon",
+                "lat",
+                "relative_lon",
+                "relative_lat",
+                "asc600",
+                "phase",
+            ]
         else:
             additional_vars = ["lon", "lat", "asc600", "phase"]
 
@@ -1876,7 +1892,14 @@ if __name__ == "__main__":
                             + f"present in {args.load_calculated}counts_means.pkl"
                         )
         if relative_lon_lat:
-            additional_vars = ["lon", "lat", "relative_lon", "relative_lat", "asc600", "phase"]
+            additional_vars = [
+                "lon",
+                "lat",
+                "relative_lon",
+                "relative_lat",
+                "asc600",
+                "phase",
+            ]
         else:
             additional_vars = ["lon", "lat", "asc600", "phase"]
         if "pressure" not in variables:
