@@ -37,6 +37,65 @@ except:
     import scripts.latexify as latexify
 
 
+def cross_correlation(ds):
+    """
+    Calculate the cross-correlation using two (discrete-)time signals.
+    Non-linear correlations may not be picked up and lead to low cross-correlation values.
+    scipy.signal.correlate() uses either fft or direct.
+    Calculates the best time for negative and positive correlation and their correlation values.
+
+    Returns
+    -------
+
+    """
+
+    return
+
+
+def auto_correlation(ds, out_params, delay, means, variances):
+    """
+    Estimate auto-correlation via
+
+    {\displaystyle {\hat {R}}(k)={\frac {1}{(n-k)\sigma ^{2}}}\sum _{t=1}^{n-k}(X_{t}-\mu )(X_{t+k}-\mu )}
+
+    for each variable and trajectory.
+
+    Parameters
+    ds : xarray.Dataset
+
+    delay : int or list-like of int
+        Define the delay (in time steps) to calculate the auto-correlation or
+        a range of delays.
+
+    Returns
+    -------
+
+    """
+    n = len(ds["time"])
+    if isinstance(delay, int):
+        auto_corr = {}
+        for col in ds:
+            if col[0] != "d" or col == "deposition":
+                var = variances[col]
+                mean = means[col]
+                no_delay = np.asarray(ds[col].isel({"time": np.arange(n-delay)})) - mean
+                delayed = p.asarray(ds[col].isel({"time": np.arange(delay, n)})) - mean
+                auto_corr[col] = np.sum(no_delay * delayed)/((n-delay)*var)
+            else:
+                for out_p in out_params:
+                    var = variances[out_p][col]
+                    mean = means[out_p][col]
+                    no_delay = np.asarray(ds[col].isel({"time": np.arange(n-delay)}).sel({"Output_Parameter_ID": out_p})) - mean
+                    delayed = np.asarray(ds[col].isel({"time": np.arange(delay, n)}).sel({"Output_Parameter_ID": out_p})) - mean
+                    if out_p not in auto_corr:
+                        auto_corr[out_p] = {}
+                        auto_corr[out_p][col] = np.sum(no_delay * delayed)/((n-delay)*var)
+                    else:
+                        auto_corr[out_p][col] = np.sum(no_delay * delayed)/((n-delay)*var)
+
+    return
+
+
 def get_top_list(ds, print_out=True, verbose=True):
     """
 
@@ -1221,6 +1280,73 @@ def get_sum_wrt(
             min_max = [min_p, max_p]
 
 
+def get_edges(
+    min_max,
+    min_max_in_params,
+    in_params,
+    param_name,
+    additional_params,
+    n_bins,
+    verbose=False,
+):
+    """
+    Create edges for 1D or 2D histograms.
+
+    Parameters
+    ----------
+    min_max : Dict of lists with two floats
+        Keys are model state variables, values are [minimum, maximum] floats.
+    min_max_in_params : Dict of dict of lists with two floats
+        First keys are model state variablees, second keys are model parameters. The values are [minimum, maximum]
+        floats.
+    in_params : List of strings
+        Names of model parameters.
+    param_name : List of strings
+        Name of model state variables for which sensitivities are available.
+    additional_params : List of strings
+        List of additional model state variables to get edges for.
+    n_bins : int
+        Number of bins.
+    verbose : bool
+        More progressbars.
+
+    Returns
+    -------
+    Dict of lists of floats (edges for model state variables), Dict of dict of lists of floats (edges
+    for model parameters for each model state variable defined in param_name).
+    """
+
+    edges = {}
+    edges_in_params = {}
+    for out_p in param_name:
+        # -2 because we add one bin each to the left and right to catch any
+        # floats just on the edge.
+        delta = (min_max[out_p][1] - min_max[out_p][0]) / (n_bins-2)
+        edges[out_p] = np.arange(
+            min_max[out_p][0] - delta, min_max[out_p][1] + 1.5 * delta / 2, delta
+        )
+        edges_in_params[out_p] = {}
+        for in_p in in_params:
+            delta = (
+                            min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
+                    ) / (n_bins-2)
+            if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][1]:
+                continue
+            else:
+                edges_in_params[out_p][in_p] = np.arange(
+                    min_max_in_params[out_p][in_p][0] - delta,
+                    min_max_in_params[out_p][in_p][1] + 1.5 * delta,
+                    delta,
+                    )
+    if additional_params is not None:
+        for out_p in tqdm(additional_params, leave=False) if verbose else additional_params:
+            delta = (min_max[out_p][1] - min_max[out_p][0]) / (n_bins-2)
+            edges[out_p] = np.arange(
+                min_max[out_p][0] - delta, min_max[out_p][1] + 1.5 * delta / 2, delta
+            )
+    return edges, edges_in_params
+
+
 def get_histogram(
     file_path,
     in_params=None,
@@ -1229,6 +1355,9 @@ def get_histogram(
     additional_params=None,
     only_asc600=False,
     inoutflow_time=-1,
+    filter_mag=None,
+    means=None,
+    verbose=False,
 ):
     """
 
@@ -1236,11 +1365,18 @@ def get_histogram(
     ----------
     file_path
     in_params
-    out_params
+    out_params : list of strings or ints
+        Define for which output parameters the sensitivities should be considered for.
+        Can be either ids ("Output_Parameter_ID") or the names of the parameters, e.g., "QV".
     n_bins
     additional_params=None,
     only_asc600
     inoutflow_time
+    filter_mag : float
+        Filter all values that are more than the given magnitude larger or smaller
+        than the mean.
+    means : Dictionary of floats
+        Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter).
 
     Returns
     -------
@@ -1259,17 +1395,35 @@ def get_histogram(
             )
         out_params = ds["Output_Parameter_ID"]
 
-    param_name = []
-    for idx in out_params:
-        param_name.append(latexify.param_id_map[idx.values])
+        param_name = []
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
+    else:
+        param_name = []
+        tmp = []
+        for idx in out_params:
+            if isinstance(idx, int):
+                param_name.append(latexify.param_id_map[idx])
+            else:
+                param_name.append(idx)
+                tmp.append(np.argwhere(np.asarray(latexify.param_id_map) == idx).item())
+        for i in range(len(tmp)):
+            out_params[i] = tmp[i]
 
     min_max = {}
     min_max_in_params = {}
     for out_p in param_name:
         min_max_in_params[out_p] = {}
+    load_params = param_name.copy()
+    if inoutflow_time > 0 or only_asc600:
+        load_params.append("asc600")
+    if in_params is not None:
+        load_params.extend(in_params)
+    if additional_params is not None:
+        load_params.extend(additional_params)
 
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[load_params]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -1281,11 +1435,12 @@ def get_histogram(
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(param_name)
-        ):
+                zip(out_params, param_name), leave=False, total=len(param_name)
+        ) if verbose else zip(out_params, param_name):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
-            min_p = np.min(ds_tmp[out_name]).values
-            max_p = np.max(ds_tmp[out_name]).values
+
+            min_p = np.nanmin(ds_tmp[out_name])
+            max_p = np.nanmax(ds_tmp[out_name])
             if out_name in min_max.keys():
                 if min_p < min_max[out_name][0]:
                     min_max[out_name][0] = min_p
@@ -1293,9 +1448,16 @@ def get_histogram(
                     min_max[out_name][1] = max_p
             else:
                 min_max[out_name] = [min_p, max_p]
-            for in_p in tqdm(in_params, leave=False):
-                min_p = np.min(ds_tmp[in_p]).values
-                max_p = np.max(ds_tmp[in_p]).values
+            for in_p in tqdm(in_params, leave=False) if verbose else in_params:
+                if filter_mag is not None and means is not None:
+                    mean = means[out_name][in_p]
+                    filtered_ds = ds_tmp[in_p]
+                    filtered_ds = filtered_ds.where(np.abs(np.log10(np.abs(filtered_ds/mean))) <= filter_mag)
+                    min_p = np.nanmin(filtered_ds)
+                    max_p = np.nanmax(filtered_ds)
+                else:
+                    min_p = np.nanmin(ds_tmp[in_p])
+                    max_p = np.nanmax(ds_tmp[in_p])
                 if in_p in min_max_in_params[out_name]:
                     if min_p < min_max_in_params[out_name][in_p][0]:
                         min_max_in_params[out_name][in_p][0] = min_p
@@ -1304,9 +1466,9 @@ def get_histogram(
                 else:
                     min_max_in_params[out_name][in_p] = [min_p, max_p]
         if additional_params is not None:
-            for out_p in tqdm(additional_params, leave=False):
-                min_p = np.min(ds[out_p]).values
-                max_p = np.max(ds[out_p]).values
+            for out_p in tqdm(additional_params, leave=False) if verbose else additional_params:
+                min_p = np.nanmin(ds[out_p])
+                max_p = np.nanmax(ds[out_p])
                 if out_p in min_max.keys():
                     if min_p < min_max[out_p][0]:
                         min_max[out_p][0] = min_p
@@ -1315,37 +1477,20 @@ def get_histogram(
                 else:
                     min_max[out_p] = [min_p, max_p]
 
-    edges = {}
-    edges_in_params = {}
-    for out_p in param_name:
-        delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
-        edges[out_p] = np.arange(
-            min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
-        )
-        edges_in_params[out_p] = {}
-        for in_p in in_params:
-            delta = (
-                min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
-            ) / n_bins
-            if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][1]:
-                continue
-            else:
-                edges_in_params[out_p][in_p] = np.arange(
-                    min_max_in_params[out_p][in_p][0],
-                    min_max_in_params[out_p][in_p][1] + delta / 2,
-                    delta,
-                )
-    if additional_params is not None:
-        for out_p in tqdm(additional_params, leave=False):
-            delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
-            edges[out_p] = np.arange(
-                min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
-            )
+    edges, edges_in_params = get_edges(
+        min_max=min_max,
+        min_max_in_params=min_max_in_params,
+        in_params=in_params,
+        param_name=param_name,
+        additional_params=additional_params,
+        n_bins=n_bins,
+        verbose=verbose,
+    )
 
     hist = {}
     hist_in_params = {}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[load_params]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -1357,8 +1502,8 @@ def get_histogram(
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
         for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(param_name)
-        ):
+                zip(out_params, param_name), leave=False, total=len(param_name)
+        ) if verbose else zip(out_params, param_name):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
             hist_tmp, _ = np.histogram(ds[out_name], edges[out_name])
             if out_name in hist:
@@ -1366,7 +1511,7 @@ def get_histogram(
             else:
                 hist[out_name] = hist_tmp
                 hist_in_params[out_name] = {}
-            for in_p in tqdm(in_params, leave=False):
+            for in_p in tqdm(in_params, leave=False) if verbose else in_params:
                 if in_p not in edges_in_params[out_name]:
                     continue
                 hist_tmp, _ = np.histogram(
@@ -1377,7 +1522,7 @@ def get_histogram(
                 else:
                     hist_in_params[out_name][in_p] = hist_tmp
         if additional_params is not None:
-            for out_p in tqdm(additional_params, leave=False):
+            for out_p in tqdm(additional_params, leave=False) if verbose else additional_params:
                 hist_tmp, _ = np.histogram(ds[out_p], edges[out_p])
                 if out_p in hist:
                     hist[out_p] += hist_tmp
@@ -1401,6 +1546,9 @@ def get_histogram_cond(
     additional_params=[],
     only_asc600=False,
     inoutflow_time=-1,
+    filter_mag=None,
+    means=None,
+    verbose=False,
 ):
     """
     Get a 2D histogram where 'cond' is the parameter for which the edges are calculated. The final 2D histogram
@@ -1434,21 +1582,40 @@ def get_histogram_cond(
                 file_path + files[0], decode_times=False, engine="netcdf4"
             )
         out_params = ds["Output_Parameter_ID"]
+        param_name = []
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
+    else:
+        param_name = []
+        tmp = []
+        for idx in out_params:
+            if isinstance(idx, int):
+                param_name.append(latexify.param_id_map[idx])
+            else:
+                param_name.append(idx)
+                tmp.append(np.argwhere(np.asarray(latexify.param_id_map) == idx).item())
+        for i in range(len(tmp)):
+            out_params[i] = tmp[i]
+
     for cond in conditional_hist:
         if cond not in additional_params:
             additional_params.append(cond)
-
-    param_name = []
-    for idx in out_params:
-        param_name.append(latexify.param_id_map[idx.values])
 
     min_max = {}
     min_max_in_params = {}
     for out_p in param_name:
         min_max_in_params[out_p] = {}
 
+    load_params = param_name.copy()
+    if inoutflow_time > 0 or only_asc600:
+        load_params.append("asc600")
+    if in_params is not None:
+        load_params.extend(in_params)
+    if additional_params is not None:
+        load_params.extend(additional_params)
+
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[load_params]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -1461,10 +1628,10 @@ def get_histogram_cond(
             ds = ds.where(ds["asc600"] == 1)
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(param_name)
-        ):
+        ) if verbose else zip(out_params, param_name):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
-            min_p = np.min(ds_tmp[out_name]).values
-            max_p = np.max(ds_tmp[out_name]).values
+            min_p = np.nanmin(ds_tmp[out_name])
+            max_p = np.nanmax(ds_tmp[out_name])
             if out_name in min_max.keys():
                 if min_p < min_max[out_name][0]:
                     min_max[out_name][0] = min_p
@@ -1472,9 +1639,16 @@ def get_histogram_cond(
                     min_max[out_name][1] = max_p
             else:
                 min_max[out_name] = [min_p, max_p]
-            for in_p in tqdm(in_params, leave=False):
-                min_p = np.min(ds_tmp[in_p]).values
-                max_p = np.max(ds_tmp[in_p]).values
+            for in_p in tqdm(in_params, leave=False) if verbose else in_params:
+                if filter_mag is not None and means is not None:
+                    mean = means[out_name][in_p]
+                    filtered_ds = ds_tmp[in_p]
+                    filtered_ds = filtered_ds.where(np.abs(np.log10(np.abs(filtered_ds/mean))) <= filter_mag)
+                    min_p = np.nanmin(filtered_ds)
+                    max_p = np.nanmax(filtered_ds)
+                else:
+                    min_p = np.nanmin(ds_tmp[in_p])
+                    max_p = np.nanmax(ds_tmp[in_p])
                 if in_p in min_max_in_params[out_name]:
                     if min_p < min_max_in_params[out_name][in_p][0]:
                         min_max_in_params[out_name][in_p][0] = min_p
@@ -1482,9 +1656,9 @@ def get_histogram_cond(
                         min_max_in_params[out_name][in_p][1] = max_p
                 else:
                     min_max_in_params[out_name][in_p] = [min_p, max_p]
-        for out_p in tqdm(additional_params, leave=False):
-            min_p = np.min(ds[out_p]).values
-            max_p = np.max(ds[out_p]).values
+        for out_p in tqdm(additional_params, leave=False) if verbose else additional_params:
+            min_p = np.nanmin(ds[out_p])
+            max_p = np.nanmax(ds[out_p])
             if out_p in min_max.keys():
                 if min_p < min_max[out_p][0]:
                     min_max[out_p][0] = min_p
@@ -1493,31 +1667,15 @@ def get_histogram_cond(
             else:
                 min_max[out_p] = [min_p, max_p]
 
-    edges = {}
-    edges_in_params = {}
-    for out_p in param_name:
-        delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
-        edges[out_p] = np.arange(
-            min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
-        )
-        edges_in_params[out_p] = {}
-        for in_p in in_params:
-            delta = (
-                min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
-            ) / n_bins
-            if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][1]:
-                continue
-            else:
-                edges_in_params[out_p][in_p] = np.arange(
-                    min_max_in_params[out_p][in_p][0],
-                    min_max_in_params[out_p][in_p][1] + delta / 2,
-                    delta,
-                )
-    for out_p in tqdm(additional_params, leave=False):
-        delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
-        edges[out_p] = np.arange(
-            min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
-        )
+    edges, edges_in_params = get_edges(
+        min_max=min_max,
+        min_max_in_params=min_max_in_params,
+        in_params=in_params,
+        param_name=param_name,
+        additional_params=additional_params,
+        n_bins=n_bins,
+        verbose=verbose,
+    )
 
     hist_conditional = {
         "edges_out_params": edges,
@@ -1525,7 +1683,7 @@ def get_histogram_cond(
     }
 
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[load_params]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -1536,7 +1694,7 @@ def get_histogram_cond(
             ds = ds.where(ds_flow == 1)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
-        for cond in tqdm(conditional_hist, leave=False):
+        for cond in tqdm(conditional_hist, leave=False) if verbose else conditional_hist:
             if cond not in hist_conditional:
                 hist_conditional[cond] = {
                     "hist_out_params": {},
@@ -1544,7 +1702,7 @@ def get_histogram_cond(
                 }
             for out_p, out_name in tqdm(
                 zip(out_params, param_name), leave=False, total=len(param_name)
-            ):
+            ) if verbose else zip(out_params, param_name):
                 ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
                 hist_tmp, _, _ = np.histogram2d(
                     ds[cond].values.flatten(),
@@ -1556,7 +1714,7 @@ def get_histogram_cond(
                 else:
                     hist_conditional[cond]["hist_out_params"][out_name] = hist_tmp
                     hist_conditional[cond]["hist_in_params"][out_name] = {}
-                for in_p in tqdm(in_params, leave=False):
+                for in_p in tqdm(in_params, leave=False) if verbose else in_params:
                     if in_p not in edges_in_params[out_name]:
                         continue
                     hist_tmp, _, _ = np.histogram2d(
@@ -1572,7 +1730,7 @@ def get_histogram_cond(
                         hist_conditional[cond]["hist_in_params"][out_name][
                             in_p
                         ] = hist_tmp
-            for out_p in tqdm(additional_params, leave=False):
+            for out_p in tqdm(additional_params, leave=False) if verbose else additional_params:
                 if out_p == cond:
                     continue
                 hist_tmp, _, _ = np.histogram2d(
@@ -2812,6 +2970,7 @@ def main(args):
                         args.file,
                         additional_params=args.additional_hist_params,
                         only_asc600=args.only_asc600,
+                        inoutflow_time=args.inoutflow_time,
                     )
                     hist = all_hist["hist_out_params"]
                     hist_in_params = all_hist["hist_in_params"]
@@ -2823,6 +2982,7 @@ def main(args):
                         cond=args.conditional_hist,
                         additional_params=args.additional_hist_params,
                         only_asc600=args.only_asc600,
+                        inoutflow_time=args.inoutflow_time,
                     )
             if args.save_histogram != "no":
                 print("########### Store histograms ###########")
