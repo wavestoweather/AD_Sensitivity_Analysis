@@ -1270,28 +1270,31 @@ def get_edges(
         # floats just on the edge.
         delta = (min_max[out_p][1] - min_max[out_p][0]) / (n_bins - 2)
         edges[out_p] = np.arange(
-            min_max[out_p][0] - delta, min_max[out_p][1] + 1.5 * delta / 2, delta
+            min_max[out_p][0] - delta, min_max[out_p][1] + 0.5 * delta, delta
         )
         edges_in_params[out_p] = {}
         for in_p in in_params:
+            if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][
+                1
+            ] or np.isnan(min_max_in_params[out_p][in_p][0]):
+                continue
             delta = (
                 min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
             ) / (n_bins - 2)
-            if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][1]:
-                continue
-            else:
-                edges_in_params[out_p][in_p] = np.arange(
-                    min_max_in_params[out_p][in_p][0] - delta,
-                    min_max_in_params[out_p][in_p][1] + 1.5 * delta,
-                    delta,
-                )
+            edges_in_params[out_p][in_p] = np.arange(
+                min_max_in_params[out_p][in_p][0] - delta,
+                min_max_in_params[out_p][in_p][1] + 0.5 * delta,
+                delta,
+            )
     if additional_params is not None:
         for out_p in (
             tqdm(additional_params, leave=False) if verbose else additional_params
         ):
+            if min_max[out_p][0] == min_max[out_p][1] or np.isnan(min_max[out_p][0]):
+                continue
             delta = (min_max[out_p][1] - min_max[out_p][0]) / (n_bins - 2)
             edges[out_p] = np.arange(
-                min_max[out_p][0] - delta, min_max[out_p][1] + 1.5 * delta / 2, delta
+                min_max[out_p][0] - delta, min_max[out_p][1] + 0.5 * delta, delta
             )
     return edges, edges_in_params
 
@@ -1303,6 +1306,7 @@ def get_histogram(
     n_bins=100,
     additional_params=None,
     only_asc600=False,
+    only_phase=None,
     inoutflow_time=-1,
     filter_mag=None,
     means=None,
@@ -1327,6 +1331,9 @@ def get_histogram(
         wish to have a histogram for.
     only_asc600 : bool
         Consider only time steps during the ascend.
+    only_phase : string
+        Consider only time steps with the given phase. Can be combined with only_asc600 or inoutflow_time.
+        Possible values are "warm phase", "mixed phase", "ice phase", "neutral phase".
     inoutflow_time : int
         Number of time steps before and after the ascent that shall be used additionally.
     filter_mag : float
@@ -1347,6 +1354,12 @@ def get_histogram(
     edges_in_params: Dictionary (keys = model state variable) of dictionaries (keys = model parameters) of arrays with
         the bin edges for the given keys.
     """
+    phases = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
+    if only_phase is not None and only_phase not in phases:
+        raise (
+            f"You asked for phase {only_phase}, which does not exist."
+            f"Possible phases are {phases}"
+        )
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
     ds = None
     if in_params is None:
@@ -1382,6 +1395,8 @@ def get_histogram(
     load_params = param_name.copy()
     if inoutflow_time > 0 or only_asc600:
         load_params.append("asc600")
+    if only_phase is not None:
+        load_params.append("phase")
     if in_params is not None:
         load_params.extend(in_params)
     if additional_params is not None:
@@ -1401,6 +1416,16 @@ def get_histogram(
             ds = ds.where(ds_flow == 1)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
+        if only_phase is not None:
+            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+                ds["phase"] = ds["phase"].astype(np.uint64)
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+            elif ds["phase"].dtype == str:
+                ds = ds.where(ds["phase"] == only_phase)
+            else:
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
         for out_p, out_name in (
             tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
             if verbose
@@ -1502,6 +1527,10 @@ def get_histogram(
             for out_p in (
                 tqdm(additional_params, leave=False) if verbose else additional_params
             ):
+                if out_p not in edges:
+                    # In case no values for the additional parameters are available, i.e.,
+                    # because only_phase is warm phase but QI is given in additonal_params.
+                    continue
                 hist_tmp, _ = np.histogram(ds[out_p], edges[out_p])
                 if out_p in hist:
                     hist[out_p] += hist_tmp
@@ -1524,6 +1553,7 @@ def get_histogram_cond(
     n_bins=100,
     additional_params=[],
     only_asc600=False,
+    only_phase=None,
     inoutflow_time=-1,
     filter_mag=None,
     means=None,
@@ -1552,6 +1582,9 @@ def get_histogram_cond(
         wish to have a histogram for.
     only_asc600 : bool
         Consider only time steps during the ascend.
+    only_phase : string
+        Consider only time steps with the given phase. Can be combined with only_asc600 or inoutflow_time.
+        Possible values are "warm phase", "mixed phase", "ice phase", "neutral phase".
     inoutflow_time : int
         Number of time steps before and after the ascent that shall be used additionally.
     filter_mag : float
@@ -1573,6 +1606,12 @@ def get_histogram_cond(
     'hist_in_params' is a dictionary of model state variables for which sensitivities are available
         and the values are dictionaries of model parameters with arrays of bin counts.
     """
+    phases = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
+    if only_phase is not None and only_phase not in phases:
+        raise (
+            f"You asked for phase {only_phase}, which does not exist."
+            f"Possible phases are {phases}"
+        )
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
     ds = None
     if in_params is None:
@@ -1707,9 +1746,21 @@ def get_histogram_cond(
             ds = ds.where(ds_flow == 1)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
+        if only_phase is not None:
+            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+                ds["phase"] = ds["phase"].astype(np.uint64)
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+            elif ds["phase"].dtype == str:
+                ds = ds.where(ds["phase"] == only_phase)
+            else:
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
         for cond in (
             tqdm(conditional_hist, leave=False) if verbose else conditional_hist
         ):
+            if cond not in edges:
+                continue
             if cond not in hist_conditional:
                 hist_conditional[cond] = {
                     "hist_out_params": {},
@@ -1720,6 +1771,8 @@ def get_histogram_cond(
                 if verbose
                 else zip(out_params, param_name)
             ):
+                if out_p not in edges:
+                    continue
                 ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
                 hist_tmp, _, _ = np.histogram2d(
                     ds[cond].values.flatten(),
@@ -1751,6 +1804,10 @@ def get_histogram_cond(
                 tqdm(additional_params, leave=False) if verbose else additional_params
             ):
                 if out_p == cond:
+                    continue
+                if out_p not in edges:
+                    # In case no values for the additional parameters are available, i.e.,
+                    # because only_phase is warm phase but QI is given in additonal_params.
                     continue
                 hist_tmp, _, _ = np.histogram2d(
                     ds[cond].values.flatten(),

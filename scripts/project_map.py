@@ -1620,7 +1620,7 @@ if __name__ == "__main__":
         help=textwrap.dedent(
             """\
             Calculate only the given step. Previous steps must be loaded using --load_calculated!
-            All options except 'all' and 'merge_counts_means' store only *.pkl files for further processing.
+            All options except 'all' and 'merge_min_max_variance' store only *.pkl files for further processing.
             The 'merge_*' options merge all results calculated 
             using the respective steps for different files with --process_file. 
             """
