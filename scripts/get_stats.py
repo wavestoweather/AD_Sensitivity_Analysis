@@ -1,4 +1,5 @@
 import copy
+import itertools
 import math
 import matplotlib.pyplot as plt
 import matplotlib.colors as mpl_col
@@ -3606,11 +3607,10 @@ def plot_traj_histogram_out_interactive(edges, hist):
     -------
     panel.layout that can be used in a jupyter notebook.
     """
-    out_param = pn.widgets.RadioButtonGroup(
+    out_param = pn.widgets.Select(
         name="Output Parameter",
         value=list(edges.keys())[0],
         options=list(edges.keys()),
-        button_type="primary",
     )
     width_slider = pn.widgets.IntSlider(
         name="Width in inches",
@@ -3673,11 +3673,11 @@ def plot_traj_histogram_out_interactive(edges, hist):
             width_slider,
             height_slider,
             font_slider,
-            log_plot,
         ),
         pn.Row(
             save_to_field,
             save_button,
+            log_plot,
         ),
         title_widget,
         plot_pane,
