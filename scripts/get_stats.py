@@ -14,6 +14,7 @@ try:
     from tqdm.auto import tqdm
 except:
     from progressbar import progressbar as tqdm
+import scipy.signal as scisig
 import seaborn as sns
 import sys
 import xarray as xr
@@ -36,6 +37,517 @@ except:
     from scripts.segment_identifier import d_unnamed
     from scripts.create_mse import load_and_append
     import scripts.latexify as latexify
+
+
+def cross_correlation(
+    ds=None, file_path=None, phases=False, columns=None, verbose=False
+):
+    """
+    Calculate the cross-correlation using two (discrete-)time signals.
+    Non-linear correlations may not be picked up and lead to low cross-correlation values.
+    scipy.signal.correlate() uses either fft or direct estimation.
+    Calculates the best time for negative or positive correlation and their correlation values.
+    The larger absolute value determines if negative or positive correlation is considered.
+    Columns are set to zero mean and variance.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Result of a sensitivity simulation.
+    file_path : string
+        Path to files with sensitivity simulations.
+    phases : bool
+        If true, calculate the auto-correlation for each phase separately.
+    columns : list of strings
+        Columns to load from the dataset. If none is given, all model state variables and model parameters
+        will be loaded. Using fewer columns uses significantly less time.
+    verbose : bool
+        Print when a phase is being evaluated and print progressbars.
+
+    Returns
+    -------
+    xarray.Dataset with coordinates 'Output Parameter' (for sensitivities), 'Parameter' (the first parameter
+    for the cross correlation), 'trajectory', and 'ensemble'. If multiple files have been loaded, an additional
+    coordinate 'file' with the name of the file is given. If phases is true, then 'phases' is available as
+    coordinate.
+    Columns are the cross correlation with the respective parameter and 'Offset Parametername' which gives the offset
+    best correlation fit.
+    """
+    phases_arr = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
+    if ds is None:
+        files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+        n_ensembles = 0
+        n_trajectories = 0
+        for f in files:
+            ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+                ["trajectory", "ensemble"]
+            ]
+            if len(ds["ensemble"]) > n_ensembles:
+                n_ensembles = len(ds["ensemble"])
+            if len(ds["trajectory"]) > n_trajectories:
+                n_trajectories = len(ds["trajectory"])
+        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+    else:
+        files = None
+        n_ensembles = len(ds["ensemble"])
+        n_trajectories = len(ds["trajectory"])
+    if "Output_Parameter_ID" in ds:
+        out_param_coord = "Output_Parameter_ID"
+        out_params = list(ds[out_param_coord].values)
+        param_names = []
+        for out_p in out_params:
+            param_names.append(latexify.param_id_map[out_p])
+    else:
+        out_param_coord = "Output Parameter"
+        out_params = list(ds[out_param_coord].values)
+        param_names = out_params
+    if phases:
+        if ds["phase"].dtype == str:
+            phases_idx = phases_arr
+        else:
+            phases_idx = np.arange(4)
+
+    param_coords = []
+    ignore_list = ["phase", "step", "asc600", "time_after_ascent"]
+    if columns is None:
+        columns = []
+        for p in list(ds.keys()):
+            if p in ignore_list:
+                continue
+            columns.append(p)
+    for p in columns:
+        if (p != "deposition") and (p[0] == "d"):
+            for out_name in param_names:
+                param_coords.append(f"d{out_name}/{p}")
+        else:
+            param_coords.append(p)
+
+    load_vars = list(columns)
+    if phases:
+        load_vars.append("phase")
+    coords = {
+        "Output Parameter": param_names,
+        "Parameter": param_coords,
+        "trajectory": np.arange(n_trajectories),
+        "ensemble": np.arange(n_ensembles),
+    }
+
+    x_corrs_outp = {}
+    x_corrs_inp = {}
+    if phases and files is None:
+        coords["phase"] = phases_arr
+        out_coords = ["phase", "ensemble", "trajectory", "Parameter"]
+        in_coords = ["phase", "Output Parameter", "ensemble", "trajectory", "Parameter"]
+        out_shape = (
+            len(coords["phase"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+        in_shape = (
+            len(coords["phase"]),
+            len(coords["Output Parameter"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+    elif files is None:
+        out_coords = ["ensemble", "trajectory", "Parameter"]
+        in_coords = ["Output Parameter", "ensemble", "trajectory", "Parameter"]
+        out_shape = (
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+        in_shape = (
+            len(coords["Output Parameter"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+    elif phases:
+        coords["file"] = files
+        coords["phase"] = phases_arr
+        out_coords = ["phase", "file", "ensemble", "trajectory", "Parameter"]
+        in_coords = [
+            "phase",
+            "file",
+            "Output Parameter",
+            "ensemble",
+            "trajectory",
+            "Parameter",
+        ]
+        out_shape = (
+            len(coords["phase"]),
+            len(coords["file"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+        in_shape = (
+            len(coords["phase"]),
+            len(coords["file"]),
+            len(coords["Output Parameter"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+    else:
+        coords["file"] = files
+        out_coords = ["file", "ensemble", "trajectory", "Parameter"]
+        in_coords = ["file", "Output Parameter", "ensemble", "trajectory", "Parameter"]
+        out_shape = (
+            len(coords["file"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+        in_shape = (
+            len(coords["file"]),
+            len(coords["Output Parameter"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+
+    for p in columns:
+        if (p != "deposition") and (p[0] == "d"):
+            x_corrs_inp[p] = (in_coords, np.empty(in_shape))
+            x_corrs_inp[p][1][:] = np.nan
+            x_corrs_inp[f"Offset {p}"] = (in_coords, np.empty(in_shape))
+            x_corrs_inp[f"Offset {p}"][1][:] = np.nan
+        else:
+            x_corrs_outp[p] = (out_coords, np.empty(out_shape))
+            x_corrs_outp[p][1][:] = np.nan
+            x_corrs_outp[f"Offset {p}"] = (out_coords, np.empty(out_shape))
+            x_corrs_outp[f"Offset {p}"][1][:] = np.nan
+
+    def get_corr(ds_tmp1, ds_tmp2, col1, col2):
+        vals1 = ds_tmp1[col1].values
+        vals2 = ds_tmp2[col2].values
+        mask = ~(np.isnan(vals1) + np.isnan(vals2))
+        # We don't care if less than 10 datapoints (=5 minutes) are available
+        if np.sum(mask) < 10:
+            return np.nan, np.nan
+        vals1 = vals1[mask]
+        vals2 = vals2[mask]
+        vals1 -= np.nanmean(vals1)
+        vals2 -= np.nanmean(vals2)
+
+        std1 = np.nanstd(vals1)
+        std2 = np.nanstd(vals2)
+        if std1 == 0 or std2 == 0:
+            # Unfortunately, only zero values might be possible, leading to a variance of zero.
+            return np.nan, np.nan
+        vals1 /= std1
+        vals2 /= std2
+        corr = scisig.correlate(
+            vals1,
+            vals2,
+            mode="full",
+            method="auto",
+        )
+
+        corr_best = np.nanmax(corr)
+        offset = np.nanargmax(corr)
+        if np.abs(np.nanmax(corr)) > corr_best:
+            corr_best = np.nanmin(corr)
+            offset = np.nanargmin(corr)
+        corr_best /= len(vals1)
+        offset = offset - len(vals1) + 1
+        return corr_best, offset
+
+    def get_corr_ds(
+        data_outp,
+        data_inp,
+        ds,
+        params,
+        columns,
+        phase_i=None,
+        f_i=None,
+        verbose=False,
+    ):
+        for col_idx, col in enumerate(tqdm(columns) if verbose else columns):
+            col_sens = (col[0] == "d") and (col != "deposition")
+            for param_idx, param in enumerate(params):
+                param_sens = (param[0] == "d") and (param != "deposition")
+                if param_sens and col_sens:
+                    tmp_param = param.split("/")
+                    out_param2 = tmp_param[0][1::]
+                    if out_param_coord == "Output_Parameter_ID":
+                        out_param_ds_idx2 = np.argwhere(
+                            np.asarray(latexify.param_id_map) == out_param2
+                        ).item()
+                    else:
+                        out_param_ds_idx2 = out_param2
+                    ds_col = tmp_param[1]
+                    for ens_idx, ens in enumerate(ds["ensemble"]):
+                        for traj_idx, traj in enumerate(ds["trajectory"]):
+                            for out_param_idx, out_param in enumerate(out_params):
+                                ds_tmp = ds.sel(
+                                    {
+                                        "ensemble": ens,
+                                        "trajectory": traj,
+                                        out_param_coord: out_param,
+                                    }
+                                )
+                                ds_tmp2 = ds.sel(
+                                    {
+                                        "ensemble": ens,
+                                        "trajectory": traj,
+                                        out_param_coord: out_param_ds_idx2,
+                                    }
+                                )
+                                corr_best, offset = get_corr(
+                                    ds_tmp, ds_tmp2, col, ds_col
+                                )
+
+                                if phase_i is None and f_i is None:
+                                    data_inp[col][1][
+                                        out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = offset
+                                elif phase_i is None:
+                                    data_inp[col][1][
+                                        f_i, out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        f_i, out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = offset
+                                elif f_i is None:
+                                    data_inp[col][1][
+                                        phase_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        phase_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = offset
+                                else:
+                                    data_inp[col][1][
+                                        phase_i,
+                                        f_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        phase_i,
+                                        f_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = offset
+                elif param_sens:
+                    tmp_param = param.split("/")
+                    out_param = tmp_param[0][1::]
+                    if out_param_coord == "Output_Parameter_ID":
+                        out_param_ds_idx = np.argwhere(
+                            np.asarray(latexify.param_id_map) == out_param
+                        ).item()
+                    else:
+                        out_param_ds_idx = out_param
+                    ds_col = tmp_param[1]
+                    for ens_idx, ens in enumerate(ds["ensemble"]):
+                        for traj_idx, traj in enumerate(ds["trajectory"]):
+                            ds_tmp = ds.sel(
+                                {
+                                    "ensemble": ens,
+                                    "trajectory": traj,
+                                    out_param_coord: out_param_ds_idx,
+                                }
+                            )
+                            corr_best, offset = get_corr(ds_tmp, ds_tmp, col, ds_col)
+
+                            if phase_i is None and f_i is None:
+                                data_outp[col][1][
+                                    ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    ens_idx, traj_idx, param_idx
+                                ] = offset
+                            elif phase_i is None:
+                                data_outp[col][1][
+                                    f_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    f_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+                            elif f_i is None:
+                                data_outp[col][1][
+                                    phase_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    phase_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+                            else:
+                                data_outp[col][1][
+                                    phase_i, f_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    phase_i, f_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+                elif col_sens:
+                    for ens_idx, ens in enumerate(ds["ensemble"]):
+                        for traj_idx, traj in enumerate(ds["trajectory"]):
+                            for out_param_idx, out_param in enumerate(out_params):
+                                ds_tmp = ds.sel(
+                                    {
+                                        "ensemble": ens,
+                                        "trajectory": traj,
+                                        out_param_coord: out_param,
+                                    }
+                                )
+                                corr_best, offset = get_corr(ds_tmp, ds_tmp, col, param)
+
+                                if phase_i is None and f_i is None:
+                                    data_inp[col][1][
+                                        out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = offset
+                                elif phase_i is None:
+                                    data_inp[col][1][
+                                        f_i, out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        f_i, out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = offset
+                                elif f_i is None:
+                                    data_inp[col][1][
+                                        phase_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        phase_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = offset
+                                else:
+                                    data_inp[col][1][
+                                        phase_i,
+                                        f_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        phase_i,
+                                        f_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = offset
+                else:
+                    for ens_idx, ens in enumerate(ds["ensemble"]):
+                        for traj_idx, traj in enumerate(ds["trajectory"]):
+                            ds_tmp = ds.sel({"ensemble": ens, "trajectory": traj})
+                            corr_best, offset = get_corr(ds_tmp, ds_tmp, col, param)
+
+                            if phase_i is None and f_i is None:
+                                data_outp[col][1][
+                                    ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    ens_idx, traj_idx, param_idx
+                                ] = offset
+                            elif phase_i is None:
+                                data_outp[col][1][
+                                    f_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    f_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+                            elif f_i is None:
+                                data_outp[col][1][
+                                    phase_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    phase_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+                            else:
+                                data_outp[col][1][
+                                    phase_i, f_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    phase_i, f_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+
+    if files is None:
+        if phases:
+            for phase_i, phase in enumerate(phases_idx):
+                if verbose:
+                    print(f"Phase: {phase}")
+                get_corr_ds(
+                    data_outp=x_corrs_outp,
+                    data_inp=x_corrs_inp,
+                    ds=ds.where(ds["phase"] == phase),
+                    columns=columns,
+                    params=param_coords,
+                    phase_i=phase_i,
+                    verbose=verbose,
+                )
+        else:
+            get_corr_ds(
+                data_outp=x_corrs_outp,
+                data_inp=x_corrs_inp,
+                ds=ds,
+                columns=columns,
+                params=param_coords,
+                verbose=verbose,
+            )
+    else:
+        for f_i, f in enumerate(tqdm(files) if verbose else files):
+            ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+                load_vars
+            ]
+            if phases:
+                for phase_i, phase in enumerate(phases_idx):
+                    if verbose:
+                        print(f"Phase: {phase}")
+                    get_corr_ds(
+                        data_outp=x_corrs_outp,
+                        data_inp=x_corrs_inp,
+                        ds=ds.where(ds["phase"] == phase),
+                        columns=columns,
+                        params=param_coords,
+                        f_i=f_i,
+                        phase_i=phase_i,
+                        verbose=verbose,
+                    )
+            else:
+                get_corr_ds(
+                    data_outp=x_corrs_outp,
+                    data_inp=x_corrs_inp,
+                    ds=ds,
+                    columns=columns,
+                    params=param_coords,
+                    f_i=f_i,
+                    verbose=verbose,
+                )
+
+    data_vars = x_corrs_outp
+    for key in x_corrs_inp:
+        data_vars[key] = x_corrs_inp[key]
+    return xr.Dataset(data_vars=data_vars, coords=coords)
 
 
 def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=False):
