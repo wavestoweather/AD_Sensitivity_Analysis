@@ -54,7 +54,6 @@ def load_data(
     """
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
     files = np.sort(files)
-    param_ids = None
     list_of_arrays = []
     if isinstance(x, str):
         vars = [x, "asc600", "phase"]
@@ -73,8 +72,6 @@ def load_data(
             ds = ds.where(ds_flow == 1)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
-        if param_ids is None and x[0] == "d":
-            param_ids = ds["Output_Parameter_ID"]
 
         data = ds[x].dropna("time", how="all")
         data = data.expand_dims({"file": [f]})

@@ -1969,6 +1969,16 @@ def get_histogram(
             ds = ds.where(ds_flow == 1)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
+        if only_phase is not None:
+            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+                ds["phase"] = ds["phase"].astype(np.uint64)
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+            elif ds["phase"].dtype == str:
+                ds = ds.where(ds["phase"] == only_phase)
+            else:
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
         for out_p, out_name in (
             tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
             if verbose
@@ -2119,6 +2129,8 @@ def get_histogram_cond(
     load_params = param_name.copy()
     if inoutflow_time > 0 or only_asc600:
         load_params.append("asc600")
+    if only_phase is not None:
+        load_params.append("phase")
     if in_params is not None:
         load_params.extend(in_params)
     if additional_params is not None:
@@ -2138,6 +2150,16 @@ def get_histogram_cond(
             ds = ds.where(ds_flow == 1)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
+        if only_phase is not None:
+            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+                ds["phase"] = ds["phase"].astype(np.uint64)
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+            elif ds["phase"].dtype == str:
+                ds = ds.where(ds["phase"] == only_phase)
+            else:
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
         for out_p, out_name in (
             tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
             if verbose
