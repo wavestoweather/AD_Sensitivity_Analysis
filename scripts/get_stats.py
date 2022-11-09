@@ -37,6 +37,470 @@ except:
     import scripts.latexify as latexify
 
 
+def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=False):
+    """
+    Estimate auto-correlation via
+
+    {\displaystyle {\hat {R}}(k)={\frac {1}{(n-k)\sigma_{t} \cdot \sigma_{t+k}}}\sum _{t=1}^{n-k}(X_{t}-\mu_{t} )(X_{t+k}-\mu_{t+k} )}
+
+    for each variable and trajectory.
+    Mean and standard deviation are estimated for every trajectory and time slice X_{t} and X_{t+k}.
+    The mean is set to zero by substracting the mean for every datapoint.
+    The variance is set to one by dividing by the variance.
+
+    Parameters
+    ds : xarray.Dataset
+        Result of a sensitivity simulation.
+    file_path : string
+        Path to files with sensitivity simulations.
+    delay : int or list-like of int
+        Define the delay (in time steps) to calculate the auto-correlation or a range of delays.
+    phases : bool
+        If true, calculate the auto-correlation for each phase separately.
+    verbose : bool
+        Print when a phase is being evaluated and print progressbars.
+
+    Returns
+    -------
+    xarray.Dataset with the model state variables and parameters as column names and their auto-correlation as values.
+    The indices are 'phase' (if phases is true), 'delay', 'file' (if file_path is given), 'trajectory', 'ensemble', and
+    'Output Parameter' (for sensitivities to model parameters).
+    """
+    phases_arr = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
+    out_param_coord = ""
+    if ds is None:
+        files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+    else:
+        files = None
+    if "Output_Parameter_ID" in ds:
+        out_params = list(ds["Output_Parameter_ID"].values)
+        param_names = []
+        for out_p in out_params:
+            param_names.append(latexify.param_id_map[out_p])
+        out_param_coord = "Output_Parameter_ID"
+    else:
+        out_params = list(ds["Output Parameter"].values)
+        param_names = out_params
+        out_param_coord = "Output Parameter"
+
+    def get_corr(ds_tmp, d, n, data, d_i):
+        ds_tmp1 = ds_tmp.isel({"time": np.arange(n - d)})
+        ds_tmp2 = ds_tmp.isel({"time": np.arange(d, n)})
+        mean1 = ds_tmp1.mean(dim="time")
+        mean2 = ds_tmp2.mean(dim="time")
+        sigma1 = ds_tmp1.std(dim="time")
+        sigma2 = ds_tmp1.std(dim="time")
+        no_delay = ds_tmp1 - mean1
+        delayed = ds_tmp2 - mean2
+        corr = np.asarray(
+            (no_delay * delayed).sum(dim="time") / ((n - d) * sigma1 * sigma2)
+        )
+        corr_shape = np.shape(corr)
+        data_shape = np.shape(data[:, :, d_i])
+        if corr_shape != data_shape:
+            dim_diff = data_shape[1] - corr_shape[1]
+            if dim_diff > 0:
+                append_arr = np.empty((corr_shape[0], dim_diff))
+                append_arr[:] = np.nan
+                corr = np.append(corr, append_arr, axis=1)
+                corr = np.reshape(corr, (corr_shape[0], data_shape[1]))
+            dim_diff = data_shape[0] - corr_shape[0]
+            if dim_diff > 0:
+                append_arr = np.empty((dim_diff, data_shape[1]))
+                append_arr[:] = np.nan
+                corr = np.append(corr, append_arr)
+                corr = np.reshape(corr, data_shape)
+        data[:, :, d_i] = corr
+
+    def get_corr_ds(
+        data_outp,
+        data_inp,
+        ds,
+        params,
+        phase_val=None,
+        phase_i=None,
+        f_i=None,
+        verbose=False,
+    ):
+        n = len(ds["time"])
+        for param_i, col in enumerate(tqdm(params) if verbose else params):
+            if col[0] != "d" or col == "deposition":
+                if isinstance(delay, int):
+                    if phase_i is None and f_i is None:
+                        get_corr(ds[col], delay, n, data_outp[col][1], 0)
+                    elif phase_i is None:
+                        get_corr(ds[col], delay, n, data_outp[col][1][f_i], 0)
+                    elif f_i is None:
+                        get_corr(
+                            ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                            delay,
+                            n,
+                            data_outp[col][1][phase_i],
+                            0,
+                        )
+                    else:
+                        get_corr(
+                            ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                            delay,
+                            n,
+                            data_outp[col][1][f_i, phase_i],
+                            0,
+                        )
+                else:
+                    for d_i, d in enumerate(delay):
+                        if phase_i is None and f_i is None:
+                            get_corr(ds[col], d, n, data_outp[col][1], d_i)
+                        elif phase_i is None:
+                            get_corr(ds[col], d, n, data_outp[col][1][f_i], d_i)
+                        elif f_i is None:
+                            get_corr(
+                                ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                                d,
+                                n,
+                                data_outp[col][1][phase_i],
+                                d_i,
+                            )
+                        else:
+                            get_corr(
+                                ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                                d,
+                                n,
+                                data_outp[col][1][f_i, phase_i],
+                                d_i,
+                            )
+            else:
+                out_p_i = 0
+                for out_p, out_name in zip(out_params, param_names):
+                    if isinstance(delay, int):
+                        if phase_i is None and f_i is None:
+                            get_corr(
+                                ds[col].sel({out_param_coord: out_p}),
+                                delay,
+                                n,
+                                data_inp[col][1][out_p_i],
+                                0,
+                            )
+                        elif phase_i is None:
+                            get_corr(
+                                ds[col].sel({out_param_coord: out_p}),
+                                delay,
+                                n,
+                                data_inp[col][1][f_i, out_p_i],
+                                0,
+                            )
+                        elif f_i is None:
+                            get_corr(
+                                ds[["phase", col]]
+                                .sel({out_param_coord: out_p})
+                                .where(ds["phase"] == phase_val)[col],
+                                delay,
+                                n,
+                                data_inp[col][1][phase_i, out_p_i],
+                                0,
+                            )
+                        else:
+                            get_corr(
+                                ds[["phase", col]]
+                                .sel({out_param_coord: out_p})
+                                .where(ds["phase"] == phase_val)[col],
+                                delay,
+                                n,
+                                data_inp[col][1][f_i, phase_i, out_p_i],
+                                0,
+                            )
+                    else:
+                        for d_i, d in enumerate(delay):
+                            if phase_i is None and f_i is None:
+                                get_corr(
+                                    ds[col].sel({out_param_coord: out_p}),
+                                    d,
+                                    n,
+                                    data_inp[col][1][out_p_i],
+                                    d_i,
+                                )
+                            elif phase_i is None:
+                                get_corr(
+                                    ds[col].sel({out_param_coord: out_p}),
+                                    d,
+                                    n,
+                                    data_inp[col][1][f_i, out_p_i],
+                                    d_i,
+                                )
+                            elif f_i is None:
+                                get_corr(
+                                    ds[["phase", col]]
+                                    .sel({out_param_coord: out_p})
+                                    .where(ds["phase"] == phase_val)[col],
+                                    d,
+                                    n,
+                                    data_inp[col][1][phase_i, out_p_i],
+                                    d_i,
+                                )
+                            else:
+                                get_corr(
+                                    ds[["phase", col]]
+                                    .sel({out_param_coord: out_p})
+                                    .where(ds["phase"] == phase_val)[col],
+                                    d,
+                                    n,
+                                    data_inp[col][1][f_i, phase_i, out_p_i],
+                                    d_i,
+                                )
+                    out_p_i += 1
+
+    auto_corr_coords = {
+        "delay": [],
+    }
+    if isinstance(delay, int):
+        auto_corr_coords["delay"].append(delay)
+    else:
+        auto_corr_coords["delay"].extend(delay)
+
+    if files is None:
+        auto_corr_coords["ensemble"] = ds["ensemble"].values
+        auto_corr_coords["trajectory"] = ds["trajectory"].values
+        auto_corr_coords["Output Parameter"] = param_names
+        columns = list(ds.keys())
+        if "phase" in columns:
+            columns.remove("phase")
+        if "step" in columns:
+            columns.remove("step")
+        if "asc600" in columns:
+            columns.remove("asc600")
+        if "time_after_ascent" in columns:
+            columns.remove("time_after_ascent")
+        if phases:
+            auto_corr_coords["phase"] = phases_arr
+            auto_corrs_outp = {}
+            auto_corrs_inp = {}
+            for param in columns:
+                if param[0] != "d" or param == "deposition":
+                    auto_corrs_outp[param] = (
+                        ["phase", "ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["phase"]),
+                                len(ds["ensemble"]),
+                                len(ds["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_outp[param][1][:] = np.nan
+                else:
+                    auto_corrs_inp[param] = (
+                        [
+                            "phase",
+                            "Output Parameter",
+                            "ensemble",
+                            "trajectory",
+                            "delay",
+                        ],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["phase"]),
+                                len(auto_corr_coords["Output Parameter"]),
+                                len(ds["ensemble"]),
+                                len(ds["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_inp[param][1][:] = np.nan
+
+            for phase_i, phase in enumerate(auto_corr_coords["phase"]):
+                if verbose:
+                    print(f"{phase}")
+                if ds["phase"].dtype != str:
+                    phase_val = phase_i
+                else:
+                    phase_val = phase
+                get_corr_ds(
+                    auto_corrs_outp,
+                    auto_corrs_inp,
+                    ds,
+                    columns,
+                    phase_val,
+                    phase_i,
+                    verbose=verbose,
+                )
+        else:
+            auto_corrs_outp = {}
+            auto_corrs_inp = {}
+            for param in columns:
+                if param[0] != "d" or param == "deposition":
+                    auto_corrs_outp[param] = (
+                        ["ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(ds["ensemble"]),
+                                len(ds["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_outp[param][1][:] = np.nan
+                else:
+                    auto_corrs_inp[param] = (
+                        ["Output Parameter", "ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["Output Parameter"]),
+                                len(ds["ensemble"]),
+                                len(ds["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_inp[param][1][:] = np.nan
+            get_corr_ds(
+                auto_corrs_outp,
+                auto_corrs_inp,
+                ds,
+                columns,
+                verbose=verbose,
+            )
+    else:
+        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+        n_ensembles = len(ds["ensemble"].values)
+        n_trajectories = len(ds["trajectory"].values)
+        auto_corr_coords["Output Parameter"] = param_names
+        auto_corr_coords["file"] = files
+        columns = list(ds.keys())
+        if "phase" in columns:
+            columns.remove("phase")
+        if "step" in columns:
+            columns.remove("step")
+        if "asc600" in columns:
+            columns.remove("asc600")
+        if "time_after_ascent" in columns:
+            columns.remove("time_after_ascent")
+
+        for f in files[1::]:
+            ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+                ["trajectory", "ensemble"]
+            ]
+            if len(ds["trajectory"]) > n_trajectories:
+                n_trajectories = len(ds["trajectory"])
+            if len(ds["ensemble"]) > n_ensembles:
+                n_ensembles = len(ds["ensemble"])
+        auto_corr_coords["ensemble"] = np.arange(n_ensembles)
+        auto_corr_coords["trajectory"] = np.arange(n_trajectories)
+        if phases:
+            auto_corr_coords["phase"] = phases_arr
+            auto_corrs_outp = {}
+            auto_corrs_inp = {}
+            for param in columns:
+                if param[0] != "d" or param == "deposition":
+                    auto_corrs_outp[param] = (
+                        ["file", "phase", "ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["file"]),
+                                len(auto_corr_coords["phase"]),
+                                len(auto_corr_coords["ensemble"]),
+                                len(auto_corr_coords["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_outp[param][1][:] = np.nan
+                else:
+                    auto_corrs_inp[param] = (
+                        [
+                            "file",
+                            "phase",
+                            "Output Parameter",
+                            "ensemble",
+                            "trajectory",
+                            "delay",
+                        ],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["file"]),
+                                len(auto_corr_coords["phase"]),
+                                len(auto_corr_coords["Output Parameter"]),
+                                len(auto_corr_coords["ensemble"]),
+                                len(auto_corr_coords["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_inp[param][1][:] = np.nan
+
+            for phase_i, phase in enumerate(auto_corr_coords["phase"]):
+                if verbose:
+                    print(f"Phase: {phase}")
+
+                for f_i, f in enumerate(tqdm(files) if verbose else files):
+                    ds = xr.open_dataset(
+                        file_path + f, decode_times=False, engine="netcdf4"
+                    )
+                    if ds["phase"].dtype != str:
+                        phase_val = phase_i
+                    else:
+                        phase_val = phase
+                    get_corr_ds(
+                        auto_corrs_outp,
+                        auto_corrs_inp,
+                        ds,
+                        columns,
+                        phase_val,
+                        phase_i,
+                        f_i,
+                        verbose=verbose,
+                    )
+        else:
+            auto_corrs_outp = {}
+            auto_corrs_inp = {}
+            for param in columns:
+                if param[0] != "d" or param == "deposition":
+                    auto_corrs_outp[param] = (
+                        ["file", "ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["file"]),
+                                len(auto_corr_coords["ensemble"]),
+                                len(auto_corr_coords["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_outp[param][1][:] = np.nan
+                else:
+                    auto_corrs_inp[param] = (
+                        ["file", "Output Parameter", "ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["file"]),
+                                len(auto_corr_coords["Output Parameter"]),
+                                len(auto_corr_coords["ensemble"]),
+                                len(auto_corr_coords["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_inp[param][1][:] = np.nan
+            for f_i, f in enumerate(tqdm(files) if verbose else files):
+                ds = xr.open_dataset(
+                    file_path + f, decode_times=False, engine="netcdf4"
+                )
+                get_corr_ds(
+                    auto_corrs_outp,
+                    auto_corrs_inp,
+                    ds,
+                    columns,
+                    None,
+                    f_i,
+                    verbose=verbose,
+                )
+    data_vars = auto_corrs_outp
+    for key in auto_corrs_inp:
+        data_vars[key] = auto_corrs_inp[key]
+    return xr.Dataset(data_vars=data_vars, coords=auto_corr_coords)
+
+
 def get_top_list(ds, print_out=True, verbose=True):
     """
 
@@ -1155,11 +1619,15 @@ def traj_get_sum_derivatives(file_path):
     out_param_coord = "Output_Parameter_ID"
     if out_param_coord not in ds:
         out_param_coord = "Output Parameter"
-    out_params = ds[out_param_coord]
+        out_params = list(ds[out_param_coord].values)
+        param_name = out_params
+    else:
+        param_name = []
+        out_params = list(ds[out_param_coord].values)
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
+
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
-    param_name = []
-    for idx in out_params:
-        param_name.append(latexify.param_id_map[idx.values])
 
     sums = {}
     for f in tqdm(files):
@@ -1771,7 +2239,7 @@ def get_histogram_cond(
                 if verbose
                 else zip(out_params, param_name)
             ):
-                if out_p not in edges:
+                if out_name not in edges:
                     continue
                 ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
                 hist_tmp, _, _ = np.histogram2d(
@@ -2294,10 +2762,13 @@ def get_sums(
     out_param_coord = "Output_Parameter_ID"
     if "Output_Parameter_ID" not in ds:
         out_param_coord = "Output Parameter"
-    out_params = ds[out_param_coord]
-    param_name = []
-    for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p.values.item()])
+        out_params = list(ds[out_param_coord].values)
+        param_name = out_params
+    else:
+        out_params = list(ds[out_param_coord].values)
+        param_name = []
+        for out_p in out_params:
+            param_name.append(latexify.param_id_map[out_p.values.item()])
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
     for f in tqdm(files):
@@ -2362,12 +2833,16 @@ def get_sums_phase(
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
     ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
     out_param_coord = "Output_Parameter_ID"
-    if "Output_Parameter_ID" not in ds:
+    if out_param_coord not in ds:
         out_param_coord = "Output Parameter"
-    out_params = ds[out_param_coord]
-    param_name = []
-    for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p.values.item()])
+        out_params = list(ds[out_param_coord].values)
+        param_name = out_params
+    else:
+        param_name = []
+        out_params = list(ds[out_param_coord].values)
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
+
     phases = ["warm phase", "mixed phase", "ice phase", "neutral phase"]
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
@@ -2446,15 +2921,18 @@ def get_cov_matrix(
     if in_params is None:
         in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     out_param_coord = "Output_Parameter_ID"
-    if "Output_Parameter_ID" not in ds:
+    if out_param_coord not in ds:
         out_param_coord = "Output Parameter"
-    out_params = ds[out_param_coord]
-    param_name = []
+        out_params = list(ds[out_param_coord].values)
+        param_name = out_params
+    else:
+        param_name = []
+        out_params = list(ds[out_param_coord].values)
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
     more_params = []
     if only_asc600 or inoutflow_time > 0:
         more_params.append("asc600")
-    for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p.values.item()])
     all_params = param_name + in_params
     n = len(all_params)
     means = {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
@@ -2587,15 +3065,18 @@ def get_cov_matrix_phase(
     if in_params is None:
         in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     out_param_coord = "Output_Parameter_ID"
-    if "Output_Parameter_ID" not in ds:
+    if out_param_coord not in ds:
         out_param_coord = "Output Parameter"
-    out_params = ds[out_param_coord]
-    param_name = []
+        out_params = list(ds[out_param_coord].values)
+        param_name = out_params
+    else:
+        param_name = []
+        out_params = list(ds[out_param_coord].values)
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
     more_params = ["phase"]
     if only_asc600 or inoutflow_time > 0:
         more_params.append("asc600")
-    for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p.values.item()])
     phases = ["warm phase", "mixed phase", "ice phase", "neutral phase"]
     all_params = param_name + in_params
     n = len(all_params)
@@ -3039,6 +3520,7 @@ def plot_heatmap_histogram(
         else:
             p = out_params
             in_p = in_params
+            print(f"{c} {p} {in_p}")
             plot_hist(
                 hist_conditional[c]["hist_in_params"][p][in_p],
                 c,
