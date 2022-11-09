@@ -1842,7 +1842,7 @@ void output_handle_t::buffer(
 #ifdef MET3D
     // time after ascent
     output_buffer[Buffer_idx::time_ascent_buf][n_snapshots] =
-        netcdf_reader.get_relative_time(t) + sub*cc.dt;
+        netcdf_reader.get_relative_time(t) * cc.dt_traject_prime + sub*cc.dt;
     // flags
 #if !defined(B_EIGHT)
     output_buffer_flags[0][n_snapshots] = netcdf_reader.get_conv_400(t);

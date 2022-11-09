@@ -37,19 +37,486 @@ except:
     import scripts.latexify as latexify
 
 
+def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=False):
+    """
+    Estimate auto-correlation via
+
+    {\displaystyle {\hat {R}}(k)={\frac {1}{(n-k)\sigma_{t} \cdot \sigma_{t+k}}}\sum _{t=1}^{n-k}(X_{t}-\mu_{t} )(X_{t+k}-\mu_{t+k} )}
+
+    for each variable and trajectory.
+    Mean and standard deviation are estimated for every trajectory and time slice X_{t} and X_{t+k}.
+    The mean is set to zero by substracting the mean for every datapoint.
+    The variance is set to one by dividing by the variance.
+
+    Parameters
+    ds : xarray.Dataset
+        Result of a sensitivity simulation.
+    file_path : string
+        Path to files with sensitivity simulations.
+    delay : int or list-like of int
+        Define the delay (in time steps) to calculate the auto-correlation or a range of delays.
+    phases : bool
+        If true, calculate the auto-correlation for each phase separately.
+    verbose : bool
+        Print when a phase is being evaluated and print progressbars.
+
+    Returns
+    -------
+    xarray.Dataset with the model state variables and parameters as column names and their auto-correlation as values.
+    The indices are 'phase' (if phases is true), 'delay', 'file' (if file_path is given), 'trajectory', 'ensemble', and
+    'Output Parameter' (for sensitivities to model parameters).
+    """
+    phases_arr = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
+    out_param_coord = ""
+    if ds is None:
+        files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+    else:
+        files = None
+    if "Output_Parameter_ID" in ds:
+        out_params = list(ds["Output_Parameter_ID"].values)
+        param_names = []
+        for out_p in out_params:
+            param_names.append(latexify.param_id_map[out_p])
+        out_param_coord = "Output_Parameter_ID"
+    else:
+        out_params = list(ds["Output Parameter"].values)
+        param_names = out_params
+        out_param_coord = "Output Parameter"
+
+    def get_corr(ds_tmp, d, n, data, d_i):
+        ds_tmp1 = ds_tmp.isel({"time": np.arange(n - d)})
+        ds_tmp2 = ds_tmp.isel({"time": np.arange(d, n)})
+        mean1 = ds_tmp1.mean(dim="time")
+        mean2 = ds_tmp2.mean(dim="time")
+        sigma1 = ds_tmp1.std(dim="time")
+        sigma2 = ds_tmp1.std(dim="time")
+        no_delay = ds_tmp1 - mean1
+        delayed = ds_tmp2 - mean2
+        corr = np.asarray(
+            (no_delay * delayed).sum(dim="time") / ((n - d) * sigma1 * sigma2)
+        )
+        corr_shape = np.shape(corr)
+        data_shape = np.shape(data[:, :, d_i])
+        if corr_shape != data_shape:
+            dim_diff = data_shape[1] - corr_shape[1]
+            if dim_diff > 0:
+                append_arr = np.empty((corr_shape[0], dim_diff))
+                append_arr[:] = np.nan
+                corr = np.append(corr, append_arr, axis=1)
+                corr = np.reshape(corr, (corr_shape[0], data_shape[1]))
+            dim_diff = data_shape[0] - corr_shape[0]
+            if dim_diff > 0:
+                append_arr = np.empty((dim_diff, data_shape[1]))
+                append_arr[:] = np.nan
+                corr = np.append(corr, append_arr)
+                corr = np.reshape(corr, data_shape)
+        data[:, :, d_i] = corr
+
+    def get_corr_ds(
+        data_outp,
+        data_inp,
+        ds,
+        params,
+        phase_val=None,
+        phase_i=None,
+        f_i=None,
+        verbose=False,
+    ):
+        n = len(ds["time"])
+        for param_i, col in enumerate(tqdm(params) if verbose else params):
+            if col[0] != "d" or col == "deposition":
+                if isinstance(delay, int):
+                    if phase_i is None and f_i is None:
+                        get_corr(ds[col], delay, n, data_outp[col][1], 0)
+                    elif phase_i is None:
+                        get_corr(ds[col], delay, n, data_outp[col][1][f_i], 0)
+                    elif f_i is None:
+                        get_corr(
+                            ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                            delay,
+                            n,
+                            data_outp[col][1][phase_i],
+                            0,
+                        )
+                    else:
+                        get_corr(
+                            ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                            delay,
+                            n,
+                            data_outp[col][1][f_i, phase_i],
+                            0,
+                        )
+                else:
+                    for d_i, d in enumerate(delay):
+                        if phase_i is None and f_i is None:
+                            get_corr(ds[col], d, n, data_outp[col][1], d_i)
+                        elif phase_i is None:
+                            get_corr(ds[col], d, n, data_outp[col][1][f_i], d_i)
+                        elif f_i is None:
+                            get_corr(
+                                ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                                d,
+                                n,
+                                data_outp[col][1][phase_i],
+                                d_i,
+                            )
+                        else:
+                            get_corr(
+                                ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                                d,
+                                n,
+                                data_outp[col][1][f_i, phase_i],
+                                d_i,
+                            )
+            else:
+                out_p_i = 0
+                for out_p, out_name in zip(out_params, param_names):
+                    if isinstance(delay, int):
+                        if phase_i is None and f_i is None:
+                            get_corr(
+                                ds[col].sel({out_param_coord: out_p}),
+                                delay,
+                                n,
+                                data_inp[col][1][out_p_i],
+                                0,
+                            )
+                        elif phase_i is None:
+                            get_corr(
+                                ds[col].sel({out_param_coord: out_p}),
+                                delay,
+                                n,
+                                data_inp[col][1][f_i, out_p_i],
+                                0,
+                            )
+                        elif f_i is None:
+                            get_corr(
+                                ds[["phase", col]]
+                                .sel({out_param_coord: out_p})
+                                .where(ds["phase"] == phase_val)[col],
+                                delay,
+                                n,
+                                data_inp[col][1][phase_i, out_p_i],
+                                0,
+                            )
+                        else:
+                            get_corr(
+                                ds[["phase", col]]
+                                .sel({out_param_coord: out_p})
+                                .where(ds["phase"] == phase_val)[col],
+                                delay,
+                                n,
+                                data_inp[col][1][f_i, phase_i, out_p_i],
+                                0,
+                            )
+                    else:
+                        for d_i, d in enumerate(delay):
+                            if phase_i is None and f_i is None:
+                                get_corr(
+                                    ds[col].sel({out_param_coord: out_p}),
+                                    d,
+                                    n,
+                                    data_inp[col][1][out_p_i],
+                                    d_i,
+                                )
+                            elif phase_i is None:
+                                get_corr(
+                                    ds[col].sel({out_param_coord: out_p}),
+                                    d,
+                                    n,
+                                    data_inp[col][1][f_i, out_p_i],
+                                    d_i,
+                                )
+                            elif f_i is None:
+                                get_corr(
+                                    ds[["phase", col]]
+                                    .sel({out_param_coord: out_p})
+                                    .where(ds["phase"] == phase_val)[col],
+                                    d,
+                                    n,
+                                    data_inp[col][1][phase_i, out_p_i],
+                                    d_i,
+                                )
+                            else:
+                                get_corr(
+                                    ds[["phase", col]]
+                                    .sel({out_param_coord: out_p})
+                                    .where(ds["phase"] == phase_val)[col],
+                                    d,
+                                    n,
+                                    data_inp[col][1][f_i, phase_i, out_p_i],
+                                    d_i,
+                                )
+                    out_p_i += 1
+
+    auto_corr_coords = {
+        "delay": [],
+    }
+    if isinstance(delay, int):
+        auto_corr_coords["delay"].append(delay)
+    else:
+        auto_corr_coords["delay"].extend(delay)
+
+    if files is None:
+        auto_corr_coords["ensemble"] = ds["ensemble"].values
+        auto_corr_coords["trajectory"] = ds["trajectory"].values
+        auto_corr_coords["Output Parameter"] = param_names
+        columns = list(ds.keys())
+        if "phase" in columns:
+            columns.remove("phase")
+        if "step" in columns:
+            columns.remove("step")
+        if "asc600" in columns:
+            columns.remove("asc600")
+        if "time_after_ascent" in columns:
+            columns.remove("time_after_ascent")
+        if phases:
+            auto_corr_coords["phase"] = phases_arr
+            auto_corrs_outp = {}
+            auto_corrs_inp = {}
+            for param in columns:
+                if param[0] != "d" or param == "deposition":
+                    auto_corrs_outp[param] = (
+                        ["phase", "ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["phase"]),
+                                len(ds["ensemble"]),
+                                len(ds["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_outp[param][1][:] = np.nan
+                else:
+                    auto_corrs_inp[param] = (
+                        [
+                            "phase",
+                            "Output Parameter",
+                            "ensemble",
+                            "trajectory",
+                            "delay",
+                        ],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["phase"]),
+                                len(auto_corr_coords["Output Parameter"]),
+                                len(ds["ensemble"]),
+                                len(ds["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_inp[param][1][:] = np.nan
+
+            for phase_i, phase in enumerate(auto_corr_coords["phase"]):
+                if verbose:
+                    print(f"{phase}")
+                if ds["phase"].dtype != str:
+                    phase_val = phase_i
+                else:
+                    phase_val = phase
+                get_corr_ds(
+                    auto_corrs_outp,
+                    auto_corrs_inp,
+                    ds,
+                    columns,
+                    phase_val,
+                    phase_i,
+                    verbose=verbose,
+                )
+        else:
+            auto_corrs_outp = {}
+            auto_corrs_inp = {}
+            for param in columns:
+                if param[0] != "d" or param == "deposition":
+                    auto_corrs_outp[param] = (
+                        ["ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(ds["ensemble"]),
+                                len(ds["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_outp[param][1][:] = np.nan
+                else:
+                    auto_corrs_inp[param] = (
+                        ["Output Parameter", "ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["Output Parameter"]),
+                                len(ds["ensemble"]),
+                                len(ds["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_inp[param][1][:] = np.nan
+            get_corr_ds(
+                auto_corrs_outp,
+                auto_corrs_inp,
+                ds,
+                columns,
+                verbose=verbose,
+            )
+    else:
+        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+        n_ensembles = len(ds["ensemble"].values)
+        n_trajectories = len(ds["trajectory"].values)
+        auto_corr_coords["Output Parameter"] = param_names
+        auto_corr_coords["file"] = files
+        columns = list(ds.keys())
+        if "phase" in columns:
+            columns.remove("phase")
+        if "step" in columns:
+            columns.remove("step")
+        if "asc600" in columns:
+            columns.remove("asc600")
+        if "time_after_ascent" in columns:
+            columns.remove("time_after_ascent")
+
+        for f in files[1::]:
+            ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+                ["trajectory", "ensemble"]
+            ]
+            if len(ds["trajectory"]) > n_trajectories:
+                n_trajectories = len(ds["trajectory"])
+            if len(ds["ensemble"]) > n_ensembles:
+                n_ensembles = len(ds["ensemble"])
+        auto_corr_coords["ensemble"] = np.arange(n_ensembles)
+        auto_corr_coords["trajectory"] = np.arange(n_trajectories)
+        if phases:
+            auto_corr_coords["phase"] = phases_arr
+            auto_corrs_outp = {}
+            auto_corrs_inp = {}
+            for param in columns:
+                if param[0] != "d" or param == "deposition":
+                    auto_corrs_outp[param] = (
+                        ["file", "phase", "ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["file"]),
+                                len(auto_corr_coords["phase"]),
+                                len(auto_corr_coords["ensemble"]),
+                                len(auto_corr_coords["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_outp[param][1][:] = np.nan
+                else:
+                    auto_corrs_inp[param] = (
+                        [
+                            "file",
+                            "phase",
+                            "Output Parameter",
+                            "ensemble",
+                            "trajectory",
+                            "delay",
+                        ],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["file"]),
+                                len(auto_corr_coords["phase"]),
+                                len(auto_corr_coords["Output Parameter"]),
+                                len(auto_corr_coords["ensemble"]),
+                                len(auto_corr_coords["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_inp[param][1][:] = np.nan
+
+            for phase_i, phase in enumerate(auto_corr_coords["phase"]):
+                if verbose:
+                    print(f"Phase: {phase}")
+
+                for f_i, f in enumerate(tqdm(files) if verbose else files):
+                    ds = xr.open_dataset(
+                        file_path + f, decode_times=False, engine="netcdf4"
+                    )
+                    if ds["phase"].dtype != str:
+                        phase_val = phase_i
+                    else:
+                        phase_val = phase
+                    get_corr_ds(
+                        auto_corrs_outp,
+                        auto_corrs_inp,
+                        ds,
+                        columns,
+                        phase_val,
+                        phase_i,
+                        f_i,
+                        verbose=verbose,
+                    )
+        else:
+            auto_corrs_outp = {}
+            auto_corrs_inp = {}
+            for param in columns:
+                if param[0] != "d" or param == "deposition":
+                    auto_corrs_outp[param] = (
+                        ["file", "ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["file"]),
+                                len(auto_corr_coords["ensemble"]),
+                                len(auto_corr_coords["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_outp[param][1][:] = np.nan
+                else:
+                    auto_corrs_inp[param] = (
+                        ["file", "Output Parameter", "ensemble", "trajectory", "delay"],
+                        np.empty(
+                            (
+                                len(auto_corr_coords["file"]),
+                                len(auto_corr_coords["Output Parameter"]),
+                                len(auto_corr_coords["ensemble"]),
+                                len(auto_corr_coords["trajectory"]),
+                                len(auto_corr_coords["delay"]),
+                            ),
+                        ),
+                    )
+                    auto_corrs_inp[param][1][:] = np.nan
+            for f_i, f in enumerate(tqdm(files) if verbose else files):
+                ds = xr.open_dataset(
+                    file_path + f, decode_times=False, engine="netcdf4"
+                )
+                get_corr_ds(
+                    auto_corrs_outp,
+                    auto_corrs_inp,
+                    ds,
+                    columns,
+                    None,
+                    f_i,
+                    verbose=verbose,
+                )
+    data_vars = auto_corrs_outp
+    for key in auto_corrs_inp:
+        data_vars[key] = auto_corrs_inp[key]
+    return xr.Dataset(data_vars=data_vars, coords=auto_corr_coords)
+
+
 def get_top_list(ds, print_out=True, verbose=True):
     """
 
     Parameters
     ----------
     ds : xarray.Dataset
+        Final, post-processed dataset with mean squared deviation and  predicted mean squared deviation.
     print_out : bool
         Print the number of parameters and the dataset.
     verbose : bool
         Print the top parameters for each output variable.
+
     Returns
     -------
-    list of output parameters, list of top20 parameters, list of top10 parameters, dict of top20 parameters, dict of top10 parameters
+    list of output parameters, list of top20 parameters, list of top10 parameters, dict of top20 parameters,
+    dict of top10 parameters.
     """
     out_params = [
         "QV",
@@ -83,7 +550,8 @@ def get_top_list(ds, print_out=True, verbose=True):
     if print_out:
         print("\nGet the top parameters for each output variable\n")
     for out_p in out_params:
-        out_p = out_p
+        if out_p not in ds["Output Parameter"]:
+            continue
         df = (
             ds.sel({"Output Parameter": [out_p]})
             .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
@@ -107,7 +575,7 @@ def get_top_list(ds, print_out=True, verbose=True):
             print(f"Top 20: \n{top20_sens_dic[out_p]}")
     top20_list = list(set(tmp20))
     top10_list = list(set(tmp10))
-    if print_out:
+    if print_out or verbose:
         print(
             f"Number of distinct parameters by taking the top 20 for everything: {len(top20_list)}"
         )
@@ -115,7 +583,13 @@ def get_top_list(ds, print_out=True, verbose=True):
             f"Number of distinct parameters by taking the top 10 for everything: {len(top10_list)}"
         )
         print(ds)
-    return out_params, top20_list, top10_list, top20_sens_dic, top10_sens_dic
+    return (
+        list(ds["Output Parameter"].values),
+        top20_list,
+        top10_list,
+        top20_sens_dic,
+        top10_sens_dic,
+    )
 
 
 def get_magnitude_list(ds, out_params, print_out=True, verbose=True):
@@ -124,15 +598,18 @@ def get_magnitude_list(ds, out_params, print_out=True, verbose=True):
 
     Parameters
     ----------
-    ds
-    out_params
-    print_out
+    ds : xarray.Dataset
+        Final, post-processed dataset with mean squared deviation and  predicted mean squared deviation.
+    out_params : list-like of strings
+        The model state variables for which sensitivities have been calculated for.
+    print_out : bool
+        Print the top parameters within one order of magnitude and the number of parameters in each magnitude list.
     verbose : bool
-        Print the top parameters for each output variable.
+        Print the top parameters for each output variable for each magnitude.
 
     Returns
     -------
-    list of parameters withing one order of magnitude, list within two orders of magnitudes, list within three orders of magnitudes
+    list of parameters within one order of magnitude, list within two orders of magnitudes, list within three orders of magnitudes
     """
     if print_out:
         print(
@@ -143,7 +620,8 @@ def get_magnitude_list(ds, out_params, print_out=True, verbose=True):
     top_three_orders = []
 
     for out_p in out_params:
-        out_p = out_p
+        if out_p not in ds["Output Parameter"]:
+            continue
         df = (
             ds.sel({"Output Parameter": [out_p]})
             .mean(dim=["trajectory", "time_after_ascent"], skipna=True)
@@ -180,7 +658,7 @@ def get_magnitude_list(ds, out_params, print_out=True, verbose=True):
     top_three_orders_list = list(set(top_three_orders))
     top_two_orders_list = list(set(top_two_orders))
     top_one_order_list = list(set(top_one_order))
-    if print_out:
+    if print_out or verbose:
         print(
             f"Number of distinct parameters by taking the top order of magnitude: {len(top_one_order_list)}"
         )
@@ -198,9 +676,11 @@ def get_magnitude_list(ds, out_params, print_out=True, verbose=True):
 def print_unique_params(top_sens_dic):
     """
     Print the parameters that appear only for a single output variable.
+
     Parameters
     ----------
-    top_sens_dic
+    top_sens_dic : dict of list of strings
+        The result of get_top_list() or get_magnitude_list()
 
     Returns
     -------
@@ -231,12 +711,16 @@ def print_unique_params(top_sens_dic):
 
 def print_correlation_broad(ds, out_params):
     """
-    Print correlation coefficients (Spearman, Pearson, and Kendall) using each time step individually with all data,
-    for each type of state variable (first moment, second moment, sedimentation), and for each output variable.
+    Print correlation coefficients (Spearman, Pearson, and Kendall) between predicted and actual error using each
+    time step individually with all data for each type of state variable (first moment, second moment,
+    sedimentation), and for each output variable.
+
     Parameters
     ----------
-    ds :
-    out_params :
+    ds : xarray.Dataset
+        Final, post-processed dataset with mean squared deviation and  predicted mean squared deviation.
+    out_params : list-like of strings
+        The model state variables for which sensitivities have been calculated for.
 
     Returns
     -------
@@ -312,11 +796,16 @@ def print_correlation_broad(ds, out_params):
 
 def print_correlation_mean(ds, out_params):
     """
+    Print correlation coefficients (Spearman, Pearson, and Kendall) between predicted and actual error using the mean
+    over time after ascent and trajectory for each type of state variable (first moment, second moment,
+    sedimentation), and for each output variable.
 
     Parameters
     ----------
-    ds
-    out_params
+    ds : xarray.Dataset
+        Final, post-processed dataset with mean squared deviation and  predicted mean squared deviation.
+    out_params : list-like of strings
+        The model state variables for which sensitivities have been calculated for.
 
     Returns
     -------
@@ -551,18 +1040,26 @@ def print_correlation_mean(ds, out_params):
 
 def print_latex_tables(ds, top=10, verbose=True):
     """
+    Create a string to use in latex for the top n (='top') parameters for each model state variable.
+    A model parameter is listed only for the model state variable where the sensitivity is the highest.
 
     Parameters
     ----------
-    ds
-    out_params
-    top
+    ds : xarray.Dataset
+        Final, post-processed dataset with mean squared deviation and  predicted mean squared deviation.
+    out_params : list-like of strings
+        The model state variables for which sensitivities have been calculated for.
+    top : int
+        The number of top parameters to print a table for.
     verbose : Bool
         If True: print the parameters while building the table.
 
     Returns
     -------
-    sort_key_list, table_dic, the printed statements
+    sort_key_list: a sorted list of (predicted squared error, model parameter, model state variable,
+    string of a row for model parameters in latex) which is sorted by the name of the model state variable.
+    table_dic: Dictionary with keys = model parameters where the value is a string of a row of the latex table.
+    printed statements as string.
     """
     text = "\nBuild Latex tables\n"
     print(text)
@@ -728,10 +1225,8 @@ def print_latex_tables(ds, top=10, verbose=True):
                     + latexify.parse_word(row["Input Parameter"]).replace("$", "")
                     + r"} $ & "
                     + latex_my_number(row["Mean Squared Error"])
-                    #                 + f"$ {row.MSE:1.2e} $"
                     + " & "
                     + latex_my_number(row["Predicted Squared Error"])
-                    #                 + f"$ {row.Sensitivity:1.2e} $"
                     + " & "
                     + "\\textbf{"
                     + group.title()
@@ -757,10 +1252,6 @@ def print_latex_tables(ds, top=10, verbose=True):
     print("\nThe table of top 10 parameters for each state variable:\n")
     print(top_10_table)
 
-    # print("\nThe table of top 10 parameters for each state variable sorted by sensitivity:\n")
-    # sort_key_list = sorted(sort_key_list, key=lambda x: x[0], reverse=True)
-    # for sens, key, state_variable, desc in sort_key_list:
-    #     print(table_dic[key])
     if verbose:
         print(f"There are {len(table_dic)} different input parameters")
 
@@ -822,10 +1313,15 @@ def print_latex_tables(ds, top=10, verbose=True):
 
 def print_variable_with_important_params(sort_key_list):
     """
+    Print model state variables and their number of model parameters. The number of parameters is determined
+    by associating a model parameter x with a model state variable y if the sensitivity dx/dy is highest for y.
 
     Parameters
     ----------
     sort_key_list
+        A sorted list of (predicted squared error, model parameter, model state variable,
+        string of a row for model parameters in latex) which is sorted by the name of the model state variable.
+        You may generate this using print_late_tables().
 
     Returns
     -------
@@ -849,11 +1345,19 @@ def print_variable_with_important_params(sort_key_list):
 
 def print_param_types(ds, table_dic):
     """
+    Print the type of parameters that are available in the dataset. Types are 'physical',
+    'physical (high variability)', 'artificial', and 'artificial (threshold)'. The categories had been determined
+    using the feedback of several meteorologists and are merely a guidance, not a definitive categorization.
+    In addition, a categorization into geometric, velocity related, exponents, coefficients, and miscellaneous
+    parameters is made too.
 
     Parameters
     ----------
-    ds
-    table_dic
+    ds : xarray.Dataset
+        Final, post-processed dataset with mean squared deviation and  predicted mean squared deviation.
+    table_dic : dict of strings
+        Dictionary with keys = model parameters where the value is a string of a row of the latex table.
+        This can be generated using print_latex_tables().
 
     Returns
     -------
@@ -956,11 +1460,15 @@ def print_param_types(ds, table_dic):
 
 def print_large_impact_no_sens(ds, top=50):
     """
+    Print every model parameter that shows a large error when perturbed despite a sensitivity value of zero.
+    Large is defined as an error within the top n (='top') parameters.
 
     Parameters
     ----------
-    ds :
-    top :
+    ds : xarray.Dataset
+        Final, post-processed dataset with mean squared deviation and  predicted mean squared deviation.
+    top : int
+        The number of top parameters to consider having a large impact.
 
     Returns
     -------
@@ -1006,11 +1514,14 @@ def print_large_impact_no_sens(ds, top=50):
 
 def print_table_top_lists(top_n_lists, top_orders_lists):
     """
+    Print a (pandas) table with all parameters for each top variant.
 
     Parameters
     ----------
-    top_n_lists
-    top_orders_lists
+    top_n_lists : list of lists of strings
+        List of lists of top n parameters generated using get_top_list().
+    top_orders_lists : list of lists of strings
+        List of lists of parameters within a given magnitude range generated using get_top_list().
 
     Returns
     -------
@@ -1043,6 +1554,8 @@ def print_table_top_lists(top_n_lists, top_orders_lists):
 
 def print_top_parameters(top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic):
     """
+    Print the parameters and number of parameters with a sensitivity within a magnitude
+    or within the top 10 for each output parameter.
 
     Parameters
     ----------
@@ -1088,6 +1601,7 @@ def print_top_parameters(top_magn_set, top10_set, top_magn_sens_dic, top_sens_di
 
 def traj_get_sum_derivatives(file_path):
     """
+    Calculate the sum of absolute values of sensitivities for each model state variable and model parameter.
 
     Parameters
     ----------
@@ -1097,16 +1611,23 @@ def traj_get_sum_derivatives(file_path):
 
     Returns
     -------
-    Dictionary with tracked output parameters as keys and a pandas.Dataframe with the sum of absolute values
-    of the gradients.
+    Dictionary with tracked output parameters as keys and a pandas.Dataframe with the sum of
+    absolute values of the gradients, and a list of strings with the output parameter names.
     """
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
     ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
-    out_params = ds["Output_Parameter_ID"]
+    out_param_coord = "Output_Parameter_ID"
+    if out_param_coord not in ds:
+        out_param_coord = "Output Parameter"
+        out_params = list(ds[out_param_coord].values)
+        param_name = out_params
+    else:
+        param_name = []
+        out_params = list(ds[out_param_coord].values)
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
+
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
-    param_name = []
-    for idx in out_params:
-        param_name.append(latexify.param_id_map[idx.value])
 
     sums = {}
     for f in tqdm(files):
@@ -1115,7 +1636,7 @@ def traj_get_sum_derivatives(file_path):
             ds[in_params] = np.abs(ds[in_params])
             df = (
                 ds[in_params]
-                .sel({"Output_Parameter_ID": out_p})
+                .sel({out_param_coord: out_p})
                 .sum(dim=["trajectory", "time"], skipna=True)
                 .to_dataframe()
                 .reset_index()
@@ -1129,19 +1650,21 @@ def traj_get_sum_derivatives(file_path):
     return sums, param_name
 
 
-def traj_get_top_params(dict_of_df, param_name, n, orders, get_values=False):
+def traj_get_top_params(dict_of_df, param_name, n, orders):
     """
+    Given the results of get_sums() or get_sums_phase(), get the parameters with the highest sensitivities,
+    within a given order of magnitude or within the top n parameters.
 
     Parameters
     ----------
-    dict_of_df
-    param_name
+    dict_of_df : dict of pandas.DataFrame
+        Dictionary with (phase +) model state variables as keys and the sums for each gradients as pandas.DataFrame.
+    param_name : list-like of strings
+        Keys of dict_of_df.
     n : int
         Get the top n parameters for each tracked model state variable
     orders : int or float
         Get the parameters within orders many orders of magnitude for each tracked model state variable
-    get_values : bool
-        Return names paired with values.
 
     Returns
     -------
@@ -1172,53 +1695,76 @@ def traj_get_top_params(dict_of_df, param_name, n, orders, get_values=False):
     return top_magn_set, top10_set, top_magn_sens_dic, top_sens_dic
 
 
-def get_sum_wrt(
-    file_path, wrt, in_params=None, out_params=None, n_bins=100, additional_params=None
+def get_edges(
+    min_max,
+    min_max_in_params,
+    in_params,
+    param_name,
+    additional_params,
+    n_bins,
+    verbose=False,
 ):
     """
+    Create edges for 1D or 2D histograms.
 
     Parameters
     ----------
-    file_path
-    wrt
-    in_params
-    out_params
-    n_bins
-    additional_params
+    min_max : Dict of lists with two floats
+        Keys are model state variables, values are [minimum, maximum] floats.
+    min_max_in_params : Dict of dict of lists with two floats
+        First keys are model state variablees, second keys are model parameters. The values are [minimum, maximum]
+        floats.
+    in_params : List of strings
+        Names of model parameters.
+    param_name : List of strings
+        Name of model state variables for which sensitivities are available.
+    additional_params : List of strings
+        List of additional model state variables to get edges for.
+    n_bins : int
+        Number of bins.
+    verbose : bool
+        More progressbars.
 
     Returns
     -------
-
+    Dict of lists of floats (edges for model state variables), Dict of dict of lists of floats (edges
+    for model parameters for each model state variable defined in param_name).
     """
-    files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
-    ds = None
-    if in_params is None:
-        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
-        in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
 
-    if out_params is None:
-        if ds is None:
-            ds = xr.open_dataset(
-                file_path + files[0], decode_times=False, engine="netcdf4"
+    edges = {}
+    edges_in_params = {}
+    for out_p in param_name:
+        # -2 because we add one bin each to the left and right to catch any
+        # floats just on the edge.
+        delta = (min_max[out_p][1] - min_max[out_p][0]) / (n_bins - 2)
+        edges[out_p] = np.arange(
+            min_max[out_p][0] - delta, min_max[out_p][1] + 0.5 * delta, delta
+        )
+        edges_in_params[out_p] = {}
+        for in_p in in_params:
+            if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][
+                1
+            ] or np.isnan(min_max_in_params[out_p][in_p][0]):
+                continue
+            delta = (
+                min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
+            ) / (n_bins - 2)
+            edges_in_params[out_p][in_p] = np.arange(
+                min_max_in_params[out_p][in_p][0] - delta,
+                min_max_in_params[out_p][in_p][1] + 0.5 * delta,
+                delta,
             )
-        out_params = ds["Output_Parameter_ID"]
-
-    param_name = []
-    for idx in out_params:
-        param_name.append(latexify.param_id_map[idx.values])
-
-    min_max = None
-    for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
-        min_p = np.min(ds[wrt]).values
-        max_p = np.max(ds[wrt]).values
-        if min_max is not None:
-            if min_p < min_max[0]:
-                min_max[0] = min_p
-            if max_p > min_max[1]:
-                min_max[1] = max_p
-        else:
-            min_max = [min_p, max_p]
+    if additional_params is not None:
+        for out_p in (
+            tqdm(additional_params, leave=False) if verbose else additional_params
+        ):
+            if min_max[out_p][0] == min_max[out_p][1] or np.isnan(min_max[out_p][0]):
+                continue
+            delta = (min_max[out_p][1] - min_max[out_p][0]) / (n_bins - 2)
+            edges[out_p] = np.arange(
+                min_max[out_p][0] - delta, min_max[out_p][1] + 0.5 * delta, delta
+            )
+    return edges, edges_in_params
 
 
 def get_histogram(
@@ -1228,24 +1774,60 @@ def get_histogram(
     n_bins=100,
     additional_params=None,
     only_asc600=False,
+    only_phase=None,
     inoutflow_time=-1,
+    filter_mag=None,
+    means=None,
+    verbose=False,
 ):
     """
+    Calculate 1D histograms.
 
     Parameters
     ----------
-    file_path
-    in_params
-    out_params
-    n_bins
-    additional_params=None,
-    only_asc600
-    inoutflow_time
+    file_path : string
+        Path to a folder with many files from a sensitivity analysis simulation.
+    in_params : list-like of strings
+        List of model parameters.
+    out_params : list of strings or ints
+        Define for which output parameters the sensitivities should be considered for.
+        Can be either ids ("Output_Parameter_ID") or the names of the parameters, e.g., "QV".
+    n_bins : int
+        Number of bins.
+    additional_params : list-like of strings
+        Additional parameters that are not model parameters and for which no sensitivity is available but you
+        wish to have a histogram for.
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    only_phase : string
+        Consider only time steps with the given phase. Can be combined with only_asc600 or inoutflow_time.
+        Possible values are "warm phase", "mixed phase", "ice phase", "neutral phase".
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
+    filter_mag : float
+        Filter all values that are more than the given magnitude larger or smaller
+        than the mean.
+    means : Dictionary of floats
+        Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter).
+    verbose : bool
+        Additional progressbars.
 
     Returns
     -------
-
+    Dictionary with the following keys and values:
+    hist_out_params: Dictionary (keys = model state variable) of arrays with values of the histogram for the given key.
+    hist_in_params: Dictionary (keys = model state variable) of dictionaries (keys = model parameters) of arrays with
+        values of the histogram for the given key.
+    edges_out_params: Dictionary (keys = model state variable) of arrays with the bin edges for the given key.
+    edges_in_params: Dictionary (keys = model state variable) of dictionaries (keys = model parameters) of arrays with
+        the bin edges for the given keys.
     """
+    phases = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
+    if only_phase is not None and only_phase not in phases:
+        raise (
+            f"You asked for phase {only_phase}, which does not exist."
+            f"Possible phases are {phases}"
+        )
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
     ds = None
     if in_params is None:
@@ -1259,17 +1841,39 @@ def get_histogram(
             )
         out_params = ds["Output_Parameter_ID"]
 
-    param_name = []
-    for idx in out_params:
-        param_name.append(latexify.param_id_map[idx.values])
+        param_name = []
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
+    else:
+        param_name = []
+        tmp = []
+        for idx in out_params:
+            if isinstance(idx, int):
+                param_name.append(latexify.param_id_map[idx])
+            else:
+                param_name.append(idx)
+                tmp.append(np.argwhere(np.asarray(latexify.param_id_map) == idx).item())
+        for i in range(len(tmp)):
+            out_params[i] = tmp[i]
 
     min_max = {}
     min_max_in_params = {}
     for out_p in param_name:
         min_max_in_params[out_p] = {}
+    load_params = param_name.copy()
+    if inoutflow_time > 0 or only_asc600:
+        load_params.append("asc600")
+    if only_phase is not None:
+        load_params.append("phase")
+    if in_params is not None:
+        load_params.extend(in_params)
+    if additional_params is not None:
+        load_params.extend(additional_params)
 
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+            load_params
+        ]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -1280,12 +1884,25 @@ def get_histogram(
             ds = ds.where(ds_flow == 1)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
-        for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(param_name)
+        if only_phase is not None:
+            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+                ds["phase"] = ds["phase"].astype(np.uint64)
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+            elif ds["phase"].dtype == str:
+                ds = ds.where(ds["phase"] == only_phase)
+            else:
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+        for out_p, out_name in (
+            tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
+            if verbose
+            else zip(out_params, param_name)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
-            min_p = np.min(ds_tmp[out_name]).values
-            max_p = np.max(ds_tmp[out_name]).values
+
+            min_p = np.nanmin(ds_tmp[out_name])
+            max_p = np.nanmax(ds_tmp[out_name])
             if out_name in min_max.keys():
                 if min_p < min_max[out_name][0]:
                     min_max[out_name][0] = min_p
@@ -1293,9 +1910,18 @@ def get_histogram(
                     min_max[out_name][1] = max_p
             else:
                 min_max[out_name] = [min_p, max_p]
-            for in_p in tqdm(in_params, leave=False):
-                min_p = np.min(ds_tmp[in_p]).values
-                max_p = np.max(ds_tmp[in_p]).values
+            for in_p in tqdm(in_params, leave=False) if verbose else in_params:
+                if filter_mag is not None and means is not None:
+                    mean = means[out_name][in_p]
+                    filtered_ds = ds_tmp[in_p]
+                    filtered_ds = filtered_ds.where(
+                        np.abs(np.log10(np.abs(filtered_ds / mean))) <= filter_mag
+                    )
+                    min_p = np.nanmin(filtered_ds)
+                    max_p = np.nanmax(filtered_ds)
+                else:
+                    min_p = np.nanmin(ds_tmp[in_p])
+                    max_p = np.nanmax(ds_tmp[in_p])
                 if in_p in min_max_in_params[out_name]:
                     if min_p < min_max_in_params[out_name][in_p][0]:
                         min_max_in_params[out_name][in_p][0] = min_p
@@ -1304,9 +1930,11 @@ def get_histogram(
                 else:
                     min_max_in_params[out_name][in_p] = [min_p, max_p]
         if additional_params is not None:
-            for out_p in tqdm(additional_params, leave=False):
-                min_p = np.min(ds[out_p]).values
-                max_p = np.max(ds[out_p]).values
+            for out_p in (
+                tqdm(additional_params, leave=False) if verbose else additional_params
+            ):
+                min_p = np.nanmin(ds[out_p])
+                max_p = np.nanmax(ds[out_p])
                 if out_p in min_max.keys():
                     if min_p < min_max[out_p][0]:
                         min_max[out_p][0] = min_p
@@ -1315,37 +1943,22 @@ def get_histogram(
                 else:
                     min_max[out_p] = [min_p, max_p]
 
-    edges = {}
-    edges_in_params = {}
-    for out_p in param_name:
-        delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
-        edges[out_p] = np.arange(
-            min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
-        )
-        edges_in_params[out_p] = {}
-        for in_p in in_params:
-            delta = (
-                min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
-            ) / n_bins
-            if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][1]:
-                continue
-            else:
-                edges_in_params[out_p][in_p] = np.arange(
-                    min_max_in_params[out_p][in_p][0],
-                    min_max_in_params[out_p][in_p][1] + delta / 2,
-                    delta,
-                )
-    if additional_params is not None:
-        for out_p in tqdm(additional_params, leave=False):
-            delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
-            edges[out_p] = np.arange(
-                min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
-            )
+    edges, edges_in_params = get_edges(
+        min_max=min_max,
+        min_max_in_params=min_max_in_params,
+        in_params=in_params,
+        param_name=param_name,
+        additional_params=additional_params,
+        n_bins=n_bins,
+        verbose=verbose,
+    )
 
     hist = {}
     hist_in_params = {}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+            load_params
+        ]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -1356,8 +1969,20 @@ def get_histogram(
             ds = ds.where(ds_flow == 1)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
-        for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(param_name)
+        if only_phase is not None:
+            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+                ds["phase"] = ds["phase"].astype(np.uint64)
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+            elif ds["phase"].dtype == str:
+                ds = ds.where(ds["phase"] == only_phase)
+            else:
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+        for out_p, out_name in (
+            tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
+            if verbose
+            else zip(out_params, param_name)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
             hist_tmp, _ = np.histogram(ds[out_name], edges[out_name])
@@ -1366,7 +1991,7 @@ def get_histogram(
             else:
                 hist[out_name] = hist_tmp
                 hist_in_params[out_name] = {}
-            for in_p in tqdm(in_params, leave=False):
+            for in_p in tqdm(in_params, leave=False) if verbose else in_params:
                 if in_p not in edges_in_params[out_name]:
                     continue
                 hist_tmp, _ = np.histogram(
@@ -1377,7 +2002,13 @@ def get_histogram(
                 else:
                     hist_in_params[out_name][in_p] = hist_tmp
         if additional_params is not None:
-            for out_p in tqdm(additional_params, leave=False):
+            for out_p in (
+                tqdm(additional_params, leave=False) if verbose else additional_params
+            ):
+                if out_p not in edges:
+                    # In case no values for the additional parameters are available, i.e.,
+                    # because only_phase is warm phase but QI is given in additonal_params.
+                    continue
                 hist_tmp, _ = np.histogram(ds[out_p], edges[out_p])
                 if out_p in hist:
                     hist[out_p] += hist_tmp
@@ -1400,7 +2031,11 @@ def get_histogram_cond(
     n_bins=100,
     additional_params=[],
     only_asc600=False,
+    only_phase=None,
     inoutflow_time=-1,
+    filter_mag=None,
+    means=None,
+    verbose=False,
 ):
     """
     Get a 2D histogram where 'cond' is the parameter for which the edges are calculated. The final 2D histogram
@@ -1409,19 +2044,52 @@ def get_histogram_cond(
 
     Parameters
     ----------
-    file_path
-    in_params
-    out_params
+    file_path : string
+        Path to a folder with many files from a sensitivity analysis simulation.
+    in_params : list-like of strings
+        List of model parameters.
+    out_params : list of strings or ints
+        Define for which output parameters the sensitivities should be considered for.
+        Can be either ids ("Output_Parameter_ID") or the names of the parameters, e.g., "QV".
     conditional_hist : string
         The model state variable (aka output parameter) for which additional edges shall be calculated.
-    n_bins
-    additional_params=None,
-    only_asc600
+    n_bins : int
+        Number of bins.
+    additional_params : list-like of strings
+        Additional parameters that are not model parameters and for which no sensitivity is available but you
+        wish to have a histogram for.
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    only_phase : string
+        Consider only time steps with the given phase. Can be combined with only_asc600 or inoutflow_time.
+        Possible values are "warm phase", "mixed phase", "ice phase", "neutral phase".
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
+    filter_mag : float
+        Filter all values that are more than the given magnitude larger or smaller
+        than the mean.
+    means : Dictionary of floats
+        Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter).
+    verbose : bool
+        Additional progressbars.
 
     Returns
     -------
-
+    Dictionary with the following keys:
+    'edges_out_params': Dictionary where the keys are model state variables and the values are arrays of bin edges.
+    'edges_in_params': Dictionary where the keys are model state variables for which sensitivities are available
+        and the values are dictionaries of model parameters with arrays of bin edges.
+    model state variables: Each model state variable has a dictionary for 'hist_out_params' and 'hist_in_params'.
+    'hist_out_params' is a dictionary of model state variables with arrays of bin counts.
+    'hist_in_params' is a dictionary of model state variables for which sensitivities are available
+        and the values are dictionaries of model parameters with arrays of bin counts.
     """
+    phases = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
+    if only_phase is not None and only_phase not in phases:
+        raise (
+            f"You asked for phase {only_phase}, which does not exist."
+            f"Possible phases are {phases}"
+        )
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
     ds = None
     if in_params is None:
@@ -1433,22 +2101,45 @@ def get_histogram_cond(
             ds = xr.open_dataset(
                 file_path + files[0], decode_times=False, engine="netcdf4"
             )
-        out_params = ds["Output_Parameter_ID"]
+        out_params = list(ds["Output_Parameter_ID"].values)
+        param_name = []
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx])
+    else:
+        param_name = []
+        tmp = []
+        for idx in out_params:
+            if isinstance(idx, int):
+                param_name.append(latexify.param_id_map[idx])
+            else:
+                param_name.append(idx)
+                tmp.append(np.argwhere(np.asarray(latexify.param_id_map) == idx).item())
+        for i in range(len(tmp)):
+            out_params[i] = tmp[i]
+
     for cond in conditional_hist:
         if cond not in additional_params:
             additional_params.append(cond)
-
-    param_name = []
-    for idx in out_params:
-        param_name.append(latexify.param_id_map[idx.values])
 
     min_max = {}
     min_max_in_params = {}
     for out_p in param_name:
         min_max_in_params[out_p] = {}
 
+    load_params = param_name.copy()
+    if inoutflow_time > 0 or only_asc600:
+        load_params.append("asc600")
+    if only_phase is not None:
+        load_params.append("phase")
+    if in_params is not None:
+        load_params.extend(in_params)
+    if additional_params is not None:
+        load_params.extend(additional_params)
+
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+            load_params
+        ]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -1459,12 +2150,24 @@ def get_histogram_cond(
             ds = ds.where(ds_flow == 1)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
-        for out_p, out_name in tqdm(
-            zip(out_params, param_name), leave=False, total=len(param_name)
+        if only_phase is not None:
+            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+                ds["phase"] = ds["phase"].astype(np.uint64)
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+            elif ds["phase"].dtype == str:
+                ds = ds.where(ds["phase"] == only_phase)
+            else:
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+        for out_p, out_name in (
+            tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
+            if verbose
+            else zip(out_params, param_name)
         ):
             ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
-            min_p = np.min(ds_tmp[out_name]).values
-            max_p = np.max(ds_tmp[out_name]).values
+            min_p = np.nanmin(ds_tmp[out_name])
+            max_p = np.nanmax(ds_tmp[out_name])
             if out_name in min_max.keys():
                 if min_p < min_max[out_name][0]:
                     min_max[out_name][0] = min_p
@@ -1472,9 +2175,18 @@ def get_histogram_cond(
                     min_max[out_name][1] = max_p
             else:
                 min_max[out_name] = [min_p, max_p]
-            for in_p in tqdm(in_params, leave=False):
-                min_p = np.min(ds_tmp[in_p]).values
-                max_p = np.max(ds_tmp[in_p]).values
+            for in_p in tqdm(in_params, leave=False) if verbose else in_params:
+                if filter_mag is not None and means is not None:
+                    mean = means[out_name][in_p]
+                    filtered_ds = ds_tmp[in_p]
+                    filtered_ds = filtered_ds.where(
+                        np.abs(np.log10(np.abs(filtered_ds / mean))) <= filter_mag
+                    )
+                    min_p = np.nanmin(filtered_ds)
+                    max_p = np.nanmax(filtered_ds)
+                else:
+                    min_p = np.nanmin(ds_tmp[in_p])
+                    max_p = np.nanmax(ds_tmp[in_p])
                 if in_p in min_max_in_params[out_name]:
                     if min_p < min_max_in_params[out_name][in_p][0]:
                         min_max_in_params[out_name][in_p][0] = min_p
@@ -1482,9 +2194,11 @@ def get_histogram_cond(
                         min_max_in_params[out_name][in_p][1] = max_p
                 else:
                     min_max_in_params[out_name][in_p] = [min_p, max_p]
-        for out_p in tqdm(additional_params, leave=False):
-            min_p = np.min(ds[out_p]).values
-            max_p = np.max(ds[out_p]).values
+        for out_p in (
+            tqdm(additional_params, leave=False) if verbose else additional_params
+        ):
+            min_p = np.nanmin(ds[out_p])
+            max_p = np.nanmax(ds[out_p])
             if out_p in min_max.keys():
                 if min_p < min_max[out_p][0]:
                     min_max[out_p][0] = min_p
@@ -1493,31 +2207,15 @@ def get_histogram_cond(
             else:
                 min_max[out_p] = [min_p, max_p]
 
-    edges = {}
-    edges_in_params = {}
-    for out_p in param_name:
-        delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
-        edges[out_p] = np.arange(
-            min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
-        )
-        edges_in_params[out_p] = {}
-        for in_p in in_params:
-            delta = (
-                min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
-            ) / n_bins
-            if min_max_in_params[out_p][in_p][0] == min_max_in_params[out_p][in_p][1]:
-                continue
-            else:
-                edges_in_params[out_p][in_p] = np.arange(
-                    min_max_in_params[out_p][in_p][0],
-                    min_max_in_params[out_p][in_p][1] + delta / 2,
-                    delta,
-                )
-    for out_p in tqdm(additional_params, leave=False):
-        delta = (min_max[out_p][1] - min_max[out_p][0]) / n_bins
-        edges[out_p] = np.arange(
-            min_max[out_p][0], min_max[out_p][1] + delta / 2, delta
-        )
+    edges, edges_in_params = get_edges(
+        min_max=min_max,
+        min_max_in_params=min_max_in_params,
+        in_params=in_params,
+        param_name=param_name,
+        additional_params=additional_params,
+        n_bins=n_bins,
+        verbose=verbose,
+    )
 
     hist_conditional = {
         "edges_out_params": edges,
@@ -1525,7 +2223,9 @@ def get_histogram_cond(
     }
 
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+            load_params
+        ]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -1536,15 +2236,33 @@ def get_histogram_cond(
             ds = ds.where(ds_flow == 1)
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
-        for cond in tqdm(conditional_hist, leave=False):
+        if only_phase is not None:
+            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+                ds["phase"] = ds["phase"].astype(np.uint64)
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+            elif ds["phase"].dtype == str:
+                ds = ds.where(ds["phase"] == only_phase)
+            else:
+                phase_idx = np.argwhere(phases == only_phase)[0].item()
+                ds = ds.where(ds["phase"] == phase_idx)
+        for cond in (
+            tqdm(conditional_hist, leave=False) if verbose else conditional_hist
+        ):
+            if cond not in edges:
+                continue
             if cond not in hist_conditional:
                 hist_conditional[cond] = {
                     "hist_out_params": {},
                     "hist_in_params": {},
                 }
-            for out_p, out_name in tqdm(
-                zip(out_params, param_name), leave=False, total=len(param_name)
+            for out_p, out_name in (
+                tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
+                if verbose
+                else zip(out_params, param_name)
             ):
+                if out_name not in edges:
+                    continue
                 ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
                 hist_tmp, _, _ = np.histogram2d(
                     ds[cond].values.flatten(),
@@ -1556,7 +2274,7 @@ def get_histogram_cond(
                 else:
                     hist_conditional[cond]["hist_out_params"][out_name] = hist_tmp
                     hist_conditional[cond]["hist_in_params"][out_name] = {}
-                for in_p in tqdm(in_params, leave=False):
+                for in_p in tqdm(in_params, leave=False) if verbose else in_params:
                     if in_p not in edges_in_params[out_name]:
                         continue
                     hist_tmp, _, _ = np.histogram2d(
@@ -1572,8 +2290,14 @@ def get_histogram_cond(
                         hist_conditional[cond]["hist_in_params"][out_name][
                             in_p
                         ] = hist_tmp
-            for out_p in tqdm(additional_params, leave=False):
+            for out_p in (
+                tqdm(additional_params, leave=False) if verbose else additional_params
+            ):
                 if out_p == cond:
+                    continue
+                if out_p not in edges:
+                    # In case no values for the additional parameters are available, i.e.,
+                    # because only_phase is warm phase but QI is given in additonal_params.
                     continue
                 hist_tmp, _, _ = np.histogram2d(
                     ds[cond].values.flatten(),
@@ -1895,6 +2619,8 @@ def plot_heatmap_traj(
         Height in inches
     title : string
         Title of the histogram. If none is given, a title will be generated.
+    verbose : bool
+        Additional output.
     """
     sns.set(rc={"figure.figsize": (width, height)})
     # sort the histogram by a simple similarity metric. It is not perfect but better than random.
@@ -2036,12 +2762,18 @@ def get_sums(
     inoutflow_time=-1,
 ):
     """
-    Calculate the sum for all gradients over all time steps and trajectories.
+    Calculate the sum for all gradients over all time steps and trajectories for multiple files.
 
     Parameters
     ----------
     file_path : string
         Path to NetCDF-files with trajectories from a sensitivity analysis simulation.
+    store_path : string
+        If a store path is given then dumps the sums to 'f{store_path}_sums.pkl'.
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
 
     Returns
     -------
@@ -2049,10 +2781,16 @@ def get_sums(
     """
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
     ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
-    out_params = ds["Output_Parameter_ID"]
-    param_name = []
-    for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p.values.item()])
+    out_param_coord = "Output_Parameter_ID"
+    if "Output_Parameter_ID" not in ds:
+        out_param_coord = "Output Parameter"
+        out_params = list(ds[out_param_coord].values)
+        param_name = out_params
+    else:
+        out_params = list(ds[out_param_coord].values)
+        param_name = []
+        for out_p in out_params:
+            param_name.append(latexify.param_id_map[out_p.values.item()])
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
     for f in tqdm(files):
@@ -2073,7 +2811,7 @@ def get_sums(
         ):
             df = (
                 ds[in_params]
-                .sel({"Output_Parameter_ID": out_p})
+                .sel({out_param_coord: out_p})
                 .sum(dim=["trajectory", "time"], skipna=True)
                 .to_dataframe()
                 .reset_index()
@@ -2103,6 +2841,12 @@ def get_sums_phase(
     ----------
     file_path : string
         Path to NetCDF-files with trajectories from a sensitivity analysis simulation.
+    store_path : string
+        If a store path is given then dumps the sums to 'f{store_path}_sums_phase.pkl'.
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
 
     Returns
     -------
@@ -2110,10 +2854,17 @@ def get_sums_phase(
     """
     files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
     ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
-    out_params = ds["Output_Parameter_ID"]
-    param_name = []
-    for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p.values.item()])
+    out_param_coord = "Output_Parameter_ID"
+    if out_param_coord not in ds:
+        out_param_coord = "Output Parameter"
+        out_params = list(ds[out_param_coord].values)
+        param_name = out_params
+    else:
+        param_name = []
+        out_params = list(ds[out_param_coord].values)
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
+
     phases = ["warm phase", "mixed phase", "ice phase", "neutral phase"]
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
@@ -2135,7 +2886,7 @@ def get_sums_phase(
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
-            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            ds_tmp = ds.sel({out_param_coord: out_p})
             for phase_i, phase in enumerate(phases):
                 if ds_tmp["phase"].dtype == str:
                     idx = np.where(ds_tmp["phase"] == phase)
@@ -2155,46 +2906,62 @@ def get_sums_phase(
 
 
 def get_cov_matrix(
-    input_filepath,
+    file_path,
     in_params=None,
-    filepath=None,
+    store_path=None,
     only_asc600=False,
     inoutflow_time=-1,
 ):
     """
+    Calculate the means and covariance matrices for model state variables and sensitivities. For each model state
+    variable with sensitivities there will be a different covariance matrix.
 
     Parameters
     ----------
-    input_filepath
-    in_params
-    filepath
+    file_path : string
+        Path to NetCDF-files with trajectories from a sensitivity analysis simulation.
+    in_params : list-like of strings
+        List of model parameters.
+    store_path : string
+        If a store path is given then dumps the means to 'f{store_path}_means.pkl'
+        and the covariance matrix to f'{store_path}_covariance_matrix.pkl'.
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
 
     Returns
     -------
-
+    means, cov, where means is a dictionary of model state variables with available sensitivities and values are
+    dictionaries with model parameters/state variables as keys and the mean values as values, i.e., the mean value
+    of dQV/db_v is means['QV']['db_v'], the mean value of QV is means[any key]['QV'].
+    cov is a dictionary of covariance matrices. The keys are model state variables with available sensitivities.
+    The values are matrices where covariances are given for sensitivities for the respective model state variable.
     """
-    files = [
-        f for f in os.listdir(input_filepath) if os.path.isfile(input_filepath + f)
-    ]
-    ds = xr.open_dataset(
-        input_filepath + files[0], decode_times=False, engine="netcdf4"
-    )
+    files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+    ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
     if in_params is None:
         in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
-    out_params = ds["Output_Parameter_ID"]
-    param_name = []
+    out_param_coord = "Output_Parameter_ID"
+    if out_param_coord not in ds:
+        out_param_coord = "Output Parameter"
+        out_params = list(ds[out_param_coord].values)
+        param_name = out_params
+    else:
+        param_name = []
+        out_params = list(ds[out_param_coord].values)
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
     more_params = []
     if only_asc600 or inoutflow_time > 0:
         more_params.append("asc600")
-    for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p.values.item()])
     all_params = param_name + in_params
     n = len(all_params)
     means = {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
     cov = {out_p: np.zeros((n, n), dtype=np.float64) for out_p in param_name}
     n_total = {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
     for f in tqdm(files):
-        ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
             all_params + more_params
         ]
         if inoutflow_time > 0:
@@ -2210,7 +2977,7 @@ def get_cov_matrix(
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
-            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            ds_tmp = ds.sel({out_param_coord: out_p})
             means_tmp = ds_tmp.mean(skipna=True)
             count_tmp = (~np.isnan(ds_tmp)).sum()
             for p in means[out_name]:
@@ -2230,7 +2997,7 @@ def get_cov_matrix(
 
     n_total = {out_p: {p: 0.0 for p in all_params} for out_p in param_name}
     for f in tqdm(files):
-        ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
             all_params + more_params
         ]
         if inoutflow_time > 0:
@@ -2246,7 +3013,7 @@ def get_cov_matrix(
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
-            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            ds_tmp = ds.sel({out_param_coord: out_p})
             count_tmp = (~np.isnan(ds_tmp)).sum()
             for i, p in enumerate(means[out_name]):
                 if n_total[out_name][p] > 0:
@@ -2272,48 +3039,66 @@ def get_cov_matrix(
                                 * (ds_tmp[p2].values - means[out_name][p2])
                             )
                         n_total[out_name][p] = n_new
-    if filepath is not None and filepath != "no":
-        with open(filepath + "_means.pkl", "wb") as f:
+    if store_path is not None and store_path != "no":
+        with open(store_path + "_means.pkl", "wb") as f:
             pickle.dump(means, f)
-        with open(filepath + "_covariance_matrix.pkl", "wb") as f:
+        with open(store_path + "_covariance_matrix.pkl", "wb") as f:
             pickle.dump(cov, f)
     return means, cov
 
 
 def get_cov_matrix_phase(
-    input_filepath,
+    file_path,
     in_params=None,
-    filepath=None,
+    store_path=None,
     only_asc600=False,
     inoutflow_time=-1,
 ):
     """
+    Calculate the means and covariance matrices for model state variables and sensitivities. For each model state
+    variable with sensitivities and each phase, there will be a different covariance matrix.
 
     Parameters
     ----------
-    input_filepath
-    in_params
-    filepath
+    file_path : string
+        Path to NetCDF-files with trajectories from a sensitivity analysis simulation.
+    in_params : list-like of strings
+        List of model parameters.
+    store_path : string
+        If a store path is given then dumps the means to 'f{store_path}_means_phases.pkl'
+        and the covariance matrix to f'{store_path}_covariance_matrix_phases.pkl'.
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
 
     Returns
     -------
-
+    means, cov, where means is a dictionary of phases and then of model state variables with available sensitivities
+    and values are dictionaries with model parameters/state variables as keys and the mean values as values, i.e.,
+    the mean value of dQV/db_v during the warm phase is means['warm phase']['QV']['db_v'],
+    the mean value of QV during the warm phase is means['warm phase'][any key]['QV'].
+    cov is a dictionary of covariance matrices. The first keys are phases, the second keys are model state variables
+    with available sensitivities.
+    The values are matrices where covariances are given for sensitivities for the respective model state variable.
     """
-    files = [
-        f for f in os.listdir(input_filepath) if os.path.isfile(input_filepath + f)
-    ]
-    ds = xr.open_dataset(
-        input_filepath + files[0], decode_times=False, engine="netcdf4"
-    )
+    files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+    ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
     if in_params is None:
         in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
-    out_params = ds["Output_Parameter_ID"]
-    param_name = []
+    out_param_coord = "Output_Parameter_ID"
+    if out_param_coord not in ds:
+        out_param_coord = "Output Parameter"
+        out_params = list(ds[out_param_coord].values)
+        param_name = out_params
+    else:
+        param_name = []
+        out_params = list(ds[out_param_coord].values)
+        for idx in out_params:
+            param_name.append(latexify.param_id_map[idx.values])
     more_params = ["phase"]
     if only_asc600 or inoutflow_time > 0:
         more_params.append("asc600")
-    for out_p in out_params:
-        param_name.append(latexify.param_id_map[out_p.values.item()])
     phases = ["warm phase", "mixed phase", "ice phase", "neutral phase"]
     all_params = param_name + in_params
     n = len(all_params)
@@ -2330,7 +3115,7 @@ def get_cov_matrix_phase(
         for phase in phases
     }
     for f in tqdm(files):
-        ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
             all_params + more_params
         ]
         if inoutflow_time > 0:
@@ -2348,7 +3133,7 @@ def get_cov_matrix_phase(
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
-            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            ds_tmp = ds.sel({out_param_coord: out_p})
 
             for phase_i, phase in enumerate(tqdm(phases, leave=False)):
                 if ds_tmp["phase"].dtype == str:
@@ -2380,7 +3165,7 @@ def get_cov_matrix_phase(
         for phase in phases
     }
     for f in tqdm(files):
-        ds = xr.open_dataset(input_filepath + f, decode_times=False, engine="netcdf4")[
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
             all_params + more_params
         ]
         if inoutflow_time > 0:
@@ -2398,7 +3183,7 @@ def get_cov_matrix_phase(
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
-            ds_tmp = ds.sel({"Output_Parameter_ID": out_p})
+            ds_tmp = ds.sel({out_param_coord: out_p})
             for phase_i, phase in enumerate(tqdm(phases, leave=False)):
                 if ds_tmp["phase"].dtype == str:
                     idx = np.where(ds_tmp["phase"] == phase)
@@ -2440,10 +3225,10 @@ def get_cov_matrix_phase(
                                     )
                                 )
                             n_total[phase][out_name][p] = n_new
-    if filepath is not None and filepath != "no":
-        with open(filepath + "_means_phases.pkl", "wb") as f:
+    if store_path is not None and store_path != "no":
+        with open(store_path + "_means_phases.pkl", "wb") as f:
             pickle.dump(means, f)
-        with open(filepath + "_covariance_matrix_phases.pkl", "wb") as f:
+        with open(store_path + "_covariance_matrix_phases.pkl", "wb") as f:
             pickle.dump(cov, f)
     return means, cov
 
@@ -2465,20 +3250,35 @@ def plot_heatmap_cov(
 
     Parameters
     ----------
-    data_in
-    out_param
-    names
-    in_params
-    plot_type
-    norm
-    title
-    filename
-    width
-    height
+    data_in : dictionary of matrices
+        The keys are model state variables with available sensitivities.
+        The values are matrices where covariances are given for sensitivities for the respective model state variable.
+        The data can be generated using get_cov_matrix().
+    out_param : string
+        The model state variable for which the sensitivities shall be plotted for.
+    names : list of strings
+        The names of each column/row in the covariance matrix. The index of names is the row/column of the
+        covariance matrix.
+    in_params : list-like of strings
+        List of model parameters or model states to plot in the covariance matrix.
+    plot_type : string
+        Define if only negative (='negative'), positive (='positive'), or all ('all') values shall be plotted.
+        If 'all' is chosen and a norm other than SymLogNorm is given, the absolute values will be plotted.
+    norm : matplotlib.colors normalization instance
+        A normalization for the colormap, such as matplotlib.colors.SymLogNorm()
+    title : string
+        Optional title for the plot. Otherwise a standard name will be used.
+    filename : string
+        Path and filename to save the plot on disk. The filename will be numerated.
+        If a file with the same name already exists, the number will be incremented.
+    width : float
+        Width in inches
+    height : float
+        Height in inches
 
     Returns
     -------
-
+    If successful, returns matplotlib.axes. Otherwise returns None.
     """
     sns.set(rc={"figure.figsize": (width, height)})
     data = copy.deepcopy(data_in[out_param])
@@ -2497,7 +3297,11 @@ def plot_heatmap_cov(
         data[np.where(data >= 0)] = np.nan
     elif plot_type == "positive":
         data[np.where(data < 0)] = np.nan
-    if norm is not None and plot_type != "positive":
+    if (
+        norm is not None
+        and plot_type != "positive"
+        and not isinstance(norm, mpl_col.SymLogNorm)
+    ):
         data = np.abs(data)
     try:
         g = sns.heatmap(
@@ -2544,6 +3348,7 @@ def plot_heatmap_histogram(
     filename=None,
     width=17,
     height=16,
+    log=True,
     font_scale=None,
     save=True,
     interactive=False,
@@ -2554,12 +3359,21 @@ def plot_heatmap_histogram(
 
     Parameters
     ----------
-    hist_conditional :
-
+    hist_conditional : Dictionary with edges and bin counts
+        The dictionary generated using get_histogram_cond(). It has the following keys:
+        'edges_out_params': Dictionary where the keys are model state variables and the values are arrays of bin edges.
+        'edges_in_params': Dictionary where the keys are model state variables for which sensitivities are available
+            and the values are dictionaries of model parameters with arrays of bin edges.
+        model state variables: Each model state variable has a dictionary for 'hist_out_params' and 'hist_in_params'.
+        'hist_out_params' is a dictionary of model state variables with arrays of bin counts.
+        'hist_in_params' is a dictionary of model state variables for which sensitivities are available
+            and the values are dictionaries of model parameters with arrays of bin counts.
     in_params : list of strings
-
+        A list of model parameters.
     out_params : list of strings
-
+        A list of model state variables with available sensitivities.
+    conditions : list of strings
+        A list of model state variables for the x-axis.
     title : string
         Title of the histogram. If none is given, a title will be generated.
     filename : string
@@ -2570,6 +3384,8 @@ def plot_heatmap_histogram(
         Height in inches
     font_scale : float
         Scale the fontsize for the title, labels and ticks.
+    log : bool
+        Plot the histograms using a log-scale
     save : bool
         Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
     interactive : bool
@@ -2579,7 +3395,8 @@ def plot_heatmap_histogram(
 
     Returns
     -------
-    If filename is given, returns None. If filename is None, returns the matplotlib.figure.Figure with the plot drawn onto it.
+    If filename is given, returns None. If filename is None, returns the matplotlib.figure.Figure with the plot drawn
+     onto it.
     """
     sns.set(rc={"figure.figsize": (width, height)})
     if interactive:
@@ -2589,12 +3406,14 @@ def plot_heatmap_histogram(
     else:
         fig = None
         ax = None
+    norm = None
+    if log:
+        norm = mpl_col.LogNorm()
 
     def plot_hist(
         hist2d, x_name, y_name, x_ticks, y_ticks, title=None, p=None, ax=None
     ):
         if title is None:
-            # title = f"Histograms for {latexify.parse_word(x_name)} and {latexify.parse_word(y_name)}"
             if p is None:
                 title = f"Histogram for {y_name} over {x_name}"
             else:
@@ -2613,7 +3432,7 @@ def plot_heatmap_histogram(
                     cmap="viridis",
                     cbar=True,
                     square=True,
-                    norm=mpl_col.LogNorm(),
+                    norm=norm,
                 )
             else:
                 _ = sns.heatmap(
@@ -2623,13 +3442,13 @@ def plot_heatmap_histogram(
                     cmap="viridis",
                     cbar=True,
                     square=True,
-                    norm=mpl_col.LogNorm(),
+                    norm=norm,
                     ax=ax,
                 )
         except:
             print(f"Plotting for {x_name}, {y_name} failed")
             return
-        if width < 24 and width > 5:
+        if 24 > width > 5:
             ticks_offset = 24 // (width - 5)
         elif width <= 5:
             ticks_offset = 6
@@ -2648,10 +3467,6 @@ def plot_heatmap_histogram(
             _ = ax.set_title(title, fontsize=int(12 * font_scale))
         ax.set_xlabel(x_name)
         ax.set_ylabel(y_name)
-        # plt.xlabel(x_name)
-        # plt.ylabel(y_name)
-        # plt.xlabel(latexify.parse_word(x_name))
-        # plt.ylabel(latexify.parse_word(y_name))
         plt.tight_layout()
         if filename is not None and save:
             fig = ax.get_figure()
@@ -2727,6 +3542,7 @@ def plot_heatmap_histogram(
         else:
             p = out_params
             in_p = in_params
+            print(f"{c} {p} {in_p}")
             plot_hist(
                 hist_conditional[c]["hist_in_params"][p][in_p],
                 c,
@@ -2773,6 +3589,330 @@ def plot_heatmap_histogram(
     return None
 
 
+def plot_traj_histogram_out_interactive(edges, hist):
+    """
+    Calling this function from a Jupyter notebook allows to visualize the
+    traj_plot_histogram_out interactively. Plots the histogram of an output parameter,
+    i.e., QV, latent_heat, latent_cool, etc.
+
+    Parameters
+    ----------
+    edges : Dictionary of list-like of float
+        Edges for the histogram. Keys must be in out_params.
+    hist : Dictionary of list-like of int
+        Number of entries for each bin. Keys must be in edges.
+
+    Returns
+    -------
+    panel.layout that can be used in a jupyter notebook.
+    """
+    out_param = pn.widgets.RadioButtonGroup(
+        name="Output Parameter",
+        value=list(edges.keys())[0],
+        options=list(edges.keys()),
+        button_type="primary",
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    log_plot = pn.widgets.Toggle(
+        name="Use log y-axis",
+        value=True,
+        button_type="success",
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=2,
+        step=0.1,
+        value=0.7,
+    )
+    plot_pane = pn.panel(
+        pn.bind(
+            traj_plot_histogram_out,
+            out_params=out_param,
+            filename=save_to_field,
+            edges=edges,
+            hist=hist,
+            log=log_plot,
+            width=width_slider,
+            height=height_slider,
+            title=title_widget,
+            save=save_button,
+            interactive=True,
+            font_scale=font_slider,
+            verbose=False,
+        ),
+    ).servable()
+
+    return pn.Column(
+        out_param,
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+            log_plot,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+        ),
+        title_widget,
+        plot_pane,
+    )
+
+
+def plot_traj_histogram_inp_interactive(
+    edges_in_params,
+    hist_in_params,
+):
+    """
+    Can be used in jupyter notebooks to interactively plot traj_plot_histogram_inp(). From traj_plot_histogram_inp():
+    Giuen histograms from a sensitivity analysis with multiple trajectories, plot three histograms per image with
+    \partial output / \partial model parameter
+    where output is QV, latent_heat and latent_cool. Plot one image per model_parameter.
+
+    Parameters
+    ----------
+    edges_in_params : Dictionary of dictionary list-like of float
+        Dictionary (keys = model state variable) of dictionaries (keys = model parameters) of arrays with
+        the bin edges for the given keys. Optional: The first level can be another dictionary of phases.
+    hist_in_params : Dictionary of dictionary list-like of int
+        Dictionary (keys = model state variable) of dictionaries (keys = model parameters) of arrays with
+        values of the histogram for the given key. Optional: The first level can be another dictionary of phases.
+
+    Returns
+    -------
+    panel.layout that can be used in a jupyter notebook.
+    """
+    tmp_params = list(edges_in_params[list(edges_in_params.keys())[0]].keys())
+    in_params = []
+    for param in tmp_params:
+        if param[0] == "d" and param != "deposition":
+            in_params.append(param)
+
+    in_param = pn.widgets.Select(
+        name="Model Parameter",
+        value=in_params[0],
+        options=in_params,
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=2,
+        step=0.1,
+        value=0.7,
+    )
+    log_plot = pn.widgets.Toggle(
+        name="Use log y-axis",
+        value=True,
+        button_type="success",
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+
+    plot_pane = pn.panel(
+        pn.bind(
+            traj_plot_histogram_inp,
+            filename=save_to_field,
+            in_params=in_param,
+            edges_in_params=edges_in_params,
+            hist_in_params=hist_in_params,
+            log=log_plot,
+            width=width_slider,
+            height=height_slider,
+            title=None,
+            font_scale=font_slider,
+            save=save_button,
+            interactive=True,
+            verbose=False,
+        ),
+    ).servable()
+
+    return pn.Column(
+        in_param,
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+            log_plot,
+        ),
+        plot_pane,
+    )
+
+
+def plot_heatmap_histogram_interactive(hist_conditional):
+    """
+    Can be used in jupyter notebooks to interactively plot plot_heatmap_histogram() (2D histograms).
+
+    Parameters
+    ----------
+    hist_conditional : Dictionary of dictionaries with edges and bin counts for 2D histograms.
+        Result of get_histogram_cond().
+        Dictionary with the following keys:
+        'edges_out_params': Dictionary where the keys are model state variables and the values are arrays of bin edges.
+        'edges_in_params': Dictionary where the keys are model state variables for which sensitivities are available
+            and the values are dictionaries of model parameters with arrays of bin edges.
+        model state variables: Each model state variable has a dictionary for 'hist_out_params' and 'hist_in_params'.
+        'hist_out_params' is a dictionary of model state variables with arrays of bin counts.
+        'hist_in_params' is a dictionary of model state variables for which sensitivities are available
+            and the values are dictionaries of model parameters with arrays of bin counts.
+
+    Returns
+    -------
+    panel.layout that can be used in a jupyter notebook.
+    """
+    conds = list(hist_conditional.keys())
+    conditions = []
+    for c in conds:
+        if c != "edges_in_params" and c != "edges_out_params":
+            conditions.append(c)
+    wrt_params = list(hist_conditional["edges_in_params"].keys())
+    out_param = pn.widgets.RadioButtonGroup(
+        name="Output Parameter",
+        value=wrt_params[0],
+        options=wrt_params,
+        button_type="primary",
+    )
+    condition = pn.widgets.RadioButtonGroup(
+        name="X-Axis",
+        value=conditions[0],
+        options=conditions,
+        button_type="primary",
+    )
+    in_params = ["None"]
+    tmp_params = list(hist_conditional["edges_in_params"][wrt_params[0]].keys())
+    for param in tmp_params:
+        if param[0] == "d" and param != "deposition":
+            in_params.append(param)
+    in_param = pn.widgets.Select(
+        name="Model Parameter (Y-Axis)",
+        value=in_params[-1],
+        options=in_params,
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=20,
+        step=1,
+        value=8,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=20,
+        step=1,
+        value=8,
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=2,
+        step=0.1,
+        value=0.7,
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    log_plot = pn.widgets.Toggle(
+        name="Use log y-axis",
+        value=True,
+        button_type="success",
+    )
+
+    plot_pane = pn.panel(
+        pn.bind(
+            plot_heatmap_histogram,
+            hist_conditional=hist_conditional,
+            filename=save_to_field,
+            in_params=in_param,
+            out_params=out_param,
+            conditions=condition,
+            log=log_plot,
+            width=width_slider,
+            height=height_slider,
+            font_scale=font_slider,
+            title=title_widget,
+            save=save_button,
+            interactive=True,
+            verbose=False,
+        ),
+    ).servable()
+
+    return pn.Column(
+        in_param,
+        "w.r.t. Model State (Y-Axis)",
+        out_param,
+        "X-Axis",
+        condition,
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+            log_plot,
+        ),
+        title_widget,
+        plot_pane,
+    )
+
+
 def main(args):
     """
     Handle the plotting routines for different data inputs and plots.
@@ -2781,7 +3921,6 @@ def main(args):
     ----------
     args : arparse.ArgumentParser or any class with the same members
         A number of arguments to handle loading and plotting.
-
     """
     if not args.from_processed:
         if (
@@ -2807,11 +3946,32 @@ def main(args):
                         hist_conditional = pickle.load(f)
             else:
                 print("########### Calculate histograms ###########")
+                if args.filter > 0 and args.load_covariance == "no":
+                    print(
+                        "If you want to filter sensitivities for the histogram "
+                        "then you have to provide a path to the means using "
+                        "'--load_covariance'"
+                    )
+                    print(
+                        "You can generate this file using --plot_type cov_heat."
+                        "This generates a covariance matrix for the parameters with "
+                        "the largest magnitudes."
+                    )
+                    return
+                elif args.filter:
+                    with open(args.load_covariance + "_means.pkl", "rb") as f:
+                        means = pickle.load(f)
+                else:
+                    means = None
                 if len(args.conditional_hist) == 0:
                     all_hist = get_histogram(
                         args.file,
                         additional_params=args.additional_hist_params,
                         only_asc600=args.only_asc600,
+                        inoutflow_time=args.inoutflow_time,
+                        means=means,
+                        filter_mag=args.filter,
+                        verbose=args.verbose,
                     )
                     hist = all_hist["hist_out_params"]
                     hist_in_params = all_hist["hist_in_params"]
@@ -2823,6 +3983,10 @@ def main(args):
                         cond=args.conditional_hist,
                         additional_params=args.additional_hist_params,
                         only_asc600=args.only_asc600,
+                        inoutflow_time=args.inoutflow_time,
+                        means=means,
+                        filter_mag=args.filter,
+                        verbose=args.verbose,
                     )
             if args.save_histogram != "no":
                 print("########### Store histograms ###########")
@@ -2894,11 +4058,13 @@ def main(args):
                 args.file,
                 args.save_statistics,
                 only_asc600=args.only_asc600,
+                inoutflow_time=args.inoutflow_time,
             )
             sums_phase = get_sums_phase(
                 args.file,
                 args.save_statistics,
                 only_asc600=args.only_asc600,
+                inoutflow_time=args.inoutflow_time,
             )
 
         if args.load_covariance != "no":
@@ -3144,298 +4310,6 @@ def main(args):
                 f.write(text)
 
 
-def plot_traj_histogram_out_interactive(edges, hist):
-    """
-    Calling this function from a Jupyter notebook allows to visualize the
-    traj_plot_histogram_out interactively. Plots the histogram of an output parameter,
-    i.e., QV, latent_heat, latent_cool, etc.
-
-    Parameters
-    ----------
-    edges : Dictionary of list-like of float
-        Edges for the histogram. Keys must be in out_params.
-    hist : Dictionary of list-like of int
-        Number of entries for each bin. Keys must be in edges.
-
-    Returns
-    -------
-
-    """
-    out_param = pn.widgets.RadioButtonGroup(
-        name="Output Parameter",
-        value=list(edges.keys())[0],
-        options=list(edges.keys()),
-        button_type="primary",
-    )
-    width_slider = pn.widgets.IntSlider(
-        name="Width in inches",
-        start=3,
-        end=15,
-        step=1,
-        value=9,
-    )
-    height_slider = pn.widgets.IntSlider(
-        name="Height in inches",
-        start=3,
-        end=15,
-        step=1,
-        value=6,
-    )
-    title_widget = pn.widgets.TextInput(
-        name="Title",
-        placeholder="",
-    )
-    log_plot = pn.widgets.Toggle(
-        name="Use log y-axis",
-        value=True,
-        button_type="success",
-    )
-    save_to_field = pn.widgets.TextInput(
-        value="Path/to/store/plot.png",
-    )
-    save_button = pn.widgets.Button(
-        name="Save Plot",
-        button_type="primary",
-    )
-    font_slider = pn.widgets.FloatSlider(
-        name="Scale fontsize",
-        start=0.2,
-        end=2,
-        step=0.1,
-        value=0.7,
-    )
-    plot_pane = pn.panel(
-        pn.bind(
-            traj_plot_histogram_out,
-            out_params=out_param,
-            filename=save_to_field,
-            edges=edges,
-            hist=hist,
-            log=log_plot,
-            width=width_slider,
-            height=height_slider,
-            title=title_widget,
-            save=save_button,
-            interactive=True,
-            font_scale=font_slider,
-            verbose=False,
-        ),
-    ).servable()
-
-    return pn.Column(
-        out_param,
-        pn.Row(
-            width_slider,
-            height_slider,
-            font_slider,
-            log_plot,
-        ),
-        pn.Row(
-            save_to_field,
-            save_button,
-        ),
-        title_widget,
-        plot_pane,
-    )
-
-
-def plot_traj_histogram_inp_interactive(
-    edges_in_params,
-    hist_in_params,
-):
-    """
-
-    Parameters
-    ----------
-    dges_in_params : Dictionary of dictionary list-like of float
-        Edges for the histogram. First keys are output parameters, second keys must be in in_params.
-    hist_in_params : Dictionary of dictionary list-like of int
-        Number of entries for each bin. First keys are output parameters, second keys must be in in_params.
-
-    Returns
-    -------
-
-    """
-    in_param = pn.widgets.Select(
-        name="Model Parameter",
-        value=list(edges_in_params[list(edges_in_params.keys())[0]].keys())[0],
-        options=list(edges_in_params[list(edges_in_params.keys())[0]].keys()),
-    )
-    width_slider = pn.widgets.IntSlider(
-        name="Width in inches",
-        start=3,
-        end=15,
-        step=1,
-        value=9,
-    )
-    height_slider = pn.widgets.IntSlider(
-        name="Height in inches",
-        start=3,
-        end=15,
-        step=1,
-        value=6,
-    )
-    font_slider = pn.widgets.FloatSlider(
-        name="Scale fontsize",
-        start=0.2,
-        end=2,
-        step=0.1,
-        value=0.7,
-    )
-    log_plot = pn.widgets.Toggle(
-        name="Use log y-axis",
-        value=True,
-        button_type="success",
-    )
-    save_to_field = pn.widgets.TextInput(
-        value="Path/to/store/plot.png",
-    )
-    save_button = pn.widgets.Button(
-        name="Save Plot",
-        button_type="primary",
-    )
-
-    plot_pane = pn.panel(
-        pn.bind(
-            traj_plot_histogram_inp,
-            filename=save_to_field,
-            in_params=in_param,
-            edges_in_params=edges_in_params,
-            hist_in_params=hist_in_params,
-            log=log_plot,
-            width=width_slider,
-            height=height_slider,
-            title=None,
-            font_scale=font_slider,
-            save=save_button,
-            interactive=True,
-            verbose=False,
-        ),
-    ).servable()
-
-    return pn.Column(
-        in_param,
-        pn.Row(
-            width_slider,
-            height_slider,
-            font_slider,
-            log_plot,
-        ),
-        pn.Row(
-            save_to_field,
-            save_button,
-        ),
-        plot_pane,
-    )
-
-
-def plot_heatmap_histogram_interactive(hist_conditional):
-    """
-
-    Parameters
-    ----------
-    hist_conditional
-
-    Returns
-    -------
-
-    """
-    conds = list(hist_conditional.keys())
-    conditions = []
-    for c in conds:
-        if c != "edges_in_params" and c != "edges_out_params":
-            conditions.append(c)
-    wrt_params = list(hist_conditional["edges_in_params"].keys())
-    out_param = pn.widgets.RadioButtonGroup(
-        name="Output Parameter",
-        value=wrt_params[0],
-        options=wrt_params,
-        button_type="primary",
-    )
-    condition = pn.widgets.RadioButtonGroup(
-        name="X-Axis",
-        value=conditions[0],
-        options=conditions,
-        button_type="primary",
-    )
-    in_param = pn.widgets.Select(
-        name="Model Parameter (Y-Axis)",
-        value=list(hist_conditional["edges_in_params"][wrt_params[0]].keys())[0],
-        options=list(hist_conditional["edges_in_params"][wrt_params[0]].keys())
-        + ["None"],
-        button_type="default",
-    )
-    width_slider = pn.widgets.IntSlider(
-        name="Width in inches",
-        start=3,
-        end=20,
-        step=1,
-        value=8,
-    )
-    height_slider = pn.widgets.IntSlider(
-        name="Height in inches",
-        start=3,
-        end=20,
-        step=1,
-        value=8,
-    )
-    font_slider = pn.widgets.FloatSlider(
-        name="Scale fontsize",
-        start=0.2,
-        end=2,
-        step=0.1,
-        value=0.7,
-    )
-    save_to_field = pn.widgets.TextInput(
-        value="Path/to/store/plot.png",
-    )
-    save_button = pn.widgets.Button(
-        name="Save Plot",
-        button_type="primary",
-    )
-    title_widget = pn.widgets.TextInput(
-        name="Title",
-        placeholder="",
-    )
-
-    plot_pane = pn.panel(
-        pn.bind(
-            plot_heatmap_histogram,
-            hist_conditional=hist_conditional,
-            filename=save_to_field,
-            in_params=in_param,
-            out_params=out_param,
-            conditions=condition,
-            width=width_slider,
-            height=height_slider,
-            font_scale=font_slider,
-            title=title_widget,
-            save=save_button,
-            interactive=True,
-            verbose=False,
-        ),
-    ).servable()
-
-    return pn.Column(
-        in_param,
-        "Model State (Y-Axis; for Sensitivities)",
-        out_param,
-        "X-Axis",
-        condition,
-        pn.Row(
-            width_slider,
-            height_slider,
-            font_slider,
-        ),
-        pn.Row(
-            save_to_field,
-            save_button,
-        ),
-        title_widget,
-        plot_pane,
-    )
-
-
 if __name__ == "__main__":
     import argparse
     import textwrap
@@ -3547,7 +4421,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--in_params",
         default=[],
-        narg="+",
+        nargs="+",
         type=str,
         help=textwrap.dedent(
             """\

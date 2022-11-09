@@ -82,6 +82,7 @@ def load_lon_lat_time(
     n_lons=100,
     n_lats=100,
     delta_time=None,
+    relative_lon_lat=False,
     verbose=False,
 ):
     """
@@ -97,6 +98,8 @@ def load_lon_lat_time(
     n_lons
     n_lats
     delta_time
+    relative_lon_lat : bool
+        Use longitude and latitude degrees relative to the start of the ascent.
     verbose
 
     Returns
@@ -116,10 +119,19 @@ def load_lon_lat_time(
             sens_model_state_ids.append(
                 np.argwhere(np.asarray(param_id_map) == state).item()
             )
+
+    additional_vars = ["lon", "lat", "asc600", "pressure"]
+    if relative_lon_lat:
+        additional_vars.extend(["relative_lon", "relative_lat"])
+        lon_name = "relative_lon"
+        lat_name = "relative_lat"
+    else:
+        lon_name = "lon"
+        lat_name = "lat"
     # Get the limits on lon and lat
     for f in tqdm(files) if verbose else files:
         ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            ["lon", "lat", "asc600", "pressure"]
+            additional_vars
         ]
         ds = filter_trajectories(
             ds=ds,
@@ -130,16 +142,16 @@ def load_lon_lat_time(
             max_pressure=max_pressure,
         )
         if len(lon_limits) > 0:
-            v = ds["lon"].min().values.item()
+            v = ds[lon_name].min().values.item()
             if v < lon_limits[0]:
                 lon_limits[0] = v
-            v = ds["lon"].max().values.item()
+            v = ds[lon_name].max().values.item()
             if v > lon_limits[1]:
                 lon_limits[1] = v
-            v = ds["lat"].min().values.item()
+            v = ds[lat_name].min().values.item()
             if v < lat_limits[0]:
                 lat_limits[0] = v
-            v = ds["lat"].max().values.item()
+            v = ds[lat_name].max().values.item()
             if v > lat_limits[1]:
                 lat_limits[1] = v
             v = ds["time"].min().values.item()
@@ -150,10 +162,10 @@ def load_lon_lat_time(
                 time_limits[1] = v
 
         else:
-            lon_limits.append(ds["lon"].min().values.item())
-            lon_limits.append(ds["lon"].max().values.item())
-            lat_limits.append(ds["lat"].min().values.item())
-            lat_limits.append(ds["lat"].max().values.item())
+            lon_limits.append(ds[lon_name].min().values.item())
+            lon_limits.append(ds[lon_name].max().values.item())
+            lat_limits.append(ds[lat_name].min().values.item())
+            lat_limits.append(ds[lat_name].max().values.item())
             time_limits.append(ds["time"].min().values.item())
             time_limits.append(ds["time"].max().values.item())
 
@@ -189,6 +201,7 @@ def load_counts_means(
     time_levels=None,
     verbose=False,
     process_file=None,
+    relative_lon_lat=False,
 ):
     """
 
@@ -210,6 +223,7 @@ def load_counts_means(
     time_levels
     verbose
     process_file
+    relative_lon_lat
 
     Returns
     -------
@@ -219,6 +233,11 @@ def load_counts_means(
         print(
             "Calculating the mean and number of occurrences at each grid point in this function."
         )
+    lon_name = "lon"
+    lat_name = "lat"
+    if relative_lon_lat:
+        lon_name = "relative_lon"
+        lat_name = "relative_lat"
     n_lons = len(lons) - 1
     n_lats = len(lats) - 1
     if pressure_levels is not None:
@@ -288,13 +307,13 @@ def load_counts_means(
         elif pressure_levels is not None:
             for i in range(n_press):
                 counts_tmp, _, _ = np.histogram2d(
-                    y=ds["lon"]
+                    y=ds[lon_name]
                     .where(
                         (ds["pressure"] >= pressure_levels[i])
                         & (ds["pressure"] < pressure_levels[i + 1])
                     )
                     .values.flatten(),
-                    x=ds["lat"]
+                    x=ds[lat_name]
                     .where(
                         (ds["pressure"] >= pressure_levels[i])
                         & (ds["pressure"] < pressure_levels[i + 1])
@@ -310,8 +329,8 @@ def load_counts_means(
             )
         else:
             counts_tmp, _, _ = np.histogram2d(
-                y=ds["lon"].values.flatten(),
-                x=ds["lat"].values.flatten(),
+                y=ds[lon_name].values.flatten(),
+                x=ds[lat_name].values.flatten(),
                 bins=(lats, lons),
             )
             counts += counts_tmp
@@ -335,10 +354,10 @@ def load_counts_means(
             elif pressure_levels is not None:
                 for p_i in range(n_press):
                     idx_where = (
-                        (ds["lon"] >= lo)
-                        & (ds["lon"] < lo + delta_lon)
-                        & (ds["lat"] >= la)
-                        & (ds["lat"] < la + delta_lat)
+                        (ds[lon_name] >= lo)
+                        & (ds[lon_name] < lo + delta_lon)
+                        & (ds[lat_name] >= la)
+                        & (ds[lat_name] < la + delta_lat)
                         & (ds["pressure"] >= pressure_levels[p_i])
                         & (ds["pressure"] < pressure_levels[p_i + 1])
                     )
@@ -356,10 +375,10 @@ def load_counts_means(
                             for id, s in zip(sens_model_state_ids, sens_model_states):
                                 ds_tmp = ds.sel({"Output_Parameter_ID": id})
                                 idx_where = (
-                                    (ds_tmp["lon"] >= lo)
-                                    & (ds_tmp["lon"] < lo + delta_lon)
-                                    & (ds_tmp["lat"] >= la)
-                                    & (ds_tmp["lat"] < la + delta_lat)
+                                    (ds_tmp[lon_name] >= lo)
+                                    & (ds_tmp[lon_name] < lo + delta_lon)
+                                    & (ds_tmp[lat_name] >= la)
+                                    & (ds_tmp[lat_name] < la + delta_lat)
                                     & (ds_tmp["pressure"] >= pressure_levels[p_i])
                                     & (ds_tmp["pressure"] < pressure_levels[p_i + 1])
                                 )
@@ -374,10 +393,10 @@ def load_counts_means(
                 )
             else:
                 idx_where = (
-                    (ds["lon"] >= lo)
-                    & (ds["lon"] < lo + delta_lon)
-                    & (ds["lat"] >= la)
-                    & (ds["lat"] < la + delta_lat)
+                    (ds[lon_name] >= lo)
+                    & (ds[lon_name] < lo + delta_lon)
+                    & (ds[lat_name] >= la)
+                    & (ds[lat_name] < la + delta_lat)
                 )
                 for v in variables:
                     if v[0] != "d" or v == "deposition" or len(sens_model_states) == 1:
@@ -387,10 +406,10 @@ def load_counts_means(
                         for id, s in zip(sens_model_state_ids, sens_model_states):
                             ds_tmp = ds.sel({"Output_Parameter_ID": id})
                             idx_where = (
-                                (ds_tmp["lon"] >= lo)
-                                & (ds_tmp["lon"] < lo + delta_lon)
-                                & (ds_tmp["lat"] >= la)
-                                & (ds_tmp["lat"] < la + delta_lat)
+                                (ds_tmp[lon_name] >= lo)
+                                & (ds_tmp[lon_name] < lo + delta_lon)
+                                & (ds_tmp[lat_name] >= la)
+                                & (ds_tmp[lat_name] < la + delta_lat)
                             )
                             sums[v][sens_idx, la_idx, lo_idx] += np.nansum(
                                 ds_tmp[v].where(idx_where)
@@ -459,6 +478,7 @@ def load_min_max_variance(
     time_levels=None,
     verbose=False,
     process_file=None,
+    relative_lon_lat=False,
 ):
     """
 
@@ -482,6 +502,7 @@ def load_min_max_variance(
     time_levels
     verbose
     process_file
+    relative_lon_lat
 
     Returns
     -------
@@ -491,6 +512,11 @@ def load_min_max_variance(
         print(
             "Calculating minimum, maximum and variance of the variables in this function."
         )
+    lon_name = "lon"
+    lat_name = "lat"
+    if relative_lon_lat:
+        lon_name = "relative_lon"
+        lat_name = "relative_lat"
     n_lons = len(lons) - 1
     n_lats = len(lats) - 1
     if pressure_levels is not None:
@@ -591,10 +617,10 @@ def load_min_max_variance(
             elif pressure_levels is not None:
                 for p_i in range(n_press):
                     idx_where = (
-                        (ds["lon"] >= lo)
-                        & (ds["lon"] < lo + delta_lon)
-                        & (ds["lat"] >= la)
-                        & (ds["lat"] < la + delta_lat)
+                        (ds[lon_name] >= lo)
+                        & (ds[lon_name] < lo + delta_lon)
+                        & (ds[lat_name] >= la)
+                        & (ds[lat_name] < la + delta_lat)
                         & (ds["pressure"] >= pressure_levels[p_i])
                         & (ds["pressure"] < pressure_levels[p_i + 1])
                     )
@@ -628,10 +654,10 @@ def load_min_max_variance(
                             for id, s in zip(sens_model_state_ids, sens_model_states):
                                 ds_tmp = ds.sel({"Output_Parameter_ID": id})
                                 idx_where = (
-                                    (ds_tmp["lon"] >= lo)
-                                    & (ds_tmp["lon"] < lo + delta_lon)
-                                    & (ds_tmp["lat"] >= la)
-                                    & (ds_tmp["lat"] < la + delta_lat)
+                                    (ds_tmp[lon_name] >= lo)
+                                    & (ds_tmp[lon_name] < lo + delta_lon)
+                                    & (ds_tmp[lat_name] >= la)
+                                    & (ds_tmp[lat_name] < la + delta_lat)
                                     & (ds_tmp["pressure"] >= pressure_levels[p_i])
                                     & (ds_tmp["pressure"] < pressure_levels[p_i + 1])
                                 )
@@ -663,10 +689,10 @@ def load_min_max_variance(
                 )
             else:
                 idx_where = (
-                    (ds["lon"] >= lo)
-                    & (ds["lon"] < lo + delta_lon)
-                    & (ds["lat"] >= la)
-                    & (ds["lat"] < la + delta_lat)
+                    (ds[lon_name] >= lo)
+                    & (ds[lon_name] < lo + delta_lon)
+                    & (ds[lat_name] >= la)
+                    & (ds[lat_name] < la + delta_lat)
                 )
                 for v in variables:
                     if v[0] != "d" or v == "deposition" or len(sens_model_states) == 1:
@@ -690,10 +716,10 @@ def load_min_max_variance(
                         for id, s in zip(sens_model_state_ids, sens_model_states):
                             ds_tmp = ds.sel({"Output_Parameter_ID": id})
                             idx_where = (
-                                (ds_tmp["lon"] >= lo)
-                                & (ds_tmp["lon"] < lo + delta_lon)
-                                & (ds_tmp["lat"] >= la)
-                                & (ds_tmp["lat"] < la + delta_lat)
+                                (ds_tmp[lon_name] >= lo)
+                                & (ds_tmp[lon_name] < lo + delta_lon)
+                                & (ds_tmp[lat_name] >= la)
+                                & (ds_tmp[lat_name] < la + delta_lat)
                             )
                             variance[v][sens_idx, la_idx, lo_idx] += np.nansum(
                                 (
@@ -772,6 +798,7 @@ def to_Dataset(
     mins,
     maxs,
     variance,
+    relative_lon_lat,
     verbose,
 ):
     """
@@ -873,6 +900,9 @@ def to_Dataset(
     for key in ds:
         if key in ds_tmp:
             ds[key].attrs = ds_tmp[key].attrs
+    if relative_lon_lat:
+        ds["lon"].attrs = ds_tmp["relative_lon"].attrs
+        ds["lat"].attrs = ds_tmp["relative_lat"].attrs
     ds["counts"].attrs = {
         "long_name": "Count",
         "standard_name": "count",
@@ -920,6 +950,7 @@ def load_data(
     delta_time=None,
     n_lons=100,
     n_lats=100,
+    relative_lon_lat=False,
     verbose=False,
 ):
     """
@@ -953,10 +984,20 @@ def load_data(
         n_lons=n_lons,
         n_lats=n_lats,
         delta_time=delta_time,
+        relative_lon_lat=relative_lon_lat,
         verbose=verbose,
     )
-
-    additional_vars = ["lon", "lat", "asc600", "phase"]
+    if relative_lon_lat:
+        additional_vars = [
+            "lon",
+            "lat",
+            "relative_lon",
+            "relative_lat",
+            "asc600",
+            "phase",
+        ]
+    else:
+        additional_vars = ["lon", "lat", "asc600", "phase"]
     if "pressure" not in variables:
         additional_vars.append("pressure")
     counts, means = load_counts_means(
@@ -974,6 +1015,7 @@ def load_data(
         max_pressure=max_pressure,
         pressure_levels=pressure_levels,
         time_levels=time_levels,
+        relative_lon_lat=relative_lon_lat,
         verbose=verbose,
     )
     mins, maxs, variance = load_min_max_variance(
@@ -993,6 +1035,7 @@ def load_data(
         max_pressure=max_pressure,
         pressure_levels=pressure_levels,
         time_levels=time_levels,
+        relative_lon_lat=relative_lon_lat,
         verbose=verbose,
     )
     return to_Dataset(
@@ -1008,6 +1051,7 @@ def load_data(
         mins=mins,
         maxs=maxs,
         variance=variance,
+        relative_lon_lat=relative_lon_lat,
         verbose=verbose,
     )
 
@@ -1445,6 +1489,15 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--relative_lon_lat",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+            Use longitude and latitude degrees relative to the start of the ascent.
+            """
+        ),
+    )
+    parser.add_argument(
         "--inoutflow_time",
         default=-1,
         type=int,
@@ -1567,7 +1620,7 @@ if __name__ == "__main__":
         help=textwrap.dedent(
             """\
             Calculate only the given step. Previous steps must be loaded using --load_calculated!
-            All options except 'all' and 'merge_counts_means' store only *.pkl files for further processing.
+            All options except 'all' and 'merge_min_max_variance' store only *.pkl files for further processing.
             The 'merge_*' options merge all results calculated 
             using the respective steps for different files with --process_file. 
             """
@@ -1614,6 +1667,7 @@ if __name__ == "__main__":
             n_lons=args.n_lons,
             n_lats=args.n_lats,
             delta_time=args.delta_time,
+            relative_lon_lat=args.relative_lon_lat,
             verbose=args.verbose,
         )
         data = {
@@ -1630,6 +1684,7 @@ if __name__ == "__main__":
             "min_pressure": min_pressure,
             "max_pressure": max_pressure,
             "inoutflow_time": args.inoutflow_time,
+            "relative_lon_lat": args.relative_lon_lat,
         }
         if args.verbose:
             print("########### Store longitudes, latitudes and time levels ###########")
@@ -1655,7 +1710,18 @@ if __name__ == "__main__":
             min_pressure = data["min_pressure"]
             max_pressure = data["max_pressure"]
             inoutflow_time = data["inoutflow_time"]
-        additional_vars = ["lon", "lat", "asc600", "phase"]
+            relative_lon_lat = data["relative_lon_lat"]
+        if relative_lon_lat:
+            additional_vars = [
+                "lon",
+                "lat",
+                "relative_lon",
+                "relative_lat",
+                "asc600",
+                "phase",
+            ]
+        else:
+            additional_vars = ["lon", "lat", "asc600", "phase"]
 
         if "pressure" not in args.var:
             additional_vars.append("pressure")
@@ -1676,6 +1742,7 @@ if __name__ == "__main__":
             time_levels=time_levels,
             verbose=args.verbose,
             process_file=args.process_file,
+            relative_lon_lat=relative_lon_lat,
         )
         data = {
             "counts": counts,
@@ -1800,6 +1867,7 @@ if __name__ == "__main__":
             min_pressure = data["min_pressure"]
             max_pressure = data["max_pressure"]
             inoutflow_time = data["inoutflow_time"]
+            relative_lon_lat = data["relative_lon_lat"]
 
         with open(args.load_calculated + "counts_means.pkl", "rb") as f:
             data = pickle.load(f)
@@ -1823,7 +1891,17 @@ if __name__ == "__main__":
                             f"You asked for variable {var} which is not "
                             + f"present in {args.load_calculated}counts_means.pkl"
                         )
-        additional_vars = ["lon", "lat", "asc600", "phase"]
+        if relative_lon_lat:
+            additional_vars = [
+                "lon",
+                "lat",
+                "relative_lon",
+                "relative_lat",
+                "asc600",
+                "phase",
+            ]
+        else:
+            additional_vars = ["lon", "lat", "asc600", "phase"]
         if "pressure" not in variables:
             additional_vars.append("pressure")
         mins, maxs, variance = load_min_max_variance(
@@ -1845,6 +1923,7 @@ if __name__ == "__main__":
             time_levels=time_levels,
             verbose=args.verbose,
             process_file=args.process_file,
+            relative_lon_lat=relative_lon_lat,
         )
         if args.verbose:
             print("########### Store minimums, maximums and variances ###########")
@@ -1962,6 +2041,7 @@ if __name__ == "__main__":
                 time_levels = data["time_levels"]
                 delta_time = data["delta_time"]
                 sens_model_states = data["sens_model_states"]
+                relative_lon_lat = data["relative_lon_lat"]
 
             ds = to_Dataset(
                 file_path=args.file_path,
@@ -1976,6 +2056,7 @@ if __name__ == "__main__":
                 mins=mins,
                 maxs=maxs,
                 variance=variance,
+                relative_lon_lat=relative_lon_lat,
                 verbose=args.verbose,
             )
             comp = dict(zlib=True, complevel=9)
@@ -2008,6 +2089,7 @@ if __name__ == "__main__":
             delta_time=args.delta_time,
             n_lons=args.n_lons,
             n_lats=args.n_lats,
+            relative_lon_lat=args.relative_lon_lat,
             verbose=args.verbose,
         )
         if args.store_calculated is not None:
