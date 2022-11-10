@@ -39,8 +39,76 @@ except:
     import scripts.latexify as latexify
 
 
+def load_ds(f, only_asc600=False, only_phase=None, inoutflow_time=-1, load_params=None):
+    """
+    Load an xarray.Dataset and filter it for certain columns or time steps or phases if needed.
+
+    Parameters
+    ----------
+    f : string
+        Path and name of the file to load
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    only_phase : string
+        Consider only time steps with the given phase. Can be combined with only_asc600 or inoutflow_time.
+        Possible values are "warm phase", "mixed phase", "ice phase", "neutral phase".
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
+    load_params : list of strings
+        If given, load only the provided columns.
+
+    Returns
+    -------
+    Loaded and, if needed, filtered xarray.Dataset.
+    """
+
+    phases = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
+    if load_params is not None:
+        additional_vars = []
+        if only_phase is not None and "phase" not in load_params:
+            additional_vars.append("phase")
+        if inoutflow_time > 0 and "asc600" not in load_params:
+            additional_vars.append("asc600")
+        if len(additional_vars) > 0:
+            ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")[
+                load_params + additional_vars
+            ]
+        else:
+            ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")[load_params]
+    else:
+        ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")
+
+    if inoutflow_time > 0:
+        ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+        ds_flow = ds_flow.rolling(
+            time=inoutflow_time * 2,  # once for inflow, another for outflow
+            min_periods=1,
+            center=True,
+        ).reduce(np.nanmax)
+        ds = ds.where(ds_flow == 1)
+    elif only_asc600:
+        ds = ds.where(ds["asc600"] == 1)
+    if only_phase is not None:
+        if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+            ds["phase"] = ds["phase"].astype(np.uint64)
+            phase_idx = np.argwhere(phases == only_phase)[0].item()
+            ds = ds.where(ds["phase"] == phase_idx)
+        elif ds["phase"].dtype == str:
+            ds = ds.where(ds["phase"] == only_phase)
+        else:
+            phase_idx = np.argwhere(phases == only_phase)[0].item()
+            ds = ds.where(ds["phase"] == phase_idx)
+    return ds
+
+
 def cross_correlation(
-    ds=None, file_path=None, phases=False, columns=None, verbose=False
+    ds=None,
+    file_path=None,
+    phases=False,
+    columns=None,
+    only_asc600=False,
+    inoutflow_time=-1,
+    verbose=False,
 ):
     """
     Calculate the cross-correlation using two (discrete-)time signals.
@@ -61,6 +129,10 @@ def cross_correlation(
     columns : list of strings
         Columns to load from the dataset. If none is given, all model state variables and model parameters
         will be loaded. Using fewer columns uses significantly less time.
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
     verbose : bool
         Print when a phase is being evaluated and print progressbars.
 
@@ -125,6 +197,9 @@ def cross_correlation(
     load_vars = list(columns)
     if phases:
         load_vars.append("phase")
+    if inoutflow_time > 0:
+        load_vars.append("asc600")
+
     coords = {
         "Output Parameter": param_names,
         "Parameter": param_coords,
@@ -225,10 +300,13 @@ def cross_correlation(
     def get_corr(ds_tmp1, ds_tmp2, col1, col2):
         vals1 = ds_tmp1[col1].values
         vals2 = ds_tmp2[col2].values
+        # NaNs *should* always be equally distributed
+        # in both vals1 and vals2
         mask = ~(np.isnan(vals1) + np.isnan(vals2))
         # We don't care if less than 10 datapoints (=5 minutes) are available
         if np.sum(mask) < 10:
             return np.nan, np.nan
+
         vals1 = vals1[mask]
         vals2 = vals2[mask]
         vals1 -= np.nanmean(vals1)
@@ -266,10 +344,15 @@ def cross_correlation(
         phase_i=None,
         f_i=None,
         verbose=False,
+        leave=False,
     ):
-        for col_idx, col in enumerate(tqdm(columns) if verbose else columns):
+        for col_idx, col in enumerate(
+            tqdm(columns, leave=leave) if verbose else columns
+        ):
             col_sens = (col[0] == "d") and (col != "deposition")
-            for param_idx, param in enumerate(params):
+            for param_idx, param in enumerate(
+                tqdm(params, leave=False) if verbose else params
+            ):
                 param_sens = (param[0] == "d") and (param != "deposition")
                 if param_sens and col_sens:
                     tmp_param = param.split("/")
@@ -504,6 +587,7 @@ def cross_correlation(
                     params=param_coords,
                     phase_i=phase_i,
                     verbose=verbose,
+                    leave=True,
                 )
         else:
             get_corr_ds(
@@ -513,16 +597,20 @@ def cross_correlation(
                 columns=columns,
                 params=param_coords,
                 verbose=verbose,
+                leave=True,
             )
     else:
         for f_i, f in enumerate(tqdm(files) if verbose else files):
-            ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-                load_vars
-            ]
+            ds = load_ds(
+                f=file_path + f,
+                only_asc600=only_asc600,
+                inoutflow_time=inoutflow_time,
+                load_params=load_vars,
+            )
             if phases:
-                for phase_i, phase in enumerate(phases_idx):
-                    if verbose:
-                        print(f"Phase: {phase}")
+                for phase_i, phase in enumerate(
+                    tqdm(phases_idx, leave=False) if verbose else phases_idx
+                ):
                     get_corr_ds(
                         data_outp=x_corrs_outp,
                         data_inp=x_corrs_inp,
@@ -532,6 +620,7 @@ def cross_correlation(
                         f_i=f_i,
                         phase_i=phase_i,
                         verbose=verbose,
+                        leave=False,
                     )
             else:
                 get_corr_ds(
@@ -542,6 +631,7 @@ def cross_correlation(
                     params=param_coords,
                     f_i=f_i,
                     verbose=verbose,
+                    leave=False,
                 )
 
     data_vars = x_corrs_outp
@@ -550,7 +640,16 @@ def cross_correlation(
     return xr.Dataset(data_vars=data_vars, coords=coords)
 
 
-def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=False):
+def auto_correlation(
+    ds=None,
+    file_path=None,
+    delay=10,
+    phases=False,
+    columns=None,
+    only_asc600=False,
+    inoutflow_time=-1,
+    verbose=False,
+):
     """
     Estimate auto-correlation via
 
@@ -570,6 +669,13 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
         Define the delay (in time steps) to calculate the auto-correlation or a range of delays.
     phases : bool
         If true, calculate the auto-correlation for each phase separately.
+    columns : list of strings
+        Columns to load from the dataset. If none is given, all model state variables and model parameters
+        will be loaded. Using fewer columns uses significantly less time.
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
     verbose : bool
         Print when a phase is being evaluated and print progressbars.
 
@@ -583,9 +689,21 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
     out_param_coord = ""
     if ds is None:
         files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+        n_ensembles = 0
+        n_trajectories = 0
+        for f in files:
+            ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+                ["trajectory", "ensemble"]
+            ]
+            if len(ds["ensemble"]) > n_ensembles:
+                n_ensembles = len(ds["ensemble"])
+            if len(ds["trajectory"]) > n_trajectories:
+                n_trajectories = len(ds["trajectory"])
         ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
     else:
         files = None
+        n_ensembles = len(ds["ensemble"])
+        n_trajectories = len(ds["trajectory"])
     if "Output_Parameter_ID" in ds:
         out_params = list(ds["Output_Parameter_ID"].values)
         param_names = []
@@ -596,6 +714,39 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
         out_params = list(ds["Output Parameter"].values)
         param_names = out_params
         out_param_coord = "Output Parameter"
+
+    auto_corr_coords = {
+        "Output Parameter": param_names,
+        "trajectory": np.arange(n_trajectories),
+        "ensemble": np.arange(n_ensembles),
+        "delay": [],
+    }
+
+    if columns is None:
+        columns = list(ds.keys())
+        if "phase" in columns:
+            columns.remove("phase")
+        if "step" in columns:
+            columns.remove("step")
+        if "asc600" in columns:
+            columns.remove("asc600")
+        if "time_after_ascent" in columns:
+            columns.remove("time_after_ascent")
+    load_vars = columns
+    if phases:
+        auto_corr_coords["phase"] = phases_arr
+        load_vars.append("phase")
+        if ds["phase"].dtype == str:
+            phases_idx = phases_arr
+        else:
+            phases_idx = np.arange(4)
+    if inoutflow_time > 0:
+        load_vars.append("asc600")
+
+    if isinstance(delay, int):
+        auto_corr_coords["delay"].append(delay)
+    else:
+        auto_corr_coords["delay"].extend(delay)
 
     def get_corr(ds_tmp, d, n, data, d_i):
         ds_tmp1 = ds_tmp.isel({"time": np.arange(n - d)})
@@ -631,13 +782,13 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
         data_inp,
         ds,
         params,
-        phase_val=None,
         phase_i=None,
         f_i=None,
         verbose=False,
+        leave=False,
     ):
         n = len(ds["time"])
-        for param_i, col in enumerate(tqdm(params) if verbose else params):
+        for param_i, col in enumerate(tqdm(params, leave=leave) if verbose else params):
             if col[0] != "d" or col == "deposition":
                 if isinstance(delay, int):
                     if phase_i is None and f_i is None:
@@ -646,7 +797,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                         get_corr(ds[col], delay, n, data_outp[col][1][f_i], 0)
                     elif f_i is None:
                         get_corr(
-                            ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                            ds[col],
                             delay,
                             n,
                             data_outp[col][1][phase_i],
@@ -654,7 +805,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                         )
                     else:
                         get_corr(
-                            ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                            ds[col],
                             delay,
                             n,
                             data_outp[col][1][f_i, phase_i],
@@ -668,7 +819,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                             get_corr(ds[col], d, n, data_outp[col][1][f_i], d_i)
                         elif f_i is None:
                             get_corr(
-                                ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                                ds[col],
                                 d,
                                 n,
                                 data_outp[col][1][phase_i],
@@ -676,7 +827,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                             )
                         else:
                             get_corr(
-                                ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                                ds[col],
                                 d,
                                 n,
                                 data_outp[col][1][f_i, phase_i],
@@ -704,9 +855,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                             )
                         elif f_i is None:
                             get_corr(
-                                ds[["phase", col]]
-                                .sel({out_param_coord: out_p})
-                                .where(ds["phase"] == phase_val)[col],
+                                ds[col].sel({out_param_coord: out_p}),
                                 delay,
                                 n,
                                 data_inp[col][1][phase_i, out_p_i],
@@ -714,9 +863,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                             )
                         else:
                             get_corr(
-                                ds[["phase", col]]
-                                .sel({out_param_coord: out_p})
-                                .where(ds["phase"] == phase_val)[col],
+                                ds[col].sel({out_param_coord: out_p}),
                                 delay,
                                 n,
                                 data_inp[col][1][f_i, phase_i, out_p_i],
@@ -742,9 +889,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                                 )
                             elif f_i is None:
                                 get_corr(
-                                    ds[["phase", col]]
-                                    .sel({out_param_coord: out_p})
-                                    .where(ds["phase"] == phase_val)[col],
+                                    ds[col].sel({out_param_coord: out_p}),
                                     d,
                                     n,
                                     data_inp[col][1][phase_i, out_p_i],
@@ -752,9 +897,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                                 )
                             else:
                                 get_corr(
-                                    ds[["phase", col]]
-                                    .sel({out_param_coord: out_p})
-                                    .where(ds["phase"] == phase_val)[col],
+                                    ds[col].sel({out_param_coord: out_p}),
                                     d,
                                     n,
                                     data_inp[col][1][f_i, phase_i, out_p_i],
@@ -762,29 +905,8 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                                 )
                     out_p_i += 1
 
-    auto_corr_coords = {
-        "delay": [],
-    }
-    if isinstance(delay, int):
-        auto_corr_coords["delay"].append(delay)
-    else:
-        auto_corr_coords["delay"].extend(delay)
-
     if files is None:
-        auto_corr_coords["ensemble"] = ds["ensemble"].values
-        auto_corr_coords["trajectory"] = ds["trajectory"].values
-        auto_corr_coords["Output Parameter"] = param_names
-        columns = list(ds.keys())
-        if "phase" in columns:
-            columns.remove("phase")
-        if "step" in columns:
-            columns.remove("step")
-        if "asc600" in columns:
-            columns.remove("asc600")
-        if "time_after_ascent" in columns:
-            columns.remove("time_after_ascent")
         if phases:
-            auto_corr_coords["phase"] = phases_arr
             auto_corrs_outp = {}
             auto_corrs_inp = {}
             for param in columns:
@@ -830,12 +952,12 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                 else:
                     phase_val = phase
                 get_corr_ds(
-                    auto_corrs_outp,
-                    auto_corrs_inp,
-                    ds,
-                    columns,
-                    phase_val,
-                    phase_i,
+                    data_outp=auto_corrs_outp,
+                    data_inp=auto_corrs_inp,
+                    ds=ds,
+                    params=columns,
+                    phase_i=phase_i,
+                    leave=True,
                     verbose=verbose,
                 )
         else:
@@ -868,40 +990,16 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                     )
                     auto_corrs_inp[param][1][:] = np.nan
             get_corr_ds(
-                auto_corrs_outp,
-                auto_corrs_inp,
-                ds,
-                columns,
+                data_outp=auto_corrs_outp,
+                data_inp=auto_corrs_inp,
+                ds=ds,
+                params=columns,
+                leave=True,
                 verbose=verbose,
             )
     else:
-        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
-        n_ensembles = len(ds["ensemble"].values)
-        n_trajectories = len(ds["trajectory"].values)
-        auto_corr_coords["Output Parameter"] = param_names
         auto_corr_coords["file"] = files
-        columns = list(ds.keys())
-        if "phase" in columns:
-            columns.remove("phase")
-        if "step" in columns:
-            columns.remove("step")
-        if "asc600" in columns:
-            columns.remove("asc600")
-        if "time_after_ascent" in columns:
-            columns.remove("time_after_ascent")
-
-        for f in files[1::]:
-            ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-                ["trajectory", "ensemble"]
-            ]
-            if len(ds["trajectory"]) > n_trajectories:
-                n_trajectories = len(ds["trajectory"])
-            if len(ds["ensemble"]) > n_ensembles:
-                n_ensembles = len(ds["ensemble"])
-        auto_corr_coords["ensemble"] = np.arange(n_ensembles)
-        auto_corr_coords["trajectory"] = np.arange(n_trajectories)
         if phases:
-            auto_corr_coords["phase"] = phases_arr
             auto_corrs_outp = {}
             auto_corrs_inp = {}
             for param in columns:
@@ -942,27 +1040,31 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                     )
                     auto_corrs_inp[param][1][:] = np.nan
 
-            for phase_i, phase in enumerate(auto_corr_coords["phase"]):
-                if verbose:
-                    print(f"Phase: {phase}")
-
-                for f_i, f in enumerate(tqdm(files) if verbose else files):
-                    ds = xr.open_dataset(
-                        file_path + f, decode_times=False, engine="netcdf4"
+            for f_i, f in enumerate(tqdm(files) if verbose else files):
+                for phase_i, phase in enumerate(
+                    tqdm(auto_corr_coords["phase"], leave=False)
+                    if verbose
+                    else auto_corr_coords["phase"]
+                ):
+                    ds = load_ds(
+                        f=file_path + f,
+                        only_asc600=only_asc600,
+                        inoutflow_time=inoutflow_time,
+                        load_params=load_vars,
                     )
                     if ds["phase"].dtype != str:
                         phase_val = phase_i
                     else:
                         phase_val = phase
                     get_corr_ds(
-                        auto_corrs_outp,
-                        auto_corrs_inp,
-                        ds,
-                        columns,
-                        phase_val,
-                        phase_i,
-                        f_i,
+                        data_outp=auto_corrs_outp,
+                        data_inp=auto_corrs_inp,
+                        ds=ds.where(ds["phase"] == phase_val),
+                        params=columns,
+                        phase_i=phase_i,
+                        f_i=f_i,
                         verbose=verbose,
+                        leave=False,
                     )
         else:
             auto_corrs_outp = {}
@@ -996,17 +1098,21 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                     )
                     auto_corrs_inp[param][1][:] = np.nan
             for f_i, f in enumerate(tqdm(files) if verbose else files):
-                ds = xr.open_dataset(
-                    file_path + f, decode_times=False, engine="netcdf4"
+                ds = load_ds(
+                    f=file_path + f,
+                    only_asc600=only_asc600,
+                    inoutflow_time=inoutflow_time,
+                    load_params=load_vars,
                 )
                 get_corr_ds(
-                    auto_corrs_outp,
-                    auto_corrs_inp,
-                    ds,
-                    columns,
-                    None,
-                    f_i,
+                    data_outp=auto_corrs_outp,
+                    data_inp=auto_corrs_inp,
+                    ds=ds,
+                    params=columns,
+                    phase_i=None,
+                    f_i=f_i,
                     verbose=verbose,
+                    leave=False,
                 )
     data_vars = auto_corrs_outp
     for key in auto_corrs_inp:
@@ -2384,29 +2490,13 @@ def get_histogram(
         load_params.extend(additional_params)
 
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            load_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
-        if only_phase is not None:
-            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
-                ds["phase"] = ds["phase"].astype(np.uint64)
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
-            elif ds["phase"].dtype == str:
-                ds = ds.where(ds["phase"] == only_phase)
-            else:
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            only_phase=only_phase,
+            inoutflow_time=inoutflow_time,
+            load_params=load_params,
+        )
         for out_p, out_name in (
             tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
             if verbose
@@ -2469,29 +2559,13 @@ def get_histogram(
     hist = {}
     hist_in_params = {}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            load_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
-        if only_phase is not None:
-            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
-                ds["phase"] = ds["phase"].astype(np.uint64)
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
-            elif ds["phase"].dtype == str:
-                ds = ds.where(ds["phase"] == only_phase)
-            else:
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            only_phase=only_phase,
+            inoutflow_time=inoutflow_time,
+            load_params=load_params,
+        )
         for out_p, out_name in (
             tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
             if verbose
@@ -2650,29 +2724,13 @@ def get_histogram_cond(
         load_params.extend(additional_params)
 
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            load_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
-        if only_phase is not None:
-            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
-                ds["phase"] = ds["phase"].astype(np.uint64)
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
-            elif ds["phase"].dtype == str:
-                ds = ds.where(ds["phase"] == only_phase)
-            else:
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            only_phase=only_phase,
+            inoutflow_time=inoutflow_time,
+            load_params=load_params,
+        )
         for out_p, out_name in (
             tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
             if verbose
@@ -2736,29 +2794,13 @@ def get_histogram_cond(
     }
 
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            load_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
-        if only_phase is not None:
-            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
-                ds["phase"] = ds["phase"].astype(np.uint64)
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
-            elif ds["phase"].dtype == str:
-                ds = ds.where(ds["phase"] == only_phase)
-            else:
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            only_phase=only_phase,
+            inoutflow_time=inoutflow_time,
+            load_params=load_params,
+        )
         for cond in (
             tqdm(conditional_hist, leave=False) if verbose else conditional_hist
         ):
@@ -3307,17 +3349,11 @@ def get_sums(
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+        )
         ds[in_params] = np.abs(ds[in_params])
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
@@ -3382,17 +3418,11 @@ def get_sums_phase(
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+        )
         ds[in_params] = np.abs(ds[in_params])
         if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
             ds["phase"] = ds["phase"].astype(np.uint64)
@@ -3474,19 +3504,11 @@ def get_cov_matrix(
     cov = {out_p: np.zeros((n, n), dtype=np.float64) for out_p in param_name}
     n_total = {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            all_params + more_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+        )
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
@@ -3510,19 +3532,11 @@ def get_cov_matrix(
 
     n_total = {out_p: {p: 0.0 for p in all_params} for out_p in param_name}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            all_params + more_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+        )
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
@@ -3628,19 +3642,12 @@ def get_cov_matrix_phase(
         for phase in phases
     }
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            all_params + more_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+            load_params=all_params + more_params,
+        )
         if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
             ds["phase"] = ds["phase"].astype(np.uint64)
         for out_p, out_name in tqdm(
@@ -3678,19 +3685,12 @@ def get_cov_matrix_phase(
         for phase in phases
     }
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            all_params + more_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+            load_params=all_params + more_params,
+        )
         if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
             ds["phase"] = ds["phase"].astype(np.uint64)
         for out_p, out_name in tqdm(
