@@ -832,8 +832,8 @@ def to_Dataset(
             "Integrating for specific time levels is not yet supported"
         )
     elif pressure_levels is not None:
-        var_dims = ["time", "pressure", "lon", "lat"]
-        sens_dims = ["Output Parameter", "time", "pressure", "lon", "lat"]
+        var_dims = ["time", "pressure", "lat", "lon"]
+        sens_dims = ["Output Parameter", "time", "pressure", "lat", "lon"]
         coords = {
             "lon": lons[:-1],
             "lat": lats[:-1],
@@ -846,7 +846,7 @@ def to_Dataset(
         )
     else:
         var_dims = ["lon", "lat"]
-        sens_dims = ["Output Parameter", "lon", "lat"]
+        sens_dims = ["Output Parameter", "lat", "lon"]
         coords = {"lon": lons[:-1], "lat": lats[:-1]}
     for v in means:
         if v[0] != "d" or v == "deposition" or len(sens_model_states) == 1:
@@ -920,11 +920,23 @@ def to_Dataset(
         ds[f"Var {v}"].attrs = ds_tmp[v].attrs
         ds[f"Mean {v}"].attrs = ds_tmp[v].attrs
 
-    # Zero values in latitude and longitudes is considered garbage values, so we delete that.
-    ds["lat"] = ds["lat"].where(ds["lat"] != 0)
-    ds["lon"] = ds["lon"].where(ds["lon"] != 0)
-    ds["lon"].attrs = ds_tmp["lon"].attrs
-    ds["lat"].attrs = ds_tmp["lat"].attrs
+    if not relative_lon_lat:
+        # Zero values in latitude and longitudes is considered garbage values, so we delete that.
+        ds["lat"] = ds["lat"].where(ds["lat"] != 0)
+        ds["lon"] = ds["lon"].where(ds["lon"] != 0)
+        ds["lon"].attrs = ds_tmp["lon"].attrs
+        ds["lat"].attrs = ds_tmp["lat"].attrs
+    else:
+        ds["lat"].attrs = {
+            "long_name": "shifted rotated latitude",
+            "standard_name": "latitude",
+            "units": "degrees",
+        }
+        ds["lon"].attrs = {
+            "long_name": "shifted rotated longitude",
+            "standard_name": "longitude",
+            "units": "degrees",
+        }
     if "pressure" in ds:
         ds["pressure"].attrs = ds_tmp["pressure"].attrs
     if "time" in ds:
@@ -2041,7 +2053,10 @@ if __name__ == "__main__":
                 time_levels = data["time_levels"]
                 delta_time = data["delta_time"]
                 sens_model_states = data["sens_model_states"]
-                relative_lon_lat = data["relative_lon_lat"]
+                if "relative_lon_lat" in data:
+                    relative_lon_lat = data["relative_lon_lat"]
+                else:
+                    relative_lon_lat = args.relative_lon_lat
 
             ds = to_Dataset(
                 file_path=args.file_path,
