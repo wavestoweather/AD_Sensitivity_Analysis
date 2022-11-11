@@ -2879,6 +2879,7 @@ def traj_plot_histogram_out(
     title=None,
     save=True,
     interactive=False,
+    latex=False,
     verbose=False,
 ):
     """
@@ -2909,6 +2910,9 @@ def traj_plot_histogram_out(
         Create a figure for interactive plotting.
     title : string
         Title of the histogram. If none is given, a title will be generated.
+    latex : bool
+        Use latex names for any title or axis. Otherwise use the
+        code names of variables and such.
     verbose : bool
         Print some additional information.
 
@@ -2916,7 +2920,7 @@ def traj_plot_histogram_out(
     -------
     If interactive == False, returns None. If interactive == True, returns the matplotlib.figure.Figure with the plot drawn onto it.
     """
-    sns.set(rc={"figure.figsize": (width, height)})
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
     if interactive:
         sns.set()
         fig = Figure()
@@ -2954,7 +2958,11 @@ def traj_plot_histogram_out(
             ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
             _ = ax.set_title(title, fontsize=int(12 * font_scale))
             ax.set_ylabel(f"# Entries", fontsize=int(11 * font_scale))
-            ax.set_xlabel(f"Bins of {out_p}", fontsize=int(11 * font_scale))
+            if latex:
+                xlabel = f"Bins of {latexify.parse_word(out_p)}"
+            else:
+                xlabel = f"Bins of {out_p}"
+            ax.set_xlabel(xlabel, fontsize=int(11 * font_scale))
 
         if filename is not None and save:
             plt.tight_layout()
@@ -3002,6 +3010,7 @@ def traj_plot_histogram_inp(
     title=None,
     save=True,
     interactive=False,
+    latex=False,
     verbose=False,
 ):
     """
@@ -3031,6 +3040,9 @@ def traj_plot_histogram_inp(
         Title of the histogram. If none is given, a title will be generated.
     save : bool
         Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
+    latex : bool
+        Use latex names for any title or axis. Otherwise use the
+        code names of variables and such.
     interactive : bool
         Create a figure for interactive plotting.
 
@@ -3038,7 +3050,7 @@ def traj_plot_histogram_inp(
     -------
     If interactive == False, returns None. If interactive == True, returns the matplotlib.figure.Figure with the plot drawn onto it.
     """
-    sns.set(rc={"figure.figsize": (width, height)})
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
     out_params = list(edges_in_params.keys())
     if interactive:
         sns.set()
@@ -3072,7 +3084,11 @@ def traj_plot_histogram_inp(
             if in_p not in edges_in_params[out_p]:
                 return
             if title is None:
-                title = f"Histogram for {out_p} w.r.t. {in_p}"
+                if latex:
+                    in_p_latex = latexify.parse_word(in_p).replace(r"\partial", "")
+                    title = f"Histogram for {latexify.parse_word(out_p)} w.r.t. {in_p_latex}"
+                else:
+                    title = f"Histogram for {out_p} w.r.t. {in_p}"
             ax_t = sns.barplot(
                 x=edges_in_params[out_p][in_p][:-1],
                 y=hist_in_params[out_p][in_p],
@@ -3107,8 +3123,12 @@ def traj_plot_histogram_inp(
         create_fig(ax2, out_params[1], in_p, title)
         create_fig(ax3, out_params[2], in_p, title)
 
+        if interactive:
+            # The view in jupyter notebooks may be different from the stored one without
+            # the given padding.
+            fig.tight_layout(h_pad=1)
+
         if filename is not None and save:
-            plt.tight_layout()
             try:
                 i = 0
                 store_type = filename.split(".")[-1]
@@ -3119,15 +3139,14 @@ def traj_plot_histogram_inp(
                     save_name = (
                         store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
                     )
-                plt.savefig(save_name, dpi=300)
+                if interactive:
+                    fig.savefig(save_name, dpi=300)
+                else:
+                    plt.savefig(save_name, dpi=300)
             except:
                 print(f"Storing to {save_name} failed.", file=sys.stderr)
             if not interactive:
                 plt.clf()
-        if interactive:
-            # The view in jupyter notebooks may be different from the stored one without
-            # the given padding.
-            fig.tight_layout(h_pad=1)
 
     if isinstance(in_params, list):
         for in_p in tqdm(in_params):
@@ -3865,6 +3884,7 @@ def plot_heatmap_histogram(
     font_scale=None,
     save=True,
     interactive=False,
+    latex=False,
     verbose=False,
 ):
     """
@@ -3903,6 +3923,9 @@ def plot_heatmap_histogram(
         Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
     interactive : bool
         Create a figure for interactive plotting.
+    latex : bool
+        Use latex names for any title or axis. Otherwise use the
+        code names of variables and such.
     verbose : bool
         Print some additional information.
 
@@ -3911,7 +3934,7 @@ def plot_heatmap_histogram(
     If filename is given, returns None. If filename is None, returns the matplotlib.figure.Figure with the plot drawn
      onto it.
     """
-    sns.set(rc={"figure.figsize": (width, height)})
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
     if interactive:
         sns.set()
         fig = Figure()
@@ -3928,9 +3951,16 @@ def plot_heatmap_histogram(
     ):
         if title is None:
             if p is None:
-                title = f"Histogram for {y_name} over {x_name}"
+                if latex:
+                    title = f"Histogram for {latexify.parse_word(y_name)} over {latexify.parse_word(x_name)}"
+                else:
+                    title = f"Histogram for {y_name} over {x_name}"
             else:
-                title = f"Histogram for d {p}/{y_name} over {x_name}"
+                if latex:
+                    p_name = r"$ \partial$" + latexify.parse_word(p)
+                    title = f"Histogram for {p_name}/{latexify.parse_word(y_name)} over {latexify.parse_word(x_name)}"
+                else:
+                    title = f"Histogram for d {p}/{y_name} over {x_name}"
         if verbose:
             if p is None:
                 print(f"Plotting histogram for {x_name}, {y_name}")
@@ -3978,8 +4008,12 @@ def plot_heatmap_histogram(
         else:
             ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
             _ = ax.set_title(title, fontsize=int(12 * font_scale))
-        ax.set_xlabel(x_name)
-        ax.set_ylabel(y_name)
+        if latex:
+            ax.set_xlabel(latexify.parse_word(x_name), fontsize=int(11 * font_scale))
+            ax.set_ylabel(latexify.parse_word(y_name), fontsize=int(11 * font_scale))
+        else:
+            ax.set_xlabel(x_name, fontsize=int(11 * font_scale))
+            ax.set_ylabel(y_name, fontsize=int(11 * font_scale))
         plt.tight_layout()
         if filename is not None and save:
             fig = ax.get_figure()
@@ -4055,7 +4089,6 @@ def plot_heatmap_histogram(
         else:
             p = out_params
             in_p = in_params
-            print(f"{c} {p} {in_p}")
             plot_hist(
                 hist_conditional[c]["hist_in_params"][p][in_p],
                 c,
@@ -4154,6 +4187,11 @@ def plot_traj_histogram_out_interactive(edges, hist):
         name="Save Plot",
         button_type="primary",
     )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
@@ -4175,6 +4213,7 @@ def plot_traj_histogram_out_interactive(edges, hist):
             save=save_button,
             interactive=True,
             font_scale=font_slider,
+            latex=latex_button,
             verbose=False,
         ),
     ).servable()
@@ -4190,6 +4229,7 @@ def plot_traj_histogram_out_interactive(edges, hist):
             save_to_field,
             save_button,
             log_plot,
+            latex_button,
         ),
         title_widget,
         plot_pane,
@@ -4263,6 +4303,11 @@ def plot_traj_histogram_inp_interactive(
         name="Save Plot",
         button_type="primary",
     )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
 
     plot_pane = pn.panel(
         pn.bind(
@@ -4278,6 +4323,7 @@ def plot_traj_histogram_inp_interactive(
             font_scale=font_slider,
             save=save_button,
             interactive=True,
+            latex=latex_button,
             verbose=False,
         ),
     ).servable()
@@ -4293,6 +4339,7 @@ def plot_traj_histogram_inp_interactive(
             save_to_field,
             save_button,
             log_plot,
+            latex_button,
         ),
         plot_pane,
     )
@@ -4331,11 +4378,10 @@ def plot_heatmap_histogram_interactive(hist_conditional):
         options=wrt_params,
         button_type="primary",
     )
-    condition = pn.widgets.RadioButtonGroup(
+    condition = pn.widgets.Select(
         name="X-Axis",
         value=conditions[0],
         options=conditions,
-        button_type="primary",
     )
     in_params = ["None"]
     tmp_params = list(hist_conditional["edges_in_params"][wrt_params[0]].keys())
@@ -4380,8 +4426,13 @@ def plot_heatmap_histogram_interactive(hist_conditional):
         placeholder="",
     )
     log_plot = pn.widgets.Toggle(
-        name="Use log y-axis",
+        name="Use log colorbar",
         value=True,
+        button_type="success",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
         button_type="success",
     )
 
@@ -4399,6 +4450,7 @@ def plot_heatmap_histogram_interactive(hist_conditional):
             font_scale=font_slider,
             title=title_widget,
             save=save_button,
+            latex=latex_button,
             interactive=True,
             verbose=False,
         ),
@@ -4408,7 +4460,6 @@ def plot_heatmap_histogram_interactive(hist_conditional):
         in_param,
         "w.r.t. Model State (Y-Axis)",
         out_param,
-        "X-Axis",
         condition,
         pn.Row(
             width_slider,
@@ -4419,6 +4470,7 @@ def plot_heatmap_histogram_interactive(hist_conditional):
             save_to_field,
             save_button,
             log_plot,
+            latex_button,
         ),
         title_widget,
         plot_pane,

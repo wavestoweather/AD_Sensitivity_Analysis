@@ -15,9 +15,9 @@ from tqdm.auto import tqdm
 import xarray as xr
 
 try:
-    from latexify import param_id_map
+    from latexify import param_id_map, parse_word
 except:
-    from scripts.latexify import param_id_map
+    from scripts.latexify import param_id_map, parse_word
 
 
 def load_data(
@@ -475,6 +475,11 @@ def plot_cluster_data_interactive(data):
         name="Save Plot",
         button_type="primary",
     )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
 
     def get_plot(
         data,
@@ -489,24 +494,49 @@ def plot_cluster_data_interactive(data):
         font_scale,
         title,
         save_path,
+        latex,
         save,
     ):
 
-        sns.set(rc={"figure.figsize": (width, height)})
+        sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
         fig = Figure()
         ax = fig.subplots()
         if in_p_x[0] == "d" and in_p_x != "deposition":
             x = f"avg d{out_p_x}/{in_p_x}"
+            if latex:
+                xlabel = (
+                    r"avg $\partial$" + parse_word(out_p_x) + f"/{parse_word(in_p_x)}"
+                )
+            else:
+                xlabel = x
         elif in_p_x != "cluster" and in_p_x != "trajectory" and in_p_x != "file":
             x = f"avg {in_p_x}"
+            if latex:
+                xlabel = f"avg {parse_word(in_p_x)}"
+            else:
+                xlabel = x
         else:
             x = in_p_x
+            xlabel = in_p_x
+
         if in_p_y[0] == "d" and in_p_y != "deposition":
             y = f"avg d{out_p_y}/{in_p_y}"
+            if latex:
+                ylabel = (
+                    r"avg $\partial$" + parse_word(out_p_y) + f"/{parse_word(in_p_y)}"
+                )
+            else:
+                ylabel = y
         elif in_p_y != "cluster" and in_p_y != "trajectory" and in_p_y != "file":
             y = f"avg {in_p_y}"
+            if latex:
+                ylabel = f"avg {parse_word(in_p_y)}"
+            else:
+                ylabel = y
         else:
             y = in_p_y
+            ylabel = in_p_y
+
         histogram = (in_p_x == in_p_y and out_p_x == out_p_y) or (
             in_p_x == in_p_y and "/" not in x
         )
@@ -551,14 +581,21 @@ def plot_cluster_data_interactive(data):
             labelsize=int(10 * font_scale),
         )
         _ = ax.set_title(title, fontsize=int(12 * font_scale))
-        ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
-        ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
+        ax.set_xlabel(xlabel, fontsize=int(11 * font_scale))
+        ax.set_ylabel(ylabel, fontsize=int(11 * font_scale))
         legend = ax.get_legend()
         legend.set_title("cluster", prop={"size": int(11 * font_scale)})
         plt.setp(legend.get_texts(), fontsize=int(10 * font_scale))
         if save:
             try:
-                ax.figure.savefig(save_path, bbox_inches="tight", dpi=300)
+                i = 0
+                store_type = save_path.split(".")[-1]
+                store_path = save_path[0 : -len(store_type) - 1]
+                save_name = store_path + "_{:03d}.".format(i) + store_type
+                while os.path.isfile(save_name):
+                    i = i + 1
+                    save_name = store_path + "_{:03d}.".format(i) + store_type
+                ax.figure.savefig(save_name, bbox_inches="tight", dpi=300)
             except:
                 save_to_field.value = (
                     f"Could not save to {save_path}. Did you forget the filetype?"
@@ -583,6 +620,7 @@ def plot_cluster_data_interactive(data):
             font_scale=font_slider,
             title=title_widget,
             save_path=save_to_field,
+            latex=latex_button,
             save=save_button,
         ),
     ).servable()
@@ -606,6 +644,7 @@ def plot_cluster_data_interactive(data):
         pn.Row(
             save_to_field,
             save_button,
+            latex_button,
         ),
         title_widget,
         plot_pane,

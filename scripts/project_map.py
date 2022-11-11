@@ -17,9 +17,9 @@ from tqdm.auto import tqdm
 import xarray as xr
 
 try:
-    from scripts.latexify import param_id_map
+    from scripts.latexify import param_id_map, parse_word
 except:
-    from latexify import param_id_map
+    from latexify import param_id_map, parse_word
 
 hv.extension("matplotlib")
 pn.extension()
@@ -1198,6 +1198,11 @@ def plot_2dmap_interactive(ds):
         step=0.1,
         value=0.7,
     )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
 
     def plot_me(
         o_p,
@@ -1213,6 +1218,7 @@ def plot_2dmap_interactive(ds):
         title,
         font_scale,
         save,
+        latex,
         save_path,
     ):
         if title == "":
@@ -1253,8 +1259,8 @@ def plot_2dmap_interactive(ds):
                 mini = -maxi
             if log_plot:
                 ds_tmp.plot(
-                    x="lat",
-                    y="lon",
+                    y="lat",
+                    x="lon",
                     cmap=c,
                     norm=SymLogNorm(
                         linthresh=linthresh,
@@ -1266,30 +1272,13 @@ def plot_2dmap_interactive(ds):
                 )
             else:
                 ds_tmp.plot(
-                    x="lat",
-                    y="lon",
+                    y="lat",
+                    x="lon",
                     cmap=c,
                     vmin=mini,
                     vmax=maxi,
                     ax=ax,
                 )
-            _ = ax.set_title(title, fontsize=int(12 * font_scale))
-            ax.tick_params(
-                axis="both",
-                which="major",
-                labelsize=int(10 * font_scale),
-            )
-            ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
-            ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
-            ax.yaxis.grid(True, which="major")
-            ax.xaxis.grid(True, which="major")
-            cbar = ax.collections[-1].colorbar
-            cbarax = cbar.ax
-            cbarax.tick_params(labelsize=int(10 * font_scale))
-            cbar.set_label(
-                label=f"{k_p} {i_p}",
-                fontsize=int(11 * font_scale),
-            )
         else:
             if log_plot:
                 if lthresh == 0:
@@ -1298,8 +1287,8 @@ def plot_2dmap_interactive(ds):
                     linthresh = 10 ** lthresh
 
                 ds_tmp.plot(
-                    x="lat",
-                    y="lon",
+                    y="lat",
+                    x="lon",
                     cmap=c,
                     norm=SymLogNorm(
                         linthresh=linthresh,
@@ -1309,31 +1298,45 @@ def plot_2dmap_interactive(ds):
                 )
             else:
                 ds_tmp.plot(
-                    x="lat",
-                    y="lon",
+                    y="lat",
+                    x="lon",
                     cmap=c,
                     ax=ax,
                 )
-            _ = ax.set_title(title, fontsize=int(12 * font_scale))
-            ax.tick_params(
-                axis="both",
-                which="major",
-                labelsize=int(10 * font_scale),
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+        ax.tick_params(
+            axis="both",
+            which="major",
+            labelsize=int(10 * font_scale),
+        )
+        ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
+        ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
+        ax.yaxis.grid(True, which="major")
+        ax.xaxis.grid(True, which="major")
+        cbar = ax.collections[-1].colorbar
+        cbarax = cbar.ax
+        cbarax.tick_params(labelsize=int(10 * font_scale))
+        if latex:
+            cbarlabel = f"{k_p} " + parse_word(i_p).replace(r"\partial", "")
+            cbar.set_label(
+                label=cbarlabel,
+                fontsize=int(11 * font_scale),
             )
-            ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
-            ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
-            ax.yaxis.grid(True, which="major")
-            ax.xaxis.grid(True, which="major")
-            cbar = ax.collections[-1].colorbar
-            cbarax = cbar.ax
-            cbarax.tick_params(labelsize=int(10 * font_scale))
+        else:
             cbar.set_label(
                 label=f"{k_p} {i_p}",
                 fontsize=int(11 * font_scale),
             )
         if save:
             try:
-                ax.figure.savefig(save_path, bbox_inches="tight", dpi=300)
+                i = 0
+                store_type = save_path.split(".")[-1]
+                store_path = save_path[0 : -len(store_type) - 1]
+                save_name = store_path + "_{:03d}.".format(i) + store_type
+                while os.path.isfile(save_name):
+                    i = i + 1
+                    save_name = store_path + "_{:03d}.".format(i) + store_type
+                ax.figure.savefig(save_name, bbox_inches="tight", dpi=300)
             except:
                 save_to_field.value = (
                     f"Could not save to {save_path}. Did you forget the filetype?"
@@ -1359,6 +1362,7 @@ def plot_2dmap_interactive(ds):
             title=title_widget,
             font_scale=font_slider,
             save=save_button,
+            latex=latex_button,
             save_path=save_to_field,
         ),
     ).servable()
@@ -1386,6 +1390,7 @@ def plot_2dmap_interactive(ds):
         pn.Row(
             save_to_field,
             save_button,
+            latex_button,
         ),
         title_widget,
         plot_pane,
