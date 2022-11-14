@@ -66,9 +66,10 @@ def filter_trajectories(
         ds = ds.sel({"Output_Parameter_ID": sens_model_state_ids})
     # There seems to be a bug with some output data where the longitude
     # and latitude happen to be zero when the trajectory is already finished.
-    # Since this is far away from our domain, we can savely delete that-
-    ds["lon"] = ds["lon"].where(ds["lon"] != 0)
-    ds["lat"] = ds["lat"].where(ds["lat"] != 0)
+    # Since this is far away from our domain, we can savely delete that.
+    # It is save to assume that only latitude with zero values are invalid
+    # ds["lon"] = ds["lon"].where(ds["lon"] != 0)
+    ds = ds.where(ds["lat"] != 0)
     return ds
 
 
