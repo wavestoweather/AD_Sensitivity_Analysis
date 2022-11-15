@@ -1148,7 +1148,17 @@ def plot_2dmap_interactive(ds):
     color_map = pn.widgets.Select(
         name="Colormap",
         value="RdBu",
-        options=["RdBu", "viridis", "blues"],
+        options=[
+            "RdBu",
+            "viridis",
+            "blues",
+            "PiYG",
+            "PRGn",
+            "BrBG",
+            "PuOr",
+            "plasma",
+            "cividis",
+        ],
     )
     fix = pn.widgets.Toggle(
         name="Fix colorbar over all levels",
@@ -1195,7 +1205,7 @@ def plot_2dmap_interactive(ds):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=2,
+        end=3,
         step=0.1,
         value=0.7,
     )

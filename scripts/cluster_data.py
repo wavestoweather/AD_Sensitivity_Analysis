@@ -464,7 +464,7 @@ def plot_cluster_data_interactive(data):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=2,
+        end=3,
         step=0.1,
         value=0.7,
     )

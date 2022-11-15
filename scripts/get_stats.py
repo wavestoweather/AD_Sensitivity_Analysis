@@ -4008,6 +4008,9 @@ def plot_heatmap_histogram(
         else:
             ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
             _ = ax.set_title(title, fontsize=int(12 * font_scale))
+            cbar = ax.collections[-1].colorbar
+            cbarax = cbar.ax
+            cbarax.tick_params(labelsize=int(10 * font_scale))
         if latex:
             ax.set_xlabel(latexify.parse_word(x_name), fontsize=int(11 * font_scale))
             ax.set_ylabel(latexify.parse_word(y_name), fontsize=int(11 * font_scale))
@@ -4195,7 +4198,7 @@ def plot_traj_histogram_out_interactive(edges, hist):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=2,
+        end=3,
         step=0.1,
         value=0.7,
     )
@@ -4287,7 +4290,7 @@ def plot_traj_histogram_inp_interactive(
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=2,
+        end=3,
         step=0.1,
         value=0.7,
     )
@@ -4410,7 +4413,7 @@ def plot_heatmap_histogram_interactive(hist_conditional):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=2,
+        end=3,
         step=0.1,
         value=0.7,
     )

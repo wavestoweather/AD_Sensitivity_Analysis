@@ -11,6 +11,7 @@ import xarray as xr
 try:
     from Deriv_dask import Deriv_dask
     from latexify import (
+        param_id_map,
         in_params_dic,
         physical_params,
         in_params_grouping,
@@ -23,6 +24,7 @@ try:
 except:
     from scripts.Deriv_dask import Deriv_dask
     from scripts.latexify import (
+        param_id_map,
         in_params_dic,
         physical_params,
         in_params_grouping,
@@ -497,8 +499,9 @@ def plot_time_evolution(
         A dataframe with columns "Output Parameter" for the model state
         variables, which must have only one value,
         "Input Parameter" for the perturbed model parameter,
-        "Predicted Squared Error" for the sensitivity calculated to deviations
-        in the next timestep, "Mean Squared Error" for the actual deviations
+        "Predicted Error" for the sensitivity calculated to deviations
+        in the next timestep, (optional; if plot_deviation is true) "Mean Squared Error" for the actual deviations
+        or (optional; if plot_deviation is false) "Not Perturbed Value".
     store_path : string
         Path to folder where to store the images.
     backend : string
@@ -644,14 +647,14 @@ def plot_time_evolution(
                 ylabel,
                 **{
                     "rotation": 90,
-                    "fontstyle": "italic",
+                    # "fontstyle": "italic",
                     "fontsize": axis_label_text_font_size,
                 },
             )
             ax.set_xlabel(
                 xlabel,
                 **{
-                    "fontstyle": "italic",
+                    # "fontstyle": "italic",
                     "fontsize": axis_label_text_font_size,
                 },
             )
@@ -705,7 +708,7 @@ def plot_time_evolution(
                 labelpad=9.0,
                 **{
                     "rotation": 270,
-                    "fontstyle": "italic",
+                    # "fontstyle": "italic",
                     "fontsize": axis_label_text_font_size,
                 },
             )
@@ -1172,6 +1175,8 @@ if __name__ == "__main__":
         "NI_OUT": "NI_OUT",
         "NG_OUT": "NG_OUT",
         "NH_OUT": "NH_OUT",
+        "latent_heat": "Latent Heating",
+        "latent_cool": "Latent Cooling",
     }
 
     if "correlation" in args.plot_variant or args.plot_variant == "histogram":
@@ -1309,57 +1314,147 @@ if __name__ == "__main__":
                 .reset_index()
             )
         else:
-            df_mean = (
-                ds.mean(dim=["time_after_ascent"], skipna=True)
-                .to_dataframe()
-                .reset_index()
-            )
-            df = ds.to_dataframe().reset_index()
-            df = df.loc[df["trajectory"] == args.traj]
-            df_mean = df_mean.loc[df_mean["trajectory"] == args.traj]
-        for out_p in out_params:
-            df_tmp = df.loc[df["Output Parameter"] == out_p]
-            df_mean_tmp = df_mean.loc[df_mean["Output Parameter"] == out_p]
-            if len(args.in_parameter) == 0:
-                in_params = list(
-                    np.unique(
-                        df_mean_tmp.nlargest(
-                            args.n_model_params, "Predicted Squared Error"
-                        )["Input Parameter"]
-                    )
+            # Result from a perturbation
+            if "time_after_ascent" in ds.dims:
+                df_mean = (
+                    ds.mean(dim=["time_after_ascent"], skipna=True)
+                    .to_dataframe()
+                    .reset_index()
                 )
-            else:
-                in_params = args.in_parameter
+                df = ds.to_dataframe().reset_index()
+                df = df.loc[df["trajectory"] == args.traj]
+                df_mean = df_mean.loc[df_mean["trajectory"] == args.traj]
+                for out_p in out_params:
+                    df_tmp = df.loc[df["Output Parameter"] == out_p]
+                    df_mean_tmp = df_mean.loc[df_mean["Output Parameter"] == out_p]
+                    if len(args.in_parameter) == 0:
+                        in_params = list(
+                            np.unique(
+                                df_mean_tmp.nlargest(
+                                    args.n_model_params, "Predicted Squared Error"
+                                )["Input Parameter"]
+                            )
+                        )
+                    else:
+                        in_params = args.in_parameter
 
-            df_tmp = df_tmp.loc[df_tmp["Input Parameter"].isin(in_params)]
-            if (
-                np.min(df_tmp["Predicted Squared Error"]) == 0
-                and np.max(df_tmp["Predicted Squared Error"]) == 0
-            ):
-                # nothing to see here
-                continue
-            print(f"Plotting for {out_p}")
-            print(df_tmp.columns)
-            df_tmp["Not Perturbed Value"] = df_tmp["Not Perturbed Value"] * -1
-            df_tmp["Predicted Error"] = df_tmp["Predicted Error"] * -1
-            plot_time_evolution(
-                df=df_tmp,
-                backend=args.backend,
-                store_path=args.store_path,
-                title=args.title + " for " + param_title_names[out_p],
-                xlabel=args.xlabel,
-                ylabel=args.ylabel
-                + " "
-                + parse_word(out_p)
-                + " "
-                + get_unit(out_p, brackets=True),
-                twinlabel=args.twinlabel + " " + get_unit(out_p, brackets=True),
-                logy=args.logy,
-                width=args.width,
-                height=args.height,
-                logtwin=args.logtwin,
-                min_x=args.min_time,
-                max_x=args.max_time,
-            )
+                    df_tmp = df_tmp.loc[df_tmp["Input Parameter"].isin(in_params)]
+                    if (
+                        np.min(df_tmp["Predicted Squared Error"]) == 0
+                        and np.max(df_tmp["Predicted Squared Error"]) == 0
+                    ):
+                        # nothing to see here
+                        continue
+                    print(f"Plotting for {out_p}")
+                    print(df_tmp.columns)
+                    df_tmp["Not Perturbed Value"] = df_tmp["Not Perturbed Value"] * -1
+                    df_tmp["Predicted Error"] = df_tmp["Predicted Error"] * -1
+                    plot_time_evolution(
+                        df=df_tmp,
+                        backend=args.backend,
+                        store_path=args.store_path,
+                        title=args.title + " for " + param_title_names[out_p],
+                        xlabel=args.xlabel,
+                        ylabel=args.ylabel
+                        + " "
+                        + parse_word(out_p)
+                        + " "
+                        + get_unit(out_p, brackets=True),
+                        twinlabel=args.twinlabel + " " + get_unit(out_p, brackets=True),
+                        logy=args.logy,
+                        width=args.width,
+                        height=args.height,
+                        logtwin=args.logtwin,
+                        min_x=args.min_time,
+                        max_x=args.max_time,
+                    )
+            else:
+                # Result from a sensitivity simulation
+                for out_p in out_params:
+                    out_p_id = np.argwhere(np.asarray(param_id_map) == out_p).item()
+                    ds_traj = ds.isel({"ensemble": 0, "trajectory": args.traj}).sel(
+                        {"Output_Parameter_ID": out_p_id}
+                    )
+                    df = ds_traj.to_dataframe().reset_index()
+                    if args.min_time is not None and args.max_time is not None:
+                        ds_mean = np.abs(
+                            ds_traj.where(
+                                (ds_traj["time_after_ascent"] >= args.min_time)
+                                & (ds_traj["time_after_ascent"] <= args.max_time)
+                            )
+                        ).mean(dim=["time"], skipna=True)
+                    elif args.min_time is not None:
+                        ds_mean = np.abs(
+                            ds_traj.where(ds_traj["time_after_ascent"] >= args.min_time)
+                        ).mean(dim=["time"], skipna=True)
+                    elif args.max_time is not None:
+                        ds_mean = np.abs(
+                            ds_traj.where(ds_traj["time_after_ascent"] <= args.max_time)
+                        ).mean(dim=["time"], skipna=True)
+                    else:
+                        ds_mean = np.abs(ds_traj).mean(dim=["time"], skipna=True)
+                    in_params = []
+                    max_vals = np.zeros(args.n_model_params)
+                    for i in range(args.n_model_params):
+                        for key in ds_mean:
+                            if key[0] == "d" and key != "deposition":
+                                if ds_mean[key].values.item() > max_vals[i]:
+                                    if key not in in_params:
+                                        if len(in_params) <= i:
+                                            in_params.append(key)
+                                        else:
+                                            in_params[i] = key
+                                        max_vals[i] = ds_mean[key].values.item()
+                    predicted_errors = np.array([])
+                    in_param_thingy = np.array([])
+                    unperturbed = np.array([])
+                    time = np.array([])
+                    for col in in_params:
+                        predicted_errors = np.append(
+                            predicted_errors, ds_traj[col].values
+                        )
+                        in_param_thingy = np.append(
+                            in_param_thingy, np.repeat(col, len(ds_traj[col].values))
+                        )
+                        unperturbed = np.append(unperturbed, ds_traj[out_p].values)
+                        time = np.append(time, ds_traj["time_after_ascent"].values)
+                    df_tmp = pd.DataFrame(
+                        data={
+                            "Predicted Error": predicted_errors,
+                            "Predicted Squared Error": predicted_errors ** 2,
+                            "Output Parameter": np.repeat(out_p, len(predicted_errors)),
+                            "Input Parameter": in_param_thingy,
+                            "Not Perturbed Value": unperturbed,
+                            "time_after_ascent": time,
+                        }
+                    )
+
+                    if (
+                        np.min(df_tmp["Predicted Squared Error"]) == 0
+                        and np.max(df_tmp["Predicted Squared Error"]) == 0
+                    ):
+                        # nothing to see here
+                        continue
+                    print(f"Plotting for {out_p}")
+                    print(df_tmp.columns)
+                    plot_time_evolution(
+                        df=df_tmp,
+                        backend=args.backend,
+                        store_path=args.store_path,
+                        title=args.title + " for " + param_title_names[out_p],
+                        xlabel=args.xlabel,
+                        ylabel=args.ylabel
+                        + " "
+                        + parse_word(out_p)
+                        + " "
+                        + get_unit(out_p, brackets=True),
+                        twinlabel=args.twinlabel + " " + get_unit(out_p, brackets=True),
+                        logy=args.logy,
+                        width=args.width,
+                        height=args.height,
+                        logtwin=args.logtwin,
+                        min_x=args.min_time,
+                        max_x=args.max_time,
+                    )
     else:
         print(f"plot_variant '{args.plot_variant}': No such plot variant. ABORTING!")
