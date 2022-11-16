@@ -2880,6 +2880,7 @@ def traj_plot_histogram_out(
     save=True,
     interactive=False,
     latex=False,
+    ticks_offset=None,
     verbose=False,
 ):
     """
@@ -2913,6 +2914,9 @@ def traj_plot_histogram_out(
     latex : bool
         Use latex names for any title or axis. Otherwise use the
         code names of variables and such.
+    ticks_offset : int
+        If none, the number of ticks is calculated based on the width of the plot. Otherwise,
+        every other "ticks_offset" is used.
     verbose : bool
         Print some additional information.
 
@@ -2934,11 +2938,16 @@ def traj_plot_histogram_out(
             title = f"Histogram for {latexify.parse_word(out_p)}"
         if verbose:
             print(f"Plotting histogram for {out_p}")
-        ticks_offset = 1
-        if width < 24 and width > 5:
-            ticks_offset = 24 // (width - 5)
-        elif width <= 5:
-            ticks_offset = 6
+
+        if ticks_offset is None:
+            if 24 > width > 5:
+                local_ticks_offset = 24 // (width - 5)
+            elif width <= 5:
+                local_ticks_offset = 6
+        else:
+            local_ticks_offset = ticks_offset
+        if ticks_offset >= len(edges[out_p]) - 1:
+            local_ticks_offset = len(edges[out_p]) - 2
         if ax is None:
             ax = sns.barplot(
                 x=edges[out_p][:-1], y=hist[out_p], log=log, color="seagreen"
@@ -2947,10 +2956,12 @@ def traj_plot_histogram_out(
             sns.barplot(
                 x=edges[out_p][:-1], y=hist[out_p], log=log, color="seagreen", ax=ax
             )
-        x_labels = [f"{tick:1.1e}" for tick in edges[out_p][:-1:ticks_offset]]
-        x_ticks = np.arange(0, len(edges[out_p]) - 1, ticks_offset)
+        x_labels = [f"{tick:1.1e}" for tick in edges[out_p][:-1:local_ticks_offset]]
+        x_ticks = np.arange(0, len(edges[out_p]) - 1, local_ticks_offset)
         ax.set(xticks=x_ticks)
-        _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
+        _ = ax.set_xticklabels(
+            x_labels, rotation=45, ha="right", rotation_mode="anchor"
+        )
         if font_scale is None:
             _ = ax.set_title(title)
             ax.set_ylabel(out_p)
@@ -2958,10 +2969,7 @@ def traj_plot_histogram_out(
             ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
             _ = ax.set_title(title, fontsize=int(12 * font_scale))
             ax.set_ylabel(f"# Entries", fontsize=int(11 * font_scale))
-            if latex:
-                xlabel = f"Bins of {latexify.parse_word(out_p)}"
-            else:
-                xlabel = f"Bins of {out_p}"
+            xlabel = f"Bins of {latexify.parse_word(out_p)}"
             ax.set_xlabel(xlabel, fontsize=int(11 * font_scale))
 
         if filename is not None and save:
@@ -2978,7 +2986,7 @@ def traj_plot_histogram_out(
                     )
                 if not interactive:
                     fig = ax.get_figure()
-                fig.savefig(save_name, dpi=300)
+                fig.savefig(save_name, bbox_inches="tight", dpi=300)
             except:
                 print(f"Storing to {save_name} failed.", file=sys.stderr)
             if not interactive:
@@ -3011,6 +3019,7 @@ def traj_plot_histogram_inp(
     save=True,
     interactive=False,
     latex=False,
+    ticks_offset=None,
     verbose=False,
 ):
     """
@@ -3043,6 +3052,9 @@ def traj_plot_histogram_inp(
     latex : bool
         Use latex names for any title or axis. Otherwise use the
         code names of variables and such.
+    ticks_offset : int
+        If none, the number of ticks is calculated based on the width of the plot. Otherwise,
+        every other "ticks_offset" is used.
     interactive : bool
         Create a figure for interactive plotting.
 
@@ -3084,11 +3096,8 @@ def traj_plot_histogram_inp(
             if in_p not in edges_in_params[out_p]:
                 return
             if title is None:
-                if latex:
-                    in_p_latex = latexify.parse_word(in_p).replace(r"\partial", "")
-                    title = f"Histogram for {latexify.parse_word(out_p)} w.r.t. {in_p_latex}"
-                else:
-                    title = f"Histogram for {out_p} w.r.t. {in_p}"
+                in_p_latex = latexify.parse_word(in_p).replace(r"\partial", "")
+                title = f"{latexify.parse_word(out_p)} w.r.t. {in_p_latex}"
             ax_t = sns.barplot(
                 x=edges_in_params[out_p][in_p][:-1],
                 y=hist_in_params[out_p][in_p],
@@ -3097,20 +3106,26 @@ def traj_plot_histogram_inp(
             )
             if log:
                 ax_t.set_yscale("log")
-            ticks_offset = 1
-            if width < 24 and width > 5:
-                ticks_offset = 24 // (width - 5)
-            elif width <= 5:
-                ticks_offset = 6
+            if ticks_offset is None:
+                if 24 > width > 5:
+                    local_ticks_offset = 24 // (width - 5)
+                elif width <= 5:
+                    local_ticks_offset = 6
+            else:
+                local_ticks_offset = ticks_offset
+            if local_ticks_offset >= len(edges_in_params[out_p][in_p][:-1]) - 1:
+                local_ticks_offset = len(edges_in_params[out_p][in_p][:-1]) - 2
             x_labels = [
                 f"{tick:1.1e}"
-                for tick in edges_in_params[out_p][in_p][:-1:ticks_offset]
+                for tick in edges_in_params[out_p][in_p][:-1:local_ticks_offset]
             ]
             x_ticks = np.arange(
-                0, len(edges_in_params[out_p][in_p][:-1]) - 1, ticks_offset
+                0, len(edges_in_params[out_p][in_p][:-1]) - 1, local_ticks_offset
             )
             ax_t.set(xticks=x_ticks)
-            _ = ax_t.set_xticklabels(x_labels, rotation=45, ha="right")
+            _ = ax_t.set_xticklabels(
+                x_labels, rotation=45, ha="right", rotation_mode="anchor"
+            )
             if font_scale is None:
                 _ = ax_t.set_title(title)
             else:
@@ -3140,9 +3155,9 @@ def traj_plot_histogram_inp(
                         store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
                     )
                 if interactive:
-                    fig.savefig(save_name, dpi=300)
+                    fig.savefig(save_name, bbox_inches="tight", dpi=300)
                 else:
-                    plt.savefig(save_name, dpi=300)
+                    plt.savefig(save_name, bbox_inches="tight", dpi=300)
             except:
                 print(f"Storing to {save_name} failed.", file=sys.stderr)
             if not interactive:
@@ -3885,6 +3900,7 @@ def plot_heatmap_histogram(
     save=True,
     interactive=False,
     latex=False,
+    ticks_offset=None,
     verbose=False,
 ):
     """
@@ -3926,6 +3942,9 @@ def plot_heatmap_histogram(
     latex : bool
         Use latex names for any title or axis. Otherwise use the
         code names of variables and such.
+    ticks_offset : int
+        If none, the number of ticks is calculated based on the width of the plot. Otherwise,
+        every other "ticks_offset" is used.
     verbose : bool
         Print some additional information.
 
@@ -3951,16 +3970,11 @@ def plot_heatmap_histogram(
     ):
         if title is None:
             if p is None:
-                if latex:
-                    title = f"Histogram for {latexify.parse_word(y_name)} over {latexify.parse_word(x_name)}"
-                else:
-                    title = f"Histogram for {y_name} over {x_name}"
+                title = f"Histogram for {latexify.parse_word(y_name)} over {latexify.parse_word(x_name)}"
             else:
-                if latex:
-                    p_name = r"$ \partial$" + latexify.parse_word(p)
-                    title = f"Histogram for {p_name}/{latexify.parse_word(y_name)} over {latexify.parse_word(x_name)}"
-                else:
-                    title = f"Histogram for d {p}/{y_name} over {x_name}"
+                p_name = r"$ \partial$" + latexify.parse_word(p)
+                title = f"Histogram for {p_name}/{latexify.parse_word(y_name)} over {latexify.parse_word(x_name)}"
+
         if verbose:
             if p is None:
                 print(f"Plotting histogram for {x_name}, {y_name}")
@@ -3991,16 +4005,30 @@ def plot_heatmap_histogram(
         except:
             print(f"Plotting for {x_name}, {y_name} failed")
             return
-        if 24 > width > 5:
-            ticks_offset = 24 // (width - 5)
-        elif width <= 5:
-            ticks_offset = 6
-        x_ticks_location = np.arange(0, np.shape(hist2d)[0], ticks_offset)
+        if ticks_offset is None:
+            if 24 > width > 5:
+                local_ticks_offset = 24 // (width - 5)
+            elif width <= 5:
+                local_ticks_offset = 6
+        else:
+            local_ticks_offset = ticks_offset
+
+        if local_ticks_offset >= np.shape(hist2d)[0]:
+            local_ticks_offset_x = np.shape(hist2d)[0] - 1
+        else:
+            local_ticks_offset_x = local_ticks_offset
+        x_ticks_location = np.arange(0, np.shape(hist2d)[0], local_ticks_offset_x)
         ax.set_xticks(x_ticks_location)
-        y_ticks_location = np.arange(0, np.shape(hist2d)[1], ticks_offset)
+        if local_ticks_offset >= np.shape(hist2d)[1]:
+            local_ticks_offset_y = np.shape(hist2d)[1] - 1
+        else:
+            local_ticks_offset_y = local_ticks_offset
+        y_ticks_location = np.arange(0, np.shape(hist2d)[1], local_ticks_offset_y)
         ax.set_yticks(y_ticks_location)
         x_labels = [f"{x_ticks[i]:1.1e}" for i in x_ticks_location]
-        _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
+        _ = ax.set_xticklabels(
+            x_labels, rotation=45, ha="right", rotation_mode="anchor"
+        )
         y_labels = [f"{y_ticks[i]:1.1e}" for i in y_ticks_location]
         _ = ax.set_yticklabels(y_labels, rotation=0)
         if font_scale is None:
@@ -4011,12 +4039,9 @@ def plot_heatmap_histogram(
             cbar = ax.collections[-1].colorbar
             cbarax = cbar.ax
             cbarax.tick_params(labelsize=int(10 * font_scale))
-        if latex:
-            ax.set_xlabel(latexify.parse_word(x_name), fontsize=int(11 * font_scale))
-            ax.set_ylabel(latexify.parse_word(y_name), fontsize=int(11 * font_scale))
-        else:
-            ax.set_xlabel(x_name, fontsize=int(11 * font_scale))
-            ax.set_ylabel(y_name, fontsize=int(11 * font_scale))
+        ax.set_xlabel(latexify.parse_word(x_name), fontsize=int(11 * font_scale))
+        ax.set_ylabel(latexify.parse_word(y_name), fontsize=int(11 * font_scale))
+
         plt.tight_layout()
         if filename is not None and save:
             fig = ax.get_figure()
@@ -4070,7 +4095,7 @@ def plot_heatmap_histogram(
                             + "_{:03d}.".format(i)
                             + store_type
                         )
-                fig.savefig(save_name, dpi=300)
+                fig.savefig(save_name, bbox_inches="tight", dpi=300)
             except:
                 print(f"Storing to {save_name} failed.", file=sys.stderr)
             if not interactive:
@@ -4198,9 +4223,16 @@ def plot_traj_histogram_out_interactive(edges, hist):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=3,
+        end=5,
         step=0.1,
         value=0.7,
+    )
+    tick_slider = pn.widgets.IntSlider(
+        name="Plot every n ticks on the x-axis:",
+        start=1,
+        end=20,
+        step=1,
+        value=6,
     )
     plot_pane = pn.panel(
         pn.bind(
@@ -4217,6 +4249,7 @@ def plot_traj_histogram_out_interactive(edges, hist):
             interactive=True,
             font_scale=font_slider,
             latex=latex_button,
+            ticks_offset=tick_slider,
             verbose=False,
         ),
     ).servable()
@@ -4227,6 +4260,7 @@ def plot_traj_histogram_out_interactive(edges, hist):
             width_slider,
             height_slider,
             font_slider,
+            tick_slider,
         ),
         pn.Row(
             save_to_field,
@@ -4290,7 +4324,7 @@ def plot_traj_histogram_inp_interactive(
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=3,
+        end=5,
         step=0.1,
         value=0.7,
     )
@@ -4311,6 +4345,13 @@ def plot_traj_histogram_inp_interactive(
         value=False,
         button_type="success",
     )
+    tick_slider = pn.widgets.IntSlider(
+        name="Plot every n ticks on the x-axis:",
+        start=1,
+        end=20,
+        step=1,
+        value=6,
+    )
 
     plot_pane = pn.panel(
         pn.bind(
@@ -4327,6 +4368,7 @@ def plot_traj_histogram_inp_interactive(
             save=save_button,
             interactive=True,
             latex=latex_button,
+            ticks_offset=tick_slider,
             verbose=False,
         ),
     ).servable()
@@ -4337,6 +4379,7 @@ def plot_traj_histogram_inp_interactive(
             width_slider,
             height_slider,
             font_slider,
+            tick_slider,
         ),
         pn.Row(
             save_to_field,
@@ -4413,7 +4456,7 @@ def plot_heatmap_histogram_interactive(hist_conditional):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=3,
+        end=5,
         step=0.1,
         value=0.7,
     )
@@ -4438,6 +4481,13 @@ def plot_heatmap_histogram_interactive(hist_conditional):
         value=False,
         button_type="success",
     )
+    tick_slider = pn.widgets.IntSlider(
+        name="Plot every n ticks:",
+        start=1,
+        end=20,
+        step=1,
+        value=6,
+    )
 
     plot_pane = pn.panel(
         pn.bind(
@@ -4455,6 +4505,7 @@ def plot_heatmap_histogram_interactive(hist_conditional):
             save=save_button,
             latex=latex_button,
             interactive=True,
+            ticks_offset=tick_slider,
             verbose=False,
         ),
     ).servable()
@@ -4468,6 +4519,7 @@ def plot_heatmap_histogram_interactive(hist_conditional):
             width_slider,
             height_slider,
             font_slider,
+            tick_slider,
         ),
         pn.Row(
             save_to_field,

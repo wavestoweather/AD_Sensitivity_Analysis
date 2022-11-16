@@ -464,7 +464,7 @@ def plot_cluster_data_interactive(data):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=3,
+        end=5,
         step=0.1,
         value=0.7,
     )
@@ -503,36 +503,20 @@ def plot_cluster_data_interactive(data):
         ax = fig.subplots()
         if in_p_x[0] == "d" and in_p_x != "deposition":
             x = f"avg d{out_p_x}/{in_p_x}"
-            if latex:
-                xlabel = (
-                    r"avg $\partial$" + parse_word(out_p_x) + f"/{parse_word(in_p_x)}"
-                )
-            else:
-                xlabel = x
+            xlabel = r"avg $\partial$" + out_p_x + f"/{parse_word(in_p_x)}"
         elif in_p_x != "cluster" and in_p_x != "trajectory" and in_p_x != "file":
             x = f"avg {in_p_x}"
-            if latex:
-                xlabel = f"avg {parse_word(in_p_x)}"
-            else:
-                xlabel = x
+            xlabel = f"avg {parse_word(in_p_x)}"
         else:
             x = in_p_x
             xlabel = in_p_x
 
         if in_p_y[0] == "d" and in_p_y != "deposition":
             y = f"avg d{out_p_y}/{in_p_y}"
-            if latex:
-                ylabel = (
-                    r"avg $\partial$" + parse_word(out_p_y) + f"/{parse_word(in_p_y)}"
-                )
-            else:
-                ylabel = y
+            ylabel = r"avg $\partial$" + parse_word(out_p_y) + f"/{parse_word(in_p_y)}"
         elif in_p_y != "cluster" and in_p_y != "trajectory" and in_p_y != "file":
             y = f"avg {in_p_y}"
-            if latex:
-                ylabel = f"avg {parse_word(in_p_y)}"
-            else:
-                ylabel = y
+            ylabel = f"avg {parse_word(in_p_y)}"
         else:
             y = in_p_y
             ylabel = in_p_y
@@ -586,6 +570,10 @@ def plot_cluster_data_interactive(data):
         legend = ax.get_legend()
         legend.set_title("cluster", prop={"size": int(11 * font_scale)})
         plt.setp(legend.get_texts(), fontsize=int(10 * font_scale))
+        ax.yaxis.get_offset_text().set_fontsize(int(11 * font_scale))
+        ax.xaxis.get_offset_text().set_fontsize(int(11 * font_scale))
+        # You may use the following line to remove the offset label if needed.
+        # ax.xaxis.get_offset_text().set(alpha=0)
         if save:
             try:
                 i = 0

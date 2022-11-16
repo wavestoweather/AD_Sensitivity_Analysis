@@ -1205,7 +1205,7 @@ def plot_2dmap_interactive(ds):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=3,
+        end=5,
         step=0.1,
         value=0.7,
     )
@@ -1232,6 +1232,7 @@ def plot_2dmap_interactive(ds):
         latex,
         save_path,
     ):
+        sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
         if title == "":
             title = None
         if i_p == "counts":
@@ -1259,9 +1260,7 @@ def plot_2dmap_interactive(ds):
         min_local = np.nanmin(ds_tmp)
         max_local = np.nanmax(ds_tmp)
         static.value = f"({mini:.2e}, {maxi:.2e}); at {p/100} hPa: ({min_local:.2e}, {max_local:.2e})"
-        fig = Figure(
-            figsize=(width, height),
-        )
+        fig = Figure()
         ax = fig.subplots()
         if fix:
             if np.abs(mini) > maxi:
@@ -1327,17 +1326,11 @@ def plot_2dmap_interactive(ds):
         cbar = ax.collections[-1].colorbar
         cbarax = cbar.ax
         cbarax.tick_params(labelsize=int(10 * font_scale))
-        if latex:
-            cbarlabel = f"{k_p} " + parse_word(i_p).replace(r"\partial", "")
-            cbar.set_label(
-                label=cbarlabel,
-                fontsize=int(11 * font_scale),
-            )
-        else:
-            cbar.set_label(
-                label=f"{k_p} {i_p}",
-                fontsize=int(11 * font_scale),
-            )
+        cbarlabel = f"{k_p} " + parse_word(i_p).replace(r"\partial", "")
+        cbar.set_label(
+            label=cbarlabel,
+            fontsize=int(11 * font_scale),
+        )
         if save:
             try:
                 i = 0
