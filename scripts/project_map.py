@@ -17,9 +17,9 @@ from tqdm.auto import tqdm
 import xarray as xr
 
 try:
-    from scripts.latexify import param_id_map
+    from scripts.latexify import param_id_map, parse_word
 except:
-    from latexify import param_id_map
+    from latexify import param_id_map, parse_word
 
 hv.extension("matplotlib")
 pn.extension()
@@ -66,9 +66,10 @@ def filter_trajectories(
         ds = ds.sel({"Output_Parameter_ID": sens_model_state_ids})
     # There seems to be a bug with some output data where the longitude
     # and latitude happen to be zero when the trajectory is already finished.
-    # Since this is far away from our domain, we can savely delete that-
-    ds["lon"] = ds["lon"].where(ds["lon"] != 0)
-    ds["lat"] = ds["lat"].where(ds["lat"] != 0)
+    # Since this is far away from our domain, we can savely delete that.
+    # It is save to assume that only latitude with zero values are invalid
+    # ds["lon"] = ds["lon"].where(ds["lon"] != 0)
+    ds = ds.where(ds["lat"] != 0)
     return ds
 
 
@@ -832,8 +833,8 @@ def to_Dataset(
             "Integrating for specific time levels is not yet supported"
         )
     elif pressure_levels is not None:
-        var_dims = ["time", "pressure", "lon", "lat"]
-        sens_dims = ["Output Parameter", "time", "pressure", "lon", "lat"]
+        var_dims = ["time", "pressure", "lat", "lon"]
+        sens_dims = ["Output Parameter", "time", "pressure", "lat", "lon"]
         coords = {
             "lon": lons[:-1],
             "lat": lats[:-1],
@@ -846,7 +847,7 @@ def to_Dataset(
         )
     else:
         var_dims = ["lon", "lat"]
-        sens_dims = ["Output Parameter", "lon", "lat"]
+        sens_dims = ["Output Parameter", "lat", "lon"]
         coords = {"lon": lons[:-1], "lat": lats[:-1]}
     for v in means:
         if v[0] != "d" or v == "deposition" or len(sens_model_states) == 1:
@@ -920,11 +921,23 @@ def to_Dataset(
         ds[f"Var {v}"].attrs = ds_tmp[v].attrs
         ds[f"Mean {v}"].attrs = ds_tmp[v].attrs
 
-    # Zero values in latitude and longitudes is considered garbage values, so we delete that.
-    ds["lat"] = ds["lat"].where(ds["lat"] != 0)
-    ds["lon"] = ds["lon"].where(ds["lon"] != 0)
-    ds["lon"].attrs = ds_tmp["lon"].attrs
-    ds["lat"].attrs = ds_tmp["lat"].attrs
+    if not relative_lon_lat:
+        # Zero values in latitude and longitudes is considered garbage values, so we delete that.
+        ds["lat"] = ds["lat"].where(ds["lat"] != 0)
+        ds["lon"] = ds["lon"].where(ds["lon"] != 0)
+        ds["lon"].attrs = ds_tmp["lon"].attrs
+        ds["lat"].attrs = ds_tmp["lat"].attrs
+    else:
+        ds["lat"].attrs = {
+            "long_name": "shifted rotated latitude",
+            "standard_name": "latitude",
+            "units": "degrees",
+        }
+        ds["lon"].attrs = {
+            "long_name": "shifted rotated longitude",
+            "standard_name": "longitude",
+            "units": "degrees",
+        }
     if "pressure" in ds:
         ds["pressure"].attrs = ds_tmp["pressure"].attrs
     if "time" in ds:
@@ -1135,7 +1148,17 @@ def plot_2dmap_interactive(ds):
     color_map = pn.widgets.Select(
         name="Colormap",
         value="RdBu",
-        options=["RdBu", "viridis", "blues"],
+        options=[
+            "RdBu",
+            "viridis",
+            "blues",
+            "PiYG",
+            "PRGn",
+            "BrBG",
+            "PuOr",
+            "plasma",
+            "cividis",
+        ],
     )
     fix = pn.widgets.Toggle(
         name="Fix colorbar over all levels",
@@ -1182,9 +1205,14 @@ def plot_2dmap_interactive(ds):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=2,
+        end=5,
         step=0.1,
         value=0.7,
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
     )
 
     def plot_me(
@@ -1201,8 +1229,10 @@ def plot_2dmap_interactive(ds):
         title,
         font_scale,
         save,
+        latex,
         save_path,
     ):
+        sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
         if title == "":
             title = None
         if i_p == "counts":
@@ -1230,9 +1260,7 @@ def plot_2dmap_interactive(ds):
         min_local = np.nanmin(ds_tmp)
         max_local = np.nanmax(ds_tmp)
         static.value = f"({mini:.2e}, {maxi:.2e}); at {p/100} hPa: ({min_local:.2e}, {max_local:.2e})"
-        fig = Figure(
-            figsize=(width, height),
-        )
+        fig = Figure()
         ax = fig.subplots()
         if fix:
             if np.abs(mini) > maxi:
@@ -1241,8 +1269,8 @@ def plot_2dmap_interactive(ds):
                 mini = -maxi
             if log_plot:
                 ds_tmp.plot(
-                    x="lat",
-                    y="lon",
+                    y="lat",
+                    x="lon",
                     cmap=c,
                     norm=SymLogNorm(
                         linthresh=linthresh,
@@ -1254,30 +1282,13 @@ def plot_2dmap_interactive(ds):
                 )
             else:
                 ds_tmp.plot(
-                    x="lat",
-                    y="lon",
+                    y="lat",
+                    x="lon",
                     cmap=c,
                     vmin=mini,
                     vmax=maxi,
                     ax=ax,
                 )
-            _ = ax.set_title(title, fontsize=int(12 * font_scale))
-            ax.tick_params(
-                axis="both",
-                which="major",
-                labelsize=int(10 * font_scale),
-            )
-            ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
-            ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
-            ax.yaxis.grid(True, which="major")
-            ax.xaxis.grid(True, which="major")
-            cbar = ax.collections[-1].colorbar
-            cbarax = cbar.ax
-            cbarax.tick_params(labelsize=int(10 * font_scale))
-            cbar.set_label(
-                label=f"{k_p} {i_p}",
-                fontsize=int(11 * font_scale),
-            )
         else:
             if log_plot:
                 if lthresh == 0:
@@ -1286,8 +1297,8 @@ def plot_2dmap_interactive(ds):
                     linthresh = 10 ** lthresh
 
                 ds_tmp.plot(
-                    x="lat",
-                    y="lon",
+                    y="lat",
+                    x="lon",
                     cmap=c,
                     norm=SymLogNorm(
                         linthresh=linthresh,
@@ -1297,31 +1308,39 @@ def plot_2dmap_interactive(ds):
                 )
             else:
                 ds_tmp.plot(
-                    x="lat",
-                    y="lon",
+                    y="lat",
+                    x="lon",
                     cmap=c,
                     ax=ax,
                 )
-            _ = ax.set_title(title, fontsize=int(12 * font_scale))
-            ax.tick_params(
-                axis="both",
-                which="major",
-                labelsize=int(10 * font_scale),
-            )
-            ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
-            ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
-            ax.yaxis.grid(True, which="major")
-            ax.xaxis.grid(True, which="major")
-            cbar = ax.collections[-1].colorbar
-            cbarax = cbar.ax
-            cbarax.tick_params(labelsize=int(10 * font_scale))
-            cbar.set_label(
-                label=f"{k_p} {i_p}",
-                fontsize=int(11 * font_scale),
-            )
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+        ax.tick_params(
+            axis="both",
+            which="major",
+            labelsize=int(10 * font_scale),
+        )
+        ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
+        ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
+        ax.yaxis.grid(True, which="major")
+        ax.xaxis.grid(True, which="major")
+        cbar = ax.collections[-1].colorbar
+        cbarax = cbar.ax
+        cbarax.tick_params(labelsize=int(10 * font_scale))
+        cbarlabel = f"{k_p} " + parse_word(i_p).replace(r"\partial", "")
+        cbar.set_label(
+            label=cbarlabel,
+            fontsize=int(11 * font_scale),
+        )
         if save:
             try:
-                ax.figure.savefig(save_path, bbox_inches="tight", dpi=300)
+                i = 0
+                store_type = save_path.split(".")[-1]
+                store_path = save_path[0 : -len(store_type) - 1]
+                save_name = store_path + "_{:03d}.".format(i) + store_type
+                while os.path.isfile(save_name):
+                    i = i + 1
+                    save_name = store_path + "_{:03d}.".format(i) + store_type
+                ax.figure.savefig(save_name, bbox_inches="tight", dpi=300)
             except:
                 save_to_field.value = (
                     f"Could not save to {save_path}. Did you forget the filetype?"
@@ -1347,6 +1366,7 @@ def plot_2dmap_interactive(ds):
             title=title_widget,
             font_scale=font_slider,
             save=save_button,
+            latex=latex_button,
             save_path=save_to_field,
         ),
     ).servable()
@@ -1374,6 +1394,7 @@ def plot_2dmap_interactive(ds):
         pn.Row(
             save_to_field,
             save_button,
+            latex_button,
         ),
         title_widget,
         plot_pane,
@@ -2041,7 +2062,10 @@ if __name__ == "__main__":
                 time_levels = data["time_levels"]
                 delta_time = data["delta_time"]
                 sens_model_states = data["sens_model_states"]
-                relative_lon_lat = data["relative_lon_lat"]
+                if "relative_lon_lat" in data:
+                    relative_lon_lat = data["relative_lon_lat"]
+                else:
+                    relative_lon_lat = args.relative_lon_lat
 
             ds = to_Dataset(
                 file_path=args.file_path,

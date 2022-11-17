@@ -298,7 +298,7 @@ mappings = {
     "Ngout": "Precipitation of Graupel Particles",
     "Nhout": "Precipitation of Hail Particles",
     "LATITUDE": "Latitude",
-    "LONGITDUE": "longitude",
+    "LONGITDUE": "Longitude",
     "pressure": "Pressure",
     "pressure_hPa": "Pressure",
     "QV": "Water Vapor Mass Density",
@@ -334,89 +334,89 @@ mappings = {
     "lat": "Latitude",
     "lon": "longitude",
     "z": "Height [m]",
-    "w": "Ascend [m/s]",
+    "w": "Ascent [m/s]",
     "MAP": "Flag for WCB-criterion",
     "Derivatives": "Derivatives",
-    "timestep": "Time [s] after ascend begins",
+    "timestep": "Time [s] after ascent begins",
     "time": "Time [s] after COSMO simulation begins",
-    "time_after_ascent": "Time [s] after ascend begins",
-    "time_after_ascent_h": "Time [h] after ascend begins",
+    "time_after_ascent": "Time [s] after ascent begins",
+    "time_after_ascent_h": "Time [h] after ascent begins",
     "step": "Simulation step",
-    "dmin_x_nuc_hetero": r"$ \partial x_{\text{min},\text{nuc},\text{het}} $",
-    "dmin_x_nuc_homo": r"$ \partial x_{\text{min},\text{nuc},\text{hom}} $",
-    "dmin_x_melt": r"$ \partial x_{\text{min},\text{melt}} $",
-    "dmin_x_evap": r"$ \partial x_{\text{min},\text{evap}} $",
-    "dmin_x_freezing": r"$ \partial x_{\text{min},\text{frz}} $",
-    "dmin_x_depo": r"$ \partial x_{\text{min},\text{dep}} $",
-    "dmin_x_collision": r"$ \partial x_{\text{min},\text{coli}} $",
-    "dmin_x_collection": r"$ \partial x_{\text{min},\text{coll}} $",
-    "dmin_x_conversion": r"$ \partial x_{\text{min},\text{con}} $",
-    "dmin_x_sedimentation": r"$ \partial x_{\text{min},\text{sed}} $",
-    "dmin_x_riming": r"$ \partial x_{\text{min},\text{rim}} $",
+    "dmin_x_nuc_hetero": r"$ \partial x_{\mathrm{min},\mathrm{nuc},\mathrm{het}} $",
+    "dmin_x_nuc_homo": r"$ \partial x_{\mathrm{min},\mathrm{nuc},\mathrm{hom}} $",
+    "dmin_x_melt": r"$ \partial x_{\mathrm{min},\mathrm{melt}} $",
+    "dmin_x_evap": r"$ \partial x_{\mathrm{min},\mathrm{evap}} $",
+    "dmin_x_freezing": r"$ \partial x_{\mathrm{min},\mathrm{frz}} $",
+    "dmin_x_depo": r"$ \partial x_{\mathrm{min},\mathrm{dep}} $",
+    "dmin_x_collision": r"$ \partial x_{\mathrm{min},\mathrm{coli}} $",
+    "dmin_x_collection": r"$ \partial x_{\mathrm{min},\mathrm{coll}} $",
+    "dmin_x_conversion": r"$ \partial x_{\mathrm{min},\mathrm{con}} $",
+    "dmin_x_sedimentation": r"$ \partial x_{\mathrm{min},\mathrm{sed}} $",
+    "dmin_x_riming": r"$ \partial x_{\mathrm{min},\mathrm{rim}} $",
     "dEpsilon": r"$ \partial \varepsilon$",
-    "dkin_visc_air": r"$ \partial \nu_{\text{kin}, \text{air}} $",
-    "dK_T": r"$K_{\text{air}} $",
-    "dp_sat_const_a": r"$ \partial p_{\text{sat}, a} $",
-    "dp_sat_ice_const_a": r"$ \partial p_{\text{sat}, \text{ice}, a} $",
-    "dp_sat_const_b": r"$ \partial p_{\text{sat}, b} $",
-    "dp_sat_ice_const_b": r"$ \partial p_{\text{sat}, \text{ice}, b} $",
-    "dp_sat_low_temp": r"$ \partial p_{\text{sat}, \text{low}, T} $",
-    "dT_sat_low_temp": r"$ \partial T_{\text{sat}, \text{low}, T} $",
-    "ddv0": r"$\partial D_{0, \text{vapor}} $",
+    "dkin_visc_air": r"$ \partial \nu_{\mathrm{kin}, \mathrm{air}} $",
+    "dK_T": r"$K_{\mathrm{air}} $",
+    "dp_sat_const_a": r"$ \partial p_{\mathrm{sat}, a} $",
+    "dp_sat_ice_const_a": r"$ \partial p_{\mathrm{sat}, \mathrm{ice}, a} $",
+    "dp_sat_const_b": r"$ \partial p_{\mathrm{sat}, b} $",
+    "dp_sat_ice_const_b": r"$ \partial p_{\mathrm{sat}, \mathrm{ice}, b} $",
+    "dp_sat_low_temp": r"$ \partial p_{\mathrm{sat}, \mathrm{low}, T} $",
+    "dT_sat_low_temp": r"$ \partial T_{\mathrm{sat}, \mathrm{low}, T} $",
+    "ddv0": r"$\partial D_{0, \mathrm{vapor}} $",
     "instance_id": "Instance ID",
-    "dT_mult_min": r"$ \partial T_{\text{mult}, \text{min}} $",
-    "dT_mult_max": r"$ \partial T_{\text{mult}, \text{max}} $",
-    "dp_sat_melt": r"$ \partial p_{\text{sat}, \text{melt}} $",
-    "dkin_visc_air": r"$ \partial \nu_{\text{kin}, \text{air}} $",
-    "drain_cmu1": r"$ \partial \mu_{\text{rain}, c, 1} $",
-    "drain_cmu2": r"$ \partial \mu_{\text{rain}, c, 2} $",
-    "drain_cmu3": r"$ \partial \mu_{\text{rain}, c, 3} $",
-    "drain_cmu4": r"$ \partial \mu_{\text{rain}, c, 4} $",
+    "dT_mult_min": r"$ \partial T_{\mathrm{mult}, \mathrm{min}} $",
+    "dT_mult_max": r"$ \partial T_{\mathrm{mult}, \mathrm{max}} $",
+    "dp_sat_melt": r"$ \partial p_{\mathrm{sat}, \mathrm{melt}} $",
+    "dkin_visc_air": r"$ \partial \nu_{\mathrm{kin}, \mathrm{air}} $",
+    "drain_cmu1": r"$ \partial \mu_{\mathrm{rain}, c, 1} $",
+    "drain_cmu2": r"$ \partial \mu_{\mathrm{rain}, c, 2} $",
+    "drain_cmu3": r"$ \partial \mu_{\mathrm{rain}, c, 3} $",
+    "drain_cmu4": r"$ \partial \mu_{\mathrm{rain}, c, 4} $",
     "Specific_Humidity": "specific humidity",
-    "dD_rainfrz_ig": r"$ \partial D_{\text{rainfrz}, ig} $",
-    "dD_rainfrz_gh": r"$ \partial D_{\text{rainfrz}, gh} $",
-    "drain_g1": r"$ \partial g_{1, \text{rain}} $",
-    "drain_g2": r"$ \partial g_{2, \text{rain}} $",
-    "dgraupel_vsedi_max": r"$ \partial v_{\text{graupel}, \text{sedi}, \text{max}} $",
-    "dice_vsedi_max": r"$ \partial v_{\text{ice}, \text{sedi}, \text{max}} $",
-    "dsnow_vsedi_max": r"$ \partial v_{\text{snow}, \text{sedi}, \text{max}} $",
-    "dhail_vsedi_max": r"$ \partial v_{\text{hail}, \text{sedi}, \text{max}} $",
-    "dk_1_accr": r"$ \partial k_{\text{accr}, 1} $",
-    "dk_1_conv": r"$ \partial k_{\text{conv}, 1} $",
-    "dk_2_conv": r"$ \partial k_{\text{conv}, 2} $",
-    "dkc_autocon": r"$ \partial k_{c, \text{autocon}} $",
-    "dna_dust": r"$ \partial n_{\text{dust}} $",
-    "dna_orga": r"$ \partial n_{\text{orga}} $",
-    "dna_soot": r"$ \partial n_{\text{soot}} $",
-    "dni_het_max": r"$ \partial n_{\text{ice}, \text{het}, \text{max}} $",
-    "dni_hom_max": r"$ \partial n_{\text{ice}, \text{hom}, \text{max}} $",
-    "dq_crit_i": r"$ \partial Q_{\text{ice}, \text{crit}} $",
-    "dq_crit_r": r"$ \partial Q_{\text{rain}, \text{crit}} $",
-    "x_conv": r"$ \partial x_{\text{conv}} $",
-    "dcloud_crit_d": r"$ \partial d_{\text{cloud}, \text{crit}} $",
-    "drain_crit_d": r"$ \partial d_{\text{rain}, \text{crit}} $",
-    "dgraupel_crit_d": r"$ \partial d_{\text{graupel}, \text{crit}} $",
-    "dhail_crit_d": r"$ \partial d_{\text{hail}, \text{crit}} $",
-    "dsnow_crit_d": r"$ \partial d_{\text{snow}, \text{crit}} $",
-    "dice_crit_d": r"$ \partial d_{\text{ice}, \text{crit}} $",
-    "drain_cmu0": r"$ \partial \mu_{\text{rain}, c, 0} $",
-    "drain_cmu5": r"$ \partial \mu_{\text{rain}, c, 5} $",
-    "drain_gfak": r"$ \partial g_{\text{rain}, \text{fak}} $",
-    "dq_crit_i": r"$ \partial Q_{\text{crit}, \text{ice}} $",
-    "dD_crit_i": r"$ \partial D_{\text{crit}, \text{ice}} $",
-    "dD_conv_i": r"$ \partial D_{\text{conv}, \text{ice}} $",
-    "dq_crit_r": r"$ \partial Q_{\text{crit}, \text{rain}} $",
-    "dD_crit_r": r"$ \partial D_{\text{crit}, \text{rain}} $",
-    "dq_crit_fr": r"$ \partial Q_{\text{crit}, \text{freeze}} $",
-    "dD_coll_c": r"$ \partial D_{\text{crit}, \text{coll}} $",
-    "dq_crit": r"$ \partial Q_{\text{crit}} $",
-    "drho_ice": r"$ \partial \rho_{\text{ice}} $",
-    "drho_vel_c": r"$ \partial \rho_{\text{vel}, c} $",
-    "dx_conv": r"$ \partial x_{\text{conv}} $",
-    "dD_conv_sg": r"$ \partial D_{\text{conv}, \text{snow}, \text{graupel}} $",
-    "dD_conv_ig": r"$ \partial D_{\text{conv}, \text{ice}, \text{graupel}} $",
-    "dcloud_k_au": r"$ \partial k_{\text{cloud}, \text{au}} $",
-    "dcloud_k_sc": r"$ \partial k_{\text{cloud}, \text{sc}} $",
+    "dD_rainfrz_ig": r"$ \partial D_{\mathrm{rainfrz}, ig} $",
+    "dD_rainfrz_gh": r"$ \partial D_{\mathrm{rainfrz}, gh} $",
+    "drain_g1": r"$ \partial g_{1, \mathrm{rain}} $",
+    "drain_g2": r"$ \partial g_{2, \mathrm{rain}} $",
+    "dgraupel_vsedi_max": r"$ \partial v_{\mathrm{graupel}, \mathrm{sedi}, \mathrm{max}} $",
+    "dice_vsedi_max": r"$ \partial v_{\mathrm{ice}, \mathrm{sedi}, \mathrm{max}} $",
+    "dsnow_vsedi_max": r"$ \partial v_{\mathrm{snow}, \mathrm{sedi}, \mathrm{max}} $",
+    "dhail_vsedi_max": r"$ \partial v_{\mathrm{hail}, \mathrm{sedi}, \mathrm{max}} $",
+    "dk_1_accr": r"$ \partial k_{\mathrm{accr}, 1} $",
+    "dk_1_conv": r"$ \partial k_{\mathrm{conv}, 1} $",
+    "dk_2_conv": r"$ \partial k_{\mathrm{conv}, 2} $",
+    "dkc_autocon": r"$ \partial k_{c, \mathrm{autocon}} $",
+    "dna_dust": r"$ \partial n_{\mathrm{dust}} $",
+    "dna_orga": r"$ \partial n_{\mathrm{orga}} $",
+    "dna_soot": r"$ \partial n_{\mathrm{soot}} $",
+    "dni_het_max": r"$ \partial n_{\mathrm{ice}, \mathrm{het}, \mathrm{max}} $",
+    "dni_hom_max": r"$ \partial n_{\mathrm{ice}, \mathrm{hom}, \mathrm{max}} $",
+    "dq_crit_i": r"$ \partial Q_{\mathrm{ice}, \mathrm{crit}} $",
+    "dq_crit_r": r"$ \partial Q_{\mathrm{rain}, \mathrm{crit}} $",
+    "x_conv": r"$ \partial x_{\mathrm{conv}} $",
+    "dcloud_crit_d": r"$ \partial d_{\mathrm{cloud}, \mathrm{crit}} $",
+    "drain_crit_d": r"$ \partial d_{\mathrm{rain}, \mathrm{crit}} $",
+    "dgraupel_crit_d": r"$ \partial d_{\mathrm{graupel}, \mathrm{crit}} $",
+    "dhail_crit_d": r"$ \partial d_{\mathrm{hail}, \mathrm{crit}} $",
+    "dsnow_crit_d": r"$ \partial d_{\mathrm{snow}, \mathrm{crit}} $",
+    "dice_crit_d": r"$ \partial d_{\mathrm{ice}, \mathrm{crit}} $",
+    "drain_cmu0": r"$ \partial \mu_{\mathrm{rain}, c, 0} $",
+    "drain_cmu5": r"$ \partial \mu_{\mathrm{rain}, c, 5} $",
+    "drain_gfak": r"$ \partial g_{\mathrm{rain}, \mathrm{fak}} $",
+    "dq_crit_i": r"$ \partial Q_{\mathrm{crit}, \mathrm{ice}} $",
+    "dD_crit_i": r"$ \partial D_{\mathrm{crit}, \mathrm{ice}} $",
+    "dD_conv_i": r"$ \partial D_{\mathrm{conv}, \mathrm{ice}} $",
+    "dq_crit_r": r"$ \partial Q_{\mathrm{crit}, \mathrm{rain}} $",
+    "dD_crit_r": r"$ \partial D_{\mathrm{crit}, \mathrm{rain}} $",
+    "dq_crit_fr": r"$ \partial Q_{\mathrm{crit}, \mathrm{freeze}} $",
+    "dD_coll_c": r"$ \partial D_{\mathrm{crit}, \mathrm{coll}} $",
+    "dq_crit": r"$ \partial Q_{\mathrm{crit}} $",
+    "drho_ice": r"$ \partial \rho_{\mathrm{ice}} $",
+    "drho_vel_c": r"$ \partial \rho_{\mathrm{vel}, c} $",
+    "dx_conv": r"$ \partial x_{\mathrm{conv}} $",
+    "dD_conv_sg": r"$ \partial D_{\mathrm{conv}, \mathrm{snow}, \mathrm{graupel}} $",
+    "dD_conv_ig": r"$ \partial D_{\mathrm{conv}, \mathrm{ice}, \mathrm{graupel}} $",
+    "dcloud_k_au": r"$ \partial k_{\mathrm{cloud}, \mathrm{au}} $",
+    "dcloud_k_sc": r"$ \partial k_{\mathrm{cloud}, \mathrm{sc}} $",
     "dcp": r"$ \partial c_p $",
     "dconst0": r"$ \partial c_0 $",
     "dconst1": r"$ \partial c_1 $",
@@ -425,9 +425,9 @@ mappings = {
     "dconst4": r"$ \partial c_4 $",
     "dconst5": r"$ \partial c_5 $",
     "dgravity_acc": r"$ \partial g $",
-    "decoll_min": r"$ \partial e_{\text{coll}, \text{min}} $",
-    "decoll_gg": r"$ \partial e_{\text{gg}} $",
-    "decoll_gg_wet": r"$ \partial e_{\text{gg}, \text{wet}} $",
+    "decoll_min": r"$ \partial e_{\mathrm{coll}, \mathrm{min}} $",
+    "decoll_gg": r"$ \partial e_{\mathrm{gg}} $",
+    "decoll_gg_wet": r"$ \partial e_{\mathrm{gg}, \mathrm{wet}} $",
 }
 
 
@@ -970,11 +970,11 @@ in_params_descr_dic = {
     "dT_freeze": "Lower temperature threshold for raindrop freezing",
     "dT_f": "Lower temperature threshold for (instantaneous) raindrop freezing",
     "dD_eq": "Equilibrium diameter for Seifert & Beheng (2008), ie Eq. 20.",
-    "drho_w": r"Density of liquid water in \f$ \text{kg}/\text{m}^3\f $",
+    "drho_w": r"Density of liquid water in \f$ \mathrm{kg}/\mathrm{m}^3\f $",
     "drho_0": "Norm air density",
     "drho_vel": "Exponent for density correction",
     "drho_vel_c": "Exponent for density correction of cloud droplets",
-    "drho_ice": r"Density of ice in $ \text{kg}/\text{m}^3 $",
+    "drho_ice": r"Density of ice in $ \mathrm{kg}/\mathrm{m}^3 $",
     "dM_w": "Molar mass of water",
     "dM_a": "Molar mass of dry air",
     "dR_universal": "Universal gas constant",
@@ -990,7 +990,7 @@ in_params_descr_dic = {
     "dK_T": "Heat conductivity of air",
     "dL_wd": "Latent heat of evaporation of water",
     "dL_ed": " Heat of sublimination ice -> vapor",
-    "dD_v": r"Diffusivity of water vapor in air at $0^\circ\text{C} $",
+    "dD_v": r"Diffusivity of water vapor in air at $0^\circ\mathrm{C} $",
     "decoll_min": "Min. efficiency for collisions graupel - cloud, ice - cloud, snow - cloud",
     "decoll_gg": "Collision efficiency for graupel selfcollection",
     "decoll_gg_wet": "Collision efficiency for wet graupel",
@@ -1005,15 +1005,15 @@ in_params_descr_dic = {
     "dconst5": "Coefficient used in riming processes for enhanced melting or conversion of snow or ice to graupel",
     "dD_rainfrz_gh": " Size thresholds for partitioning of freezing rain in the hail scheme",
     "dD_rainfrz_ig": "Size thresholds for partitioning of freezing rain in the hail scheme",
-    "ddv0": r"Diffusivity of water vapor in air at $0^\circ\text{C} $",
-    "dp_sat_melt": r"Saturation pressure at $ \text{T}=\text{T}_\text{freeze} $",
-    "dcp": r"Specific heat capacity of air at constant pressure in $ \text{J}/\text{K}/\text{kg} $",
-    "dk_b": r"Boltzmann constant in $ \text{J}/\text{K} $",
+    "ddv0": r"Diffusivity of water vapor in air at $0^\circ\mathrm{C} $",
+    "dp_sat_melt": r"Saturation pressure at $ \mathrm{T}=\mathrm{T}_\mathrm{freeze} $",
+    "dcp": r"Specific heat capacity of air at constant pressure in $ \mathrm{J}/\mathrm{K}/\mathrm{kg} $",
+    "dk_b": r"Boltzmann constant in $ \mathrm{J}/\mathrm{K} $",
     "da_HET": "Exponent for rain freeze with data of Barklie and Gokhale",
     "db_HET": "Coefficient for rain freeze with data of Barklie and Gokhale",
     "dN_sc": "Schmidt number",
     "dn_f": " Exponent of N_sc in the vent-coeff",
-    "dN_avo": r"Avogadro number in $ \text{mol}^{-1} $",
+    "dN_avo": r"Avogadro number in $ \mathrm{mol}^{-1} $",
     "dna_dust": r"Initial number density of dust [$m^{-3} $]",
     "dna_soot": r"Initial number density of soot [$m^{-3} $]",
     "dna_orga": r"Initial number density of organics [$m^{-3} $]",
@@ -1046,7 +1046,7 @@ in_params_descr_dic = {
     "dd_ccn_4": r"Parameter for calculating CCN concentration during CCN activation \citeA{hande_parameterizing_2016}",
     "dr_const": "Parameter for saturation adjustment",
     "dr1_const": "Parameter for saturation adjustment",
-    "dcv": r"Specific heat capacity of water vapor at constant pressure in $ \text{J}/\text{K}/\text{kg} $",
+    "dcv": r"Specific heat capacity of water vapor at constant pressure in $ \mathrm{J}/\mathrm{K}/\mathrm{kg} $",
     "dp_sat_const_a": "Parameter for saturation adjustment. Constant saturated water vapor pressure",
     "dp_sat_ice_const_a": "Parameter for saturation adjustment. Constant saturated ice pressure",
     "dp_sat_const_b": "Parameter for saturation adjustment. Constant saturated water vapor pressure",
@@ -1096,8 +1096,8 @@ in_params_descr_dic = {
     "drain_beta": "Coefficient for rain sedimentation",
     "drain_gamma": "Exponent for rain sedimentation",
     "drain_nu": r"Parameter to calculate the shape of the generalized $ \Gamma $-distribution",
-    "drain_g1": r"Right edge of incomplete gamma function,  which had been initialized with $ \text{nm}_1 $",
-    "drain_g2": r"Right edge of incomplete gamma function,  which had been initialized with $ \text{nm}_2 $",
+    "drain_g1": r"Right edge of incomplete gamma function,  which had been initialized with $ \mathrm{nm}_1 $",
+    "drain_g2": r"Right edge of incomplete gamma function,  which had been initialized with $ \mathrm{nm}_2 $",
     "drain_mu": r"Shape parameter of the generalized $ \Gamma $-distribution",
     "drain_nm1": "Number of bins of the incomplete gamma function lookup table 1",
     "drain_nm2": "Number of bins of the incomplete gamma function lookup table 2",
@@ -1210,8 +1210,8 @@ in_params_descr_dic = {
     "dgraupel_beta": "Not used",
     "dgraupel_gamma": "Not used",
     "dgraupel_nu": r"Parameter to calculate the shape parameter of the generalized $ \Gamma $-distribution",
-    "dgraupel_g1": r"Right edge of incomplete gamma function,  which had been initialized with $ \text{nm}_1 $",
-    "dgraupel_g2": r"Right edge of incomplete gamma function,  which had been initialized with $ \text{nm}_2 $",
+    "dgraupel_g1": r"Right edge of incomplete gamma function,  which had been initialized with $ \mathrm{nm}_1 $",
+    "dgraupel_g2": r"Right edge of incomplete gamma function,  which had been initialized with $ \mathrm{nm}_2 $",
     "dgraupel_mu": r"Shape parameter of the generalized $ \Gamma $-distribution",
     "dgraupel_nm1": "Number of bins of the incomplete gamma function lookup table 1",
     "dgraupel_nm2": "Number of bins of the incomplete gamma function lookup table 2",
@@ -1804,26 +1804,26 @@ def parse_word(word):
         if "dnm" in word:
             return r"$ \partial n_{m, " + word[-1] + r"} $"
         if "_nm1" in word:
-            return r"$ \partial n_{\text{" + word.split("_")[0][1::] + r"}, 1} $"
+            return r"$ \partial n_{\mathrm{" + word.split("_")[0][1::] + r"}, 1} $"
         if "_nm2" in word:
-            return r"$ \partial n_{\text{" + word.split("_")[0][1::] + r"}, 2} $"
+            return r"$ \partial n_{\mathrm{" + word.split("_")[0][1::] + r"}, 2} $"
         if "_nm3" in word:
-            return r"$ \partial n_{\text{" + word.split("_")[0][1::] + r"}, 3} $"
+            return r"$ \partial n_{\mathrm{" + word.split("_")[0][1::] + r"}, 3} $"
         if "_c_s" in word[-4::]:
             return (
                 r"$ \partial \kappa_{s, "
-                + r"\text{"
+                + r"\mathrm{"
                 + word.split("_")[0][1::]
                 + r"}} $"
             )
         if "HET" in word:
-            return r"$ \partial " + word[1] + r"_{\text{HET}} $"
+            return r"$ \partial " + word[1] + r"_{\mathrm{HET}} $"
         if "_ccn_" in word:
-            return r"$ \partial " + word[1] + r"_{\text{ccn}, " + word[-1] + r"} $"
+            return r"$ \partial " + word[1] + r"_{\mathrm{ccn}, " + word[-1] + r"} $"
         if "_alfa_" in word:
             return (
                 r"$ \partial "
-                + r"\alpha_{\text{"
+                + r"\alpha_{\mathrm{"
                 + word.split("_")[0][1::]
                 + r"}, "
                 + word[-1]
@@ -1852,14 +1852,14 @@ def parse_word(word):
                         + " "
                         + parts[2]
                         + r"_{"
-                        + r"\text{"
+                        + r"\mathrm{"
                         + parts[0]
                         + r"},"
-                        + r"\text{"
+                        + r"\mathrm{"
                         + parts[1]
-                        + r"},\text{"
+                        + r"},\mathrm{"
                         + parts[3]
-                        + r"},\text{"
+                        + r"},\mathrm{"
                         + parts[4]
                         + r"}}"
                     )
@@ -1870,10 +1870,10 @@ def parse_word(word):
                             + " "
                             + parts[1].capitalize()
                             + r"_{"
-                            + r"\text{"
+                            + r"\mathrm{"
                             + parts[0]
                             + r"},"
-                            + r"\text{"
+                            + r"\mathrm{"
                             + parts[2]
                             + r"},"
                             + parts[3]
@@ -1885,12 +1885,12 @@ def parse_word(word):
                             + " "
                             + parts[2]
                             + r"_{"
-                            + r"\text{"
+                            + r"\mathrm{"
                             + parts[0]
                             + r"},"
-                            + r"\text{"
+                            + r"\mathrm{"
                             + parts[1]
-                            + r"},\text{"
+                            + r"},\mathrm{"
                             + parts[3]
                             + r"}}"
                         )
@@ -1901,7 +1901,7 @@ def parse_word(word):
                             + parts[2]
                             + r"_{"
                             + parts[1]
-                            + r", \text{"
+                            + r", \mathrm{"
                             + parts[0]
                             + r"},"
                             + parts[3]
@@ -1915,12 +1915,14 @@ def parse_word(word):
                         + parts[2]
                         + r"_{"
                         + parts[1]
-                        + r", \text{"
+                        + r", \mathrm{"
                         + parts[0]
                         + r"}}"
                     )
                 else:
-                    word = start + " " + parts[1] + r"_{" + r"\text{" + parts[0] + r"}}"
+                    word = (
+                        start + " " + parts[1] + r"_{" + r"\mathrm{" + parts[0] + r"}}"
+                    )
                 no_subscript = False
                 break
         if no_subscript:
@@ -1930,15 +1932,15 @@ def parse_word(word):
 
         word = r"$" + word + r" $"
         for w in no_math:
-            word = word.replace(w, r"\text{" + w + r"}")
-        if r"ri\text{min]g" in word:
-            word = word.replace(r"ri\text{min]g", r"\text{riming}")
+            word = word.replace(w, r"\mathrm{" + w + r"}")
+        if r"ri\mathrm{min]g" in word:
+            word = word.replace(r"ri\mathrm{min]g", r"\mathrm{riming}")
         for w in math_keys:
             word = word.replace(w, "\\" + w)
         if "nuc" in word:
             word = word.replace("\\nuc", "nuc")
         if "\\mult" in word:
-            word = word.replace("\\mult", r"\text{mult}")
+            word = word.replace("\\mult", r"\mathrm{mult}")
         if r"}\text" in word:
             word = word.replace(r"}\text", r"}, \text")
         return word
@@ -2570,7 +2572,7 @@ in_params_notation_mapping = {
     ],
     "dD_conv_i": [
         "Minimum mean size of ice particles to determine the number of final ice particles in ice selfcollection",
-        r"Similar to $ \overline{x}_{i, \text{min}} $ but only for ice self collection",
+        r"Similar to $ \overline{x}_{i, \mathrm{min}} $ but only for ice self collection",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["ice_self_collection", "ice_riming"],
@@ -2722,7 +2724,7 @@ in_params_notation_mapping = {
         [],
     ],
     "drho_w": [
-        r"Density of liquid water in $ \text{kg}/\text{m}^3 $. Not tracked.",
+        r"Density of liquid water in $ \mathrm{kg}/\mathrm{m}^3 $. Not tracked.",
         r"$ \rho_w $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
@@ -2750,7 +2752,7 @@ in_params_notation_mapping = {
         [],
     ],
     "drho_ice": [
-        r"Density of ice in $ \text{kg}/\text{m}^3 $. Not tracked.",
+        r"Density of ice in $ \mathrm{kg}/\mathrm{m}^3 $. Not tracked.",
         r"$ \rho_\epsilon $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
@@ -2901,7 +2903,7 @@ in_params_notation_mapping = {
         ["ice_nuc_hom", "vapor_dep_relaxation"],
     ],
     "dD_v": [
-        r"Diffusivity of water vapor in air at $0^\circ\text{C} $ used in evaporation of ice particles. Not tracked",
+        r"Diffusivity of water vapor in air at $0^\circ\mathrm{C} $ used in evaporation of ice particles. Not tracked",
         "$ D_v $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
@@ -2909,56 +2911,56 @@ in_params_notation_mapping = {
     ],
     "decoll_min": [
         "Min. efficiency for riming of cloud with graupel, ice or snow",
-        r"similar to $ \overline{E}_{g, \text{max}} $",
+        r"similar to $ \overline{E}_{g, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["riming_cloud_core", "particle_cloud_riming"],
     ],
     "decoll_gg": [
         "Collision efficiency for graupel selfcollection",
-        r"$ \overline{E}_{\text{coll}, gg} $",
+        r"$ \overline{E}_{\mathrm{coll}, gg} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (64)",
         "independent",
         ["particle_particle_collection"],
     ],
     "decoll_gg_wet": [
         "Collision efficiency for wet graupel",
-        r"similar to $ \overline{E}_{\text{coll}, gg} $",
+        r"similar to $ \overline{E}_{\mathrm{coll}, gg} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (64)",
         "independent",
         ["particle_particle_collection"],
     ],
     "dkin_visc_air": [
         "Kinematic viscosity of dry air used to calculate the terminal fall velocity of raindrops during rain evaporation more accurately than with a power law",
-        r"$ \nu_{\text{air}} $",
+        r"$ \nu_{\mathrm{air}} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["rain_evaporation_sb"],
     ],
     "dC_mult": [
         "Coefficient for splintering during Hallet-Mossop ice multiplication.",
-        r"$ F_\text{splint} $",
+        r"$ F_\mathrm{splint} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["ice_riming", "snow_riming", "particle_cloud_riming", "particle_rain_riming"],
     ],
     "dT_mult_min": [
         "Coefficient used in Hallet-Mossop ice multiplication",
-        r"$ T_{\text{splint}, \text{min}} $",
+        r"$ T_{\mathrm{splint}, \mathrm{min}} $",
         r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002} Eq. (4.127)",
         "independent",
         ["ice_riming", "snow_riming", "particle_cloud_riming", "particle_rain_riming"],
     ],
     "dT_mult_max": [
         "Coefficient used in Hallet-Mossop ice multiplication",
-        r"$ T_{\text{splint}, \text{max}} $",
+        r"$ T_{\mathrm{splint}, \mathrm{max}} $",
         r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002} Eq. (4.127)",
         "independent",
         ["ice_riming", "snow_riming", "particle_cloud_riming", "particle_rain_riming"],
     ],
     "dT_mult_opt": [
         "Coefficient used in Hallet-Mossop ice multiplication. Not tracked",
-        r"$ T_{\text{splint}, \text{opt}} $",
+        r"$ T_{\mathrm{splint}, \mathrm{opt}} $",
         r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002} Eq. (4.127)",
         "independent",
         [],
@@ -2972,14 +2974,14 @@ in_params_notation_mapping = {
     ],
     "dconst3": [
         "Coefficient used in riming processes for breaking up particles",
-        r"$( T_{\text{splint}, \text{opt}} - T_{\text{splint}, \text{min}})^{-1}$",
+        r"$( T_{\mathrm{splint}, \mathrm{opt}} - T_{\mathrm{splint}, \mathrm{min}})^{-1}$",
         r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002} Eq. (4.127)",
         "independent",
         ["ice_riming", "snow_riming", "particle_cloud_riming", "particle_rain_riming"],
     ],
     "dconst4": [
         "Coefficient used in riming processes for breaking up particles",
-        r"$( T_{\text{splint}, \text{opt}} - T_{\text{splint}, \text{max}})^{-1}$",
+        r"$( T_{\mathrm{splint}, \mathrm{opt}} - T_{\mathrm{splint}, \mathrm{max}})^{-1}$",
         r"Based on \citeA{hallett_production_1974}; following notation from \citeA{seifert_parametrisierung_2002} Eq. (4.127)",
         "independent",
         ["ice_riming", "snow_riming", "particle_cloud_riming", "particle_rain_riming"],
@@ -3006,21 +3008,21 @@ in_params_notation_mapping = {
         ["rain_freeze"],
     ],
     "ddv0": [
-        r"Diffusivity of water vapor in air at $0^\circ\text{C} $",
+        r"Diffusivity of water vapor in air at $0^\circ\mathrm{C} $",
         "$ D_v $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["snow_melting", "graupel_melting", "hail_melting"],
     ],
     "dp_sat_melt": [
-        r"Saturation pressure at $ \text{T}=\text{T}_\text{freeze} $",
+        r"Saturation pressure at $ \mathrm{T}=\mathrm{T}_\mathrm{freeze} $",
         "$ P_{lv}(T_3) $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["snow_melting", "graupel_melting", "hail_melting"],
     ],
     "dcp": [
-        r"Specific heat capacity of air at constant pressure in $ \text{J}/\text{K}/\text{kg} $. Not tracked.",
+        r"Specific heat capacity of air at constant pressure in $ \mathrm{J}/\mathrm{K}/\mathrm{kg} $. Not tracked.",
         "$ c_p $",
         r"\citeA{karcher_physically_2006}",
         "independent",
@@ -3035,21 +3037,21 @@ in_params_notation_mapping = {
     ],
     "da_HET": [
         "Exponent for heterogeneous rain freezing with data of Barklie and Gokhale",
-        r"$ B_{\text{HET}} $",
+        r"$ B_{\mathrm{HET}} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["rain_freeze"],
     ],
     "db_HET": [
         "Coefficient for heterogeneous rain freezing with data of Barklie and Gokhale",
-        r"$ A_{\text{HET}} $",
+        r"$ A_{\mathrm{HET}} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["rain_freeze"],
     ],
     "dN_sc": [
         "Schmidt number used in rain evaporation",
-        r"$ N_{\text{sc}} $",
+        r"$ N_{\mathrm{sc}} $",
         r"\citeA{seifert_parameterization_2008}, Eqs. (8), (A3), (A6), and (A7)",
         "independent",
         [],
@@ -3070,28 +3072,28 @@ in_params_notation_mapping = {
     ],
     "dna_dust": [
         "Initial number density of dust",
-        r"Similar to $ n_{\text{IN}, \text{DM}} $",
+        r"Similar to $ n_{\mathrm{IN}, \mathrm{DM}} $",
         r"\citeA{phillips_empirical_2008}",
         "independent",
         ["ice_activation_phillips"],
     ],
     "dna_soot": [
         "Initial number density of soot",
-        r"$ n_{\text{IN}, \text{BC}} $",
+        r"$ n_{\mathrm{IN}, \mathrm{BC}} $",
         r"\citeA{phillips_empirical_2008}",
         "independent",
         ["ice_activation_phillips"],
     ],
     "dna_orga": [
         "Initial number density of organics",
-        r"$ n_{\text{IN}, \text{O}} $",
+        r"$ n_{\mathrm{IN}, \mathrm{O}} $",
         r"\citeA{phillips_empirical_2008}",
         "independent",
         ["ice_activation_phillips"],
     ],
     "dni_het_max": [
         "Maximum particle number for heterogeneous ice nucleation per liter",
-        r"$ n_{\text{IN}, X} $",
+        r"$ n_{\mathrm{IN}, X} $",
         r"\citeA{phillips_empirical_2008}, Eq. (13)",
         "independent",
         ["ice_activation_phillips"],
@@ -3168,7 +3170,7 @@ in_params_notation_mapping = {
     ],
     "dhande_ccn_fac": [
         "Parameter to scale the effect of CCN activation.",
-        r"$f_{\text{fac}}",
+        r"$f_{\mathrm{fac}}",
         "Annette's code",
         "independent",
         ["ccn_act_hande_akm"],
@@ -3349,7 +3351,7 @@ in_params_notation_mapping = {
         [],
     ],
     "dcv": [
-        r"Specific heat capacity of water vapor at constant pressure in $ \text{J}/\text{K}/\text{kg} $. Not used",
+        r"Specific heat capacity of water vapor at constant pressure in $ \mathrm{J}/\mathrm{K}/\mathrm{kg} $. Not used",
         "",
         "",
         "independent",
@@ -3497,7 +3499,7 @@ in_params_notation_mapping = {
     ],
     "drain_min_x": [
         "Minimum size of the particle used after the microphysics",
-        r"$ \overline{x}_{r, \text{min}} $",
+        r"$ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -3541,14 +3543,14 @@ in_params_notation_mapping = {
     ],
     "drain_min_x_evap": [
         "Minimum size of particle for evaporation",
-        r"$ \overline{x}_{r, \text{min}} $",
+        r"$ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["rain_evaporation_sb"],
     ],
     "drain_min_x_freezing": [
         "Minimum size of particle for freezing",
-        r"$ \overline{x}_{r, \text{min}} $",
+        r"$ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["rain_freeze"],
@@ -3569,7 +3571,7 @@ in_params_notation_mapping = {
     ],
     "drain_min_x_collection": [
         "Minimum size of particle for different collision processes",
-        r"$ \overline{x}_{r, \text{min}} $",
+        r"$ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["rain_self_collection_sb"],
@@ -3583,21 +3585,21 @@ in_params_notation_mapping = {
     ],
     "drain_min_x_sedimentation": [
         "Minimum size of particle for sedimentation",
-        r"$ \overline{x}_{r, \text{min}} $",
+        r"$ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["sedimentation_explicit"],
     ],
     "drain_min_x_riming": [
         "Minimum size of particle for riming",
-        r"$ \overline{x}_{r, \text{min}} $",
+        r"$ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["riming_rain_core", "ice_riming", "snow_riming", "particle_rain_riming"],
     ],
     "drain_max_x": [
         "Maximum size of particle",
-        r"$ \overline{x}_{r, \text{max}} $",
+        r"$ \overline{x}_{r, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -3710,7 +3712,7 @@ in_params_notation_mapping = {
     ],
     "drain_cmu3": [
         r"Constant for calculating the shape parameter $ \mu $ during rain evaporation",
-        r"$ D_{\text{eq}} $",
+        r"$ D_{\mathrm{eq}} $",
         r"\citeA{seifert_parameterization_2008}, Eq. (20)",
         "independent",
         ["rain_evaporation_sb", "sedimentation_explicit"],
@@ -3779,14 +3781,14 @@ in_params_notation_mapping = {
         ["rain_freeze"],
     ],
     "drain_nm1": [
-        r"Argument of incomplete $ \Gamma $-distribution for $g_{1, \text{rain}}$",
+        r"Argument of incomplete $ \Gamma $-distribution for $g_{1, \mathrm{rain}}$",
         r"$ \frac{\nu+1}{\mu} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (80)",
         "dependent",
         ["rain_freeze"],
     ],
     "drain_nm2": [
-        r"Argument of incomplete $ \Gamma $-distribution for $g_{2, \text{rain}}$",
+        r"Argument of incomplete $ \Gamma $-distribution for $g_{2, \mathrm{rain}}$",
         r"$ \frac{\nu+2}{\mu} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (80)",
         "dependent",
@@ -3913,7 +3915,7 @@ in_params_notation_mapping = {
     ],
     "dcloud_min_x": [
         "Minimum size of the particle used after the microphysics",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -3928,7 +3930,7 @@ in_params_notation_mapping = {
     ],
     "dcloud_min_x_act": [
         "Minimum size of particle for CCN activation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["ccn_act_hande_akm", "ccn_act_hande"],
@@ -3963,7 +3965,7 @@ in_params_notation_mapping = {
     ],
     "dcloud_min_x_freezing": [
         "Minimum size of particle for freezing",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["cloud_freeze_hom"],
@@ -3991,7 +3993,7 @@ in_params_notation_mapping = {
     ],
     "dcloud_min_x_conversion": [
         "Minimum size of particle for conversion processes",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["auto_conversion_kb", "auto_conversion_sb"],
@@ -4005,14 +4007,14 @@ in_params_notation_mapping = {
     ],
     "dcloud_min_x_riming": [
         "Minimum size of particle for riming",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["riming_cloud_core", "particle_cloud_riming"],
     ],
     "dcloud_max_x": [
         "Maximum size of particle",
-        r"similar to $ \overline{x}_{r, \text{max}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -4340,7 +4342,7 @@ in_params_notation_mapping = {
     ],
     "dgraupel_min_x": [
         "Minimum size of the particle used after the microphysics",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -4378,14 +4380,14 @@ in_params_notation_mapping = {
     ],
     "dgraupel_min_x_melt": [
         "Minimum size of particle for melting",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["graupel_melting"],
     ],
     "dgraupel_min_x_evap": [
         "Minimum size of particle for evaporation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["evaporation"],
@@ -4399,7 +4401,7 @@ in_params_notation_mapping = {
     ],
     "dgraupel_min_x_depo": [
         "Minimum size of particle for vapor deposition",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["vapor_dep_relaxation"],
@@ -4413,35 +4415,35 @@ in_params_notation_mapping = {
     ],
     "dgraupel_min_x_collection": [
         "Minimum size of particle for different collision processes",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["particle_collection", "particle_particle_collection"],
     ],
     "dgraupel_min_x_conversion": [
         "Minimum size of particle for conversion processes",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["graupel_hail_conv"],
     ],
     "dgraupel_min_x_sedimentation": [
         "Minimum size of particle for sedimentation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["sedimentation_explicit"],
     ],
     "dgraupel_min_x_riming": [
         "Minimum size of particle for riming",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["particle_cloud_riming", "particle_rain_riming"],
     ],
     "dgraupel_max_x": [
         "Maximum size of particle",
-        r"similar to $ \overline{x}_{r, \text{max}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -4644,14 +4646,14 @@ in_params_notation_mapping = {
         ["graupel_hail_conv"],
     ],
     "dgraupel_nm1": [
-        r"Argument of incomplete $ \Gamma $-distribution for $g_{1, \text{rain}}$",
+        r"Argument of incomplete $ \Gamma $-distribution for $g_{1, \mathrm{rain}}$",
         r"$ \frac{\nu+1}{\mu} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (80)",
         "dependent",
         ["graupel_hail_conv"],
     ],
     "dgraupel_nm2": [
-        r"Argument of incomplete $ \Gamma $-distribution for $g_{2, \text{rain}}$",
+        r"Argument of incomplete $ \Gamma $-distribution for $g_{2, \mathrm{rain}}$",
         r"$ \frac{\nu+2}{\mu} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (80)",
         "dependent",
@@ -4680,7 +4682,7 @@ in_params_notation_mapping = {
     ],
     "dgraupel_ecoll_c": [
         "Riming coefficient. Maximum collision efficiency with cloud droplets",
-        r"$ \overline{E}_{g, \text{max}} $",
+        r"$ \overline{E}_{g, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["particle_cloud_riming"],
@@ -4715,14 +4717,14 @@ in_params_notation_mapping = {
     ],
     "dgraupel_a_f": [
         "Constant for average ventilation. Used in melting and ice-vapor processes",
-        r"$ \overline{a}_{\text{vent}, 1} $",
+        r"$ \overline{a}_{\mathrm{vent}, 1} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (88)",
         "dependent",
         ["graupel_melting", "evaporation", "vapor_dep_relaxation"],
     ],
     "dgraupel_b_f": [
         "Coefficient for average ventilation",
-        r"$ \overline{b}_{\text{vent}, 1} $",
+        r"$ \overline{b}_{\mathrm{vent}, 1} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (89)",
         "dependent",
         ["graupel_melting", "evaporation", "vapor_dep_relaxation"],
@@ -4778,7 +4780,7 @@ in_params_notation_mapping = {
     ],
     "dhail_min_x": [
         "Minimum size of the particle used after the microphysics",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [],
@@ -4806,7 +4808,7 @@ in_params_notation_mapping = {
     ],
     "dhail_min_x_melt": [
         "Minimum size of particle for melting",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [],
@@ -4827,7 +4829,7 @@ in_params_notation_mapping = {
     ],
     "dhail_min_x_depo": [
         "Minimum size of particle for vapor deposition",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [],
@@ -4855,21 +4857,21 @@ in_params_notation_mapping = {
     ],
     "dhail_min_x_sedimentation": [
         "Minimum size of particle for sedimentation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [],
     ],
     "dhail_min_x_riming": [
         "Minimum size of particle for riming",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [],
     ],
     "dhail_max_x": [
         "Maximum size of particle",
-        r"similar to $ \overline{x}_{r, \text{max}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [],
@@ -5072,7 +5074,7 @@ in_params_notation_mapping = {
     ],
     "dhail_ecoll_c": [
         "Riming coefficient. Maximum collision efficiency with cloud droplets",
-        r"Similar to $ \overline{E}_{g, \text{max}} $",
+        r"Similar to $ \overline{E}_{g, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         [],
@@ -5107,14 +5109,14 @@ in_params_notation_mapping = {
     ],
     "dhail_a_f": [
         "Constant for average ventilation. Used in melting and ice-vapor processes",
-        r"$ \overline{a}_{\text{vent}, 1} $",
+        r"$ \overline{a}_{\mathrm{vent}, 1} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (88)",
         "dependent",
         [],
     ],
     "dhail_b_f": [
         "Coefficient for average ventilation",
-        r"$ \overline{b}_{\text{vent}, 1} $",
+        r"$ \overline{b}_{\mathrm{vent}, 1} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (89)",
         "dependent",
         [],
@@ -5188,7 +5190,7 @@ in_params_notation_mapping = {
     ],
     "dice_min_x": [
         "Minimum size of the particle used after the microphysics",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -5210,35 +5212,35 @@ in_params_notation_mapping = {
     ],
     "dice_min_x_act": [
         "Minimum size of particle for ice activation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["ice_activation_phillips"],
     ],
     "dice_min_x_nuc_homo": [
         "Minimum size of particle for homogenous nucleation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["ice_nuc_hom"],
     ],
     "dice_min_x_nuc_hetero": [
         "Minimum size of particle for heterogeneous nucleation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [],
     ],
     "dice_min_x_melt": [
         "Minimum size of particle for melting",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["ice_melting"],
     ],
     "dice_min_x_evap": [
         "Minimum size of particle for evaporation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["evaporation"],
@@ -5252,42 +5254,42 @@ in_params_notation_mapping = {
     ],
     "dice_min_x_depo": [
         "Minimum size of particle for vapor deposition",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["vapor_dep_relaxation"],
     ],
     "dice_min_x_collision": [
         "Minimum size of particle for ice-ice collision",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["ice_self_collection"],
     ],
     "dice_min_x_collection": [
         "Minimum size of particle for different collision processes",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["particle_collection"],
     ],
     "dice_min_x_conversion": [
         "Minimum size of particle for conversion processes",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["ice_riming"],
     ],
     "dice_min_x_sedimentation": [
         "Minimum size of particle for sedimentation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["sedimentation_explicit"],
     ],
     "dice_min_x_riming": [
         "Minimum size of particle for riming",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -5301,7 +5303,7 @@ in_params_notation_mapping = {
     ],
     "dice_max_x": [
         "Maximum size of particle",
-        r"similar to $ \overline{x}_{r, \text{max}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -5543,7 +5545,7 @@ in_params_notation_mapping = {
     ],
     "dice_ecoll_c": [
         "Riming coefficient. Maximum collision efficiency with cloud droplets",
-        r"$ \overline{E}_{i, \text{max}} $",
+        r"$ \overline{E}_{i, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["riming_cloud_core"],
@@ -5578,14 +5580,14 @@ in_params_notation_mapping = {
     ],
     "dice_a_f": [
         "Constant for average ventilation. Used in melting and ice-vapor processes",
-        r"$ \overline{a}_{\text{vent}, 1} $",
+        r"$ \overline{a}_{\mathrm{vent}, 1} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (88)",
         "dependent",
         ["evaporation", "vapor_dep_relaxation"],
     ],
     "dice_b_f": [
         "Coefficient for average ventilation",
-        r"$ \overline{b}_{\text{vent}, 1} $",
+        r"$ \overline{b}_{\mathrm{vent}, 1} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (89)",
         "dependent",
         ["evaporation", "vapor_dep_relaxation"],
@@ -5663,7 +5665,7 @@ in_params_notation_mapping = {
     ],
     "dsnow_min_x": [
         "Minimum size of the particle used after the microphysics",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -5701,14 +5703,14 @@ in_params_notation_mapping = {
     ],
     "dsnow_min_x_melt": [
         "Minimum size of particle for melting",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["snow_melting"],
     ],
     "dsnow_min_x_evap": [
         "Minimum size of particle for evaporation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["evaporation"],
@@ -5722,7 +5724,7 @@ in_params_notation_mapping = {
     ],
     "dsnow_min_x_depo": [
         "Minimum size of particle for vapor deposition",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["vapor_dep_relaxation"],
@@ -5736,7 +5738,7 @@ in_params_notation_mapping = {
     ],
     "dsnow_min_x_collection": [
         "Minimum size of particle for different collision processes",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["snow_self_collection", "particle_collection"],
@@ -5750,21 +5752,21 @@ in_params_notation_mapping = {
     ],
     "dsnow_min_x_sedimentation": [
         "Minimum size of particle for sedimentation",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["sedimentation_explicit"],
     ],
     "dsnow_min_x_riming": [
         "Minimum size of particle for riming",
-        r"similar to $ \overline{x}_{r, \text{min}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{min}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         ["riming_cloud_core", "riming_rain_core", "snow_riming"],
     ],
     "dsnow_max_x": [
         "Maximum size of particle",
-        r"similar to $ \overline{x}_{r, \text{max}} $",
+        r"similar to $ \overline{x}_{r, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}, Eqs. (94), (97)",
         "independent",
         [
@@ -6008,7 +6010,7 @@ in_params_notation_mapping = {
     ],
     "dsnow_ecoll_c": [
         "Riming coefficient. Maximum collision efficiency with cloud droplets",
-        r"$ \overline{E}_{s, \text{max}} $",
+        r"$ \overline{E}_{s, \mathrm{max}} $",
         r"\citeA{seifert_two-moment_2006}",
         "independent",
         ["riming_cloud_core"],
@@ -6043,14 +6045,14 @@ in_params_notation_mapping = {
     ],
     "dsnow_a_f": [
         "Constant for average ventilation. Used in melting and ice-vapor processes",
-        r"$ \overline{a}_{\text{vent}, 1} $",
+        r"$ \overline{a}_{\mathrm{vent}, 1} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (88)",
         "dependent",
         ["snow_melting", "evaporation", "vapor_dep_relaxation"],
     ],
     "dsnow_b_f": [
         "Coefficient for average ventilation",
-        r"$ \overline{b}_{\text{vent}, 1} $",
+        r"$ \overline{b}_{\mathrm{vent}, 1} $",
         r"\citeA{seifert_two-moment_2006}, Eq. (89)",
         "dependent",
         ["snow_melting", "evaporation", "vapor_dep_relaxation"],

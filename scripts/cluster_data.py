@@ -9,19 +9,25 @@ import os
 import pandas as pd
 import panel as pn
 import seaborn as sns
-from sklearn.cluster import KMeans, SpectralClustering
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from tqdm.auto import tqdm
 import xarray as xr
 
 try:
-    from latexify import param_id_map
+    from latexify import param_id_map, parse_word
 except:
-    from scripts.latexify import param_id_map
+    from scripts.latexify import param_id_map, parse_word
 
 
 def load_data(
-    file_path, x, only_asc600=False, inoutflow_time=-1, phase=None, verbose=False
+    file_path,
+    x,
+    only_asc600=False,
+    inoutflow_time=-1,
+    phase=None,
+    averages=False,
+    verbose=False,
 ):
     """
     Load multiple NetCDF-files as xarray.Dataset, filter them if necessary and concatenate all
@@ -38,6 +44,10 @@ def load_data(
     inoutflow_time : int
         Consider only time steps during the fastest 600 hPa ascent and this many timesteps before
         and after the ascent (in- and outflow).
+    averages : bool
+        If true, calculate the averages over time when each file is loaded. Otherwise tries to concatenate
+        all data in the end which may need lots of memory if inoutflow_time > 0 or only_asc600 == True
+        or phase is not None.
     phase : int
         Only use the given phase.
         0: warm phase
@@ -56,12 +66,14 @@ def load_data(
     files = np.sort(files)
     list_of_arrays = []
     if isinstance(x, str):
-        vars = [x, "asc600", "phase"]
+        variables = [x, "asc600", "phase"]
     else:
-        vars = [v for v in x] + ["asc600", "phase"]
+        variables = [v for v in x] + ["asc600", "phase"]
 
     for f in tqdm(files) if verbose else files:
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[vars]
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+            variables
+        ]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -73,12 +85,35 @@ def load_data(
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
 
-        data = ds[x].dropna("time", how="all")
-        data = data.expand_dims({"file": [f]})
         if phase is not None:
-            data = data.where(ds["phase"] == phase)
-        if len(data["time"]) > 0:
-            list_of_arrays.append(data)
+            ds = ds.where(ds["phase"] == phase)
+        if (
+            "lat" in variables
+            or "lon" in variables
+            or "relative_lat" in variables
+            or "relative_lon" in variables
+        ):
+            ds = ds.where(ds["lat"] != 0)
+        ds = ds[x].dropna("time", how="all")
+        ds = ds.expand_dims({"file": [f]})
+
+        if averages:
+            # for key in variables:
+            #     if "d" != key[0] or "deposition" == key:
+            #         break
+            # if "d" == key[0] and "deposition" != key:
+            #     if "Output Parameter" in ds.dims:
+            #         param_coord = "Output Parameter"
+            #     else:
+            #         param_coord = "Output_Parameter_ID"
+            #     weights = (~np.isnan(ds.isel({param_coord: 0})[key])).sum(dim="time")
+            # else:
+            #     weights = (~np.isnan(ds[key])).sum(dim="time")
+            # ds["weights"] = weights
+            ds = get_average(ds)
+            list_of_arrays.append(ds)
+        elif len(ds["time"]) > 0:
+            list_of_arrays.append(ds)
     data = xr.concat(list_of_arrays, dim="file", join="outer", combine_attrs="override")
     return data
 
@@ -137,8 +172,10 @@ def get_cluster(
     data_array = None
     n_features = 1
     if x is not None and isinstance(data, xr.Dataset):
-        if isinstance(x, str) and param_names is None or len(x) == 1:
+        if (isinstance(x, str) or len(x) == 1) and param_names is None:
             # A single model state
+            if not isinstance(x, str):
+                x = x[0]
             data_array = data[x]
             avg_name = f"avg {x}"
             if include_all_data:
@@ -154,6 +191,8 @@ def get_cluster(
                         else:
                             non_features_list.append([f"avg {col}", None, col])
         elif isinstance(x, str) or len(x) == 1:
+            if not isinstance(x, str):
+                x = x[0]
             # A single parameter but for multiple model states
             avg_name_list = []
             n_features = len(param_names)
@@ -250,9 +289,9 @@ def get_cluster(
             "trajectory": np.asarray([]),
             "file": np.asarray([]),
         }
-        clusters = KMeans(n_clusters=k, tol=tol, random_state=42).fit_predict(
-            fit_data_normed[fit_mask, :]
-        )
+        clusters = KMeans(
+            n_clusters=k, tol=tol, init="k-means++", random_state=42
+        ).fit_predict(fit_data_normed[fit_mask, :])
         trajectory = data["trajectory"]
         for _ in range(len(data["file"]) - 1):
             trajectory = np.append(trajectory, data["trajectory"])
@@ -464,7 +503,7 @@ def plot_cluster_data_interactive(data):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=2,
+        end=5,
         step=0.1,
         value=0.7,
     )
@@ -474,6 +513,11 @@ def plot_cluster_data_interactive(data):
     save_button = pn.widgets.Button(
         name="Save Plot",
         button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
     )
 
     def get_plot(
@@ -489,24 +533,33 @@ def plot_cluster_data_interactive(data):
         font_scale,
         title,
         save_path,
+        latex,
         save,
     ):
 
-        sns.set(rc={"figure.figsize": (width, height)})
+        sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
         fig = Figure()
         ax = fig.subplots()
         if in_p_x[0] == "d" and in_p_x != "deposition":
             x = f"avg d{out_p_x}/{in_p_x}"
+            xlabel = r"avg $\partial$" + out_p_x + f"/{parse_word(in_p_x)}"
         elif in_p_x != "cluster" and in_p_x != "trajectory" and in_p_x != "file":
             x = f"avg {in_p_x}"
+            xlabel = f"avg {parse_word(in_p_x)}"
         else:
             x = in_p_x
+            xlabel = in_p_x
+
         if in_p_y[0] == "d" and in_p_y != "deposition":
             y = f"avg d{out_p_y}/{in_p_y}"
+            ylabel = r"avg $\partial$" + parse_word(out_p_y) + f"/{parse_word(in_p_y)}"
         elif in_p_y != "cluster" and in_p_y != "trajectory" and in_p_y != "file":
             y = f"avg {in_p_y}"
+            ylabel = f"avg {parse_word(in_p_y)}"
         else:
             y = in_p_y
+            ylabel = in_p_y
+
         histogram = (in_p_x == in_p_y and out_p_x == out_p_y) or (
             in_p_x == in_p_y and "/" not in x
         )
@@ -551,14 +604,25 @@ def plot_cluster_data_interactive(data):
             labelsize=int(10 * font_scale),
         )
         _ = ax.set_title(title, fontsize=int(12 * font_scale))
-        ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
-        ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
+        ax.set_xlabel(xlabel, fontsize=int(11 * font_scale))
+        ax.set_ylabel(ylabel, fontsize=int(11 * font_scale))
         legend = ax.get_legend()
         legend.set_title("cluster", prop={"size": int(11 * font_scale)})
         plt.setp(legend.get_texts(), fontsize=int(10 * font_scale))
+        ax.yaxis.get_offset_text().set_fontsize(int(11 * font_scale))
+        ax.xaxis.get_offset_text().set_fontsize(int(11 * font_scale))
+        # You may use the following line to remove the offset label if needed.
+        # ax.xaxis.get_offset_text().set(alpha=0)
         if save:
             try:
-                ax.figure.savefig(save_path, bbox_inches="tight", dpi=300)
+                i = 0
+                store_type = save_path.split(".")[-1]
+                store_path = save_path[0 : -len(store_type) - 1]
+                save_name = store_path + "_{:03d}.".format(i) + store_type
+                while os.path.isfile(save_name):
+                    i = i + 1
+                    save_name = store_path + "_{:03d}.".format(i) + store_type
+                ax.figure.savefig(save_name, bbox_inches="tight", dpi=300)
             except:
                 save_to_field.value = (
                     f"Could not save to {save_path}. Did you forget the filetype?"
@@ -583,6 +647,7 @@ def plot_cluster_data_interactive(data):
             font_scale=font_slider,
             title=title_widget,
             save_path=save_to_field,
+            latex=latex_button,
             save=save_button,
         ),
     ).servable()
@@ -606,6 +671,7 @@ def plot_cluster_data_interactive(data):
         pn.Row(
             save_to_field,
             save_button,
+            latex_button,
         ),
         title_widget,
         plot_pane,

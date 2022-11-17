@@ -14,6 +14,7 @@ try:
     from tqdm.auto import tqdm
 except:
     from progressbar import progressbar as tqdm
+import scipy.signal as scisig
 import seaborn as sns
 import sys
 import xarray as xr
@@ -38,7 +39,617 @@ except:
     import scripts.latexify as latexify
 
 
-def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=False):
+def load_ds(f, only_asc600=False, only_phase=None, inoutflow_time=-1, load_params=None):
+    """
+    Load an xarray.Dataset and filter it for certain columns or time steps or phases if needed.
+
+    Parameters
+    ----------
+    f : string
+        Path and name of the file to load
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    only_phase : string
+        Consider only time steps with the given phase. Can be combined with only_asc600 or inoutflow_time.
+        Possible values are "warm phase", "mixed phase", "ice phase", "neutral phase".
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
+    load_params : list of strings
+        If given, load only the provided columns.
+
+    Returns
+    -------
+    Loaded and, if needed, filtered xarray.Dataset.
+    """
+
+    phases = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
+    if load_params is not None:
+        additional_vars = []
+        if only_phase is not None and "phase" not in load_params:
+            additional_vars.append("phase")
+        if inoutflow_time > 0 and "asc600" not in load_params:
+            additional_vars.append("asc600")
+        if len(additional_vars) > 0:
+            ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")[
+                load_params + additional_vars
+            ]
+        else:
+            ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")[load_params]
+    else:
+        ds = xr.open_dataset(f, decode_times=False, engine="netcdf4")
+
+    if inoutflow_time > 0:
+        ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
+        ds_flow = ds_flow.rolling(
+            time=inoutflow_time * 2,  # once for inflow, another for outflow
+            min_periods=1,
+            center=True,
+        ).reduce(np.nanmax)
+        ds = ds.where(ds_flow == 1)
+    elif only_asc600:
+        ds = ds.where(ds["asc600"] == 1)
+    if only_phase is not None:
+        if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
+            ds["phase"] = ds["phase"].astype(np.uint64)
+            phase_idx = np.argwhere(phases == only_phase)[0].item()
+            ds = ds.where(ds["phase"] == phase_idx)
+        elif ds["phase"].dtype == str:
+            ds = ds.where(ds["phase"] == only_phase)
+        else:
+            phase_idx = np.argwhere(phases == only_phase)[0].item()
+            ds = ds.where(ds["phase"] == phase_idx)
+    return ds
+
+
+def cross_correlation(
+    ds=None,
+    file_path=None,
+    phases=False,
+    columns=None,
+    only_asc600=False,
+    inoutflow_time=-1,
+    verbose=False,
+):
+    """
+    Calculate the cross-correlation using two (discrete-)time signals.
+    Non-linear correlations may not be picked up and lead to low cross-correlation values.
+    scipy.signal.correlate() uses either fft or direct estimation.
+    Calculates the best time for negative or positive correlation and their correlation values.
+    The larger absolute value determines if negative or positive correlation is considered.
+    Columns are set to zero mean and variance.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Result of a sensitivity simulation.
+    file_path : string
+        Path to files with sensitivity simulations.
+    phases : bool
+        If true, calculate the auto-correlation for each phase separately.
+    columns : list of strings
+        Columns to load from the dataset. If none is given, all model state variables and model parameters
+        will be loaded. Using fewer columns uses significantly less time.
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
+    verbose : bool
+        Print when a phase is being evaluated and print progressbars.
+
+    Returns
+    -------
+    xarray.Dataset with coordinates 'Output Parameter' (for sensitivities), 'Parameter' (the first parameter
+    for the cross correlation), 'trajectory', and 'ensemble'. If multiple files have been loaded, an additional
+    coordinate 'file' with the name of the file is given. If phases is true, then 'phases' is available as
+    coordinate.
+    Columns are the cross correlation with the respective parameter and 'Offset Parametername' which gives the offset
+    best correlation fit.
+    """
+    phases_arr = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
+    if ds is None:
+        files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+        n_ensembles = 0
+        n_trajectories = 0
+        for f in files:
+            ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+                ["trajectory", "ensemble"]
+            ]
+            if len(ds["ensemble"]) > n_ensembles:
+                n_ensembles = len(ds["ensemble"])
+            if len(ds["trajectory"]) > n_trajectories:
+                n_trajectories = len(ds["trajectory"])
+        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
+    else:
+        files = None
+        n_ensembles = len(ds["ensemble"])
+        n_trajectories = len(ds["trajectory"])
+    if "Output_Parameter_ID" in ds:
+        out_param_coord = "Output_Parameter_ID"
+        out_params = list(ds[out_param_coord].values)
+        param_names = []
+        for out_p in out_params:
+            param_names.append(latexify.param_id_map[out_p])
+    else:
+        out_param_coord = "Output Parameter"
+        out_params = list(ds[out_param_coord].values)
+        param_names = out_params
+    if phases:
+        if ds["phase"].dtype == str:
+            phases_idx = phases_arr
+        else:
+            phases_idx = np.arange(4)
+
+    param_coords = []
+    ignore_list = ["phase", "step", "asc600", "time_after_ascent"]
+    if columns is None:
+        columns = []
+        for p in list(ds.keys()):
+            if p in ignore_list:
+                continue
+            columns.append(p)
+    for p in columns:
+        if (p != "deposition") and (p[0] == "d"):
+            for out_name in param_names:
+                param_coords.append(f"d{out_name}/{p}")
+        else:
+            param_coords.append(p)
+
+    load_vars = list(columns)
+    if phases:
+        load_vars.append("phase")
+    if inoutflow_time > 0:
+        load_vars.append("asc600")
+
+    coords = {
+        "Output Parameter": param_names,
+        "Parameter": param_coords,
+        "trajectory": np.arange(n_trajectories),
+        "ensemble": np.arange(n_ensembles),
+    }
+
+    x_corrs_outp = {}
+    x_corrs_inp = {}
+    if phases and files is None:
+        coords["phase"] = phases_arr
+        out_coords = ["phase", "ensemble", "trajectory", "Parameter"]
+        in_coords = ["phase", "Output Parameter", "ensemble", "trajectory", "Parameter"]
+        out_shape = (
+            len(coords["phase"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+        in_shape = (
+            len(coords["phase"]),
+            len(coords["Output Parameter"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+    elif files is None:
+        out_coords = ["ensemble", "trajectory", "Parameter"]
+        in_coords = ["Output Parameter", "ensemble", "trajectory", "Parameter"]
+        out_shape = (
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+        in_shape = (
+            len(coords["Output Parameter"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+    elif phases:
+        coords["file"] = files
+        coords["phase"] = phases_arr
+        out_coords = ["phase", "file", "ensemble", "trajectory", "Parameter"]
+        in_coords = [
+            "phase",
+            "file",
+            "Output Parameter",
+            "ensemble",
+            "trajectory",
+            "Parameter",
+        ]
+        out_shape = (
+            len(coords["phase"]),
+            len(coords["file"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+        in_shape = (
+            len(coords["phase"]),
+            len(coords["file"]),
+            len(coords["Output Parameter"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+    else:
+        coords["file"] = files
+        out_coords = ["file", "ensemble", "trajectory", "Parameter"]
+        in_coords = ["file", "Output Parameter", "ensemble", "trajectory", "Parameter"]
+        out_shape = (
+            len(coords["file"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+        in_shape = (
+            len(coords["file"]),
+            len(coords["Output Parameter"]),
+            len(coords["ensemble"]),
+            len(coords["trajectory"]),
+            len(coords["Parameter"]),
+        )
+
+    for p in columns:
+        if (p != "deposition") and (p[0] == "d"):
+            x_corrs_inp[p] = (in_coords, np.empty(in_shape))
+            x_corrs_inp[p][1][:] = np.nan
+            x_corrs_inp[f"Offset {p}"] = (in_coords, np.empty(in_shape))
+            x_corrs_inp[f"Offset {p}"][1][:] = np.nan
+        else:
+            x_corrs_outp[p] = (out_coords, np.empty(out_shape))
+            x_corrs_outp[p][1][:] = np.nan
+            x_corrs_outp[f"Offset {p}"] = (out_coords, np.empty(out_shape))
+            x_corrs_outp[f"Offset {p}"][1][:] = np.nan
+
+    def get_corr(ds_tmp1, ds_tmp2, col1, col2):
+        vals1 = ds_tmp1[col1].values
+        vals2 = ds_tmp2[col2].values
+        # NaNs *should* always be equally distributed
+        # in both vals1 and vals2
+        mask = ~(np.isnan(vals1) + np.isnan(vals2))
+        # We don't care if less than 10 datapoints (=5 minutes) are available
+        if np.sum(mask) < 10:
+            return np.nan, np.nan
+
+        vals1 = vals1[mask]
+        vals2 = vals2[mask]
+        vals1 -= np.nanmean(vals1)
+        vals2 -= np.nanmean(vals2)
+
+        std1 = np.nanstd(vals1)
+        std2 = np.nanstd(vals2)
+        if std1 == 0 or std2 == 0:
+            # Unfortunately, only zero values might be possible, leading to a variance of zero.
+            return np.nan, np.nan
+        vals1 /= std1
+        vals2 /= std2
+        corr = scisig.correlate(
+            vals1,
+            vals2,
+            mode="full",
+            method="auto",
+        )
+
+        corr_best = np.nanmax(corr)
+        offset = np.nanargmax(corr)
+        if np.abs(np.nanmax(corr)) > corr_best:
+            corr_best = np.nanmin(corr)
+            offset = np.nanargmin(corr)
+        corr_best /= len(vals1)
+        offset = offset - len(vals1) + 1
+        return corr_best, offset
+
+    def get_corr_ds(
+        data_outp,
+        data_inp,
+        ds,
+        params,
+        columns,
+        phase_i=None,
+        f_i=None,
+        verbose=False,
+        leave=False,
+    ):
+        for col_idx, col in enumerate(
+            tqdm(columns, leave=leave) if verbose else columns
+        ):
+            col_sens = (col[0] == "d") and (col != "deposition")
+            for param_idx, param in enumerate(
+                tqdm(params, leave=False) if verbose else params
+            ):
+                param_sens = (param[0] == "d") and (param != "deposition")
+                if param_sens and col_sens:
+                    tmp_param = param.split("/")
+                    out_param2 = tmp_param[0][1::]
+                    if out_param_coord == "Output_Parameter_ID":
+                        out_param_ds_idx2 = np.argwhere(
+                            np.asarray(latexify.param_id_map) == out_param2
+                        ).item()
+                    else:
+                        out_param_ds_idx2 = out_param2
+                    ds_col = tmp_param[1]
+                    for ens_idx, ens in enumerate(ds["ensemble"]):
+                        for traj_idx, traj in enumerate(ds["trajectory"]):
+                            for out_param_idx, out_param in enumerate(out_params):
+                                ds_tmp = ds.sel(
+                                    {
+                                        "ensemble": ens,
+                                        "trajectory": traj,
+                                        out_param_coord: out_param,
+                                    }
+                                )
+                                ds_tmp2 = ds.sel(
+                                    {
+                                        "ensemble": ens,
+                                        "trajectory": traj,
+                                        out_param_coord: out_param_ds_idx2,
+                                    }
+                                )
+                                corr_best, offset = get_corr(
+                                    ds_tmp, ds_tmp2, col, ds_col
+                                )
+
+                                if phase_i is None and f_i is None:
+                                    data_inp[col][1][
+                                        out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = offset
+                                elif phase_i is None:
+                                    data_inp[col][1][
+                                        f_i, out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        f_i, out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = offset
+                                elif f_i is None:
+                                    data_inp[col][1][
+                                        phase_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        phase_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = offset
+                                else:
+                                    data_inp[col][1][
+                                        phase_i,
+                                        f_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        phase_i,
+                                        f_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = offset
+                elif param_sens:
+                    tmp_param = param.split("/")
+                    out_param = tmp_param[0][1::]
+                    if out_param_coord == "Output_Parameter_ID":
+                        out_param_ds_idx = np.argwhere(
+                            np.asarray(latexify.param_id_map) == out_param
+                        ).item()
+                    else:
+                        out_param_ds_idx = out_param
+                    ds_col = tmp_param[1]
+                    for ens_idx, ens in enumerate(ds["ensemble"]):
+                        for traj_idx, traj in enumerate(ds["trajectory"]):
+                            ds_tmp = ds.sel(
+                                {
+                                    "ensemble": ens,
+                                    "trajectory": traj,
+                                    out_param_coord: out_param_ds_idx,
+                                }
+                            )
+                            corr_best, offset = get_corr(ds_tmp, ds_tmp, col, ds_col)
+
+                            if phase_i is None and f_i is None:
+                                data_outp[col][1][
+                                    ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    ens_idx, traj_idx, param_idx
+                                ] = offset
+                            elif phase_i is None:
+                                data_outp[col][1][
+                                    f_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    f_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+                            elif f_i is None:
+                                data_outp[col][1][
+                                    phase_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    phase_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+                            else:
+                                data_outp[col][1][
+                                    phase_i, f_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    phase_i, f_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+                elif col_sens:
+                    for ens_idx, ens in enumerate(ds["ensemble"]):
+                        for traj_idx, traj in enumerate(ds["trajectory"]):
+                            for out_param_idx, out_param in enumerate(out_params):
+                                ds_tmp = ds.sel(
+                                    {
+                                        "ensemble": ens,
+                                        "trajectory": traj,
+                                        out_param_coord: out_param,
+                                    }
+                                )
+                                corr_best, offset = get_corr(ds_tmp, ds_tmp, col, param)
+
+                                if phase_i is None and f_i is None:
+                                    data_inp[col][1][
+                                        out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = offset
+                                elif phase_i is None:
+                                    data_inp[col][1][
+                                        f_i, out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        f_i, out_param_idx, ens_idx, traj_idx, param_idx
+                                    ] = offset
+                                elif f_i is None:
+                                    data_inp[col][1][
+                                        phase_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        phase_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = offset
+                                else:
+                                    data_inp[col][1][
+                                        phase_i,
+                                        f_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = corr_best
+                                    data_inp[f"Offset {col}"][1][
+                                        phase_i,
+                                        f_i,
+                                        out_param_idx,
+                                        ens_idx,
+                                        traj_idx,
+                                        param_idx,
+                                    ] = offset
+                else:
+                    for ens_idx, ens in enumerate(ds["ensemble"]):
+                        for traj_idx, traj in enumerate(ds["trajectory"]):
+                            ds_tmp = ds.sel({"ensemble": ens, "trajectory": traj})
+                            corr_best, offset = get_corr(ds_tmp, ds_tmp, col, param)
+
+                            if phase_i is None and f_i is None:
+                                data_outp[col][1][
+                                    ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    ens_idx, traj_idx, param_idx
+                                ] = offset
+                            elif phase_i is None:
+                                data_outp[col][1][
+                                    f_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    f_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+                            elif f_i is None:
+                                data_outp[col][1][
+                                    phase_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    phase_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+                            else:
+                                data_outp[col][1][
+                                    phase_i, f_i, ens_idx, traj_idx, param_idx
+                                ] = corr_best
+                                data_outp[f"Offset {col}"][1][
+                                    phase_i, f_i, ens_idx, traj_idx, param_idx
+                                ] = offset
+
+    if files is None:
+        if phases:
+            for phase_i, phase in enumerate(phases_idx):
+                if verbose:
+                    print(f"Phase: {phase}")
+                get_corr_ds(
+                    data_outp=x_corrs_outp,
+                    data_inp=x_corrs_inp,
+                    ds=ds.where(ds["phase"] == phase),
+                    columns=columns,
+                    params=param_coords,
+                    phase_i=phase_i,
+                    verbose=verbose,
+                    leave=True,
+                )
+        else:
+            get_corr_ds(
+                data_outp=x_corrs_outp,
+                data_inp=x_corrs_inp,
+                ds=ds,
+                columns=columns,
+                params=param_coords,
+                verbose=verbose,
+                leave=True,
+            )
+    else:
+        for f_i, f in enumerate(tqdm(files) if verbose else files):
+            ds = load_ds(
+                f=file_path + f,
+                only_asc600=only_asc600,
+                inoutflow_time=inoutflow_time,
+                load_params=load_vars,
+            )
+            if phases:
+                for phase_i, phase in enumerate(
+                    tqdm(phases_idx, leave=False) if verbose else phases_idx
+                ):
+                    get_corr_ds(
+                        data_outp=x_corrs_outp,
+                        data_inp=x_corrs_inp,
+                        ds=ds.where(ds["phase"] == phase),
+                        columns=columns,
+                        params=param_coords,
+                        f_i=f_i,
+                        phase_i=phase_i,
+                        verbose=verbose,
+                        leave=False,
+                    )
+            else:
+                get_corr_ds(
+                    data_outp=x_corrs_outp,
+                    data_inp=x_corrs_inp,
+                    ds=ds,
+                    columns=columns,
+                    params=param_coords,
+                    f_i=f_i,
+                    verbose=verbose,
+                    leave=False,
+                )
+
+    data_vars = x_corrs_outp
+    for key in x_corrs_inp:
+        data_vars[key] = x_corrs_inp[key]
+    return xr.Dataset(data_vars=data_vars, coords=coords)
+
+
+def auto_correlation(
+    ds=None,
+    file_path=None,
+    delay=10,
+    phases=False,
+    columns=None,
+    only_asc600=False,
+    inoutflow_time=-1,
+    verbose=False,
+):
     """
     Estimate auto-correlation via
 
@@ -58,6 +669,13 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
         Define the delay (in time steps) to calculate the auto-correlation or a range of delays.
     phases : bool
         If true, calculate the auto-correlation for each phase separately.
+    columns : list of strings
+        Columns to load from the dataset. If none is given, all model state variables and model parameters
+        will be loaded. Using fewer columns uses significantly less time.
+    only_asc600 : bool
+        Consider only time steps during the ascend.
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
     verbose : bool
         Print when a phase is being evaluated and print progressbars.
 
@@ -71,9 +689,21 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
     out_param_coord = ""
     if ds is None:
         files = [f for f in os.listdir(file_path) if os.path.isfile(file_path + f)]
+        n_ensembles = 0
+        n_trajectories = 0
+        for f in files:
+            ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+                ["trajectory", "ensemble"]
+            ]
+            if len(ds["ensemble"]) > n_ensembles:
+                n_ensembles = len(ds["ensemble"])
+            if len(ds["trajectory"]) > n_trajectories:
+                n_trajectories = len(ds["trajectory"])
         ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
     else:
         files = None
+        n_ensembles = len(ds["ensemble"])
+        n_trajectories = len(ds["trajectory"])
     if "Output_Parameter_ID" in ds:
         out_params = list(ds["Output_Parameter_ID"].values)
         param_names = []
@@ -84,6 +714,39 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
         out_params = list(ds["Output Parameter"].values)
         param_names = out_params
         out_param_coord = "Output Parameter"
+
+    auto_corr_coords = {
+        "Output Parameter": param_names,
+        "trajectory": np.arange(n_trajectories),
+        "ensemble": np.arange(n_ensembles),
+        "delay": [],
+    }
+
+    if columns is None:
+        columns = list(ds.keys())
+        if "phase" in columns:
+            columns.remove("phase")
+        if "step" in columns:
+            columns.remove("step")
+        if "asc600" in columns:
+            columns.remove("asc600")
+        if "time_after_ascent" in columns:
+            columns.remove("time_after_ascent")
+    load_vars = columns
+    if phases:
+        auto_corr_coords["phase"] = phases_arr
+        load_vars.append("phase")
+        if ds["phase"].dtype == str:
+            phases_idx = phases_arr
+        else:
+            phases_idx = np.arange(4)
+    if inoutflow_time > 0:
+        load_vars.append("asc600")
+
+    if isinstance(delay, int):
+        auto_corr_coords["delay"].append(delay)
+    else:
+        auto_corr_coords["delay"].extend(delay)
 
     def get_corr(ds_tmp, d, n, data, d_i):
         ds_tmp1 = ds_tmp.isel({"time": np.arange(n - d)})
@@ -119,13 +782,13 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
         data_inp,
         ds,
         params,
-        phase_val=None,
         phase_i=None,
         f_i=None,
         verbose=False,
+        leave=False,
     ):
         n = len(ds["time"])
-        for param_i, col in enumerate(tqdm(params) if verbose else params):
+        for param_i, col in enumerate(tqdm(params, leave=leave) if verbose else params):
             if col[0] != "d" or col == "deposition":
                 if isinstance(delay, int):
                     if phase_i is None and f_i is None:
@@ -134,7 +797,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                         get_corr(ds[col], delay, n, data_outp[col][1][f_i], 0)
                     elif f_i is None:
                         get_corr(
-                            ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                            ds[col],
                             delay,
                             n,
                             data_outp[col][1][phase_i],
@@ -142,7 +805,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                         )
                     else:
                         get_corr(
-                            ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                            ds[col],
                             delay,
                             n,
                             data_outp[col][1][f_i, phase_i],
@@ -156,7 +819,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                             get_corr(ds[col], d, n, data_outp[col][1][f_i], d_i)
                         elif f_i is None:
                             get_corr(
-                                ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                                ds[col],
                                 d,
                                 n,
                                 data_outp[col][1][phase_i],
@@ -164,7 +827,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                             )
                         else:
                             get_corr(
-                                ds[["phase", col]].where(ds["phase"] == phase_val)[col],
+                                ds[col],
                                 d,
                                 n,
                                 data_outp[col][1][f_i, phase_i],
@@ -192,9 +855,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                             )
                         elif f_i is None:
                             get_corr(
-                                ds[["phase", col]]
-                                .sel({out_param_coord: out_p})
-                                .where(ds["phase"] == phase_val)[col],
+                                ds[col].sel({out_param_coord: out_p}),
                                 delay,
                                 n,
                                 data_inp[col][1][phase_i, out_p_i],
@@ -202,9 +863,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                             )
                         else:
                             get_corr(
-                                ds[["phase", col]]
-                                .sel({out_param_coord: out_p})
-                                .where(ds["phase"] == phase_val)[col],
+                                ds[col].sel({out_param_coord: out_p}),
                                 delay,
                                 n,
                                 data_inp[col][1][f_i, phase_i, out_p_i],
@@ -230,9 +889,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                                 )
                             elif f_i is None:
                                 get_corr(
-                                    ds[["phase", col]]
-                                    .sel({out_param_coord: out_p})
-                                    .where(ds["phase"] == phase_val)[col],
+                                    ds[col].sel({out_param_coord: out_p}),
                                     d,
                                     n,
                                     data_inp[col][1][phase_i, out_p_i],
@@ -240,9 +897,7 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                                 )
                             else:
                                 get_corr(
-                                    ds[["phase", col]]
-                                    .sel({out_param_coord: out_p})
-                                    .where(ds["phase"] == phase_val)[col],
+                                    ds[col].sel({out_param_coord: out_p}),
                                     d,
                                     n,
                                     data_inp[col][1][f_i, phase_i, out_p_i],
@@ -250,29 +905,8 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                                 )
                     out_p_i += 1
 
-    auto_corr_coords = {
-        "delay": [],
-    }
-    if isinstance(delay, int):
-        auto_corr_coords["delay"].append(delay)
-    else:
-        auto_corr_coords["delay"].extend(delay)
-
     if files is None:
-        auto_corr_coords["ensemble"] = ds["ensemble"].values
-        auto_corr_coords["trajectory"] = ds["trajectory"].values
-        auto_corr_coords["Output Parameter"] = param_names
-        columns = list(ds.keys())
-        if "phase" in columns:
-            columns.remove("phase")
-        if "step" in columns:
-            columns.remove("step")
-        if "asc600" in columns:
-            columns.remove("asc600")
-        if "time_after_ascent" in columns:
-            columns.remove("time_after_ascent")
         if phases:
-            auto_corr_coords["phase"] = phases_arr
             auto_corrs_outp = {}
             auto_corrs_inp = {}
             for param in columns:
@@ -318,12 +952,12 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                 else:
                     phase_val = phase
                 get_corr_ds(
-                    auto_corrs_outp,
-                    auto_corrs_inp,
-                    ds,
-                    columns,
-                    phase_val,
-                    phase_i,
+                    data_outp=auto_corrs_outp,
+                    data_inp=auto_corrs_inp,
+                    ds=ds,
+                    params=columns,
+                    phase_i=phase_i,
+                    leave=True,
                     verbose=verbose,
                 )
         else:
@@ -356,40 +990,16 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                     )
                     auto_corrs_inp[param][1][:] = np.nan
             get_corr_ds(
-                auto_corrs_outp,
-                auto_corrs_inp,
-                ds,
-                columns,
+                data_outp=auto_corrs_outp,
+                data_inp=auto_corrs_inp,
+                ds=ds,
+                params=columns,
+                leave=True,
                 verbose=verbose,
             )
     else:
-        ds = xr.open_dataset(file_path + files[0], decode_times=False, engine="netcdf4")
-        n_ensembles = len(ds["ensemble"].values)
-        n_trajectories = len(ds["trajectory"].values)
-        auto_corr_coords["Output Parameter"] = param_names
         auto_corr_coords["file"] = files
-        columns = list(ds.keys())
-        if "phase" in columns:
-            columns.remove("phase")
-        if "step" in columns:
-            columns.remove("step")
-        if "asc600" in columns:
-            columns.remove("asc600")
-        if "time_after_ascent" in columns:
-            columns.remove("time_after_ascent")
-
-        for f in files[1::]:
-            ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-                ["trajectory", "ensemble"]
-            ]
-            if len(ds["trajectory"]) > n_trajectories:
-                n_trajectories = len(ds["trajectory"])
-            if len(ds["ensemble"]) > n_ensembles:
-                n_ensembles = len(ds["ensemble"])
-        auto_corr_coords["ensemble"] = np.arange(n_ensembles)
-        auto_corr_coords["trajectory"] = np.arange(n_trajectories)
         if phases:
-            auto_corr_coords["phase"] = phases_arr
             auto_corrs_outp = {}
             auto_corrs_inp = {}
             for param in columns:
@@ -430,27 +1040,31 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                     )
                     auto_corrs_inp[param][1][:] = np.nan
 
-            for phase_i, phase in enumerate(auto_corr_coords["phase"]):
-                if verbose:
-                    print(f"Phase: {phase}")
-
-                for f_i, f in enumerate(tqdm(files) if verbose else files):
-                    ds = xr.open_dataset(
-                        file_path + f, decode_times=False, engine="netcdf4"
+            for f_i, f in enumerate(tqdm(files) if verbose else files):
+                for phase_i, phase in enumerate(
+                    tqdm(auto_corr_coords["phase"], leave=False)
+                    if verbose
+                    else auto_corr_coords["phase"]
+                ):
+                    ds = load_ds(
+                        f=file_path + f,
+                        only_asc600=only_asc600,
+                        inoutflow_time=inoutflow_time,
+                        load_params=load_vars,
                     )
                     if ds["phase"].dtype != str:
                         phase_val = phase_i
                     else:
                         phase_val = phase
                     get_corr_ds(
-                        auto_corrs_outp,
-                        auto_corrs_inp,
-                        ds,
-                        columns,
-                        phase_val,
-                        phase_i,
-                        f_i,
+                        data_outp=auto_corrs_outp,
+                        data_inp=auto_corrs_inp,
+                        ds=ds.where(ds["phase"] == phase_val),
+                        params=columns,
+                        phase_i=phase_i,
+                        f_i=f_i,
                         verbose=verbose,
+                        leave=False,
                     )
         else:
             auto_corrs_outp = {}
@@ -484,17 +1098,21 @@ def auto_correlation(ds=None, file_path=None, delay=10, phases=False, verbose=Fa
                     )
                     auto_corrs_inp[param][1][:] = np.nan
             for f_i, f in enumerate(tqdm(files) if verbose else files):
-                ds = xr.open_dataset(
-                    file_path + f, decode_times=False, engine="netcdf4"
+                ds = load_ds(
+                    f=file_path + f,
+                    only_asc600=only_asc600,
+                    inoutflow_time=inoutflow_time,
+                    load_params=load_vars,
                 )
                 get_corr_ds(
-                    auto_corrs_outp,
-                    auto_corrs_inp,
-                    ds,
-                    columns,
-                    None,
-                    f_i,
+                    data_outp=auto_corrs_outp,
+                    data_inp=auto_corrs_inp,
+                    ds=ds,
+                    params=columns,
+                    phase_i=None,
+                    f_i=f_i,
                     verbose=verbose,
+                    leave=False,
                 )
     data_vars = auto_corrs_outp
     for key in auto_corrs_inp:
@@ -1872,29 +2490,13 @@ def get_histogram(
         load_params.extend(additional_params)
 
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            load_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
-        if only_phase is not None:
-            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
-                ds["phase"] = ds["phase"].astype(np.uint64)
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
-            elif ds["phase"].dtype == str:
-                ds = ds.where(ds["phase"] == only_phase)
-            else:
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            only_phase=only_phase,
+            inoutflow_time=inoutflow_time,
+            load_params=load_params,
+        )
         for out_p, out_name in (
             tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
             if verbose
@@ -1957,29 +2559,13 @@ def get_histogram(
     hist = {}
     hist_in_params = {}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            load_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
-        if only_phase is not None:
-            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
-                ds["phase"] = ds["phase"].astype(np.uint64)
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
-            elif ds["phase"].dtype == str:
-                ds = ds.where(ds["phase"] == only_phase)
-            else:
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            only_phase=only_phase,
+            inoutflow_time=inoutflow_time,
+            load_params=load_params,
+        )
         for out_p, out_name in (
             tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
             if verbose
@@ -2138,29 +2724,13 @@ def get_histogram_cond(
         load_params.extend(additional_params)
 
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            load_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
-        if only_phase is not None:
-            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
-                ds["phase"] = ds["phase"].astype(np.uint64)
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
-            elif ds["phase"].dtype == str:
-                ds = ds.where(ds["phase"] == only_phase)
-            else:
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            only_phase=only_phase,
+            inoutflow_time=inoutflow_time,
+            load_params=load_params,
+        )
         for out_p, out_name in (
             tqdm(zip(out_params, param_name), leave=False, total=len(param_name))
             if verbose
@@ -2224,29 +2794,13 @@ def get_histogram_cond(
     }
 
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            load_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
-        if only_phase is not None:
-            if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
-                ds["phase"] = ds["phase"].astype(np.uint64)
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
-            elif ds["phase"].dtype == str:
-                ds = ds.where(ds["phase"] == only_phase)
-            else:
-                phase_idx = np.argwhere(phases == only_phase)[0].item()
-                ds = ds.where(ds["phase"] == phase_idx)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            only_phase=only_phase,
+            inoutflow_time=inoutflow_time,
+            load_params=load_params,
+        )
         for cond in (
             tqdm(conditional_hist, leave=False) if verbose else conditional_hist
         ):
@@ -2325,6 +2879,8 @@ def traj_plot_histogram_out(
     title=None,
     save=True,
     interactive=False,
+    latex=False,
+    ticks_offset=None,
     verbose=False,
 ):
     """
@@ -2355,6 +2911,12 @@ def traj_plot_histogram_out(
         Create a figure for interactive plotting.
     title : string
         Title of the histogram. If none is given, a title will be generated.
+    latex : bool
+        Use latex names for any title or axis. Otherwise use the
+        code names of variables and such.
+    ticks_offset : int
+        If none, the number of ticks is calculated based on the width of the plot. Otherwise,
+        every other "ticks_offset" is used.
     verbose : bool
         Print some additional information.
 
@@ -2362,7 +2924,7 @@ def traj_plot_histogram_out(
     -------
     If interactive == False, returns None. If interactive == True, returns the matplotlib.figure.Figure with the plot drawn onto it.
     """
-    sns.set(rc={"figure.figsize": (width, height)})
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
     if interactive:
         sns.set()
         fig = Figure()
@@ -2376,11 +2938,16 @@ def traj_plot_histogram_out(
             title = f"Histogram for {latexify.parse_word(out_p)}"
         if verbose:
             print(f"Plotting histogram for {out_p}")
-        ticks_offset = 1
-        if width < 24 and width > 5:
-            ticks_offset = 24 // (width - 5)
-        elif width <= 5:
-            ticks_offset = 6
+
+        if ticks_offset is None:
+            if 24 > width > 5:
+                local_ticks_offset = 24 // (width - 5)
+            elif width <= 5:
+                local_ticks_offset = 6
+        else:
+            local_ticks_offset = ticks_offset
+        if ticks_offset >= len(edges[out_p]) - 1:
+            local_ticks_offset = len(edges[out_p]) - 2
         if ax is None:
             ax = sns.barplot(
                 x=edges[out_p][:-1], y=hist[out_p], log=log, color="seagreen"
@@ -2389,10 +2956,12 @@ def traj_plot_histogram_out(
             sns.barplot(
                 x=edges[out_p][:-1], y=hist[out_p], log=log, color="seagreen", ax=ax
             )
-        x_labels = [f"{tick:1.1e}" for tick in edges[out_p][:-1:ticks_offset]]
-        x_ticks = np.arange(0, len(edges[out_p]) - 1, ticks_offset)
+        x_labels = [f"{tick:1.1e}" for tick in edges[out_p][:-1:local_ticks_offset]]
+        x_ticks = np.arange(0, len(edges[out_p]) - 1, local_ticks_offset)
         ax.set(xticks=x_ticks)
-        _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
+        _ = ax.set_xticklabels(
+            x_labels, rotation=45, ha="right", rotation_mode="anchor"
+        )
         if font_scale is None:
             _ = ax.set_title(title)
             ax.set_ylabel(out_p)
@@ -2400,7 +2969,8 @@ def traj_plot_histogram_out(
             ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
             _ = ax.set_title(title, fontsize=int(12 * font_scale))
             ax.set_ylabel(f"# Entries", fontsize=int(11 * font_scale))
-            ax.set_xlabel(f"Bins of {out_p}", fontsize=int(11 * font_scale))
+            xlabel = f"Bins of {latexify.parse_word(out_p)}"
+            ax.set_xlabel(xlabel, fontsize=int(11 * font_scale))
 
         if filename is not None and save:
             plt.tight_layout()
@@ -2416,7 +2986,7 @@ def traj_plot_histogram_out(
                     )
                 if not interactive:
                     fig = ax.get_figure()
-                fig.savefig(save_name, dpi=300)
+                fig.savefig(save_name, bbox_inches="tight", dpi=300)
             except:
                 print(f"Storing to {save_name} failed.", file=sys.stderr)
             if not interactive:
@@ -2448,6 +3018,8 @@ def traj_plot_histogram_inp(
     title=None,
     save=True,
     interactive=False,
+    latex=False,
+    ticks_offset=None,
     verbose=False,
 ):
     """
@@ -2477,6 +3049,12 @@ def traj_plot_histogram_inp(
         Title of the histogram. If none is given, a title will be generated.
     save : bool
         Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
+    latex : bool
+        Use latex names for any title or axis. Otherwise use the
+        code names of variables and such.
+    ticks_offset : int
+        If none, the number of ticks is calculated based on the width of the plot. Otherwise,
+        every other "ticks_offset" is used.
     interactive : bool
         Create a figure for interactive plotting.
 
@@ -2484,7 +3062,7 @@ def traj_plot_histogram_inp(
     -------
     If interactive == False, returns None. If interactive == True, returns the matplotlib.figure.Figure with the plot drawn onto it.
     """
-    sns.set(rc={"figure.figsize": (width, height)})
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
     out_params = list(edges_in_params.keys())
     if interactive:
         sns.set()
@@ -2518,7 +3096,8 @@ def traj_plot_histogram_inp(
             if in_p not in edges_in_params[out_p]:
                 return
             if title is None:
-                title = f"Histogram for {out_p} w.r.t. {in_p}"
+                in_p_latex = latexify.parse_word(in_p).replace(r"\partial", "")
+                title = f"{latexify.parse_word(out_p)} w.r.t. {in_p_latex}"
             ax_t = sns.barplot(
                 x=edges_in_params[out_p][in_p][:-1],
                 y=hist_in_params[out_p][in_p],
@@ -2527,20 +3106,26 @@ def traj_plot_histogram_inp(
             )
             if log:
                 ax_t.set_yscale("log")
-            ticks_offset = 1
-            if width < 24 and width > 5:
-                ticks_offset = 24 // (width - 5)
-            elif width <= 5:
-                ticks_offset = 6
+            if ticks_offset is None:
+                if 24 > width > 5:
+                    local_ticks_offset = 24 // (width - 5)
+                elif width <= 5:
+                    local_ticks_offset = 6
+            else:
+                local_ticks_offset = ticks_offset
+            if local_ticks_offset >= len(edges_in_params[out_p][in_p][:-1]) - 1:
+                local_ticks_offset = len(edges_in_params[out_p][in_p][:-1]) - 2
             x_labels = [
                 f"{tick:1.1e}"
-                for tick in edges_in_params[out_p][in_p][:-1:ticks_offset]
+                for tick in edges_in_params[out_p][in_p][:-1:local_ticks_offset]
             ]
             x_ticks = np.arange(
-                0, len(edges_in_params[out_p][in_p][:-1]) - 1, ticks_offset
+                0, len(edges_in_params[out_p][in_p][:-1]) - 1, local_ticks_offset
             )
             ax_t.set(xticks=x_ticks)
-            _ = ax_t.set_xticklabels(x_labels, rotation=45, ha="right")
+            _ = ax_t.set_xticklabels(
+                x_labels, rotation=45, ha="right", rotation_mode="anchor"
+            )
             if font_scale is None:
                 _ = ax_t.set_title(title)
             else:
@@ -2553,8 +3138,12 @@ def traj_plot_histogram_inp(
         create_fig(ax2, out_params[1], in_p, title)
         create_fig(ax3, out_params[2], in_p, title)
 
+        if interactive:
+            # The view in jupyter notebooks may be different from the stored one without
+            # the given padding.
+            fig.tight_layout(h_pad=1)
+
         if filename is not None and save:
-            plt.tight_layout()
             try:
                 i = 0
                 store_type = filename.split(".")[-1]
@@ -2565,15 +3154,14 @@ def traj_plot_histogram_inp(
                     save_name = (
                         store_path + "_" + in_p + "_{:03d}.".format(i) + store_type
                     )
-                plt.savefig(save_name, dpi=300)
+                if interactive:
+                    fig.savefig(save_name, bbox_inches="tight", dpi=300)
+                else:
+                    plt.savefig(save_name, bbox_inches="tight", dpi=300)
             except:
                 print(f"Storing to {save_name} failed.", file=sys.stderr)
             if not interactive:
                 plt.clf()
-        if interactive:
-            # The view in jupyter notebooks may be different from the stored one without
-            # the given padding.
-            fig.tight_layout(h_pad=1)
 
     if isinstance(in_params, list):
         for in_p in tqdm(in_params):
@@ -2795,17 +3383,11 @@ def get_sums(
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+        )
         ds[in_params] = np.abs(ds[in_params])
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
@@ -2870,17 +3452,11 @@ def get_sums_phase(
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+        )
         ds[in_params] = np.abs(ds[in_params])
         if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
             ds["phase"] = ds["phase"].astype(np.uint64)
@@ -2962,19 +3538,11 @@ def get_cov_matrix(
     cov = {out_p: np.zeros((n, n), dtype=np.float64) for out_p in param_name}
     n_total = {out_p: {in_p: 0.0 for in_p in all_params} for out_p in param_name}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            all_params + more_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+        )
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
@@ -2998,19 +3566,11 @@ def get_cov_matrix(
 
     n_total = {out_p: {p: 0.0 for p in all_params} for out_p in param_name}
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            all_params + more_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+        )
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
         ):
@@ -3116,19 +3676,12 @@ def get_cov_matrix_phase(
         for phase in phases
     }
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            all_params + more_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+            load_params=all_params + more_params,
+        )
         if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
             ds["phase"] = ds["phase"].astype(np.uint64)
         for out_p, out_name in tqdm(
@@ -3166,19 +3719,12 @@ def get_cov_matrix_phase(
         for phase in phases
     }
     for f in tqdm(files):
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
-            all_params + more_params
-        ]
-        if inoutflow_time > 0:
-            ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
-            ds_flow = ds_flow.rolling(
-                time=inoutflow_time * 2,  # once for inflow, another for outflow
-                min_periods=1,
-                center=True,
-            ).reduce(np.nanmax)
-            ds = ds.where(ds_flow == 1)
-        elif only_asc600:
-            ds = ds.where(ds["asc600"] == 1)
+        ds = load_ds(
+            f=file_path + f,
+            only_asc600=only_asc600,
+            inoutflow_time=inoutflow_time,
+            load_params=all_params + more_params,
+        )
         if ds["phase"].dtype != str and ds["phase"].dtype != np.uint64:
             ds["phase"] = ds["phase"].astype(np.uint64)
         for out_p, out_name in tqdm(
@@ -3353,6 +3899,8 @@ def plot_heatmap_histogram(
     font_scale=None,
     save=True,
     interactive=False,
+    latex=False,
+    ticks_offset=None,
     verbose=False,
 ):
     """
@@ -3391,6 +3939,12 @@ def plot_heatmap_histogram(
         Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
     interactive : bool
         Create a figure for interactive plotting.
+    latex : bool
+        Use latex names for any title or axis. Otherwise use the
+        code names of variables and such.
+    ticks_offset : int
+        If none, the number of ticks is calculated based on the width of the plot. Otherwise,
+        every other "ticks_offset" is used.
     verbose : bool
         Print some additional information.
 
@@ -3399,7 +3953,7 @@ def plot_heatmap_histogram(
     If filename is given, returns None. If filename is None, returns the matplotlib.figure.Figure with the plot drawn
      onto it.
     """
-    sns.set(rc={"figure.figsize": (width, height)})
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
     if interactive:
         sns.set()
         fig = Figure()
@@ -3416,9 +3970,11 @@ def plot_heatmap_histogram(
     ):
         if title is None:
             if p is None:
-                title = f"Histogram for {y_name} over {x_name}"
+                title = f"Histogram for {latexify.parse_word(y_name)} over {latexify.parse_word(x_name)}"
             else:
-                title = f"Histogram for d {p}/{y_name} over {x_name}"
+                p_name = r"$ \partial$" + latexify.parse_word(p)
+                title = f"Histogram for {p_name}/{latexify.parse_word(y_name)} over {latexify.parse_word(x_name)}"
+
         if verbose:
             if p is None:
                 print(f"Plotting histogram for {x_name}, {y_name}")
@@ -3449,16 +4005,30 @@ def plot_heatmap_histogram(
         except:
             print(f"Plotting for {x_name}, {y_name} failed")
             return
-        if 24 > width > 5:
-            ticks_offset = 24 // (width - 5)
-        elif width <= 5:
-            ticks_offset = 6
-        x_ticks_location = np.arange(0, np.shape(hist2d)[0], ticks_offset)
+        if ticks_offset is None:
+            if 24 > width > 5:
+                local_ticks_offset = 24 // (width - 5)
+            elif width <= 5:
+                local_ticks_offset = 6
+        else:
+            local_ticks_offset = ticks_offset
+
+        if local_ticks_offset >= np.shape(hist2d)[0]:
+            local_ticks_offset_x = np.shape(hist2d)[0] - 1
+        else:
+            local_ticks_offset_x = local_ticks_offset
+        x_ticks_location = np.arange(0, np.shape(hist2d)[0], local_ticks_offset_x)
         ax.set_xticks(x_ticks_location)
-        y_ticks_location = np.arange(0, np.shape(hist2d)[1], ticks_offset)
+        if local_ticks_offset >= np.shape(hist2d)[1]:
+            local_ticks_offset_y = np.shape(hist2d)[1] - 1
+        else:
+            local_ticks_offset_y = local_ticks_offset
+        y_ticks_location = np.arange(0, np.shape(hist2d)[1], local_ticks_offset_y)
         ax.set_yticks(y_ticks_location)
         x_labels = [f"{x_ticks[i]:1.1e}" for i in x_ticks_location]
-        _ = ax.set_xticklabels(x_labels, rotation=45, ha="right")
+        _ = ax.set_xticklabels(
+            x_labels, rotation=45, ha="right", rotation_mode="anchor"
+        )
         y_labels = [f"{y_ticks[i]:1.1e}" for i in y_ticks_location]
         _ = ax.set_yticklabels(y_labels, rotation=0)
         if font_scale is None:
@@ -3466,8 +4036,12 @@ def plot_heatmap_histogram(
         else:
             ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
             _ = ax.set_title(title, fontsize=int(12 * font_scale))
-        ax.set_xlabel(x_name)
-        ax.set_ylabel(y_name)
+            cbar = ax.collections[-1].colorbar
+            cbarax = cbar.ax
+            cbarax.tick_params(labelsize=int(10 * font_scale))
+        ax.set_xlabel(latexify.parse_word(x_name), fontsize=int(11 * font_scale))
+        ax.set_ylabel(latexify.parse_word(y_name), fontsize=int(11 * font_scale))
+
         plt.tight_layout()
         if filename is not None and save:
             fig = ax.get_figure()
@@ -3521,7 +4095,7 @@ def plot_heatmap_histogram(
                             + "_{:03d}.".format(i)
                             + store_type
                         )
-                fig.savefig(save_name, dpi=300)
+                fig.savefig(save_name, bbox_inches="tight", dpi=300)
             except:
                 print(f"Storing to {save_name} failed.", file=sys.stderr)
             if not interactive:
@@ -3543,7 +4117,6 @@ def plot_heatmap_histogram(
         else:
             p = out_params
             in_p = in_params
-            print(f"{c} {p} {in_p}")
             plot_hist(
                 hist_conditional[c]["hist_in_params"][p][in_p],
                 c,
@@ -3642,12 +4215,24 @@ def plot_traj_histogram_out_interactive(edges, hist):
         name="Save Plot",
         button_type="primary",
     )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=2,
+        end=5,
         step=0.1,
         value=0.7,
+    )
+    tick_slider = pn.widgets.IntSlider(
+        name="Plot every n ticks on the x-axis:",
+        start=1,
+        end=20,
+        step=1,
+        value=6,
     )
     plot_pane = pn.panel(
         pn.bind(
@@ -3663,6 +4248,8 @@ def plot_traj_histogram_out_interactive(edges, hist):
             save=save_button,
             interactive=True,
             font_scale=font_slider,
+            latex=latex_button,
+            ticks_offset=tick_slider,
             verbose=False,
         ),
     ).servable()
@@ -3673,11 +4260,13 @@ def plot_traj_histogram_out_interactive(edges, hist):
             width_slider,
             height_slider,
             font_slider,
+            tick_slider,
         ),
         pn.Row(
             save_to_field,
             save_button,
             log_plot,
+            latex_button,
         ),
         title_widget,
         plot_pane,
@@ -3735,7 +4324,7 @@ def plot_traj_histogram_inp_interactive(
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=2,
+        end=5,
         step=0.1,
         value=0.7,
     )
@@ -3750,6 +4339,18 @@ def plot_traj_histogram_inp_interactive(
     save_button = pn.widgets.Button(
         name="Save Plot",
         button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    tick_slider = pn.widgets.IntSlider(
+        name="Plot every n ticks on the x-axis:",
+        start=1,
+        end=20,
+        step=1,
+        value=6,
     )
 
     plot_pane = pn.panel(
@@ -3766,6 +4367,8 @@ def plot_traj_histogram_inp_interactive(
             font_scale=font_slider,
             save=save_button,
             interactive=True,
+            latex=latex_button,
+            ticks_offset=tick_slider,
             verbose=False,
         ),
     ).servable()
@@ -3776,11 +4379,13 @@ def plot_traj_histogram_inp_interactive(
             width_slider,
             height_slider,
             font_slider,
+            tick_slider,
         ),
         pn.Row(
             save_to_field,
             save_button,
             log_plot,
+            latex_button,
         ),
         plot_pane,
     )
@@ -3819,11 +4424,10 @@ def plot_heatmap_histogram_interactive(hist_conditional):
         options=wrt_params,
         button_type="primary",
     )
-    condition = pn.widgets.RadioButtonGroup(
+    condition = pn.widgets.Select(
         name="X-Axis",
         value=conditions[0],
         options=conditions,
-        button_type="primary",
     )
     in_params = ["None"]
     tmp_params = list(hist_conditional["edges_in_params"][wrt_params[0]].keys())
@@ -3852,7 +4456,7 @@ def plot_heatmap_histogram_interactive(hist_conditional):
     font_slider = pn.widgets.FloatSlider(
         name="Scale fontsize",
         start=0.2,
-        end=2,
+        end=5,
         step=0.1,
         value=0.7,
     )
@@ -3868,9 +4472,21 @@ def plot_heatmap_histogram_interactive(hist_conditional):
         placeholder="",
     )
     log_plot = pn.widgets.Toggle(
-        name="Use log y-axis",
+        name="Use log colorbar",
         value=True,
         button_type="success",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    tick_slider = pn.widgets.IntSlider(
+        name="Plot every n ticks:",
+        start=1,
+        end=20,
+        step=1,
+        value=6,
     )
 
     plot_pane = pn.panel(
@@ -3887,7 +4503,9 @@ def plot_heatmap_histogram_interactive(hist_conditional):
             font_scale=font_slider,
             title=title_widget,
             save=save_button,
+            latex=latex_button,
             interactive=True,
+            ticks_offset=tick_slider,
             verbose=False,
         ),
     ).servable()
@@ -3896,17 +4514,18 @@ def plot_heatmap_histogram_interactive(hist_conditional):
         in_param,
         "w.r.t. Model State (Y-Axis)",
         out_param,
-        "X-Axis",
         condition,
         pn.Row(
             width_slider,
             height_slider,
             font_slider,
+            tick_slider,
         ),
         pn.Row(
             save_to_field,
             save_button,
             log_plot,
+            latex_button,
         ),
         title_widget,
         plot_pane,
