@@ -9,7 +9,7 @@ import os
 import pandas as pd
 import panel as pn
 import seaborn as sns
-from sklearn.cluster import KMeans, SpectralClustering
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from tqdm.auto import tqdm
 import xarray as xr
@@ -21,7 +21,13 @@ except:
 
 
 def load_data(
-    file_path, x, only_asc600=False, inoutflow_time=-1, phase=None, verbose=False
+    file_path,
+    x,
+    only_asc600=False,
+    inoutflow_time=-1,
+    phase=None,
+    averages=False,
+    verbose=False,
 ):
     """
     Load multiple NetCDF-files as xarray.Dataset, filter them if necessary and concatenate all
@@ -38,6 +44,10 @@ def load_data(
     inoutflow_time : int
         Consider only time steps during the fastest 600 hPa ascent and this many timesteps before
         and after the ascent (in- and outflow).
+    averages : bool
+        If true, calculate the averages over time when each file is loaded. Otherwise tries to concatenate
+        all data in the end which may need lots of memory if inoutflow_time > 0 or only_asc600 == True
+        or phase is not None.
     phase : int
         Only use the given phase.
         0: warm phase
@@ -56,12 +66,14 @@ def load_data(
     files = np.sort(files)
     list_of_arrays = []
     if isinstance(x, str):
-        vars = [x, "asc600", "phase"]
+        variables = [x, "asc600", "phase"]
     else:
-        vars = [v for v in x] + ["asc600", "phase"]
+        variables = [v for v in x] + ["asc600", "phase"]
 
     for f in tqdm(files) if verbose else files:
-        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[vars]
+        ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")[
+            variables
+        ]
         if inoutflow_time > 0:
             ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
             ds_flow = ds_flow.rolling(
@@ -73,12 +85,35 @@ def load_data(
         elif only_asc600:
             ds = ds.where(ds["asc600"] == 1)
 
-        data = ds[x].dropna("time", how="all")
-        data = data.expand_dims({"file": [f]})
         if phase is not None:
-            data = data.where(ds["phase"] == phase)
-        if len(data["time"]) > 0:
-            list_of_arrays.append(data)
+            ds = ds.where(ds["phase"] == phase)
+        if (
+            "lat" in variables
+            or "lon" in variables
+            or "relative_lat" in variables
+            or "relative_lon" in variables
+        ):
+            ds = ds.where(ds["lat"] != 0)
+        ds = ds[x].dropna("time", how="all")
+        ds = ds.expand_dims({"file": [f]})
+
+        if averages:
+            # for key in variables:
+            #     if "d" != key[0] or "deposition" == key:
+            #         break
+            # if "d" == key[0] and "deposition" != key:
+            #     if "Output Parameter" in ds.dims:
+            #         param_coord = "Output Parameter"
+            #     else:
+            #         param_coord = "Output_Parameter_ID"
+            #     weights = (~np.isnan(ds.isel({param_coord: 0})[key])).sum(dim="time")
+            # else:
+            #     weights = (~np.isnan(ds[key])).sum(dim="time")
+            # ds["weights"] = weights
+            ds = get_average(ds)
+            list_of_arrays.append(ds)
+        elif len(ds["time"]) > 0:
+            list_of_arrays.append(ds)
     data = xr.concat(list_of_arrays, dim="file", join="outer", combine_attrs="override")
     return data
 
@@ -137,8 +172,10 @@ def get_cluster(
     data_array = None
     n_features = 1
     if x is not None and isinstance(data, xr.Dataset):
-        if isinstance(x, str) and param_names is None or len(x) == 1:
+        if (isinstance(x, str) or len(x) == 1) and param_names is None:
             # A single model state
+            if not isinstance(x, str):
+                x = x[0]
             data_array = data[x]
             avg_name = f"avg {x}"
             if include_all_data:
@@ -154,6 +191,8 @@ def get_cluster(
                         else:
                             non_features_list.append([f"avg {col}", None, col])
         elif isinstance(x, str) or len(x) == 1:
+            if not isinstance(x, str):
+                x = x[0]
             # A single parameter but for multiple model states
             avg_name_list = []
             n_features = len(param_names)
@@ -250,9 +289,9 @@ def get_cluster(
             "trajectory": np.asarray([]),
             "file": np.asarray([]),
         }
-        clusters = KMeans(n_clusters=k, tol=tol, random_state=42).fit_predict(
-            fit_data_normed[fit_mask, :]
-        )
+        clusters = KMeans(
+            n_clusters=k, tol=tol, init="k-means++", random_state=42
+        ).fit_predict(fit_data_normed[fit_mask, :])
         trajectory = data["trajectory"]
         for _ in range(len(data["file"]) - 1):
             trajectory = np.append(trajectory, data["trajectory"])
