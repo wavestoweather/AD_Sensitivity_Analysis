@@ -2066,7 +2066,6 @@ if __name__ == "__main__":
                     relative_lon_lat = data["relative_lon_lat"]
                 else:
                     relative_lon_lat = args.relative_lon_lat
-
             ds = to_Dataset(
                 file_path=args.file_path,
                 lons=lons,
@@ -2085,6 +2084,9 @@ if __name__ == "__main__":
             )
             comp = dict(zlib=True, complevel=9)
             encoding = {var: comp for var in ds.data_vars}
+            print(
+                f"Storing dataset to {args.store_calculated}grid_{n_lons}_{n_lats}.nc"
+            )
             ds.to_netcdf(
                 path=f"{args.store_calculated}grid_{n_lons}_{n_lats}.nc",
                 encoding=encoding,
@@ -2119,6 +2121,9 @@ if __name__ == "__main__":
         if args.store_calculated is not None:
             comp = dict(zlib=True, complevel=9)
             encoding = {var: comp for var in ds.data_vars}
+            print(
+                f"Storing dataset to {args.store_calculated}grid_{args.n_lons}_{args.n_lats}.nc"
+            )
             ds.to_netcdf(
                 path=f"{args.store_calculated}grid_{args.n_lons}_{args.n_lats}.nc",
                 encoding=encoding,
