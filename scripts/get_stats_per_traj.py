@@ -189,6 +189,7 @@ def create_rank_traj_dataset(file_path, inoutflow_time=240, model_params=None):
                     param_values = get_ranking(ds_out)
                     for traj_idx in range(len(param_values)):
                         param_values[traj_idx].sort(key=lambda x: x[1])
+                        param_values[traj_idx] = param_values[traj_idx][::-1]
                         last_val = 0
                         rank_offset = 1  # zero is the "invalid number" in our case
                         for rank, param_pair in enumerate(param_values[traj_idx]):
