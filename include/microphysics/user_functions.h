@@ -70,6 +70,14 @@ void saturation_adjust(
         get_at(cc.constants, Cons_idx::T_sat_low_temp),
         get_at(cc.constants, Cons_idx::p_sat_const_b),
         get_at(cc.constants, Cons_idx::Epsilon));
+
+#ifdef TRACE_ENV
+        if (trace)
+        std::cout << "\nbefore sat ad S calc "
+            << S
+            << ", QC: " << qc_prime << "\n";
+#endif
+
     if (S < 1 && qc_prime <= 0) return;  // Nothing to evaporate.
     float_t q_total = qv_prime + qc_prime;
 
@@ -417,6 +425,7 @@ void ccn_act_hande_akm(
         res[Nc_idx] += delta_n;
         res[qc_idx] += delta_q;
         res[qv_idx] -= delta_q;
+
 #ifdef TRACE_QC
         if (trace)
             std::cout << "traj: " << cc.traj_id << " Ascent dqc " << delta_q << ", dNc " << delta_n

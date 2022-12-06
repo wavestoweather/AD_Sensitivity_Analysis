@@ -210,8 +210,6 @@ void substep_trace(
 #endif
     if (trace)
         std::cout << cc.id << " timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
-
-#endif
 #if defined(TRACE_SAT)
     if (trace)
         std::cout << "Start qv_prime " << y_single_old[qv_idx]*ref_quant.qref << "\n";
@@ -256,6 +254,7 @@ void substep_trace(
         std::cout << "qv_old " << y_single_old[qv_idx]*ref_quant.qref
             << "\n";
     }
+#endif
 }
 #endif
 
@@ -355,20 +354,48 @@ void finish_last_step(
     float_t qv_prime = y_single_new[qv_idx]*ref_quant.qref;
     float_t qc_prime = y_single_new[qc_idx]*ref_quant.qref;
 
+    // Large gradients can be avoided by using the following line somehow?
+    // There has been a single datapoint amongst 90 million where this line is
+    // needed
+    y_single_new[S_idx] = convert_qv_to_S(
+            p_prime,
+            T_prime,
+            qv_prime,
+            get_at(cc.constants, Cons_idx::p_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_a),
+            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+            get_at(cc.constants, Cons_idx::p_sat_const_b),
+            get_at(cc.constants, Cons_idx::Epsilon));
+//    std::cout << convert_qv_to_S(
+//            p_prime,
+//            T_prime,
+//            qv_prime,
+//            get_at(cc.constants, Cons_idx::p_sat_low_temp),
+//            get_at(cc.constants, Cons_idx::p_sat_const_a),
+//            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+//            get_at(cc.constants, Cons_idx::p_sat_const_b),
+//            get_at(cc.constants, Cons_idx::Epsilon))
+//            << ", " << convert_qv_to_S(
+//            p_prime,
+//            T_prime,
+//            qv_prime,
+//            get_at(cc.constants, Cons_idx::p_sat_low_temp),
+//            get_at(cc.constants, Cons_idx::p_sat_const_a),
+//            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+//            get_at(cc.constants, Cons_idx::p_sat_const_b),
+//            get_at(cc.constants, Cons_idx::Epsilon)) << ", " << convert_qv_to_S(
+//            p_prime,
+//            T_prime,
+//            qv_prime,
+//            get_at(cc.constants, Cons_idx::p_sat_low_temp),
+//            get_at(cc.constants, Cons_idx::p_sat_const_a),
+//            get_at(cc.constants, Cons_idx::T_sat_low_temp),
+//            get_at(cc.constants, Cons_idx::p_sat_const_b),
+//            get_at(cc.constants, Cons_idx::Epsilon))
+//            << "\n";
 #ifdef TRACE_ENV
     if (trace)
-        std::cout << "traj: " << cc.traj_id << ", before sat ad S " << y_single_new[S_idx]
-            << "\nbefore sat ad S calc "
-            << convert_qv_to_S(
-                p_prime,
-                T_prime,
-                qv_prime,
-                get_at(cc.constants, Cons_idx::p_sat_low_temp),
-                get_at(cc.constants, Cons_idx::p_sat_const_a),
-                get_at(cc.constants, Cons_idx::T_sat_low_temp),
-                get_at(cc.constants, Cons_idx::p_sat_const_b),
-                get_at(cc.constants, Cons_idx::Epsilon))
-            << ", QC: " << qc_prime << "\n";
+        std::cout << "traj: " << cc.traj_id << ", before sat ad S " << y_single_new[S_idx];
 #endif
     std::vector<float_t> res(num_comp);
     for (auto& r : res) r = 0;

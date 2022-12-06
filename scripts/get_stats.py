@@ -3379,7 +3379,7 @@ def get_sums(
         out_params = list(ds[out_param_coord].values)
         param_name = []
         for out_p in out_params:
-            param_name.append(latexify.param_id_map[out_p.values.item()])
+            param_name.append(latexify.param_id_map[out_p])
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
     for f in tqdm(files):
@@ -3446,7 +3446,7 @@ def get_sums_phase(
         param_name = []
         out_params = list(ds[out_param_coord].values)
         for idx in out_params:
-            param_name.append(latexify.param_id_map[idx.values])
+            param_name.append(latexify.param_id_map[idx])
 
     phases = ["warm phase", "mixed phase", "ice phase", "neutral phase"]
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]

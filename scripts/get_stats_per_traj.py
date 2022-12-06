@@ -222,12 +222,10 @@ def create_rank_traj_dataset(file_path, inoutflow_time=240, model_params=None):
     data_vars["asc600 step count"] = (addit_dims, asc600_steps)
     ds = xr.Dataset(data_vars=data_vars, coords=coords)
     for param in model_parameter_index:
-        ds[f"{param} rank"].attrs(
-            {
-                "no data": 0,
-                "rank for zero gradients": worst_rank,
-            }
-        )
+        ds[f"{param} rank"].attrs = {
+            "no data": 0,
+            "rank for zero gradients": worst_rank,
+        }
     return ds
 
 
