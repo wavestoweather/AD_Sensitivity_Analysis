@@ -366,33 +366,6 @@ void finish_last_step(
             get_at(cc.constants, Cons_idx::T_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_const_b),
             get_at(cc.constants, Cons_idx::Epsilon));
-//    std::cout << convert_qv_to_S(
-//            p_prime,
-//            T_prime,
-//            qv_prime,
-//            get_at(cc.constants, Cons_idx::p_sat_low_temp),
-//            get_at(cc.constants, Cons_idx::p_sat_const_a),
-//            get_at(cc.constants, Cons_idx::T_sat_low_temp),
-//            get_at(cc.constants, Cons_idx::p_sat_const_b),
-//            get_at(cc.constants, Cons_idx::Epsilon))
-//            << ", " << convert_qv_to_S(
-//            p_prime,
-//            T_prime,
-//            qv_prime,
-//            get_at(cc.constants, Cons_idx::p_sat_low_temp),
-//            get_at(cc.constants, Cons_idx::p_sat_const_a),
-//            get_at(cc.constants, Cons_idx::T_sat_low_temp),
-//            get_at(cc.constants, Cons_idx::p_sat_const_b),
-//            get_at(cc.constants, Cons_idx::Epsilon)) << ", " << convert_qv_to_S(
-//            p_prime,
-//            T_prime,
-//            qv_prime,
-//            get_at(cc.constants, Cons_idx::p_sat_low_temp),
-//            get_at(cc.constants, Cons_idx::p_sat_const_a),
-//            get_at(cc.constants, Cons_idx::T_sat_low_temp),
-//            get_at(cc.constants, Cons_idx::p_sat_const_b),
-//            get_at(cc.constants, Cons_idx::Epsilon))
-//            << "\n";
 #ifdef TRACE_ENV
     if (trace)
         std::cout << "traj: " << cc.traj_id << ", before sat ad S " << y_single_new[S_idx];
