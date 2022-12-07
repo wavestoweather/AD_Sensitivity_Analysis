@@ -3033,9 +3033,9 @@ def traj_plot_histogram_inp(
         Model parameter name or multiple input parameter names to plot the histogram for.
     filename : string
         Path and name of the output file. If the file already exists, a number will be appended.
-    edges_in_params : Dictionary of dictionary list-like of float
+    edges_in_params : Dictionary of dictionary of list-like of float
         Edges for the histogram. First keys are output parameters, second keys must be in in_params.
-    hist_in_params : Dictionary of dictionary list-like of int
+    hist_in_params : Dictionary of dictionary of list-like of int
         Number of entries for each bin. First keys are output parameters, second keys must be in in_params.
     log : bool
         Plot the y-axis using log-scale.
@@ -3379,7 +3379,7 @@ def get_sums(
         out_params = list(ds[out_param_coord].values)
         param_name = []
         for out_p in out_params:
-            param_name.append(latexify.param_id_map[out_p.values.item()])
+            param_name.append(latexify.param_id_map[out_p])
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
     sums = {}
     for f in tqdm(files):
@@ -3446,7 +3446,7 @@ def get_sums_phase(
         param_name = []
         out_params = list(ds[out_param_coord].values)
         for idx in out_params:
-            param_name.append(latexify.param_id_map[idx.values])
+            param_name.append(latexify.param_id_map[idx])
 
     phases = ["warm phase", "mixed phase", "ice phase", "neutral phase"]
     in_params = [d for d in ds if (d[0] == "d" and d != "deposition")]
@@ -4528,6 +4528,280 @@ def plot_heatmap_histogram_interactive(hist_conditional):
             latex_button,
         ),
         title_widget,
+        plot_pane,
+    )
+
+
+def traj_plot_kde_inp(
+    in_params,
+    out_param,
+    filename,
+    edges_in_params,
+    hist_in_params,
+    linewidth=2,
+    bw_adjust=0.1,
+    log=False,
+    font_scale=1,
+    width=24,
+    height=12,
+    title=None,
+    save=False,
+    latex=False,
+):
+    """
+    Similar to traj_plot_histogram_inp() but using a kde estimation.
+
+    Parameters
+    ----------
+    in_params : list-like of strings
+        Input parameter names to plot the histogram for.
+    out_param : string
+        Name od model state variable to plot the sensitivities for.
+    filename : string
+        Path and name of the output file. If the file already exists, a number will be appended.
+    edges_in_params : Dictionary of dictionary list-like of float
+        Dictionary (keys = model state variable) of dictionaries (keys = model parameters) of arrays with
+        the bin edges for the given keys. Optional: The first level can be another dictionary of phases.
+    hist_in_params : Dictionary of dictionary list-like of int
+        Dictionary (keys = model state variable) of dictionaries (keys = model parameters) of arrays with
+        values of the histogram for the given key. Optional: The first level can be another dictionary of phases.
+    linewidth : float
+        Line width of each kde.
+    bw_adjust : float
+        Used to calculate the kde. Typically, 0.3 is used but here we set the default lower since the true
+        distributions tend to be less smooth. Larger values generate smoother estimations.
+    log : bool
+        Plot the y-axis using log-scale.
+    font_scale : float
+        Scale the fontsize for the title, labels and ticks.
+    width : float
+        Width in inches
+    height : float
+        Height in inches
+    title : string
+        Title of the histogram. If none is given, a title will be generated.
+    save : bool
+        Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
+    latex : bool
+        Use latex names for any title or axis. Otherwise use the
+        code names of variables and such.
+
+    Returns
+    -------
+    Returns the matplotlib.figure.Figure with the plot drawn onto it.
+    """
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
+    common_norm = False
+    data_dic = {
+        "Parameter": [],
+        "weight": [],
+        "Impact": [],
+    }
+
+    if len(in_params) == 0:
+        return None
+
+    for in_p in in_params:
+        if log:
+            zeros = np.argwhere(hist_in_params[out_param][in_p] == 0)
+            weights = np.log10(
+                hist_in_params[out_param][in_p],
+                where=(hist_in_params[out_param][in_p] >= 0.5),
+            )
+            weights += 0.1
+            weights[zeros] = 0
+        else:
+            weights = np.ones(np.shape(hist_in_params[out_param][in_p]))
+        data_dic["weight"].extend(weights)
+        data_dic["Impact"].extend(
+            edges_in_params[out_param][in_p][:-1]
+            + (
+                edges_in_params[out_param][in_p][1]
+                - edges_in_params[out_param][in_p][0]
+            )
+            / 2
+        )
+        data_dic["Parameter"].extend(np.repeat(in_p, len(weights)))
+
+    df = pd.DataFrame(data_dic)
+
+    fig = Figure()
+    ax = fig.subplots()
+
+    _ = sns.kdeplot(
+        data=df,
+        x="Impact",
+        hue="Parameter",
+        weights="weight",
+        common_norm=common_norm,
+        ax=ax,
+        bw_adjust=bw_adjust,
+        hue_order=np.sort(in_params),
+        linewidth=linewidth,
+    )
+
+    ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
+    ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
+    ax.tick_params(
+        axis="both",
+        which="major",
+        labelsize=int(10 * font_scale),
+    )
+    if title is not None:
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+
+    plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+    plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    ax.xaxis.get_offset_text().set_size(int(9 * font_scale))
+    ax.yaxis.get_offset_text().set_size(int(9 * font_scale))
+
+    if filename is not None and save:
+        fig = ax.get_figure()
+        try:
+            i = 0
+            store_type = filename.split(".")[-1]
+            store_path = filename[0 : -len(store_type) - 1]
+            save_name = store_path + "_{:03d}.".format(i) + store_type
+
+            while os.path.isfile(save_name):
+                i = i + 1
+                save_name = store_path + "_{:03d}.".format(i) + store_type
+            fig.savefig(save_name, bbox_inches="tight", dpi=300)
+        except:
+            print(f"Storing to {save_name} failed.", file=sys.stderr)
+
+    return fig
+
+
+def plot_traj_kde_inp_interactive(
+    edges_in_params,
+    hist_in_params,
+):
+    """
+    Can be used in jupyter notebooks to interactively plot traj_plot_kde_inp().
+
+    Parameters
+    ----------
+    edges_in_params : Dictionary of dictionary list-like of float
+        Dictionary (keys = model state variable) of dictionaries (keys = model parameters) of arrays with
+        the bin edges for the given keys. Optional: The first level can be another dictionary of phases.
+    hist_in_params : Dictionary of dictionary list-like of int
+        Dictionary (keys = model state variable) of dictionaries (keys = model parameters) of arrays with
+        values of the histogram for the given key. Optional: The first level can be another dictionary of phases.
+
+    Returns
+    -------
+    panel.layout that can be used in a jupyter notebook.
+    """
+    tmp_params = list(edges_in_params[list(edges_in_params.keys())[0]].keys())
+    in_params = []
+    for param in tmp_params:
+        if param[0] == "d" and param != "deposition":
+            in_params.append(param)
+
+    in_param = pn.widgets.CrossSelector(
+        name="Parameter",
+        value=in_params[0:2],
+        options=in_params,
+    )
+    out_param_list = list(edges_in_params.keys())
+    out_param = pn.widgets.Select(
+        name="Output Parameter",
+        value=out_param_list[0],
+        options=out_param_list,
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=5,
+        step=0.1,
+        value=0.7,
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    line_slider = pn.widgets.FloatSlider(
+        name="Change the line width",
+        start=1,
+        end=10,
+        step=0.5,
+        value=2,
+    )
+    bw_slider = pn.widgets.FloatSlider(
+        name="Change the bandwidth for the kde calculation",
+        start=0.05,
+        end=1.5,
+        step=0.05,
+        value=0.1,
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+
+    plot_pane = pn.panel(
+        pn.bind(
+            traj_plot_kde_inp,
+            filename=save_to_field,
+            in_params=in_param,
+            out_param=out_param,
+            linewidth=line_slider,
+            bw_adjust=bw_slider,
+            edges_in_params=edges_in_params,
+            hist_in_params=hist_in_params,
+            log=True,
+            width=width_slider,
+            height=height_slider,
+            title=title_widget,
+            font_scale=font_slider,
+            save=save_button,
+            latex=latex_button,
+        ),
+    ).servable()
+
+    return pn.Column(
+        pn.Row(
+            in_param,
+            out_param,
+        ),
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+            latex_button,
+        ),
+        pn.Row(
+            line_slider,
+            bw_slider,
+            title_widget,
+        ),
         plot_pane,
     )
 
