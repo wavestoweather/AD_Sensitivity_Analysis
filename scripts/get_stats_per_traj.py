@@ -20,16 +20,19 @@ pn.extension()
 
 def create_rank_traj_dataset(file_path, inoutflow_time=240, model_params=None):
     """
-    Ranked Index of parameters for each trajectory.
+    Ranked index of parameters for each trajectory.
     Count model parameter / process index occurrence over all trajectories.
     Additional information that might be useful:
     location of ascent. Average ascent. Number of time steps with ascent.
 
     Parameters
     ----------
-    file_path
-    inoutflow_time
-    model_params
+    file_path : string
+        Path to a set of NetCDF-files from a sensitivity analysis.
+    inoutflow_time : int
+        Number of time steps before and after the ascent that shall be used additionally.
+    model_params : List of strings or None
+        List of model parameters to create a rank for. If None is given, all model parameters are used.
 
     Returns
     -------
@@ -230,18 +233,100 @@ def create_rank_traj_dataset(file_path, inoutflow_time=240, model_params=None):
     return ds
 
 
-def create_rank_latex_table_per_outp(ds, col, only_n=None):
+def create_rank_latex_table(ds, phase, flow):
     """
+    Create multiple latex tables with median rank, median absolute deviation, mean rank, and standard deviation
+    for a given phase and flow.
 
     Parameters
     ----------
-    ds
-    col
-    only_n
+    ds : xarray.Dataset
+        Ranked index of each trajectory created by create_rank_traj_dataset().
+    phase : string
+        Name of the phase to use. Options are those in ds["phase"], which typically amounts to
+        "warm phase", "mixed phase", "ice phase", "any".
+    flow : string
+        Name of the 'flow' to use. Options are those in ds["flow"], which typically amounts to
+        "inflow", "ascent", "outflow", "any".
 
     Returns
     -------
+    Dictionary of raw strings (latex tables). The keys are the model state variables.
+    """
+    table_text = r"""
+    \begin{table}[ht]
+        \centering
+        \begin{tabular}{l|l|c|c|c|c}
+            \textbf{Model State Variable} & \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{MAD} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
+    """
+    ds2 = ds.sel({"phase": phase, "flow": flow})
+    for o_p in ds["Output Parameter"]:
+        ds_op = ds2.sel({"Output Parameter": o_p})
+        table_text += f"        {latexify.parse_word(o_p.item()):<25}& "
+        p_i = 0
+        for param in ds:
+            if not "rank" in param:
+                continue
 
+            ds_op2 = ds_op[param]
+            ds_op2 = ds_op2.where(ds_op2 > 0)
+            med = ds_op2.median().item()
+            if med > 10 and ds_op2.mean().item() > 10:
+                continue
+            if np.isnan(med):
+                continue
+            mad = ds_op2 - med
+            mad = mad.median().item()
+            if p_i > 0:
+                table_text += "                                 & "
+            p_i += 1
+            word = latexify.parse_word(param[:-5]).replace(r"\partial ", "")
+            table_text += f"{word:<40}& "
+            table_text += (
+                f"{int(med):2d} & {int(mad):2d} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}"
+                + r" \\"
+                + "\n"
+            )
+
+    table_text += r"""
+        \end{tabular}
+        \caption{"""
+    caption = "The median and median absolute deviation of the rank of each model parameter if we calculate the rank over all trajectories. Only those with median or mean lower than 11 are used."
+    if phase == "any":
+        caption += "Using any phase "
+    else:
+        caption += f"Using {phase} "
+    if flow == "any":
+        caption += "and inflow, outflow, and ascent."
+    else:
+        caption += f"and {flow}."
+    caption += f"Using {phase} phase and {flow} flow."
+    table_text += f"{caption}"
+    table_text += r"""}
+        \label{tab:analysis:rank_count}
+    \end{table}
+    """
+    return table_text
+
+
+def create_rank_latex_table_per_outp(ds, col, only_n=None):
+    """
+    Create multiple latex tables with the statistic defined in col. The table shows the statistic for any combination
+    of flow and phase. Each table is the impact on a different model state variable.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Ranked index of each trajectory created by create_rank_traj_dataset().
+    col : string
+        Define which statistic shall be shown. Options are "Median Rank", "Mean Rank", "MAD", "STD". If the
+        string is not recognized, it defaults to "STD".
+    only_n : int
+        Show only model parameters that have a rank lower than 'only_n'.
+
+    Returns
+    -------
+    Dictionary of raw strings (latex tables). The keys are the model state variables.
     """
     tables = {}
     phases = ["warm phase", "mixed phase", "ice phase"]

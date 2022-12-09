@@ -20,22 +20,14 @@ import sys
 import xarray as xr
 
 try:
-    from Deriv_dask import Deriv_dask
     from latexify import in_params_dic, physical_params, in_params_notation_mapping
-    from plot_mse import load_and_append, reduce_df
-    from segment_identifier import d_unnamed
-    from create_mse import load_and_append
     import latexify as latexify
 except:
-    from scripts.Deriv_dask import Deriv_dask
     from scripts.latexify import (
         in_params_dic,
         physical_params,
         in_params_notation_mapping,
     )
-    from scripts.plot_mse import load_and_append, reduce_df
-    from scripts.segment_identifier import d_unnamed
-    from scripts.create_mse import load_and_append
     import scripts.latexify as latexify
 
 
@@ -2427,7 +2419,7 @@ def get_histogram(
         Filter all values that are more than the given magnitude larger or smaller
         than the mean.
     means : Dictionary of floats
-        Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter).
+        Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter). Only needed for filtering data.
     verbose : bool
         Additional progressbars.
 
@@ -2656,7 +2648,7 @@ def get_histogram_cond(
         Filter all values that are more than the given magnitude larger or smaller
         than the mean.
     means : Dictionary of floats
-        Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter).
+        Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter). Only needed for filtering data.
     verbose : bool
         Additional progressbars.
 
@@ -3528,7 +3520,7 @@ def get_cov_matrix(
         param_name = []
         out_params = list(ds[out_param_coord].values)
         for idx in out_params:
-            param_name.append(latexify.param_id_map[idx.values])
+            param_name.append(latexify.param_id_map[idx])
     more_params = []
     if only_asc600 or inoutflow_time > 0:
         more_params.append("asc600")
@@ -3656,7 +3648,7 @@ def get_cov_matrix_phase(
         param_name = []
         out_params = list(ds[out_param_coord].values)
         for idx in out_params:
-            param_name.append(latexify.param_id_map[idx.values])
+            param_name.append(latexify.param_id_map[idx])
     more_params = ["phase"]
     if only_asc600 or inoutflow_time > 0:
         more_params.append("asc600")
@@ -4538,6 +4530,7 @@ def traj_plot_kde_inp(
     filename,
     edges_in_params,
     hist_in_params,
+    filter_zero=False,
     linewidth=2,
     bw_adjust=0.1,
     log=False,
@@ -4565,6 +4558,8 @@ def traj_plot_kde_inp(
     hist_in_params : Dictionary of dictionary list-like of int
         Dictionary (keys = model state variable) of dictionaries (keys = model parameters) of arrays with
         values of the histogram for the given key. Optional: The first level can be another dictionary of phases.
+    filter_zero : bool
+        Filter zero gradients. Does not really help other than there is a dent in the distribution.
     linewidth : float
         Line width of each kde.
     bw_adjust : float
@@ -4612,6 +4607,16 @@ def traj_plot_kde_inp(
             weights[zeros] = 0
         else:
             weights = np.ones(np.shape(hist_in_params[out_param][in_p]))
+
+        if filter_zero:
+            # We can only approximate zero gradients. We have to
+            # find the bin that contains zero and set the
+            # corresponding weight to zero
+            for i, edge in enumerate(edges_in_params[out_param][in_p][:-1]):
+                if edge <= 0 <= edges_in_params[out_param][in_p][i + 1]:
+                    weights[i] = 0
+                    break
+
         data_dic["weight"].extend(weights)
         data_dic["Impact"].extend(
             edges_in_params[out_param][in_p][:-1]
@@ -4621,10 +4626,9 @@ def traj_plot_kde_inp(
             )
             / 2
         )
-        data_dic["Parameter"].extend(np.repeat(in_p, len(weights)))
+        data_dic["Parameter"].extend(np.repeat(latexify.parse_word(in_p), len(weights)))
 
     df = pd.DataFrame(data_dic)
-
     fig = Figure()
     ax = fig.subplots()
 
@@ -4636,7 +4640,7 @@ def traj_plot_kde_inp(
         common_norm=common_norm,
         ax=ax,
         bw_adjust=bw_adjust,
-        hue_order=np.sort(in_params),
+        hue_order=[latexify.parse_word(p) for p in np.sort(in_params)],
         linewidth=linewidth,
     )
 
@@ -4777,6 +4781,7 @@ def plot_traj_kde_inp_interactive(
             height=height_slider,
             title=title_widget,
             font_scale=font_slider,
+            filter_zero=False,
             save=save_button,
             latex=latex_button,
         ),
