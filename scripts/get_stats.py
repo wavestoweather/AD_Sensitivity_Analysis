@@ -2434,8 +2434,11 @@ def get_histogram(
         the bin edges for the given keys.
     """
     phases = np.asarray(["warm phase", "mixed phase", "ice phase", "neutral phase"])
-    if only_phase is not None and only_phase not in phases:
-        raise (
+    try:
+        if only_phase is not None and only_phase not in phases:
+            raise KeyError
+    except:
+        print(
             f"You asked for phase {only_phase}, which does not exist."
             f"Possible phases are {phases}"
         )
