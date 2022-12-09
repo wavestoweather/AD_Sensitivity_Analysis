@@ -798,6 +798,7 @@ def plot_kde_histogram_interactive(ds):
     for col in ds:
         if "rank" in col:
             in_param_values.append(col)
+    in_param_values = list(np.sort(in_param_values))
     in_params = pn.widgets.CrossSelector(
         name="Parameter",
         value=in_param_values[0:2],
