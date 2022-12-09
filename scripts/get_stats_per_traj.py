@@ -488,8 +488,8 @@ def plot_kde_histogram(
     df = ds_tmp[in_params].to_dataframe().stack().reset_index()
     df = df.rename(columns={"level_4": "Parameter", 0: "Rank"})
     df = df.loc[df["Rank"] > 0]
+    worst_rank = ds[in_params[0]].attrs["rank for zero gradients"]
     if ignore_zero_gradients:
-        worst_rank = ds[in_params[0]].attrs["rank for zero gradients"]
         df = df.loc[df["Rank"] < worst_rank]
 
     sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
@@ -515,13 +515,23 @@ def plot_kde_histogram(
             label="inflow",
             linewidth=linewidth,
             bw_adjust=bw_adjust,
+            clip=(1, worst_rank),
         )
         for p in phase_hue_order[::-1]:
             if (
                 p in df_tmp["phase"].values
-                and len(np.unique(df_tmp.loc[df_tmp["phase"] == p]["Rank"])) > 1
+                and len(np.unique(df_tmp.loc[df_tmp["phase"] == p]["Rank"])) >= 1
             ):
                 new_labels.append(f"inflow {p}")
+            # in case there is anything with zero variance, we plot a single bar.
+            vals = np.unique(df_tmp.loc[df_tmp["phase"] == p]["Rank"])
+            if len(vals) == 1:
+                ax.axvline(
+                    x=vals[0],
+                    color=phase_colors[p],
+                    linestyle="dotted",
+                    label=f"inflow {p}",
+                )
         df_tmp = df.loc[df["flow"] == "ascent"]
         _ = sns.kdeplot(
             data=df_tmp,
@@ -535,13 +545,23 @@ def plot_kde_histogram(
             label="ascent",
             linewidth=linewidth,
             bw_adjust=bw_adjust,
+            clip=(1, worst_rank),
         )
         for p in phase_hue_order[::-1]:
             if (
                 p in df_tmp["phase"].values
-                and len(np.unique(df_tmp.loc[df_tmp["phase"] == p]["Rank"])) > 1
+                and len(np.unique(df_tmp.loc[df_tmp["phase"] == p]["Rank"])) >= 1
             ):
                 new_labels.append(f"ascent {p}")
+            # in case there is anything with zero variance, we plot a single bar.
+            vals = np.unique(df_tmp.loc[df_tmp["phase"] == p]["Rank"])
+            if len(vals) == 1:
+                ax.axvline(
+                    x=vals[0],
+                    color=phase_colors[p],
+                    linestyle="solid",
+                    label=f"ascent {p}",
+                )
         df_tmp = df.loc[df["flow"] == "outflow"]
         _ = sns.kdeplot(
             data=df_tmp,
@@ -555,29 +575,52 @@ def plot_kde_histogram(
             label="outflow",
             linewidth=linewidth,
             bw_adjust=bw_adjust,
+            clip=(1, worst_rank),
         )
         for p in phase_hue_order[::-1]:
             if (
                 p in df_tmp["phase"].values
-                and len(np.unique(df_tmp.loc[df_tmp["phase"] == p]["Rank"])) > 1
+                and len(np.unique(df_tmp.loc[df_tmp["phase"] == p]["Rank"])) >= 1
             ):
                 new_labels.append(f"outflow {p}")
+            # in case there is anything with zero variance, we plot a single bar.
+            vals = np.unique(df_tmp.loc[df_tmp["phase"] == p]["Rank"])
+            if len(vals) == 1:
+                ax.axvline(
+                    x=vals[0],
+                    color=phase_colors[p],
+                    linestyle="dashed",
+                    label=f"outflow {p}",
+                )
         ax.get_legend().remove()
         handles, labels = ax.get_legend_handles_labels()
         leg = ax.legend(handles, new_labels, fontsize=int(10 * font_scale))
     elif phase:
-        df = df.loc[(df["phase"] != "any") & (df["phase"] != "neutral phase")]
+        df = df.loc[
+            (df["phase"] != "any")
+            & (df["phase"] != "neutral phase")
+            & (df["flow"] == "any")
+        ]
+        phase_hue_order = np.sort(np.unique(df["phase"]))
         _ = sns.kdeplot(
-            data=df.loc[df["flow"] == "any"],
+            data=df,
             x="Rank",
             hue="phase",
+            hue_order=phase_hue_order,
             common_norm=common_norm,
             linestyle="solid",
             palette=phase_colors,
             ax=ax,
             linewidth=linewidth,
             bw_adjust=bw_adjust,
+            clip=(1, worst_rank),
         )
+        # in case there is anything with zero variance, we plot a single bar.
+        for phase in np.unique(df["phase"]):
+            vals = np.unique(df.loc[df["phase"] == phase]["Rank"])
+            if len(vals) == 1:
+                ax.axvline(x=vals[0], color=phase_colors[phase])
+
     elif flow:
         df = df.loc[df["phase"] == "any"]
         param_hue_order = np.sort(np.unique(df["Parameter"]))
@@ -594,6 +637,7 @@ def plot_kde_histogram(
             label="inflow",
             linewidth=linewidth,
             bw_adjust=bw_adjust,
+            clip=(1, worst_rank),
         )
         for param in param_hue_order[::-1]:
             if (
@@ -613,6 +657,7 @@ def plot_kde_histogram(
             label="ascent",
             linewidth=linewidth,
             bw_adjust=bw_adjust,
+            clip=(1, worst_rank),
         )
         for param in param_hue_order[::-1]:
             if (
@@ -632,6 +677,7 @@ def plot_kde_histogram(
             label="outflow",
             linewidth=linewidth,
             bw_adjust=bw_adjust,
+            clip=(1, worst_rank),
         )
         for param in param_hue_order[::-1]:
             if (
@@ -656,6 +702,7 @@ def plot_kde_histogram(
             ax=ax,
             linewidth=linewidth,
             bw_adjust=bw_adjust,
+            clip=(1, worst_rank),
         )
 
     if font_scale is None:
