@@ -4296,7 +4296,7 @@ def plot_traj_histogram_inp_interactive(
     for param in tmp_params:
         if param[0] == "d" and param != "deposition":
             in_params.append(param)
-    in_params = np.sort(in_params)
+    in_params = list(np.sort(in_params))
     in_param = pn.widgets.Select(
         name="Model Parameter",
         value=in_params[0],
@@ -4412,7 +4412,7 @@ def plot_heatmap_histogram_interactive(hist_conditional):
     for c in conds:
         if c != "edges_in_params" and c != "edges_out_params":
             conditions.append(c)
-    conditions = np.sort(conditions)
+    conditions = list(np.sort(conditions))
     wrt_params = list(hist_conditional["edges_in_params"].keys())
     out_param = pn.widgets.RadioButtonGroup(
         name="Output Parameter",
@@ -4430,7 +4430,7 @@ def plot_heatmap_histogram_interactive(hist_conditional):
     for param in tmp_params:
         if param[0] == "d" and param != "deposition":
             in_params.append(param)
-    in_params = np.sort(in_params)
+    in_params = list(np.sort(in_params))
     in_param = pn.widgets.Select(
         name="Model Parameter (Y-Axis)",
         value=in_params[-1],
@@ -4709,7 +4709,7 @@ def plot_traj_kde_inp_interactive(
     for param in tmp_params:
         if param[0] == "d" and param != "deposition":
             in_params.append(param)
-    in_params = np.sort(in_params)
+    in_params = list(np.sort(in_params))
     in_param = pn.widgets.CrossSelector(
         name="Parameter",
         value=in_params[0:2],
