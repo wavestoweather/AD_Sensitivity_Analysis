@@ -424,6 +424,8 @@ def plot_kde_histogram(
     flow,
     phase,
     ignore_zero_gradients,
+    linewidth=2,
+    bw_adjust=1.0,
     title=None,
     filename=None,
     width=17,
@@ -449,6 +451,11 @@ def plot_kde_histogram(
         Plot different phases, i.e., warm phase, mixed phase, and ice phase.
     ignore_zero_gradients : bool
         Do not show the rank of gradients that are always zero.
+    linewidth : float
+        Line width of each kde.
+    bw_adjust : float
+        Used to calculate the kde. Adjusts multiplicatively the bandwidth that is found automatically by
+        scipy.stats.gaussian.kde. Larger values generate smoother estimations.
     title : string
         Title of the histogram. If none is given, a title will be generated.
     filename : string
@@ -506,6 +513,8 @@ def plot_kde_histogram(
             palette=phase_colors,
             ax=ax,
             label="inflow",
+            linewidth=linewidth,
+            bw_adjust=bw_adjust,
         )
         for p in phase_hue_order[::-1]:
             if (
@@ -524,6 +533,8 @@ def plot_kde_histogram(
             palette=phase_colors,
             ax=ax,
             label="ascent",
+            linewidth=linewidth,
+            bw_adjust=bw_adjust,
         )
         for p in phase_hue_order[::-1]:
             if (
@@ -542,6 +553,8 @@ def plot_kde_histogram(
             palette=phase_colors,
             ax=ax,
             label="outflow",
+            linewidth=linewidth,
+            bw_adjust=bw_adjust,
         )
         for p in phase_hue_order[::-1]:
             if (
@@ -562,6 +575,8 @@ def plot_kde_histogram(
             linestyle="solid",
             palette=phase_colors,
             ax=ax,
+            linewidth=linewidth,
+            bw_adjust=bw_adjust,
         )
     elif flow:
         df = df.loc[df["phase"] == "any"]
@@ -577,6 +592,8 @@ def plot_kde_histogram(
             linestyle="dotted",
             ax=ax,
             label="inflow",
+            linewidth=linewidth,
+            bw_adjust=bw_adjust,
         )
         for param in param_hue_order[::-1]:
             if (
@@ -594,6 +611,8 @@ def plot_kde_histogram(
             linestyle="solid",
             ax=ax,
             label="ascent",
+            linewidth=linewidth,
+            bw_adjust=bw_adjust,
         )
         for param in param_hue_order[::-1]:
             if (
@@ -611,6 +630,8 @@ def plot_kde_histogram(
             linestyle="dashed",
             ax=ax,
             label="outflow",
+            linewidth=linewidth,
+            bw_adjust=bw_adjust,
         )
         for param in param_hue_order[::-1]:
             if (
@@ -633,6 +654,8 @@ def plot_kde_histogram(
             common_norm=common_norm,
             linestyle="solid",
             ax=ax,
+            linewidth=linewidth,
+            bw_adjust=bw_adjust,
         )
 
     if font_scale is None:
@@ -733,6 +756,20 @@ def plot_kde_histogram_interactive(ds):
         value=in_param_values[0:2],
         options=in_param_values,
     )
+    line_slider = pn.widgets.FloatSlider(
+        name="Change the line width",
+        start=1,
+        end=10,
+        step=0.5,
+        value=2,
+    )
+    bw_slider = pn.widgets.FloatSlider(
+        name="Change the bandwidth for the kde calculation",
+        start=0.05,
+        end=1.5,
+        step=0.05,
+        value=1.0,
+    )
     ignore_zero_button = pn.widgets.Toggle(
         name="Ignore zero gradients",
         button_type="success",
@@ -744,6 +781,8 @@ def plot_kde_histogram_interactive(ds):
             ds=ds,
             in_params=in_params,
             out_param=out_param,
+            linewidth=line_slider,
+            bw_adjust=bw_slider,
             flow=flow_button,
             phase=phase_button,
             ignore_zero_gradients=ignore_zero_button,
@@ -771,12 +810,16 @@ def plot_kde_histogram_interactive(ds):
         pn.Row(
             flow_button,
             phase_button,
-            out_param,
+            ignore_zero_button,
         ),
         pn.Row(
             in_params,
-            ignore_zero_button,
+            out_param,
         ),
-        title_widget,
+        pn.Row(
+            line_slider,
+            bw_slider,
+            title_widget,
+        ),
         plot_pane,
     )

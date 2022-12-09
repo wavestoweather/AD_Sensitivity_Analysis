@@ -4563,8 +4563,10 @@ def traj_plot_kde_inp(
     linewidth : float
         Line width of each kde.
     bw_adjust : float
-        Used to calculate the kde. Typically, 0.3 is used but here we set the default lower since the true
-        distributions tend to be less smooth. Larger values generate smoother estimations.
+        Used to calculate the kde. Adjusts multiplicatively the bandwidth that is found automatically by
+        scipy.stats.gaussian.kde. Larger values generate smoother estimations. Since the underlying data
+        here is a set of bins with their counts as weights, the automatically estimated bandwidth is
+        smoother than what would be used when using the complete dataset. Therefore, we use a default of 0.1.
     log : bool
         Plot the y-axis using log-scale.
     font_scale : float
