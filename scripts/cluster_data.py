@@ -135,7 +135,14 @@ def get_average(data):
 
 
 def get_cluster(
-    data, k, tol=1e-4, x=None, param_names=None, include_all_data=False, verbose=False
+    data,
+    k,
+    tol=1e-4,
+    x=None,
+    param_names=None,
+    include_all_data=False,
+    reduce_name="",
+    verbose=False,
 ):
     """
     Calculate clusters using k-means for the variable 'x'.
@@ -143,7 +150,8 @@ def get_cluster(
     Parameters
     ----------
     data : xarray.Dataset or xarray.DataArray
-        A dataset of trajectories from a sensitivity simulation or one column of the set.
+        A dataset of trajectories from a sensitivity simulation or one column of the set
+        where the time dimension has been reduced using an average metric.
         Must be a dataset with coordinates 'trajectory' and 'file', i.e., loaded using 'load_data()'.
     k : int
         Number of clusters for k-means.
@@ -157,6 +165,9 @@ def get_cluster(
         If 'x' is a model parameter, then calculate clusters for each sensitivity of a model state variable towards 'x'.
     include_all_data : bool
         Include all columns in data in the returned dataframe. Otherwise only include columns used for clustering.
+    reduce_name : string
+        Name to be prepended to the columns. Should relate to the reduction
+        applied to the dataset, such as "avg" or "rank".
     verbose : bool
         If true, get more output.
 
@@ -171,25 +182,41 @@ def get_cluster(
     non_features_list = []
     data_array = None
     n_features = 1
+    out_coord = "Output_Parameter_ID"
+    if out_coord not in data:
+        out_coord = "Output Parameter"
     if x is not None and isinstance(data, xr.Dataset):
         if (isinstance(x, str) or len(x) == 1) and param_names is None:
             # A single model state
             if not isinstance(x, str):
                 x = x[0]
             data_array = data[x]
-            avg_name = f"avg {x}"
+            avg_name = f"{reduce_name}{x}"
             if include_all_data:
-                if "Output_Parameter_ID" in data:
-                    out_params = data["Output_Parameter_ID"].values
+                if out_coord in data:
+                    out_params = data[out_coord].values
                 for col in data:
                     if col != x:
-                        if col[0] == "d" and col != "deposition":
+                        if (
+                            col[0] == "d"
+                            and col != "deposition"
+                            and col != "deposition rank"
+                        ):
                             for out_p in out_params:
-                                non_features_list.append(
-                                    [f"avg d{param_id_map[out_p]}/{col}", out_p, col]
-                                )
+                                if out_coord == "Output_Parameter_ID":
+                                    non_features_list.append(
+                                        [
+                                            f"{reduce_name}d{param_id_map[out_p]}/{col}",
+                                            out_p,
+                                            col,
+                                        ]
+                                    )
+                                else:
+                                    non_features_list.append(
+                                        [f"{reduce_name}d{out_p}/{col}", out_p, col]
+                                    )
                         else:
-                            non_features_list.append([f"avg {col}", None, col])
+                            non_features_list.append([f"{reduce_name}{col}", None, col])
         elif isinstance(x, str) or len(x) == 1:
             if not isinstance(x, str):
                 x = x[0]
@@ -197,60 +224,99 @@ def get_cluster(
             avg_name_list = []
             n_features = len(param_names)
             for p in param_names:
-                avg_name_list.append(f"avg d{p}/{x}")
+                avg_name_list.append(f"{reduce_name}d{p}/{x}")
             if include_all_data:
-                if "Output_Parameter_ID" in data:
-                    out_params = data["Output_Parameter_ID"].values
+                if out_coord in data:
+                    out_params = data[out_coord].values
                 for col in data:
                     if col != x:
-                        if col[0] == "d" and col != "deposition":
+                        if (
+                            col[0] == "d"
+                            and col != "deposition"
+                            and col != "deposition rank"
+                        ):
                             for out_p in out_params:
-                                non_features_list.append(
-                                    [f"avg d{param_id_map[out_p]}/{col}", out_p, col]
-                                )
+                                if out_coord == "Output_Parameter_ID":
+                                    non_features_list.append(
+                                        [
+                                            f"{reduce_name}d{param_id_map[out_p]}/{col}",
+                                            out_p,
+                                            col,
+                                        ]
+                                    )
+                                else:
+                                    non_features_list.append(
+                                        [f"{reduce_name}d{out_p}/{col}", out_p, col]
+                                    )
                         else:
-                            non_features_list.append([f"avg {col}", None, col])
+                            non_features_list.append([f"{reduce_name}{col}", None, col])
         elif param_names is None:
             # Multiple model states and no model parameter
             n_features = len(x)
-            avg_name_list = [f"avg {v}" for v in x]
+            avg_name_list = [f"{reduce_name}{v}" for v in x]
             if include_all_data:
-                if "Output_Parameter_ID" in data:
-                    out_params = data["Output_Parameter_ID"].values
+                if out_coord in data:
+                    out_params = data[out_coord].values
                 for col in data:
                     if col not in x:
-                        if col[0] == "d" and col != "deposition":
+                        if (
+                            col[0] == "d"
+                            and col != "deposition"
+                            and col != "deposition rank"
+                        ):
                             for out_p in out_params:
-                                non_features_list.append(
-                                    [f"avg d{param_id_map[out_p]}/{col}", out_p, col]
-                                )
+                                if out_coord == "Output_Parameter_ID":
+                                    non_features_list.append(
+                                        [
+                                            f"{reduce_name}d{param_id_map[out_p]}/{col}",
+                                            out_p,
+                                            col,
+                                        ]
+                                    )
+                                else:
+                                    non_features_list.append(
+                                        [f"{reduce_name}d{out_p}/{col}", out_p, col]
+                                    )
                         else:
-                            non_features_list.append([f"avg {col}", None, col])
+                            non_features_list.append([f"{reduce_name}{col}", None, col])
         else:
             # Multiple model states and at least one model parameter
             avg_name_list = []
             for v in x:
                 if v[0] == "d" and v != "deposition":
                     for p in param_names:
-                        avg_name_list.append(f"avg d{p}/{v}")
+                        avg_name_list.append(f"{reduce_name}d{p}/{v}")
                 else:
-                    avg_name_list.append(f"avg {v}")
+                    avg_name_list.append(f"{reduce_name}{v}")
             n_features = len(avg_name_list)
             if include_all_data:
-                if "Output_Parameter_ID" in data:
-                    out_params = data["Output_Parameter_ID"].values
+                if out_coord in data:
+                    out_params = data[out_coord].values
                 for col in data:
                     if col not in x:
-                        if col[0] == "d" and col != "deposition":
+                        if (
+                            col[0] == "d"
+                            and col != "deposition"
+                            and col != "deposition rank"
+                        ):
                             for out_p in out_params:
-                                non_features_list.append(
-                                    [f"avg d{param_id_map[out_p]}/{col}", out_p, col]
-                                )
+                                if out_coord == "Output_Parameter_ID":
+                                    non_features_list.append(
+                                        [
+                                            f"{reduce_name}d{param_id_map[out_p]}/{col}",
+                                            out_p,
+                                            col,
+                                        ]
+                                    )
+                                else:
+                                    non_features_list.append(
+                                        [f"{reduce_name}d{out_p}/{col}", out_p, col]
+                                    )
                         else:
-                            non_features_list.append([f"avg {col}", None, col])
+                            non_features_list.append([f"{reduce_name}{col}", None, col])
     else:
         data_array = data
-        avg_name = "avg " + data.name
+        avg_name = f"{reduce_name}" + data.name
     # n_samples, n_features
     n_samples = len(data["file"]) * len(data["trajectory"])
     shape = (n_samples, n_features)
@@ -263,15 +329,18 @@ def get_cluster(
             name = avg_name_list[i]
             if "/" in name:
                 # Model parameter
-                out_p = name.split("/")[0][5:]
+                out_p = name.split("/")[0][len(reduce_name) + 1 :]
                 in_p = name.split("/")[1]
-                param_i = np.argwhere(np.asarray(param_id_map) == out_p).item()
+                if out_coord == "Output_Parameter_ID":
+                    param_i = np.argwhere(np.asarray(param_id_map) == out_p).item()
+                else:
+                    param_i = out_p
                 fit_data[:, i] = np.reshape(
-                    data[in_p].sel({"Output_Parameter_ID": param_i}).values, n_samples
+                    data[in_p].sel({out_coord: param_i}).values, n_samples
                 )
             else:
                 # Model state
-                state_name = name[4:]
+                state_name = name[len(reduce_name) :]
                 fit_data[:, i] = np.reshape(data[state_name].values, n_samples)
         fit_mask = None
         for i in range(n_features):
@@ -310,10 +379,9 @@ def get_cluster(
                     tmp_arr = np.asarray(data[non_feat[2]].values).flatten()
                 else:
                     tmp_arr = np.asarray(
-                        data.sel({"Output_Parameter_ID": non_feat[1]})[
-                            non_feat[2]
-                        ].values
+                        data.sel({out_coord: non_feat[1]})[non_feat[2]].values
                     ).flatten()
+
                 kmeans_dic[non_feat[0]] = tmp_arr[fit_mask]
         return pd.DataFrame.from_dict(kmeans_dic)
 
@@ -349,9 +417,7 @@ def get_cluster(
                     tmp_arr = np.asarray(data[non_feat[2]].values).flatten()
                 else:
                     tmp_arr = np.asarray(
-                        data.sel({"Output_Parameter_ID": non_feat[1]})[
-                            non_feat[2]
-                        ].values
+                        data.sel({out_coord: non_feat[1]})[non_feat[2]].values
                     ).flatten()
                 kmeans_dic[non_feat[0]] = tmp_arr[~np.isnan(fit_data[:, 0])]
         return pd.DataFrame.from_dict(kmeans_dic)
@@ -421,15 +487,18 @@ def plot_cluster_data(
         return g
 
 
-def plot_cluster_data_interactive(data):
+def plot_cluster_data_interactive(data, reduce_name=""):
     """
     Calling this function from a Jupyter notebook allows to visualize the cluster association with different
     dimensions. Make sure to call pn.extension() from your notebook first.
 
     Parameters
     ----------
-    data
-
+    data : pandas.DataFrame
+        DataFrame generated using get_cluster().
+    reduce_name : string
+        Name prepended to the columns. Should relate to the reduction
+        applied to the dataset, such as "avg" or "rank" in get_cluster().
     Returns
     -------
 
@@ -438,10 +507,10 @@ def plot_cluster_data_interactive(data):
     in_params = []
     for col in data:
         if "/" in col:
-            out_params.append(col.split("/")[0][5:])
+            out_params.append(col.split("/")[0][len(reduce_name) + 1 :])
             in_params.append(col.split("/")[1])
-        elif "avg " in col:
-            in_params.append(col[4:])
+        elif reduce_name in col and len(reduce_name) > 0:
+            in_params.append(col[len(reduce_name) :])
         else:
             in_params.append(col)
     in_params = list(set(in_params))
@@ -541,21 +610,26 @@ def plot_cluster_data_interactive(data):
         fig = Figure()
         ax = fig.subplots()
         if in_p_x[0] == "d" and in_p_x != "deposition":
-            x = f"avg d{out_p_x}/{in_p_x}"
-            xlabel = r"avg $\partial$" + out_p_x + f"/{parse_word(in_p_x)}"
+            x = f"{reduce_name}d{out_p_x}/{in_p_x}"
+            xlabel = reduce_name + r"$\partial$" + out_p_x + f"/{parse_word(in_p_x)}"
         elif in_p_x != "cluster" and in_p_x != "trajectory" and in_p_x != "file":
-            x = f"avg {in_p_x}"
-            xlabel = f"avg {parse_word(in_p_x)}"
+            x = f"{reduce_name}{in_p_x}"
+            xlabel = f"{reduce_name}{parse_word(in_p_x)}"
         else:
             x = in_p_x
             xlabel = in_p_x
 
         if in_p_y[0] == "d" and in_p_y != "deposition":
-            y = f"avg d{out_p_y}/{in_p_y}"
-            ylabel = r"avg $\partial$" + parse_word(out_p_y) + f"/{parse_word(in_p_y)}"
+            y = f"{reduce_name}d{out_p_y}/{in_p_y}"
+            ylabel = (
+                reduce_name
+                + r"$\partial$"
+                + parse_word(out_p_y)
+                + f"/{parse_word(in_p_y)}"
+            )
         elif in_p_y != "cluster" and in_p_y != "trajectory" and in_p_y != "file":
-            y = f"avg {in_p_y}"
-            ylabel = f"avg {parse_word(in_p_y)}"
+            y = f"{reduce_name}{in_p_y}"
+            ylabel = f"{reduce_name}{parse_word(in_p_y)}"
         else:
             y = in_p_y
             ylabel = in_p_y
@@ -1149,6 +1223,7 @@ if __name__ == "__main__":
         k=args.k,
         x=args.cluster_var,
         param_names=args.sens_model_states,
+        reduce_name="avg ",
         verbose=args.verbose,
     )
     if args.plot_type == "histplot" or args.plot_type == "both":
