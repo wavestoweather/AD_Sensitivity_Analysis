@@ -3,6 +3,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import os
 import panel as pn
+import pickle
 import seaborn as sns
 import sys
 from tqdm.auto import tqdm
@@ -729,6 +730,57 @@ def plot_kde_histogram(
         except:
             print(f"Storing to {save_name} failed.", file=sys.stderr)
     return fig
+
+
+def get_corr_matrix(
+    ds,
+    store_path=None,
+    verbose=False,
+):
+    """
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset with ranks per trajectory created by create_rank_traj_dataset().
+    store_path : string
+        If a store path is given then dumps the correlation matrix to f'{store_path}_correlation_matrix_per_traj.pkl'.
+    verbose : bool
+        Print progressbars.
+
+    Returns
+    -------
+    Dictionary with output parameter, flow, and phase as keys and values are correlation matrices. Also a list of
+    model parameter names for each column/row.
+    """
+    n = len(ds)
+
+    corr_matrix = {
+        out_p.item(): {
+            flow.item(): {phase.item(): np.zeros((n, n)) for phase in ds["phase"]}
+            for flow in ds["flow"]
+        }
+        for out_p in ds["Output Parameter"]
+    }
+    col_names = list(ds.keys())
+    for out_p in tqdm(ds["Output Parameter"]) if verbose else ds["Output Parameter"]:
+        ds_tmp = ds.sel({"Output Parameter": out_p})
+        for flow in tqdm(ds["flow"], leave=False) if verbose else ds["flow"]:
+            ds_tmp2 = ds_tmp.sel({"flow": flow})
+            for phase in tqdm(ds["phase"], leave=False) if verbose else ds["phase"]:
+                ds_tmp3 = ds_tmp2.sel({"phase": phase})
+                for i, col in enumerate(
+                    tqdm(col_names, leave=False) if verbose else col_names
+                ):
+                    for j, col2 in enumerate(col_names):
+                        corr_matrix[out_p.item()][flow.item()][phase.item()][
+                            i, j
+                        ] = xr.cov(ds_tmp3[col], ds_tmp3[col2]).item()
+    if store_path is not None:
+        corr_and_names = {"correlation": corr_matrix, "column names": col_names}
+        with open(store_path + "_correlation_matrix_per_traj.pkl", "wb") as f:
+            pickle.dump(corr_and_names, f)
+    return corr_matrix, col_names
 
 
 def plot_kde_histogram_interactive(ds):

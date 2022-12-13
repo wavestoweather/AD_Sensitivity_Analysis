@@ -16,8 +16,10 @@ import xarray as xr
 
 try:
     from latexify import param_id_map, parse_word
+    from latexify import mappings as latex_mappings
 except:
     from scripts.latexify import param_id_map, parse_word
+    from scripts.latexify import mappings as latex_mappings
 
 
 def load_data(
@@ -609,30 +611,45 @@ def plot_cluster_data_interactive(data, reduce_name=""):
         sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
         fig = Figure()
         ax = fig.subplots()
+
         if in_p_x[0] == "d" and in_p_x != "deposition":
+            if " " in in_p_x:
+                in_p_x_parse = in_p_x.split()[0]
+                reduce_name_x = in_p_x.split()[1] + " "
+            else:
+                reduce_name_x = reduce_name
+                in_p_x_parse = in_p_x
             x = f"{reduce_name}d{out_p_x}/{in_p_x}"
-            xlabel = reduce_name + r"$\partial$" + out_p_x + f"/{parse_word(in_p_x)}"
-        elif in_p_x != "cluster" and in_p_x != "trajectory" and in_p_x != "file":
+            xlabel = (
+                reduce_name_x + r"$\partial$" + out_p_x + f"/{parse_word(in_p_x_parse)}"
+            )
+        elif in_p_x in latex_mappings:
             x = f"{reduce_name}{in_p_x}"
             xlabel = f"{reduce_name}{parse_word(in_p_x)}"
         else:
             x = in_p_x
-            xlabel = in_p_x
+            xlabel = reduce_name + in_p_x
 
         if in_p_y[0] == "d" and in_p_y != "deposition":
+            if " " in in_p_y:
+                in_p_y_parse = in_p_y.split()[0]
+                reduce_name_y = in_p_y.split()[1] + " "
+            else:
+                reduce_name_y = reduce_name
+                in_p_y_parse = in_p_y
             y = f"{reduce_name}d{out_p_y}/{in_p_y}"
             ylabel = (
-                reduce_name
+                reduce_name_y
                 + r"$\partial$"
                 + parse_word(out_p_y)
-                + f"/{parse_word(in_p_y)}"
+                + f"/{parse_word(in_p_y_parse)}"
             )
-        elif in_p_y != "cluster" and in_p_y != "trajectory" and in_p_y != "file":
+        elif in_p_y in latex_mappings:
             y = f"{reduce_name}{in_p_y}"
             ylabel = f"{reduce_name}{parse_word(in_p_y)}"
         else:
             y = in_p_y
-            ylabel = in_p_y
+            ylabel = reduce_name + in_p_y
 
         histogram = (in_p_x == in_p_y and out_p_x == out_p_y) or (
             in_p_x == in_p_y and "/" not in x
