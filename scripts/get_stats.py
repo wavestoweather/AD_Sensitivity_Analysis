@@ -3886,6 +3886,7 @@ def plot_heatmap_matrix(
         annot=annot,
         fmt="1.2e",
         ax=ax,
+        annot_kws={"size": int(9 * font_scale)},
     )
     if title is None:
         title_ = f"Heatmap of Relation (Gradients for {out_param})"
@@ -3970,14 +3971,14 @@ def plot_heatmap_interactive(
     width_slider = pn.widgets.IntSlider(
         name="Width in inches",
         start=3,
-        end=15,
+        end=45,
         step=1,
         value=9,
     )
     height_slider = pn.widgets.IntSlider(
         name="Height in inches",
         start=3,
-        end=15,
+        end=25,
         step=1,
         value=6,
     )
@@ -4014,10 +4015,25 @@ def plot_heatmap_interactive(
         name="Sort by correlation sum",
         button_type="success",
     )
+    rank_names = False
+    for n in names:
+        if "rank" in n:
+            rank_names = True
+            break
+    if rank_names:
+        names_list = []
+        for n in np.sort(names):
+            if "rank" in n:
+                names_list.append(n)
+        for n in np.sort(names):
+            if "rank" not in n:
+                names_list.append(n)
+    else:
+        names_list = np.sort(names)
     param_select = pn.widgets.CrossSelector(
         name="Parameter",
-        value=names[0:5],
-        options=names,
+        value=names_list[0:5],
+        options=names_list,
     )
     plot_type = pn.widgets.Select(
         name="Plot values:",

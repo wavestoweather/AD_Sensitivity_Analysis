@@ -775,11 +775,19 @@ def get_matrix(
                 for i, col in enumerate(
                     tqdm(col_names, leave=False) if verbose else col_names
                 ):
+                    if "rank" in col:
+                        ds_tmp4 = ds_tmp3.where(ds_tmp3[col] > 0)
+                    else:
+                        ds_tmp4 = ds_tmp3
                     for j, col2 in enumerate(col_names):
-                        if corr:
-                            val = xr.corr(ds_tmp3[col], ds_tmp3[col2]).item()
+                        if "rank" in col2:
+                            ds_tmp5 = ds_tmp4.where(ds_tmp4[col2] > 0)
                         else:
-                            val = xr.cov(ds_tmp3[col], ds_tmp3[col2]).item()
+                            ds_tmp5 = ds_tmp4
+                        if corr:
+                            val = xr.corr(ds_tmp5[col], ds_tmp5[col2]).item()
+                        else:
+                            val = xr.cov(ds_tmp5[col], ds_tmp5[col2]).item()
                         corr_matrix[out_p.item()][flow.item()][phase.item()][i, j] = val
     if store_path is not None:
         corr_and_names = {"correlation": corr_matrix, "column names": col_names}
