@@ -732,9 +732,10 @@ def plot_kde_histogram(
     return fig
 
 
-def get_corr_matrix(
+def get_matrix(
     ds,
     store_path=None,
+    corr=True,
     verbose=False,
 ):
     """
@@ -745,13 +746,15 @@ def get_corr_matrix(
         Dataset with ranks per trajectory created by create_rank_traj_dataset().
     store_path : string
         If a store path is given then dumps the correlation matrix to f'{store_path}_correlation_matrix_per_traj.pkl'.
+    corr : bool
+        If true, calculate the Pearson correlation. Otherwise calculate the covariance.
     verbose : bool
         Print progressbars.
 
     Returns
     -------
-    Dictionary with output parameter, flow, and phase as keys and values are correlation matrices. Also a list of
-    model parameter names for each column/row.
+    Dictionary with output parameter, flow, and phase as keys and values are correlation/covariance matrices.
+    Also a list of model parameter names for each column/row.
     """
     n = len(ds)
 
@@ -773,13 +776,19 @@ def get_corr_matrix(
                     tqdm(col_names, leave=False) if verbose else col_names
                 ):
                     for j, col2 in enumerate(col_names):
-                        corr_matrix[out_p.item()][flow.item()][phase.item()][
-                            i, j
-                        ] = xr.cov(ds_tmp3[col], ds_tmp3[col2]).item()
+                        if corr:
+                            val = xr.corr(ds_tmp3[col], ds_tmp3[col2]).item()
+                        else:
+                            val = xr.cov(ds_tmp3[col], ds_tmp3[col2]).item()
+                        corr_matrix[out_p.item()][flow.item()][phase.item()][i, j] = val
     if store_path is not None:
         corr_and_names = {"correlation": corr_matrix, "column names": col_names}
-        with open(store_path + "_correlation_matrix_per_traj.pkl", "wb") as f:
-            pickle.dump(corr_and_names, f)
+        if corr:
+            with open(store_path + "_correlation_matrix_per_traj.pkl", "wb") as f:
+                pickle.dump(corr_and_names, f)
+        else:
+            with open(store_path + "_covariance_matrix_per_traj.pkl", "wb") as f:
+                pickle.dump(corr_and_names, f)
     return corr_matrix, col_names
 
 

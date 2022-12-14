@@ -3610,6 +3610,7 @@ def get_cov_matrix_phase(
     only_asc600=False,
     inoutflow_time=-1,
 ):
+
     """
     Calculate the means and covariance matrices for model state variables and sensitivities. For each model state
     variable with sensitivities and each phase, there will be a different covariance matrix.
@@ -3775,37 +3776,44 @@ def get_cov_matrix_phase(
     return means, cov
 
 
-def plot_heatmap_cov(
+def plot_heatmap_matrix(
     data_in,
     out_param,
     names,
+    flow=None,
+    phase=None,
+    latex=False,
+    font_scale=1.0,
+    save=False,
     in_params=None,
     plot_type="all",
     norm=None,
     title=None,
     filename=None,
+    cmap="viridis",
     width=30,
     height=16,
+    sort=False,
+    annot=False,
 ):
     """
-    Plot a heatmap of a covariance matrix.
+    Plot a heatmap of a covariance or correlation matrix.
 
     Parameters
     ----------
-    data_in : dictionary of matrices
-        The keys are model state variables with available sensitivities.
+    data_in : dictionary of matrices or dictionary of dictionary of dictionary of matrices
+        Either: The keys are model state variables with available sensitivities.
         The values are matrices where covariances are given for sensitivities for the respective model state variable.
         The data can be generated using get_cov_matrix().
+        Or: The first keys are model state variables, then the flow, then phase used for calculating correlation/covariance values. The data can be generated using get_stats_per_traj.get_matrix().
     out_param : string
         The model state variable for which the sensitivities shall be plotted for.
     names : list of strings
-        The names of each column/row in the covariance matrix. The index of names is the row/column of the
-        covariance matrix.
+        The names of each column/row in the covariance matrix. The index of names is the row/column of the matrix.
     in_params : list-like of strings
         List of model parameters or model states to plot in the covariance matrix.
     plot_type : string
         Define if only negative (='negative'), positive (='positive'), or all ('all') values shall be plotted.
-        If 'all' is chosen and a norm other than SymLogNorm is given, the absolute values will be plotted.
     norm : matplotlib.colors normalization instance
         A normalization for the colormap, such as matplotlib.colors.SymLogNorm()
     title : string
@@ -3813,18 +3821,26 @@ def plot_heatmap_cov(
     filename : string
         Path and filename to save the plot on disk. The filename will be numerated.
         If a file with the same name already exists, the number will be incremented.
+    cmap : string
+        Name of the color palette passed to seaborn.
     width : float
         Width in inches
     height : float
         Height in inches
+    sort : bool
+        Sort the rows and columns such that the one with the largest sum is on top/left and the smallest
+        sum is on bottom/right.
 
     Returns
     -------
-    If successful, returns matplotlib.axes. Otherwise returns None.
+    If successful, returns the matplotlib.figure.Figure with the plot drawn onto it. Otherwise returns None.
     """
-    sns.set(rc={"figure.figsize": (width, height)})
-    data = copy.deepcopy(data_in[out_param])
-    if in_params is not None and len(in_params) < np.shape(data_in[out_param])[0]:
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
+    if isinstance(data_in[out_param], dict):
+        data = copy.deepcopy(data_in[out_param][flow][phase])
+    else:
+        data = copy.deepcopy(data_in[out_param])
+    if in_params is not None and len(in_params) < np.shape(data)[0]:
         if len(in_params) == 0:
             return
         idx = []
@@ -3839,46 +3855,293 @@ def plot_heatmap_cov(
         data[np.where(data >= 0)] = np.nan
     elif plot_type == "positive":
         data[np.where(data < 0)] = np.nan
-    if (
-        norm is not None
-        and plot_type != "positive"
-        and not isinstance(norm, mpl_col.SymLogNorm)
-    ):
-        data = np.abs(data)
-    try:
-        g = sns.heatmap(
-            data=data,
-            cmap="viridis",
-            norm=norm,
-            cbar=True,
-            yticklabels=names,
-            xticklabels=names,
-            annot=((len(names) <= 20) and (width > 19)),
-            fmt="1.2e",
+
+    if sort:
+        pairs = []
+        i = 0
+        for name, col in zip(names, data):
+            pairs.append((np.nansum(np.abs(col)), name, i))
+            i += 1
+        pairs.sort(key=lambda x: x[0])
+        permutation = []
+        for p in pairs[::-1]:
+            permutation.append(p[2])
+        plot_data = data[:, permutation]
+        plot_data = plot_data[permutation, :]
+        plot_names = np.asarray(names)[permutation]
+    else:
+        plot_data = data
+        plot_names = names
+
+    # try:
+    fig = Figure()
+    ax = fig.subplots()
+    sns.heatmap(
+        data=plot_data,
+        cmap=cmap,
+        norm=norm,
+        cbar=True,
+        yticklabels=plot_names,
+        xticklabels=plot_names,
+        annot=annot,
+        fmt="1.2e",
+        ax=ax,
+    )
+    if title is None:
+        title_ = f"Heatmap of Relation (Gradients for {out_param})"
+    else:
+        title_ = title
+    _ = ax.set_title(title_, fontsize=int(12 * font_scale))
+    _ = ax.set_yticklabels(
+        ax.get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor"
+    )
+    _ = ax.set_xticklabels(
+        ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor"
+    )
+    ax.tick_params(axis="x", which="major", labelsize=int(10 * font_scale))
+    ax.tick_params(axis="y", which="major", labelsize=int(10 * font_scale))
+    cbar = ax.collections[-1].colorbar
+    cbarax = cbar.ax
+    cbarax.tick_params(labelsize=int(10 * font_scale))
+
+    plt.tight_layout(h_pad=1)
+    if filename is not None and save:
+        i = 0
+        store_type = filename.split(".")[-1]
+        store_path = filename[0 : -len(store_type) - 1]
+        save_path = store_path + "_{:03d}.".format(i) + store_type
+        while os.path.isfile(save_path):
+            i = i + 1
+            save_path = store_path + "_{:03d}.".format(i) + store_type
+        fig.savefig(save_path, dpi=300)
+    return fig
+    # except:
+    #     if filename is not None:
+    #         print(f"Cannot create plot for {filename} ({out_param})")
+    #     else:
+    #         print(f"Cannot create plot for {out_param}")
+    #     return None
+
+
+def plot_heatmap_interactive(
+    filepath=None,
+    matrix_dic=None,
+    names=None,
+):
+    """
+    Interactive plot for plot_heatmap_matrix() that takes correlation and covariance matrices.
+
+    Parameters
+    ----------
+    filepath : string (optional)
+        Path to pickle file with a correlation matrix to load.
+    matrix_dic : dictionary of matrices or dictionary of dictionary of dictionary of matrices
+        Either: The keys are model state variables with available sensitivities.
+        The values are matrices where covariances are given for sensitivities for the respective model state variable.
+        The data can be generated using get_cov_matrix().
+        Or: The first keys are model state variables, then the flow, then phase used for calculating
+        correlation/covariance values.
+        The data can be generated using get_stats_per_traj.get_matrix().
+    names : list of strings
+        The names of each column/row in the covariance matrix. The index of names is the row/column of the matrix.
+
+    Returns
+    -------
+    panel.layout that can be used in a jupyter notebook.
+    """
+    if filepath is not None:
+        with open(filepath, "rb") as f:
+            data = pickle.load(f)
+            matrix_dic = data["correlation"]
+            names = data["column names"]
+    elif matrix_dic is None or names is None:
+        print(
+            "You either have to specify a filepath to a pickle file or "
+            "you need to provide the matrix dictionary with the names."
         )
-        if title is None:
-            title_ = f"Heatmap of Covariance (Gradients for {out_param})"
-        else:
-            title_ = title
-        _ = g.set_title(title_)
-        plt.tight_layout()
-        fig = g.get_figure()
-        if filename is not None:
-            i = 0
-            store_type = filename.split(".")[-1]
-            store_path = filename[0 : -len(store_type) - 1]
-            save = store_path + "_{:03d}.".format(i) + store_type
-            while os.path.isfile(save):
-                i = i + 1
-                save = store_path + "_{:03d}.".format(i) + store_type
-            fig.savefig(save, dpi=300)
-        return g
-    except:
-        if filename is not None:
-            print(f"Cannot create plot for {filename} ({out_param})")
-        else:
-            print(f"Cannot create plot for {out_param}")
         return None
+    out_param_list = list(matrix_dic.keys())
+    out_param = pn.widgets.Select(
+        name="Output Parameter",
+        value=out_param_list[0],
+        options=out_param_list,
+    )
+
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=5,
+        step=0.1,
+        value=0.7,
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    cmaps = ["viridis", "mako", "vlag", "icefire", "Spectral", "coolwarm"]
+    color_widget = pn.widgets.Select(
+        name="Colormap",
+        value=cmaps[2],
+        options=cmaps,
+    )
+    sort_button = pn.widgets.Toggle(
+        name="Sort by correlation sum",
+        button_type="success",
+    )
+    param_select = pn.widgets.CrossSelector(
+        name="Parameter",
+        value=names[0:5],
+        options=names,
+    )
+    plot_type = pn.widgets.Select(
+        name="Plot values:",
+        value="all",
+        options=["all", "negative", "positive"],
+    )
+    norms = [
+        mpl_col.Normalize(-1, 1),
+        mpl_col.SymLogNorm(1e-2),
+        mpl_col.SymLogNorm(1e-10),
+        mpl_col.SymLogNorm(1e-15),
+        mpl_col.SymLogNorm(1e-20),
+        mpl_col.LogNorm(),
+        None,
+    ]
+    norm = pn.widgets.Select(
+        name="Norm",
+        value=norms[0],
+        options=norms,
+    )
+    annot_button = pn.widgets.Toggle(
+        name="Annotate entries",
+        button_type="success",
+    )
+    if isinstance(matrix_dic[out_param_list[0]], dict):
+        flow_list = list(matrix_dic[out_param_list[0]].keys())
+        flow = pn.widgets.Select(
+            name="Flow",
+            value=flow_list[0],
+            options=flow_list,
+        )
+        phase_list = list(matrix_dic[out_param_list[0]][flow_list[0]].keys())
+        phase = pn.widgets.Select(
+            name="Phase",
+            value=phase_list[0],
+            options=phase_list,
+        )
+    else:
+        phase = None
+        flow = None
+
+    plot_pane = pn.panel(
+        pn.bind(
+            plot_heatmap_matrix,
+            data_in=matrix_dic,
+            out_param=out_param,
+            names=names,
+            in_params=param_select,
+            plot_type=plot_type,
+            norm=norm,
+            title=title_widget,
+            filename=save_to_field,
+            cmap=color_widget,
+            width=width_slider,
+            height=height_slider,
+            sort=sort_button,
+            latex=latex_button,
+            save=save_button,
+            phase=phase,
+            flow=flow,
+            font_scale=font_slider,
+            annot=annot_button,
+        )
+    ).servable()
+
+    if isinstance(matrix_dic[out_param_list[0]], dict):
+        return pn.Column(
+            pn.Row(
+                width_slider,
+                height_slider,
+                font_slider,
+            ),
+            pn.Row(
+                save_to_field,
+                save_button,
+                latex_button,
+            ),
+            pn.Row(
+                param_select,
+                pn.Column(
+                    sort_button,
+                    flow,
+                    phase,
+                ),
+            ),
+            pn.Row(
+                out_param,
+                plot_type,
+                norm,
+            ),
+            pn.Row(
+                title_widget,
+                color_widget,
+                annot_button,
+            ),
+            plot_pane,
+        )
+    else:
+        return pn.Column(
+            pn.Row(
+                width_slider,
+                height_slider,
+                font_slider,
+            ),
+            pn.Row(
+                save_to_field,
+                save_button,
+                latex_button,
+            ),
+            pn.Row(
+                param_select,
+                sort_button,
+            ),
+            pn.Row(
+                out_param,
+                plot_type,
+                norm,
+            ),
+            pn.Row(
+                title_widget,
+                color_widget,
+            ),
+            plot_pane,
+        )
 
 
 def plot_heatmap_histogram(
@@ -5065,7 +5328,7 @@ def main(args):
         if args.plot_type == "all" or args.plot_type == "cov_heat":
             print("########### Plot covariance matrix ###########")
             for out_p in tqdm(cov):
-                _ = plot_heatmap_cov(
+                _ = plot_heatmap_matrix(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
@@ -5073,22 +5336,24 @@ def main(args):
                     plot_type="all",
                     norm=mpl_col.LogNorm(),
                     filename=f"{store_path}_{out_p}_all_log.{store_type}",
+                    save=True,
                     width=args.width,
                     height=args.height,
                 )
                 plt.clf()
-                _ = plot_heatmap_cov(
+                _ = plot_heatmap_matrix(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
                     title=f"Heatmap of Covariance (Gradients for {out_p})",
                     plot_type="all",
                     filename=f"{store_path}_{out_p}_all.{store_type}",
+                    save=True,
                     width=args.width,
                     height=args.height,
                 )
                 plt.clf()
-                _ = plot_heatmap_cov(
+                _ = plot_heatmap_matrix(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
@@ -5097,11 +5362,12 @@ def main(args):
                     plot_type="all",
                     norm=mpl_col.LogNorm(),
                     filename=f"{store_path}_{out_p}_some_log.{store_type}",
+                    save=True,
                     width=args.width,
                     height=args.height,
                 )
                 plt.clf()
-                _ = plot_heatmap_cov(
+                _ = plot_heatmap_matrix(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
@@ -5109,6 +5375,7 @@ def main(args):
                     title=f"Heatmap of Covariance (Gradients for {out_p})",
                     plot_type="all",
                     filename=f"{store_path}_{out_p}_some.{store_type}",
+                    save=True,
                     width=args.width,
                     height=args.height,
                 )
@@ -5120,7 +5387,7 @@ def main(args):
                     continue
                 phase_strip = phase.strip()
                 for out_p in tqdm(cov_phase[phase], leave=False):
-                    _ = plot_heatmap_cov(
+                    _ = plot_heatmap_matrix(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=list(means_phase[phase][out_p].keys()),
@@ -5128,22 +5395,24 @@ def main(args):
                         plot_type="all",
                         norm=mpl_col.LogNorm(),
                         filename=f"{store_path}_{phase_strip}_{out_p}_all_log.{store_type}",
+                        save=True,
                         width=args.width,
                         height=args.height,
                     )
                     plt.clf()
-                    _ = plot_heatmap_cov(
+                    _ = plot_heatmap_matrix(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=list(means_phase[phase][out_p].keys()),
                         title=f"({phase_strip}) Heatmap of Covariance (Gradients for {out_p})",
                         plot_type="all",
                         filename=f"{store_path}_{phase_strip}_{out_p}_all.{store_type}",
+                        save=True,
                         width=args.width,
                         height=args.height,
                     )
                     plt.clf()
-                    _ = plot_heatmap_cov(
+                    _ = plot_heatmap_matrix(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=means_phase[phase][out_p].keys(),
@@ -5152,11 +5421,12 @@ def main(args):
                         plot_type="all",
                         norm=mpl_col.LogNorm(),
                         filename=f"{store_path}_{phase_strip}_{out_p}_some_log.{store_type}",
+                        save=True,
                         width=args.width,
                         height=args.height,
                     )
                     plt.clf()
-                    _ = plot_heatmap_cov(
+                    _ = plot_heatmap_matrix(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=means_phase[phase][out_p].keys(),
@@ -5164,6 +5434,7 @@ def main(args):
                         title=f"({phase_strip}) Heatmap of Covariance (Gradients for {out_p})",
                         plot_type="all",
                         filename=f"{store_path}_{phase_strip}_{out_p}_some.{store_type}",
+                        save=True,
                         width=args.width,
                         height=args.height,
                     )
