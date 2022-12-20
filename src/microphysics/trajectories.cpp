@@ -209,7 +209,9 @@ void substep_trace(
 #endif
 #endif
     if (trace)
-        std::cout << cc.id << " timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) << "\n";
+        std::cout << "\n################################\n"
+                  << cc.id << " timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime)
+                  << "\n";
 #if defined(TRACE_SAT)
     if (trace)
         std::cout << "Start qv_prime " << y_single_old[qv_idx]*ref_quant.qref << "\n";
@@ -366,6 +368,11 @@ void finish_last_step(
             get_at(cc.constants, Cons_idx::T_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_const_b),
             get_at(cc.constants, Cons_idx::Epsilon));
+#ifdef TRACE_SAT
+    if (trace)
+        std::cout << "traj: " << cc.traj_id << ", S (last step before saturation adjustment): "
+                  << y_single_new[S_idx] << "\n";
+#endif
 #ifdef TRACE_ENV
     if (trace)
         std::cout << "traj: " << cc.traj_id << ", before sat ad S " << y_single_new[S_idx];
@@ -400,6 +407,11 @@ void finish_last_step(
         get_at(cc.constants, Cons_idx::T_sat_low_temp),
         get_at(cc.constants, Cons_idx::p_sat_const_b),
         get_at(cc.constants, Cons_idx::Epsilon));
+#ifdef TRACE_SAT
+    if (trace)
+        std::cout << "traj: " << cc.traj_id << ", S (last step after saturation adjustment): "
+                  << y_single_new[S_idx] << "\n";
+#endif
 #ifdef TRACE_ENV
     if (trace)
         std::cout << "traj: " << cc.traj_id << ", sat ad S " << y_single_new[S_idx]
@@ -505,6 +517,10 @@ void run_substeps(
                 get_at(cc.constants, Cons_idx::T_sat_low_temp),
                 get_at(cc.constants, Cons_idx::p_sat_const_b),
                 get_at(cc.constants, Cons_idx::Epsilon));
+#ifdef TRACE_SAT
+            if (trace)
+                std::cout << "traj: " << cc.traj_id << ", S (sub==1): " << y_single_old[S_idx] << "\n";
+#endif
         }
 #ifdef DEVELOP
         std::cout << "run RK4\n";
@@ -512,8 +528,9 @@ void run_substeps(
 //////////////// Add any different scheme and model here
 #if defined(RK4) || defined(RK4_ONE_MOMENT) || defined(OTHER)
         // Not implemented
-#elif defined(RK4NOICE)
-        // Not implemented
+#elif defined(EXPLICIT_EULER)
+        euler_step(y_single_new, y_single_old, ref_quant, cc,
+            input.fixed_iteration);
 #elif defined(RK4ICE)
         RK4_step_2_sb_ice(y_single_new, y_single_old, ref_quant, cc,
             input.fixed_iteration);
@@ -642,6 +659,10 @@ void run_substeps(
                 get_at(cc.constants, Cons_idx::T_sat_low_temp),
                 get_at(cc.constants, Cons_idx::p_sat_const_b),
                 get_at(cc.constants, Cons_idx::Epsilon));
+#ifdef TRACE_SAT
+            if (trace)
+                std::cout << "traj: " << cc.traj_id << ", S (sub==1): " << y_single_old[S_idx] << "\n";
+#endif
         }
 //////////////// Add any different scheme and model here
 #if defined(RK4) || defined(RK4_ONE_MOMENT) || defined(OTHER)

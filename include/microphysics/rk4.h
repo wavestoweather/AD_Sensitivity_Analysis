@@ -191,6 +191,9 @@ void RK4_step_2_sb_ice(
                 get_at(cc.constants, Cons_idx::T_sat_low_temp),
                 get_at(cc.constants, Cons_idx::p_sat_const_b),
                 get_at(cc.constants, Cons_idx::Epsilon));
+#ifdef TRACE_SAT
+    std::cout << "traj: " << cc.traj_id << ", S (end of RK4): " << ynew[S_idx] << "\n";
+#endif
 }
 
 /** @} */  // end of group rk
