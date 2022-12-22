@@ -345,6 +345,13 @@ def load_counts_means(
         # Get the actual values and calculate the mean at the end
         lo_idx = 0
         la_idx = 0
+        idx_where_p = []
+        if pressure_levels is not None:
+            for p_i in range(n_press):
+                idx_where_p.append(
+                    (ds["pressure"] >= pressure_levels[p_i])
+                    & (ds["pressure"] < pressure_levels[p_i + 1])
+                )
         for la, lo in (
             tqdm(
                 itertools.product(lats[:-1], lons[:-1]),
@@ -366,11 +373,7 @@ def load_counts_means(
                 )
             elif pressure_levels is not None:
                 for p_i in range(n_press):
-                    idx_where = (
-                        idx_where_ll
-                        & (ds["pressure"] >= pressure_levels[p_i])
-                        & (ds["pressure"] < pressure_levels[p_i + 1])
-                    )
+                    idx_where = idx_where_ll & idx_where_p[p_i]
                     for v in variables:
                         if (
                             v[0] != "d"
@@ -548,6 +551,12 @@ def load_min_max_variance(
             sens_model_state_ids.append(
                 np.argwhere(np.asarray(param_id_map) == state).item()
             )
+    no_sens = True
+    for v in variables:
+        if v[0] != "d" or v == "deposition" or len(sens_model_states) == 1:
+            continue
+        else:
+            no_sens = False
     # Create arrays
     if pressure_levels is not None and n_times > 1:
         n_var = n_times * n_press * n_lons * n_lats
@@ -615,6 +624,13 @@ def load_min_max_variance(
 
         lo_idx = 0
         la_idx = 0
+        idx_where_p = []
+        if pressure_levels is not None:
+            for p_i in range(n_press):
+                idx_where_p.append(
+                    (ds["pressure"] >= pressure_levels[p_i])
+                    & (ds["pressure"] < pressure_levels[p_i + 1])
+                )
         for la, lo in (
             tqdm(
                 itertools.product(lats[:-1], lons[:-1]),
@@ -624,21 +640,19 @@ def load_min_max_variance(
             if verbose
             else itertools.product(lats[:-1], lons[:-1])
         ):
-
+            idx_where_ll = (
+                (ds[lon_name] >= lo)
+                & (ds[lon_name] < lo + delta_lon)
+                & (ds[lat_name] >= la)
+                & (ds[lat_name] < la + delta_lat)
+            )
             if pressure_levels is not None and n_times > 1:
                 raise NotImplementedError(
                     "Integrating for specific time levels is not yet supported"
                 )
             elif pressure_levels is not None:
                 for p_i in range(n_press):
-                    idx_where = (
-                        (ds[lon_name] >= lo)
-                        & (ds[lon_name] < lo + delta_lon)
-                        & (ds[lat_name] >= la)
-                        & (ds[lat_name] < la + delta_lat)
-                        & (ds["pressure"] >= pressure_levels[p_i])
-                        & (ds["pressure"] < pressure_levels[p_i + 1])
-                    )
+                    idx_where = idx_where_ll & idx_where_p[p_i]
                     for v in variables:
                         if (
                             v[0] != "d"
@@ -664,40 +678,38 @@ def load_min_max_variance(
                                     np.nanmax(ds[v].where(idx_where).values),
                                 ]
                             )
-                        else:
-                            sens_idx = 0
-                            for id, s in zip(sens_model_state_ids, sens_model_states):
-                                ds_tmp = ds.sel({"Output_Parameter_ID": id})
-                                idx_where = (
-                                    (ds_tmp[lon_name] >= lo)
-                                    & (ds_tmp[lon_name] < lo + delta_lon)
-                                    & (ds_tmp[lat_name] >= la)
-                                    & (ds_tmp[lat_name] < la + delta_lat)
-                                    & (ds_tmp["pressure"] >= pressure_levels[p_i])
-                                    & (ds_tmp["pressure"] < pressure_levels[p_i + 1])
+                    if no_sens:
+                        continue
+                    sens_idx = 0
+                    for id, s in zip(sens_model_state_ids, sens_model_states):
+                        ds_tmp = ds.sel({"Output_Parameter_ID": id})
+                        for v in variables:
+                            if (
+                                v[0] != "d"
+                                or v == "deposition"
+                                or len(sens_model_states) == 1
+                            ):
+                                continue
+                            variance[v][sens_idx, 0, p_i, la_idx, lo_idx] += np.nansum(
+                                (
+                                    ds_tmp[v].where(idx_where)
+                                    - means[v][sens_idx, 0, p_i, la_idx, lo_idx]
                                 )
-                                variance[v][
-                                    sens_idx, 0, p_i, la_idx, lo_idx
-                                ] += np.nansum(
-                                    (
-                                        ds_tmp[v].where(idx_where)
-                                        - means[v][sens_idx, 0, p_i, la_idx, lo_idx]
-                                    )
-                                    ** 2
-                                )
-                                mins[v][sens_idx, 0, p_i, la_idx, lo_idx] = np.nanmin(
-                                    [
-                                        mins[v][sens_idx, 0, p_i, la_idx, lo_idx],
-                                        np.nanmin(ds_tmp[v].where(idx_where).values),
-                                    ]
-                                )
-                                maxs[v][sens_idx, 0, p_i, la_idx, lo_idx] = np.nanmax(
-                                    [
-                                        maxs[v][sens_idx, 0, p_i, la_idx, lo_idx],
-                                        np.nanmax(ds_tmp[v].where(idx_where).values),
-                                    ]
-                                )
-                                sens_idx += 1
+                                ** 2
+                            )
+                            mins[v][sens_idx, 0, p_i, la_idx, lo_idx] = np.nanmin(
+                                [
+                                    mins[v][sens_idx, 0, p_i, la_idx, lo_idx],
+                                    np.nanmin(ds_tmp[v].where(idx_where).values),
+                                ]
+                            )
+                            maxs[v][sens_idx, 0, p_i, la_idx, lo_idx] = np.nanmax(
+                                [
+                                    maxs[v][sens_idx, 0, p_i, la_idx, lo_idx],
+                                    np.nanmax(ds_tmp[v].where(idx_where).values),
+                                ]
+                            )
+                        sens_idx += 1
             elif time_levels is not None and n_times > 1:
                 raise NotImplementedError(
                     "Integrating for specific time levels is not yet supported"
@@ -726,36 +738,39 @@ def load_min_max_variance(
                                 np.nanmax(ds[v].where(idx_where).values),
                             ]
                         )
-                    else:
-                        sens_idx = 0
-                        for id, s in zip(sens_model_state_ids, sens_model_states):
-                            ds_tmp = ds.sel({"Output_Parameter_ID": id})
-                            idx_where = (
-                                (ds_tmp[lon_name] >= lo)
-                                & (ds_tmp[lon_name] < lo + delta_lon)
-                                & (ds_tmp[lat_name] >= la)
-                                & (ds_tmp[lat_name] < la + delta_lat)
+                if no_sens:
+                    continue
+
+                sens_idx = 0
+                for id, s in zip(sens_model_state_ids, sens_model_states):
+                    ds_tmp = ds.sel({"Output_Parameter_ID": id})
+                    for v in variables:
+                        if (
+                            v[0] != "d"
+                            or v == "deposition"
+                            or len(sens_model_states) == 1
+                        ):
+                            continue
+                        variance[v][sens_idx, la_idx, lo_idx] += np.nansum(
+                            (
+                                ds_tmp[v].where(idx_where)
+                                - means[v][sens_idx, la_idx, lo_idx]
                             )
-                            variance[v][sens_idx, la_idx, lo_idx] += np.nansum(
-                                (
-                                    ds_tmp[v].where(idx_where)
-                                    - means[v][sens_idx, la_idx, lo_idx]
-                                )
-                                ** 2
-                            )
-                            mins[v][sens_idx, la_idx, lo_idx] = np.nanmin(
-                                [
-                                    mins[v][sens_idx, la_idx, lo_idx],
-                                    np.nanmin(ds_tmp[v].where(idx_where).values),
-                                ]
-                            )
-                            maxs[v][sens_idx, la_idx, lo_idx] = np.nanmax(
-                                [
-                                    maxs[v][sens_idx, la_idx, lo_idx],
-                                    np.nanmax(ds_tmp[v].where(idx_where).values),
-                                ]
-                            )
-                            sens_idx += 1
+                            ** 2
+                        )
+                        mins[v][sens_idx, la_idx, lo_idx] = np.nanmin(
+                            [
+                                mins[v][sens_idx, la_idx, lo_idx],
+                                np.nanmin(ds_tmp[v].where(idx_where).values),
+                            ]
+                        )
+                        maxs[v][sens_idx, la_idx, lo_idx] = np.nanmax(
+                            [
+                                maxs[v][sens_idx, la_idx, lo_idx],
+                                np.nanmax(ds_tmp[v].where(idx_where).values),
+                            ]
+                        )
+                    sens_idx += 1
             lo_idx += 1
             if lo_idx == n_lons:
                 la_idx += 1
