@@ -6726,3 +6726,587 @@ def get_unit(param, brackets=False):
         return r"$ \mathrm{m}\,\mathrm{s}^{-1} $"
     else:
         return ""
+
+
+def top_to_table(top, caption, label):
+    """
+    Create either a latex table with model parameters and a description of those.
+    Or differentiate between sensitivities for different model state variables and
+    print the top parameters without description.
+    Or differentiate between different model state variables and phases but also
+    without description.
+
+    Parameters
+    ----------
+    top : Dict or set
+        Either a set of model parameter names for a table with descriptions
+        or a dictionary with keys the model state variable for a table with top
+        parameters for each model state variable or a keys with phases and model state
+        variable name for a distinction between different phases.
+    caption : string
+        Cpation to put in the table.
+    label : string
+        Label for the table.
+
+    Returns
+    -------
+        String that can be printed for a latex table.
+    """
+    if isinstance(top, set):
+        n = 0
+        for p in top:
+            parsed = parse_word(p).replace("\partial ", "")
+            if len(parsed) > n:
+                n = len(parsed)
+        table = """\
+\\bgroup
+\\def\\arraystretch{1.3} 
+\\begin{tabularx}{\\linewidth}{@{}l|X@{}}
+"""
+        table += f"\caption{{{caption}}}\\\\ \\hline\n"
+        tmp = "\\textbf{Model Parameter}"
+        table += f"{tmp} & \\textbf{{Description}} \\\\[6pt] \hline \n"
+        for p in top:
+            parsed = parse_word(p).replace("\partial ", "")
+            method = ""
+            for m in in_params_notation_mapping[p][4]:
+                method += f"{m}, "
+            method = method.replace("_", "\\_")
+            table += f"        {parsed:<{n}} & {in_params_notation_mapping[p][0]} ({method}) \\\\ \hline"
+            table += "\n"
+        table += f"    \\label{{{label}}}\n"
+        table += "\\end{tabularx}\n"
+        table += "\\egroup\n"
+        return table
+    elif isinstance(top, dict):
+        if "phase" in list(top.keys())[0]:
+            table = """\
+\\begin{table}[ht]
+    \centering
+    \\begin{tabular}{l|l|l}
+        """
+            tmp = "\\textbf{Model State Variable}"
+            tmp2 = "\\textbf{Phase}"
+            tmp3 = "\\textbf{{Top Parameters}}"
+            n = len(tmp)
+            n2 = len(tmp2)
+            n3 = len(tmp3)
+            for var in top:
+                var1_n = len(var.split("phase ")[1])
+                if var1_n > n:
+                    n = var1_n
+                phase = var.split("phase ")[0] + "phase"
+                if len(phase) > n3:
+                    n3 = len(phase)
+            table += f"{tmp:<{n}} & {tmp2:<{n2}} & {tmp3:<{n3}} \\\\ \hline \n"
+            for var in top:
+                var1 = var.split("phase ")[1]
+                table += f"        {parse_word(var1):<{n}} & "
+                phase = var.split("phase ")[0] + "phase"
+                table += f"{phase:<{n2}} & "
+                line = "$"
+                empty = " "
+                n_breaks = 1
+                for param in top[var]:
+                    line += f"{parse_word(param)}".replace(" $", "").replace("$", "")
+                    if len(line) > 100 * n_breaks and param != top[var][-1]:
+                        line += f"$ \\\\ \n{empty:<{n+8}} & {empty:<{n2}} & $ "
+                        n_breaks += 1.5
+                    else:
+                        line += ", "
+                table += line + "$ \\\\ \n"
+            table += "    \\end{tabular}\n"
+            table += f"    \\caption{{{caption}}}\n"
+            table += f"    \\label{{{label}}}\n"
+            table += "\\end{table}"
+            return table
+        else:
+            table = """\
+\\begin{table}[ht]
+    \centering
+    \\begin{tabular}{l|l}
+        """
+            tmp = "\\textbf{Model State Variable}"
+            tmp2 = "\\textbf{{Top Parameters}}"
+            n = len(tmp)
+            n2 = len(tmp2)
+            for var in top:
+                if len(parse_word(var)) > n:
+                    n = len(parse_word(var))
+
+            table += f"{tmp:<{n}} & {tmp2:<{n2}} \\\\ \hline \n"
+            for var in top:
+                table += f"        {parse_word(var):<{n}} & "
+                line = "$"
+                empty = " "
+                n_breaks = 1
+                for param in top[var]:
+                    line += f"{parse_word(param)}".replace(" $", "").replace("$", "")
+                    if len(line) > 100 * n_breaks and param != top[var][-1]:
+                        line += f"$ \\\\ \n{empty:<{n+8}} &  $ "
+                        n_breaks += 1.5
+                    else:
+                        line += ", "
+                table += line + "$ \\\\ \n"
+            table += "    \\end{tabular}\n"
+            table += f"    \\caption{{{caption}}}\n"
+            table += f"    \\label{{{label}}}\n"
+            table += "\\end{table}"
+            return table
+
+
+def create_rank_latex_table(ds, phase, flow):
+    """
+    Create multiple latex tables with median rank, median absolute deviation, mean rank, and standard deviation
+    for a given phase and flow.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Ranked index of each trajectory created by create_rank_traj_dataset().
+    phase : string
+        Name of the phase to use. Options are those in ds["phase"], which typically amounts to
+        "warm phase", "mixed phase", "ice phase", "any".
+    flow : string
+        Name of the 'flow' to use. Options are those in ds["flow"], which typically amounts to
+        "inflow", "ascent", "outflow", "any".
+
+    Returns
+    -------
+    Dictionary of raw strings (latex tables). The keys are the model state variables.
+    """
+    table_text = r"""
+    \begin{table}[ht]
+        \centering
+        \begin{tabular}{l|l|c|c|c|c}
+            \textbf{Model State Variable} & \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{MAD} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
+    """
+    ds2 = ds.sel({"phase": phase, "flow": flow})
+    for o_p in ds["Output Parameter"]:
+        ds_op = ds2.sel({"Output Parameter": o_p})
+        table_text += f"        {parse_word(o_p.item()):<25}& "
+        p_i = 0
+        for param in ds:
+            if not "rank" in param:
+                continue
+
+            ds_op2 = ds_op[param]
+            ds_op2 = ds_op2.where(ds_op2 > 0)
+            med = ds_op2.median().item()
+            if med > 10 and ds_op2.mean().item() > 10:
+                continue
+            if np.isnan(med):
+                continue
+            mad = ds_op2 - med
+            mad = mad.median().item()
+            if p_i > 0:
+                table_text += "                                 & "
+            p_i += 1
+            word = parse_word(param[:-5]).replace(r"\partial ", "")
+            table_text += f"{word:<40}& "
+            table_text += (
+                f"{int(med):2d} & {int(mad):2d} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}"
+                + r" \\"
+                + "\n"
+            )
+
+    table_text += r"""
+        \end{tabular}
+        \caption{"""
+    caption = "The median and median absolute deviation of the rank of each model parameter if we calculate the rank over all trajectories. Only those with median or mean lower than 11 are used."
+    if phase == "any":
+        caption += "Using any phase "
+    else:
+        caption += f"Using {phase} "
+    if flow == "any":
+        caption += "and inflow, outflow, and ascent."
+    else:
+        caption += f"and {flow}."
+    caption += f"Using {phase} phase and {flow} flow."
+    table_text += f"{caption}"
+    table_text += r"""}
+        \label{tab:analysis:rank_count}
+    \end{table}
+    """
+    return table_text
+
+
+def create_rank_latex_table_per_outp(ds, col, only_n=None):
+    """
+    Create multiple latex tables with the statistic defined in col. The table shows the statistic for any combination
+    of flow and phase. Each table is the impact on a different model state variable.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Ranked index of each trajectory created by create_rank_traj_dataset().
+    col : string
+        Define which statistic shall be shown. Options are "Median Rank", "Mean Rank", "MAD", "STD". If the
+        string is not recognized, it defaults to "STD".
+    only_n : int
+        Show only model parameters that have a rank lower than 'only_n'.
+
+    Returns
+    -------
+    Dictionary of raw strings (latex tables). The keys are the model state variables.
+    """
+    tables = {}
+    phases = ["warm phase", "mixed phase", "ice phase"]
+    flows = ["inflow", "ascent", "outflow"]
+    for o_p in ds["Output Parameter"]:
+        ds_op = ds.sel({"Output Parameter": o_p})
+
+        table_text = r"""
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{l|c|c|c}
+        \multirow{3}*{\textbf{{Parameter}}}     & \multicolumn{3}{c}{\textbf{"""
+        table_text += f"{col}"
+        table_text += r"""}} \\ \cline{2-4} 
+                                                & inflow & ascent & outflow \\ \cline{2-4} 
+                                                & wp, mp, ip & wp, mp, ip & wp, mp, ip \\ \hline
+"""
+        for param in ds:
+            if not "rank" in param:
+                continue
+            row_vals = "        "
+            word = parse_word(param[:-5]).replace(r"\partial ", "")
+            row_vals += f"{word:<40}& "
+            got_valid = False
+            for flow in flows:
+                ds_flow = ds_op.sel({"flow": flow})
+                for phase_i, phase in enumerate(phases):
+                    ds2 = ds_flow.sel({"phase": phase})
+                    ds_op2 = ds2[param]
+                    ds_op2 = ds_op2.where(ds_op2 > 0)
+                    if col == "Median Rank":
+                        val = ds_op2.median().item()
+                        if only_n is None:
+                            got_valid = True
+                        elif only_n >= val:
+                            got_valid = True
+                    elif col == "Mean Rank":
+                        val = ds_op2.mean().item()
+                        if only_n is None:
+                            got_valid = True
+                        elif only_n >= val:
+                            got_valid = True
+                    elif col == "MAD":
+                        got_valid = True
+                        med = ds_op2.median().item()
+                        diff = ds_op2 - med
+                        diff = np.sort(diff.values.flatten())
+                        diff = diff[~np.isnan(diff)]
+                        if len(diff) == 0:
+                            val = np.nan
+                        elif len(diff) % 2 == 0:
+                            val = (diff[len(diff) // 2] + diff[len(diff) // 2 - 1]) / 2
+                        else:
+                            val = diff[len(diff) // 2]
+                    else:
+                        val = ds_op2.std().item()
+
+                    if np.isnan(val):
+                        row_vals += " -"
+                    else:
+                        if col == "Median Rank":
+                            row_vals += f"{int(val):02d}"
+                        else:
+                            row_vals += f"{val:2.2f}"
+
+                    if phase_i < len(phases) - 1:
+                        row_vals += ", "
+                    elif flow != "outflow":
+                        row_vals += " & "
+            if got_valid:
+                table_text += row_vals + r" \\" + "\n"
+
+        table_text += r"""
+    \end{tabular}
+    \caption{"""
+        caption = "The median and median absolute deviation of the rank of each model parameter if we calculate the rank over all trajectories. "
+        caption += "Only those with median or mean lower than 11 are used. Distinction with different phases. "
+        caption += "wp = warm phase, mp = mixed phase, ip = ice phase. "
+        caption += f"Impact on {parse_word(o_p.item())} is used here."
+        table_text += f"{caption}"
+        table_text += r"""}
+            \label{tab:analysis:rank_count_variations_"""
+        table_text += f"{o_p.item()}"
+        table_text += """}
+\end{table}
+        """
+        tables[o_p.item()] = table_text
+    return tables
+
+
+def print_latex_tables(ds, top=10, verbose=True):
+    """
+    Create a string to use in latex for the top n (='top') parameters for each model state variable.
+    A model parameter is listed only for the model state variable where the sensitivity is the highest.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Final, post-processed dataset with mean squared deviation and  predicted mean squared deviation.
+    out_params : list-like of strings
+        The model state variables for which sensitivities have been calculated for.
+    top : int
+        The number of top parameters to print a table for.
+    verbose : Bool
+        If True: print the parameters while building the table.
+
+    Returns
+    -------
+    sort_key_list: a sorted list of (predicted squared error, model parameter, model state variable,
+    string of a row for model parameters in latex) which is sorted by the name of the model state variable.
+    table_dic: Dictionary with keys = model parameters where the value is a string of a row of the latex table.
+    printed statements as string.
+    """
+    text = "\nBuild Latex tables\n"
+    print(text)
+    tmp_df = (
+        ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
+        .to_dataframe()
+        .reset_index()
+    )
+
+    table_dic = {}
+    sort_key_list = []
+
+    latexify_state = {
+        "QV": r"\frac{\partial Q_\vapor}{",
+        "QC": r"\frac{\partial Q_\cloud}{",
+        "QR": r"\frac{\partial Q_\rain}{",
+        "QG": r"\frac{\partial Q_\graupel}{",
+        "QH": r"\frac{\partial Q_\hail}{",
+        "QI": r"\frac{\partial Q_\ice}{",
+        "QS": r"\frac{\partial Q_\snow}{",
+        "NCCLOUD": r"\frac{\partial N_\cloud}{",
+        "NCRAIN": r"\frac{\partial N_\rain}{",
+        "NCGRAUPEL": r"\frac{\partial N_\graupel}{",
+        "NCHAIL": r"\frac{\partial N_\hail}{",
+        "NCICE": r"\frac{\partial N_\ice}{",
+        "NCSNOW": r"\frac{\partial N_\snow}{",
+        "QR_OUT": r"\frac{\partial Q_{\rain, \text{out}}}{",
+        "QG_OUT": r"\frac{\partial Q_{\graupel, \text{out}}}{",
+        "QH_OUT": r"\frac{\partial Q_{\hail, \text{out}}}{",
+        "QI_OUT": r"\frac{\partial Q_{\ice, \text{out}}}{",
+        "QS_OUT": r"\frac{\partial Q_{\snow, \text{out}}}{",
+        "NR_OUT": r"\frac{\partial N_{\rain, \text{out}}}{",
+        "NG_OUT": r"\frac{\partial N_{\graupel, \text{out}}}{",
+        "NH_OUT": r"\frac{\partial N_{\hail, \text{out}}}{",
+        "NI_OUT": r"\frac{\partial N_{\ice, \text{out}}}{",
+        "NS_OUT": r"\frac{\partial N_{\snow, \text{out}}}{",
+    }
+
+    top_10_table = "\\begin{table}[hbt] \n \t\\centering \n \t\\begin{tabular}{ll}"
+    top_10_table += "\n \t\t\\textbf{Model State Variable} \t& \\textbf{Top 10 Parameters} \\\\ \\hline \n"
+    sedi_latex = ""
+    sedi_started = False
+    long_table_dic = {}
+
+    for out_p in latexify_state.keys():
+        if "OUT" in out_p:
+            if sedi_started:
+                sedi_latex = sedi_latex[:-2] + "$ \\\\ \n\t\t\t\t\t\t & $ "
+            else:
+                sedi_latex = "\t\t Sedimentation \t& $ "
+                sedi_started = True
+        else:
+            top_10_table += "\t\t" + latexify.parse_word(out_p) + "\t& $ "
+        if verbose:
+            print(f"########################### {out_p} ########################")
+        df = tmp_df.loc[tmp_df["Output Parameter"] == out_p]
+        # Ignore parameters that never appeared in unperturbed versions
+        if np.max(df["Predicted Squared Error"]) == 0:
+            continue
+        if verbose:
+            print("sort by sensitivity")
+            print(
+                df.nlargest(top, "Predicted Squared Error")[
+                    ["Input Parameter", "Predicted Squared Error", "Mean Squared Error"]
+                ]
+            )
+        tmp = df.nlargest(top, "Predicted Squared Error")[
+            ["Input Parameter", "Predicted Squared Error", "Mean Squared Error"]
+        ]
+        i = 0
+        for idx, row in tmp.iterrows():
+            if i == 5:
+                if "OUT" in out_p:
+                    sedi_latex = sedi_latex[:-2] + "$ \\\\ \n\t\t\t\t\t\t & $ "
+                else:
+                    top_10_table = top_10_table[:-2] + "$ \\\\ \n\t\t\t\t\t\t & $ "
+            i += 1
+            if "OUT" in out_p:
+                sedi_latex += (
+                    latexify.parse_word(row["Input Parameter"])
+                    .replace("$", "")
+                    .replace("\partial", "")
+                    + ", "
+                )
+            else:
+                top_10_table += (
+                    latexify.parse_word(row["Input Parameter"])
+                    .replace("$", "")
+                    .replace("\partial", "")
+                    + ", "
+                )
+            found = False
+            for val, param, state_var, l_string in sort_key_list:
+                if param == row["Input Parameter"] and (
+                    val < row["Predicted Squared Error"]
+                    or ("N" in state_var and "N" not in out_p)
+                ):
+                    if "N" not in state_var and "N" in out_p:
+                        break
+
+                    found = True
+                    if verbose:
+                        print(f"Replace ({val}, {param}, {state_var})")
+                        print(f"With (")
+                        print(row["Predicted Squared Error"], end=", ")
+                        print(row["Input Parameter"], end=", ")
+                        print(out_p, end=")\n")
+
+                    sort_key_list.remove((val, param, state_var, l_string))
+                    break
+
+            if row["Input Parameter"] not in table_dic or found:
+
+                group = None
+                for g in latexify.in_params_grouping:
+                    if row["Input Parameter"] in latexify.in_params_grouping[g]:
+                        group = g
+
+                def latex_my_number(x):
+                    if x == 0:
+                        return "$ 0.00 $"
+                    if x >= 100:
+                        exponent = int(np.log10(x))
+                        var = x / 10 ** exponent
+                        return f"$ {var:2.2f} \\times 10^{ {exponent} } $"
+                    elif x < 0.01:
+                        exponent = math.floor(np.log10(x))
+                        var = x * 10 ** (-exponent)
+                        return f"$ {var:2.2f} \\times 10^{ {exponent} } $"
+                    else:
+                        err = row["Predicted Squared Error"]
+                        return f"$ {err:2.2f} $"
+
+                long_string = (
+                    latexify.parse_word(row["Input Parameter"]).replace("\partial", "")
+                    + " & "
+                    + latex_my_number(row["Mean Squared Error"])
+                    + " & "
+                    + latex_my_number(row["Predicted Squared Error"])
+                    + " & "
+                    + "\\textbf{"
+                    + group.title()
+                    + "}: "
+                    + latexify.in_params_descr_dic[row["Input Parameter"]]
+                    + " \\\\ "
+                )
+                if out_p not in long_table_dic:
+                    long_table_dic[out_p] = [long_string]
+                else:
+                    long_table_dic[out_p].append(long_string)
+                sort_key_list.append(
+                    (
+                        row["Predicted Squared Error"],
+                        row["Input Parameter"],
+                        out_p,
+                        long_string,
+                    )
+                )
+
+                table_dic[row["Input Parameter"]] = (
+                    "$ \displaystyle "
+                    + latexify_state[out_p]
+                    + latexify.parse_word(row["Input Parameter"]).replace("$", "")
+                    + r"} $ & "
+                    + latex_my_number(row["Mean Squared Error"])
+                    + " & "
+                    + latex_my_number(row["Predicted Squared Error"])
+                    + " & "
+                    + "\\textbf{"
+                    + group.title()
+                    + "}: "
+                    + latexify.in_params_descr_dic[row["Input Parameter"]]
+                    + " \\\\ "
+                )
+        if "OUT" not in out_p:
+            top_10_table = top_10_table[:-2] + " $ \\\\ \n"
+        if verbose:
+            print(f"sort by Predicted Squared Error")
+            print(
+                df.nlargest(top, "Predicted Squared Error")[
+                    ["Input Parameter", "Predicted Squared Error", "Mean Squared Error"]
+                ]
+            )
+
+    top_10_table += sedi_latex[:-2] + " $ \\\\"
+    top_10_table += "\n\t\\end{tabular} \n \t\\caption{} \n"
+    top_10_table += "\t\\label{tab:} \n \\end{table} \n"
+    text += "\nThe table of top 10 parameters for each state variable:\n"
+    text += top_10_table
+    print("\nThe table of top 10 parameters for each state variable:\n")
+    print(top_10_table)
+
+    if verbose:
+        print(f"There are {len(table_dic)} different input parameters")
+
+    text += "\nAppendix table of top parameters\n"
+    print("\nAppendix table of top parameters\n")
+    tmp_sort = sorted(sort_key_list, key=lambda x: (x[2], x[0]), reverse=True)
+    sort_dic_long_table = {}
+    sort_dic_short_table = {}
+    for sens, key, state_variable, l_string in tmp_sort:
+        if "_OUT" in state_variable:
+            state_variable2 = "Sedimentation"
+        else:
+            state_variable2 = state_variable
+        if state_variable not in sort_dic_long_table:
+            sort_dic_long_table[state_variable] = [(sens, key, l_string)]
+        else:
+            sort_dic_long_table[state_variable].append((sens, key, l_string))
+
+        if state_variable2 not in sort_dic_short_table:
+            sort_dic_short_table[state_variable2] = [(sens, key, l_string)]
+        else:
+            sort_dic_short_table[state_variable2].append((sens, key, l_string))
+    table_text = "\\bgroup\n"
+    table_text += "\\def\\arraystretch{1.2} %  1 is the default, we want it slightly larger such that exponents are easier to read\n"
+    table_text += "\\begin{tabularx}{\\linewidth}{@{}lccX@{}}\n"
+    table_text += "\t\\textbf{Model Param.}  & \\textbf{MSD} & \\textbf{Predicted MSD} & \\textbf{Parameter Description}\n"
+    table_text += "\t\\endhead\n"
+    i = 0
+    for state_variable in latexify_state.keys():
+        if state_variable not in sort_dic_long_table:
+            continue
+        table_text += (
+            "\t\t\\hline \\multicolumn{4}{c}{"
+            + latexify.parse_word(state_variable).title()
+            + "}\t \\\\ \\hline\n"
+        )
+        for _, _, s in sort_dic_long_table[state_variable]:
+            table_text += "\t\t"
+            table_text += f"{s}"
+            i += 1
+    table_text += "\t"
+    top_str = "ten"
+    if top != 10:
+        top_str = str(top)
+    table_text += (
+        r"\caption{This is the set of parameters if we gather the "
+        + top_str
+        + r" most important ones for each model state variable. The predicted MSD is defined in Equation~\ref{eq:identification:msd_predict}, where we only show the highest predicted MSD among all mass densities unless the parameter did not have an impact on mass densities. In that case, the predicted deviation on number density and precipitation is considered. There are $ "
+        + str(i)
+        + r" $ different parameters in total.}"
+    )
+    table_text += "\t\\label{tab:important_params}\n"
+    table_text += "\\end{tabularx}\n"
+    table_text += "\\egroup\n"
+    text += table_text
+    print(table_text)
+    return sort_key_list, table_dic, text
