@@ -428,6 +428,7 @@ mappings = {
     "decoll_min": r"$ \partial e_{\mathrm{coll}, \mathrm{min}} $",
     "decoll_gg": r"$ \partial e_{\mathrm{gg}} $",
     "decoll_gg_wet": r"$ \partial e_{\mathrm{gg}, \mathrm{wet}} $",
+    "dhande_ccn_fac": r"$ \partial \mathrm{fac}_{\mathrm{ccn}} $",
 }
 
 

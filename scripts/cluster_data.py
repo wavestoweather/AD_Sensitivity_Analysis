@@ -772,13 +772,14 @@ def plot_cluster_data_interactive(data, reduce_name=""):
 def get_traj_near_center(data, x, n=1):
     """
     Extract the number and filenames for trajectories closest to the cluster centers.
+    Does not normalize data for distance calculation.
 
     Parameters
     ----------
     data : pandas.DataFrame
         DataFrame with clusters from 'get_cluster()'.
-    x : string
-        Variable that has been used for calculating the clusters. Usually starts with 'avg '.
+    x : string or list of strings
+        Variable(s) that has been used for calculating the clusters. Usually starts with 'avg '.
     n : int
         The number of trajectories to extract for each cluster center.
 
@@ -788,11 +789,25 @@ def get_traj_near_center(data, x, n=1):
     """
     centers = []
     for cluster in np.unique(data["cluster"]):
-        centers.append(np.mean(data.loc[data["cluster"] == cluster][x]))
+        if isinstance(x, str):
+            centers.append(np.mean(data.loc[data["cluster"] == cluster][x]))
+        else:
+            centers_tmp = []
+            for col in x:
+                centers_tmp.append(np.mean(data.loc[data["cluster"] == cluster][col]))
+            centers.append(centers_tmp)
     traj_centers = []
     for center in centers:
-        idx = (np.abs(data[x] - center)).argsort()[:n]
-        traj_centers.append(data.iloc[idx])
+        if isinstance(x, str):
+            idx = (np.abs(data[x] - center)).argsort()[:n]
+            traj_centers.append(data.iloc[idx])
+        else:
+            distance = np.power(data[x[0]] - center[0], 2)
+            for i in range(1, len(center)):
+                distance += np.power(data[x[i]] - center[i], 2)
+            distance = np.sqrt(distance)
+            idx = distance.argsort()[:n]
+            traj_centers.append(data.iloc[idx])
     return traj_centers
 
 
@@ -848,7 +863,10 @@ def extract_trajs(
             tmp_max = ds["time"].max()
             if max_time is None or max_time < tmp_max:
                 max_time = tmp_max
-
+    if verbose:
+        print(
+            "For each center, get all the trajectories and merge them into one dataset."
+        )
     for center_df in tqdm(centers) if verbose else centers:
         data_arrays = []
         for idx, row in (
@@ -859,6 +877,8 @@ def extract_trajs(
             traj = row["trajectory"]
             f = row["file"]
             ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+            print(ds["time_after_ascent"].attrs)
+            print(ds["ensemble"].attrs)
             ds = ds.sel({"trajectory": [traj]})
             if inoutflow_time > 0:
                 ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
@@ -894,6 +914,8 @@ def extract_trajs(
             ds["trajectory"].attrs = traj_attrs
             ds["ensemble"].attrs = ens_attrs
             ds["time"].attrs = time_attrs
+            print(ds["time_after_ascent"].attrs)
+            print(ds["ensemble"].attrs)
             weird_lon = np.count_nonzero(ds["lon"] == 0)
             weird_lat = np.count_nonzero(ds["lat"] == 0)
             # A rare bug can happen where a single lat or lon is set to zero inbetween valid values
@@ -956,9 +978,14 @@ def extract_trajs(
                         time=np.arange(min_time, tmp_min, 30),
                     ),
                 )
+                print("tmp_min")
+                print(tmp_set["time_after_ascent"].attrs)
+                print(tmp_set["ensemble"].attrs)
                 ds = xr.concat(
                     [ds, tmp_set], join="outer", dim="time", combine_attrs="override"
                 )
+                print(ds["time_after_ascent"].attrs)
+                print(ds["ensemble"].attrs)
                 # ds["cluster"] = ds["cluster"].where(~np.isnan(ds["pressure"]))
             elif tmp_max < max_time:
                 variables = {}
@@ -990,9 +1017,15 @@ def extract_trajs(
                         time=np.arange(tmp_max + 30, max_time + 20, 30),
                     ),
                 )
+                print("tmp_max")
+                print(tmp_set["time_after_ascent"].attrs)
+                print(tmp_set["ensemble"].attrs)
                 ds = xr.concat(
                     [ds, tmp_set], join="outer", dim="time", combine_attrs="override"
                 )
+                print(ds["time_after_ascent"].attrs)
+                print(ds["ensemble"].attrs)
+                print("#######################################")
                 # ds["cluster"] = ds["cluster"].where(~np.isnan(ds["pressure"]))
 
             if ds["time"].dtype == np.float64:
@@ -1011,7 +1044,11 @@ def extract_trajs(
     if verbose:
         print("Concatenating the final list")
     ds = xr.concat(ds_list, dim="trajectory", join="outer", combine_attrs="override")
+    print(ds["time_after_ascent"].attrs)
+    print(ds["ensemble"].attrs)
     ds["cluster"] = ds["cluster"].where(~np.isnan(ds["pressure"]))
+    print(ds["time_after_ascent"].attrs)
+    print(ds["ensemble"].attrs)
     if traj_abs:
         for col in ds:
             ds[col] = np.abs(ds[col])

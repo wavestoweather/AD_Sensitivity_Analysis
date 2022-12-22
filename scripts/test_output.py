@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from tqdm.auto import tqdm
 import xarray as xr
 
 from physics_t import physics_t
-
-from tqdm import tqdm
+from latexify import param_id_map
 
 ColourReset = "\033[0m"
 Warning = "\033[93m"
@@ -414,6 +414,7 @@ def test_phases(ds, recalc):
     ALso prints the percentage and number of time steps for each phase over all trajectories.
     Calculates the phases if necessary.
     If recalc is false, tests if the phases are correct.
+    This test is only correct if the simulation did not use sedimentation from above.
 
     Parameters
     ----------
@@ -755,6 +756,99 @@ def test_ccn_act_akm(physics, w, T, qv, qc, verbose=False):
     return err
 
 
+def test_sensitivities(ds, threshold, verbosity):
+    """
+    Test if there are time steps and model parameters with too large sensitivities. Uses the absolute value
+    to check for size.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset with trajectory data from a sensitivity simulation.
+    threshold : float
+        The threshold at which a sensitivity is considered too large.
+    verbosity : verbosity
+        0: print only results.
+        >=3: print errors for each model state variable w.r.t. each model parameter.
+        >=4: print the trajectory at which the large sensitivities occurred.
+        5: print minimum, maximum, mean, and median sensitivities.
+
+    Returns
+    -------
+    Number of model parameters for each model state variables with large sensitivities.
+    """
+    if verbosity >= 4:
+        print("~*~*~*~Testing sensitivities in each trajectory~*~*~*~")
+    else:
+        print("~*~*~*~Testing sensitivities~*~*~*~")
+    err = 0
+    err_total = 0
+    n_traj = len(ds["trajectory"])
+    n_ens = len(ds["ensemble"])
+    n_steps = len(ds["trajectory"]) * len(ds["time"]) * n_ens
+    n_params = 0
+    out_coord = "Output_Parameter_ID"
+    if out_coord not in ds:
+        out_coord = "Output Parameter"
+    for out_p in ds[out_coord]:
+        if out_coord == "Output Parameter":
+            out_name = out_p.item()
+        else:
+            out_name = param_id_map[out_p.item()]
+        if out_name[0] == "N":
+            continue
+        ds_tmp = ds.sel({out_coord: out_p})
+        for col in ds:
+            if col[0] != "d" or col == "deposition":
+                continue
+            n_params += 1
+            if verbosity >= 5:
+                min_val = np.nanmin(ds_tmp[col])
+                max_val = np.nanmax(ds_tmp[col])
+                mean_val = np.nanmean(ds_tmp[col])
+                median_val = np.nanmedian(ds_tmp[col])
+                print(
+                    f"{Status}d{out_name}/{col}: {min_val}, {max_val}, {mean_val}, {median_val}{ColourReset}"
+                )
+            if verbosity >= 4:
+                already_error = False
+                for traj in np.arange(n_traj):
+                    ds_tmp2 = ds_tmp.isel({"trajectory": traj})
+                    masked_greater = np.ma.masked_greater(
+                        np.abs(ds_tmp2[col]), threshold, copy=False
+                    )
+                    error = np.sum(masked_greater.mask)
+                    err_total += error
+                    if error > 0:
+                        print(
+                            f"{Warning}d{out_name}/{col}, traj {traj}: too big sensitivities: {error} or {error*100/n_steps:2.2f}% of the time{ColourReset}"
+                        )
+                    if error > 0 and not already_error:
+                        err += 1
+                        already_error = True
+            else:
+                masked_greater = np.ma.masked_greater(
+                    np.abs(ds_tmp[col]), threshold, copy=False
+                )
+                error = np.sum(masked_greater.mask)
+                err_total += error
+                if error > 0 and verbosity >= 3:
+                    print(
+                        f"{Warning}d{out_name}/{col}: too big sensitivities: {error} or {error*100/n_steps:2.2f}% of the time{ColourReset}"
+                    )
+                if error > 0:
+                    err += 1
+    if err > 0:
+        print(
+            f"{Error}Failed: Too large sensitivities detected for {err} model parameters. Error rate of {n_steps*err_total/n_params*100:2.2f}.{ColourReset}\n"
+        )
+    else:
+        print(
+            f"{Success}No large sensitivities for all model parameters detected.{ColourReset}\n"
+        )
+    return err
+
+
 if __name__ == "__main__":
     import argparse
     import textwrap
@@ -896,6 +990,16 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--test_sensitivities",
+        action="store_true",
+        help=textwrap.dedent(
+            """\
+            Test if any sensitivity has extremely large values excluding any number concentration sensitivities. 
+            Prints the minimum, maximum, and mean sensitivities, if verbosity is set to 5. 
+            """
+        ),
+    )
+    parser.add_argument(
         "--verbosity",
         type=int,
         default=0,
@@ -906,9 +1010,12 @@ if __name__ == "__main__":
             hydrometeor sizes and which variables are being plotted (if any).
             Verbosity 2 prints in addition each error in the NaN test for
             dimensions. Verbosity 3 prints in addition the amount of non-physical
-            hydrometeor sizes even if those are below the given threshold. Verbosity 4
-            prints in addition each error in the NaN test for variables (columns).
-            Verbosity 5 prints every error for the physics tests.
+            hydrometeor sizes even if those are below the given threshold. 
+            Prints the amount of time steps with too big sensitivities in sensitivity tests. 
+            Verbosity 4 prints in addition each error in the NaN test for variables (columns).
+             Prints the trajectory where large sensitivities occurr in sensitivity tests.
+            Verbosity 5 prints every error for the physics tests and minimum, maximum, mean, and median sensitivities in
+            the sensitivity test.
             """
         ),
     )
@@ -931,6 +1038,8 @@ if __name__ == "__main__":
             errors += err_traj
         if args.test_phases:
             errors += test_phases(ds, args.calc_phases)
+        if args.test_sensitivities:
+            errors += test_sensitivities(ds, 10.0, args.verbosity)
         return errors
 
     if args.input is not None:

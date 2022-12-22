@@ -336,8 +336,9 @@ inline float_t latent_heat_water_supercooled(float_t T, float_t M_w) {
 
 
 /**
- * Latent heat of vaporization of liquid water in
- * \f$ \text{J}/\text{kg} \f$.
+ * Latent heat of vaporization of liquid water over specific heat at constant volume in
+ * \f$ \text{K} \text{kg}/\text{kg} \f$.
+ * Useful to directly calculate the temperature difference from evaporation of a given specific mass.
  *
  * @param T Temperature in Kelvin
  * @param L_wd Latent heat of evaporation of water (water->vapor)
@@ -346,7 +347,7 @@ inline float_t latent_heat_water_supercooled(float_t T, float_t M_w) {
  * @param T_freeze Lower temperature threshold for raindrop freezing
  * @param R_v  Gas constant for water vapor, unit in \f$\text{J}/\text{K}/\text{kg}\f$
  * @param R_a Gas constant for dry air, unit: \f$\text{J}/\text{K}/\text{kg}\f$
- * @return Latent heat
+ * @return Latent heat over specific heat at constant volume
  */
 template <class float_t>
 inline float_t latent_heat_water(
