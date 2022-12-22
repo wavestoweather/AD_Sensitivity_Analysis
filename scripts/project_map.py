@@ -277,6 +277,12 @@ def load_counts_means(
                 sums[v] = np.zeros(var_shapes)
             else:
                 sums[v] = np.zeros(sens_shapes)
+    no_sens = True
+    for v in variables:
+        if v[0] != "d" or v == "deposition" or len(sens_model_states) == 1:
+            continue
+        else:
+            no_sens = False
 
     if verbose:
         print(
@@ -348,6 +354,12 @@ def load_counts_means(
             if verbose
             else itertools.product(lats[:-1], lons[:-1])
         ):
+            idx_where_ll = (
+                (ds[lon_name] >= lo)
+                & (ds[lon_name] < lo + delta_lon)
+                & (ds[lat_name] >= la)
+                & (ds[lat_name] < la + delta_lat)
+            )
             if pressure_levels is not None and n_times > 1:
                 raise NotImplementedError(
                     "Integrating for specific time levels is not yet supported"
@@ -355,10 +367,7 @@ def load_counts_means(
             elif pressure_levels is not None:
                 for p_i in range(n_press):
                     idx_where = (
-                        (ds[lon_name] >= lo)
-                        & (ds[lon_name] < lo + delta_lon)
-                        & (ds[lat_name] >= la)
-                        & (ds[lat_name] < la + delta_lat)
+                        idx_where_ll
                         & (ds["pressure"] >= pressure_levels[p_i])
                         & (ds["pressure"] < pressure_levels[p_i + 1])
                     )
@@ -371,22 +380,24 @@ def load_counts_means(
                             sums[v][0, p_i, la_idx, lo_idx] += np.nansum(
                                 ds[v].where(idx_where)
                             )
-                        else:
-                            sens_idx = 0
-                            for id, s in zip(sens_model_state_ids, sens_model_states):
-                                ds_tmp = ds.sel({"Output_Parameter_ID": id})
-                                idx_where = (
-                                    (ds_tmp[lon_name] >= lo)
-                                    & (ds_tmp[lon_name] < lo + delta_lon)
-                                    & (ds_tmp[lat_name] >= la)
-                                    & (ds_tmp[lat_name] < la + delta_lat)
-                                    & (ds_tmp["pressure"] >= pressure_levels[p_i])
-                                    & (ds_tmp["pressure"] < pressure_levels[p_i + 1])
-                                )
-                                sums[v][sens_idx, 0, p_i, la_idx, lo_idx] += np.nansum(
-                                    ds_tmp[v].where(idx_where)
-                                )
-                                sens_idx += 1
+
+                    if no_sens:
+                        continue
+                    sens_idx = 0
+                    for id, s in zip(sens_model_state_ids, sens_model_states):
+                        ds_tmp = ds.sel({"Output_Parameter_ID": id})
+                        for v in variables:
+                            if (
+                                v[0] != "d"
+                                or v == "deposition"
+                                or len(sens_model_states) == 1
+                            ):
+                                continue
+
+                            sums[v][sens_idx, 0, p_i, la_idx, lo_idx] += np.nansum(
+                                ds_tmp[v].where(idx_where)
+                            )
+                        sens_idx += 1
 
             elif time_levels is not None and n_times > 1:
                 raise NotImplementedError(
@@ -402,20 +413,23 @@ def load_counts_means(
                 for v in variables:
                     if v[0] != "d" or v == "deposition" or len(sens_model_states) == 1:
                         sums[v][la_idx, lo_idx] += np.nansum(ds[v].where(idx_where))
-                    else:
-                        sens_idx = 0
-                        for id, s in zip(sens_model_state_ids, sens_model_states):
-                            ds_tmp = ds.sel({"Output_Parameter_ID": id})
-                            idx_where = (
-                                (ds_tmp[lon_name] >= lo)
-                                & (ds_tmp[lon_name] < lo + delta_lon)
-                                & (ds_tmp[lat_name] >= la)
-                                & (ds_tmp[lat_name] < la + delta_lat)
-                            )
-                            sums[v][sens_idx, la_idx, lo_idx] += np.nansum(
-                                ds_tmp[v].where(idx_where)
-                            )
-                            sens_idx += 1
+
+                if no_sens:
+                    continue
+                sens_idx = 0
+                for id, s in zip(sens_model_state_ids, sens_model_states):
+                    ds_tmp = ds.sel({"Output_Parameter_ID": id})
+                    for v in variables:
+                        if (
+                            v[0] != "d"
+                            or v == "deposition"
+                            or len(sens_model_states) == 1
+                        ):
+                            continue
+                        sums[v][sens_idx, la_idx, lo_idx] += np.nansum(
+                            ds_tmp[v].where(idx_where)
+                        )
+                    sens_idx += 1
             lo_idx += 1
             if lo_idx == n_lons:
                 la_idx += 1
