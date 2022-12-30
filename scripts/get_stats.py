@@ -2040,6 +2040,7 @@ def get_edges(
     param_name,
     additional_params,
     n_bins,
+    log=False,
     verbose=False,
 ):
     """
@@ -2060,6 +2061,8 @@ def get_edges(
         List of additional model state variables to get edges for.
     n_bins : int
         Number of bins.
+    log : bool
+        Use log-scale for the edges.
     verbose : bool
         More progressbars.
 
@@ -2087,11 +2090,27 @@ def get_edges(
             delta = (
                 min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
             ) / (n_bins - 2)
-            edges_in_params[out_p][in_p] = np.arange(
-                min_max_in_params[out_p][in_p][0] - delta,
-                min_max_in_params[out_p][in_p][1] + 0.5 * delta,
-                delta,
-            )
+            if log:
+                start = min_max_in_params[out_p][in_p][0] - delta
+                stop = min_max_in_params[out_p][in_p][1]
+                if start >= 0:
+                    offset = 0
+                else:
+                    offset = start * 2
+
+                edges_in_params[out_p][in_p] = np.logspace(
+                    np.log10(np.abs(start)),
+                    np.log10(np.abs(stop - offset)),
+                    n_bins,
+                )
+                if start < 0:
+                    edges_in_params[out_p][in_p] += offset
+            else:
+                edges_in_params[out_p][in_p] = np.arange(
+                    min_max_in_params[out_p][in_p][0] - delta,
+                    min_max_in_params[out_p][in_p][1] + 0.5 * delta,
+                    delta,
+                )
     if additional_params is not None:
         for out_p in (
             tqdm(additional_params, leave=False) if verbose else additional_params
@@ -2099,9 +2118,24 @@ def get_edges(
             if min_max[out_p][0] == min_max[out_p][1] or np.isnan(min_max[out_p][0]):
                 continue
             delta = (min_max[out_p][1] - min_max[out_p][0]) / (n_bins - 2)
-            edges[out_p] = np.arange(
-                min_max[out_p][0] - delta, min_max[out_p][1] + 0.5 * delta, delta
-            )
+            if log:
+                start = min_max[out_p][0] - delta
+                stop = min_max[out_p][1]
+                if start >= 0:
+                    offset = 0
+                else:
+                    offset = start * 2
+                edges[out_p] = np.logspace(
+                    np.log10(np.abs(start)),
+                    np.log10(np.abs(stop - offset)),
+                    n_bins,
+                )
+                if start < 0:
+                    edges[out_p] += offset
+            else:
+                edges[out_p] = np.arange(
+                    min_max[out_p][0] - delta, min_max[out_p][1] + 0.5 * delta, delta
+                )
     return edges, edges_in_params
 
 
@@ -2116,6 +2150,7 @@ def get_histogram(
     inoutflow_time=-1,
     filter_mag=None,
     means=None,
+    log=False,
     verbose=False,
 ):
     """
@@ -2147,6 +2182,8 @@ def get_histogram(
         than the mean.
     means : Dictionary of floats
         Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter). Only needed for filtering data.
+    log : bool
+        Use log-scale for the edges.
     verbose : bool
         Additional progressbars.
 
@@ -2275,6 +2312,7 @@ def get_histogram(
         param_name=param_name,
         additional_params=additional_params,
         n_bins=n_bins,
+        log=log,
         verbose=verbose,
     )
 
@@ -2344,6 +2382,7 @@ def get_histogram_cond(
     inoutflow_time=-1,
     filter_mag=None,
     means=None,
+    log=False,
     verbose=False,
 ):
     """
@@ -2379,6 +2418,8 @@ def get_histogram_cond(
         than the mean.
     means : Dictionary of floats
         Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter). Only needed for filtering data.
+    log : bool
+        Use log-scale for the edges.
     verbose : bool
         Additional progressbars.
 
@@ -2507,6 +2548,7 @@ def get_histogram_cond(
         param_name=param_name,
         additional_params=additional_params,
         n_bins=n_bins,
+        log=log,
         verbose=verbose,
     )
 
@@ -3264,6 +3306,7 @@ def get_cov_matrix(
             f=file_path + f,
             only_asc600=only_asc600,
             inoutflow_time=inoutflow_time,
+            load_params=all_params,
         )
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
@@ -3287,11 +3330,13 @@ def get_cov_matrix(
                     means[out_name][p] = means_tmp[p].values.item()
 
     n_total = {out_p: {p: 0.0 for p in all_params} for out_p in param_name}
+    more_info = ""
     for f in tqdm(files):
         ds = load_ds(
             f=file_path + f,
             only_asc600=only_asc600,
             inoutflow_time=inoutflow_time,
+            load_params=all_params,
         )
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
@@ -3312,6 +3357,15 @@ def get_cov_matrix(
                                 cov[out_name][i, i2] * n_total[out_name][p] / n_new
                                 + cov_tmp * n_add / n_new
                             )
+                            if (
+                                p == "dg_ccn_1"
+                                and p2 == "dg_ccn_1"
+                                and out_name == "QV"
+                                and cov_tmp > 1e-16
+                            ):
+                                more_info += f"{p}, {p2}: {n_new}, {n_add}, {cov[out_name][i, i2]}, {cov_tmp}, {n_total[out_name][p]}; means {np.nanmean(ds_tmp[p].values)} - {means[out_name][p]}; max {np.nanmax(ds_tmp[p].values - means[out_name][p])}; min {np.nanmin(ds_tmp[p].values - means[out_name][p])}\n"
+                                more_info += f"{f}\n"
+                                # print(f"{p}, {p2}: {n_new}, {cov[out_name][i, i2]}, {cov_tmp}, {n_total[out_name][p]}")
                         n_total[out_name][p] = n_new
                 else:
                     n_new = count_tmp[p].values.item() + n_total[out_name][p]
@@ -3321,13 +3375,21 @@ def get_cov_matrix(
                                 (ds_tmp[p].values - means[out_name][p])
                                 * (ds_tmp[p2].values - means[out_name][p2])
                             )
+                            if (
+                                p == "dg_ccn_1"
+                                and p2 == "dg_ccn_1"
+                                and out_name == "QV"
+                            ):
+                                more_info += f"(2) {p}, {p2}: {n_new}, {cov[out_name][i, i2]}, {n_total[out_name][p]}; means {np.nanmean(ds_tmp[p].values)} - {means[out_name][p]}; min {np.nanmin(ds_tmp[p].values)}\n"
+                                # print(f"(2) {p}, {p2}: {n_new}, {cov[out_name][i, i2]}, {n_total[out_name][p]}")
                         n_total[out_name][p] = n_new
+
     if store_path is not None and store_path != "no":
         with open(store_path + "_means.pkl", "wb") as f:
             pickle.dump(means, f)
         with open(store_path + "_covariance_matrix.pkl", "wb") as f:
             pickle.dump(cov, f)
-    return means, cov
+    return means, cov, more_info
 
 
 def get_cov_matrix_phase(

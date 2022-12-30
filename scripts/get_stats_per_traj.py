@@ -286,8 +286,7 @@ def plot_kde_histogram(
     save : bool
         Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
     latex : bool
-        Use latex names for any title or axis. Otherwise use the
-        code names of variables and such.
+        Use latex font.
 
     Returns
     -------
@@ -411,7 +410,7 @@ def plot_kde_histogram(
                 )
         ax.get_legend().remove()
         handles, labels = ax.get_legend_handles_labels()
-        leg = ax.legend(handles, new_labels, fontsize=int(10 * font_scale))
+        leg = ax.legend(handles, new_labels, fontsize=int(9 * font_scale))
     elif phase:
         df = df.loc[
             (df["phase"] != "any")
@@ -437,7 +436,10 @@ def plot_kde_histogram(
             vals = np.unique(df.loc[df["phase"] == phase]["Rank"])
             if len(vals) == 1:
                 ax.axvline(x=vals[0], color=phase_colors[phase])
-
+        new_labels = []
+        for l in phase_hue_order[::-1]:
+            new_labels.append(l)
+        leg = ax.legend(new_labels, fontsize=int(9 * font_scale))
     elif flow:
         df = df.loc[df["phase"] == "any"]
         param_hue_order = np.sort(np.unique(df["Parameter"]))
@@ -461,7 +463,7 @@ def plot_kde_histogram(
                 param in df_tmp["Parameter"].values
                 and len(np.unique(df_tmp.loc[df_tmp["Parameter"] == param]["Rank"])) > 1
             ):
-                new_labels.append(f"inflow {param}")
+                new_labels.append(f"inflow {latexify.parse_word(param[:-5])} rank")
         df_tmp = df.loc[df["flow"] == "ascent"]
         _ = sns.kdeplot(
             data=df_tmp,
@@ -481,7 +483,7 @@ def plot_kde_histogram(
                 param in df_tmp["Parameter"].values
                 and len(np.unique(df_tmp.loc[df_tmp["Parameter"] == param]["Rank"])) > 1
             ):
-                new_labels.append(f"ascent {param}")
+                new_labels.append(f"ascent {latexify.parse_word(param[:-5])} rank")
         df_tmp = df.loc[df["flow"] == "outflow"]
         _ = sns.kdeplot(
             data=df_tmp,
@@ -501,10 +503,10 @@ def plot_kde_histogram(
                 param in df_tmp["Parameter"].values
                 and len(np.unique(df_tmp.loc[df_tmp["Parameter"] == param]["Rank"])) > 1
             ):
-                new_labels.append(f"outflow {param}")
+                new_labels.append(f"outflow {latexify.parse_word(param[:-5])} rank")
         ax.get_legend().remove()
         handles, labels = ax.get_legend_handles_labels()
-        leg = ax.legend(handles, new_labels, fontsize=int(10 * font_scale))
+        leg = ax.legend(handles, new_labels, fontsize=int(9 * font_scale))
 
     else:
         param_hue_order = np.sort(np.unique(df["Parameter"]))
@@ -521,6 +523,11 @@ def plot_kde_histogram(
             bw_adjust=bw_adjust,
             clip=(1, worst_rank),
         )
+        new_labels = []
+        for l in param_hue_order[::-1]:
+            new_labels.append(latexify.parse_word(l[:-5]))
+            new_labels[-1] += " rank"
+        leg = ax.legend(new_labels, fontsize=int(9 * font_scale))
 
     if font_scale is None:
         _ = ax.set_title(title)
