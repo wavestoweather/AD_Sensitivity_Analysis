@@ -136,10 +136,12 @@ bool task_scheduler_t::send_task(
             auto idx = std::distance(free_worker.begin(), it);
             checkpoint = checkpoint_queue.front();
             checkpoint_queue.pop();
-            if (my_rank != idx)
-                checkpoint.send_checkpoint(idx);
-            else
+            if (my_rank != idx) {
+                checkpoint_sent_queue.push(checkpoint);
+                checkpoint_sent_queue.back().send_checkpoint(idx);
+            } else {
                 orig_is_dest = true;
+            }
 
             if (my_rank == 0) {
                 free_worker[idx] = 0;
@@ -187,7 +189,8 @@ void task_scheduler_t::send_new_task(
     auto it = std::find(free_worker.begin(), free_worker.end(), 1);
     if (it != free_worker.end()) {
         auto idx = std::distance(free_worker.begin(), it);
-        checkpoint.send_checkpoint(idx);
+        checkpoint_sent_queue.push(checkpoint);
+        checkpoint_sent_queue.back().send_checkpoint(idx);
         int busy = 0;
         int current_value = 1;
         int compare_value = 1;
@@ -312,7 +315,7 @@ bool task_scheduler_t::receive_task(
         return true;
     }
     // check if work is directly available
-    int all_done = 0;
+    all_done = 0;
     bool task_sent = false;
     while (!checkpoint.receive_checkpoint()) {
         // check if work is available on own queue ?
@@ -356,12 +359,14 @@ bool task_scheduler_t::receive_task(
             }
             SUCCESS_OR_DIE(MPI_Win_unlock(my_rank, work_window));
         }
-        SUCCESS_OR_DIE(MPI_Bcast(&all_done, 1, MPI_INT, 0, MPI_COMM_WORLD));
+        SUCCESS_OR_DIE(MPI_Ibcast(&all_done, 1, MPI_INT, 0, MPI_COMM_WORLD, &request));
+        if (my_rank == 0 && all_done == 1) {
+            SUCCESS_OR_DIE(MPI_Wait(&request, MPI_STATUS_IGNORE));
+        }
         if (task_sent) return true;
         if (all_done == 1) return false;
     }
     signal_sent = false;
-
     if (all_done == 1) return false;
     return true;
 }
@@ -404,4 +409,16 @@ void task_scheduler_t::signal_work_avail() {
             MPI_INT,        // target datatype
             work_window));
     SUCCESS_OR_DIE(MPI_Win_unlock(0, work_window));
+}
+
+
+void task_scheduler_t::check_sent_queue() {
+    while (!checkpoint_sent_queue.empty()) {
+        MPI_Status status;
+        SUCCESS_OR_DIE(
+            MPI_Wait(
+                &checkpoint_sent_queue.front().request,
+                &status));
+        checkpoint_sent_queue.pop();
+    }
 }

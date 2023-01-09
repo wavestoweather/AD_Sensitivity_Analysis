@@ -21,6 +21,8 @@
 struct checkpoint_t {
  private:
     nlohmann::json checkpoint;
+    std::string s;
+    char* s_c;
 
  public:
     checkpoint_t();
@@ -106,4 +108,6 @@ struct checkpoint_t {
      * Check if a checkpoint had been stored already.
      */
     bool checkpoint_available() const;
+
+    MPI_Request request;
 };

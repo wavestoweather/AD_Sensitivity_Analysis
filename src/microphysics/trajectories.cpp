@@ -7,7 +7,7 @@
 #include <iostream>
 #include <vector>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 #include "include/microphysics/constants.h"
 #include "include/types/checkpoint_t.h"
@@ -91,8 +91,12 @@ model_constants_t<float_t> prepare_constants(
             if (rank == 0)
                 print_segments(segments);
             if (input.simulation_mode == limited_time_ensembles) {
-                cc.n_ensembles = 1;
-                cc.max_n_trajs = segments[0].n_members;
+                cc.n_ensembles = segments.size();
+                int max_trajs = 0;
+                for (auto &s : segments) {
+                    max_trajs = (s.n_members > max_trajs) ? s.n_members : max_trajs;
+                }
+                cc.max_n_trajs = max_trajs - 1;
             }
         }
     }
@@ -270,6 +274,7 @@ void parameter_check(
     input_parameters_t &input,
     const reference_quantities_t &ref_quant,
     task_scheduler_t &scheduler) {
+    uint64_t segment_id = 0;
     for (auto &s : segments) {
         bool perturb = s.perturb_check(
             y_diff, y_single_old, time_old);
@@ -293,14 +298,14 @@ void parameter_check(
                         scheduler.max_ensemble_id = result;
                         MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
                         SUCCESS_OR_DIE(
-                        MPI_Compare_and_swap(
-                            &ens_id,                        // origin
-                            &scheduler.max_ensemble_id,   // compare
-                            &result,                        // result
-                            MPI_UINT64_T,                     // datatype
-                            0,                              // target rank
-                            0,                              // target displ
-                            scheduler.ens_window));
+                            MPI_Compare_and_swap(
+                                &ens_id,                        // origin
+                                &scheduler.max_ensemble_id,   // compare
+                                &result,                        // result
+                                MPI_UINT64_T,                     // datatype
+                                0,                              // target rank
+                                0,                              // target displ
+                                scheduler.ens_window));
                     } while (result != scheduler.max_ensemble_id);
                 } else if (input.simulation_mode != limited_time_ensembles) {
                     SUCCESS_OR_DIE(
@@ -309,7 +314,7 @@ void parameter_check(
                     scheduler.max_ensemble_id = ens_id;
                     MPI_Win_unlock(scheduler.my_rank, scheduler.ens_window);
                 } else {
-                    ens_id = scheduler.max_ensemble_id;
+                    ens_id = segment_id + 1;
                 }
                 if (ens_id < cc.n_ensembles) {
                     for (uint32_t i=1; i < s.n_members; ++i) {
@@ -322,27 +327,40 @@ void parameter_check(
                         cc.checkpoint_steps = abs(time_old)/cc.dt_prime;
                         if (input.simulation_mode == limited_time_ensembles) {
                             std::string throw_away = "";
-                            s.activated = true;
                             s.perturb(cc, ref_quant, input, throw_away);
-                        }
-                        checkpoint_t checkpoint(
-                            cc,
-                            y_single_old,
-                            segments,
-                            input,
-                            time_old,
-                            i,
-                            ens_id,
-                            total_members,
-                            duration);
-                        scheduler.send_new_task(checkpoint);
-                        if (input.simulation_mode == limited_time_ensembles) {
+                            s.activated = true;
+                            // No more limited time ensembles are generated from child proceesses.
+                            std::vector<segment_t> segments_tmp;
+                            checkpoint_t checkpoint(
+                                    cc,
+                                    y_single_old,
+                                    segments_tmp,
+                                    input,
+                                    time_old,
+                                    i-1,
+                                    ens_id,
+                                    total_members,
+                                    duration);
+                            scheduler.send_new_task(checkpoint);
                             s.reset_variables(cc);
+                        } else {
+                            checkpoint_t checkpoint(
+                                cc,
+                                y_single_old,
+                                segments,
+                                input,
+                                time_old,
+                                i,
+                                ens_id,
+                                total_members,
+                                duration);
+                            scheduler.send_new_task(checkpoint);
                         }
                     }
                 }
             }
         }
+        segment_id++;
     }
 }
 
@@ -816,9 +834,9 @@ int run_simulation(
 #if defined(TRACE_COMM_DEBUG) || defined(DEVELOP)
     std::cout << cc.rank << ", sim end. pbar.finish()\n";
 #endif
-    if (finish_progress)
+    if (finish_progress) {
         pbar.finish();
-
+    }
     return 0;
 }
 
@@ -982,7 +1000,7 @@ void limited_time_ensemble_simulation(
     model_constants_t<float_t> cc = prepare_constants<float_t>(rank, input, global_args,
         ref_quant, segments, y_init, checkpoint);
     netcdf_reader.set_dims(input.INPUT_FILENAME.c_str(), cc, input.simulation_mode);
-
+    cc.rank = rank;
     // static scheduling with parallel read and write enabled
     // The output is based on the ensemble configuration file.
     setup_simulation_base(rank, input,
@@ -1002,22 +1020,27 @@ void limited_time_ensemble_simulation(
     // The progressbar here is just an estimate since the members
     // are distributed dynamically
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
-    uint64_t sims_for_r0 = (netcdf_reader.n_ensembles + n_processes-1)/n_processes;
 
     uint64_t steps_members = 0;
     for (auto &s : segments) {
         const uint64_t n_repeats = (cc.num_sub_steps * cc.num_steps * cc.dt_prime - s.value+1) / s.value - 1;
 
-        steps_members += n_repeats * (s.n_members + n_processes - 2)/(n_processes/2)
+        steps_members += n_repeats * (s.n_members - 1)/(n_processes)
             * s.n_segments * s.duration/cc.dt_prime;
     }
+    // Time 1.2, asssuming rank 0 gets a couple more time steps to process.
     ProgressBar pbar = ProgressBar(
-        cc.num_sub_steps*cc.num_steps * sims_for_r0 + steps_members,
+        cc.num_sub_steps*cc.num_steps + steps_members * 1.4,
         progress_index, "simulation step", std::cout);
     SUCCESS_OR_DIE(MPI_Win_lock_all(0, scheduler.free_window));
     if (rank == 0) {
-        scheduler.set_n_ensembles(1);
-        scheduler.set_n_trajectories(segments[0].n_members);
+        scheduler.set_n_ensembles(segments.size());
+        int max_trajs = 0;
+        for (auto &s : segments) {
+            max_trajs = (s.n_members > max_trajs) ? s.n_members : max_trajs;
+        }
+        max_trajs -= 1;
+        scheduler.set_n_trajectories(max_trajs);
         netcdf_reader.read_initial_values(y_init, ref_quant, cc,
             global_args.checkpoint_flag, input.traj, input.ensemble);
 #ifdef DEVELOP
@@ -1039,13 +1062,11 @@ void limited_time_ensemble_simulation(
             out_handler, segments, scheduler, netcdf_reader, pbar, input.delay_time_store, 0, false));
     }
     uint64_t pbar_counter =  cc.num_sub_steps*cc.num_steps-1;
-
     while (scheduler.receive_task(checkpoint)) {
 #ifdef DEVELOP
         std::cout << " rank " << rank << " received task \n";
 #endif
         global_args.checkpoint_flag = true;
-
         setup_simulation(rank, input,
             global_args, ref_quant, segments, cc, y_init,
             checkpoint, out_handler, already_loaded, netcdf_reader);
@@ -1060,7 +1081,6 @@ void limited_time_ensemble_simulation(
         std::cout << "rank " << rank << ", received traj: " << scheduler.current_traj
             << ", ens: " << scheduler.current_ens << "\n";
 #endif
-
         // Set "old" values as temporary holder of values.
         for (int ii = 0 ; ii < num_comp ; ii++)
             y_single_old[ii] = y_init[ii];
@@ -1077,7 +1097,7 @@ void limited_time_ensemble_simulation(
             netcdf_reader,
             y_single_old,
             y_diff,
-            0,
+            1,
             0,
             ref_quant,
             input.snapshot_index,
@@ -1097,6 +1117,7 @@ void limited_time_ensemble_simulation(
 #ifdef TRACE_COMM
         std::cout << "rank " << rank << ", simulation done\n";
 #endif
+//        scheduler.check_sent_queue();
     }
 #ifdef TRACE_COMM
         std::cout << "rank " << rank << " busy\n";

@@ -13,7 +13,7 @@
 #include <iostream>
 #include <vector>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 #include "include/microphysics/constants.h"
 #include "include/types/checkpoint_t.h"

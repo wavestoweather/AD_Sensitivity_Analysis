@@ -1841,6 +1841,9 @@ void output_handle_t::buffer(
 
 #ifdef MET3D
     // time after ascent
+//    if (traj > 0)
+//        std::cout << "buffer " << t << ", rel " << netcdf_reader.get_relative_time(t)
+//            << ", dt " << cc.dt_traject_prime << ", sub " << sub << " dt2 " << cc.dt << "\n";
     output_buffer[Buffer_idx::time_ascent_buf][n_snapshots] =
         netcdf_reader.get_relative_time(t) * cc.dt_traject_prime + sub*cc.dt;
     // flags
@@ -1907,23 +1910,6 @@ void output_handle_t::buffer(
         current_phase = (current_phase == 2) ? 1 : 0;
     }
     output_buffer_int[1][n_snapshots] = current_phase;
-
-    // phase, 0: warm phase, 1: mixed phase, 2: ice phase,
-    // 3: only water vapor or nothing at all
-//    uint64_t current_phase = 3;
-#if defined(RK4ICE)
-//    if (output_buffer[qi_idx][n_snapshots] > 1e-14 || output_buffer[qs_idx][n_snapshots] > 1e-14
-//        || output_buffer[qh_idx][n_snapshots] > 1e-14 || output_buffer[qg_idx][n_snapshots] > 1e-14
-//        || output_buffer[Ni_idx][n_snapshots] > 0.9999 || output_buffer[Ns_idx][n_snapshots] > 0.9999
-//        || output_buffer[Nh_idx][n_snapshots] > 0.9999 || output_buffer[Ng_idx][n_snapshots]  > 0.9999) {
-//        current_phase = 2;
-//    }
-#endif
-//    if (output_buffer[qc_idx][n_snapshots] > 0 || output_buffer[qr_idx][n_snapshots] > 0
-//        || output_buffer[Nc_idx][n_snapshots] > 0 || output_buffer[Nr_idx][n_snapshots] > 0) {
-//        current_phase = (current_phase == 2) ? 1 : 0;
-//    }
-//    output_buffer_int[1][n_snapshots] = current_phase;
     n_snapshots++;
 }
 
@@ -1932,7 +1918,9 @@ template<class float_t>
 bool output_handle_t::flush_buffer(
     const model_constants_t<float_t> &cc,
     bool no_flush) {
+//    std::cout << "FLUSHING\n";
 #ifdef COMPRESS_OUTPUT
+//    std::cout << "FLUSHING Compressed!\n";
     int needed = (no_flush) ? 0 : 1;
     std::vector<int> needed_receive(n_processes, 0);
     SUCCESS_OR_DIE(
@@ -2468,6 +2456,7 @@ bool output_handle_t::flush_buffer(
 #endif
     if (!no_flush) flushed_snapshots += n_snapshots;
     n_snapshots = 0;
+//    std::cout << "FLUSHING DONE\n";
     return true;
 }
 
