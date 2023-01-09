@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 #include "include/microphysics/constants.h"
 #include "include/types/particle_model_constants_t.h"

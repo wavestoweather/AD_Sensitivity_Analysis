@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <boost/math/special_functions/gamma.hpp>
-#include "codi.hpp"
+#include <codi.hpp>
 
 #include "include/microphysics/constants.h"
 

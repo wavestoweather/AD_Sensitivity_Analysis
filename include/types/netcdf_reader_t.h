@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 #include "include/misc/error.h"
 #include "include/types/model_constants_t.h"

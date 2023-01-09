@@ -109,8 +109,13 @@ class ProgressBar {
         rem_string = rem_string + std::to_string(static_cast<int>(rem_time%60)) + "s";
 
         // Check how long the bar can be
-        if (right_string.length()+1+rem_string.length() > desc_width)
+        if (right_string.length()+1+rem_string.length() > desc_width) {
             desc_width = right_string.length() + rem_string.length();
+        } else {
+            while (right_string.length()+rem_string.length() < desc_width) {
+                rem_string = rem_string + " ";
+            }
+        }
         // Get the progressbar
         int bar_width_max = window_width-desc_width-1;
         double current_box = static_cast<double>(current_step)/static_cast<double>(end_step) * bar_width_max;

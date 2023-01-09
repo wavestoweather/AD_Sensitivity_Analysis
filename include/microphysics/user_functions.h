@@ -7,7 +7,7 @@
 #include <cmath>
 #include <vector>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 #include "include/microphysics/constants.h"
 #include "include/microphysics/physical_parameterizations.h"

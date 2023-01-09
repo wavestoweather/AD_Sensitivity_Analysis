@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 /** @defgroup constants Constants
  * Various constants for accessing data in the right order and model constants

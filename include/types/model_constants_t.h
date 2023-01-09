@@ -8,7 +8,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 #include "include/misc/error.h"
 #include "include/types/collection_model_constants_t.h"

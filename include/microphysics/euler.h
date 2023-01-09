@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 #include "include/microphysics/constants.h"
 #include "include/microphysics/user_functions.h"
