@@ -91,7 +91,7 @@ model_constants_t<float_t> prepare_constants(
             if (rank == 0)
                 print_segments(segments);
             if (input.simulation_mode == limited_time_ensembles) {
-                cc.n_ensembles = segments.size();
+                cc.n_ensembles = segments.size() + 1;
                 int max_trajs = 0;
                 for (auto &s : segments) {
                     max_trajs = (s.n_members > max_trajs) ? s.n_members : max_trajs;
@@ -1028,13 +1028,13 @@ void limited_time_ensemble_simulation(
         steps_members += n_repeats * (s.n_members - 1)/(n_processes)
             * s.n_segments * s.duration/cc.dt_prime;
     }
-    // Time 1.2, asssuming rank 0 gets a couple more time steps to process.
+    // Time 1.4, asssuming rank 0 gets a couple more time steps to process.
     ProgressBar pbar = ProgressBar(
         cc.num_sub_steps*cc.num_steps + steps_members * 1.4,
         progress_index, "simulation step", std::cout);
     SUCCESS_OR_DIE(MPI_Win_lock_all(0, scheduler.free_window));
     if (rank == 0) {
-        scheduler.set_n_ensembles(segments.size());
+        scheduler.set_n_ensembles(segments.size() + 1);
         int max_trajs = 0;
         for (auto &s : segments) {
             max_trajs = (s.n_members > max_trajs) ? s.n_members : max_trajs;

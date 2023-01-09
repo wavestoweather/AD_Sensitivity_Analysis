@@ -67,12 +67,11 @@ class ProgressBar {
 #if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR)
 #if !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
         current_step++;
-        // std::cout << "update_every " << update_every
-        //     << "\ncurrent_step " << current_step
-        //     << "\nend_step " << end_step << "\n";
         if (update_every == 0) return;
         if (current_step%update_every != 0 && current_step != end_step) return;
         if (current_step == 0) return;
+        if (current_step > end_step)
+            end_step = current_step + 1;
         auto now = std::chrono::system_clock::now();
         double dt_total = ((std::chrono::duration<double>)(now - t_first)).count();
         // Get total time string
