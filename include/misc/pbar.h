@@ -70,8 +70,10 @@ class ProgressBar {
         if (update_every == 0) return;
         if (current_step%update_every != 0 && current_step != end_step) return;
         if (current_step == 0) return;
-        if (current_step > end_step)
+        if (current_step > end_step) {
             end_step = current_step + 1;
+            end_step_string = std::to_string(end_step);
+        }
         auto now = std::chrono::system_clock::now();
         double dt_total = ((std::chrono::duration<double>)(now - t_first)).count();
         // Get total time string
