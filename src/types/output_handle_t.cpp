@@ -1918,9 +1918,7 @@ template<class float_t>
 bool output_handle_t::flush_buffer(
     const model_constants_t<float_t> &cc,
     bool no_flush) {
-//    std::cout << "FLUSHING\n";
 #ifdef COMPRESS_OUTPUT
-//    std::cout << "FLUSHING Compressed!\n";
     int needed = (no_flush) ? 0 : 1;
     std::vector<int> needed_receive(n_processes, 0);
     SUCCESS_OR_DIE(

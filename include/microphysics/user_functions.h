@@ -1557,7 +1557,13 @@ void rain_evaporation_sb(
 #endif
 #ifdef TRACE_QV
         if (trace)
-            std::cout << "traj: " << cc.traj_id << " rain evaporation after Seifert (2008) dqv " << delta_qv << "\n";
+            std::cout << "traj: " << cc.traj_id << " rain evaporation after Seifert (2008) dqv " << delta_qv
+                << " g_d " << g_d << " Nr " << Nr << " mue " << mue
+                << " lambda " << lambda << " f_v " << f_v
+                << " s_sw " << s_sw
+                << " gamma_eva " << gamma_eva
+                << " x_r " << x_r
+                << "\n";
 #endif
         float_t delta_e = latent_heat_evap(T_prime) * delta_qv
             / specific_heat_water_vapor<float_t>();

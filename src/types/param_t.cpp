@@ -277,10 +277,14 @@ void param_t::perturb(
                 pt_model = &(cc.ice);
                 break;
             default:
-                std::cout << "Error in perturbing...\n";
+                std::cout << "Particle id " << out_name << " does not exist\n";
+                SUCCESS_OR_DIE(PERTURB_ERR);
         }
         if (name >= static_cast<int>(pt_model->constants.size())
             || name < 0) {
+            std::cerr << "Cannot perturb parameter " << name
+            << "/" << static_cast<int>(pt_model->constants.size())
+            << " of particle id " << out_name << "\n";
             SUCCESS_OR_DIE(PERTURB_ERR);
         }
         if (func_name == "fixed") {
@@ -296,6 +300,7 @@ void param_t::perturb(
     } else {
         if (name >= static_cast<int>(cc.constants.size())
             || name < 0) {
+            std::cerr << "Cannot perturb parameter " << name << "/" << static_cast<int>(cc.constants.size()) << "\n";
             SUCCESS_OR_DIE(PERTURB_ERR);
         }
         if (func_name == "fixed") {

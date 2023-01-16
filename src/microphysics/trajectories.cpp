@@ -92,7 +92,7 @@ model_constants_t<float_t> prepare_constants(
                 print_segments(segments);
             if (input.simulation_mode == limited_time_ensembles) {
                 cc.n_ensembles = segments.size() + 1;
-                int max_trajs = 0;
+                uint32_t max_trajs = 0;
                 for (auto &s : segments) {
                     max_trajs = (s.n_members > max_trajs) ? s.n_members : max_trajs;
                 }
@@ -329,8 +329,8 @@ void parameter_check(
                             std::string throw_away = "";
                             s.perturb(cc, ref_quant, input, throw_away);
                             s.activated = true;
-                            // No more limited time ensembles are generated from child proceesses.
-                            std::vector<segment_t> segments_tmp;
+                            // No more limited time ensembles are generated from child processes.
+                            std::vector<segment_t> segments_tmp = {s};
                             checkpoint_t checkpoint(
                                     cc,
                                     y_single_old,
@@ -796,12 +796,13 @@ int run_simulation(
     if (input.track_initial_cond) cc.register_input();
     sediment_n_total = 0;
     sediment_q_total = 0;
-    // Loop over every timestep that is usually fixed to 20 s
+    // Loop over every timestep that is usually fixed to O(10) s
     for (uint32_t t=start_step; t < cc.num_steps - cc.done_steps; ++t) {
         if (netcdf_reader.read_buffer(cc, ref_quant, y_single_old,
             inflow, t, global_args.checkpoint_flag, input.start_over_env) != SUCCESS) {
             // If the input file consists of (multiple) NaNs, we do not
-            // need a simulation.
+            // need a simulation. It also aborts if a model state variable is NaN
+            // from previous iterations.
 #ifdef DEVELOP
             std::cout << cc.rank << " flush buffer\n";
 #endif
@@ -1023,19 +1024,19 @@ void limited_time_ensemble_simulation(
 
     uint64_t steps_members = 0;
     for (auto &s : segments) {
-        const uint64_t n_repeats = (cc.num_sub_steps * cc.num_steps * cc.dt_prime - s.value+1) / s.value - 1;
-
-        steps_members += n_repeats * (s.n_members - 1)/(n_processes)
+        uint64_t n_repeats = (cc.num_sub_steps * cc.num_steps * cc.dt_prime - s.value+1) / s.value - 1;
+        n_repeats = (n_repeats == 0) ? 1 : n_repeats;
+        steps_members += n_repeats * (s.n_members - 1)
             * s.n_segments * s.duration/cc.dt_prime;
     }
     // Time 1.4, asssuming rank 0 gets a couple more time steps to process.
     ProgressBar pbar = ProgressBar(
-        cc.num_sub_steps*cc.num_steps + steps_members * 1.4,
+        cc.num_sub_steps*cc.num_steps + steps_members/(n_processes) * 1.4,
         progress_index, "simulation step", std::cout);
     SUCCESS_OR_DIE(MPI_Win_lock_all(0, scheduler.free_window));
     if (rank == 0) {
         scheduler.set_n_ensembles(segments.size() + 1);
-        int max_trajs = 0;
+        uint32_t max_trajs = 0;
         for (auto &s : segments) {
             max_trajs = (s.n_members > max_trajs) ? s.n_members : max_trajs;
         }
@@ -1066,6 +1067,7 @@ void limited_time_ensemble_simulation(
 #ifdef DEVELOP
         std::cout << " rank " << rank << " received task \n";
 #endif
+
         global_args.checkpoint_flag = true;
         setup_simulation(rank, input,
             global_args, ref_quant, segments, cc, y_init,
@@ -1089,7 +1091,6 @@ void limited_time_ensemble_simulation(
         const uint64_t out_timestep = (input.current_time - input.delay_time_store)
             / (cc.dt_prime * cc.num_sub_steps);
         out_handler.reset(scheduler.current_traj, scheduler.current_ens, out_timestep);
-
         // buffer the initial values for this trajectory
         // -> one step is already done this way
         out_handler.buffer(
@@ -1117,7 +1118,9 @@ void limited_time_ensemble_simulation(
 #ifdef TRACE_COMM
         std::cout << "rank " << rank << ", simulation done\n";
 #endif
-//        scheduler.check_sent_queue();
+        for (auto &s : segments)
+            if (s.activated)
+                s.reset_variables(cc);
     }
 #ifdef TRACE_COMM
         std::cout << "rank " << rank << " busy\n";
@@ -1290,7 +1293,7 @@ void create_set_simulation(
 template<class float_t>
 void dynamic_ensemble_simulation(
     const int &rank,
-    const int &n_processes,
+//    const int &n_processes,
     input_parameters_t &input,
     global_args_t &global_args,
     reference_quantities_t &ref_quant,
@@ -1442,11 +1445,11 @@ int main(int argc, char** argv) {
     } else {   // dynamic scheduling with parallel read and write disabled
         if (input.track_initial_cond) {
             dynamic_ensemble_simulation<codi::RealForwardVec<num_par_init> >(
-                rank, n_processes, input, global_args,
+                rank, input, global_args,
                 ref_quant, scheduler, netcdf_reader);
         } else {
             dynamic_ensemble_simulation<codi::RealReverse>(
-                rank, n_processes, input, global_args,
+                rank, input, global_args,
                 ref_quant, scheduler, netcdf_reader);
         }
     }

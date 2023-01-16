@@ -410,6 +410,7 @@ int netcdf_reader_t::read_buffer(
     const bool &start_over_env) {
     time_buffer_idx += step+start_time_idx-time_idx;
     time_idx = step+start_time_idx;
+//    bool did_i_buffer = false;
     // check if buffer needs to be reloaded
 #if defined B_EIGHT
     if (time_buffer_idx + 20 >= n_timesteps_buffer) {
@@ -418,6 +419,7 @@ int netcdf_reader_t::read_buffer(
 #endif
         buffer_params(ref_quant);
         time_buffer_idx = 0;
+//        did_i_buffer = true;
     }
 #ifdef TRACE_COMM
     std::cout << "read buffer: set time_buffer_idx: " << time_buffer_idx
@@ -638,6 +640,8 @@ int netcdf_reader_t::read_buffer(
                     << "your dataset! Aborting now.\n";
                 SUCCESS_OR_DIE(INPUT_NAN_ERR);
 #endif
+
+//                SUCCESS_OR_DIE(INPUT_NAN_ERR);
             }
         }
     }

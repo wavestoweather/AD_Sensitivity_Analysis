@@ -28,8 +28,7 @@ void segment_t::add_value(
     value = v;
 }
 
-            // this->params = j["params"].get<std::vector<param_t> >();;
-            // j.at("params").get_to(this->params);
+
 void segment_t::add_value_name(
     std::string n) {
     if (method == impact_change) {
