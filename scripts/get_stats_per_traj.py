@@ -570,7 +570,7 @@ def get_matrix(
     store_path : string
         If a store path is given then dumps the correlation matrix to f'{store_path}_correlation_matrix_per_traj.pkl'.
     corr : bool
-        If true, calculate the Pearson correlation. Otherwise calculate the covariance.
+        If true, calculate the Pearson correlation. Otherwise, calculate the covariance.
     verbose : bool
         Print progressbars.
 

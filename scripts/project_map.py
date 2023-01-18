@@ -2,11 +2,13 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
+import copy
 import hvplot.xarray  # noqa
 import itertools
 import holoviews as hv
 from holoviews import opts
-from matplotlib.colors import SymLogNorm, NoNorm
+import matplotlib.cm as mpl_map
+from matplotlib.colors import SymLogNorm, LogNorm, NoNorm
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
@@ -1159,7 +1161,7 @@ def plot_2dmap_interactive(ds):
     kind_param = pn.widgets.RadioButtonGroup(
         name="Kind",
         value="Mean",
-        options=["Mean", "Min", "Max", "Var"],
+        options=["Mean", "Min", "Max", "Var", "Std"],
         button_type="primary",
     )
     in_params = []
@@ -1180,7 +1182,8 @@ def plot_2dmap_interactive(ds):
         options=[
             "RdBu",
             "viridis",
-            "blues",
+            "Blues",
+            "Reds",
             "PiYG",
             "PRGn",
             "BrBG",
@@ -1264,6 +1267,8 @@ def plot_2dmap_interactive(ds):
         sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
         if title == "":
             title = None
+        if k_p == "Std":
+            ds[f"Std {i_p}"] = np.sqrt(ds[f"Var {i_p}"])
         if i_p == "counts":
             ds_tmp = ds.isel({"time": 0})[i_p]
         elif i_p[0] == "d" and i_p != "deposition":
@@ -1272,6 +1277,14 @@ def plot_2dmap_interactive(ds):
             ds_tmp = ds.isel({"time": 0})[f"{k_p} {i_p}"]
         mini = ds_tmp.min().values.item()
         maxi = ds_tmp.max().values.item()
+        if mini == 0:
+            mini2 = ds_tmp.where(ds_tmp > 0).min().values.item() / 10
+        else:
+            mini2 = mini
+        if maxi == 0:
+            maxi2 = ds_tmp.where(ds_tmp < 0).max().values.item() / 10
+        else:
+            maxi2 = maxi
         if lthresh == 0:
             linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
         else:
@@ -1288,15 +1301,23 @@ def plot_2dmap_interactive(ds):
             ds_tmp = ds[f"{k_p} {i_p}"].isel({"time": 0}).sel({"pressure": p})
         min_local = np.nanmin(ds_tmp)
         max_local = np.nanmax(ds_tmp)
+        if min_local == 0:
+            min_local2 = ds_tmp.where(ds_tmp > 0).min().values.item() / 10
+        else:
+            min_local2 = min_local
+        if max_local == 0:
+            max_local2 = ds_tmp.where(ds_tmp < 0).max().values.item() / 10
+        else:
+            max_local2 = max_local
         static.value = f"({mini:.2e}, {maxi:.2e}); at {p/100} hPa: ({min_local:.2e}, {max_local:.2e})"
         fig = Figure()
         ax = fig.subplots()
         if fix:
-            if np.abs(mini) > maxi:
-                maxi = np.abs(mini)
-            else:
-                mini = -maxi
-            if log_plot:
+            if log_plot and mini != 0 and maxi != 0:
+                if np.abs(mini) > maxi:
+                    maxi = np.abs(mini)
+                else:
+                    mini = -maxi
                 ds_tmp.plot(
                     y="lat",
                     x="lon",
@@ -1306,6 +1327,19 @@ def plot_2dmap_interactive(ds):
                         vmin=mini,
                         vmax=maxi,
                         base=10,
+                    ),
+                    ax=ax,
+                )
+            elif log_plot:
+                if linthresh != 0:
+                    mini2 = 10 ** lthresh
+                ds_tmp.plot(
+                    y="lat",
+                    x="lon",
+                    cmap=c,
+                    norm=LogNorm(
+                        vmin=mini2,
+                        vmax=maxi2,
                     ),
                     ax=ax,
                 )
@@ -1319,7 +1353,7 @@ def plot_2dmap_interactive(ds):
                     ax=ax,
                 )
         else:
-            if log_plot:
+            if log_plot and min_local != 0 and max_local != 0:
                 if lthresh == 0:
                     linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
                 else:
@@ -1332,6 +1366,19 @@ def plot_2dmap_interactive(ds):
                     norm=SymLogNorm(
                         linthresh=linthresh,
                         base=10,
+                    ),
+                    ax=ax,
+                )
+            elif log_plot:
+                if linthresh != 0:
+                    min_local2 = 10 ** lthresh
+                ds_tmp.plot(
+                    y="lat",
+                    x="lon",
+                    cmap=c,
+                    norm=LogNorm(
+                        vmin=min_local2,
+                        vmax=max_local2,
                     ),
                     ax=ax,
                 )

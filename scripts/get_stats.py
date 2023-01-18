@@ -3794,7 +3794,16 @@ def plot_heatmap_interactive(
         name="Title",
         placeholder="",
     )
-    cmaps = ["viridis", "mako", "vlag", "icefire", "Spectral", "coolwarm"]
+    cmaps = [
+        "viridis",
+        "mako",
+        "vlag",
+        "icefire",
+        "Spectral",
+        "coolwarm",
+        "Blues",
+        "Reds",
+    ]
     color_widget = pn.widgets.Select(
         name="Colormap",
         value=cmaps[2],
@@ -3818,7 +3827,7 @@ def plot_heatmap_interactive(
             if "rank" not in n:
                 names_list.append(n)
     else:
-        names_list = np.sort(names)
+        names_list = list(np.sort(names))
     param_select = pn.widgets.CrossSelector(
         name="Parameter",
         value=names_list[0:5],
@@ -3831,6 +3840,8 @@ def plot_heatmap_interactive(
     )
     norms = [
         mpl_col.Normalize(-1, 1),
+        mpl_col.Normalize(1, 0),
+        mpl_col.Normalize(0, 1),
         mpl_col.SymLogNorm(1e-2),
         mpl_col.SymLogNorm(1e-10),
         mpl_col.SymLogNorm(1e-15),
@@ -3909,6 +3920,11 @@ def plot_heatmap_interactive(
                 ),
             ),
             pn.Row(
+                pn.pane.Markdown(
+                    "Available norms: Normalized (-1, 1), Normalized (1, 0), Normalizes (0, -1), SymLogNorm(thresholds: 1e-2, 1e-10, 1e-15, or 1e-20), and LogNorm."
+                ),
+            ),
+            pn.Row(
                 out_param,
                 plot_type,
                 norm,
@@ -3939,11 +3955,14 @@ def plot_heatmap_interactive(
             pn.Row(
                 out_param,
                 plot_type,
-                norm,
+                pn.pane.Markdown(
+                    "Available norms: Normalized (-1, 1), SymLogNorm(1e-2, 1e-10, 1e-15, or 1e-20), and LogNorm."
+                ),
             ),
             pn.Row(
                 title_widget,
                 color_widget,
+                norm,
             ),
             plot_pane,
         )
@@ -4606,7 +4625,8 @@ def traj_plot_kde_inp(
     filter_zero=False,
     linewidth=2,
     bw_adjust=0.1,
-    log=False,
+    log_weights=False,
+    log_x=False,
     font_scale=1,
     width=24,
     height=12,
@@ -4640,8 +4660,10 @@ def traj_plot_kde_inp(
         scipy.stats.gaussian.kde. Larger values generate smoother estimations. Since the underlying data
         here is a set of bins with their counts as weights, the automatically estimated bandwidth is
         smoother than what would be used when using the complete dataset. Therefore, we use a default of 0.1.
-    log : bool
-        Plot the y-axis using log-scale.
+    log_weights : bool
+        Plot the y-axis using log-scale by using log10 weights.
+    log_x : bool
+        Plot the x-axis using log-scale.
     font_scale : float
         Scale the fontsize for the title, labels and ticks.
     width : float
@@ -4672,7 +4694,7 @@ def traj_plot_kde_inp(
         return None
 
     for in_p in in_params:
-        if log:
+        if log_weights:
             zeros = np.argwhere(hist_in_params[out_param][in_p] == 0)
             weights = np.log10(
                 hist_in_params[out_param][in_p],
@@ -4706,6 +4728,14 @@ def traj_plot_kde_inp(
     df = pd.DataFrame(data_dic)
     fig = Figure()
     ax = fig.subplots()
+    if log_x:
+        signs = np.sign(df["Impact"])
+        zeros = df["Impact"] == 0
+        df["Impact"] = np.log10(np.abs(df["Impact"]))
+        min_imp = np.nanmin(df["Impact"])  # * 1.1
+        df["Impact"] -= min_imp
+        df["Impact"] *= signs
+        df["Impact"] = df["Impact"].where(~zeros, 0)
 
     _ = sns.kdeplot(
         data=df,
@@ -4719,6 +4749,34 @@ def traj_plot_kde_inp(
         linewidth=linewidth,
     )
 
+    if title is not None:
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+    if log_x:
+        old_x_ticks = ax.get_xticks()
+        signs = np.sign(old_x_ticks)
+        if latex:
+            x_labels = []
+            for i, x_tick in enumerate(old_x_ticks):
+                l = "$"
+                if signs[i] < 0:
+                    l += "-"
+                l += r"10^{" + f"{(abs(x_tick) + min_imp):1.2f}" + r"}$"
+                x_labels.append(l)
+        else:
+            x_labels = [
+                f"{signs[i] * 10**(abs(x_tick) + min_imp):1.1e}"
+                for i, x_tick in enumerate(old_x_ticks)
+            ]
+        for i in range(len(old_x_ticks)):
+            if old_x_ticks[i] == 0:
+                if latex:
+                    x_labels[i] = r"$\leq 10^{" + f"{min_imp:1.2f}" + r"}$"
+                else:
+                    x_labels[i] = r"$\leq$" + f"{10**min_imp:1.1e}"
+                break
+        # For some reason, set_xticklabels() resets the font.
+        _ = ax.set_xticklabels(x_labels, fontdict={"usetex": latex})
+
     ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
     ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
     ax.tick_params(
@@ -4726,9 +4784,6 @@ def traj_plot_kde_inp(
         which="major",
         labelsize=int(10 * font_scale),
     )
-    if title is not None:
-        _ = ax.set_title(title, fontsize=int(12 * font_scale))
-
     plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
     plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
     ax.xaxis.get_offset_text().set_size(int(9 * font_scale))
@@ -4840,6 +4895,16 @@ def plot_traj_kde_inp_interactive(
         name="Title",
         placeholder="",
     )
+    log_x = pn.widgets.Toggle(
+        name="Log x-axis",
+        value=False,
+        button_type="success",
+    )
+    log_weights = pn.widgets.Toggle(
+        name="Log weights",
+        value=True,
+        button_type="success",
+    )
 
     plot_pane = pn.panel(
         pn.bind(
@@ -4851,7 +4916,8 @@ def plot_traj_kde_inp_interactive(
             bw_adjust=bw_slider,
             edges_in_params=edges_in_params,
             hist_in_params=hist_in_params,
-            log=True,
+            log_weights=log_weights,
+            log_x=log_x,
             width=width_slider,
             height=height_slider,
             title=title_widget,
@@ -4865,7 +4931,11 @@ def plot_traj_kde_inp_interactive(
     return pn.Column(
         pn.Row(
             in_param,
-            out_param,
+            pn.Column(
+                out_param,
+                log_x,
+                log_weights,
+            ),
         ),
         pn.Row(
             width_slider,
