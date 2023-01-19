@@ -247,6 +247,7 @@ def plot_kde_histogram(
     filename=None,
     width=17,
     height=16,
+    common_norm=False,
     font_scale=None,
     save=True,
     latex=False,
@@ -281,6 +282,8 @@ def plot_kde_histogram(
         Width in inches
     height : float
         Height in inches
+    common_norm : bool
+        All densities sum up to one if true
     font_scale : float
         Scale the fontsize for the title, labels and ticks.
     save : bool
@@ -300,7 +303,6 @@ def plot_kde_histogram(
     }
 
     ds_tmp = ds.sel({"Output Parameter": out_param}).drop("Output Parameter")
-    common_norm = False  # All densities sum up to one if true
     df = ds_tmp[in_params].to_dataframe().stack().reset_index()
     df = df.rename(columns={"level_4": "Parameter", 0: "Rank"})
     df = df.loc[df["Rank"] > 0]
@@ -436,10 +438,12 @@ def plot_kde_histogram(
             vals = np.unique(df.loc[df["phase"] == phase]["Rank"])
             if len(vals) == 1:
                 ax.axvline(x=vals[0], color=phase_colors[phase])
-        new_labels = []
-        for l in phase_hue_order[::-1]:
-            new_labels.append(l)
-        leg = ax.legend(new_labels, fontsize=int(9 * font_scale))
+        # new_labels = []
+        # for l in phase_hue_order[::-1]:
+        #     new_labels.append(l)
+        plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+        plt.setp(ax.get_legend().get_title(), fontsize=int(10 * font_scale))
+        # leg = ax.legend(new_labels, fontsize=int(9 * font_scale))
     elif flow:
         df = df.loc[df["phase"] == "any"]
         param_hue_order = np.sort(np.unique(df["Parameter"]))
@@ -511,8 +515,9 @@ def plot_kde_histogram(
     else:
         param_hue_order = np.sort(np.unique(df["Parameter"]))
         df = df.loc[df["phase"] == "any"]
+        df = df.loc[df["flow"] == "any"]
         _ = sns.kdeplot(
-            data=df.loc[df["flow"] == "any"],
+            data=df,
             x="Rank",
             hue="Parameter",
             hue_order=param_hue_order,
@@ -714,6 +719,10 @@ def plot_kde_histogram_interactive(ds):
         name="Ignore zero gradients",
         button_type="success",
     )
+    common_toggle = pn.widgets.Toggle(
+        name="Common norm",
+        button_type="success",
+    )
 
     plot_pane = pn.panel(
         pn.bind(
@@ -730,6 +739,7 @@ def plot_kde_histogram_interactive(ds):
             filename=save_to_field,
             width=width_slider,
             height=height_slider,
+            common_norm=common_toggle,
             font_scale=font_slider,
             save=save_button,
             latex=latex_button,
@@ -754,7 +764,10 @@ def plot_kde_histogram_interactive(ds):
         ),
         pn.Row(
             in_params,
-            out_param,
+            pn.Column(
+                out_param,
+                common_toggle,
+            ),
         ),
         pn.Row(
             line_slider,
@@ -763,3 +776,215 @@ def plot_kde_histogram_interactive(ds):
         ),
         plot_pane,
     )
+
+
+def create_rank_latex_table_per_outp(ds, col, only_n=None):
+    tables = {}
+    phases = ["warm phase", "mixed phase", "ice phase"]
+    flows = ["inflow", "ascent", "outflow"]
+    for o_p in ds["Output Parameter"]:
+        ds_op = ds.sel({"Output Parameter": o_p})
+
+        table_text = r"""
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{l|c|c|c}
+        \multirow{3}*{\textbf{{Parameter}}}     & \multicolumn{3}{c}{\textbf{"""
+        table_text += f"{col}"
+        table_text += r"""}} \\ \cline{2-4} 
+                                                & inflow & ascent & outflow \\ \cline{2-4} 
+                                                & wp, mp, ip & wp, mp, ip & wp, mp, ip \\ \hline
+"""
+        for param in ds:
+            if not "rank" in param:
+                continue
+            row_vals = "        "
+            word = latexify.parse_word(param[:-5]).replace(r"\partial ", "")
+            row_vals += f"{word:<40}& "
+            got_valid = False
+            for flow in flows:
+                ds_flow = ds_op.sel({"flow": flow})
+                for phase_i, phase in enumerate(phases):
+                    ds2 = ds_flow.sel({"phase": phase})
+                    ds_op2 = ds2[param]
+                    ds_op2 = ds_op2.where(ds_op2 > 0)
+                    if col == "Median Rank":
+                        val = ds_op2.median().item()
+                        if only_n is None:
+                            got_valid = True
+                        elif only_n >= val:
+                            got_valid = True
+                    elif col == "Mean Rank":
+                        val = ds_op2.mean().item()
+                        if only_n is None:
+                            got_valid = True
+                        elif only_n >= val:
+                            got_valid = True
+                    elif col == "MAD":
+                        got_valid = True
+                        med = ds_op2.median().item()
+                        diff = ds_op2 - med
+                        diff = np.sort(diff.values.flatten())
+                        diff = diff[~np.isnan(diff)]
+                        if len(diff) == 0:
+                            val = np.nan
+                        elif len(diff)%2 == 0:
+                            val = (diff[len(diff)//2] + diff[len(diff)//2 - 1]) / 2
+                        else:
+                            val = diff[len(diff)//2]
+                    else:
+                        val = ds_op2.std().item()
+
+                    if np.isnan(val):
+                        row_vals += " -"
+                    else:
+                        if col == "Median Rank":
+                            row_vals += f"{int(val):02d}"
+                        else:
+                            row_vals += f"{val:2.2f}"
+
+                    if phase_i < len(phases)-1:
+                        row_vals += ", "
+                    elif flow != "outflow":
+                        row_vals += " & "
+            if got_valid:
+                table_text += row_vals + r" \\" + "\n"
+
+        table_text += r"""
+    \end{tabular}
+    \caption{"""
+        caption = "The median and median absolute deviation of the rank of each model parameter if we calculate the rank over all trajectories. "
+        caption += "Only those with median or mean lower than 11 are used. Distinction with different phases. "
+        caption += "wp = warm phase, mp = mixed phase, ip = ice phase. "
+        caption += f"Impact on {latexify.parse_word(o_p.item())} is used here."
+        table_text += f"{caption}"
+        table_text += r"""}
+            \label{tab:analysis:rank_count_variations_"""
+        table_text += f"{o_p.item()}"
+        table_text += """}
+\end{table}
+        """
+        tables[o_p.item()] = table_text
+    return tables
+
+
+def create_rank_latex_table(ds, phase, flow, avg=False, all_params=False, multiple_tables=False, param_order=None):
+    if multiple_tables:
+        if avg:
+            table_text = r"""
+        \begin{table}[ht]
+            \centering
+            \begin{tabular}{l|c|c|c|c}
+                \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{Mean Impact} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
+            """
+        else:
+            table_text = r"""
+        \begin{table}[ht]
+            \centering
+            \begin{tabular}{l|c|c|c}
+                \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
+            """
+    else:
+        if avg:
+            table_text = r"""
+            \begin{table}[ht]
+                \centering
+                \begin{tabular}{l|l|c|c|c|c}
+                    \textbf{Model State Variable} & \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{Mean Impact} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
+            """
+        else:
+            table_text = r"""
+            \begin{table}[ht]
+                \centering
+                \begin{tabular}{l|l|c|c|c}
+                    \textbf{Model State Variable} & \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
+            """
+    if all_params:
+        caption = "The median and median absolute deviation of the rank if we calculate the rank over all trajectories."
+    else:
+        caption = "The median and median absolute deviation of the rank if we calculate the rank over all trajectories. Only those with median or mean lower than 11 are used."
+    if phase == "any":
+        caption += "Using any phase "
+    else:
+        caption += f"Using {phase} "
+    if flow == "any":
+        caption += "and inflow, outflow, and ascent."
+    else:
+        caption += f"and {flow}."
+    caption += f"Using {phase} phase and {flow} flow."
+    ds2 = ds.sel({"phase": phase, "flow": flow})
+    table_texts = {}
+    for o_p in ds["Output Parameter"]:
+        ds_op = ds2.sel({"Output Parameter": o_p})
+        if multiple_tables:
+            table_texts[o_p.item()] = table_text
+        else:
+            table_text += f"        {latexify.parse_word(o_p.item()):<25}& "
+        p_i = 0
+        if param_order is not None:
+            rows = {}
+        for param in ds:
+            if not "rank" in param:
+                continue
+
+            ds_op2 = ds_op[param]
+            ds_op2 = ds_op2.where(ds_op2 > 0)
+            med = ds_op2.median().item()
+            if med > 10 and ds_op2.mean().item() > 10 and not all_params:
+                continue
+            if np.isnan(med):
+                continue
+            mad = ds_op2 - med
+            mad = mad.median().item()
+            table_row = ""
+            if multiple_tables:
+                table_row += "               "
+            else:
+                if p_i > 0:
+                        table_row += "                                 & "
+                p_i += 1
+            word = latexify.parse_word(param[:-5]).replace(r"\partial ", "")
+            table_row += f"{word:<40}& "
+            if avg:
+                ds_op3 = ds_op[param[:-4] + "avg"]
+            if avg:
+                table_row += f"{int(med):2d} & {ds_op3.mean().item():1.2e} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}" + r" \\" + "\n"
+            else:
+                table_row += f"{int(med):2d} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}" + r" \\" + "\n"
+
+            if param_order is not None:
+                rows[param] = table_row
+            elif multiple_tables:
+                table_texts[o_p.item()] += table_row
+            else:
+                table_text += table_row
+
+        if param_order is not None:
+            for param in param_order:
+                if f"{param} rank" not in rows:
+                    continue
+                if multiple_tables:
+                    table_texts[o_p.item()] += rows[f"{param} rank"]
+                else:
+                    table_text += rows[f"{param} rank"]
+        if multiple_tables:
+            table_texts[o_p.item()] += r"""
+        \end{tabular}
+        \caption{"""
+            table_texts[o_p.item()] += f"{caption}"
+            table_texts[o_p.item()] += r"""}
+        \label{tab:analysis:rank_count}
+    \end{table}
+    """
+
+    if not multiple_tables:
+        table_text += r"""
+            \end{tabular}
+            \caption{"""
+        table_text += f"{caption}"
+        table_text += r"""}
+            \label{tab:analysis:rank_count}
+        \end{table}
+        """
+        return table_text
+    return table_texts

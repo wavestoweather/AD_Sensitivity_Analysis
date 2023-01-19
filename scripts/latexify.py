@@ -333,6 +333,8 @@ mappings = {
     "Q_total": "Total Water Content",
     "lat": "Latitude",
     "lon": "longitude",
+    "relative_lon": "Relative Longitude",
+    "relative_lat": "Relative Latitude",
     "z": "Height [m]",
     "w": "Ascent [m/s]",
     "MAP": "Flag for WCB-criterion",
