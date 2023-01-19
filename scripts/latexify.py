@@ -6740,7 +6740,7 @@ def top_to_table(top, caption, label):
 
     Parameters
     ----------
-    top : Dict or set
+    top : Dict or set or list
         Either a set of model parameter names for a table with descriptions
         or a dictionary with keys the model state variable for a table with top
         parameters for each model state variable or a keys with phases and model state
@@ -6754,7 +6754,7 @@ def top_to_table(top, caption, label):
     -------
         String that can be printed for a latex table.
     """
-    if isinstance(top, set):
+    if isinstance(top, set) or isinstance(top, list):
         n = 0
         for p in top:
             parsed = parse_word(p).replace("\partial ", "")
@@ -6857,7 +6857,7 @@ def top_to_table(top, caption, label):
             return table
 
 
-def create_rank_latex_table(ds, phase, flow):
+def create_rank_latex_table(ds, phase, flow, avg=False, all_params=False, multiple_tables=False, param_order=None):
     """
     Create multiple latex tables with median rank, median absolute deviation, mean rank, and standard deviation
     for a given phase and flow.
@@ -6877,45 +6877,40 @@ def create_rank_latex_table(ds, phase, flow):
     -------
     Dictionary of raw strings (latex tables). The keys are the model state variables.
     """
-    table_text = r"""
-    \begin{table}[ht]
-        \centering
-        \begin{tabular}{l|l|c|c|c|c}
-            \textbf{Model State Variable} & \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{MAD} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
-    """
-    ds2 = ds.sel({"phase": phase, "flow": flow})
-    for o_p in ds["Output Parameter"]:
-        ds_op = ds2.sel({"Output Parameter": o_p})
-        table_text += f"        {parse_word(o_p.item()):<25}& "
-        p_i = 0
-        for param in ds:
-            if not "rank" in param:
-                continue
-
-            ds_op2 = ds_op[param]
-            ds_op2 = ds_op2.where(ds_op2 > 0)
-            med = ds_op2.median().item()
-            if med > 10 and ds_op2.mean().item() > 10:
-                continue
-            if np.isnan(med):
-                continue
-            mad = ds_op2 - med
-            mad = mad.median().item()
-            if p_i > 0:
-                table_text += "                                 & "
-            p_i += 1
-            word = parse_word(param[:-5]).replace(r"\partial ", "")
-            table_text += f"{word:<40}& "
-            table_text += (
-                f"{int(med):2d} & {int(mad):2d} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}"
-                + r" \\"
-                + "\n"
-            )
-
-    table_text += r"""
-        \end{tabular}
-        \caption{"""
-    caption = "The median and median absolute deviation of the rank of each model parameter if we calculate the rank over all trajectories. Only those with median or mean lower than 11 are used."
+    if multiple_tables:
+        if avg:
+            table_text = r"""
+        \begin{table}[ht]
+            \centering
+            \begin{tabular}{l|c|c|c|c}
+                \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{Mean Impact} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
+            """
+        else:
+            table_text = r"""
+        \begin{table}[ht]
+            \centering
+            \begin{tabular}{l|c|c|c}
+                \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
+            """
+    else:
+        if avg:
+            table_text = r"""
+            \begin{table}[ht]
+                \centering
+                \begin{tabular}{l|l|c|c|c|c}
+                    \textbf{Model State Variable} & \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{Mean Impact} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
+            """
+        else:
+            table_text = r"""
+            \begin{table}[ht]
+                \centering
+                \begin{tabular}{l|l|c|c|c}
+                    \textbf{Model State Variable} & \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
+            """
+    if all_params:
+        caption = "The median and median absolute deviation of the rank if we calculate the rank over all trajectories."
+    else:
+        caption = "The median and median absolute deviation of the rank if we calculate the rank over all trajectories. Only those with median or mean lower than 11 are used."
     if phase == "any":
         caption += "Using any phase "
     else:
@@ -6925,12 +6920,82 @@ def create_rank_latex_table(ds, phase, flow):
     else:
         caption += f"and {flow}."
     caption += f"Using {phase} phase and {flow} flow."
-    table_text += f"{caption}"
-    table_text += r"""}
+    ds2 = ds.sel({"phase": phase, "flow": flow})
+    table_texts = {}
+    for o_p in ds["Output Parameter"]:
+        ds_op = ds2.sel({"Output Parameter": o_p})
+        if multiple_tables:
+            table_texts[o_p.item()] = table_text
+        else:
+            table_text += f"        {latexify.parse_word(o_p.item()):<25}& "
+        p_i = 0
+        if param_order is not None:
+            rows = {}
+        for param in ds:
+            if not "rank" in param:
+                continue
+
+            ds_op2 = ds_op[param]
+            ds_op2 = ds_op2.where(ds_op2 > 0)
+            med = ds_op2.median().item()
+            if med > 10 and ds_op2.mean().item() > 10 and not all_params:
+                continue
+            if np.isnan(med):
+                continue
+            mad = ds_op2 - med
+            mad = mad.median().item()
+            table_row = ""
+            if multiple_tables:
+                table_row += "               "
+            else:
+                if p_i > 0:
+                    table_row += "                                 & "
+                p_i += 1
+            word = latexify.parse_word(param[:-5]).replace(r"\partial ", "")
+            table_row += f"{word:<40}& "
+            if avg:
+                ds_op3 = ds_op[param[:-4] + "avg"]
+            if avg:
+                table_row += f"{int(med):2d} & {ds_op3.mean().item():1.2e} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}" + r" \\" + "\n"
+            else:
+                table_row += f"{int(med):2d} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}" + r" \\" + "\n"
+
+            if param_order is not None:
+                rows[param] = table_row
+            elif multiple_tables:
+                table_texts[o_p.item()] += table_row
+            else:
+                table_text += table_row
+
+        if param_order is not None:
+            for param in param_order:
+                if f"{param} rank" not in rows:
+                    continue
+                if multiple_tables:
+                    table_texts[o_p.item()] += rows[f"{param} rank"]
+                else:
+                    table_text += rows[f"{param} rank"]
+        if multiple_tables:
+            table_texts[o_p.item()] += r"""
+        \end{tabular}
+        \caption{"""
+            table_texts[o_p.item()] += f"{caption}"
+            table_texts[o_p.item()] += r"""}
         \label{tab:analysis:rank_count}
     \end{table}
     """
-    return table_text
+
+    if not multiple_tables:
+        table_text += r"""
+            \end{tabular}
+            \caption{"""
+        table_text += f"{caption}"
+        table_text += r"""}
+            \label{tab:analysis:rank_count}
+        \end{table}
+        """
+        return table_text
+    return table_texts
 
 
 def create_rank_latex_table_per_outp(ds, col, only_n=None):
