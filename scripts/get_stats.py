@@ -5797,7 +5797,30 @@ def plot_rank_probs(
     save=False,
     latex=False,
 ):
+    """
 
+    Parameters
+    ----------
+    ds
+    flow
+    phase
+    out_param
+    median
+    rank
+    mark_top_n
+    dot_size
+    title
+    filename
+    width
+    height
+    font_scale
+    save
+    latex
+
+    Returns
+    -------
+
+    """
     ds = ds.sel({"flow": flow, "phase": phase})
     if median:
         y = "Median"

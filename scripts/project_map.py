@@ -1181,6 +1181,8 @@ def plot_2dmap_interactive(ds):
             in_params.append(col[5:])
     if "counts" in ds:
         in_params.append("counts")
+    if "Top_Parameter" in ds:
+        in_params.append("Top_Parameter")
     in_params.sort()
     in_param = pn.widgets.Select(
         name="Color according to",
@@ -1258,6 +1260,133 @@ def plot_2dmap_interactive(ds):
         button_type="success",
     )
 
+    # This is for the B8 paper with hard coded color scheme for the ranking
+    process_param = {
+        "evaporation": [
+            "dkin_visc_air",
+            "da_prime",
+            "db_prime",
+            "dc_prime",
+            "da_v",
+            "db_v",
+            "drain_cmu3",
+            "drain_nu",
+        ],
+        "geometry": [
+            "drain_a_geo",
+            "drain_b_geo",
+            "dsnow_a_geo",
+            "dsnow_b_geo",
+            "dice_a_geo",
+            "dice_b_geo",
+            "dgraupel_a_geo",
+            "dgraupel_b_geo",
+        ],
+        "ccn": [
+            "db_ccn_1",
+            "db_ccn_2",
+            "db_ccn_3",
+            "dc_ccn_1",
+            "dc_ccn_2",
+            "dc_ccn_3",
+            "dg_ccn_1",
+            "dg_ccn_2",
+            "dh_ccn_1",
+            "di_ccn_1",
+            "dhande_ccn_fac",
+        ],
+        "fall velocity": [
+            "dcloud_b_vel",
+            "drain_a_vel",
+            "drain_b_vel",
+            "dsnow_b_vel",
+            "dice_b_vel",
+            "dgraupel_a_vel",
+            "dgraupel_b_vel",
+        ],
+        "misc": [
+            "dT_mult_min",
+            "dp_sat_melt",
+            "da_HET",
+            "drain_mu",
+        ],
+    }
+
+    regrid_idx = [
+        "dkin_visc_air",
+        "da_prime",
+        "db_prime",
+        "dc_prime",
+        "da_v",
+        "db_v",
+        "drain_cmu3",
+        "drain_nu",
+        "db_ccn_1",
+        "db_ccn_2",
+        "db_ccn_3",
+        "dc_ccn_1",
+        "dc_ccn_2",
+        "dc_ccn_3",
+        "dg_ccn_1",
+        "dg_ccn_2",
+        "dh_ccn_1",
+        "di_ccn_1",
+        "dhande_ccn_fac",
+        "drain_a_geo",
+        "drain_b_geo",
+        "dsnow_a_geo",
+        "dsnow_b_geo",
+        "dice_a_geo",
+        "dice_b_geo",
+        "dgraupel_a_geo",
+        "dgraupel_b_geo",
+        "dcloud_b_vel",
+        "drain_a_vel",
+        "drain_b_vel",
+        "dsnow_b_vel",
+        "dice_b_vel",
+        "dgraupel_a_vel",
+        "dgraupel_b_vel",
+        "dT_mult_min",
+        "dp_sat_melt",
+        "da_HET",
+        "drain_mu",
+    ]
+    color_shades = {}
+    for key in process_param:
+        n = len(process_param[key])
+        if key == "evaporation":
+            color = plt.cm.Blues(np.linspace(0, 1, n))
+        elif key == "geometry":
+            color = plt.cm.Greens(np.linspace(0.2, 1, n))
+        elif key == "misc":
+            color = plt.cm.Purples(np.linspace(0.2, 1, n))
+        elif key == "ccn":
+            color = plt.cm.Reds(np.linspace(0.2, 1, n))
+        elif key == "fall velocity":
+            color = plt.cm.Oranges(np.linspace(0.2, 1, n))
+        else:
+            print(f"{key} not defined")
+            break
+        color_shades[key] = []
+        for i in range(n):
+            color_shades[key].append(color[i])
+    colors = []
+    for p in regrid_idx:
+        for key in process_param:
+            found = False
+            for i, p2 in enumerate(process_param[key]):
+                if p2 == p:
+                    colors.append(color_shades[key][i])
+                    # colors[i] = color_shades[key][i]
+                    found = True
+                    break
+            if found:
+                break
+        if not found:
+            print(p)
+    colors.append([0, 0, 0, 0])
+
     def plot_me(
         o_p,
         i_p,
@@ -1279,126 +1408,144 @@ def plot_2dmap_interactive(ds):
         sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
         if title == "":
             title = None
-        if k_p == "Std":
+        if k_p == "Std" and f"Std {i_p}" not in ds:
             ds[f"Std {i_p}"] = np.sqrt(ds[f"Var {i_p}"])
+        if k_p == "Var" and f"Var {i_p}" not in ds:
+            ds[f"Var {i_p}"] = ds[f"Std {i_p}"] * ds[f"Std {i_p}"]
         if i_p == "counts":
             ds_tmp = ds.isel({"time": time})[i_p]
         elif i_p[0] == "d" and i_p != "deposition":
             ds_tmp = ds.isel({"time": time}).sel({coord: o_p})[f"{k_p} {i_p}"]
+        elif i_p == "Top_Parameter":
+            ds_tmp = ds.isel({"time": time}).sel({coord: o_p, "pressure": p})[
+                "Top_Parameter"
+            ]
         else:
             ds_tmp = ds.isel({"time": time})[f"{k_p} {i_p}"]
-        mini = ds_tmp.min().values.item()
-        maxi = ds_tmp.max().values.item()
-        if mini == 0:
-            mini2 = ds_tmp.where(ds_tmp > 0).min().values.item() / 10
-        else:
-            mini2 = mini
-        if maxi == 0:
-            maxi2 = ds_tmp.where(ds_tmp < 0).max().values.item() / 10
-        else:
-            maxi2 = maxi
-        if lthresh == 0:
-            linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
-        else:
-            linthresh = 10 ** lthresh
-        if i_p == "counts":
-            ds_tmp = ds[i_p].isel({"time": 0}).sel({"pressure": p})
-        elif i_p[0] == "d" and i_p != "deposition":
-            ds_tmp = (
-                ds[f"{k_p} {i_p}"].isel({"time": 0}).sel({coord: o_p, "pressure": p})
-            )
-        else:
-            ds_tmp = ds[f"{k_p} {i_p}"].isel({"time": 0}).sel({"pressure": p})
-        min_local = np.nanmin(ds_tmp)
-        max_local = np.nanmax(ds_tmp)
-        if min_local == 0:
-            min_local2 = ds_tmp.where(ds_tmp > 0).min().values.item() / 10
-        else:
-            min_local2 = min_local
-        if max_local == 0:
-            max_local2 = ds_tmp.where(ds_tmp < 0).max().values.item() / 10
-        else:
-            max_local2 = max_local
-        static.value = f"({mini:.2e}, {maxi:.2e}); at {p/100} hPa: ({min_local:.2e}, {max_local:.2e})"
+
         fig = Figure()
         ax = fig.subplots()
-        if fix:
-            if log_plot and mini != 0 and maxi != 0:
-                if np.abs(mini) > maxi:
-                    maxi = np.abs(mini)
+        if i_p == "Top_Parameter":
+            ds_tmp.plot.pcolormesh(
+                y="lat",
+                x="lon",
+                levels=np.arange(len(colors)),
+                colors=colors,
+                ax=ax,
+            )
+        else:
+            mini = ds_tmp.min().values.item()
+            maxi = ds_tmp.max().values.item()
+            if mini == 0:
+                mini2 = ds_tmp.where(ds_tmp > 0).min().values.item() / 10
+            else:
+                mini2 = mini
+            if maxi == 0:
+                maxi2 = ds_tmp.where(ds_tmp < 0).max().values.item() / 10
+            else:
+                maxi2 = maxi
+            if lthresh == 0:
+                linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
+            else:
+                linthresh = 10 ** lthresh
+            if i_p == "counts":
+                ds_tmp = ds[i_p].isel({"time": 0}).sel({"pressure": p})
+            elif i_p[0] == "d" and i_p != "deposition":
+                ds_tmp = (
+                    ds[f"{k_p} {i_p}"]
+                    .isel({"time": 0})
+                    .sel({coord: o_p, "pressure": p})
+                )
+            else:
+                ds_tmp = ds[f"{k_p} {i_p}"].isel({"time": 0}).sel({"pressure": p})
+            min_local = np.nanmin(ds_tmp)
+            max_local = np.nanmax(ds_tmp)
+            if min_local == 0:
+                min_local2 = ds_tmp.where(ds_tmp > 0).min().values.item() / 10
+            else:
+                min_local2 = min_local
+            if max_local == 0:
+                max_local2 = ds_tmp.where(ds_tmp < 0).max().values.item() / 10
+            else:
+                max_local2 = max_local
+            static.value = f"({mini:.2e}, {maxi:.2e}); at {p/100} hPa: ({min_local:.2e}, {max_local:.2e})"
+            if fix:
+                if log_plot and mini != 0 and maxi != 0:
+                    if np.abs(mini) > maxi:
+                        maxi = np.abs(mini)
+                    else:
+                        mini = -maxi
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
+                        norm=SymLogNorm(
+                            linthresh=linthresh,
+                            vmin=mini,
+                            vmax=maxi,
+                            base=10,
+                        ),
+                        ax=ax,
+                    )
+                elif log_plot:
+                    if linthresh != 0:
+                        mini2 = 10 ** lthresh
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
+                        norm=LogNorm(
+                            vmin=mini2,
+                            vmax=maxi2,
+                        ),
+                        ax=ax,
+                    )
                 else:
-                    mini = -maxi
-                ds_tmp.plot(
-                    y="lat",
-                    x="lon",
-                    cmap=c,
-                    norm=SymLogNorm(
-                        linthresh=linthresh,
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
                         vmin=mini,
                         vmax=maxi,
-                        base=10,
-                    ),
-                    ax=ax,
-                )
-            elif log_plot:
-                if linthresh != 0:
-                    mini2 = 10 ** lthresh
-                ds_tmp.plot(
-                    y="lat",
-                    x="lon",
-                    cmap=c,
-                    norm=LogNorm(
-                        vmin=mini2,
-                        vmax=maxi2,
-                    ),
-                    ax=ax,
-                )
+                        ax=ax,
+                    )
             else:
-                ds_tmp.plot(
-                    y="lat",
-                    x="lon",
-                    cmap=c,
-                    vmin=mini,
-                    vmax=maxi,
-                    ax=ax,
-                )
-        else:
-            if log_plot and min_local != 0 and max_local != 0:
-                if lthresh == 0:
-                    linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
-                else:
-                    linthresh = 10 ** lthresh
+                if log_plot and min_local != 0 and max_local != 0:
+                    if lthresh == 0:
+                        linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
+                    else:
+                        linthresh = 10 ** lthresh
 
-                ds_tmp.plot(
-                    y="lat",
-                    x="lon",
-                    cmap=c,
-                    norm=SymLogNorm(
-                        linthresh=linthresh,
-                        base=10,
-                    ),
-                    ax=ax,
-                )
-            elif log_plot:
-                if linthresh != 0:
-                    min_local2 = 10 ** lthresh
-                ds_tmp.plot(
-                    y="lat",
-                    x="lon",
-                    cmap=c,
-                    norm=LogNorm(
-                        vmin=min_local2,
-                        vmax=max_local2,
-                    ),
-                    ax=ax,
-                )
-            else:
-                ds_tmp.plot(
-                    y="lat",
-                    x="lon",
-                    cmap=c,
-                    ax=ax,
-                )
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
+                        norm=SymLogNorm(
+                            linthresh=linthresh,
+                            base=10,
+                        ),
+                        ax=ax,
+                    )
+                elif log_plot:
+                    if linthresh != 0:
+                        min_local2 = 10 ** lthresh
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
+                        norm=LogNorm(
+                            vmin=min_local2,
+                            vmax=max_local2,
+                        ),
+                        ax=ax,
+                    )
+                else:
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
+                        ax=ax,
+                    )
         _ = ax.set_title(title, fontsize=int(12 * font_scale))
         ax.tick_params(
             axis="both",
@@ -1411,8 +1558,21 @@ def plot_2dmap_interactive(ds):
         ax.xaxis.grid(True, which="major")
         cbar = ax.collections[-1].colorbar
         cbarax = cbar.ax
+        if i_p == "Top_Parameter":
+            cbarlabel = "Index of top parameter"
+            cbar_ticks = [4, 14, 23, 30, 36]
+            cbar_labels = [
+                "evaporation",
+                "CCN activation",
+                "geometry",
+                "fall velocity",
+                "miscellaneous",
+            ]
+            cbar.set_ticks(cbar_ticks)
+            cbar.set_ticklabels(cbar_labels)
+        else:
+            cbarlabel = f"{k_p} " + parse_word(i_p).replace(r"\partial", "")
         cbarax.tick_params(labelsize=int(10 * font_scale))
-        cbarlabel = f"{k_p} " + parse_word(i_p).replace(r"\partial", "")
         cbar.set_label(
             label=cbarlabel,
             fontsize=int(11 * font_scale),
