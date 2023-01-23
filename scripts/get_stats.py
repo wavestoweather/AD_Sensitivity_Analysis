@@ -4960,20 +4960,20 @@ def plot_traj_kde_inp_interactive(
 
 
 def plot_rank_over_impact(
-        ds,
-        out_param,
-        width=24,
-        height=12,
-        font_scale=None,
-        filename=None,
-        title=None,
-        save=False,
-        latex=False,
-        dot_size=6,
-        log=False,
-        phase=False,
-        flow=False,
-        avg=False,
+    ds,
+    out_param,
+    width=24,
+    height=12,
+    font_scale=None,
+    filename=None,
+    title=None,
+    save=False,
+    latex=False,
+    dot_size=6,
+    log=False,
+    phase=False,
+    flow=False,
+    avg=False,
 ):
     sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
     fig = Figure()
@@ -5041,11 +5041,18 @@ def plot_rank_over_impact(
                 "Output Parameter": np.asarray([]),
             }
             for out_p in ds["Output Parameter"]:
-                imp_vals = ds_imp.sel({"Output Parameter": out_p}).to_array().values.flatten()
-                rank_vals = ds_rank.sel({"Output Parameter": out_p}).to_array().values.flatten()
+                imp_vals = (
+                    ds_imp.sel({"Output Parameter": out_p}).to_array().values.flatten()
+                )
+                rank_vals = (
+                    ds_rank.sel({"Output Parameter": out_p}).to_array().values.flatten()
+                )
                 data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
                 data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
-                data_dic["Output Parameter"] = np.append(data_dic["Output Parameter"], np.repeat(out_p.item(), len(rank_vals)))
+                data_dic["Output Parameter"] = np.append(
+                    data_dic["Output Parameter"],
+                    np.repeat(out_p.item(), len(rank_vals)),
+                )
             df = pd.DataFrame.from_dict(data_dic)
             sns.scatterplot(
                 data=df,
@@ -5070,7 +5077,9 @@ def plot_rank_over_impact(
                 rank_vals = ds_rank.sel({"phase": phase_v}).to_array().values.flatten()
                 data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
                 data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
-                data_dic["Phase"] = np.append(data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals)))
+                data_dic["Phase"] = np.append(
+                    data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals))
+                )
             df = pd.DataFrame.from_dict(data_dic)
 
             sns.scatterplot(
@@ -5089,12 +5098,25 @@ def plot_rank_over_impact(
             data_dic["Output Parameter"] = np.asarray([])
             for phase_v in ds["phase"]:
                 for out_p in ds["Output Parameter"]:
-                    imp_vals = ds_imp.sel({"Output Parameter": out_p, "phase": phase_v}).to_array().values.flatten()
-                    rank_vals = ds_rank.sel({"Output Parameter": out_p, "phase": phase_v}).to_array().values.flatten()
+                    imp_vals = (
+                        ds_imp.sel({"Output Parameter": out_p, "phase": phase_v})
+                        .to_array()
+                        .values.flatten()
+                    )
+                    rank_vals = (
+                        ds_rank.sel({"Output Parameter": out_p, "phase": phase_v})
+                        .to_array()
+                        .values.flatten()
+                    )
                     data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
                     data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
-                    data_dic["Phase"] = np.append(data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals)))
-                    data_dic["Output Parameter"] = np.append(data_dic["Output Parameter"], np.repeat(out_p.item(), len(rank_vals)))
+                    data_dic["Phase"] = np.append(
+                        data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals))
+                    )
+                    data_dic["Output Parameter"] = np.append(
+                        data_dic["Output Parameter"],
+                        np.repeat(out_p.item(), len(rank_vals)),
+                    )
             df = pd.DataFrame.from_dict(data_dic)
             sns.scatterplot(
                 data=df,
@@ -5122,7 +5144,9 @@ def plot_rank_over_impact(
             rank_vals = ds_rank.sel({"flow": flow_v}).to_array().values.flatten()
             data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
             data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
-            data_dic["Flow"] = np.append(data_dic["Flow"], np.repeat(flow_v.item(), len(imp_vals)))
+            data_dic["Flow"] = np.append(
+                data_dic["Flow"], np.repeat(flow_v.item(), len(imp_vals))
+            )
         df = pd.DataFrame.from_dict(data_dic)
 
         sns.scatterplot(
@@ -5135,7 +5159,7 @@ def plot_rank_over_impact(
                 "Inflow": "hexagon",
                 "Ascent": "star",
                 "Outflow": "plus (filled)",
-            }
+            },
         )
 
         plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
@@ -5148,12 +5172,24 @@ def plot_rank_over_impact(
         }
         for flow_v in ds["flow"]:
             for phase_v in ds["phase"]:
-                imp_vals = ds_imp.sel({"flow": flow_v, "phase": phase_v}).to_array().values.flatten()
-                rank_vals = ds_rank.sel({"flow": flow_v, "phase": phase_v}).to_array().values.flatten()
+                imp_vals = (
+                    ds_imp.sel({"flow": flow_v, "phase": phase_v})
+                    .to_array()
+                    .values.flatten()
+                )
+                rank_vals = (
+                    ds_rank.sel({"flow": flow_v, "phase": phase_v})
+                    .to_array()
+                    .values.flatten()
+                )
                 data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
                 data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
-                data_dic["Flow"] = np.append(data_dic["Flow"], np.repeat(flow_v.item(), len(imp_vals)))
-                data_dic["Phase"] = np.append(data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals)))
+                data_dic["Flow"] = np.append(
+                    data_dic["Flow"], np.repeat(flow_v.item(), len(imp_vals))
+                )
+                data_dic["Phase"] = np.append(
+                    data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals))
+                )
         df = pd.DataFrame.from_dict(data_dic)
         sns.scatterplot(
             data=df,
@@ -5348,12 +5384,12 @@ def main(args):
     """
     if not args.from_processed:
         if (
-                args.plot_type == "all"
-                or args.plot_type == "hist_out"
-                or args.plot_type == "hist_in"
-                or args.plot_type == "heat"
-                or args.plot_type == "2D_hist"
-                or args.save_histogram != "no"
+            args.plot_type == "all"
+            or args.plot_type == "hist_out"
+            or args.plot_type == "hist_in"
+            or args.plot_type == "heat"
+            or args.plot_type == "2D_hist"
+            or args.save_histogram != "no"
         ):
             if args.load_histogram != "no":
                 print("########### Load histograms ###########")
@@ -5532,7 +5568,7 @@ def main(args):
                 f.write(text)
 
         if (
-                args.plot_type == "all" or args.plot_type == "cov_heat"
+            args.plot_type == "all" or args.plot_type == "cov_heat"
         ) and args.load_covariance == "no":
             print("########### Calculate covariance matrix ###########")
             means, cov = get_cov_matrix(
@@ -5543,7 +5579,7 @@ def main(args):
                 inoutflow_time=args.inoutflow_time,
             )
         if (
-                args.plot_type == "all" or args.plot_type == "cov_heat_phases"
+            args.plot_type == "all" or args.plot_type == "cov_heat_phases"
         ) and args.load_covariance == "no":
             print("########### Calculate covariance matrix with phases ###########")
             means_phase, cov_phase = get_cov_matrix_phase(
@@ -5555,7 +5591,7 @@ def main(args):
             )
 
         if len(args.conditional_hist) != 0 and (
-                args.plot_type == "all" or args.plot_type == "2D_hist"
+            args.plot_type == "all" or args.plot_type == "2D_hist"
         ):
             print("########### Plot 2D histogram ###########")
             if args.conditional_hist[0] == "all":
@@ -5714,12 +5750,12 @@ def main(args):
         pd.set_option("display.max_columns", 10)
 
         with pd.option_context(
-                "display.max_rows",
-                100,
-                "display.max_columns",
-                10,
-                "display.expand_frame_repr",
-                False,
+            "display.max_rows",
+            100,
+            "display.max_columns",
+            10,
+            "display.expand_frame_repr",
+            False,
         ):
             text = print_table_top_lists(
                 [top10_list, top20_list],
@@ -5742,6 +5778,320 @@ def main(args):
             filename = filename[0 : -len(ending) - 1] + ".txt"
             with open(filename, "w+") as f:
                 f.write(text)
+
+
+def plot_rank_probs(
+    ds,
+    flow,
+    phase,
+    out_param,
+    median=False,
+    rank=False,
+    mark_top_n=10,
+    dot_size=12,
+    title=None,
+    filename=None,
+    width=17,
+    height=16,
+    font_scale=None,
+    save=False,
+    latex=False,
+):
+
+    ds = ds.sel({"flow": flow, "phase": phase})
+    if median:
+        y = "Median"
+    else:
+        y = "Mean"
+    vals = {"QV": {}, "latent_heat": {}, "latent_cool": {}}
+    median_vals = {"QV": {}, "latent_heat": {}, "latent_cool": {}}
+    mean_vals = {"QV": {}, "latent_heat": {}, "latent_cool": {}}
+    order = []
+    for out_p in ds["Output Parameter"]:
+        ds_tmp = ds.sel({"Output Parameter": out_p})
+        for col in ds_tmp:
+            if not "rank" in col:
+                continue
+            ds_tmp2 = ds_tmp.where(ds_tmp[col] > 0)
+            n_total = np.nansum(~np.isnan(ds_tmp2[col]))
+            n_top10 = np.nansum(~np.isnan(ds_tmp2.where(ds_tmp2[col] <= 10)[col]))
+            vals[out_p.item()][col[:-5]] = n_top10 / n_total * 100
+            if out_p.item() == ds["Output Parameter"].values[0]:
+                order.append(col[:-5])
+            if not rank:
+                median_vals[out_p.item()][col[:-5]] = (
+                    ds_tmp2[f"{col[:-5]} avg"].median().item()
+                )
+                mean_vals[out_p.item()][col[:-5]] = (
+                    ds_tmp2[f"{col[:-5]} avg"].mean().item()
+                )
+            else:
+                median_vals[out_p.item()][col[:-5]] = ds_tmp2[col].median().item()
+                mean_vals[out_p.item()][col[:-5]] = ds_tmp2[col].mean().item()
+
+    vals2 = {"QV": [], "latent_heat": [], "latent_cool": []}
+    median = {"QV": [], "latent_heat": [], "latent_cool": []}
+    mean = {"QV": [], "latent_heat": [], "latent_cool": []}
+
+    for t in ds["Output Parameter"]:
+        t = t.item()
+        for o in order:
+            vals2[t].append(vals[t][o])
+            median[t].append(median_vals[t][o])
+            mean[t].append(mean_vals[t][o])
+
+    o_p = "QV"
+    df = pd.DataFrame.from_dict(
+        {
+            "Probability for high ranking": vals2[o_p],
+            "Parameter": order,
+        }
+    )
+    top_params1 = np.sort(
+        np.unique(
+            df.nlargest(n=mark_top_n, columns=["Probability for high ranking"])[
+                "Parameter"
+            ]
+        )
+    )
+
+    o_p = "latent_heat"
+    df = pd.DataFrame.from_dict(
+        {
+            "Probability for high ranking": vals2[o_p],
+            "Parameter": order,
+        }
+    )
+    top_params2 = np.sort(
+        np.unique(
+            df.nlargest(n=mark_top_n, columns=["Probability for high ranking"])[
+                "Parameter"
+            ]
+        )
+    )
+
+    o_p = "latent_cool"
+    df = pd.DataFrame.from_dict(
+        {
+            "Probability for high ranking": vals2[o_p],
+            "Parameter": order,
+        }
+    )
+    top_params3 = np.sort(
+        np.unique(
+            df.nlargest(n=mark_top_n, columns=["Probability for high ranking"])[
+                "Parameter"
+            ]
+        )
+    )
+    top_params = np.sort(
+        np.unique(list(top_params1) + list(top_params2) + list(top_params3))
+    )
+    top_params_order = {
+        "QV": top_params1,
+        "latent_heat": top_params2,
+        "latent_cool": top_params3,
+    }
+
+    n = len(top_params)
+    color = plt.cm.tab20(np.linspace(0, 1, n))
+    top_params_c = {}
+    for i in range(n):
+        top_params_c[top_params[i]] = color[i]
+
+    if rank:
+        y2 = "Rank"
+    else:
+        y2 = "Impact"
+    df = pd.DataFrame.from_dict(
+        {
+            "Probability for high ranking": vals2[out_param],
+            "Parameter": order,
+            f"Median {y2}": median[out_param],
+            f"Mean {y2}": mean[out_param],
+        }
+    )
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
+    fig = Figure()
+    ax = fig.subplots()
+    sns.scatterplot(
+        data=df,
+        x="Probability for high ranking",
+        y=f"{y} {y2}",
+        facecolor="k",
+        ax=ax,
+        s=dot_size,
+    )
+    sns.scatterplot(
+        data=df.nlargest(n=mark_top_n, columns=["Probability for high ranking"]),
+        x="Probability for high ranking",
+        y=f"{y} {y2}",
+        ax=ax,
+        s=dot_size,
+        hue="Parameter",
+        palette=top_params_c,
+        hue_order=top_params_order[out_param],
+    )
+    if title is not None:
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+    ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
+    handles, labels = ax.get_legend_handles_labels()
+    leg = ax.legend(
+        handles, labels, fontsize=int(10 * font_scale), markerscale=font_scale
+    )
+    ax.set_xlabel("Probability for high ranking", fontsize=int(11 * font_scale))
+    ax.yaxis.get_offset_text().set_fontsize(int(11 * font_scale))
+    ax.set_ylabel(f"{y} {y2}", fontsize=int(11 * font_scale))
+    plt.tight_layout()
+    if filename is not None and save:
+        try:
+            i = 0
+            store_type = filename.split(".")[-1]
+            store_path = filename[0 : -len(store_type) - 1]
+            save_name = store_path + "_{:03d}.".format(i) + store_type
+            while os.path.isfile(save_name):
+                i = i + 1
+                save_name = store_path + "_{:03d}.".format(i) + store_type
+            fig.savefig(save_name, bbox_inches="tight", dpi=300)
+        except:
+            print(f"Storing to {save_name} failed.", file=sys.stderr)
+    return fig
+
+
+def plot_rank_probs_interactive(ds):
+    """
+
+    Parameters
+    ----------
+    ds
+
+    Returns
+    -------
+
+    """
+    out_param = pn.widgets.Select(
+        name="Output Parameter",
+        value=ds["Output Parameter"].values[0],
+        options=ds["Output Parameter"].values.tolist(),
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=5,
+        step=0.1,
+        value=0.7,
+    )
+    flow_select = pn.widgets.Select(
+        name="Flow",
+        value=ds["flow"].values[0],
+        options=ds["flow"].values.tolist(),
+    )
+    phase_select = pn.widgets.Select(
+        name="Phase",
+        value=ds["phase"].values[0],
+        options=ds["phase"].values.tolist(),
+    )
+    dot_slider = pn.widgets.IntSlider(
+        name="Change the dot size",
+        start=1,
+        end=500,
+        step=2,
+        value=12,
+    )
+    median_toggle = pn.widgets.Toggle(
+        name="Show median instead of mean",
+        button_type="success",
+        value=True,
+    )
+    rank_toggle = pn.widgets.Toggle(
+        name="Show rank instead of avg impact",
+        button_type="success",
+    )
+    top_slider = pn.widgets.IntSlider(
+        name="Color the top n parameters",
+        start=1,
+        end=38,
+        step=1,
+        value=10,
+    )
+
+    plot_pane = pn.panel(
+        pn.bind(
+            plot_rank_probs,
+            ds=ds,
+            flow=flow_select,
+            phase=phase_select,
+            out_param=out_param,
+            median=median_toggle,
+            rank=rank_toggle,
+            mark_top_n=top_slider,
+            dot_size=dot_slider,
+            title=title_widget,
+            filename=save_to_field,
+            width=width_slider,
+            height=height_slider,
+            font_scale=font_slider,
+            save=save_button,
+            latex=latex_button,
+        ),
+    ).servable()
+
+    return pn.Column(
+        pn.Row(
+            width_slider,
+            height_slider,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+            latex_button,
+        ),
+        pn.Row(
+            flow_select,
+            phase_select,
+            out_param,
+        ),
+        pn.Row(
+            median_toggle,
+            rank_toggle,
+        ),
+        pn.Row(
+            top_slider,
+            font_slider,
+            dot_slider,
+        ),
+        plot_pane,
+    )
 
 
 if __name__ == "__main__":

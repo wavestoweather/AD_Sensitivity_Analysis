@@ -6857,7 +6857,15 @@ def top_to_table(top, caption, label):
             return table
 
 
-def create_rank_latex_table(ds, phase, flow, avg=False, all_params=False, multiple_tables=False, param_order=None):
+def create_rank_latex_table(
+    ds,
+    phase,
+    flow,
+    avg=False,
+    all_params=False,
+    multiple_tables=False,
+    param_order=None,
+):
     """
     Create multiple latex tables with median rank, median absolute deviation, mean rank, and standard deviation
     for a given phase and flow.
@@ -6956,9 +6964,17 @@ def create_rank_latex_table(ds, phase, flow, avg=False, all_params=False, multip
             if avg:
                 ds_op3 = ds_op[param[:-4] + "avg"]
             if avg:
-                table_row += f"{int(med):2d} & {ds_op3.mean().item():1.2e} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}" + r" \\" + "\n"
+                table_row += (
+                    f"{int(med):2d} & {ds_op3.mean().item():1.2e} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}"
+                    + r" \\"
+                    + "\n"
+                )
             else:
-                table_row += f"{int(med):2d} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}" + r" \\" + "\n"
+                table_row += (
+                    f"{int(med):2d} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}"
+                    + r" \\"
+                    + "\n"
+                )
 
             if param_order is not None:
                 rows[param] = table_row
@@ -6976,11 +6992,15 @@ def create_rank_latex_table(ds, phase, flow, avg=False, all_params=False, multip
                 else:
                     table_text += rows[f"{param} rank"]
         if multiple_tables:
-            table_texts[o_p.item()] += r"""
+            table_texts[
+                o_p.item()
+            ] += r"""
         \end{tabular}
         \caption{"""
             table_texts[o_p.item()] += f"{caption}"
-            table_texts[o_p.item()] += r"""}
+            table_texts[
+                o_p.item()
+            ] += r"""}
         \label{tab:analysis:rank_count}
     \end{table}
     """

@@ -1155,7 +1155,7 @@ def plot_2dmap_interactive(ds):
     time_slider = pn.widgets.IntSlider(
         name="timestep",
         start=0,
-        end=len(ds["time"])-1,
+        end=len(ds["time"]) - 1,
         step=1,
         value=0,
     )
@@ -1305,9 +1305,7 @@ def plot_2dmap_interactive(ds):
             ds_tmp = ds[i_p].isel({"time": 0}).sel({"pressure": p})
         elif i_p[0] == "d" and i_p != "deposition":
             ds_tmp = (
-                ds[f"{k_p} {i_p}"]
-                .isel({"time": 0})
-                .sel({coord: o_p, "pressure": p})
+                ds[f"{k_p} {i_p}"].isel({"time": 0}).sel({coord: o_p, "pressure": p})
             )
         else:
             ds_tmp = ds[f"{k_p} {i_p}"].isel({"time": 0}).sel({"pressure": p})
@@ -1463,7 +1461,6 @@ def plot_2dmap_interactive(ds):
     return pn.Column(
         "# Plot Grid",
         static,
-
         kind_param,
         out_param,
         pn.Row(
@@ -1492,7 +1489,7 @@ def plot_2dmap_interactive(ds):
                 time_slider,
             ),
             plot_pane,
-        )
+        ),
     )
 
 
