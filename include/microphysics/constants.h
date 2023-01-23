@@ -2742,12 +2742,12 @@ const uint32_t n_lookup_hr_dummy = 10;
 /**
  * Threshold for determining if a phase is an ice or mixed phase for cold hydrometeors.
  */
-const double ice_q_phase_threshold = 1e-14;
+const double ice_q_phase_threshold = 0.0;
 
 /**
  * Threshold for determining if a phase is an ice or mixed phase for cold hydrometeors.
  */
-const double ice_n_phase_threshold = 0.9999;
+const double ice_n_phase_threshold = 0.0;
 
 /**
  * Threshold for determining if a phase is a warm or mixed phase for cloud and rain droplets.

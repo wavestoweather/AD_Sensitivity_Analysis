@@ -50,14 +50,14 @@ void netcdf_simulation_reader_t::load_vars(
             ncid,
             "Output_Parameter_ID",
             &dimid[Dim_idx::output_para_idx]));
-    for (uint32_t i=0; i<Par_idx::n_pars; i++) {
+    for (uint32_t i = 0; i < Par_idx::n_pars; i++) {
         SUCCESS_OR_DIE(
             nc_inq_varid(
                 ncid,
                 order_par[i].c_str(),
                 &varid[i]));
     }
-    for (uint32_t i=0; i<Sens_par_idx::n_sens_pars; i++) {
+    for (uint32_t i = 0; i < Sens_par_idx::n_sens_pars; i++) {
         SUCCESS_OR_DIE(
             nc_inq_varid(
                 ncid,
@@ -99,7 +99,7 @@ void netcdf_simulation_reader_t::init_netcdf(
             startp.data(),
             countp.data(),
             rel_start_time.data()));
-    for (uint32_t i=0; i < rel_start_time.size()-1; i++) {
+    for (uint32_t i = 0; i < rel_start_time.size()-1; i++) {
         if (std::isnan(rel_start_time[i])) continue;
         if (start_time < rel_start_time[i]) {
             start_time_idx = 0;
@@ -115,7 +115,7 @@ void netcdf_simulation_reader_t::init_netcdf(
     }
     n_readable_timesteps = countp[2];
     // Load all the data into buffer
-    for (uint32_t i=0; i<Par_idx::n_pars; i++) {
+    for (uint32_t i = 0; i < Par_idx::n_pars; i++) {
         SUCCESS_OR_DIE(
             nc_get_vara_double(
                 ncid,
@@ -125,17 +125,17 @@ void netcdf_simulation_reader_t::init_netcdf(
                 buffer[i].data()));
     }
     std::vector<size_t> startp2, countp2;
-    startp2.push_back(0);              // Out index
-    startp2.push_back(0);              // ensemble
-    startp2.push_back(traj_idx);       // trajectory
-    startp2.push_back(start_time_idx); // time
+    startp2.push_back(0);               // Out index
+    startp2.push_back(0);               // ensemble
+    startp2.push_back(traj_idx);        // trajectory
+    startp2.push_back(start_time_idx);  // time
     countp2.push_back(1);
     countp2.push_back(1);
     countp2.push_back(1);
     countp2.push_back(countp[2]);
-    for (uint32_t o_id=0; o_id<3; o_id++) {
+    for (uint32_t o_id = 0; o_id < 3; o_id++) {
         startp2[0] = o_id;
-        for (uint32_t i=0; i<Sens_par_idx::n_sens_pars; i++) {
+        for (uint32_t i = 0; i < Sens_par_idx::n_sens_pars; i++) {
             SUCCESS_OR_DIE(
                 nc_get_vara_double(
                     ncid,

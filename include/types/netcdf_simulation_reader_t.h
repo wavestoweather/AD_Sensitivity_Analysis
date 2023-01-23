@@ -1,9 +1,9 @@
-#ifndef TRAJECTORIES_NETCDF_SIMULATION_READER_T_H
-#define TRAJECTORIES_NETCDF_SIMULATION_READER_T_H
+#ifndef INCLUDE_TYPES_NETCDF_SIMULATION_READER_T_H_
+#define INCLUDE_TYPES_NETCDF_SIMULATION_READER_T_H_
 
+#include <netcdf.h>
 #include <cmath>
 #include <array>
-#include <netcdf.h>
 #include <string>
 #include <vector>
 
@@ -40,7 +40,8 @@ struct netcdf_simulation_reader_t {
 
     std::array<std::vector<double>, Par_idx::n_pars > buffer;
     std::array<std::vector<double>, Sens_par_idx::n_sens_pars*3 > buffer_sens;
-  private:
+
+ private:
     std::vector<int> startp, countp;
     int ncid;
     uint64_t n_timesteps_in; /*!< Total number of time steps that can be read from the input file. */
@@ -60,11 +61,6 @@ struct netcdf_simulation_reader_t {
      * ID for variables of output file.
      */
     std::vector<int> varid, sensvarid;
-
-
-
-
-
 };
 
-#endif //TRAJECTORIES_NETCDF_SIMULATION_READER_T_H
+#endif  // INCLUDE_TYPES_NETCDF_SIMULATION_READER_T_H_

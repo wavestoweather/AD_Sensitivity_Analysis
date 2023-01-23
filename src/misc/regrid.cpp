@@ -1,12 +1,10 @@
 #include <mpi.h>
-
+#include <netcdf.h>
 #include <stdlib.h>
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <filesystem>
-#include <iostream>
-#include <netcdf.h>
 #include <vector>
 
 #include "include/types/netcdf_simulation_reader_t.h"
@@ -47,7 +45,7 @@ void process_file(
     const uint32_t &n_times) {
 
     ProgressBar pbar = ProgressBar(netcdf_reader.n_trajectories, 1, "Trajectory", std::cout);
-    for(uint32_t traj=0; traj<netcdf_reader.n_trajectories; traj++) {
+    for (uint32_t traj = 0; traj < netcdf_reader.n_trajectories; traj++) {
         netcdf_reader.init_netcdf(start_time_rel, traj);
         // Do the calculations
         uint32_t current_idx = 0;
@@ -55,7 +53,7 @@ void process_file(
 
         int t_idx = -1;
         double current_time = netcdf_reader.buffer[Par_idx::time_val][current_idx];
-        for (const auto &t: times) {
+        for (const auto &t : times) {
             if (current_time >= t) {
                 t_idx++;
             }
@@ -70,27 +68,27 @@ void process_file(
             int lon_idx = -1;
             int lat_idx = -1;
             int p_idx = -1;
-            for (const auto &p: pressure_levels) {
+            for (const auto &p : pressure_levels) {
                 if (current_p >= p) {
                     p_idx++;
                 }
             }
-            for (const auto &l: lons) {
+            for (const auto &l : lons) {
                 if (current_lon >= l) {
                     lon_idx++;
                 }
             }
-            for (const auto &l: lats) {
+            for (const auto &l : lats) {
                 if (current_lat >= l) {
                     lat_idx++;
                 }
             }
             uint32_t idx = t_idx * offset_t + p_idx * offset_p + lat_idx * offset_lat + lon_idx;
-            for (uint32_t i=1; i<n_model_params+1; i++) {
+            for (uint32_t i = 1; i < n_model_params+1; i++) {
                 auto val = netcdf_reader.buffer[i][current_idx];
                 means_model[idx + offset_params*(i-1)] += val;
                 std_model[idx + offset_params*(i-1)] += val*val;
-                if (counter != 1 or traj != 0) {
+                if (counter != 1 || traj != 0) {
                     if (val < mins_model[idx + offset_params*(i-1)])
                         mins_model[idx + offset_params*(i-1)] = val;
                     if (val > maxs_model[idx + offset_params*(i-1)])
@@ -101,13 +99,13 @@ void process_file(
                 }
             }
             idx = t_idx * offset_t + p_idx * offset_p + lat_idx * offset_lat + lon_idx;
-            for (uint32_t i=0; i<n_params; i++) {
-                for (uint32_t j=0; j<n_out_params; j++) {
+            for (uint32_t i = 0; i < n_params; i++) {
+                for (uint32_t j = 0; j < n_out_params; j++) {
                     auto val = netcdf_reader.buffer_sens[i*3 + j][current_idx];
                     means[idx + i*offset_sens + j*offset_params] += val;
                     stds[idx + i*offset_sens + j*offset_params] += val*val;
                     tmp_avg[i*3 + j] = val;
-                    if (counter != 1 or traj != 0) {
+                    if (counter != 1 || traj != 0) {
                         if (val < mins[idx + i*offset_sens + j*offset_params])
                             mins[idx + i*offset_sens + j*offset_params] = val;
                         if (val > maxs[idx + i*offset_sens + j*offset_params])
@@ -125,7 +123,7 @@ void process_file(
             if (30 + current_time >= times[t_idx+1]) {
                 std::vector<int> max_idx = {-1, -1, -1};
                 std::vector<double> max_sens = {0, 0, 0};
-                for (uint32_t i=0; i<n_params; i++) {
+                for (uint32_t i = 0; i < n_params; i++) {
                     for (uint32_t j = 0; j < n_out_params; j++) {
                         if (std::fabs(tmp_avg[i*n_out_params + j]) > max_sens[j]) {
                             max_sens[j] = std::fabs(tmp_avg[i*n_out_params + j]);
@@ -182,9 +180,9 @@ int create_dims(
     // Create dimensions
     SUCCESS_OR_DIE(
         nc_def_dim(
-            ncid,               // ncid
-            "Output_Parameter", // name
-            3,                  // length
+            ncid,                // ncid
+            "Output_Parameter",  // name
+            3,                   // length
             &dimid[Grid_dim_idx::outp_dim_idx]));   // idp
     SUCCESS_OR_DIE(
         nc_def_dim(
@@ -231,11 +229,11 @@ void define_vars(
 
     SUCCESS_OR_DIE(
         nc_def_var(
-            ncid,                       // ncid
-            "Output_Parameter",         // name
-            NC_STRING,                  // type
-            1,                          // ndims (0=scalar, 1=vector, 2=matrix, ...)
-            &dimid[Grid_dim_idx::outp_dim_idx], // dimid
+            ncid,                   // ncid
+            "Output_Parameter",     // name
+            NC_STRING,              // type
+            1,                      // ndims (0=scalar, 1=vector, 2=matrix, ...)
+            &dimid[Grid_dim_idx::outp_dim_idx],     // dimid
             &varid[Grid_dim_idx::outp_dim_idx]));   // varid
     SUCCESS_OR_DIE(
         nc_def_var(
@@ -271,7 +269,7 @@ void define_vars(
             &varid[Grid_dim_idx::lon_dim_idx]));
     // Now all the other things
     // Model state
-    for (uint32_t i=1; i<n_model_params+1; i++) {
+    for (uint32_t i = 1; i < n_model_params+1; i++) {
         SUCCESS_OR_DIE(
             nc_def_var(
                 ncid,
@@ -306,7 +304,7 @@ void define_vars(
                 &varid_stds[i-1]));
     }
     // Sensitivities
-    for (uint32_t i=0; i<n_params; i++) {
+    for (uint32_t i = 0; i < n_params; i++) {
         SUCCESS_OR_DIE(
             nc_def_var(
                 ncid,
@@ -429,7 +427,7 @@ void set_compression(
     const int &ncid,
     const std::vector<int> &varid) {
 
-    for (const auto v: varid)
+    for (const auto v : varid)
         SUCCESS_OR_DIE(
             nc_def_var_deflate(
                 ncid,
@@ -454,7 +452,7 @@ void write_other_values(
     const std::vector<size_t> &startp,
     const std::vector<size_t> &countp) {
 
-    for (uint32_t i=0; i<n_model_params; i++) {
+    for (uint32_t i = 0; i < n_model_params; i++) {
         SUCCESS_OR_DIE(
             nc_put_vara(
                 ncid,
@@ -500,14 +498,11 @@ int main(int argc, char** argv) {
     const std::filesystem::path load_path{argv[1]};
     const std::string store_path = argv[2];
 
-//    const std::filesystem::path load_path{"/media/mahieron/Austausch/data/Z2_data_gradients_satfix_rel/"};
-//    const std::filesystem::path load_path{"/media/mahieron/Austausch/data/Z2_data_gradients_smallset/"};
-//    const std::string store_path = "/media/mahieron/Austausch/data/regrid/grid_100_100_11_t.nc";
     const uint32_t n_params = 38;
     const uint32_t n_model_params = 18;
 
     uint32_t buffer_size = 20000;
-    uint32_t delta_steps = 60; // 30 minutes
+    uint32_t delta_steps = 60;  // 30 minutes
     netcdf_simulation_reader_t netcdf_reader(buffer_size);
     float start_time_rel = -240;
     const uint32_t n_bins = 100;
@@ -517,8 +512,8 @@ int main(int argc, char** argv) {
     const uint32_t n_plevels = 11;
     // Get min time, max time, longitude, latitude
     // Here already hard coded.
-    double min_time = 0; // 270
-    double max_time = 60*60*24*3; // 255870
+    double min_time = 0;  // 270
+    double max_time = 60*60*24*3;  // 255870
     double delta_time = 3600;
     std::vector<double> lons(n_bins+1);
     std::vector<double>  lats(n_bins+1);
@@ -530,19 +525,19 @@ int main(int argc, char** argv) {
     double delta_lon = (max_lon - min_lon)/n_bins;
     double delta_lat = (max_lat - min_lat)/n_bins;
     uint32_t counter = 0;
-    for(auto &l: lons) {
+    for (auto &l : lons) {
         l = min_lon + counter*delta_lon;
         counter++;
     }
     counter = 0;
-    for(auto &l: lats) {
+    for (auto &l : lats) {
         l = min_lat + counter*delta_lat;
         counter++;
     }
     uint32_t n_times = (max_time - min_time)/delta_time;
     counter = 0;
     std::vector<double> times(n_times+1);
-    for(auto &t: times) {
+    for (auto &t : times) {
         t = min_time + counter*delta_time;
         counter++;
     }
@@ -564,7 +559,8 @@ int main(int argc, char** argv) {
             + std_model.size() + means.size() + mins.size() + maxs.size()
             + stds.size()) + sizeof(uint64_t) * (counts.size() + ranking.size()
             + ranking_vals.size());
-    std::cout << "For calculating the gridded data this program allocates about " << mem_usage/(1024*1024*1024) << " GByte\n";
+    std::cout << "For calculating the gridded data this program allocates about "
+        << mem_usage/(1024*1024*1024) << " GByte\n";
     // Get the counts, means, min. max, std, ranking
     // Get means:
     // Sum everything and then divide by counts in the end.
@@ -587,7 +583,7 @@ int main(int argc, char** argv) {
     const uint32_t rank_offset = offset_params * n_out_params;
 
     if (std::filesystem::is_directory(load_path)) {
-        for (auto const &dir_entry: std::filesystem::directory_iterator(load_path)) {
+        for (auto const &dir_entry : std::filesystem::directory_iterator(load_path)) {
             counter += 1;
             // Load the file
             netcdf_reader.load_vars(dir_entry.path().c_str());
@@ -619,8 +615,7 @@ int main(int argc, char** argv) {
                     n_params,
                     n_model_params,
                     n_out_params,
-                    n_times
-            );
+                    n_times);
 
             auto now = std::chrono::system_clock::now();
             double dt_total = ((std::chrono::duration<double>) (now - t_first)).count();
@@ -674,18 +669,8 @@ int main(int argc, char** argv) {
                 n_params,
                 n_model_params,
                 n_out_params,
-                n_times
-        );
+                n_times);
     }
-//    std::cout << "Is everything okay so far?\n";
-//    double mean1 = 0;
-//    double mean2 = 0;
-//    for (auto i=0; i<100*100*n_plevels; i++) {
-//        mean1 += means_model[Par_idx::ascent*offset_params + i + 5*offset_t];
-//        mean2 += means_model[Par_idx::ascent*offset_params + i + 45*offset_t];
-//    }
-//    std::cout << "Mean w at t=5  " << mean1/(100*100*n_plevels) << "\n";
-//    std::cout << "Mean w at t=45 " << mean2/(100*100*n_plevels) << "\n";
 
     // Calculate means and std
     for (uint64_t i = 0; i < counts.size(); i++) {
@@ -778,20 +763,10 @@ int main(int argc, char** argv) {
     startp.push_back(0);
     startp.push_back(0);
 
-    countp.push_back(n_times); // time
-    countp.push_back(n_plevels); // pressure
-    countp.push_back(n_bins); // lat
-    countp.push_back(n_bins); // lon
-
-//    std::cout << "Is everything okay so far?\n";
-//    mean1 = 0;
-//    mean2 = 0;
-//    for (auto i=0; i<100*100*n_plevels; i++) {
-//        mean1 += means_model[(Par_idx::ascent-1)*offset_params + i + 5*offset_t];
-//        mean2 += means_model[(Par_idx::ascent-1)*offset_params + i + 45*offset_t];
-//    }
-//    std::cout << "Mean w at t=5  " << mean1/(100*100*n_plevels) << "\n";
-//    std::cout << "Mean w at t=45 " << mean2/(100*100*n_plevels) << "\n";
+    countp.push_back(n_times);      // time
+    countp.push_back(n_plevels);    // pressure
+    countp.push_back(n_bins);       // lat
+    countp.push_back(n_bins);       // lon
 
     write_other_values(
         ncid,
@@ -825,10 +800,10 @@ int main(int argc, char** argv) {
     startp2.push_back(0);
 
     countp2.push_back(3);
-    countp2.push_back(n_times); // time
-    countp2.push_back(n_plevels); // pressure
-    countp2.push_back(n_bins); // lat
-    countp2.push_back(n_bins); // lon
+    countp2.push_back(n_times);     // time
+    countp2.push_back(n_plevels);   // pressure
+    countp2.push_back(n_bins);      // lat
+    countp2.push_back(n_bins);      // lon
 
     write_other_values(
             ncid,

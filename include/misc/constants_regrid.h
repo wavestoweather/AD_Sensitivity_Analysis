@@ -1,5 +1,5 @@
-#ifndef TRAJECTORIES_CONSTANTS_REGRID_H
-#define TRAJECTORIES_CONSTANTS_REGRID_H
+#ifndef INCLUDE_MISC_CONSTANTS_REGRID_H_
+#define INCLUDE_MISC_CONSTANTS_REGRID_H_
 
 #include <array>
 #include <string>
@@ -140,4 +140,4 @@ enum Grid_dim_idx {
 };
 
 
-#endif //TRAJECTORIES_CONSTANTS_REGRID_H
+#endif  // INCLUDE_MISC_CONSTANTS_REGRID_H_
