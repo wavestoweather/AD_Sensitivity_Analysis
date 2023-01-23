@@ -1152,10 +1152,21 @@ def plot_2dmap_interactive(ds):
         step=(ds["pressure"].values[1] - ds["pressure"].values[0]),
         value=ds["pressure"].values[-4],
     )
+    time_slider = pn.widgets.IntSlider(
+        name="timestep",
+        start=0,
+        end=len(ds["time"])-1,
+        step=1,
+        value=0,
+    )
+    if "Output Parameter" in ds:
+        coord = "Output Parameter"
+    else:
+        coord = "Output_Parameter"
     out_param = pn.widgets.RadioButtonGroup(
         name="Output Parameter",
-        value=ds["Output Parameter"].values[0],
-        options=list(ds["Output Parameter"].values),
+        value=ds[coord].values[0],
+        options=list(ds[coord].values),
         button_type="primary",
     )
     kind_param = pn.widgets.RadioButtonGroup(
@@ -1213,7 +1224,7 @@ def plot_2dmap_interactive(ds):
     )
     log_plot = pn.widgets.Toggle(
         name="Use log colorbar",
-        value=True,
+        value=False,
         button_type="success",
     )
     log_threshold_slider = pn.widgets.FloatSlider(
@@ -1252,6 +1263,7 @@ def plot_2dmap_interactive(ds):
         i_p,
         k_p,
         p,
+        time,
         c,
         fix,
         log_plot,
@@ -1270,11 +1282,11 @@ def plot_2dmap_interactive(ds):
         if k_p == "Std":
             ds[f"Std {i_p}"] = np.sqrt(ds[f"Var {i_p}"])
         if i_p == "counts":
-            ds_tmp = ds.isel({"time": 0})[i_p]
+            ds_tmp = ds.isel({"time": time})[i_p]
         elif i_p[0] == "d" and i_p != "deposition":
-            ds_tmp = ds.isel({"time": 0}).sel({"Output Parameter": o_p})[f"{k_p} {i_p}"]
+            ds_tmp = ds.isel({"time": time}).sel({coord: o_p})[f"{k_p} {i_p}"]
         else:
-            ds_tmp = ds.isel({"time": 0})[f"{k_p} {i_p}"]
+            ds_tmp = ds.isel({"time": time})[f"{k_p} {i_p}"]
         mini = ds_tmp.min().values.item()
         maxi = ds_tmp.max().values.item()
         if mini == 0:
@@ -1295,7 +1307,7 @@ def plot_2dmap_interactive(ds):
             ds_tmp = (
                 ds[f"{k_p} {i_p}"]
                 .isel({"time": 0})
-                .sel({"Output Parameter": o_p, "pressure": p})
+                .sel({coord: o_p, "pressure": p})
             )
         else:
             ds_tmp = ds[f"{k_p} {i_p}"].isel({"time": 0}).sel({"pressure": p})
@@ -1433,6 +1445,7 @@ def plot_2dmap_interactive(ds):
             i_p=in_param,
             k_p=kind_param,
             p=pressure,
+            time=time_slider,
             c=color_map,
             fix=fix,
             log_plot=log_plot,
@@ -1450,7 +1463,7 @@ def plot_2dmap_interactive(ds):
     return pn.Column(
         "# Plot Grid",
         static,
-        pressure,
+
         kind_param,
         out_param,
         pn.Row(
@@ -1473,7 +1486,13 @@ def plot_2dmap_interactive(ds):
             latex_button,
         ),
         title_widget,
-        plot_pane,
+        pn.Row(
+            pn.Column(
+                pressure,
+                time_slider,
+            ),
+            plot_pane,
+        )
     )
 
 

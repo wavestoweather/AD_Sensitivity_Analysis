@@ -15,6 +15,10 @@ set(TYPES_SRCS
     types/task_scheduler_t.cpp
     misc/general.cpp
     )
+set(REGRID_SRCS
+    microphysics/constants.cpp
+    types/netcdf_simulation_reader_t.cpp
+    )
 
 if( TARGET )
     if( "${TARGET}" MATCHES "simulation" )
@@ -22,6 +26,12 @@ if( TARGET )
         set_property(TARGET trajectories PROPERTY CXX_STANDARD 17)
         set_property(TARGET trajectories PROPERTY CXX_STANDARD_REQUIRED ON)
         target_link_libraries(trajectories ${targets})
+    endif()
+    if( "${TARGET}" MATCHES "regrid" )
+        add_executable(regrid ${REGRID_SRCS} misc/regrid.cpp)
+        set_property(TARGET regrid PROPERTY CXX_STANDARD 17)
+        set_property(TARGET regrid PROPERTY CXX_STANDARD_REQUIRED ON)
+        target_link_libraries(regrid ${targets})
     endif()
     if( "${TARGET}" MATCHES "timing" )
         add_executable(timing ${TYPES_SRCS} misc/timing.cpp)

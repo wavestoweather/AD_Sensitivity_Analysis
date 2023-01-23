@@ -657,6 +657,18 @@ void netcdf_reader_t::set_dims(
     const char *input_file,
     model_constants_t<float_t> &cc,
     const int &simulation_mode) {
+
+    set_dims(input_file, simulation_mode);
+    if (simulation_mode != limited_time_ensembles) {
+        cc.n_ensembles = n_ensembles;
+        cc.max_n_trajs = n_trajectories;
+    }
+}
+
+
+void netcdf_reader_t::set_dims(
+    const char *input_file,
+    const int &simulation_mode) {
     time_buffer_idx = 0;
     traj_idx = 0;
     ens_idx = 0;
@@ -711,10 +723,7 @@ void netcdf_reader_t::set_dims(
                     << " which does not exist. ABORTING.\n";
         SUCCESS_OR_DIE(NC_TRAJ_IDX_ERR);
     }
-    if (simulation_mode != limited_time_ensembles) {
-        cc.n_ensembles = n_ensembles;
-        cc.max_n_trajs = n_trajectories;
-    }
+
     if (!already_open) {
         SUCCESS_OR_DIE(
             nc_inq_dimid(
@@ -819,7 +828,7 @@ void netcdf_reader_t::init_netcdf(
     this->start_time_idx = start_time_idx;
 #elif defined(B_EIGHT)
     countp.push_back(1);
-    countp.push_back(11);
+    countp.push_back(10);
 
     startp.push_back(traj_idx);     // trajectory
     startp.push_back(0);            // time

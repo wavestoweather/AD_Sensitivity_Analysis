@@ -3616,9 +3616,10 @@ def plot_heatmap_matrix(
         Width in inches
     height : float
         Height in inches
-    sort : bool
-        Sort the rows and columns such that the one with the largest sum is on top/left and the smallest
+    sort : bool or list of strings
+        If true: sort the rows and columns such that the one with the largest sum is on top/left and the smallest
         sum is on bottom/right.
+        If list
 
     Returns
     -------
@@ -3717,6 +3718,7 @@ def plot_heatmap_interactive(
     filepath=None,
     matrix_dic=None,
     names=None,
+    order=None,
 ):
     """
     Interactive plot for plot_heatmap_matrix() that takes correlation and covariance matrices.
@@ -3734,7 +3736,8 @@ def plot_heatmap_interactive(
         The data can be generated using get_stats_per_traj.get_matrix().
     names : list of strings
         The names of each column/row in the covariance matrix. The index of names is the row/column of the matrix.
-
+    order : list of strings
+        The order in which the columns/rows shall be plotted
     Returns
     -------
     panel.layout that can be used in a jupyter notebook.
@@ -4956,6 +4959,384 @@ def plot_traj_kde_inp_interactive(
     )
 
 
+def plot_rank_over_impact(
+        ds,
+        out_param,
+        width=24,
+        height=12,
+        font_scale=None,
+        filename=None,
+        title=None,
+        save=False,
+        latex=False,
+        dot_size=6,
+        log=False,
+        phase=False,
+        flow=False,
+        avg=False,
+):
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
+    fig = Figure()
+    ax = fig.subplots()
+    params_rank = []
+    params_imp = []
+    for p in ds:
+        if "rank" in p:
+            params_rank.append(p)
+        elif "avg" in p and p != "avg ascent":
+            params_imp.append(p)
+    phases = ["warm phase", "mixed phase", "ice phase"]
+    flows = ["inflow", "ascent", "outflow"]
+    phase_colors = {
+        "warm phase": "tab:orange",
+        "mixed phase": "tab:green",
+        "ice phase": "tab:blue",
+        "any": "k",
+    }
+    if out_param != "all":
+        ds = ds.sel({"Output Parameter": out_param})
+        out_markers = None
+    else:
+        out_markers = {
+            "QV": "D",
+            "latent_heat": "o",
+            "latent_cool": "^",
+        }
+    if not phase and not flow:
+        ds = ds.sel({"phase": "any", "flow": "any"})
+    elif phase:
+        ds = ds.sel({"phase": phases, "flow": "any"})
+    elif flow:
+        ds = ds.sel({"phase": "any", "flow": flows})
+    else:
+        ds = ds.sel({"phase": phases, "flow": flows})
+    ds_rank = ds[params_rank]
+    ds_imp = ds[params_imp]
+
+    if avg:
+        ds_rank = ds_rank.mean(dim=["trajectory", "file"])
+        ds_imp = ds_imp.mean(dim=["trajectory", "file"])
+
+    if not phase and not flow:
+        if out_param != "all":
+            imp_vals = ds_imp.to_array().values.flatten()
+            rank_vals = ds_rank.to_array().values.flatten()
+            df = pd.DataFrame.from_dict(
+                {
+                    "Rank": rank_vals,
+                    "Impact": imp_vals,
+                }
+            )
+            sns.scatterplot(
+                data=df,
+                x="Rank",
+                y="Impact",
+                ax=ax,
+                s=dot_size,
+            )
+        else:
+            data_dic = {
+                "Rank": np.asarray([]),
+                "Impact": np.asarray([]),
+                "Output Parameter": np.asarray([]),
+            }
+            for out_p in ds["Output Parameter"]:
+                imp_vals = ds_imp.sel({"Output Parameter": out_p}).to_array().values.flatten()
+                rank_vals = ds_rank.sel({"Output Parameter": out_p}).to_array().values.flatten()
+                data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
+                data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
+                data_dic["Output Parameter"] = np.append(data_dic["Output Parameter"], np.repeat(out_p.item(), len(rank_vals)))
+            df = pd.DataFrame.from_dict(data_dic)
+            sns.scatterplot(
+                data=df,
+                x="Rank",
+                y="Impact",
+                style="Output Parameter",
+                ax=ax,
+                s=dot_size,
+                markers=out_markers,
+            )
+            plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+            plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    elif phase:
+        data_dic = {
+            "Rank": np.asarray([]),
+            "Impact": np.asarray([]),
+            "Phase": np.asarray([]),
+        }
+        if out_param != "all":
+            for phase_v in ds["phase"]:
+                imp_vals = ds_imp.sel({"phase": phase_v}).to_array().values.flatten()
+                rank_vals = ds_rank.sel({"phase": phase_v}).to_array().values.flatten()
+                data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
+                data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
+                data_dic["Phase"] = np.append(data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals)))
+            df = pd.DataFrame.from_dict(data_dic)
+
+            sns.scatterplot(
+                data=df,
+                x="Rank",
+                y="Impact",
+                ax=ax,
+                s=dot_size,
+                hue="Phase",
+                hue_order=phases,
+                palette=phase_colors,
+            )
+            plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+            plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+        else:
+            data_dic["Output Parameter"] = np.asarray([])
+            for phase_v in ds["phase"]:
+                for out_p in ds["Output Parameter"]:
+                    imp_vals = ds_imp.sel({"Output Parameter": out_p, "phase": phase_v}).to_array().values.flatten()
+                    rank_vals = ds_rank.sel({"Output Parameter": out_p, "phase": phase_v}).to_array().values.flatten()
+                    data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
+                    data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
+                    data_dic["Phase"] = np.append(data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals)))
+                    data_dic["Output Parameter"] = np.append(data_dic["Output Parameter"], np.repeat(out_p.item(), len(rank_vals)))
+            df = pd.DataFrame.from_dict(data_dic)
+            sns.scatterplot(
+                data=df,
+                x="Rank",
+                y="Impact",
+                style="Output Parameter",
+                ax=ax,
+                s=dot_size,
+                markers=out_markers,
+                hue="Phase",
+                hue_order=phases,
+                palette=phase_colors,
+            )
+
+            plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+            plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    elif flow:
+        data_dic = {
+            "Rank": np.asarray([]),
+            "Impact": np.asarray([]),
+            "Flow": np.asarray([]),
+        }
+        for flow_v in ds["flow"]:
+            imp_vals = ds_imp.sel({"flow": flow_v}).to_array().values.flatten()
+            rank_vals = ds_rank.sel({"flow": flow_v}).to_array().values.flatten()
+            data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
+            data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
+            data_dic["Flow"] = np.append(data_dic["Flow"], np.repeat(flow_v.item(), len(imp_vals)))
+        df = pd.DataFrame.from_dict(data_dic)
+
+        sns.scatterplot(
+            data=df,
+            x="Rank",
+            y="Impact",
+            ax=ax,
+            s=dot_size,
+            markers={
+                "Inflow": "hexagon",
+                "Ascent": "star",
+                "Outflow": "plus (filled)",
+            }
+        )
+
+        plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+        plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    elif phase and flow:
+        data_dic = {
+            "Rank": np.asarray([]),
+            "Impact": np.asarray([]),
+            "Flow": np.asarray([]),
+        }
+        for flow_v in ds["flow"]:
+            for phase_v in ds["phase"]:
+                imp_vals = ds_imp.sel({"flow": flow_v, "phase": phase_v}).to_array().values.flatten()
+                rank_vals = ds_rank.sel({"flow": flow_v, "phase": phase_v}).to_array().values.flatten()
+                data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
+                data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
+                data_dic["Flow"] = np.append(data_dic["Flow"], np.repeat(flow_v.item(), len(imp_vals)))
+                data_dic["Phase"] = np.append(data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals)))
+        df = pd.DataFrame.from_dict(data_dic)
+        sns.scatterplot(
+            data=df,
+            x="Rank",
+            y="Impact",
+            ax=ax,
+            s=dot_size,
+            markers={
+                "Inflow": "hexagon",
+                "Ascent": "star",
+                "Outflow": "plus (filled)",
+            },
+            hue="Phase",
+            hue_order=phases,
+            palette=phase_colors,
+        )
+        plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+        plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    if log:
+        ax.set_yscale("log")
+    if title is not None:
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+    ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
+    ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
+    ax.tick_params(
+        axis="both",
+        which="major",
+        labelsize=int(10 * font_scale),
+    )
+    # plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+    # plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    ax.xaxis.get_offset_text().set_size(int(9 * font_scale))
+    ax.yaxis.get_offset_text().set_size(int(9 * font_scale))
+
+    if filename is not None and save:
+        fig = ax.get_figure()
+        try:
+            i = 0
+            store_type = filename.split(".")[-1]
+            store_path = filename[0 : -len(store_type) - 1]
+            save_name = store_path + "_{:03d}.".format(i) + store_type
+
+            while os.path.isfile(save_name):
+                i = i + 1
+                save_name = store_path + "_{:03d}.".format(i) + store_type
+            fig.savefig(save_name, bbox_inches="tight", dpi=300)
+        except:
+            print(f"Storing to {save_name} failed.", file=sys.stderr)
+
+    return fig
+
+
+def plot_rank_over_impact_interactive(ds):
+    """
+
+    Parameters
+    ----------
+    ds
+
+    Returns
+    -------
+
+    """
+    out_params = []
+    for o_p in ds["Output Parameter"]:
+        out_params.append(o_p.item())
+    out_params.append("all")
+    out_param = pn.widgets.Select(
+        name="Output Parameter",
+        value=out_params[0],
+        options=out_params,
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    dot_slider = pn.widgets.IntSlider(
+        name="Dot size",
+        start=1,
+        end=500,
+        step=2,
+        value=6,
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=5,
+        step=0.1,
+        value=0.7,
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    log_y = pn.widgets.Toggle(
+        name="Log y-axis",
+        value=False,
+        button_type="success",
+    )
+    trajectory_toggle = pn.widgets.Toggle(
+        name="Average over all trajectories",
+        value=True,
+        button_type="success",
+    )
+    phase_toggle = pn.widgets.Toggle(
+        name="Show phases",
+        value=False,
+        button_type="success",
+    )
+    flow_toggle = pn.widgets.Toggle(
+        name="Show flow",
+        value=False,
+        button_type="success",
+    )
+    plot_pane = pn.panel(
+        pn.bind(
+            plot_rank_over_impact,
+            ds=ds,
+            out_param=out_param,
+            width=width_slider,
+            height=height_slider,
+            font_scale=font_slider,
+            filename=save_to_field,
+            title=title_widget,
+            save=save_button,
+            latex=latex_button,
+            dot_size=dot_slider,
+            log=log_y,
+            phase=phase_toggle,
+            flow=flow_toggle,
+            avg=trajectory_toggle,
+        ),
+    ).servable()
+    return pn.Column(
+        pn.Row(
+            width_slider,
+            height_slider,
+            dot_slider,
+        ),
+        pn.Row(
+            phase_toggle,
+            flow_toggle,
+        ),
+        pn.Row(
+            font_slider,
+            log_y,
+            trajectory_toggle,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+            latex_button,
+        ),
+        pn.Row(
+            out_param,
+            title_widget,
+        ),
+        plot_pane,
+    )
+
+
 def main(args):
     """
     Handle the plotting routines for different data inputs and plots.
@@ -4967,12 +5348,12 @@ def main(args):
     """
     if not args.from_processed:
         if (
-            args.plot_type == "all"
-            or args.plot_type == "hist_out"
-            or args.plot_type == "hist_in"
-            or args.plot_type == "heat"
-            or args.plot_type == "2D_hist"
-            or args.save_histogram != "no"
+                args.plot_type == "all"
+                or args.plot_type == "hist_out"
+                or args.plot_type == "hist_in"
+                or args.plot_type == "heat"
+                or args.plot_type == "2D_hist"
+                or args.save_histogram != "no"
         ):
             if args.load_histogram != "no":
                 print("########### Load histograms ###########")
@@ -5151,7 +5532,7 @@ def main(args):
                 f.write(text)
 
         if (
-            args.plot_type == "all" or args.plot_type == "cov_heat"
+                args.plot_type == "all" or args.plot_type == "cov_heat"
         ) and args.load_covariance == "no":
             print("########### Calculate covariance matrix ###########")
             means, cov = get_cov_matrix(
@@ -5162,7 +5543,7 @@ def main(args):
                 inoutflow_time=args.inoutflow_time,
             )
         if (
-            args.plot_type == "all" or args.plot_type == "cov_heat_phases"
+                args.plot_type == "all" or args.plot_type == "cov_heat_phases"
         ) and args.load_covariance == "no":
             print("########### Calculate covariance matrix with phases ###########")
             means_phase, cov_phase = get_cov_matrix_phase(
@@ -5174,7 +5555,7 @@ def main(args):
             )
 
         if len(args.conditional_hist) != 0 and (
-            args.plot_type == "all" or args.plot_type == "2D_hist"
+                args.plot_type == "all" or args.plot_type == "2D_hist"
         ):
             print("########### Plot 2D histogram ###########")
             if args.conditional_hist[0] == "all":
@@ -5333,12 +5714,12 @@ def main(args):
         pd.set_option("display.max_columns", 10)
 
         with pd.option_context(
-            "display.max_rows",
-            100,
-            "display.max_columns",
-            10,
-            "display.expand_frame_repr",
-            False,
+                "display.max_rows",
+                100,
+                "display.max_columns",
+                10,
+                "display.expand_frame_repr",
+                False,
         ):
             text = print_table_top_lists(
                 [top10_list, top20_list],

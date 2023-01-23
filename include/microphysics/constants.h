@@ -132,6 +132,11 @@ typedef bool(*track_func)(const int&, const bool&);
  */
 #define limited_time_ensembles 4
 /**
+ * Input data are trajectories from a sensitivity simulation. Output is a
+ * regridded set.
+ */
+#define regrid_mode 5
+/**
  * Old:
  * Create a training set according to the configuration file. The output file contains
  * impact matrices M_ix, where x is the time in minutes until the impact is evaluated
