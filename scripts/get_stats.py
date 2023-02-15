@@ -4716,9 +4716,7 @@ def traj_plot_kde_inp(
                 if edge <= 0 <= edges_in_params[out_param][in_p][i + 1]:
                     weights[i] = 0
                     break
-
-        data_dic["weight"].extend(weights)
-        data_dic["Impact"].extend(
+        impact = (
             edges_in_params[out_param][in_p][:-1]
             + (
                 edges_in_params[out_param][in_p][1]
@@ -4726,6 +4724,8 @@ def traj_plot_kde_inp(
             )
             / 2
         )
+        data_dic["weight"].extend(weights)
+        data_dic["Impact"].extend(impact)
         data_dic["Parameter"].extend(np.repeat(latexify.parse_word(in_p), len(weights)))
 
     df = pd.DataFrame(data_dic)

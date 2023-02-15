@@ -1152,13 +1152,20 @@ def plot_2dmap_interactive(ds):
         step=(ds["pressure"].values[1] - ds["pressure"].values[0]),
         value=ds["pressure"].values[-4],
     )
-    time_slider = pn.widgets.IntSlider(
-        name="timestep",
-        start=0,
-        end=len(ds["time"]) - 1,
-        step=1,
-        value=0,
-    )
+    if len(ds["time"]) > 1:
+        time_slider = pn.widgets.IntSlider(
+            name="timestep",
+            start=0,
+            end=len(ds["time"]) - 1,
+            step=1,
+            value=0,
+        )
+    else:
+        time_slider = pn.widgets.Select(
+            name="timestep",
+            value=0,
+            options=[0],
+        )
     if "Output Parameter" in ds:
         coord = "Output Parameter"
     else:
@@ -1169,16 +1176,25 @@ def plot_2dmap_interactive(ds):
         options=list(ds[coord].values),
         button_type="primary",
     )
-    kind_param = pn.widgets.RadioButtonGroup(
-        name="Kind",
-        value="Mean",
-        options=["Mean", "Min", "Max", "Var", "Std"],
-        button_type="primary",
-    )
     in_params = []
+    kind_params = []
     for col in ds:
         if "Mean " in col:
             in_params.append(col[5:])
+            if "Mean" not in kind_params:
+                kind_params.append("Mean")
+        if "Var " or "Std " in col:
+            if "Var" not in kind_params:
+                kind_params.append("Var")
+                kind_params.append("Std")
+            else:
+                kind_params.append("Var")
+        if "Min " in col:
+            if "Min" not in kind_params:
+                kind_params.append("Min")
+        if "Max " in col:
+            if "Max" not in kind_params:
+                kind_params.append("Max")
     if "counts" in ds:
         in_params.append("counts")
     if "Top_Parameter" in ds:
@@ -1189,6 +1205,13 @@ def plot_2dmap_interactive(ds):
         value=in_params[-1],
         options=in_params,
     )
+    kind_param = pn.widgets.RadioButtonGroup(
+        name="Kind",
+        value=kind_params[0],
+        options=kind_params,
+        button_type="primary",
+    )
+
     color_map = pn.widgets.Select(
         name="Colormap",
         value="RdBu",
@@ -1415,16 +1438,17 @@ def plot_2dmap_interactive(ds):
         if i_p == "counts":
             ds_tmp = ds.isel({"time": time})[i_p]
         elif i_p[0] == "d" and i_p != "deposition":
-            ds_tmp = ds.isel({"time": time}).sel({coord: o_p})[f"{k_p} {i_p}"]
+            ds_tmp = ds.sel({coord: o_p})[f"{k_p} {i_p}"]
         elif i_p == "Top_Parameter":
             ds_tmp = ds.isel({"time": time}).sel({coord: o_p, "pressure": p})[
                 "Top_Parameter"
             ]
         else:
-            ds_tmp = ds.isel({"time": time})[f"{k_p} {i_p}"]
+            ds_tmp = ds[f"{k_p} {i_p}"]
 
         fig = Figure()
         ax = fig.subplots()
+
         if i_p == "Top_Parameter":
             ds_tmp.plot.pcolormesh(
                 y="lat",
@@ -1449,15 +1473,15 @@ def plot_2dmap_interactive(ds):
             else:
                 linthresh = 10 ** lthresh
             if i_p == "counts":
-                ds_tmp = ds[i_p].isel({"time": 0}).sel({"pressure": p})
+                ds_tmp = ds[i_p].isel({"time": time}).sel({"pressure": p})
             elif i_p[0] == "d" and i_p != "deposition":
                 ds_tmp = (
                     ds[f"{k_p} {i_p}"]
-                    .isel({"time": 0})
+                    .isel({"time": time})
                     .sel({coord: o_p, "pressure": p})
                 )
             else:
-                ds_tmp = ds[f"{k_p} {i_p}"].isel({"time": 0}).sel({"pressure": p})
+                ds_tmp = ds[f"{k_p} {i_p}"].isel({"time": time}).sel({"pressure": p})
             min_local = np.nanmin(ds_tmp)
             max_local = np.nanmax(ds_tmp)
             if min_local == 0:
@@ -1468,7 +1492,8 @@ def plot_2dmap_interactive(ds):
                 max_local2 = ds_tmp.where(ds_tmp < 0).max().values.item() / 10
             else:
                 max_local2 = max_local
-            static.value = f"({mini:.2e}, {maxi:.2e}); at {p/100} hPa: ({min_local:.2e}, {max_local:.2e})"
+            static.value = f"({mini:.2e}, {maxi:.2e}); at {p/100} hPa: ({min_local:.2e}, {max_local:.2e}) -- ({min_local2:.2e}, {max_local2:.2e}) {linthresh:.2e}, {lthresh:.2e}"
+
             if fix:
                 if log_plot and mini != 0 and maxi != 0:
                     if np.abs(mini) > maxi:
@@ -1527,8 +1552,12 @@ def plot_2dmap_interactive(ds):
                         ax=ax,
                     )
                 elif log_plot:
-                    if linthresh != 0:
-                        min_local2 = 10 ** lthresh
+                    if lthresh != 0:
+                        if max_local2 <= 0 and -(10 ** lthresh) > min_local2:
+                            max_local2 = -(10 ** lthresh)
+                        elif max_local2 > 0 and 10 ** lthresh < max_local2:
+                            min_local2 = 10 ** lthresh
+
                     ds_tmp.plot(
                         y="lat",
                         x="lon",
@@ -1552,6 +1581,8 @@ def plot_2dmap_interactive(ds):
             which="major",
             labelsize=int(10 * font_scale),
         )
+        ax.set_xlabel("Longitude")
+        ax.set_ylabel("Latitude")
         ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
         ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
         ax.yaxis.grid(True, which="major")
@@ -1644,12 +1675,10 @@ def plot_2dmap_interactive(ds):
         ),
         title_widget,
         pn.Row(
-            pn.Column(
-                pressure,
-                time_slider,
-            ),
-            plot_pane,
+            pressure,
+            time_slider,
         ),
+        plot_pane,
     )
 
 

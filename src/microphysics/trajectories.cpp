@@ -1293,7 +1293,7 @@ void create_set_simulation(
 template<class float_t>
 void dynamic_ensemble_simulation(
     const int &rank,
-//    const int &n_processes,
+    const int &n_processes,
     input_parameters_t &input,
     global_args_t &global_args,
     reference_quantities_t &ref_quant,
@@ -1445,11 +1445,11 @@ int main(int argc, char** argv) {
     } else {   // dynamic scheduling with parallel read and write disabled
         if (input.track_initial_cond) {
             dynamic_ensemble_simulation<codi::RealForwardVec<num_par_init> >(
-                rank, input, global_args,
+                rank, n_processes, input, global_args,
                 ref_quant, scheduler, netcdf_reader);
         } else {
             dynamic_ensemble_simulation<codi::RealReverse>(
-                rank, input, global_args,
+                rank, n_processes, input, global_args,
                 ref_quant, scheduler, netcdf_reader);
         }
     }

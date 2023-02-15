@@ -4,7 +4,7 @@
 template<class float_t>
 particle_model_constants_t<float_t>::particle_model_constants_t() {
     constants.resize(static_cast<int>(Particle_cons_idx::n_items));
-    // This makes debugging easier, so pleaase leave it.
+    // This makes debugging easier, so please leave it.
     std::fill(constants.begin(), constants.end(), 0);
 }
 

@@ -120,7 +120,7 @@ def create_rank_traj_dataset(file_path, inoutflow_time=240, model_params=None):
     def get_phase(ds_tmp, phase):
         if phase == "any":
             return ds_tmp
-        if phase_type == str:
+        if phase_type == str or phase_type == object:
             phase_idx = phase
         else:
             phase_idx = np.argwhere(phases == phase)[0].item()
@@ -188,6 +188,8 @@ def create_rank_traj_dataset(file_path, inoutflow_time=240, model_params=None):
                 avg_ascent[f_i, traj_idx, phase_i] = avg_ascent_tmp[traj_idx]
                 asc600_steps[f_i, traj_idx, phase_i] = asc600_steps_tmp[traj_idx]
             for flow_i, flow in enumerate(coords["flow"]):
+                if inoutflow_time < 0 and flow != "any" and flow != "ascent":
+                    continue
                 ds_flow = get_flow(ds_phase, flow)
                 for out_p_i, out_p in enumerate(out_params_coord_id):
                     ds_out = ds_flow.sel({out_coord: out_p})
@@ -423,6 +425,8 @@ def plot_kde_histogram(
             & (df["phase"] != "neutral phase")
             & (df["flow"] == "any")
         ]
+        if df.empty:
+            return
         phase_hue_order = np.sort(np.unique(df["phase"]))
         _ = sns.kdeplot(
             data=df,
@@ -515,11 +519,19 @@ def plot_kde_histogram(
         ax.get_legend().remove()
         handles, labels = ax.get_legend_handles_labels()
         leg = ax.legend(handles, new_labels, fontsize=int(9 * font_scale))
-
     else:
-        param_hue_order = np.sort(np.unique(df["Parameter"]))
+        param_hue_order_tmp = np.sort(np.unique(df["Parameter"]))
         df = df.loc[df["phase"] == "any"]
         df = df.loc[df["flow"] == "any"]
+        param_hue_order = []
+        for p in param_hue_order_tmp:
+            vals = np.unique(df.loc[df["Parameter"] == p]["Rank"])
+            if len(vals) == 1 and (0 in vals or worst_rank in vals):
+                continue
+            elif len(vals) == 2 and (0 in vals and worst_rank in vals):
+                continue
+            param_hue_order.append(p)
+        df = df.loc[df["Parameter"].isin(param_hue_order)]
         _ = sns.kdeplot(
             data=df,
             x="Rank",

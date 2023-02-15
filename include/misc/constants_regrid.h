@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#define DELTA_TIMESTEP 30
+
 const std::array<std::string, 38> order_sens = {
         "dkin_visc_air", "da_prime", "db_prime", "dc_prime", "da_v", "db_v", "drain_cmu3", "drain_nu",
         "db_ccn_1", "db_ccn_2", "db_ccn_3", "dc_ccn_1", "dc_ccn_2", "dc_ccn_3", "dg_ccn_1", "dg_ccn_2", "dh_ccn_1",
@@ -35,11 +37,12 @@ const std::array<std::string, 24> order_par = {
         "NCHAIL",
         "latent_heat",
         "latent_cool",
-        "lat",
-        "lon",
+//        "lat",
+//        "lon",
+        "relative_lat",
+        "relative_lon",
         "time_after_ascent",
         "asc600",
-        "time"
 };
 
 const std::array<std::string, 2> order_misc = {
@@ -71,7 +74,7 @@ enum Par_idx {
     lon,
     time_after_ascent,
     asc600,
-    time_val,
+//    time_val,
     n_pars
 };
 

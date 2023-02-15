@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <vector>
 
+#include <chrono>
+
 #include "include/types/netcdf_simulation_reader_t.h"
 #include "include/misc/constants_regrid.h"
 #include "include/misc/error.h"
@@ -14,6 +16,38 @@
 
 const double FILLVALUE = std::numeric_limits<double>::quiet_NaN();
 const nc_type NC_FLOAT_T = NC_DOUBLE;
+
+void get_rank(
+        const uint32_t &n_params,
+        const uint32_t &n_out_params,
+        const int &t_idx,
+        const int &p_idx,
+        const int &lat_idx,
+        const int &lon_idx,
+        const uint32_t &offset_lat,
+        const uint32_t &offset_p,
+        const uint32_t &offset_t,
+        const uint32_t &offset_params,
+        const uint32_t &rank_offset,
+        std::vector<double> &tmp_avg,
+        std::vector<uint64_t> &ranking) {
+    std::vector<int> max_idx = {-1, -1, -1};
+    std::vector<double> max_sens = {0, 0, 0};
+    for (uint32_t i = 0; i < n_params; i++) {
+        for (uint32_t j = 0; j < n_out_params; j++) {
+            if (tmp_avg[j*n_params + i] > max_sens[j]) {
+                max_sens[j] = tmp_avg[j*n_params + i];
+                max_idx[j] = i;
+            }
+        }
+    }
+    uint32_t idx = t_idx * offset_t + p_idx * offset_p + lat_idx * offset_lat + lon_idx;
+    for (uint32_t j = 0; j < n_out_params; j++) {
+        if (max_idx[j] < 0) continue;
+        ranking[idx + j*offset_params + max_idx[j]*rank_offset] += 1;
+    }
+    for (auto &v : tmp_avg) v = 0;
+}
 
 void process_file(
     netcdf_simulation_reader_t &netcdf_reader,
@@ -42,17 +76,29 @@ void process_file(
     const uint32_t &n_params,
     const uint32_t &n_model_params,
     const uint32_t &n_out_params,
-    const uint32_t &n_times) {
+    const int &n_times) {
 
-    ProgressBar pbar = ProgressBar(netcdf_reader.n_trajectories, 1, "Trajectory", std::cout);
+    ProgressBar pbar = ProgressBar(netcdf_reader.n_trajectories, 50, "Trajectory", std::cout);
     for (uint32_t traj = 0; traj < netcdf_reader.n_trajectories; traj++) {
-        netcdf_reader.init_netcdf(start_time_rel, traj);
+        netcdf_reader.init_netcdf(traj);
         // Do the calculations
         uint32_t current_idx = 0;
         bool not_finished = true;
+        uint64_t buffer_offset = (traj%netcdf_reader.n_traj_buffer)*netcdf_reader.read_time_buffer;
+        auto start_time_idx = 0;
+        for (uint32_t i = (traj%netcdf_reader.n_traj_buffer)*10; i < ((traj%netcdf_reader.n_traj_buffer)+1)*10; i++) {
+            if (std::isnan(netcdf_reader.relative_time_buffer[i])) continue;
+            if (start_time_rel < netcdf_reader.relative_time_buffer[i]) {
+                start_time_idx = 0;
+            } else {
+                start_time_idx = i-(traj%netcdf_reader.n_traj_buffer)*10
+                        + (start_time_rel - netcdf_reader.relative_time_buffer[i]) / DELTA_TIMESTEP;
+            }
+        }
+        buffer_offset += start_time_idx;
 
         int t_idx = -1;
-        double current_time = netcdf_reader.buffer[Par_idx::time_val][current_idx];
+        double current_time = netcdf_reader.init_time + DELTA_TIMESTEP*start_time_idx;
         for (const auto &t : times) {
             if (current_time >= t) {
                 t_idx++;
@@ -61,10 +107,17 @@ void process_file(
         uint32_t outflow_counter = 0;
         bool ascent_started = false;
         std::vector<double> tmp_avg(n_params*3);
+        int old_t_idx = -1;
+        int old_p_idx = -1;
+        int old_lon_idx = -1;
+        int old_lat_idx = -1;
+        int old_idx = -1;
+        bool got_rank = false;
         while (not_finished) {
-            double current_lon = netcdf_reader.buffer[Par_idx::lon][current_idx];
-            double current_lat = netcdf_reader.buffer[Par_idx::lat][current_idx];
-            double current_p = netcdf_reader.buffer[Par_idx::pressure][current_idx];
+            got_rank = false;
+            double current_lon = netcdf_reader.buffer[Par_idx::lon][current_idx + buffer_offset];
+            double current_lat = netcdf_reader.buffer[Par_idx::lat][current_idx + buffer_offset];
+            double current_p = netcdf_reader.buffer[Par_idx::pressure][current_idx + buffer_offset];
             int lon_idx = -1;
             int lat_idx = -1;
             int p_idx = -1;
@@ -83,9 +136,45 @@ void process_file(
                     lat_idx++;
                 }
             }
+            if (lon_idx < 0 || lat_idx < 0 || p_idx < 0) {
+                current_time += DELTA_TIMESTEP;
+                current_idx++;
+                if (current_time >= times[t_idx+1])
+                    t_idx++;
+                if (t_idx == n_times)
+                    break;
+                continue;
+            }
             uint32_t idx = t_idx * offset_t + p_idx * offset_p + lat_idx * offset_lat + lon_idx;
+            if (old_idx > -1 && old_idx != idx) {
+                get_rank(
+                    n_params,
+                    n_out_params,
+                    old_t_idx,
+                    old_p_idx,
+                    old_lat_idx,
+                    old_lon_idx,
+                    offset_lat,
+                    offset_p,
+                    offset_t,
+                    offset_params,
+                    rank_offset,
+                    tmp_avg,
+                    ranking);
+                old_idx = idx;
+                old_t_idx = t_idx;
+                old_p_idx = p_idx;
+                old_lat_idx = lat_idx;
+                old_lon_idx = lon_idx;
+            } else if (old_idx == -1) {
+                old_idx = idx;
+                old_t_idx = t_idx;
+                old_p_idx = p_idx;
+                old_lat_idx = lat_idx;
+                old_lon_idx = lon_idx;
+            }
             for (uint32_t i = 1; i < n_model_params+1; i++) {
-                auto val = netcdf_reader.buffer[i][current_idx];
+                auto val = netcdf_reader.buffer[i][current_idx + buffer_offset];
                 means_model[idx + offset_params*(i-1)] += val;
                 std_model[idx + offset_params*(i-1)] += val*val;
                 if (counter != 1 || traj != 0) {
@@ -101,10 +190,10 @@ void process_file(
             idx = t_idx * offset_t + p_idx * offset_p + lat_idx * offset_lat + lon_idx;
             for (uint32_t i = 0; i < n_params; i++) {
                 for (uint32_t j = 0; j < n_out_params; j++) {
-                    auto val = netcdf_reader.buffer_sens[i*3 + j][current_idx];
+                    auto val = netcdf_reader.buffer_sens[i*3 + j][current_idx + buffer_offset];
                     means[idx + i*offset_sens + j*offset_params] += val;
                     stds[idx + i*offset_sens + j*offset_params] += val*val;
-                    tmp_avg[i*3 + j] = val;
+                    tmp_avg[j*n_params + i] += std::fabs(val);
                     if (counter != 1 || traj != 0) {
                         if (val < mins[idx + i*offset_sens + j*offset_params])
                             mins[idx + i*offset_sens + j*offset_params] = val;
@@ -120,30 +209,45 @@ void process_file(
             counts[idx]++;
             // check if the next time step would be a new time idx and then
             // get the ranks
-            if (30 + current_time >= times[t_idx+1]) {
-                std::vector<int> max_idx = {-1, -1, -1};
-                std::vector<double> max_sens = {0, 0, 0};
-                for (uint32_t i = 0; i < n_params; i++) {
-                    for (uint32_t j = 0; j < n_out_params; j++) {
-                        if (std::fabs(tmp_avg[i*n_out_params + j]) > max_sens[j]) {
-                            max_sens[j] = std::fabs(tmp_avg[i*n_out_params + j]);
-                            max_idx[j] = i;
-                        }
-                    }
+            if (DELTA_TIMESTEP + current_time >= times[t_idx+1] && t_idx-1 == n_times) {
+                if (!got_rank) {
+                    get_rank(
+                        n_params,
+                        n_out_params,
+                        t_idx,
+                        p_idx,
+                        lat_idx,
+                        lon_idx,
+                        offset_lat,
+                        offset_p,
+                        offset_t,
+                        offset_params,
+                        rank_offset,
+                        tmp_avg,
+                        ranking);
                 }
-                idx = t_idx * offset_t + p_idx * offset_p + lat_idx * offset_lat + lon_idx;
-                for (uint32_t j = 0; j < n_out_params; j++) {
-                    if (max_idx[j] < 0) continue;
-                    ranking[idx + j*offset_params + max_idx[j]*rank_offset] += 1;
-                }
-                for (auto &v : tmp_avg) v = 0;
-            }
-            if (30 + current_time >= times[t_idx+1] && t_idx-1 == n_times) {
                 break;
             }
             // Also finished if t_idx is too large
-            if (t_idx + 1 == netcdf_reader.n_readable_timesteps)
+            if (t_idx + 1 == netcdf_reader.n_timesteps_in - start_time_idx) {
+                if (!got_rank) {
+                    get_rank(
+                        n_params,
+                        n_out_params,
+                        t_idx,
+                        p_idx,
+                        lat_idx,
+                        lon_idx,
+                        offset_lat,
+                        offset_p,
+                        offset_t,
+                        offset_params,
+                        rank_offset,
+                        tmp_avg,
+                        ranking);
+                }
                 break;
+            }
             // Finished if outflow limit is reached
             if (ascent_started) {
                 if (!netcdf_reader.buffer[Par_idx::asc600][t_idx])
@@ -152,16 +256,50 @@ void process_file(
                 if (netcdf_reader.buffer[Par_idx::asc600][t_idx])
                     ascent_started = true;
             }
-            if (outflow_counter == 240)
+            if (outflow_counter == 240) {
+                if (!got_rank) {
+                    get_rank(
+                        n_params,
+                        n_out_params,
+                        t_idx,
+                        p_idx,
+                        lat_idx,
+                        lon_idx,
+                        offset_lat,
+                        offset_p,
+                        offset_t,
+                        offset_params,
+                        rank_offset,
+                        tmp_avg,
+                        ranking);
+                }
                 break;
-            current_time += 30;
+            }
+            current_time += DELTA_TIMESTEP;
             current_idx++;
-            if (current_time >= times[t_idx+1])
+            if (current_time >= times[t_idx+1]) {
                 t_idx++;
-            if (t_idx == n_times)
-                break;
+                if (t_idx == n_times) {
+                    if (!got_rank) {
+                        get_rank(
+                            n_params,
+                            n_out_params,
+                            t_idx-1,
+                            p_idx,
+                            lat_idx,
+                            lon_idx,
+                            offset_lat,
+                            offset_p,
+                            offset_t,
+                            offset_params,
+                            rank_offset,
+                            tmp_avg,
+                            ranking);
+                    }
+                    break;
+                }
+            }
         }
-
         pbar.progress();
     }
 }
@@ -434,7 +572,7 @@ void set_compression(
                 v,
                 1,  // shuffle
                 1,  // deflate
-                9));  // max compression
+                6));  // compression
 }
 
 void write_other_values(
@@ -501,8 +639,7 @@ int main(int argc, char** argv) {
     const uint32_t n_params = 38;
     const uint32_t n_model_params = 18;
 
-    uint32_t buffer_size = 20000;
-    uint32_t delta_steps = 60;  // 30 minutes
+    uint32_t buffer_size = 8600;  // The maximum in the current dataset should be about 8500
     netcdf_simulation_reader_t netcdf_reader(buffer_size);
     float start_time_rel = -240;
     const uint32_t n_bins = 100;
@@ -518,10 +655,17 @@ int main(int argc, char** argv) {
     std::vector<double> lons(n_bins+1);
     std::vector<double>  lats(n_bins+1);
     std::cout << "Get the time and lon/lat limits\n";
-    double min_lon = -68.36053039;
-    double max_lon = 54.02139617;
-    double min_lat = 35.43841152;
-    double max_lat = 83.80421467;
+    // Do that with relative coordinates; make sure that constants_regrid.h uses
+    // the correct name in order_par.
+    double min_lon = -39.85666908;
+    double max_lon = 93.78482497;
+    double min_lat = -4.09258344;
+    double max_lat = 39.54533842;
+    // Or take the ordinary coordinates
+//    double min_lon = -68.36053039;
+//    double max_lon = 54.02139617;
+//    double min_lat = 35.43841152;
+//    double max_lat = 83.80421467;
     double delta_lon = (max_lon - min_lon)/n_bins;
     double delta_lat = (max_lat - min_lat)/n_bins;
     uint32_t counter = 0;
@@ -534,7 +678,7 @@ int main(int argc, char** argv) {
         l = min_lat + counter*delta_lat;
         counter++;
     }
-    uint32_t n_times = (max_time - min_time)/delta_time;
+    int n_times = (max_time - min_time)/delta_time;
     counter = 0;
     std::vector<double> times(n_times+1);
     for (auto &t : times) {
@@ -554,6 +698,7 @@ int main(int argc, char** argv) {
     std::vector<double> mins(n_bins*n_bins*n_times*n_out_params*n_params*n_plevels);
     std::vector<double> maxs(n_bins*n_bins*n_times*n_out_params*n_params*n_plevels);
     std::vector<double> stds(n_bins*n_bins*n_times*n_out_params*n_params*n_plevels);
+
     double mem_usage = sizeof(double) *
             (means_model.size() + mins_model.size() + maxs_model.size()
             + std_model.size() + means.size() + mins.size() + maxs.size()
@@ -561,6 +706,8 @@ int main(int argc, char** argv) {
             + ranking_vals.size());
     std::cout << "For calculating the gridded data this program allocates about "
         << mem_usage/(1024*1024*1024) << " GByte\n";
+    std::cout << "Total usage: "
+              << netcdf_reader.mem_usage/(1024*1024) + mem_usage/(1024*1024*1024) << " GByte\n";
     // Get the counts, means, min. max, std, ranking
     // Get means:
     // Sum everything and then divide by counts in the end.
@@ -616,7 +763,7 @@ int main(int argc, char** argv) {
                     n_model_params,
                     n_out_params,
                     n_times);
-
+            netcdf_reader.close_netcdf();
             auto now = std::chrono::system_clock::now();
             double dt_total = ((std::chrono::duration<double>) (now - t_first)).count();
             std::string time = " in ";
@@ -627,13 +774,14 @@ int main(int argc, char** argv) {
 
             time = time + std::to_string(static_cast<int>(dt_total) % 60) + "s ";
             std::cout << std::fixed << std::setprecision(3)
-                      << "Done " << counter << " files in " << time;
+                      << "\nDone " << counter << " files in " << time;
             double remaining = dt_total / counter * (n_files - counter);
             time = "";
             if (remaining >= 3600)
                 time = time + std::to_string(static_cast<int>(remaining / 3600)) + "h ";
             if (remaining >= 60)
                 time = time + std::to_string(static_cast<int>(remaining) % 3600 / 60) + "min ";
+            time = time + std::to_string(static_cast<int>(remaining) % 60) + "s";
             std::cout << " remaining " << time << "\n";
         }
 
@@ -673,9 +821,11 @@ int main(int argc, char** argv) {
     }
 
     // Calculate means and std
+    std::cout << "Calculate the means and variances. ";
+    auto start_means = std::chrono::system_clock::now();
     for (uint64_t i = 0; i < counts.size(); i++) {
         if (counts[i] == 0) continue;
-        for (auto j = 0; j < n_model_params; j++) {
+        for (uint32_t j = 0; j < n_model_params; j++) {
             means_model[i + j * counts.size()] /= counts[i];
             std_model[i + j * counts.size()] /= counts[i];
         }
@@ -690,11 +840,11 @@ int main(int argc, char** argv) {
     }
     for (uint64_t i = 0; i < counts.size(); i++) {
         if (counts[i] == 0) continue;
-        for (auto j = 0; j < n_model_params; j++) {
+        for (uint32_t j = 0; j < n_model_params; j++) {
             std_model[i + j * counts.size()] -= (means_model[i + j * counts.size()] *
                                                  means_model[i + j * counts.size()]);
         }
-        for (auto j = 0; j < n_params; j++) {
+        for (uint32_t j = 0; j < n_params; j++) {
             stds[i + j * counts.size() * n_out_params] -= (means[i + j * counts.size() * 3] *
                                                            means[i + j * counts.size() * n_out_params]);
             stds[i + j * counts.size() * n_out_params + counts.size()] -= (
@@ -705,16 +855,29 @@ int main(int argc, char** argv) {
                     means[i + j * counts.size() * n_out_params + 2 * counts.size()]);
         }
     }
+    auto end_means = std::chrono::system_clock::now();
+    double dt_total = ((std::chrono::duration<double>) (end_means - start_means)).count();
+    std::string time = "Done in ";
+    if (dt_total >= 3600)
+        time = time + std::to_string(static_cast<int>(dt_total / 3600)) + "h ";
+    if (dt_total >= 60)
+        time = time + std::to_string(static_cast<int>(dt_total) % 3600 / 60) + "min ";
+
+    time = time + std::to_string(static_cast<int>(dt_total) % 60) + "s.\n";
+    std::cout << std::fixed << std::setprecision(3) << time;
+
     // Get the rank
-    for (auto model_i = 0; model_i < n_out_params; model_i++) {
-        for (auto t_i = 0; t_i < n_times; t_i++) {
-            for (auto p_i = 0; p_i < n_plevels; p_i++) {
-                for (auto lat_i = 0; lat_i < n_bins; lat_i++) {
-                    for (auto lon_i = 0; lon_i < n_bins; lon_i++) {
-                        uint32_t max_idx = 39;
+    std::cout << "Get the top parameters. ";
+    auto start_rank = std::chrono::system_clock::now();
+    for (uint32_t model_i = 0; model_i < n_out_params; model_i++) {
+        for (uint32_t t_i = 0; t_i < n_times; t_i++) {
+            for (uint32_t p_i = 0; p_i < n_plevels; p_i++) {
+                for (uint32_t lat_i = 0; lat_i < n_bins; lat_i++) {
+                    for (uint32_t lon_i = 0; lon_i < n_bins; lon_i++) {
+                        uint32_t max_idx = 38;
                         uint32_t max_count = 0;
                         uint32_t this_idx = t_i * offset_t + p_i * offset_p + lat_i * offset_lat + lon_i;
-                        for (auto param_idx = 0; param_idx < n_params; param_idx++) {
+                        for (uint32_t param_idx = 0; param_idx < n_params; param_idx++) {
                             if (ranking[this_idx + model_i * offset_params + param_idx * rank_offset] > max_count) {
                                 max_idx = param_idx;
                                 max_count = ranking[this_idx + model_i * offset_params + param_idx * rank_offset];
@@ -726,8 +889,20 @@ int main(int argc, char** argv) {
             }
         }
     }
+    auto end_rank = std::chrono::system_clock::now();
+    dt_total = ((std::chrono::duration<double>) (end_rank - start_rank)).count();
+    time = "Done in ";
+    if (dt_total >= 3600)
+        time = time + std::to_string(static_cast<int>(dt_total / 3600)) + "h ";
+    if (dt_total >= 60)
+        time = time + std::to_string(static_cast<int>(dt_total) % 3600 / 60) + "min ";
+
+    time = time + std::to_string(static_cast<int>(dt_total) % 60) + "s.\n";
+    std::cout << std::fixed << std::setprecision(3) << time;
 
     // flush results
+    std::cout << "Flushing the results. " << std::flush;
+    auto start_flush = std::chrono::system_clock::now();
     std::vector<int> dimid(Grid_dim_idx::n_griddims);
     int ncid = create_dims(store_path, n_plevels, n_bins, n_times, dimid);
     std::vector<int> varid, varid_means, varid_mins, varid_maxs, varid_stds;
@@ -827,4 +1002,14 @@ int main(int argc, char** argv) {
             startp2.data(),
             countp2.data(),
             ranking_vals.data()));
+    auto end_flush = std::chrono::system_clock::now();
+    dt_total = ((std::chrono::duration<double>) (end_flush - start_flush)).count();
+    time = "Done in ";
+    if (dt_total >= 3600)
+        time = time + std::to_string(static_cast<int>(dt_total / 3600)) + "h ";
+    if (dt_total >= 60)
+        time = time + std::to_string(static_cast<int>(dt_total) % 3600 / 60) + "min ";
+
+    time = time + std::to_string(static_cast<int>(dt_total) % 60) + "s.\n";
+    std::cout << std::fixed << std::setprecision(3) << time;
 }

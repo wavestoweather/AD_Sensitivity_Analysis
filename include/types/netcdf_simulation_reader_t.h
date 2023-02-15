@@ -13,9 +13,14 @@
 struct netcdf_simulation_reader_t {
     uint64_t n_trajectories;
     uint64_t start_time_idx; /*!< The start time index. */
+    double init_time; /*!< The first value in time. */
     uint64_t time_idx; /*!< Current index to read from netcdf file. */
-    uint64_t n_readable_timesteps; /*!< Amount of timtesteps that have been loaded. */
-
+    std::vector<uint64_t> n_readable_timesteps; /*!< Amount of timtesteps that have been loaded. */
+    uint32_t n_timesteps_buffer; /*!< Number of time steps that can be stored in the buffer. */
+    uint64_t n_traj_buffer; /*!< Number of trajectories that can be stored in the bufer. */
+    double mem_usage; /*!< Memory usage in KBytes. */
+    uint64_t n_timesteps_in; /*!< Total number of time steps that can be read from the input file. */
+    uint64_t read_time_buffer; /*!< Number of time steps that have been read. */
     /**
      *
      * @param buffer_size Number of time steps to read at once
@@ -34,18 +39,16 @@ struct netcdf_simulation_reader_t {
     uint32_t get_traj_idx() const {return traj_idx;}
 
     void load_vars(const char* input_file);
-    void init_netcdf(
-        const double &start_time,
-        const uint32_t &traj_idx);
+    void init_netcdf(const uint32_t &traj_idx);
+    void close_netcdf();
 
     std::array<std::vector<double>, Par_idx::n_pars > buffer;
     std::array<std::vector<double>, Sens_par_idx::n_sens_pars*3 > buffer_sens;
+    std::vector<double> relative_time_buffer;
 
  private:
-    std::vector<int> startp, countp;
     int ncid;
-    uint64_t n_timesteps_in; /*!< Total number of time steps that can be read from the input file. */
-    uint32_t n_timesteps_buffer; /*!< Number of time steps that can be stored in the buffer. */
+
     uint64_t time_buffer_idx; /*!< Current index to read from the buffer. */
 
     uint32_t traj_idx; /*!< Index of trajectory to read from. */

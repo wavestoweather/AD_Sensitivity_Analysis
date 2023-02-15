@@ -263,6 +263,8 @@ def get_cluster(
             if include_all_data:
                 if out_coord in data:
                     out_params = data[out_coord].values
+                else:
+                    out_params = ["model_state"]
                 for col in data:
                     if col not in x:
                         if (
@@ -841,6 +843,7 @@ def extract_trajs(
     traj_abs=False,
     split_states=False,
     keep_coords="both",
+    fix_weird_coords=False,
     verbose=False,
 ):
     """
@@ -869,6 +872,8 @@ def extract_trajs(
         "both": Keep longitude, latitude, and coordinates relative to the start of the ascent.
         "relative": Keep only coordinates relative to the start of the ascent.
         "normal": Keep only longitude and latitude.
+    fix_weird_coords : bool
+        Some data may have zero lon and lat where no data should be there.
     verbose : bool
         If true, get more output.
     """
@@ -923,7 +928,8 @@ def extract_trajs(
                 ds = ds.where(ds_flow == 1)
             elif only_asc600:
                 ds = ds.where(ds["asc600"] == 1)
-            ds["asc600"] = ds["asc600"].where(ds["asc600"] >= 0)
+            if "asc600" in ds:
+                ds["asc600"] = ds["asc600"].where(ds["asc600"] >= 0)
             traj_attrs = ds["trajectory"].attrs
             ens_attrs = ds["ensemble"].attrs
             time_attrs = ds["time"].attrs
@@ -945,58 +951,66 @@ def extract_trajs(
                 },
             )
             ds["trajectory"].attrs = traj_attrs
+            if "asc600" not in ds:
+                ds["ensemble"] = [0]
             ds["ensemble"].attrs = ens_attrs
             ds["time"].attrs = time_attrs
-            # print(ds["time_after_ascent"].attrs)
-            # print(ds["ensemble"].attrs)
-            weird_lon = np.count_nonzero(ds["lon"] == 0)
-            weird_lat = np.count_nonzero(ds["lat"] == 0)
-            # A rare bug can happen where a single lat or lon is set to zero inbetween valid values
-            if weird_lon > 0:
-                idxs = np.argwhere(ds["lon"].where(ds["lon"] == 0).values == 0)[:, 2]
-                # We assume the idxs are consecutive
-                n_fills = len(idxs)
-                lon_tmp = ds["lon"].isel(
-                    {
-                        "time": [idxs[0] - 1, idxs[-1] + 1],
-                    }
-                )
-                val_delta = (
-                    (lon_tmp.isel({"time": 1}) - lon_tmp.isel({"time": 0})) / n_fills
-                ).values.item()
-                val_start = lon_tmp.isel({"time": 1}).values.item()
-                for i_idx, idx in enumerate(idxs):
-                    ds["lon"][0, 0, idx] = val_start + (i_idx + 1) * val_delta
-            if weird_lat > 0:
-                idxs = np.argwhere(ds["lat"].where(ds["lat"] == 0).values == 0)[:, 2]
-                # We assume the idxs are consecutive
-                n_fills = len(idxs)
-                lat_tmp = ds["lat"].isel(
-                    {
-                        "time": [idxs[0] - 1, idxs[-1] + 1],
-                    }
-                )
-                val_delta = (
-                    (lat_tmp.isel({"time": 1}) - lat_tmp.isel({"time": 0})) / n_fills
-                ).values.item()
-                val_start = lat_tmp.isel({"time": 1}).values.item()
-                for i_idx, idx in enumerate(idxs):
-                    ds["lat"][0, 0, idx] = val_start + (i_idx + 1) * val_delta
+            if fix_weird_coords:
+                weird_lon = np.count_nonzero(ds["lon"] == 0)
+                weird_lat = np.count_nonzero(ds["lat"] == 0)
+                # A rare bug can happen where a single lat or lon is set to zero inbetween valid values
+                if weird_lon > 0:
+                    idxs = np.argwhere(ds["lon"].where(ds["lon"] == 0).values == 0)[
+                        :, 2
+                    ]
+                    # We assume the idxs are consecutive
+                    n_fills = len(idxs)
+                    lon_tmp = ds["lon"].isel(
+                        {
+                            "time": [idxs[0] - 1, idxs[-1] + 1],
+                        }
+                    )
+                    val_delta = (
+                        (lon_tmp.isel({"time": 1}) - lon_tmp.isel({"time": 0}))
+                        / n_fills
+                    ).values.item()
+                    val_start = lon_tmp.isel({"time": 1}).values.item()
+                    for i_idx, idx in enumerate(idxs):
+                        ds["lon"][0, 0, idx] = val_start + (i_idx + 1) * val_delta
+                if weird_lat > 0:
+                    idxs = np.argwhere(ds["lat"].where(ds["lat"] == 0).values == 0)[
+                        :, 2
+                    ]
+                    # We assume the idxs are consecutive
+                    n_fills = len(idxs)
+                    lat_tmp = ds["lat"].isel(
+                        {
+                            "time": [idxs[0] - 1, idxs[-1] + 1],
+                        }
+                    )
+                    val_delta = (
+                        (lat_tmp.isel({"time": 1}) - lat_tmp.isel({"time": 0}))
+                        / n_fills
+                    ).values.item()
+                    val_start = lat_tmp.isel({"time": 1}).values.item()
+                    for i_idx, idx in enumerate(idxs):
+                        ds["lat"][0, 0, idx] = val_start + (i_idx + 1) * val_delta
             # Fill time coordinate and add NaNs where necessary
             tmp_min = ds["time"].min()
             tmp_max = ds["time"].max()
             if tmp_min > min_time:
                 variables = {}
                 times = int(tmp_min + 20 - min_time) // 30
-                sens_shape = (len(ds[out_coord]), 1, 1, times)
+                if out_coord in ds:
+                    sens_shape = (len(ds[out_coord]), 1, 1, times)
+                    add_sens = np.reshape(
+                        np.repeat(np.NaN, times * len(ds[out_coord])),
+                        sens_shape,
+                    )
                 val_shape = (1, 1, times)
-                add_sens = np.reshape(
-                    np.repeat(np.NaN, times * len(ds[out_coord])),
-                    sens_shape,
-                )
                 add_vals = np.reshape(np.repeat(np.NaN, times), val_shape)
                 for var in ds:
-                    if var[0] != "d" or var == "deposition":
+                    if var[0] != "d" or var == "deposition" or var == "dp2h":
                         variables[var] = (["ensemble", "trajectory", "time"], add_vals)
                     else:
                         variables[var] = (
@@ -1011,27 +1025,22 @@ def extract_trajs(
                         time=np.arange(min_time, tmp_min, 30),
                     ),
                 )
-                # print("tmp_min")
-                # print(tmp_set["time_after_ascent"].attrs)
-                # print(tmp_set["ensemble"].attrs)
                 ds = xr.concat(
                     [ds, tmp_set], join="outer", dim="time", combine_attrs="override"
                 )
-                # print(ds["time_after_ascent"].attrs)
-                # print(ds["ensemble"].attrs)
-                # ds["cluster"] = ds["cluster"].where(~np.isnan(ds["pressure"]))
             elif tmp_max < max_time:
                 variables = {}
                 times = int(max_time + 20 - tmp_max) // 30
-                sens_shape = (len(ds[out_coord]), 1, 1, times)
+                if out_coord in ds:
+                    sens_shape = (len(ds[out_coord]), 1, 1, times)
+                    add_sens = np.reshape(
+                        np.repeat(np.NaN, times * len(ds[out_coord])),
+                        sens_shape,
+                    )
                 val_shape = (1, 1, times)
-                add_sens = np.reshape(
-                    np.repeat(np.NaN, times * len(ds[out_coord])),
-                    sens_shape,
-                )
                 add_vals = np.reshape(np.repeat(np.NaN, times), val_shape)
                 for var in ds:
-                    if var[0] != "d" or var == "deposition":
+                    if var[0] != "d" or var == "deposition" or var == "dp2h":
                         variables[var] = (["ensemble", "trajectory", "time"], add_vals)
                     else:
                         variables[var] = (
@@ -1050,16 +1059,9 @@ def extract_trajs(
                         time=np.arange(tmp_max + 30, max_time + 20, 30),
                     ),
                 )
-                # print("tmp_max")
-                # print(tmp_set["time_after_ascent"].attrs)
-                # print(tmp_set["ensemble"].attrs)
                 ds = xr.concat(
                     [ds, tmp_set], join="outer", dim="time", combine_attrs="override"
                 )
-                # print(ds["time_after_ascent"].attrs)
-                # print(ds["ensemble"].attrs)
-                # print("#######################################")
-                # ds["cluster"] = ds["cluster"].where(~np.isnan(ds["pressure"]))
 
             if ds["time"].dtype == np.float64:
                 ds["time"] = ds["time"].astype(np.float32)
@@ -1076,11 +1078,7 @@ def extract_trajs(
     if verbose:
         print("Concatenating the final list")
     ds = xr.concat(ds_list, dim="trajectory", join="outer", combine_attrs="override")
-    # print(ds["time_after_ascent"].attrs)
-    # print(ds["ensemble"].attrs)
     ds["cluster"] = ds["cluster"].where(~np.isnan(ds["pressure"]))
-    # print(ds["time_after_ascent"].attrs)
-    # print(ds["ensemble"].attrs)
     if traj_abs:
         for col in ds:
             ds[col] = np.abs(ds[col])
