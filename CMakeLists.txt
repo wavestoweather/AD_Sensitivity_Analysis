@@ -31,7 +31,7 @@ if(NOT WIN32)
     set(BoldWhite   "${Esc}[1;37m")
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -105,8 +105,11 @@ if( NOT RELOPTLEVEL )
 endif()
 set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: None debug release" FORCE)
 
-set(CMAKE_CXX_FLAGS_SIM "-DRK4ICE -DAUTUMN -DFLUX -DMET3D -DSB_CONV -DSB_SHAPE")
-
+if( EXPLICIT_EULER )
+    set(CMAKE_CXX_FLAGS_SIM "-DEXPLICIT_EULER -DRK4ICE -DAUTUMN -DFLUX -DMET3D -DSB_CONV -DSB_SHAPE")
+else()
+    set(CMAKE_CXX_FLAGS_SIM "-DRK4ICE -DAUTUMN -DFLUX -DMET3D -DSB_CONV -DSB_SHAPE")
+endif()
 # Set flags used in all build types
 set(CMAKE_CXX_FLAGS "-pipe ${CXX_STANDARD} ${CXX_WARNING_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_SIM} -DNPROCS=${NPROCS} -lm -DCODI_UseForcedInlines -fargument-noalias-global -ftree-loop-vectorize")
 string(REGEX REPLACE "[ ]+" " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})

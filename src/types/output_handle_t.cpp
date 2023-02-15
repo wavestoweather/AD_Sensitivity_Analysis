@@ -175,7 +175,7 @@ void output_handle_t::define_var_gradients(
             }
         }
     } else {
-        for (uint32_t i = 0; i < num_par - num_par_init; ++i) {
+        for (uint32_t i = 0; i < num_par; ++i) {
             if (cc.trace_check(i, false)) {
                 SUCCESS_OR_DIE(nc_def_var(
                        ncid,
@@ -662,7 +662,7 @@ void output_handle_t::set_attributes(
 
     if (!track_ic) {
         // all gradients are auxiliary data
-        for (int i=0; i < num_par-num_par_init; i++) {
+        for (int i=0; i < num_par; i++) {
             if (cc.trace_check(i, false)) {
                 SUCCESS_OR_DIE(nc_put_att_text(
                         ncid,
@@ -1191,7 +1191,7 @@ void output_handle_t::set_compression(const model_constants_t<float_t> &cc) {
         }
         if (!track_ic) {
             // gradients
-            for (uint32_t i=0; i < num_par-num_par_init; ++i) {
+            for (uint32_t i=0; i < num_par; ++i) {
                 if (cc.trace_check(i, false))
 //                         SUCCESS_OR_DIE(
 //                             nc_def_var_szip(
@@ -1427,7 +1427,7 @@ void output_handle_t::set_parallel_access(
 #endif
     if (!track_ic) {
         // gradients
-        for (uint32_t i=0; i < num_par-num_par_init; ++i) {
+        for (uint32_t i=0; i < num_par; ++i) {
             if (cc.trace_check(i, false)) {
                 SUCCESS_OR_DIE(
                     nc_inq_varid(
@@ -1537,7 +1537,7 @@ void output_handle_t::set_parallel_access(
         for (uint32_t i=0; i < Var_idx::n_vars; i++)
             SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_INDEPENDENT));
         if (!track_ic) {
-            for (uint32_t i=0; i < num_par-num_par_init; i++)
+            for (uint32_t i=0; i < num_par; i++)
                 if (cc.trace_check(i, false))
                     SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_INDEPENDENT));
         } else {
@@ -1559,7 +1559,7 @@ void output_handle_t::set_parallel_access(
             SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i], NC_COLLECTIVE));
         }
         if (!track_ic) {
-            for (uint32_t i=0; i < num_par-num_par_init; i++)
+            for (uint32_t i=0; i < num_par; i++)
                 if (cc.trace_check(i, false))
                     SUCCESS_OR_DIE(nc_var_par_access(ncid, varid[i+Var_idx::n_vars], NC_COLLECTIVE));
         } else {
@@ -1597,7 +1597,7 @@ void output_handle_t::setup(
     if (track_ic) {
         varid.resize(Var_idx::n_vars + num_par_init);
     } else {
-        varid.resize(Var_idx::n_vars + num_par-num_par_init);
+        varid.resize(Var_idx::n_vars + num_par);
     }
 
 
@@ -1631,7 +1631,7 @@ void output_handle_t::setup(
         output_buffer[Buffer_idx::perturb_buf].resize(vec_size*n_perturbed_params);
     if (!track_ic) {
         // gradients
-        for (uint32_t i=Buffer_idx::n_buffer; i < Buffer_idx::n_buffer+num_par-num_par_init; i++)
+        for (uint32_t i=Buffer_idx::n_buffer; i < Buffer_idx::n_buffer+num_par; i++)
             if (cc.trace_check(i-Buffer_idx::n_buffer, false))
                 output_buffer[i].resize(vec_size_grad);
     } else {
@@ -1735,7 +1735,7 @@ void output_handle_t::buffer_gradient(
         if (!cc.trace_check(i, true))
             continue;
         if (!track_ic) {
-            for (uint64_t j=0; j < num_par-num_par_init; j++)  // gradient of input parameter j
+            for (uint64_t j=0; j < num_par; j++)  // gradient of input parameter j
                 if (cc.trace_check(j, false)) {
                     if (n_snapshots%snapshot_index == 0) {
                         output_buffer[Buffer_idx::n_buffer+j][comp_idx*total_snapshots + n_snapshots] =
@@ -1841,6 +1841,9 @@ void output_handle_t::buffer(
 
 #ifdef MET3D
     // time after ascent
+//    if (traj > 0)
+//        std::cout << "buffer " << t << ", rel " << netcdf_reader.get_relative_time(t)
+//            << ", dt " << cc.dt_traject_prime << ", sub " << sub << " dt2 " << cc.dt << "\n";
     output_buffer[Buffer_idx::time_ascent_buf][n_snapshots] =
         netcdf_reader.get_relative_time(t) * cc.dt_traject_prime + sub*cc.dt;
     // flags
@@ -1907,23 +1910,6 @@ void output_handle_t::buffer(
         current_phase = (current_phase == 2) ? 1 : 0;
     }
     output_buffer_int[1][n_snapshots] = current_phase;
-
-    // phase, 0: warm phase, 1: mixed phase, 2: ice phase,
-    // 3: only water vapor or nothing at all
-//    uint64_t current_phase = 3;
-#if defined(RK4ICE)
-//    if (output_buffer[qi_idx][n_snapshots] > 1e-14 || output_buffer[qs_idx][n_snapshots] > 1e-14
-//        || output_buffer[qh_idx][n_snapshots] > 1e-14 || output_buffer[qg_idx][n_snapshots] > 1e-14
-//        || output_buffer[Ni_idx][n_snapshots] > 0.9999 || output_buffer[Ns_idx][n_snapshots] > 0.9999
-//        || output_buffer[Nh_idx][n_snapshots] > 0.9999 || output_buffer[Ng_idx][n_snapshots]  > 0.9999) {
-//        current_phase = 2;
-//    }
-#endif
-//    if (output_buffer[qc_idx][n_snapshots] > 0 || output_buffer[qr_idx][n_snapshots] > 0
-//        || output_buffer[Nc_idx][n_snapshots] > 0 || output_buffer[Nr_idx][n_snapshots] > 0) {
-//        current_phase = (current_phase == 2) ? 1 : 0;
-//    }
-//    output_buffer_int[1][n_snapshots] = current_phase;
     n_snapshots++;
 }
 
@@ -2146,12 +2132,12 @@ bool output_handle_t::flush_buffer(
                             continue;
                         startp[0] = (no_flush) ? 0 : comp_idx;
 
-                        for (uint64_t j=0; j < num_par-num_par_init; j++) {
+                        for (uint64_t j=0; j < num_par; j++) {
                             if (cc.trace_check(j, false)) {
 #ifdef DEVELOP
                                 std::cout << "(strided) traj: " << traj << " at " << flushed_snapshots
                                           << " param " << i << "/" << local_num_comp
-                                          << " gradient " << j << "/" << num_par-num_par_init << "\n";
+                                          << " gradient " << j << "/" << num_par << "\n";
 #endif
                                 SUCCESS_OR_DIE(
                                     nc_put_vara(
@@ -2178,7 +2164,7 @@ bool output_handle_t::flush_buffer(
 #ifdef DEVELOP
                                 std::cout << "traj: " << traj << " at " << flushed_snapshots
                                           << " IC param " << i << "/" << local_num_comp
-                                          << " gradient " << j << "/" << num_par-num_par_init << "\n";
+                                          << " gradient " << j << "/" << num_par << "\n";
 #endif
                                 SUCCESS_OR_DIE(
                                     nc_put_vara(
@@ -2229,11 +2215,11 @@ bool output_handle_t::flush_buffer(
 
 
                 if (!track_ic) {
-                    for (uint64_t j=0; j < num_par-num_par_init; j++) {
+                    for (uint64_t j=0; j < num_par; j++) {
                         if (cc.trace_check(j, false)) {
 #ifdef DEVELOP
                             std::cout << "traj: " << traj << " at " << flushed_snapshots
-                                      << " gradient " << j << "/" << num_par-num_par_init << "\n";
+                                      << " gradient " << j << "/" << num_par << "\n";
 #endif
                             SUCCESS_OR_DIE(
                                 nc_put_varm(
@@ -2253,7 +2239,7 @@ bool output_handle_t::flush_buffer(
                         if (cc.trace_check(j, 2)) {
 #ifdef DEVELOP
                             std::cout << "traj: " << traj << " at " << flushed_snapshots
-                                      << " IC gradient " << j << "/" << num_par-num_par_init << "\n";
+                                      << " IC gradient " << j << "/" << num_par << "\n";
 #endif
                             SUCCESS_OR_DIE(
                                 nc_put_varm(
@@ -2281,11 +2267,11 @@ bool output_handle_t::flush_buffer(
 #endif
 #endif
             if (!track_ic) {
-                for (uint64_t j=0; j < num_par-num_par_init; j++) {
+                for (uint64_t j=0; j < num_par; j++) {
                     if (cc.trace_check(j, false)) {
 #ifdef DEVELOP
                         std::cout << "traj: " << traj << " at " << flushed_snapshots
-                                  << " Two gradient " << j << "/" << num_par-num_par_init
+                                  << " Two gradient " << j << "/" << num_par
                                   << " varid: " << varid[Var_idx::n_vars + j] << "\n";
 #endif
                         SUCCESS_OR_DIE(
@@ -2303,7 +2289,7 @@ bool output_handle_t::flush_buffer(
                     if (cc.trace_check(j, 2)) {
 #ifdef DEVELOP
                         std::cout << "traj: " << traj << " at " << flushed_snapshots
-                                  << " IC Two gradient " << j << "/" << num_par-num_par_init << "\n";
+                                  << " IC Two gradient " << j << "/" << num_par << "\n";
 #endif
                         SUCCESS_OR_DIE(
                             nc_put_vara(
@@ -2335,13 +2321,13 @@ bool output_handle_t::flush_buffer(
             countp2.push_back(n_snapshots);
         }
         if (!track_ic) {
-            for (uint64_t j=0; j < num_par-num_par_init; j++) {
+            for (uint64_t j=0; j < num_par; j++) {
                 if (cc.trace_check(j, false)) {
                     for (int i = 0; i < local_num_comp; i++) {
 #ifdef DEVELOP
                         std::cout << "traj: " << traj << " at " << flushed_snapshots
                                   << " Manual param " << i << "/" << local_num_comp
-                                  << " gradient " << j << "/" << num_par-num_par_init << "\n";
+                                  << " gradient " << j << "/" << num_par << "\n";
 #endif
                         startp2[0] = i;
                         SUCCESS_OR_DIE(
@@ -2363,7 +2349,7 @@ bool output_handle_t::flush_buffer(
 #ifdef DEVELOP
                         std::cout << "traj: " << traj << " at " << flushed_snapshots
                                   << " Manual IC param " << i << "/" << local_num_comp
-                                  << " gradient " << j << "/" << num_par-num_par_init << "\n";
+                                  << " gradient " << j << "/" << num_par << "\n";
 #endif
                         SUCCESS_OR_DIE(
                             nc_put_vara(
@@ -2408,7 +2394,7 @@ bool output_handle_t::flush_buffer(
             imap.push_back(1);
 
             if (!track_ic) {
-                for (uint64_t j=0; j < num_par-num_par_init; j++) {
+                for (uint64_t j=0; j < num_par; j++) {
                     if (cc.trace_check(j, false))
                         SUCCESS_OR_DIE(
                             nc_put_varm(
@@ -2437,7 +2423,7 @@ bool output_handle_t::flush_buffer(
             }
         } else {
             if (!track_ic) {
-                for (uint64_t j=0; j < num_par-num_par_init; j++) {
+                for (uint64_t j=0; j < num_par; j++) {
                     if (cc.trace_check(j, false))
                         SUCCESS_OR_DIE(
                             nc_put_vara(
@@ -2468,6 +2454,7 @@ bool output_handle_t::flush_buffer(
 #endif
     if (!no_flush) flushed_snapshots += n_snapshots;
     n_snapshots = 0;
+//    std::cout << "FLUSHING DONE\n";
     return true;
 }
 

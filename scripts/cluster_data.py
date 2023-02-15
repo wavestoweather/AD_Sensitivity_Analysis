@@ -188,6 +188,10 @@ def get_cluster(
     if out_coord not in data:
         out_coord = "Output Parameter"
     if x is not None and isinstance(data, xr.Dataset):
+        rank_set = False
+        for col in data:
+            if "rank" in col or "avg" in col:
+                rank_set = True
         if (isinstance(x, str) or len(x) == 1) and param_names is None:
             # A single model state
             if not isinstance(x, str):
@@ -259,6 +263,8 @@ def get_cluster(
             if include_all_data:
                 if out_coord in data:
                     out_params = data[out_coord].values
+                else:
+                    out_params = ["model_state"]
                 for col in data:
                     if col not in x:
                         if (
@@ -300,6 +306,7 @@ def get_cluster(
                             col[0] == "d"
                             and col != "deposition"
                             and col != "deposition rank"
+                            and col != "deposition avg"
                         ):
                             for out_p in out_params:
                                 if out_coord == "Output_Parameter_ID":
@@ -317,6 +324,9 @@ def get_cluster(
                         else:
                             non_features_list.append([f"{reduce_name}{col}", None, col])
     else:
+        rank_set = False
+        if "rank" in data.name or "avg" in data.name:
+            rank_set = True
         data_array = data
         avg_name = f"{reduce_name}" + data.name
     # n_samples, n_features
@@ -590,6 +600,13 @@ def plot_cluster_data_interactive(data, reduce_name=""):
         value=False,
         button_type="success",
     )
+    dot_slider = pn.widgets.IntSlider(
+        name="Change the dot size",
+        start=1,
+        end=200,
+        step=2,
+        value=12,
+    )
 
     def get_plot(
         data,
@@ -606,6 +623,7 @@ def plot_cluster_data_interactive(data, reduce_name=""):
         save_path,
         latex,
         save,
+        s,
     ):
 
         sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
@@ -675,6 +693,7 @@ def plot_cluster_data_interactive(data, reduce_name=""):
                 y=y,
                 hue="cluster",
                 palette="tab10",
+                s=s,
                 ax=ax,
             )
         if logx and not histogram:
@@ -740,6 +759,7 @@ def plot_cluster_data_interactive(data, reduce_name=""):
             save_path=save_to_field,
             latex=latex_button,
             save=save_button,
+            s=dot_slider,
         ),
     ).servable()
 
@@ -760,9 +780,12 @@ def plot_cluster_data_interactive(data, reduce_name=""):
             font_slider,
         ),
         pn.Row(
+            dot_slider,
+            latex_button,
+        ),
+        pn.Row(
             save_to_field,
             save_button,
-            latex_button,
         ),
         title_widget,
         plot_pane,
@@ -772,13 +795,14 @@ def plot_cluster_data_interactive(data, reduce_name=""):
 def get_traj_near_center(data, x, n=1):
     """
     Extract the number and filenames for trajectories closest to the cluster centers.
+    Does not normalize data for distance calculation.
 
     Parameters
     ----------
     data : pandas.DataFrame
         DataFrame with clusters from 'get_cluster()'.
-    x : string
-        Variable that has been used for calculating the clusters. Usually starts with 'avg '.
+    x : string or list of strings
+        Variable(s) that has been used for calculating the clusters. Usually starts with 'avg '.
     n : int
         The number of trajectories to extract for each cluster center.
 
@@ -788,11 +812,25 @@ def get_traj_near_center(data, x, n=1):
     """
     centers = []
     for cluster in np.unique(data["cluster"]):
-        centers.append(np.mean(data.loc[data["cluster"] == cluster][x]))
+        if isinstance(x, str):
+            centers.append(np.mean(data.loc[data["cluster"] == cluster][x]))
+        else:
+            centers_tmp = []
+            for col in x:
+                centers_tmp.append(np.mean(data.loc[data["cluster"] == cluster][col]))
+            centers.append(centers_tmp)
     traj_centers = []
     for center in centers:
-        idx = (np.abs(data[x] - center)).argsort()[:n]
-        traj_centers.append(data.iloc[idx])
+        if isinstance(x, str):
+            idx = (np.abs(data[x] - center)).argsort()[:n]
+            traj_centers.append(data.iloc[idx])
+        else:
+            distance = np.power(data[x[0]] - center[0], 2)
+            for i in range(1, len(center)):
+                distance += np.power(data[x[i]] - center[i], 2)
+            distance = np.sqrt(distance)
+            idx = distance.argsort()[:n]
+            traj_centers.append(data.iloc[idx])
     return traj_centers
 
 
@@ -803,6 +841,9 @@ def extract_trajs(
     only_asc600=False,
     inoutflow_time=-1,
     traj_abs=False,
+    split_states=False,
+    keep_coords="both",
+    fix_weird_coords=False,
     verbose=False,
 ):
     """
@@ -824,33 +865,48 @@ def extract_trajs(
         and after the ascent (in- and outflow).
     traj_abs : bool
         Take the absolute values for sensitivities.
+    split_states : bool
+        Removes the dimension 'Output_Parameter_ID' or 'Output Parameter' if present and
+        stores separate NetCDF-files for each dimension value.
+    keep_coords : string
+        "both": Keep longitude, latitude, and coordinates relative to the start of the ascent.
+        "relative": Keep only coordinates relative to the start of the ascent.
+        "normal": Keep only longitude and latitude.
+    fix_weird_coords : bool
+        Some data may have zero lon and lat where no data should be there.
     verbose : bool
         If true, get more output.
     """
     ds_list = []
     traj_enum = 0
-    cluster = 0
     min_time = None
     max_time = None
+    out_coord = "Output_Parameter_ID"
     if verbose:
         print("Load the files to check for the time ranges for the final file")
     for center_df in tqdm(centers) if verbose else centers:
         for idx, row in (
             tqdm(center_df.iterrows(), leave=False, total=len(center_df))
             if verbose
-            else tqdm(center_df.iterrows(), leave=False, total=len(center_df))
+            else center_df.iterrows()
         ):
             f = row["file"]
             ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+            if out_coord not in ds:
+                out_coord = "Output Parameter"
             tmp_min = ds["time"].min()
             if min_time is None or min_time > tmp_min:
                 min_time = tmp_min
             tmp_max = ds["time"].max()
             if max_time is None or max_time < tmp_max:
                 max_time = tmp_max
-
+    if verbose:
+        print(
+            "For each center, get all the trajectories and merge them into one dataset."
+        )
     for center_df in tqdm(centers) if verbose else centers:
         data_arrays = []
+        cluster = np.unique(center_df["cluster"])[0]
         for idx, row in (
             tqdm(center_df.iterrows(), leave=False, total=len(center_df))
             if verbose
@@ -859,6 +915,8 @@ def extract_trajs(
             traj = row["trajectory"]
             f = row["file"]
             ds = xr.open_dataset(file_path + f, decode_times=False, engine="netcdf4")
+            # print(ds["time_after_ascent"].attrs)
+            # print(ds["ensemble"].attrs)
             ds = ds.sel({"trajectory": [traj]})
             if inoutflow_time > 0:
                 ds_flow = ds.where(ds["asc600"] == 1)["asc600"]
@@ -870,7 +928,8 @@ def extract_trajs(
                 ds = ds.where(ds_flow == 1)
             elif only_asc600:
                 ds = ds.where(ds["asc600"] == 1)
-            ds["asc600"] = ds["asc600"].where(ds["asc600"] >= 0)
+            if "asc600" in ds:
+                ds["asc600"] = ds["asc600"].where(ds["asc600"] >= 0)
             traj_attrs = ds["trajectory"].attrs
             ens_attrs = ds["ensemble"].attrs
             time_attrs = ds["time"].attrs
@@ -892,60 +951,70 @@ def extract_trajs(
                 },
             )
             ds["trajectory"].attrs = traj_attrs
+            if "asc600" not in ds:
+                ds["ensemble"] = [0]
             ds["ensemble"].attrs = ens_attrs
             ds["time"].attrs = time_attrs
-            weird_lon = np.count_nonzero(ds["lon"] == 0)
-            weird_lat = np.count_nonzero(ds["lat"] == 0)
-            # A rare bug can happen where a single lat or lon is set to zero inbetween valid values
-            if weird_lon > 0:
-                idxs = np.argwhere(ds["lon"].where(ds["lon"] == 0).values == 0)[:, 2]
-                # We assume the idxs are consecutive
-                n_fills = len(idxs)
-                lon_tmp = ds["lon"].isel(
-                    {
-                        "time": [idxs[0] - 1, idxs[-1] + 1],
-                    }
-                )
-                val_delta = (
-                    (lon_tmp.isel({"time": 1}) - lon_tmp.isel({"time": 0})) / n_fills
-                ).values.item()
-                val_start = lon_tmp.isel({"time": 1}).values.item()
-                for i_idx, idx in enumerate(idxs):
-                    ds["lon"][0, 0, idx] = val_start + (i_idx + 1) * val_delta
-            if weird_lat > 0:
-                idxs = np.argwhere(ds["lat"].where(ds["lat"] == 0).values == 0)[:, 2]
-                # We assume the idxs are consecutive
-                n_fills = len(idxs)
-                lat_tmp = ds["lat"].isel(
-                    {
-                        "time": [idxs[0] - 1, idxs[-1] + 1],
-                    }
-                )
-                val_delta = (
-                    (lat_tmp.isel({"time": 1}) - lat_tmp.isel({"time": 0})) / n_fills
-                ).values.item()
-                val_start = lat_tmp.isel({"time": 1}).values.item()
-                for i_idx, idx in enumerate(idxs):
-                    ds["lat"][0, 0, idx] = val_start + (i_idx + 1) * val_delta
+            if fix_weird_coords:
+                weird_lon = np.count_nonzero(ds["lon"] == 0)
+                weird_lat = np.count_nonzero(ds["lat"] == 0)
+                # A rare bug can happen where a single lat or lon is set to zero inbetween valid values
+                if weird_lon > 0:
+                    idxs = np.argwhere(ds["lon"].where(ds["lon"] == 0).values == 0)[
+                        :, 2
+                    ]
+                    # We assume the idxs are consecutive
+                    n_fills = len(idxs)
+                    lon_tmp = ds["lon"].isel(
+                        {
+                            "time": [idxs[0] - 1, idxs[-1] + 1],
+                        }
+                    )
+                    val_delta = (
+                        (lon_tmp.isel({"time": 1}) - lon_tmp.isel({"time": 0}))
+                        / n_fills
+                    ).values.item()
+                    val_start = lon_tmp.isel({"time": 1}).values.item()
+                    for i_idx, idx in enumerate(idxs):
+                        ds["lon"][0, 0, idx] = val_start + (i_idx + 1) * val_delta
+                if weird_lat > 0:
+                    idxs = np.argwhere(ds["lat"].where(ds["lat"] == 0).values == 0)[
+                        :, 2
+                    ]
+                    # We assume the idxs are consecutive
+                    n_fills = len(idxs)
+                    lat_tmp = ds["lat"].isel(
+                        {
+                            "time": [idxs[0] - 1, idxs[-1] + 1],
+                        }
+                    )
+                    val_delta = (
+                        (lat_tmp.isel({"time": 1}) - lat_tmp.isel({"time": 0}))
+                        / n_fills
+                    ).values.item()
+                    val_start = lat_tmp.isel({"time": 1}).values.item()
+                    for i_idx, idx in enumerate(idxs):
+                        ds["lat"][0, 0, idx] = val_start + (i_idx + 1) * val_delta
             # Fill time coordinate and add NaNs where necessary
             tmp_min = ds["time"].min()
             tmp_max = ds["time"].max()
             if tmp_min > min_time:
                 variables = {}
                 times = int(tmp_min + 20 - min_time) // 30
-                sens_shape = (len(ds["Output_Parameter_ID"]), 1, 1, times)
+                if out_coord in ds:
+                    sens_shape = (len(ds[out_coord]), 1, 1, times)
+                    add_sens = np.reshape(
+                        np.repeat(np.NaN, times * len(ds[out_coord])),
+                        sens_shape,
+                    )
                 val_shape = (1, 1, times)
-                add_sens = np.reshape(
-                    np.repeat(np.NaN, times * len(ds["Output_Parameter_ID"])),
-                    sens_shape,
-                )
                 add_vals = np.reshape(np.repeat(np.NaN, times), val_shape)
                 for var in ds:
-                    if var[0] != "d" or var == "deposition":
+                    if var[0] != "d" or var == "deposition" or var == "dp2h":
                         variables[var] = (["ensemble", "trajectory", "time"], add_vals)
                     else:
                         variables[var] = (
-                            ["Output_Parameter_ID", "ensemble", "trajectory", "time"],
+                            [out_coord, "ensemble", "trajectory", "time"],
                             add_sens,
                         )
                 tmp_set = xr.Dataset(
@@ -959,23 +1028,23 @@ def extract_trajs(
                 ds = xr.concat(
                     [ds, tmp_set], join="outer", dim="time", combine_attrs="override"
                 )
-                # ds["cluster"] = ds["cluster"].where(~np.isnan(ds["pressure"]))
             elif tmp_max < max_time:
                 variables = {}
                 times = int(max_time + 20 - tmp_max) // 30
-                sens_shape = (len(ds["Output_Parameter_ID"]), 1, 1, times)
+                if out_coord in ds:
+                    sens_shape = (len(ds[out_coord]), 1, 1, times)
+                    add_sens = np.reshape(
+                        np.repeat(np.NaN, times * len(ds[out_coord])),
+                        sens_shape,
+                    )
                 val_shape = (1, 1, times)
-                add_sens = np.reshape(
-                    np.repeat(np.NaN, times * len(ds["Output_Parameter_ID"])),
-                    sens_shape,
-                )
                 add_vals = np.reshape(np.repeat(np.NaN, times), val_shape)
                 for var in ds:
-                    if var[0] != "d" or var == "deposition":
+                    if var[0] != "d" or var == "deposition" or var == "dp2h":
                         variables[var] = (["ensemble", "trajectory", "time"], add_vals)
                     else:
                         variables[var] = (
-                            ["Output_Parameter_ID", "ensemble", "trajectory", "time"],
+                            [out_coord, "ensemble", "trajectory", "time"],
                             add_sens,
                         )
                         if var == "asc600":
@@ -993,7 +1062,6 @@ def extract_trajs(
                 ds = xr.concat(
                     [ds, tmp_set], join="outer", dim="time", combine_attrs="override"
                 )
-                # ds["cluster"] = ds["cluster"].where(~np.isnan(ds["pressure"]))
 
             if ds["time"].dtype == np.float64:
                 ds["time"] = ds["time"].astype(np.float32)
@@ -1007,7 +1075,6 @@ def extract_trajs(
                 data_arrays, dim="trajectory", join="outer", combine_attrs="override"
             )
         )
-        cluster += 1
     if verbose:
         print("Concatenating the final list")
     ds = xr.concat(ds_list, dim="trajectory", join="outer", combine_attrs="override")
@@ -1025,15 +1092,40 @@ def extract_trajs(
     if verbose:
         print(f"Storing the extracted trajectories to {filename}")
     comp = dict(zlib=True, complevel=9)
-    encoding = {var: comp for var in ds.data_vars}
-    ds.to_netcdf(
-        path=filename,
-        encoding=encoding,
-        compute=True,
-        engine="netcdf4",
-        format="NETCDF4",
-        mode="w",
-    )
+    if keep_coords == "relative":
+        cols = []
+        for col in ds:
+            if (col != "lon") and (col != "lat"):
+                cols.append(col)
+        ds = ds[cols]
+    elif keep_coords == "normal":
+        cols = []
+        for col in ds:
+            if (col != "relative_lon") and (col != "relative_lat"):
+                cols.append(col)
+        ds = ds[cols]
+    if split_states and out_coord in ds.dims:
+        for out_param in ds[out_coord]:
+            ds_tmp = ds.sel({out_coord: out_param})
+            encoding = {var: comp for var in ds_tmp.data_vars}
+            ds_tmp.to_netcdf(
+                path=filename.split(".")[0] + f"_{out_param.values.item()}.nc",
+                encoding=encoding,
+                compute=True,
+                engine="netcdf4",
+                format="NETCDF4",
+                mode="w",
+            )
+    else:
+        encoding = {var: comp for var in ds.data_vars}
+        ds.to_netcdf(
+            path=filename,
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w",
+        )
 
 
 if __name__ == "__main__":

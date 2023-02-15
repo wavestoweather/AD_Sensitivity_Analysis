@@ -912,6 +912,150 @@ def convert_wcb2(f, store_path, fl, ensemble):
     )
 
 
+def get_sym_log_norm(file_path, threshold=1e-14, grid_data=False):
+    ds = xr.open_dataset(
+        file_path,
+        decode_times=False,
+        engine="netcdf4",
+    )
+    grid_prefixes = ["Mean ", "Var ", "Min ", "Max ", "Median ", "Std "]
+    shift_val = np.log10(threshold)
+    for col in ds:
+        if "deposition" in col:
+            continue
+        if not grid_data and col[0] == "d":
+            attr = ds[col].attrs
+            signs = np.sign(ds[col])
+            ds[col] = np.log10(np.abs(ds[col]))
+            ds[col] -= shift_val
+            ds[col] = ds[col].where(ds[col] > 0, other=0)
+            ds[col] *= signs
+            ds[col].attrs = attr
+        elif grid_data:
+            for p in grid_prefixes:
+                if col.startswith(p) and col[len(p)] == "d":
+                    attr = ds[col].attrs
+                    signs = np.sign(ds[col])
+                    ds[col] = np.log10(np.abs(ds[col]))
+                    ds[col] -= shift_val
+                    ds[col] = ds[col].where(ds[col] > 0, other=0)
+                    ds[col] *= signs
+                    ds[col].attrs = attr
+    ds.attrs["description"] = (
+        f"Sensitivities are log10 with preserved sign and shifted by {shift_val} "
+        f"such that values below {threshold:1.2e} are zero"
+    )
+    return ds
+
+
+def grid_to_met3d(file_path, store_path, method, threshold=1e-14):
+    """
+    Convert the grid data such that it can be loaded in Met3D since the current version does not support
+    Multiple sensitivity targets. In addition, some post-processing can be applied such as taking the absolute
+    values of the sensitivities, or applying a symmetric log-normalization.
+
+
+    Parameters
+    ----------
+    file_path : string
+        Path and name of the grid to load.
+    store_path : string
+        Path and name to store the new calculated grid.
+    method : string
+        Possible actions are 'None' (does not change the data), 'Abs' (take absolute values of the sensitivities),
+        'Log' (applies log10 on the absolute values of the sensitivities), and 'SymLog' (applies log10 on
+        the values of the sensitivities and preserves the sign; shifts the values such that 'threshold' is stored
+        as 0, 'threshold' times 10 is stored as 1, and so on).
+    threshold : float
+        The threshold to use for symmetric log-normalization. Any value closer than that to zero is considered zero.
+    """
+    grid_prefixes = ["Mean ", "Var ", "Min ", "Max ", "Median ", "Std "]
+    if method == "SymLog":
+        ds = get_sym_log_norm(file_path, threshold=threshold, grid_data=True)
+    elif method == "Log":
+        ds = xr.open_dataset(file_path, decode_times=False, engine="netcdf4")
+        for col in ds:
+            for p in grid_prefixes:
+                if col.startswith(p) and col[len(p)] == "d":
+                    attr = ds[col].attrs
+                    ds[col] = np.log10(np.abs(ds[col]))
+                    ds[col].attrs = attr
+        ds.attrs["description"] = f"Sensitivities are log10 of absolute values."
+    elif method == "Abs":
+        ds = xr.open_dataset(file_path, decode_times=False, engine="netcdf4")
+        for col in ds:
+            for p in grid_prefixes:
+                if col.startswith(p) and col[len(p)] == "d":
+                    attr = ds[col].attrs
+                    ds[col] = np.abs(ds[col])
+                    ds[col].attrs = attr
+        ds.attrs["description"] = f"Sensitivities are absolute values."
+    else:
+        print(f"No such method {method}")
+        return
+    comp = dict(zlib=True, complevel=9)
+    coord = "Output_Parameter_ID"
+    if coord not in ds:
+        coord = "Output Parameter"
+    store_type = store_path.split(".")[-1]
+    store_path_2 = store_path[0 : -len(store_type) - 1]
+    for out_p in ds[coord]:
+        ds_tmp = ds.sel({coord: out_p})
+        encoding = {var: comp for var in ds_tmp.data_vars}
+        ds_tmp.to_netcdf(
+            path=f"{store_path_2}_{out_p.item()}.{store_type}",
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w",
+        )
+
+
+def traj_sym_log_norm(file_path, store_path, threshold=1e-14):
+    """
+    Convert sensitivities of a single file such that they can be plotted using linear color maps in Met3D.
+    Best used with trajectories extracted from the dataset, i.e., by calculating clusters.
+
+    Parameters
+    ----------
+    file_path : string
+        Path and name of the file to load.
+    store_path : string
+        Path and name to store the new calculated file.
+    threshold : float
+        The threshold to use for symmetric log-normalization. Any value as close or closer than that to zero is
+        considered zero.
+    """
+    ds = get_sym_log_norm(file_path, threshold=threshold, grid_data=False)
+    comp = dict(zlib=True, complevel=9)
+    out_coord = "Output_Parameter_ID"
+    if out_coord not in ds:
+        out_coord = "Output Parameter"
+    for out_p in ds[out_coord]:
+        ds_tmp = ds.sel({out_coord: out_p})
+        if "auxiliary_data" not in ds_tmp["time_after_ascent"].attrs:
+            ds_tmp["time_after_ascent"].attrs = {
+                "long_name": "time after rapid ascent started",
+                "standard_name": "time_after_ascent",
+                "units": "seconds since start of convective/slantwise ascent",
+                "auxiliary_data": "yes",
+            }
+        if "auxiliary_data" not in ds_tmp[out_coord]:
+            ds_tmp[out_coord].attrs["auxiliary_data"] = "yes"
+        encoding = {var: comp for var in ds_tmp.data_vars}
+        store_type = store_path.split(".")[-1]
+        store_path_2 = store_path[0 : -len(store_type) - 1]
+        ds_tmp.to_netcdf(
+            path=f"{store_path_2}_{out_p}.{store_type}",
+            encoding=encoding,
+            compute=True,
+            engine="netcdf4",
+            format="NETCDF4",
+            mode="w",
+        )
+
+
 if __name__ == "__main__":
     import argparse
     import textwrap

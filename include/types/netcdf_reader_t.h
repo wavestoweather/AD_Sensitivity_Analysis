@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 #include "include/misc/error.h"
 #include "include/types/model_constants_t.h"
@@ -27,6 +27,10 @@ struct netcdf_reader_t {
      * @param buffer_size Number of time steps to read at once
      */
     explicit netcdf_reader_t(const uint32_t &buffer_size);
+
+    void set_ensemble_idx(uint32_t idx) {this->ens_idx = idx;}
+    void set_traj_idx(uint32_t idx) {this->traj_idx = idx;}
+    uint64_t get_buffer_size() {return n_timesteps_buffer;}
 
     /**
      * Read data from the buffer and store in in y_single_old and inflows.
@@ -70,6 +74,17 @@ struct netcdf_reader_t {
         const char *input_file,
         model_constants_t<float_t> &cc,
         const int &simulation_mode);
+
+    /**
+     * Set dimids of this object. Sets pressure in reference quantities. Default is 1e5
+     * for Pa, otherwise hPa with 1e3 is possible as well.
+     *
+     * @param input_file Path to file to read
+     * @param simulation_mode The simulation mode defined on the command line
+     */
+    void set_dims(
+            const char *input_file,
+            const int &simulation_mode);
 
     /**
     * Read initial values from the netcdf file and stores them to y_init.
@@ -146,7 +161,7 @@ struct netcdf_reader_t {
     std::vector<int> startp, countp;
     int ncid;
     uint64_t n_timesteps_in; /*!< Total number of time steps that can be read from the input file. */
-    uint32_t n_timesteps_buffer; /*!< Number of time steps that can be stored in the buffer. */
+    uint64_t n_timesteps_buffer; /*!< Number of time steps that can be stored in the buffer. */
     uint64_t time_buffer_idx; /*!< Current index to read from the buffer. */
 
     uint32_t traj_idx; /*!< Index of trajectory to read from. */

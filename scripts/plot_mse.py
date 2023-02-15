@@ -1,3 +1,7 @@
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.patches import Ellipse
+import matplotlib.transforms as transforms
 from bokeh.models import Range1d, LinearAxis, GlyphRenderer
 import holoviews as hv
 from holoviews import opts
@@ -6,6 +10,9 @@ import matplotlib
 import numpy as np
 import os
 import pandas as pd
+import panel as pn
+import seaborn as sns
+import sys
 import xarray as xr
 
 try:
@@ -323,6 +330,265 @@ def plot_histogram(
     renderer.save(image, save)
 
 
+def plot_errors(
+    df,
+    out_param,
+    in_params,
+    x_key,
+    y_key,
+    alpha=0.5,
+    plot_types=True,
+    add_zero_sens=False,
+    n_std=2,
+    linewidth=2,
+    title=None,
+    xlabel="Sensitivity",
+    ylabel=None,
+    width=12,
+    height=12,
+    log_x=False,
+    log_y=False,
+    corr_line=False,
+    font_scale=None,
+    save=True,
+    latex=False,
+    filename=None,
+    s=2,
+):
+    """
+    Plot the dataframe which should hold parameters with their sensitivity
+    to one model state parameter and the actual deviation when perturbing
+    on a log-log plot.
+
+    Parameters
+    ----------
+    df : pandas.Dataframe
+        A dataframe with columns "Output Parameter" for the model state
+        variables, which must have only one value,
+        "Input Parameter" for the perturbed model parameter,
+        "Predicted Squared Error" for the sensitivity calculated to deviations
+        in the next timestep, "Mean Squared Error" for the actual deviations
+    out_param : string
+       The output parameter in the given dataframe to plot for.
+    store_path : string
+        Path to folder where to store the image.
+    alpha : float
+        Alpha value for the dots.
+    plot_types : bool
+        Wether to plot the errors grouped by the type of the model parameters.
+    add_zero_sens : bool
+        Add sensitivities of value zero to the far left and mark it with
+        negative infinity for the x-axis.
+    n_std : float or None
+        Plot a confidence ellipse around each sample with confidence
+        as number of standard deviations. If none is given, no ellipse will be plotted.
+    title : string
+        Title for the plot.
+    xlabel : string
+        Alternative label for x-axis.
+    ylabel : string
+        Alternative label for y-axis.
+    width : int
+        Width of plot in inches.
+    height : int
+        Height of plot in inches.
+    plot_kind : string
+        "paper" for single plots, "single_plot" for a plot with
+        multiple output parameters at once.
+    legend_pos : string
+        if plot_kind == "paper", then define the legend position here.
+    corr_line : bool
+        Plot a dashed line to show the 1-to-1 mapping in the plot.
+    font_scale : float
+        Scale the fontsize for the title, labels and ticks.
+    save : bool
+        Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
+    latex : bool
+        Use latex font.
+    """
+
+    def confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):
+        """
+        Create a plot of the covariance confidence ellipse of *x* and *y*.
+        By https://matplotlib.org/stable/gallery/statistics/confidence_ellipse.html
+
+        Parameters
+        ----------
+        x, y : array-like, shape (n, )
+            Input data.
+
+        ax : matplotlib.axes.Axes
+            The axes object to draw the ellipse into.
+
+        n_std : float
+            The number of standard deviations to determine the ellipse's radiuses.
+
+        **kwargs
+            Forwarded to `~matplotlib.patches.Ellipse`
+
+        Returns
+        -------
+        matplotlib.patches.Ellipse
+        """
+        if x.size != y.size:
+            raise ValueError("x and y must be the same size")
+
+        cov = np.cov(x, y)
+        pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
+        # Using a special case to obtain the eigenvalues of this
+        # two-dimensional dataset.
+        ell_radius_x = np.sqrt(1 + pearson)
+        ell_radius_y = np.sqrt(1 - pearson)
+        ellipse = Ellipse(
+            (0, 0),
+            width=ell_radius_x * 2,
+            height=ell_radius_y * 2,
+            facecolor=facecolor,
+            **kwargs,
+        )
+
+        # Calculating the standard deviation of x from
+        # the squareroot of the variance and multiplying
+        # with the given number of standard deviations.
+        scale_x = np.sqrt(cov[0, 0]) * n_std
+        mean_x = np.mean(x)
+
+        # calculating the standard deviation of y ...
+        scale_y = np.sqrt(cov[1, 1]) * n_std
+        mean_y = np.mean(y)
+
+        transf = (
+            transforms.Affine2D()
+            .rotate_deg(45)
+            .scale(scale_x, scale_y)
+            .translate(mean_x, mean_y)
+        )
+
+        ellipse.set_transform(transf + ax.transData)
+        return ax.add_patch(ellipse)
+
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
+
+    df_tmp = df.copy()
+    df_tmp = df_tmp.loc[df_tmp["Output Parameter"] == out_param]
+    df_tmp = df_tmp.loc[df_tmp["Input Parameter"].isin(in_params)]
+    if plot_types:
+        # We need to add a column 'Group' to plot it correctly
+        tmp_dic = {}
+        for in_p in in_params:
+            for g in in_params_grouping:
+                if in_p in in_params_grouping[g]:
+                    tmp_dic[in_p] = g
+                    break
+        df_tmp["Group"] = df_tmp.apply(
+            lambda row: tmp_dic[row["Input Parameter"]], axis=1
+        )
+        group_colors = {
+            "artificial": "tab:orange",
+            "artificial (threshold)": "tab:green",
+            "physical": "tab:blue",
+            "physical (high variability)": "tab:red",
+            "1-moment": "k",
+        }
+
+    if add_zero_sens:
+        inf_val = np.min(df_tmp.loc[df_tmp[x_key] != 0][x_key]) / 10
+        df_tmp[x_key] = df_tmp[x_key].replace({0: inf_val})
+    else:
+        df_tmp = df_tmp.loc[df_tmp[x_key] != 0]
+        inf_val = None
+
+    if log_x:
+        df_tmp[x_key] = np.log10(np.abs(df_tmp[x_key]))
+    if log_y:
+        df_tmp[y_key] = np.log10(np.abs(df_tmp[y_key]))
+
+    fig = Figure()
+    ax = fig.subplots()
+    if plot_types:
+        g = sns.scatterplot(
+            data=df_tmp,
+            x=x_key,
+            y=y_key,
+            hue="Group",
+            ax=ax,
+            palette=group_colors,
+            alpha=alpha,
+            s=s,
+        )
+        if n_std is not None and n_std > 0:
+            for group in np.unique(df_tmp["Group"]):
+                df_tmp2 = df_tmp.loc[df_tmp["Group"] == group]
+                confidence_ellipse(
+                    x=df_tmp2[x_key],
+                    y=df_tmp2[y_key],
+                    ax=ax,
+                    n_std=n_std,
+                    edgecolor=group_colors[group],
+                    linewidth=linewidth,
+                )
+        handles, labels = ax.get_legend_handles_labels()
+        leg = ax.legend(handles, labels, fontsize=int(9 * font_scale))
+    else:
+        g = sns.scatterplot(
+            data=df_tmp,
+            x=x_key,
+            y=y_key,
+            ax=ax,
+            alpha=alpha,
+            s=s,
+        )
+        if n_std is not None and n_std > 0:
+            confidence_ellipse(
+                x=df_tmp[x_key],
+                y=df_tmp[y_key],
+                ax=ax,
+                n_std=n_std,
+                linewidth=linewidth,
+                edgecolor="k",
+            )
+    if corr_line:
+        tmp_min = np.nanmin(df_tmp[x_key])
+        if tmp_min < np.nanmin(df_tmp[y_key]):
+            tmp_min = np.nanmin(df_tmp[y_key])
+        tmp_max = np.nanmax(df_tmp[x_key])
+        if tmp_max > np.nanmax(df_tmp[y_key]):
+            tmp_max = np.nanmax(df_tmp[y_key])
+        line = matplotlib.lines.Line2D(
+            [tmp_min, tmp_max],
+            [tmp_min, tmp_max],
+            lw=linewidth,
+            color="k",
+            linestyle="dashed",
+        )
+        ax.add_line(line)
+
+    if font_scale is None:
+        _ = ax.set_title(title)
+    else:
+        ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+    ax.set_xlabel(xlabel, fontsize=int(11 * font_scale))
+    ax.set_ylabel(ylabel, fontsize=int(11 * font_scale))
+
+    plt.tight_layout()
+    if filename is not None and save:
+        fig = ax.get_figure()
+        try:
+            i = 0
+            store_type = filename.split(".")[-1]
+            store_path = filename[0 : -len(store_type) - 1]
+            save_name = store_path + "_{:03d}.".format(i) + store_type
+
+            while os.path.isfile(save_name):
+                i = i + 1
+                save_name = store_path + "_{:03d}.".format(i) + store_type
+            fig.savefig(save_name, bbox_inches="tight", dpi=300)
+        except:
+            print(f"Storing to {save_name} failed.", file=sys.stderr)
+    return fig
+
+
 def plot_mse(
     df,
     out_params,
@@ -354,7 +620,7 @@ def plot_mse(
         "Input Parameter" for the perturbed model parameter,
         "Predicted Squared Error" for the sensitivity calculated to deviations
         in the next timestep, "Mean Squared Error" for the actual deviations
-    out_params : list of string
+    out_params : list of string or string
         *Should* be only a list of a single value, namely the output parameter
         in the given dataframe.
     store_path : string
@@ -393,6 +659,8 @@ def plot_mse(
     in_params = np.unique(df["Input Parameter"])
 
     datashade = False
+    if isinstance(out_params, str):
+        out_params = [out_params]
 
     if plot_kind == "paper" or plot_kind == "single_plot":
         alpha = 0.5
@@ -467,6 +735,213 @@ def plot_mse(
     )
 
 
+def plot_errors_interactive(
+    df,
+):
+    """
+    Use plot_errors() interactively in a jupyter notebook for perturbation simulations.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        A dataframe with columns "Output Parameter" for the model state
+        "Input Parameter" for the perturbed model parameter,
+        "Predicted Squared Error" and "Predicted Error" for the sensitivity calculated to deviations
+        in the next timestep, "Mean Squared Error" or "Mean Error" for the actual deviations
+
+    Returns
+    -------
+    panel.layout that can be used in a jupyter notebook.
+    """
+    out_param_list = list(np.unique(df["Output Parameter"]))
+    out_param = pn.widgets.Select(
+        name="Output Parameter",
+        value=out_param_list[0],
+        options=out_param_list,
+    )
+    in_params_list = list(np.unique(df["Input Parameter"]))
+    in_params = pn.widgets.CrossSelector(
+        name="Parameter",
+        value=in_params_list[0:2],
+        options=in_params_list,
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=5,
+        step=0.1,
+        value=0.7,
+    )
+    alpha_slider = pn.widgets.FloatSlider(
+        name="Alpha",
+        start=0.1,
+        end=1,
+        step=0.1,
+        value=0.6,
+    )
+    dot_slider = pn.widgets.IntSlider(
+        name="Change the dot size",
+        start=1,
+        end=200,
+        step=2,
+        value=12,
+    )
+    logx_plot = pn.widgets.Toggle(
+        name="Use log x-axis",
+        value=False,
+        button_type="success",
+    )
+    logy_plot = pn.widgets.Toggle(
+        name="Use log y-axis",
+        value=False,
+        button_type="success",
+    )
+    x_widget = pn.widgets.TextInput(
+        name="X-label",
+        placeholder="Predicted Error",
+        value="Predicted Error",
+    )
+    y_widget = pn.widgets.TextInput(
+        name="Y-label",
+        placeholder="Ensemble Error",
+        value="Ensemble Error",
+    )
+    data_variants = []
+    for col in df:
+        if col != "Output Parameter" and col != "Input Parameter":
+            data_variants.append(col)
+    x_data = pn.widgets.Select(
+        name="X-axis",
+        value=data_variants[0],
+        options=data_variants,
+    )
+    y_data = pn.widgets.Select(
+        name="Y-axis",
+        value=data_variants[2],
+        options=data_variants,
+    )
+    corr_line = pn.widgets.Toggle(
+        name="Correlation line",
+        value=False,
+        button_type="success",
+    )
+    line_slider = pn.widgets.FloatSlider(
+        name="Change the line width",
+        start=1,
+        end=10,
+        step=0.5,
+        value=2,
+    )
+    group_toggle = pn.widgets.Toggle(
+        name="Group parameters",
+        value=False,
+        button_type="success",
+    )
+    ellipsis_widget = pn.widgets.FloatSlider(
+        name="Ellipsis in standard deviations",
+        start=0,
+        end=5,
+        step=0.2,
+        value=2,
+    )
+
+    plot_pane = pn.panel(
+        pn.bind(
+            plot_errors,
+            df=df,
+            out_param=out_param,
+            in_params=in_params,
+            x_key=x_data,
+            y_key=y_data,
+            alpha=alpha_slider,
+            plot_types=group_toggle,
+            n_std=ellipsis_widget,
+            linewidth=line_slider,
+            title=title_widget,
+            xlabel=x_widget,
+            ylabel=y_widget,
+            width=width_slider,
+            height=height_slider,
+            log_x=logx_plot,
+            log_y=logy_plot,
+            corr_line=corr_line,
+            font_scale=font_slider,
+            save=save_button,
+            latex=latex_button,
+            filename=save_to_field,
+            s=dot_slider,
+        ),
+    ).servable()
+    return pn.Column(
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+        ),
+        pn.Row(
+            x_data,
+            y_data,
+            ellipsis_widget,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+            latex_button,
+        ),
+        pn.Row(
+            logx_plot,
+            logy_plot,
+            corr_line,
+        ),
+        pn.Row(
+            in_params,
+            pn.Column(
+                out_param,
+                x_widget,
+                y_widget,
+                group_toggle,
+            ),
+        ),
+        pn.Row(
+            dot_slider,
+            line_slider,
+            alpha_slider,
+        ),
+        title_widget,
+        plot_pane,
+    )
+
+
 def plot_time_evolution(
     df,
     store_path="../pics/time_evo",
@@ -477,6 +952,7 @@ def plot_time_evolution(
     twinlabel=None,
     min_x=None,
     max_x=None,
+    x_limits=None,
     plot_deviation=False,
     perturb_delta=None,
     alpha=1,
@@ -484,6 +960,13 @@ def plot_time_evolution(
     height=900,
     logy=False,
     logtwin=False,
+    save=False,
+    font_scale=None,
+    s=2,
+    latex=False,
+    trajectory=None,
+    out_param=None,
+    in_params=None,
 ):
     """
     Plot over time after ascent the model state (left y-axis) and
@@ -521,6 +1004,9 @@ def plot_time_evolution(
         min_x to the first step when it is actually perturbed.
     max_x : float
         Set the last time relative to the start of the ascent.
+    x_limits : Tuple of floats
+        Set the limits of the x-axis. Values range between zero and one as percentages of the full
+        range. Is used for interactive plotting. Is always superceeded by min_x or max_x.
     plot_deviation : bool
         If true, plot the deviation from perturbing parameters. If false,
         plot the actual model state variable.
@@ -529,40 +1015,86 @@ def plot_time_evolution(
         This will plot vertical lines at each of those time steps.
     alpha : float
         Alpha value for the dots.
-    width : int
-        Width of plot in pixels.
-    height : int
-        Height of plot in pixels.
+    width : int or float
+        Width of plot in pixels or inches. Defaults to inches for values lower than 100 or floats.
+    height : int or float
+        Height of plot in pixels or inches. Defaults to inches for values lower than 100 or floats.
     logy : bool
         If true, use log10 on y-axis
     logtwin : bool
         If true, use log10 on twin-axis
+    save : bool
+        If true, save the plot to the given path.
+    font_scale : float
+        Scale the fontsize for the title, labels and ticks.
+    s : int
+        Dot size.
+    latex : bool
+        Use latex font.
+    trajectory : int
+        In case df has multiple trajectories, you may select one.
+    out_param : string
+        Name of the model state variable for which sensitivities shall be plotted in case multiple
+        are available in df.
+    in_params : list of strings
+        Name of the model parameters in df to plot.
+
+    Returns
+    -------
+    matplotlib.figure.Figure with the plot drawn onto it.
     """
-    s = 14
     import matplotlib.ticker as tick
 
-    fontscale = height / 350
+    sns.set(rc={"text.usetex": latex, "axes.grid": True})
+
+    if trajectory is not None:
+        df = df.loc[df["trajectory"] == trajectory]
+    if out_param is not None:
+        df = df.loc[df["Output Parameter"] == out_p]
+    if in_params is not None:
+        df = df.loc[df["Input Parameter"].isin(in_params)]
+
     if backend == "matplotlib":
-        fontscale = height / 900 * 0.8
-        s = 2
-        matplotlib.rcParams["font.family"] = "sans-serif"
-        matplotlib.rcParams["font.sans-serif"] = "Helvetica"
-        title_font_size = 13 * fontscale
-        axis_label_text_font_size = matplotlib.rcParams["font.size"] * fontscale
-        major_label_text_font_size = matplotlib.rcParams["font.size"] * fontscale
+        if font_scale is None:
+            if isinstance(height, float) or height < 100:
+                font_scale = height / 3 * 0.8
+            else:
+                font_scale = height / 900 * 0.8
+        if s is None:
+            s = 2
+        # matplotlib.rcParams["font.family"] = "sans-serif"
+        # matplotlib.rcParams["font.sans-serif"] = "Helvetica"
+        title_font_size = 12  # * font_scale
+        axis_label_text_font_size = 10  # * font_scale
+        major_label_text_font_size = 10  # * font_scale
         aspect = width / height
     else:
-        axis_label_text_font_size = int(13 * fontscale * 0.8)
-        major_label_text_font_size = int(11 * fontscale * 0.8)
+        if font_scale is None:
+            if isinstance(height, float) or height < 100:
+                font_scale = height * 1.2
+            else:
+                font_scale = height / 350
+        axis_label_text_font_size = int(13 * font_scale * 0.8)
+        major_label_text_font_size = int(11 * font_scale * 0.8)
+        if s is None:
+            s = 14
 
     hv.extension(backend)
 
+    tmp_max = np.nanmax(df["time_after_ascent"])
+    tmp_min = np.nanmin(df["time_after_ascent"])
     if min_x is not None:
+        df = df.loc[df["time_after_ascent"] >= min_x]
+    elif x_limits is not None:
+        min_x = tmp_min + (tmp_max - tmp_min) * x_limits[0]
         df = df.loc[df["time_after_ascent"] >= min_x]
     if max_x is not None:
         df = df.loc[df["time_after_ascent"] <= max_x]
+    elif x_limits is not None:
+        max_x = tmp_min + (tmp_max - tmp_min) * x_limits[1]
+        df = df.loc[df["time_after_ascent"] <= max_x]
 
-    # Make time after ascent to minuts
+    # Make time after ascent to minutes
     df["time_after_ascent"] /= 60
     y = "Not Perturbed Value"
     if plot_deviation:
@@ -575,23 +1107,21 @@ def plot_time_evolution(
         df.replace(-np.inf, min_log_y, inplace=True)
     min_log_twin = np.NaN
     if logtwin:
-        df["Predicted Error"] = np.log10(df["Predicted Error"])
+        df["Predicted Error"] = np.log10(np.abs(df["Predicted Error"]))
         min_log_twin = (
             np.nanmin(df.loc[df["Predicted Error"] != -np.inf]["Predicted Error"]) - 1
         )
         df.replace(-np.inf, min_log_twin, inplace=True)
-    # print(df)
-    df = df.loc[df["Predicted Error"] < np.max(df["Predicted Error"])]
-    # print(df)
+    # df = df.loc[df["Predicted Error"] < np.max(df["Predicted Error"])]
     lower_y = np.min(df["Predicted Error"])
     upper_y = np.max(df["Predicted Error"])
 
     delta = (upper_y - lower_y) / 12
-    if upper_y == 0:
-        upper_y += 4 * delta
-        delta = (upper_y - lower_y) / 12
-    else:
-        upper_y += delta
+    # if upper_y == 0:
+    #     upper_y += 4 * delta
+    #     delta = (upper_y - lower_y) / 12
+    # else:
+    upper_y += delta
     lower_y -= delta
 
     lower_y2 = np.min(df[y])
@@ -600,7 +1130,13 @@ def plot_time_evolution(
     lower_y2 -= delta2
     upper_y2 += delta2
 
-    renderer = hv.Store.renderers[backend].instance(fig="png", dpi=300)
+    if "." not in store_path:
+        filetype = "png"
+        tmp_path = store_path
+    else:
+        filetype = store_path.split(".")[-1]
+        tmp_path = store_path.split(".")[0]
+    renderer = hv.Store.renderers[backend].instance(fig=filetype, dpi=300)
 
     min_t = np.min(df["time_after_ascent"])
     max_t = np.max(df["time_after_ascent"])
@@ -634,13 +1170,14 @@ def plot_time_evolution(
 
         def apply_axis_format(plot, element):
             ax = plot.handles["axis"]
+            ax.set_ylim((lower_y2, upper_y2))
             ax.set_title(
                 title,
                 loc="left",
                 # fontdic={},
                 **{
                     "fontweight": "bold",
-                    "fontsize": title_font_size,
+                    "fontsize": title_font_size * font_scale,
                 },
             )
             ax.set_ylabel(
@@ -648,17 +1185,19 @@ def plot_time_evolution(
                 **{
                     "rotation": 90,
                     # "fontstyle": "italic",
-                    "fontsize": axis_label_text_font_size,
+                    "fontsize": axis_label_text_font_size * font_scale,
                 },
             )
             ax.set_xlabel(
                 xlabel,
                 **{
                     # "fontstyle": "italic",
-                    "fontsize": axis_label_text_font_size,
+                    "fontsize": axis_label_text_font_size
+                    * font_scale,
                 },
             )
-            ax.minorticks_on()
+            # ax.minorticks_on()
+            ax.xaxis.set_ticks_position("none")
 
             def format_fn(tick_val, tick_pose):
                 # Can implement an even fancier format here if needed
@@ -672,8 +1211,12 @@ def plot_time_evolution(
 
             ax.yaxis.set_major_formatter(tick.FuncFormatter(format_fn))
             ax.tick_params(
-                axis="both", which="major", labelsize=major_label_text_font_size
+                axis="both",
+                which="major",
+                labelsize=major_label_text_font_size * font_scale,
             )
+            ax.xaxis.set_ticks_position("none")
+            ax.set_yticks(np.linspace(ax.get_ybound()[0], ax.get_ybound()[1], 5))
             plot.handles["axis"] = ax
 
         left = (
@@ -691,6 +1234,7 @@ def plot_time_evolution(
             )
             .opts(
                 initial_hooks=[apply_axis_format],
+                # yticks=np.arange(lower_y2 + delta, upper_y2 - delta2/2, delta2*2.5),
             )
             .opts(
                 opts.Scatter(
@@ -701,15 +1245,17 @@ def plot_time_evolution(
 
         def twinx_per_timestep(plot, element):
             ax = plot.handles["axis"]
+            ax.xaxis.set_ticks_position("none")
             twinax = ax.twinx()
+
             twinax.set_ylim((lower_y, upper_y))
             twinax.set_ylabel(
                 twinlabel,
-                labelpad=9.0,
+                labelpad=13.0 * font_scale,
                 **{
                     "rotation": 270,
                     # "fontstyle": "italic",
-                    "fontsize": axis_label_text_font_size,
+                    "fontsize": axis_label_text_font_size * font_scale,
                 },
             )
             if logtwin:
@@ -718,8 +1264,10 @@ def plot_time_evolution(
                 if yticks_tmp[1] - yticks_tmp[0] < 3.5:
                     yticks_tmp = np.delete(yticks_tmp, 1)
                 twinax.set_yticks(yticks_tmp)
-            else:
-                twinax.minorticks_on()
+            # else:
+            # twinax.set_yticks(np.arange(lower_y + delta, upper_y, delta*2.5))
+            # else:
+            #     twinax.minorticks_on()
 
             def format_fn(tick_val, tick_pose):
                 # Can implement an even fancier format here if needed
@@ -733,7 +1281,13 @@ def plot_time_evolution(
 
             twinax.yaxis.set_major_formatter(tick.FuncFormatter(format_fn))
             twinax.tick_params(
-                axis="both", which="major", labelsize=major_label_text_font_size
+                axis="both",
+                which="major",
+                labelsize=major_label_text_font_size * font_scale,
+            )
+            twinax.xaxis.set_ticks_position("none")
+            twinax.set_yticks(
+                np.linspace(twinax.get_ybound()[0], twinax.get_ybound()[1], 5)
             )
             plot.handles["axis"] = twinax
 
@@ -743,6 +1297,7 @@ def plot_time_evolution(
             twinax.set_ylim((lower_y, upper_y))
             twinax.set_yticks([])
             plot.handles["axis"] = twinax
+            twinax.xaxis.set_ticks_position("none")
 
         twin = None
         for i, in_p in enumerate(data_types_2[1::]):
@@ -776,7 +1331,11 @@ def plot_time_evolution(
                     legend=False,
                     aspect=aspect,
                     color=cmap_values[i + 1],
-                ).opts(initial_hooks=[twinx2], apply_ranges=False,).opts(
+                ).opts(
+                    initial_hooks=[twinx2],
+                    apply_ranges=False,
+                    # yticks=np.arange(lower_y + delta, upper_y - delta/2, delta*2.5),
+                ).opts(
                     opts.Scatter(
                         s=s,
                         cmap=cmap_map,
@@ -787,17 +1346,26 @@ def plot_time_evolution(
             {
                 data_types[i]: hv.Scatter((np.NaN, np.NaN)).opts(
                     opts.Scatter(
-                        s=s * 8,
+                        s=s * 4,
                         color=cmap_values[i],
                     )
                 )
                 for i in range(len(data_types))
             }
+        ).opts(
+            fontsize={
+                "legend": major_label_text_font_size * font_scale,
+                "xticks": major_label_text_font_size * font_scale,
+                "yticks": major_label_text_font_size * font_scale,
+                "title": title_font_size * font_scale,
+                "xlabel": axis_label_text_font_size * font_scale,
+                "ylabel": axis_label_text_font_size * font_scale,
+            }
         )
         if perturb_delta is not None:
             image = left * twin * perturb_lines * legend_overlay
         else:
-            image = left * twin * legend_overlay
+            image = legend_overlay * left * twin
     else:
 
         left = df.hvplot.scatter(
@@ -845,24 +1413,313 @@ def plot_time_evolution(
         else:
             image = left * twin
     if backend == "matplotlib":
-        image = image.opts(
-            fig_inches=((width / 300.0, height / 300.0)),
-            fontscale=fontscale,
-        )
+        if isinstance(width, float) or width < 100:
+            image = image.opts(
+                fig_inches=(width, height),
+                # fontscale=font_scale,
+            )
+        else:
+            image = image.opts(
+                fig_inches=(width / 300.0, height / 300.0),
+                # fontscale=font_scale,
+            )
     else:
-        image = image.opts(
-            width=width,
-            height=height,
-            title=title,
-            fontscale=fontscale,
-        )
+        if isinstance(width, float) or width < 100:
+            image = image.opts(
+                width=int(width * 300),
+                height=int(height * 300),
+                title=title,
+                # fontscale=font_scale,
+            )
+        else:
+            image = image.opts(
+                width=width,
+                height=height,
+                title=title,
+                # fontscale=font_scale,
+            )
 
-    i = 0
-    save = store_path + "_" + "{:03d}".format(i)
-    while os.path.isfile(save + ".png"):
-        i = i + 1
-        save = store_path + "_" + "{:03d}".format(i)
-    renderer.save(image, save)
+    if save:
+        i = 0
+        save_path = tmp_path + "_" + "{:03d}".format(i)
+        while os.path.isfile(save_path + "." + filetype):
+            i = i + 1
+            save_path = tmp_path + "_" + "{:03d}".format(i)
+        renderer.save(image, save_path)
+    return image
+
+
+def plot_time_evolution_interactive(ds, perturbed=False):
+    """
+    Use plot_time_evolution() interactively in a jupyter notebook for perturbation or sensitivity simulations.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset with trajectories from a perturbed or sensitivity simulation.
+    perturbed : bool
+        If true, then ds is from a perturbed ensemble simulation. Otherwise a sensitivity simulation is
+        assumed.
+
+    Returns
+    -------
+    panel.layout that can be used in a jupyter notebook.
+    """
+    if "Output Parameter" in ds:
+        out_param_list = ds["Output Parameter"].values.tolist()
+    else:
+        out_param_list = []
+        for out_p in ds["Output_Parameter_ID"]:
+            out_param_list.append(param_id_map[out_p.item()])
+    out_param = pn.widgets.Select(
+        name="Output Parameter",
+        value=out_param_list[0],
+        options=out_param_list,
+    )
+    in_params_list = []
+    for col in ds:
+        if col[0] == "d" and col != "deposition":
+            in_params_list.append(col)
+    in_params_list = list(np.sort(in_params_list))
+    in_params = pn.widgets.CrossSelector(
+        name="Parameter",
+        value=in_params_list[0:2],
+        options=in_params_list,
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=5,
+        step=0.1,
+        value=0.7,
+    )
+    dot_slider = pn.widgets.IntSlider(
+        name="Change the dot size",
+        start=1,
+        end=200,
+        step=2,
+        value=12,
+    )
+    x_slider = pn.widgets.RangeSlider(
+        name="X Limits in percent",
+        start=0,
+        end=1,
+        value=(0, 1),
+        step=0.001,
+    )
+    log_twin_plot = pn.widgets.Toggle(
+        name="Use log twin y-axis",
+        value=False,
+        button_type="success",
+    )
+    log_plot = pn.widgets.Toggle(
+        name="Use log y-axis",
+        value=False,
+        button_type="success",
+    )
+    x_widget = pn.widgets.TextInput(
+        name="X-label",
+        placeholder="Time after ascent [min]",
+        value="Time after ascent [min]",
+    )
+    y_widget = pn.widgets.TextInput(
+        name="Y-label",
+        placeholder="Specific humidty [kg/kg]",
+    )
+    y2_widget = pn.widgets.TextInput(
+        name="Twin y-label",
+        placeholder="Predicted Deviation [kg/kg]",
+        value="Predicted Deviation [kg/kg]",
+    )
+    traj_widget = pn.widgets.IntSlider(
+        name="Trajectory",
+        start=0,
+        end=len(ds["trajectory"]) - 1,
+        step=1,
+    )
+
+    def prepare_dataset_and_plot(
+        ds,
+        backend,
+        store_path,
+        title,
+        xlabel,
+        ylabel,
+        twinlabel,
+        logtwin,
+        logy,
+        width,
+        height,
+        x_limits,
+        save,
+        latex,
+        font_scale,
+        s,
+        trajectory,
+        out_param,
+        in_params,
+        plot_deviation,
+    ):
+        if not perturbed:
+            out_p_id = np.argwhere(np.asarray(param_id_map) == out_param).item()
+            ds_traj = ds.isel({"ensemble": 0, "trajectory": trajectory}).sel(
+                {"Output_Parameter_ID": out_p_id}
+            )
+            # Sensitivity simulation
+            predicted_errors = np.array([])
+            in_param_thingy = np.array([])
+            unperturbed = np.array([])
+            time = np.array([])
+            for col in in_params:
+                predicted_errors = np.append(predicted_errors, ds_traj[col].values)
+                in_param_thingy = np.append(
+                    in_param_thingy, np.repeat(col, len(ds_traj[col].values))
+                )
+                unperturbed = np.append(unperturbed, ds_traj[out_param].values)
+                time = np.append(time, ds_traj["time_after_ascent"].values)
+            df = pd.DataFrame(
+                data={
+                    "Predicted Error": predicted_errors,
+                    "Predicted Squared Error": predicted_errors ** 2,
+                    "Output Parameter": np.repeat(out_param, len(predicted_errors)),
+                    "Input Parameter": in_param_thingy,
+                    "Not Perturbed Value": unperturbed,
+                    "time_after_ascent": time,
+                }
+            )
+            return plot_time_evolution(
+                df=df,
+                backend=backend,
+                store_path=store_path,
+                title=title,
+                xlabel=xlabel,
+                ylabel=ylabel,
+                twinlabel=twinlabel,
+                logtwin=logtwin,
+                logy=logy,
+                width=width,
+                height=height,
+                x_limits=x_limits,
+                save=save,
+                latex=latex,
+                font_scale=font_scale,
+                s=s,
+                plot_deviation=plot_deviation,
+            )
+        else:
+            # Perturbed ensemble
+            df = ds.to_dataframe().reset_index()
+            return plot_time_evolution(
+                df=df,
+                backend=backend,
+                store_path=store_path,
+                title=title,
+                xlabel=xlabel,
+                ylabel=ylabel,
+                twinlabel=twinlabel,
+                logtwin=logtwin,
+                logy=logy,
+                width=width,
+                height=height,
+                x_limits=x_limits,
+                save=save,
+                latex=latex,
+                s=s,
+                trajectory=trajectory,
+                font_scale=font_scale,
+                out_param=out_param,
+                in_params=in_params,
+                plot_deviation=plot_deviation,
+            )
+
+    plot_pane = pn.panel(
+        pn.bind(
+            prepare_dataset_and_plot,
+            ds=ds,
+            backend="matplotlib",
+            store_path=save_to_field,
+            title=title_widget,
+            xlabel=x_widget,
+            ylabel=y_widget,
+            twinlabel=y2_widget,
+            logtwin=log_twin_plot,
+            logy=log_plot,
+            width=width_slider,
+            height=height_slider,
+            x_limits=x_slider,
+            save=save_button,
+            latex=latex_button,
+            s=dot_slider,
+            trajectory=traj_widget,
+            out_param=out_param,
+            in_params=in_params,
+            plot_deviation=perturbed,
+            font_scale=font_slider,
+        ),
+    ).servable()
+
+    return pn.Column(
+        pn.Row(
+            width_slider,
+            height_slider,
+            font_slider,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+            latex_button,
+        ),
+        pn.Row(
+            log_plot,
+            log_twin_plot,
+            traj_widget,
+        ),
+        pn.Row(
+            in_params,
+            pn.Column(
+                out_param,
+                x_widget,
+                y_widget,
+                y2_widget,
+            ),
+        ),
+        pn.Row(
+            x_slider,
+            dot_slider,
+            title_widget,
+        ),
+        plot_pane,
+    )
 
 
 if __name__ == "__main__":
@@ -1367,6 +2224,7 @@ if __name__ == "__main__":
                         logtwin=args.logtwin,
                         min_x=args.min_time,
                         max_x=args.max_time,
+                        save=True,
                     )
             else:
                 # Result from a sensitivity simulation

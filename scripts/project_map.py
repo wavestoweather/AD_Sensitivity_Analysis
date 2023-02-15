@@ -2,11 +2,13 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
+import copy
 import hvplot.xarray  # noqa
 import itertools
 import holoviews as hv
 from holoviews import opts
-from matplotlib.colors import SymLogNorm, NoNorm
+import matplotlib.cm as mpl_map
+from matplotlib.colors import SymLogNorm, LogNorm, NoNorm
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
@@ -277,6 +279,12 @@ def load_counts_means(
                 sums[v] = np.zeros(var_shapes)
             else:
                 sums[v] = np.zeros(sens_shapes)
+    no_sens = True
+    for v in variables:
+        if v[0] != "d" or v == "deposition" or len(sens_model_states) == 1:
+            continue
+        else:
+            no_sens = False
 
     if verbose:
         print(
@@ -339,6 +347,13 @@ def load_counts_means(
         # Get the actual values and calculate the mean at the end
         lo_idx = 0
         la_idx = 0
+        idx_where_p = []
+        if pressure_levels is not None:
+            for p_i in range(n_press):
+                idx_where_p.append(
+                    (ds["pressure"] >= pressure_levels[p_i])
+                    & (ds["pressure"] < pressure_levels[p_i + 1])
+                )
         for la, lo in (
             tqdm(
                 itertools.product(lats[:-1], lons[:-1]),
@@ -348,20 +363,19 @@ def load_counts_means(
             if verbose
             else itertools.product(lats[:-1], lons[:-1])
         ):
+            idx_where_ll = (
+                (ds[lon_name] >= lo)
+                & (ds[lon_name] < lo + delta_lon)
+                & (ds[lat_name] >= la)
+                & (ds[lat_name] < la + delta_lat)
+            )
             if pressure_levels is not None and n_times > 1:
                 raise NotImplementedError(
                     "Integrating for specific time levels is not yet supported"
                 )
             elif pressure_levels is not None:
                 for p_i in range(n_press):
-                    idx_where = (
-                        (ds[lon_name] >= lo)
-                        & (ds[lon_name] < lo + delta_lon)
-                        & (ds[lat_name] >= la)
-                        & (ds[lat_name] < la + delta_lat)
-                        & (ds["pressure"] >= pressure_levels[p_i])
-                        & (ds["pressure"] < pressure_levels[p_i + 1])
-                    )
+                    idx_where = idx_where_ll & idx_where_p[p_i]
                     for v in variables:
                         if (
                             v[0] != "d"
@@ -371,22 +385,24 @@ def load_counts_means(
                             sums[v][0, p_i, la_idx, lo_idx] += np.nansum(
                                 ds[v].where(idx_where)
                             )
-                        else:
-                            sens_idx = 0
-                            for id, s in zip(sens_model_state_ids, sens_model_states):
-                                ds_tmp = ds.sel({"Output_Parameter_ID": id})
-                                idx_where = (
-                                    (ds_tmp[lon_name] >= lo)
-                                    & (ds_tmp[lon_name] < lo + delta_lon)
-                                    & (ds_tmp[lat_name] >= la)
-                                    & (ds_tmp[lat_name] < la + delta_lat)
-                                    & (ds_tmp["pressure"] >= pressure_levels[p_i])
-                                    & (ds_tmp["pressure"] < pressure_levels[p_i + 1])
-                                )
-                                sums[v][sens_idx, 0, p_i, la_idx, lo_idx] += np.nansum(
-                                    ds_tmp[v].where(idx_where)
-                                )
-                                sens_idx += 1
+
+                    if no_sens:
+                        continue
+                    sens_idx = 0
+                    for id, s in zip(sens_model_state_ids, sens_model_states):
+                        ds_tmp = ds.sel({"Output_Parameter_ID": id})
+                        for v in variables:
+                            if (
+                                v[0] != "d"
+                                or v == "deposition"
+                                or len(sens_model_states) == 1
+                            ):
+                                continue
+
+                            sums[v][sens_idx, 0, p_i, la_idx, lo_idx] += np.nansum(
+                                ds_tmp[v].where(idx_where)
+                            )
+                        sens_idx += 1
 
             elif time_levels is not None and n_times > 1:
                 raise NotImplementedError(
@@ -402,20 +418,23 @@ def load_counts_means(
                 for v in variables:
                     if v[0] != "d" or v == "deposition" or len(sens_model_states) == 1:
                         sums[v][la_idx, lo_idx] += np.nansum(ds[v].where(idx_where))
-                    else:
-                        sens_idx = 0
-                        for id, s in zip(sens_model_state_ids, sens_model_states):
-                            ds_tmp = ds.sel({"Output_Parameter_ID": id})
-                            idx_where = (
-                                (ds_tmp[lon_name] >= lo)
-                                & (ds_tmp[lon_name] < lo + delta_lon)
-                                & (ds_tmp[lat_name] >= la)
-                                & (ds_tmp[lat_name] < la + delta_lat)
-                            )
-                            sums[v][sens_idx, la_idx, lo_idx] += np.nansum(
-                                ds_tmp[v].where(idx_where)
-                            )
-                            sens_idx += 1
+
+                if no_sens:
+                    continue
+                sens_idx = 0
+                for id, s in zip(sens_model_state_ids, sens_model_states):
+                    ds_tmp = ds.sel({"Output_Parameter_ID": id})
+                    for v in variables:
+                        if (
+                            v[0] != "d"
+                            or v == "deposition"
+                            or len(sens_model_states) == 1
+                        ):
+                            continue
+                        sums[v][sens_idx, la_idx, lo_idx] += np.nansum(
+                            ds_tmp[v].where(idx_where)
+                        )
+                    sens_idx += 1
             lo_idx += 1
             if lo_idx == n_lons:
                 la_idx += 1
@@ -534,6 +553,12 @@ def load_min_max_variance(
             sens_model_state_ids.append(
                 np.argwhere(np.asarray(param_id_map) == state).item()
             )
+    no_sens = True
+    for v in variables:
+        if v[0] != "d" or v == "deposition" or len(sens_model_states) == 1:
+            continue
+        else:
+            no_sens = False
     # Create arrays
     if pressure_levels is not None and n_times > 1:
         n_var = n_times * n_press * n_lons * n_lats
@@ -601,6 +626,13 @@ def load_min_max_variance(
 
         lo_idx = 0
         la_idx = 0
+        idx_where_p = []
+        if pressure_levels is not None:
+            for p_i in range(n_press):
+                idx_where_p.append(
+                    (ds["pressure"] >= pressure_levels[p_i])
+                    & (ds["pressure"] < pressure_levels[p_i + 1])
+                )
         for la, lo in (
             tqdm(
                 itertools.product(lats[:-1], lons[:-1]),
@@ -610,21 +642,19 @@ def load_min_max_variance(
             if verbose
             else itertools.product(lats[:-1], lons[:-1])
         ):
-
+            idx_where_ll = (
+                (ds[lon_name] >= lo)
+                & (ds[lon_name] < lo + delta_lon)
+                & (ds[lat_name] >= la)
+                & (ds[lat_name] < la + delta_lat)
+            )
             if pressure_levels is not None and n_times > 1:
                 raise NotImplementedError(
                     "Integrating for specific time levels is not yet supported"
                 )
             elif pressure_levels is not None:
                 for p_i in range(n_press):
-                    idx_where = (
-                        (ds[lon_name] >= lo)
-                        & (ds[lon_name] < lo + delta_lon)
-                        & (ds[lat_name] >= la)
-                        & (ds[lat_name] < la + delta_lat)
-                        & (ds["pressure"] >= pressure_levels[p_i])
-                        & (ds["pressure"] < pressure_levels[p_i + 1])
-                    )
+                    idx_where = idx_where_ll & idx_where_p[p_i]
                     for v in variables:
                         if (
                             v[0] != "d"
@@ -650,40 +680,38 @@ def load_min_max_variance(
                                     np.nanmax(ds[v].where(idx_where).values),
                                 ]
                             )
-                        else:
-                            sens_idx = 0
-                            for id, s in zip(sens_model_state_ids, sens_model_states):
-                                ds_tmp = ds.sel({"Output_Parameter_ID": id})
-                                idx_where = (
-                                    (ds_tmp[lon_name] >= lo)
-                                    & (ds_tmp[lon_name] < lo + delta_lon)
-                                    & (ds_tmp[lat_name] >= la)
-                                    & (ds_tmp[lat_name] < la + delta_lat)
-                                    & (ds_tmp["pressure"] >= pressure_levels[p_i])
-                                    & (ds_tmp["pressure"] < pressure_levels[p_i + 1])
+                    if no_sens:
+                        continue
+                    sens_idx = 0
+                    for id, s in zip(sens_model_state_ids, sens_model_states):
+                        ds_tmp = ds.sel({"Output_Parameter_ID": id})
+                        for v in variables:
+                            if (
+                                v[0] != "d"
+                                or v == "deposition"
+                                or len(sens_model_states) == 1
+                            ):
+                                continue
+                            variance[v][sens_idx, 0, p_i, la_idx, lo_idx] += np.nansum(
+                                (
+                                    ds_tmp[v].where(idx_where)
+                                    - means[v][sens_idx, 0, p_i, la_idx, lo_idx]
                                 )
-                                variance[v][
-                                    sens_idx, 0, p_i, la_idx, lo_idx
-                                ] += np.nansum(
-                                    (
-                                        ds_tmp[v].where(idx_where)
-                                        - means[v][sens_idx, 0, p_i, la_idx, lo_idx]
-                                    )
-                                    ** 2
-                                )
-                                mins[v][sens_idx, 0, p_i, la_idx, lo_idx] = np.nanmin(
-                                    [
-                                        mins[v][sens_idx, 0, p_i, la_idx, lo_idx],
-                                        np.nanmin(ds_tmp[v].where(idx_where).values),
-                                    ]
-                                )
-                                maxs[v][sens_idx, 0, p_i, la_idx, lo_idx] = np.nanmax(
-                                    [
-                                        maxs[v][sens_idx, 0, p_i, la_idx, lo_idx],
-                                        np.nanmax(ds_tmp[v].where(idx_where).values),
-                                    ]
-                                )
-                                sens_idx += 1
+                                ** 2
+                            )
+                            mins[v][sens_idx, 0, p_i, la_idx, lo_idx] = np.nanmin(
+                                [
+                                    mins[v][sens_idx, 0, p_i, la_idx, lo_idx],
+                                    np.nanmin(ds_tmp[v].where(idx_where).values),
+                                ]
+                            )
+                            maxs[v][sens_idx, 0, p_i, la_idx, lo_idx] = np.nanmax(
+                                [
+                                    maxs[v][sens_idx, 0, p_i, la_idx, lo_idx],
+                                    np.nanmax(ds_tmp[v].where(idx_where).values),
+                                ]
+                            )
+                        sens_idx += 1
             elif time_levels is not None and n_times > 1:
                 raise NotImplementedError(
                     "Integrating for specific time levels is not yet supported"
@@ -712,36 +740,39 @@ def load_min_max_variance(
                                 np.nanmax(ds[v].where(idx_where).values),
                             ]
                         )
-                    else:
-                        sens_idx = 0
-                        for id, s in zip(sens_model_state_ids, sens_model_states):
-                            ds_tmp = ds.sel({"Output_Parameter_ID": id})
-                            idx_where = (
-                                (ds_tmp[lon_name] >= lo)
-                                & (ds_tmp[lon_name] < lo + delta_lon)
-                                & (ds_tmp[lat_name] >= la)
-                                & (ds_tmp[lat_name] < la + delta_lat)
+                if no_sens:
+                    continue
+
+                sens_idx = 0
+                for id, s in zip(sens_model_state_ids, sens_model_states):
+                    ds_tmp = ds.sel({"Output_Parameter_ID": id})
+                    for v in variables:
+                        if (
+                            v[0] != "d"
+                            or v == "deposition"
+                            or len(sens_model_states) == 1
+                        ):
+                            continue
+                        variance[v][sens_idx, la_idx, lo_idx] += np.nansum(
+                            (
+                                ds_tmp[v].where(idx_where)
+                                - means[v][sens_idx, la_idx, lo_idx]
                             )
-                            variance[v][sens_idx, la_idx, lo_idx] += np.nansum(
-                                (
-                                    ds_tmp[v].where(idx_where)
-                                    - means[v][sens_idx, la_idx, lo_idx]
-                                )
-                                ** 2
-                            )
-                            mins[v][sens_idx, la_idx, lo_idx] = np.nanmin(
-                                [
-                                    mins[v][sens_idx, la_idx, lo_idx],
-                                    np.nanmin(ds_tmp[v].where(idx_where).values),
-                                ]
-                            )
-                            maxs[v][sens_idx, la_idx, lo_idx] = np.nanmax(
-                                [
-                                    maxs[v][sens_idx, la_idx, lo_idx],
-                                    np.nanmax(ds_tmp[v].where(idx_where).values),
-                                ]
-                            )
-                            sens_idx += 1
+                            ** 2
+                        )
+                        mins[v][sens_idx, la_idx, lo_idx] = np.nanmin(
+                            [
+                                mins[v][sens_idx, la_idx, lo_idx],
+                                np.nanmin(ds_tmp[v].where(idx_where).values),
+                            ]
+                        )
+                        maxs[v][sens_idx, la_idx, lo_idx] = np.nanmax(
+                            [
+                                maxs[v][sens_idx, la_idx, lo_idx],
+                                np.nanmax(ds_tmp[v].where(idx_where).values),
+                            ]
+                        )
+                    sens_idx += 1
             lo_idx += 1
             if lo_idx == n_lons:
                 la_idx += 1
@@ -1121,37 +1152,74 @@ def plot_2dmap_interactive(ds):
         step=(ds["pressure"].values[1] - ds["pressure"].values[0]),
         value=ds["pressure"].values[-4],
     )
+    if len(ds["time"]) > 1:
+        time_slider = pn.widgets.IntSlider(
+            name="timestep",
+            start=0,
+            end=len(ds["time"]) - 1,
+            step=1,
+            value=0,
+        )
+    else:
+        time_slider = pn.widgets.Select(
+            name="timestep",
+            value=0,
+            options=[0],
+        )
+    if "Output Parameter" in ds:
+        coord = "Output Parameter"
+    else:
+        coord = "Output_Parameter"
     out_param = pn.widgets.RadioButtonGroup(
         name="Output Parameter",
-        value=ds["Output Parameter"].values[0],
-        options=list(ds["Output Parameter"].values),
-        button_type="primary",
-    )
-    kind_param = pn.widgets.RadioButtonGroup(
-        name="Kind",
-        value="Mean",
-        options=["Mean", "Min", "Max", "Var"],
+        value=ds[coord].values[0],
+        options=list(ds[coord].values),
         button_type="primary",
     )
     in_params = []
+    kind_params = []
     for col in ds:
         if "Mean " in col:
             in_params.append(col[5:])
+            if "Mean" not in kind_params:
+                kind_params.append("Mean")
+        if "Var " or "Std " in col:
+            if "Var" not in kind_params:
+                kind_params.append("Var")
+                kind_params.append("Std")
+            else:
+                kind_params.append("Var")
+        if "Min " in col:
+            if "Min" not in kind_params:
+                kind_params.append("Min")
+        if "Max " in col:
+            if "Max" not in kind_params:
+                kind_params.append("Max")
     if "counts" in ds:
         in_params.append("counts")
+    if "Top_Parameter" in ds:
+        in_params.append("Top_Parameter")
     in_params.sort()
     in_param = pn.widgets.Select(
         name="Color according to",
         value=in_params[-1],
         options=in_params,
     )
+    kind_param = pn.widgets.RadioButtonGroup(
+        name="Kind",
+        value=kind_params[0],
+        options=kind_params,
+        button_type="primary",
+    )
+
     color_map = pn.widgets.Select(
         name="Colormap",
         value="RdBu",
         options=[
             "RdBu",
             "viridis",
-            "blues",
+            "Blues",
+            "Reds",
             "PiYG",
             "PRGn",
             "BrBG",
@@ -1181,7 +1249,7 @@ def plot_2dmap_interactive(ds):
     )
     log_plot = pn.widgets.Toggle(
         name="Use log colorbar",
-        value=True,
+        value=False,
         button_type="success",
     )
     log_threshold_slider = pn.widgets.FloatSlider(
@@ -1215,11 +1283,139 @@ def plot_2dmap_interactive(ds):
         button_type="success",
     )
 
+    # This is for the B8 paper with hard coded color scheme for the ranking
+    process_param = {
+        "evaporation": [
+            "dkin_visc_air",
+            "da_prime",
+            "db_prime",
+            "dc_prime",
+            "da_v",
+            "db_v",
+            "drain_cmu3",
+            "drain_nu",
+        ],
+        "geometry": [
+            "drain_a_geo",
+            "drain_b_geo",
+            "dsnow_a_geo",
+            "dsnow_b_geo",
+            "dice_a_geo",
+            "dice_b_geo",
+            "dgraupel_a_geo",
+            "dgraupel_b_geo",
+        ],
+        "ccn": [
+            "db_ccn_1",
+            "db_ccn_2",
+            "db_ccn_3",
+            "dc_ccn_1",
+            "dc_ccn_2",
+            "dc_ccn_3",
+            "dg_ccn_1",
+            "dg_ccn_2",
+            "dh_ccn_1",
+            "di_ccn_1",
+            "dhande_ccn_fac",
+        ],
+        "fall velocity": [
+            "dcloud_b_vel",
+            "drain_a_vel",
+            "drain_b_vel",
+            "dsnow_b_vel",
+            "dice_b_vel",
+            "dgraupel_a_vel",
+            "dgraupel_b_vel",
+        ],
+        "misc": [
+            "dT_mult_min",
+            "dp_sat_melt",
+            "da_HET",
+            "drain_mu",
+        ],
+    }
+
+    regrid_idx = [
+        "dkin_visc_air",
+        "da_prime",
+        "db_prime",
+        "dc_prime",
+        "da_v",
+        "db_v",
+        "drain_cmu3",
+        "drain_nu",
+        "db_ccn_1",
+        "db_ccn_2",
+        "db_ccn_3",
+        "dc_ccn_1",
+        "dc_ccn_2",
+        "dc_ccn_3",
+        "dg_ccn_1",
+        "dg_ccn_2",
+        "dh_ccn_1",
+        "di_ccn_1",
+        "dhande_ccn_fac",
+        "drain_a_geo",
+        "drain_b_geo",
+        "dsnow_a_geo",
+        "dsnow_b_geo",
+        "dice_a_geo",
+        "dice_b_geo",
+        "dgraupel_a_geo",
+        "dgraupel_b_geo",
+        "dcloud_b_vel",
+        "drain_a_vel",
+        "drain_b_vel",
+        "dsnow_b_vel",
+        "dice_b_vel",
+        "dgraupel_a_vel",
+        "dgraupel_b_vel",
+        "dT_mult_min",
+        "dp_sat_melt",
+        "da_HET",
+        "drain_mu",
+    ]
+    color_shades = {}
+    for key in process_param:
+        n = len(process_param[key])
+        if key == "evaporation":
+            color = plt.cm.Blues(np.linspace(0, 1, n))
+        elif key == "geometry":
+            color = plt.cm.Greens(np.linspace(0.2, 1, n))
+        elif key == "misc":
+            color = plt.cm.Purples(np.linspace(0.2, 1, n))
+        elif key == "ccn":
+            color = plt.cm.Reds(np.linspace(0.2, 1, n))
+        elif key == "fall velocity":
+            color = plt.cm.Oranges(np.linspace(0.2, 1, n))
+        else:
+            print(f"{key} not defined")
+            break
+        color_shades[key] = []
+        for i in range(n):
+            color_shades[key].append(color[i])
+    colors = []
+    for p in regrid_idx:
+        for key in process_param:
+            found = False
+            for i, p2 in enumerate(process_param[key]):
+                if p2 == p:
+                    colors.append(color_shades[key][i])
+                    # colors[i] = color_shades[key][i]
+                    found = True
+                    break
+            if found:
+                break
+        if not found:
+            print(p)
+    colors.append([0, 0, 0, 0])
+
     def plot_me(
         o_p,
         i_p,
         k_p,
         p,
+        time,
         c,
         fix,
         log_plot,
@@ -1235,98 +1431,179 @@ def plot_2dmap_interactive(ds):
         sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
         if title == "":
             title = None
+        if k_p == "Std" and f"Std {i_p}" not in ds:
+            ds[f"Std {i_p}"] = np.sqrt(ds[f"Var {i_p}"])
+        if k_p == "Var" and f"Var {i_p}" not in ds:
+            ds[f"Var {i_p}"] = ds[f"Std {i_p}"] * ds[f"Std {i_p}"]
         if i_p == "counts":
-            ds_tmp = ds.isel({"time": 0})[i_p]
+            ds_tmp = ds.isel({"time": time})[i_p]
         elif i_p[0] == "d" and i_p != "deposition":
-            ds_tmp = ds.isel({"time": 0}).sel({"Output Parameter": o_p})[f"{k_p} {i_p}"]
+            ds_tmp = ds.sel({coord: o_p})[f"{k_p} {i_p}"]
+        elif i_p == "Top_Parameter":
+            ds_tmp = ds.isel({"time": time}).sel({coord: o_p, "pressure": p})[
+                "Top_Parameter"
+            ]
         else:
-            ds_tmp = ds.isel({"time": 0})[f"{k_p} {i_p}"]
-        mini = ds_tmp.min().values.item()
-        maxi = ds_tmp.max().values.item()
-        if lthresh == 0:
-            linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
-        else:
-            linthresh = 10 ** lthresh
-        if i_p == "counts":
-            ds_tmp = ds[i_p].isel({"time": 0}).sel({"pressure": p})
-        elif i_p[0] == "d" and i_p != "deposition":
-            ds_tmp = (
-                ds[f"{k_p} {i_p}"]
-                .isel({"time": 0})
-                .sel({"Output Parameter": o_p, "pressure": p})
-            )
-        else:
-            ds_tmp = ds[f"{k_p} {i_p}"].isel({"time": 0}).sel({"pressure": p})
-        min_local = np.nanmin(ds_tmp)
-        max_local = np.nanmax(ds_tmp)
-        static.value = f"({mini:.2e}, {maxi:.2e}); at {p/100} hPa: ({min_local:.2e}, {max_local:.2e})"
+            ds_tmp = ds[f"{k_p} {i_p}"]
+
         fig = Figure()
         ax = fig.subplots()
-        if fix:
-            if np.abs(mini) > maxi:
-                maxi = np.abs(mini)
+
+        if i_p == "Top_Parameter":
+            ds_tmp.plot.pcolormesh(
+                y="lat",
+                x="lon",
+                levels=np.arange(len(colors)),
+                colors=colors,
+                ax=ax,
+            )
+        else:
+            mini = ds_tmp.min().values.item()
+            maxi = ds_tmp.max().values.item()
+            if mini == 0:
+                mini2 = ds_tmp.where(ds_tmp > 0).min().values.item() / 10
             else:
-                mini = -maxi
-            if log_plot:
-                ds_tmp.plot(
-                    y="lat",
-                    x="lon",
-                    cmap=c,
-                    norm=SymLogNorm(
-                        linthresh=linthresh,
+                mini2 = mini
+            if maxi == 0:
+                maxi2 = ds_tmp.where(ds_tmp < 0).max().values.item() / 10
+            else:
+                maxi2 = maxi
+            if lthresh == 0:
+                linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
+            else:
+                linthresh = 10 ** lthresh
+            if i_p == "counts":
+                ds_tmp = ds[i_p].isel({"time": time}).sel({"pressure": p})
+            elif i_p[0] == "d" and i_p != "deposition":
+                ds_tmp = (
+                    ds[f"{k_p} {i_p}"]
+                    .isel({"time": time})
+                    .sel({coord: o_p, "pressure": p})
+                )
+            else:
+                ds_tmp = ds[f"{k_p} {i_p}"].isel({"time": time}).sel({"pressure": p})
+            min_local = np.nanmin(ds_tmp)
+            max_local = np.nanmax(ds_tmp)
+            if min_local == 0:
+                min_local2 = ds_tmp.where(ds_tmp > 0).min().values.item() / 10
+            else:
+                min_local2 = min_local
+            if max_local == 0:
+                max_local2 = ds_tmp.where(ds_tmp < 0).max().values.item() / 10
+            else:
+                max_local2 = max_local
+            static.value = f"({mini:.2e}, {maxi:.2e}); at {p/100} hPa: ({min_local:.2e}, {max_local:.2e}) -- ({min_local2:.2e}, {max_local2:.2e}) {linthresh:.2e}, {lthresh:.2e}"
+
+            if fix:
+                if log_plot and mini != 0 and maxi != 0:
+                    if np.abs(mini) > maxi:
+                        maxi = np.abs(mini)
+                    else:
+                        mini = -maxi
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
+                        norm=SymLogNorm(
+                            linthresh=linthresh,
+                            vmin=mini,
+                            vmax=maxi,
+                            base=10,
+                        ),
+                        ax=ax,
+                    )
+                elif log_plot:
+                    if linthresh != 0:
+                        mini2 = 10 ** lthresh
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
+                        norm=LogNorm(
+                            vmin=mini2,
+                            vmax=maxi2,
+                        ),
+                        ax=ax,
+                    )
+                else:
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
                         vmin=mini,
                         vmax=maxi,
-                        base=10,
-                    ),
-                    ax=ax,
-                )
+                        ax=ax,
+                    )
             else:
-                ds_tmp.plot(
-                    y="lat",
-                    x="lon",
-                    cmap=c,
-                    vmin=mini,
-                    vmax=maxi,
-                    ax=ax,
-                )
-        else:
-            if log_plot:
-                if lthresh == 0:
-                    linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
-                else:
-                    linthresh = 10 ** lthresh
+                if log_plot and min_local != 0 and max_local != 0:
+                    if lthresh == 0:
+                        linthresh = np.nanmin(np.abs(ds_tmp.where(np.abs(ds_tmp) > 0)))
+                    else:
+                        linthresh = 10 ** lthresh
 
-                ds_tmp.plot(
-                    y="lat",
-                    x="lon",
-                    cmap=c,
-                    norm=SymLogNorm(
-                        linthresh=linthresh,
-                        base=10,
-                    ),
-                    ax=ax,
-                )
-            else:
-                ds_tmp.plot(
-                    y="lat",
-                    x="lon",
-                    cmap=c,
-                    ax=ax,
-                )
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
+                        norm=SymLogNorm(
+                            linthresh=linthresh,
+                            base=10,
+                        ),
+                        ax=ax,
+                    )
+                elif log_plot:
+                    if lthresh != 0:
+                        if max_local2 <= 0 and -(10 ** lthresh) > min_local2:
+                            max_local2 = -(10 ** lthresh)
+                        elif max_local2 > 0 and 10 ** lthresh < max_local2:
+                            min_local2 = 10 ** lthresh
+
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
+                        norm=LogNorm(
+                            vmin=min_local2,
+                            vmax=max_local2,
+                        ),
+                        ax=ax,
+                    )
+                else:
+                    ds_tmp.plot(
+                        y="lat",
+                        x="lon",
+                        cmap=c,
+                        ax=ax,
+                    )
         _ = ax.set_title(title, fontsize=int(12 * font_scale))
         ax.tick_params(
             axis="both",
             which="major",
             labelsize=int(10 * font_scale),
         )
+        ax.set_xlabel("Longitude")
+        ax.set_ylabel("Latitude")
         ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
         ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
         ax.yaxis.grid(True, which="major")
         ax.xaxis.grid(True, which="major")
         cbar = ax.collections[-1].colorbar
         cbarax = cbar.ax
+        if i_p == "Top_Parameter":
+            cbarlabel = "Index of top parameter"
+            cbar_ticks = [4, 14, 23, 30, 36]
+            cbar_labels = [
+                "evaporation",
+                "CCN activation",
+                "geometry",
+                "fall velocity",
+                "miscellaneous",
+            ]
+            cbar.set_ticks(cbar_ticks)
+            cbar.set_ticklabels(cbar_labels)
+        else:
+            cbarlabel = f"{k_p} " + parse_word(i_p).replace(r"\partial", "")
         cbarax.tick_params(labelsize=int(10 * font_scale))
-        cbarlabel = f"{k_p} " + parse_word(i_p).replace(r"\partial", "")
         cbar.set_label(
             label=cbarlabel,
             fontsize=int(11 * font_scale),
@@ -1357,6 +1634,7 @@ def plot_2dmap_interactive(ds):
             i_p=in_param,
             k_p=kind_param,
             p=pressure,
+            time=time_slider,
             c=color_map,
             fix=fix,
             log_plot=log_plot,
@@ -1374,7 +1652,6 @@ def plot_2dmap_interactive(ds):
     return pn.Column(
         "# Plot Grid",
         static,
-        pressure,
         kind_param,
         out_param,
         pn.Row(
@@ -1397,6 +1674,10 @@ def plot_2dmap_interactive(ds):
             latex_button,
         ),
         title_widget,
+        pn.Row(
+            pressure,
+            time_slider,
+        ),
         plot_pane,
     )
 

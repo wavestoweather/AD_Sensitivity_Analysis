@@ -1649,279 +1649,6 @@ def print_correlation_mean(ds, out_params):
     return text
 
 
-def print_latex_tables(ds, top=10, verbose=True):
-    """
-    Create a string to use in latex for the top n (='top') parameters for each model state variable.
-    A model parameter is listed only for the model state variable where the sensitivity is the highest.
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        Final, post-processed dataset with mean squared deviation and  predicted mean squared deviation.
-    out_params : list-like of strings
-        The model state variables for which sensitivities have been calculated for.
-    top : int
-        The number of top parameters to print a table for.
-    verbose : Bool
-        If True: print the parameters while building the table.
-
-    Returns
-    -------
-    sort_key_list: a sorted list of (predicted squared error, model parameter, model state variable,
-    string of a row for model parameters in latex) which is sorted by the name of the model state variable.
-    table_dic: Dictionary with keys = model parameters where the value is a string of a row of the latex table.
-    printed statements as string.
-    """
-    text = "\nBuild Latex tables\n"
-    print(text)
-    tmp_df = (
-        ds.mean(dim=["trajectory", "time_after_ascent"], skipna=True)
-        .to_dataframe()
-        .reset_index()
-    )
-
-    table_dic = {}
-    sort_key_list = []
-
-    latexify_state = {
-        "QV": r"\frac{\partial Q_\vapor}{",
-        "QC": r"\frac{\partial Q_\cloud}{",
-        "QR": r"\frac{\partial Q_\rain}{",
-        "QG": r"\frac{\partial Q_\graupel}{",
-        "QH": r"\frac{\partial Q_\hail}{",
-        "QI": r"\frac{\partial Q_\ice}{",
-        "QS": r"\frac{\partial Q_\snow}{",
-        "NCCLOUD": r"\frac{\partial N_\cloud}{",
-        "NCRAIN": r"\frac{\partial N_\rain}{",
-        "NCGRAUPEL": r"\frac{\partial N_\graupel}{",
-        "NCHAIL": r"\frac{\partial N_\hail}{",
-        "NCICE": r"\frac{\partial N_\ice}{",
-        "NCSNOW": r"\frac{\partial N_\snow}{",
-        "QR_OUT": r"\frac{\partial Q_{\rain, \text{out}}}{",
-        "QG_OUT": r"\frac{\partial Q_{\graupel, \text{out}}}{",
-        "QH_OUT": r"\frac{\partial Q_{\hail, \text{out}}}{",
-        "QI_OUT": r"\frac{\partial Q_{\ice, \text{out}}}{",
-        "QS_OUT": r"\frac{\partial Q_{\snow, \text{out}}}{",
-        "NR_OUT": r"\frac{\partial N_{\rain, \text{out}}}{",
-        "NG_OUT": r"\frac{\partial N_{\graupel, \text{out}}}{",
-        "NH_OUT": r"\frac{\partial N_{\hail, \text{out}}}{",
-        "NI_OUT": r"\frac{\partial N_{\ice, \text{out}}}{",
-        "NS_OUT": r"\frac{\partial N_{\snow, \text{out}}}{",
-    }
-
-    top_10_table = "\\begin{table}[hbt] \n \t\\centering \n \t\\begin{tabular}{ll}"
-    top_10_table += "\n \t\t\\textbf{Model State Variable} \t& \\textbf{Top 10 Parameters} \\\\ \\hline \n"
-    sedi_latex = ""
-    sedi_started = False
-    long_table_dic = {}
-
-    for out_p in latexify_state.keys():
-        if "OUT" in out_p:
-            if sedi_started:
-                sedi_latex = sedi_latex[:-2] + "$ \\\\ \n\t\t\t\t\t\t & $ "
-            else:
-                sedi_latex = "\t\t Sedimentation \t& $ "
-                sedi_started = True
-        else:
-            top_10_table += "\t\t" + latexify.parse_word(out_p) + "\t& $ "
-        if verbose:
-            print(f"########################### {out_p} ########################")
-        df = tmp_df.loc[tmp_df["Output Parameter"] == out_p]
-        # Ignore parameters that never appeared in unperturbed versions
-        if np.max(df["Predicted Squared Error"]) == 0:
-            continue
-        if verbose:
-            print("sort by sensitivity")
-            print(
-                df.nlargest(top, "Predicted Squared Error")[
-                    ["Input Parameter", "Predicted Squared Error", "Mean Squared Error"]
-                ]
-            )
-        tmp = df.nlargest(top, "Predicted Squared Error")[
-            ["Input Parameter", "Predicted Squared Error", "Mean Squared Error"]
-        ]
-        i = 0
-        for idx, row in tmp.iterrows():
-            if i == 5:
-                if "OUT" in out_p:
-                    sedi_latex = sedi_latex[:-2] + "$ \\\\ \n\t\t\t\t\t\t & $ "
-                else:
-                    top_10_table = top_10_table[:-2] + "$ \\\\ \n\t\t\t\t\t\t & $ "
-            i += 1
-            if "OUT" in out_p:
-                sedi_latex += (
-                    latexify.parse_word(row["Input Parameter"])
-                    .replace("$", "")
-                    .replace("\partial", "")
-                    + ", "
-                )
-            else:
-                top_10_table += (
-                    latexify.parse_word(row["Input Parameter"])
-                    .replace("$", "")
-                    .replace("\partial", "")
-                    + ", "
-                )
-            found = False
-            for val, param, state_var, l_string in sort_key_list:
-                if param == row["Input Parameter"] and (
-                    val < row["Predicted Squared Error"]
-                    or ("N" in state_var and "N" not in out_p)
-                ):
-                    if "N" not in state_var and "N" in out_p:
-                        break
-
-                    found = True
-                    if verbose:
-                        print(f"Replace ({val}, {param}, {state_var})")
-                        print(f"With (")
-                        print(row["Predicted Squared Error"], end=", ")
-                        print(row["Input Parameter"], end=", ")
-                        print(out_p, end=")\n")
-
-                    sort_key_list.remove((val, param, state_var, l_string))
-                    break
-
-            if row["Input Parameter"] not in table_dic or found:
-
-                group = None
-                for g in latexify.in_params_grouping:
-                    if row["Input Parameter"] in latexify.in_params_grouping[g]:
-                        group = g
-
-                def latex_my_number(x):
-                    if x == 0:
-                        return "$ 0.00 $"
-                    if x >= 100:
-                        exponent = int(np.log10(x))
-                        var = x / 10 ** exponent
-                        return f"$ {var:2.2f} \\times 10^{ {exponent} } $"
-                    elif x < 0.01:
-                        exponent = math.floor(np.log10(x))
-                        var = x * 10 ** (-exponent)
-                        return f"$ {var:2.2f} \\times 10^{ {exponent} } $"
-                    else:
-                        err = row["Predicted Squared Error"]
-                        return f"$ {err:2.2f} $"
-
-                long_string = (
-                    latexify.parse_word(row["Input Parameter"]).replace("\partial", "")
-                    + " & "
-                    + latex_my_number(row["Mean Squared Error"])
-                    + " & "
-                    + latex_my_number(row["Predicted Squared Error"])
-                    + " & "
-                    + "\\textbf{"
-                    + group.title()
-                    + "}: "
-                    + latexify.in_params_descr_dic[row["Input Parameter"]]
-                    + " \\\\ "
-                )
-                if out_p not in long_table_dic:
-                    long_table_dic[out_p] = [long_string]
-                else:
-                    long_table_dic[out_p].append(long_string)
-                sort_key_list.append(
-                    (
-                        row["Predicted Squared Error"],
-                        row["Input Parameter"],
-                        out_p,
-                        long_string,
-                    )
-                )
-
-                table_dic[row["Input Parameter"]] = (
-                    "$ \displaystyle "
-                    + latexify_state[out_p]
-                    + latexify.parse_word(row["Input Parameter"]).replace("$", "")
-                    + r"} $ & "
-                    + latex_my_number(row["Mean Squared Error"])
-                    + " & "
-                    + latex_my_number(row["Predicted Squared Error"])
-                    + " & "
-                    + "\\textbf{"
-                    + group.title()
-                    + "}: "
-                    + latexify.in_params_descr_dic[row["Input Parameter"]]
-                    + " \\\\ "
-                )
-        if "OUT" not in out_p:
-            top_10_table = top_10_table[:-2] + " $ \\\\ \n"
-        if verbose:
-            print(f"sort by Predicted Squared Error")
-            print(
-                df.nlargest(top, "Predicted Squared Error")[
-                    ["Input Parameter", "Predicted Squared Error", "Mean Squared Error"]
-                ]
-            )
-
-    top_10_table += sedi_latex[:-2] + " $ \\\\"
-    top_10_table += "\n\t\\end{tabular} \n \t\\caption{} \n"
-    top_10_table += "\t\\label{tab:} \n \\end{table} \n"
-    text += "\nThe table of top 10 parameters for each state variable:\n"
-    text += top_10_table
-    print("\nThe table of top 10 parameters for each state variable:\n")
-    print(top_10_table)
-
-    if verbose:
-        print(f"There are {len(table_dic)} different input parameters")
-
-    text += "\nAppendix table of top parameters\n"
-    print("\nAppendix table of top parameters\n")
-    tmp_sort = sorted(sort_key_list, key=lambda x: (x[2], x[0]), reverse=True)
-    sort_dic_long_table = {}
-    sort_dic_short_table = {}
-    for sens, key, state_variable, l_string in tmp_sort:
-        if "_OUT" in state_variable:
-            state_variable2 = "Sedimentation"
-        else:
-            state_variable2 = state_variable
-        if state_variable not in sort_dic_long_table:
-            sort_dic_long_table[state_variable] = [(sens, key, l_string)]
-        else:
-            sort_dic_long_table[state_variable].append((sens, key, l_string))
-
-        if state_variable2 not in sort_dic_short_table:
-            sort_dic_short_table[state_variable2] = [(sens, key, l_string)]
-        else:
-            sort_dic_short_table[state_variable2].append((sens, key, l_string))
-    table_text = "\\bgroup\n"
-    table_text += "\\def\\arraystretch{1.2} %  1 is the default, we want it slightly larger such that exponents are easier to read\n"
-    table_text += "\\begin{tabularx}{\\linewidth}{@{}lccX@{}}\n"
-    table_text += "\t\\textbf{Model Param.}  & \\textbf{MSD} & \\textbf{Predicted MSD} & \\textbf{Parameter Description}\n"
-    table_text += "\t\\endhead\n"
-    i = 0
-    for state_variable in latexify_state.keys():
-        if state_variable not in sort_dic_long_table:
-            continue
-        table_text += (
-            "\t\t\\hline \\multicolumn{4}{c}{"
-            + latexify.parse_word(state_variable).title()
-            + "}\t \\\\ \\hline\n"
-        )
-        for _, _, s in sort_dic_long_table[state_variable]:
-            table_text += "\t\t"
-            table_text += f"{s}"
-            i += 1
-    table_text += "\t"
-    top_str = "ten"
-    if top != 10:
-        top_str = str(top)
-    table_text += (
-        r"\caption{This is the set of parameters if we gather the "
-        + top_str
-        + r" most important ones for each model state variable. The predicted MSD is defined in Equation~\ref{eq:identification:msd_predict}, where we only show the highest predicted MSD among all mass densities unless the parameter did not have an impact on mass densities. In that case, the predicted deviation on number density and precipitation is considered. There are $ "
-        + str(i)
-        + r" $ different parameters in total.}"
-    )
-    table_text += "\t\\label{tab:important_params}\n"
-    table_text += "\\end{tabularx}\n"
-    table_text += "\\egroup\n"
-    text += table_text
-    print(table_text)
-    return sort_key_list, table_dic, text
-
-
 def print_variable_with_important_params(sort_key_list):
     """
     Print model state variables and their number of model parameters. The number of parameters is determined
@@ -1968,7 +1695,7 @@ def print_param_types(ds, table_dic):
         Final, post-processed dataset with mean squared deviation and  predicted mean squared deviation.
     table_dic : dict of strings
         Dictionary with keys = model parameters where the value is a string of a row of the latex table.
-        This can be generated using print_latex_tables().
+        This can be generated using latexify.print_latex_tables().
 
     Returns
     -------
@@ -2313,6 +2040,7 @@ def get_edges(
     param_name,
     additional_params,
     n_bins,
+    log=False,
     verbose=False,
 ):
     """
@@ -2333,6 +2061,8 @@ def get_edges(
         List of additional model state variables to get edges for.
     n_bins : int
         Number of bins.
+    log : bool
+        Use log-scale for the edges.
     verbose : bool
         More progressbars.
 
@@ -2360,11 +2090,27 @@ def get_edges(
             delta = (
                 min_max_in_params[out_p][in_p][1] - min_max_in_params[out_p][in_p][0]
             ) / (n_bins - 2)
-            edges_in_params[out_p][in_p] = np.arange(
-                min_max_in_params[out_p][in_p][0] - delta,
-                min_max_in_params[out_p][in_p][1] + 0.5 * delta,
-                delta,
-            )
+            if log:
+                start = min_max_in_params[out_p][in_p][0] - delta
+                stop = min_max_in_params[out_p][in_p][1]
+                if start >= 0:
+                    offset = 0
+                else:
+                    offset = start * 2
+
+                edges_in_params[out_p][in_p] = np.logspace(
+                    np.log10(np.abs(start)),
+                    np.log10(np.abs(stop - offset)),
+                    n_bins,
+                )
+                if start < 0:
+                    edges_in_params[out_p][in_p] += offset
+            else:
+                edges_in_params[out_p][in_p] = np.arange(
+                    min_max_in_params[out_p][in_p][0] - delta,
+                    min_max_in_params[out_p][in_p][1] + 0.5 * delta,
+                    delta,
+                )
     if additional_params is not None:
         for out_p in (
             tqdm(additional_params, leave=False) if verbose else additional_params
@@ -2372,9 +2118,24 @@ def get_edges(
             if min_max[out_p][0] == min_max[out_p][1] or np.isnan(min_max[out_p][0]):
                 continue
             delta = (min_max[out_p][1] - min_max[out_p][0]) / (n_bins - 2)
-            edges[out_p] = np.arange(
-                min_max[out_p][0] - delta, min_max[out_p][1] + 0.5 * delta, delta
-            )
+            if log:
+                start = min_max[out_p][0] - delta
+                stop = min_max[out_p][1]
+                if start >= 0:
+                    offset = 0
+                else:
+                    offset = start * 2
+                edges[out_p] = np.logspace(
+                    np.log10(np.abs(start)),
+                    np.log10(np.abs(stop - offset)),
+                    n_bins,
+                )
+                if start < 0:
+                    edges[out_p] += offset
+            else:
+                edges[out_p] = np.arange(
+                    min_max[out_p][0] - delta, min_max[out_p][1] + 0.5 * delta, delta
+                )
     return edges, edges_in_params
 
 
@@ -2389,6 +2150,7 @@ def get_histogram(
     inoutflow_time=-1,
     filter_mag=None,
     means=None,
+    log=False,
     verbose=False,
 ):
     """
@@ -2420,6 +2182,8 @@ def get_histogram(
         than the mean.
     means : Dictionary of floats
         Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter). Only needed for filtering data.
+    log : bool
+        Use log-scale for the edges.
     verbose : bool
         Additional progressbars.
 
@@ -2548,6 +2312,7 @@ def get_histogram(
         param_name=param_name,
         additional_params=additional_params,
         n_bins=n_bins,
+        log=log,
         verbose=verbose,
     )
 
@@ -2617,6 +2382,7 @@ def get_histogram_cond(
     inoutflow_time=-1,
     filter_mag=None,
     means=None,
+    log=False,
     verbose=False,
 ):
     """
@@ -2652,6 +2418,8 @@ def get_histogram_cond(
         than the mean.
     means : Dictionary of floats
         Mean values for the parameters. Model parameters are dictionaries (model state for which the sensitivitity is for) of dictionaries (the model parameter). Only needed for filtering data.
+    log : bool
+        Use log-scale for the edges.
     verbose : bool
         Additional progressbars.
 
@@ -2780,6 +2548,7 @@ def get_histogram_cond(
         param_name=param_name,
         additional_params=additional_params,
         n_bins=n_bins,
+        log=log,
         verbose=verbose,
     )
 
@@ -3537,6 +3306,7 @@ def get_cov_matrix(
             f=file_path + f,
             only_asc600=only_asc600,
             inoutflow_time=inoutflow_time,
+            load_params=all_params,
         )
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
@@ -3560,11 +3330,13 @@ def get_cov_matrix(
                     means[out_name][p] = means_tmp[p].values.item()
 
     n_total = {out_p: {p: 0.0 for p in all_params} for out_p in param_name}
+    more_info = ""
     for f in tqdm(files):
         ds = load_ds(
             f=file_path + f,
             only_asc600=only_asc600,
             inoutflow_time=inoutflow_time,
+            load_params=all_params,
         )
         for out_p, out_name in tqdm(
             zip(out_params, param_name), leave=False, total=len(out_params)
@@ -3585,6 +3357,15 @@ def get_cov_matrix(
                                 cov[out_name][i, i2] * n_total[out_name][p] / n_new
                                 + cov_tmp * n_add / n_new
                             )
+                            if (
+                                p == "dg_ccn_1"
+                                and p2 == "dg_ccn_1"
+                                and out_name == "QV"
+                                and cov_tmp > 1e-16
+                            ):
+                                more_info += f"{p}, {p2}: {n_new}, {n_add}, {cov[out_name][i, i2]}, {cov_tmp}, {n_total[out_name][p]}; means {np.nanmean(ds_tmp[p].values)} - {means[out_name][p]}; max {np.nanmax(ds_tmp[p].values - means[out_name][p])}; min {np.nanmin(ds_tmp[p].values - means[out_name][p])}\n"
+                                more_info += f"{f}\n"
+                                # print(f"{p}, {p2}: {n_new}, {cov[out_name][i, i2]}, {cov_tmp}, {n_total[out_name][p]}")
                         n_total[out_name][p] = n_new
                 else:
                     n_new = count_tmp[p].values.item() + n_total[out_name][p]
@@ -3594,13 +3375,21 @@ def get_cov_matrix(
                                 (ds_tmp[p].values - means[out_name][p])
                                 * (ds_tmp[p2].values - means[out_name][p2])
                             )
+                            if (
+                                p == "dg_ccn_1"
+                                and p2 == "dg_ccn_1"
+                                and out_name == "QV"
+                            ):
+                                more_info += f"(2) {p}, {p2}: {n_new}, {cov[out_name][i, i2]}, {n_total[out_name][p]}; means {np.nanmean(ds_tmp[p].values)} - {means[out_name][p]}; min {np.nanmin(ds_tmp[p].values)}\n"
+                                # print(f"(2) {p}, {p2}: {n_new}, {cov[out_name][i, i2]}, {n_total[out_name][p]}")
                         n_total[out_name][p] = n_new
+
     if store_path is not None and store_path != "no":
         with open(store_path + "_means.pkl", "wb") as f:
             pickle.dump(means, f)
         with open(store_path + "_covariance_matrix.pkl", "wb") as f:
             pickle.dump(cov, f)
-    return means, cov
+    return means, cov, more_info
 
 
 def get_cov_matrix_phase(
@@ -3610,6 +3399,7 @@ def get_cov_matrix_phase(
     only_asc600=False,
     inoutflow_time=-1,
 ):
+
     """
     Calculate the means and covariance matrices for model state variables and sensitivities. For each model state
     variable with sensitivities and each phase, there will be a different covariance matrix.
@@ -3775,37 +3565,44 @@ def get_cov_matrix_phase(
     return means, cov
 
 
-def plot_heatmap_cov(
+def plot_heatmap_matrix(
     data_in,
     out_param,
     names,
+    flow=None,
+    phase=None,
+    latex=False,
+    font_scale=1.0,
+    save=False,
     in_params=None,
     plot_type="all",
     norm=None,
     title=None,
     filename=None,
+    cmap="viridis",
     width=30,
     height=16,
+    sort=False,
+    annot=False,
 ):
     """
-    Plot a heatmap of a covariance matrix.
+    Plot a heatmap of a covariance or correlation matrix.
 
     Parameters
     ----------
-    data_in : dictionary of matrices
-        The keys are model state variables with available sensitivities.
+    data_in : dictionary of matrices or dictionary of dictionary of dictionary of matrices
+        Either: The keys are model state variables with available sensitivities.
         The values are matrices where covariances are given for sensitivities for the respective model state variable.
         The data can be generated using get_cov_matrix().
+        Or: The first keys are model state variables, then the flow, then phase used for calculating correlation/covariance values. The data can be generated using get_stats_per_traj.get_matrix().
     out_param : string
         The model state variable for which the sensitivities shall be plotted for.
     names : list of strings
-        The names of each column/row in the covariance matrix. The index of names is the row/column of the
-        covariance matrix.
+        The names of each column/row in the covariance matrix. The index of names is the row/column of the matrix.
     in_params : list-like of strings
         List of model parameters or model states to plot in the covariance matrix.
     plot_type : string
         Define if only negative (='negative'), positive (='positive'), or all ('all') values shall be plotted.
-        If 'all' is chosen and a norm other than SymLogNorm is given, the absolute values will be plotted.
     norm : matplotlib.colors normalization instance
         A normalization for the colormap, such as matplotlib.colors.SymLogNorm()
     title : string
@@ -3813,18 +3610,27 @@ def plot_heatmap_cov(
     filename : string
         Path and filename to save the plot on disk. The filename will be numerated.
         If a file with the same name already exists, the number will be incremented.
+    cmap : string
+        Name of the color palette passed to seaborn.
     width : float
         Width in inches
     height : float
         Height in inches
+    sort : bool or list of strings
+        If true: sort the rows and columns such that the one with the largest sum is on top/left and the smallest
+        sum is on bottom/right.
+        If list
 
     Returns
     -------
-    If successful, returns matplotlib.axes. Otherwise returns None.
+    If successful, returns the matplotlib.figure.Figure with the plot drawn onto it. Otherwise returns None.
     """
-    sns.set(rc={"figure.figsize": (width, height)})
-    data = copy.deepcopy(data_in[out_param])
-    if in_params is not None and len(in_params) < np.shape(data_in[out_param])[0]:
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
+    if isinstance(data_in[out_param], dict):
+        data = copy.deepcopy(data_in[out_param][flow][phase])
+    else:
+        data = copy.deepcopy(data_in[out_param])
+    if in_params is not None and len(in_params) < np.shape(data)[0]:
         if len(in_params) == 0:
             return
         idx = []
@@ -3839,46 +3645,330 @@ def plot_heatmap_cov(
         data[np.where(data >= 0)] = np.nan
     elif plot_type == "positive":
         data[np.where(data < 0)] = np.nan
-    if (
-        norm is not None
-        and plot_type != "positive"
-        and not isinstance(norm, mpl_col.SymLogNorm)
-    ):
-        data = np.abs(data)
-    try:
-        g = sns.heatmap(
-            data=data,
-            cmap="viridis",
-            norm=norm,
-            cbar=True,
-            yticklabels=names,
-            xticklabels=names,
-            annot=((len(names) <= 20) and (width > 19)),
-            fmt="1.2e",
+
+    if sort:
+        pairs = []
+        i = 0
+        for name, col in zip(names, data):
+            pairs.append((np.nansum(np.abs(col)), name, i))
+            i += 1
+        pairs.sort(key=lambda x: x[0])
+        permutation = []
+        for p in pairs[::-1]:
+            permutation.append(p[2])
+        plot_data = data[:, permutation]
+        plot_data = plot_data[permutation, :]
+        plot_names = np.asarray(names)[permutation]
+    else:
+        plot_data = data
+        plot_names = names
+
+    # try:
+    fig = Figure()
+    ax = fig.subplots()
+    sns.heatmap(
+        data=plot_data,
+        cmap=cmap,
+        norm=norm,
+        cbar=True,
+        yticklabels=plot_names,
+        xticklabels=plot_names,
+        annot=annot,
+        fmt="1.2e",
+        ax=ax,
+        annot_kws={"size": int(9 * font_scale)},
+    )
+    if title is None:
+        title_ = f"Heatmap of Relation (Gradients for {out_param})"
+    else:
+        title_ = title
+    _ = ax.set_title(title_, fontsize=int(12 * font_scale))
+    _ = ax.set_yticklabels(
+        ax.get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor"
+    )
+    _ = ax.set_xticklabels(
+        ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor"
+    )
+    ax.tick_params(axis="x", which="major", labelsize=int(10 * font_scale))
+    ax.tick_params(axis="y", which="major", labelsize=int(10 * font_scale))
+    cbar = ax.collections[-1].colorbar
+    cbarax = cbar.ax
+    cbarax.tick_params(labelsize=int(10 * font_scale))
+
+    plt.tight_layout(h_pad=1)
+    if filename is not None and save:
+        i = 0
+        store_type = filename.split(".")[-1]
+        store_path = filename[0 : -len(store_type) - 1]
+        save_path = store_path + "_{:03d}.".format(i) + store_type
+        while os.path.isfile(save_path):
+            i = i + 1
+            save_path = store_path + "_{:03d}.".format(i) + store_type
+        fig.savefig(save_path, dpi=300)
+    return fig
+    # except:
+    #     if filename is not None:
+    #         print(f"Cannot create plot for {filename} ({out_param})")
+    #     else:
+    #         print(f"Cannot create plot for {out_param}")
+    #     return None
+
+
+def plot_heatmap_interactive(
+    filepath=None,
+    matrix_dic=None,
+    names=None,
+    order=None,
+):
+    """
+    Interactive plot for plot_heatmap_matrix() that takes correlation and covariance matrices.
+
+    Parameters
+    ----------
+    filepath : string (optional)
+        Path to pickle file with a correlation matrix to load.
+    matrix_dic : dictionary of matrices or dictionary of dictionary of dictionary of matrices
+        Either: The keys are model state variables with available sensitivities.
+        The values are matrices where covariances are given for sensitivities for the respective model state variable.
+        The data can be generated using get_cov_matrix().
+        Or: The first keys are model state variables, then the flow, then phase used for calculating
+        correlation/covariance values.
+        The data can be generated using get_stats_per_traj.get_matrix().
+    names : list of strings
+        The names of each column/row in the covariance matrix. The index of names is the row/column of the matrix.
+    order : list of strings
+        The order in which the columns/rows shall be plotted
+    Returns
+    -------
+    panel.layout that can be used in a jupyter notebook.
+    """
+    if filepath is not None:
+        with open(filepath, "rb") as f:
+            data = pickle.load(f)
+            matrix_dic = data["correlation"]
+            names = data["column names"]
+    elif matrix_dic is None or names is None:
+        print(
+            "You either have to specify a filepath to a pickle file or "
+            "you need to provide the matrix dictionary with the names."
         )
-        if title is None:
-            title_ = f"Heatmap of Covariance (Gradients for {out_param})"
-        else:
-            title_ = title
-        _ = g.set_title(title_)
-        plt.tight_layout()
-        fig = g.get_figure()
-        if filename is not None:
-            i = 0
-            store_type = filename.split(".")[-1]
-            store_path = filename[0 : -len(store_type) - 1]
-            save = store_path + "_{:03d}.".format(i) + store_type
-            while os.path.isfile(save):
-                i = i + 1
-                save = store_path + "_{:03d}.".format(i) + store_type
-            fig.savefig(save, dpi=300)
-        return g
-    except:
-        if filename is not None:
-            print(f"Cannot create plot for {filename} ({out_param})")
-        else:
-            print(f"Cannot create plot for {out_param}")
         return None
+    out_param_list = list(matrix_dic.keys())
+    out_param = pn.widgets.Select(
+        name="Output Parameter",
+        value=out_param_list[0],
+        options=out_param_list,
+    )
+
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=45,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=25,
+        step=1,
+        value=6,
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=5,
+        step=0.1,
+        value=0.7,
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    cmaps = [
+        "viridis",
+        "mako",
+        "vlag",
+        "icefire",
+        "Spectral",
+        "coolwarm",
+        "Blues",
+        "Reds",
+    ]
+    color_widget = pn.widgets.Select(
+        name="Colormap",
+        value=cmaps[2],
+        options=cmaps,
+    )
+    sort_button = pn.widgets.Toggle(
+        name="Sort by correlation sum",
+        button_type="success",
+    )
+    rank_names = False
+    for n in names:
+        if "rank" in n:
+            rank_names = True
+            break
+    if rank_names:
+        names_list = []
+        for n in np.sort(names):
+            if "rank" in n:
+                names_list.append(n)
+        for n in np.sort(names):
+            if "rank" not in n:
+                names_list.append(n)
+    else:
+        names_list = list(np.sort(names))
+    param_select = pn.widgets.CrossSelector(
+        name="Parameter",
+        value=names_list[0:5],
+        options=names_list,
+    )
+    plot_type = pn.widgets.Select(
+        name="Plot values:",
+        value="all",
+        options=["all", "negative", "positive"],
+    )
+    norms = [
+        mpl_col.Normalize(-1, 1),
+        mpl_col.Normalize(1, 0),
+        mpl_col.Normalize(0, 1),
+        mpl_col.SymLogNorm(1e-2),
+        mpl_col.SymLogNorm(1e-10),
+        mpl_col.SymLogNorm(1e-15),
+        mpl_col.SymLogNorm(1e-20),
+        mpl_col.LogNorm(),
+        None,
+    ]
+    norm = pn.widgets.Select(
+        name="Norm",
+        value=norms[0],
+        options=norms,
+    )
+    annot_button = pn.widgets.Toggle(
+        name="Annotate entries",
+        button_type="success",
+    )
+    if isinstance(matrix_dic[out_param_list[0]], dict):
+        flow_list = list(matrix_dic[out_param_list[0]].keys())
+        flow = pn.widgets.Select(
+            name="Flow",
+            value=flow_list[0],
+            options=flow_list,
+        )
+        phase_list = list(matrix_dic[out_param_list[0]][flow_list[0]].keys())
+        phase = pn.widgets.Select(
+            name="Phase",
+            value=phase_list[0],
+            options=phase_list,
+        )
+    else:
+        phase = None
+        flow = None
+
+    plot_pane = pn.panel(
+        pn.bind(
+            plot_heatmap_matrix,
+            data_in=matrix_dic,
+            out_param=out_param,
+            names=names,
+            in_params=param_select,
+            plot_type=plot_type,
+            norm=norm,
+            title=title_widget,
+            filename=save_to_field,
+            cmap=color_widget,
+            width=width_slider,
+            height=height_slider,
+            sort=sort_button,
+            latex=latex_button,
+            save=save_button,
+            phase=phase,
+            flow=flow,
+            font_scale=font_slider,
+            annot=annot_button,
+        )
+    ).servable()
+
+    if isinstance(matrix_dic[out_param_list[0]], dict):
+        return pn.Column(
+            pn.Row(
+                width_slider,
+                height_slider,
+                font_slider,
+            ),
+            pn.Row(
+                save_to_field,
+                save_button,
+                latex_button,
+            ),
+            pn.Row(
+                param_select,
+                pn.Column(
+                    sort_button,
+                    flow,
+                    phase,
+                ),
+            ),
+            pn.Row(
+                pn.pane.Markdown(
+                    "Available norms: Normalized (-1, 1), Normalized (1, 0), Normalizes (0, -1), SymLogNorm(thresholds: 1e-2, 1e-10, 1e-15, or 1e-20), and LogNorm."
+                ),
+            ),
+            pn.Row(
+                out_param,
+                plot_type,
+                norm,
+            ),
+            pn.Row(
+                title_widget,
+                color_widget,
+                annot_button,
+            ),
+            plot_pane,
+        )
+    else:
+        return pn.Column(
+            pn.Row(
+                width_slider,
+                height_slider,
+                font_slider,
+            ),
+            pn.Row(
+                save_to_field,
+                save_button,
+                latex_button,
+            ),
+            pn.Row(
+                param_select,
+                sort_button,
+            ),
+            pn.Row(
+                out_param,
+                plot_type,
+                pn.pane.Markdown(
+                    "Available norms: Normalized (-1, 1), SymLogNorm(1e-2, 1e-10, 1e-15, or 1e-20), and LogNorm."
+                ),
+            ),
+            pn.Row(
+                title_widget,
+                color_widget,
+                norm,
+            ),
+            plot_pane,
+        )
 
 
 def plot_heatmap_histogram(
@@ -4538,7 +4628,8 @@ def traj_plot_kde_inp(
     filter_zero=False,
     linewidth=2,
     bw_adjust=0.1,
-    log=False,
+    log_weights=False,
+    log_x=False,
     font_scale=1,
     width=24,
     height=12,
@@ -4572,8 +4663,10 @@ def traj_plot_kde_inp(
         scipy.stats.gaussian.kde. Larger values generate smoother estimations. Since the underlying data
         here is a set of bins with their counts as weights, the automatically estimated bandwidth is
         smoother than what would be used when using the complete dataset. Therefore, we use a default of 0.1.
-    log : bool
-        Plot the y-axis using log-scale.
+    log_weights : bool
+        Plot the y-axis using log-scale by using log10 weights.
+    log_x : bool
+        Plot the x-axis using log-scale.
     font_scale : float
         Scale the fontsize for the title, labels and ticks.
     width : float
@@ -4604,7 +4697,7 @@ def traj_plot_kde_inp(
         return None
 
     for in_p in in_params:
-        if log:
+        if log_weights:
             zeros = np.argwhere(hist_in_params[out_param][in_p] == 0)
             weights = np.log10(
                 hist_in_params[out_param][in_p],
@@ -4623,9 +4716,7 @@ def traj_plot_kde_inp(
                 if edge <= 0 <= edges_in_params[out_param][in_p][i + 1]:
                     weights[i] = 0
                     break
-
-        data_dic["weight"].extend(weights)
-        data_dic["Impact"].extend(
+        impact = (
             edges_in_params[out_param][in_p][:-1]
             + (
                 edges_in_params[out_param][in_p][1]
@@ -4633,11 +4724,21 @@ def traj_plot_kde_inp(
             )
             / 2
         )
+        data_dic["weight"].extend(weights)
+        data_dic["Impact"].extend(impact)
         data_dic["Parameter"].extend(np.repeat(latexify.parse_word(in_p), len(weights)))
 
     df = pd.DataFrame(data_dic)
     fig = Figure()
     ax = fig.subplots()
+    if log_x:
+        signs = np.sign(df["Impact"])
+        zeros = df["Impact"] == 0
+        df["Impact"] = np.log10(np.abs(df["Impact"]))
+        min_imp = np.nanmin(df["Impact"])  # * 1.1
+        df["Impact"] -= min_imp
+        df["Impact"] *= signs
+        df["Impact"] = df["Impact"].where(~zeros, 0)
 
     _ = sns.kdeplot(
         data=df,
@@ -4651,6 +4752,34 @@ def traj_plot_kde_inp(
         linewidth=linewidth,
     )
 
+    if title is not None:
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+    if log_x:
+        old_x_ticks = ax.get_xticks()
+        signs = np.sign(old_x_ticks)
+        if latex:
+            x_labels = []
+            for i, x_tick in enumerate(old_x_ticks):
+                l = "$"
+                if signs[i] < 0:
+                    l += "-"
+                l += r"10^{" + f"{(abs(x_tick) + min_imp):1.2f}" + r"}$"
+                x_labels.append(l)
+        else:
+            x_labels = [
+                f"{signs[i] * 10**(abs(x_tick) + min_imp):1.1e}"
+                for i, x_tick in enumerate(old_x_ticks)
+            ]
+        for i in range(len(old_x_ticks)):
+            if old_x_ticks[i] == 0:
+                if latex:
+                    x_labels[i] = r"$\leq 10^{" + f"{min_imp:1.2f}" + r"}$"
+                else:
+                    x_labels[i] = r"$\leq$" + f"{10**min_imp:1.1e}"
+                break
+        # For some reason, set_xticklabels() resets the font.
+        _ = ax.set_xticklabels(x_labels, fontdict={"usetex": latex})
+
     ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
     ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
     ax.tick_params(
@@ -4658,9 +4787,6 @@ def traj_plot_kde_inp(
         which="major",
         labelsize=int(10 * font_scale),
     )
-    if title is not None:
-        _ = ax.set_title(title, fontsize=int(12 * font_scale))
-
     plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
     plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
     ax.xaxis.get_offset_text().set_size(int(9 * font_scale))
@@ -4772,6 +4898,16 @@ def plot_traj_kde_inp_interactive(
         name="Title",
         placeholder="",
     )
+    log_x = pn.widgets.Toggle(
+        name="Log x-axis",
+        value=False,
+        button_type="success",
+    )
+    log_weights = pn.widgets.Toggle(
+        name="Log weights",
+        value=True,
+        button_type="success",
+    )
 
     plot_pane = pn.panel(
         pn.bind(
@@ -4783,7 +4919,8 @@ def plot_traj_kde_inp_interactive(
             bw_adjust=bw_slider,
             edges_in_params=edges_in_params,
             hist_in_params=hist_in_params,
-            log=True,
+            log_weights=log_weights,
+            log_x=log_x,
             width=width_slider,
             height=height_slider,
             title=title_widget,
@@ -4797,7 +4934,11 @@ def plot_traj_kde_inp_interactive(
     return pn.Column(
         pn.Row(
             in_param,
-            out_param,
+            pn.Column(
+                out_param,
+                log_x,
+                log_weights,
+            ),
         ),
         pn.Row(
             width_slider,
@@ -4812,6 +4953,420 @@ def plot_traj_kde_inp_interactive(
         pn.Row(
             line_slider,
             bw_slider,
+            title_widget,
+        ),
+        plot_pane,
+    )
+
+
+def plot_rank_over_impact(
+    ds,
+    out_param,
+    width=24,
+    height=12,
+    font_scale=None,
+    filename=None,
+    title=None,
+    save=False,
+    latex=False,
+    dot_size=6,
+    log=False,
+    phase=False,
+    flow=False,
+    avg=False,
+):
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
+    fig = Figure()
+    ax = fig.subplots()
+    params_rank = []
+    params_imp = []
+    for p in ds:
+        if "rank" in p:
+            params_rank.append(p)
+        elif "avg" in p and p != "avg ascent":
+            params_imp.append(p)
+    phases = ["warm phase", "mixed phase", "ice phase"]
+    flows = ["inflow", "ascent", "outflow"]
+    phase_colors = {
+        "warm phase": "tab:orange",
+        "mixed phase": "tab:green",
+        "ice phase": "tab:blue",
+        "any": "k",
+    }
+    if out_param != "all":
+        ds = ds.sel({"Output Parameter": out_param})
+        out_markers = None
+    else:
+        out_markers = {
+            "QV": "D",
+            "latent_heat": "o",
+            "latent_cool": "^",
+        }
+    if not phase and not flow:
+        ds = ds.sel({"phase": "any", "flow": "any"})
+    elif phase:
+        ds = ds.sel({"phase": phases, "flow": "any"})
+    elif flow:
+        ds = ds.sel({"phase": "any", "flow": flows})
+    else:
+        ds = ds.sel({"phase": phases, "flow": flows})
+    ds_rank = ds[params_rank]
+    ds_imp = ds[params_imp]
+
+    if avg:
+        ds_rank = ds_rank.mean(dim=["trajectory", "file"])
+        ds_imp = ds_imp.mean(dim=["trajectory", "file"])
+
+    if not phase and not flow:
+        if out_param != "all":
+            imp_vals = ds_imp.to_array().values.flatten()
+            rank_vals = ds_rank.to_array().values.flatten()
+            df = pd.DataFrame.from_dict(
+                {
+                    "Rank": rank_vals,
+                    "Impact": imp_vals,
+                }
+            )
+            sns.scatterplot(
+                data=df,
+                x="Rank",
+                y="Impact",
+                ax=ax,
+                s=dot_size,
+            )
+        else:
+            data_dic = {
+                "Rank": np.asarray([]),
+                "Impact": np.asarray([]),
+                "Output Parameter": np.asarray([]),
+            }
+            for out_p in ds["Output Parameter"]:
+                imp_vals = (
+                    ds_imp.sel({"Output Parameter": out_p}).to_array().values.flatten()
+                )
+                rank_vals = (
+                    ds_rank.sel({"Output Parameter": out_p}).to_array().values.flatten()
+                )
+                data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
+                data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
+                data_dic["Output Parameter"] = np.append(
+                    data_dic["Output Parameter"],
+                    np.repeat(out_p.item(), len(rank_vals)),
+                )
+            df = pd.DataFrame.from_dict(data_dic)
+            sns.scatterplot(
+                data=df,
+                x="Rank",
+                y="Impact",
+                style="Output Parameter",
+                ax=ax,
+                s=dot_size,
+                markers=out_markers,
+            )
+            plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+            plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    elif phase:
+        data_dic = {
+            "Rank": np.asarray([]),
+            "Impact": np.asarray([]),
+            "Phase": np.asarray([]),
+        }
+        if out_param != "all":
+            for phase_v in ds["phase"]:
+                imp_vals = ds_imp.sel({"phase": phase_v}).to_array().values.flatten()
+                rank_vals = ds_rank.sel({"phase": phase_v}).to_array().values.flatten()
+                data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
+                data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
+                data_dic["Phase"] = np.append(
+                    data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals))
+                )
+            df = pd.DataFrame.from_dict(data_dic)
+
+            sns.scatterplot(
+                data=df,
+                x="Rank",
+                y="Impact",
+                ax=ax,
+                s=dot_size,
+                hue="Phase",
+                hue_order=phases,
+                palette=phase_colors,
+            )
+            plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+            plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+        else:
+            data_dic["Output Parameter"] = np.asarray([])
+            for phase_v in ds["phase"]:
+                for out_p in ds["Output Parameter"]:
+                    imp_vals = (
+                        ds_imp.sel({"Output Parameter": out_p, "phase": phase_v})
+                        .to_array()
+                        .values.flatten()
+                    )
+                    rank_vals = (
+                        ds_rank.sel({"Output Parameter": out_p, "phase": phase_v})
+                        .to_array()
+                        .values.flatten()
+                    )
+                    data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
+                    data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
+                    data_dic["Phase"] = np.append(
+                        data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals))
+                    )
+                    data_dic["Output Parameter"] = np.append(
+                        data_dic["Output Parameter"],
+                        np.repeat(out_p.item(), len(rank_vals)),
+                    )
+            df = pd.DataFrame.from_dict(data_dic)
+            sns.scatterplot(
+                data=df,
+                x="Rank",
+                y="Impact",
+                style="Output Parameter",
+                ax=ax,
+                s=dot_size,
+                markers=out_markers,
+                hue="Phase",
+                hue_order=phases,
+                palette=phase_colors,
+            )
+
+            plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+            plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    elif flow:
+        data_dic = {
+            "Rank": np.asarray([]),
+            "Impact": np.asarray([]),
+            "Flow": np.asarray([]),
+        }
+        for flow_v in ds["flow"]:
+            imp_vals = ds_imp.sel({"flow": flow_v}).to_array().values.flatten()
+            rank_vals = ds_rank.sel({"flow": flow_v}).to_array().values.flatten()
+            data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
+            data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
+            data_dic["Flow"] = np.append(
+                data_dic["Flow"], np.repeat(flow_v.item(), len(imp_vals))
+            )
+        df = pd.DataFrame.from_dict(data_dic)
+
+        sns.scatterplot(
+            data=df,
+            x="Rank",
+            y="Impact",
+            ax=ax,
+            s=dot_size,
+            markers={
+                "Inflow": "hexagon",
+                "Ascent": "star",
+                "Outflow": "plus (filled)",
+            },
+        )
+
+        plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+        plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    elif phase and flow:
+        data_dic = {
+            "Rank": np.asarray([]),
+            "Impact": np.asarray([]),
+            "Flow": np.asarray([]),
+        }
+        for flow_v in ds["flow"]:
+            for phase_v in ds["phase"]:
+                imp_vals = (
+                    ds_imp.sel({"flow": flow_v, "phase": phase_v})
+                    .to_array()
+                    .values.flatten()
+                )
+                rank_vals = (
+                    ds_rank.sel({"flow": flow_v, "phase": phase_v})
+                    .to_array()
+                    .values.flatten()
+                )
+                data_dic["Rank"] = np.append(data_dic["Rank"], rank_vals)
+                data_dic["Impact"] = np.append(data_dic["Impact"], imp_vals)
+                data_dic["Flow"] = np.append(
+                    data_dic["Flow"], np.repeat(flow_v.item(), len(imp_vals))
+                )
+                data_dic["Phase"] = np.append(
+                    data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals))
+                )
+        df = pd.DataFrame.from_dict(data_dic)
+        sns.scatterplot(
+            data=df,
+            x="Rank",
+            y="Impact",
+            ax=ax,
+            s=dot_size,
+            markers={
+                "Inflow": "hexagon",
+                "Ascent": "star",
+                "Outflow": "plus (filled)",
+            },
+            hue="Phase",
+            hue_order=phases,
+            palette=phase_colors,
+        )
+        plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+        plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    if log:
+        ax.set_yscale("log")
+    if title is not None:
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+    ax.xaxis.get_label().set_fontsize(int(11 * font_scale))
+    ax.yaxis.get_label().set_fontsize(int(11 * font_scale))
+    ax.tick_params(
+        axis="both",
+        which="major",
+        labelsize=int(10 * font_scale),
+    )
+    # plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+    # plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    ax.xaxis.get_offset_text().set_size(int(9 * font_scale))
+    ax.yaxis.get_offset_text().set_size(int(9 * font_scale))
+
+    if filename is not None and save:
+        fig = ax.get_figure()
+        try:
+            i = 0
+            store_type = filename.split(".")[-1]
+            store_path = filename[0 : -len(store_type) - 1]
+            save_name = store_path + "_{:03d}.".format(i) + store_type
+
+            while os.path.isfile(save_name):
+                i = i + 1
+                save_name = store_path + "_{:03d}.".format(i) + store_type
+            fig.savefig(save_name, bbox_inches="tight", dpi=300)
+        except:
+            print(f"Storing to {save_name} failed.", file=sys.stderr)
+
+    return fig
+
+
+def plot_rank_over_impact_interactive(ds):
+    """
+
+    Parameters
+    ----------
+    ds
+
+    Returns
+    -------
+
+    """
+    out_params = []
+    for o_p in ds["Output Parameter"]:
+        out_params.append(o_p.item())
+    out_params.append("all")
+    out_param = pn.widgets.Select(
+        name="Output Parameter",
+        value=out_params[0],
+        options=out_params,
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    dot_slider = pn.widgets.IntSlider(
+        name="Dot size",
+        start=1,
+        end=500,
+        step=2,
+        value=6,
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=5,
+        step=0.1,
+        value=0.7,
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    log_y = pn.widgets.Toggle(
+        name="Log y-axis",
+        value=False,
+        button_type="success",
+    )
+    trajectory_toggle = pn.widgets.Toggle(
+        name="Average over all trajectories",
+        value=True,
+        button_type="success",
+    )
+    phase_toggle = pn.widgets.Toggle(
+        name="Show phases",
+        value=False,
+        button_type="success",
+    )
+    flow_toggle = pn.widgets.Toggle(
+        name="Show flow",
+        value=False,
+        button_type="success",
+    )
+    plot_pane = pn.panel(
+        pn.bind(
+            plot_rank_over_impact,
+            ds=ds,
+            out_param=out_param,
+            width=width_slider,
+            height=height_slider,
+            font_scale=font_slider,
+            filename=save_to_field,
+            title=title_widget,
+            save=save_button,
+            latex=latex_button,
+            dot_size=dot_slider,
+            log=log_y,
+            phase=phase_toggle,
+            flow=flow_toggle,
+            avg=trajectory_toggle,
+        ),
+    ).servable()
+    return pn.Column(
+        pn.Row(
+            width_slider,
+            height_slider,
+            dot_slider,
+        ),
+        pn.Row(
+            phase_toggle,
+            flow_toggle,
+        ),
+        pn.Row(
+            font_slider,
+            log_y,
+            trajectory_toggle,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+            latex_button,
+        ),
+        pn.Row(
+            out_param,
             title_widget,
         ),
         plot_pane,
@@ -5065,7 +5620,7 @@ def main(args):
         if args.plot_type == "all" or args.plot_type == "cov_heat":
             print("########### Plot covariance matrix ###########")
             for out_p in tqdm(cov):
-                _ = plot_heatmap_cov(
+                _ = plot_heatmap_matrix(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
@@ -5073,22 +5628,24 @@ def main(args):
                     plot_type="all",
                     norm=mpl_col.LogNorm(),
                     filename=f"{store_path}_{out_p}_all_log.{store_type}",
+                    save=True,
                     width=args.width,
                     height=args.height,
                 )
                 plt.clf()
-                _ = plot_heatmap_cov(
+                _ = plot_heatmap_matrix(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
                     title=f"Heatmap of Covariance (Gradients for {out_p})",
                     plot_type="all",
                     filename=f"{store_path}_{out_p}_all.{store_type}",
+                    save=True,
                     width=args.width,
                     height=args.height,
                 )
                 plt.clf()
-                _ = plot_heatmap_cov(
+                _ = plot_heatmap_matrix(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
@@ -5097,11 +5654,12 @@ def main(args):
                     plot_type="all",
                     norm=mpl_col.LogNorm(),
                     filename=f"{store_path}_{out_p}_some_log.{store_type}",
+                    save=True,
                     width=args.width,
                     height=args.height,
                 )
                 plt.clf()
-                _ = plot_heatmap_cov(
+                _ = plot_heatmap_matrix(
                     data_in=cov,
                     out_param=out_p,
                     names=list(means[out_p].keys()),
@@ -5109,6 +5667,7 @@ def main(args):
                     title=f"Heatmap of Covariance (Gradients for {out_p})",
                     plot_type="all",
                     filename=f"{store_path}_{out_p}_some.{store_type}",
+                    save=True,
                     width=args.width,
                     height=args.height,
                 )
@@ -5120,7 +5679,7 @@ def main(args):
                     continue
                 phase_strip = phase.strip()
                 for out_p in tqdm(cov_phase[phase], leave=False):
-                    _ = plot_heatmap_cov(
+                    _ = plot_heatmap_matrix(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=list(means_phase[phase][out_p].keys()),
@@ -5128,22 +5687,24 @@ def main(args):
                         plot_type="all",
                         norm=mpl_col.LogNorm(),
                         filename=f"{store_path}_{phase_strip}_{out_p}_all_log.{store_type}",
+                        save=True,
                         width=args.width,
                         height=args.height,
                     )
                     plt.clf()
-                    _ = plot_heatmap_cov(
+                    _ = plot_heatmap_matrix(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=list(means_phase[phase][out_p].keys()),
                         title=f"({phase_strip}) Heatmap of Covariance (Gradients for {out_p})",
                         plot_type="all",
                         filename=f"{store_path}_{phase_strip}_{out_p}_all.{store_type}",
+                        save=True,
                         width=args.width,
                         height=args.height,
                     )
                     plt.clf()
-                    _ = plot_heatmap_cov(
+                    _ = plot_heatmap_matrix(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=means_phase[phase][out_p].keys(),
@@ -5152,11 +5713,12 @@ def main(args):
                         plot_type="all",
                         norm=mpl_col.LogNorm(),
                         filename=f"{store_path}_{phase_strip}_{out_p}_some_log.{store_type}",
+                        save=True,
                         width=args.width,
                         height=args.height,
                     )
                     plt.clf()
-                    _ = plot_heatmap_cov(
+                    _ = plot_heatmap_matrix(
                         data_in=cov_phase[phase],
                         out_param=out_p,
                         names=means_phase[phase][out_p].keys(),
@@ -5164,6 +5726,7 @@ def main(args):
                         title=f"({phase_strip}) Heatmap of Covariance (Gradients for {out_p})",
                         plot_type="all",
                         filename=f"{store_path}_{phase_strip}_{out_p}_some.{store_type}",
+                        save=True,
                         width=args.width,
                         height=args.height,
                     )
@@ -5202,7 +5765,9 @@ def main(args):
         text += print_unique_params(top10_sens_dic)
         text += print_correlation_broad(ds, out_params)
         text += print_correlation_mean(ds, out_params)
-        sort_key_list, table_dic, text_tmp = print_latex_tables(ds, 10, args.verbose)
+        sort_key_list, table_dic, text_tmp = latexify.print_latex_tables(
+            ds, 10, args.verbose
+        )
         text += text_tmp
         text += print_variable_with_important_params(sort_key_list)
         text += print_param_types(ds, table_dic)
@@ -5213,6 +5778,343 @@ def main(args):
             filename = filename[0 : -len(ending) - 1] + ".txt"
             with open(filename, "w+") as f:
                 f.write(text)
+
+
+def plot_rank_probs(
+    ds,
+    flow,
+    phase,
+    out_param,
+    median=False,
+    rank=False,
+    mark_top_n=10,
+    dot_size=12,
+    title=None,
+    filename=None,
+    width=17,
+    height=16,
+    font_scale=None,
+    save=False,
+    latex=False,
+):
+    """
+
+    Parameters
+    ----------
+    ds
+    flow
+    phase
+    out_param
+    median
+    rank
+    mark_top_n
+    dot_size
+    title
+    filename
+    width
+    height
+    font_scale
+    save
+    latex
+
+    Returns
+    -------
+
+    """
+    ds = ds.sel({"flow": flow, "phase": phase})
+    if median:
+        y = "Median"
+    else:
+        y = "Mean"
+    vals = {"QV": {}, "latent_heat": {}, "latent_cool": {}}
+    median_vals = {"QV": {}, "latent_heat": {}, "latent_cool": {}}
+    mean_vals = {"QV": {}, "latent_heat": {}, "latent_cool": {}}
+    order = []
+    for out_p in ds["Output Parameter"]:
+        ds_tmp = ds.sel({"Output Parameter": out_p})
+        for col in ds_tmp:
+            if not "rank" in col:
+                continue
+            ds_tmp2 = ds_tmp.where(ds_tmp[col] > 0)
+            n_total = np.nansum(~np.isnan(ds_tmp2[col]))
+            n_top10 = np.nansum(~np.isnan(ds_tmp2.where(ds_tmp2[col] <= 10)[col]))
+            vals[out_p.item()][col[:-5]] = n_top10 / n_total * 100
+            if out_p.item() == ds["Output Parameter"].values[0]:
+                order.append(col[:-5])
+            if not rank:
+                median_vals[out_p.item()][col[:-5]] = (
+                    ds_tmp2[f"{col[:-5]} avg"].median().item()
+                )
+                mean_vals[out_p.item()][col[:-5]] = (
+                    ds_tmp2[f"{col[:-5]} avg"].mean().item()
+                )
+            else:
+                median_vals[out_p.item()][col[:-5]] = ds_tmp2[col].median().item()
+                mean_vals[out_p.item()][col[:-5]] = ds_tmp2[col].mean().item()
+
+    vals2 = {"QV": [], "latent_heat": [], "latent_cool": []}
+    median = {"QV": [], "latent_heat": [], "latent_cool": []}
+    mean = {"QV": [], "latent_heat": [], "latent_cool": []}
+
+    for t in ds["Output Parameter"]:
+        t = t.item()
+        for o in order:
+            vals2[t].append(vals[t][o])
+            median[t].append(median_vals[t][o])
+            mean[t].append(mean_vals[t][o])
+
+    o_p = "QV"
+    df = pd.DataFrame.from_dict(
+        {
+            "Probability for high ranking": vals2[o_p],
+            "Parameter": order,
+        }
+    )
+    top_params1 = np.sort(
+        np.unique(
+            df.nlargest(n=mark_top_n, columns=["Probability for high ranking"])[
+                "Parameter"
+            ]
+        )
+    )
+
+    o_p = "latent_heat"
+    df = pd.DataFrame.from_dict(
+        {
+            "Probability for high ranking": vals2[o_p],
+            "Parameter": order,
+        }
+    )
+    top_params2 = np.sort(
+        np.unique(
+            df.nlargest(n=mark_top_n, columns=["Probability for high ranking"])[
+                "Parameter"
+            ]
+        )
+    )
+
+    o_p = "latent_cool"
+    df = pd.DataFrame.from_dict(
+        {
+            "Probability for high ranking": vals2[o_p],
+            "Parameter": order,
+        }
+    )
+    top_params3 = np.sort(
+        np.unique(
+            df.nlargest(n=mark_top_n, columns=["Probability for high ranking"])[
+                "Parameter"
+            ]
+        )
+    )
+    top_params = np.sort(
+        np.unique(list(top_params1) + list(top_params2) + list(top_params3))
+    )
+    top_params_order = {
+        "QV": top_params1,
+        "latent_heat": top_params2,
+        "latent_cool": top_params3,
+    }
+
+    n = len(top_params)
+    color = plt.cm.tab20(np.linspace(0, 1, n))
+    top_params_c = {}
+    for i in range(n):
+        top_params_c[top_params[i]] = color[i]
+
+    if rank:
+        y2 = "Rank"
+    else:
+        y2 = "Impact"
+    df = pd.DataFrame.from_dict(
+        {
+            "Probability for high ranking": vals2[out_param],
+            "Parameter": order,
+            f"Median {y2}": median[out_param],
+            f"Mean {y2}": mean[out_param],
+        }
+    )
+    sns.set(rc={"figure.figsize": (width, height), "text.usetex": latex})
+    fig = Figure()
+    ax = fig.subplots()
+    sns.scatterplot(
+        data=df,
+        x="Probability for high ranking",
+        y=f"{y} {y2}",
+        facecolor="k",
+        ax=ax,
+        s=dot_size,
+    )
+    sns.scatterplot(
+        data=df.nlargest(n=mark_top_n, columns=["Probability for high ranking"]),
+        x="Probability for high ranking",
+        y=f"{y} {y2}",
+        ax=ax,
+        s=dot_size,
+        hue="Parameter",
+        palette=top_params_c,
+        hue_order=top_params_order[out_param],
+    )
+    if title is not None:
+        _ = ax.set_title(title, fontsize=int(12 * font_scale))
+    ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
+    handles, labels = ax.get_legend_handles_labels()
+    leg = ax.legend(
+        handles, labels, fontsize=int(10 * font_scale), markerscale=font_scale
+    )
+    ax.set_xlabel("Probability for high ranking", fontsize=int(11 * font_scale))
+    ax.yaxis.get_offset_text().set_fontsize(int(11 * font_scale))
+    ax.set_ylabel(f"{y} {y2}", fontsize=int(11 * font_scale))
+    plt.tight_layout()
+    if filename is not None and save:
+        try:
+            i = 0
+            store_type = filename.split(".")[-1]
+            store_path = filename[0 : -len(store_type) - 1]
+            save_name = store_path + "_{:03d}.".format(i) + store_type
+            while os.path.isfile(save_name):
+                i = i + 1
+                save_name = store_path + "_{:03d}.".format(i) + store_type
+            fig.savefig(save_name, bbox_inches="tight", dpi=300)
+        except:
+            print(f"Storing to {save_name} failed.", file=sys.stderr)
+    return fig
+
+
+def plot_rank_probs_interactive(ds):
+    """
+
+    Parameters
+    ----------
+    ds
+
+    Returns
+    -------
+
+    """
+    out_param = pn.widgets.Select(
+        name="Output Parameter",
+        value=ds["Output Parameter"].values[0],
+        options=ds["Output Parameter"].values.tolist(),
+    )
+    width_slider = pn.widgets.IntSlider(
+        name="Width in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=9,
+    )
+    height_slider = pn.widgets.IntSlider(
+        name="Height in inches",
+        start=3,
+        end=15,
+        step=1,
+        value=6,
+    )
+    title_widget = pn.widgets.TextInput(
+        name="Title",
+        placeholder="",
+    )
+    save_to_field = pn.widgets.TextInput(
+        value="Path/to/store/plot.png",
+    )
+    save_button = pn.widgets.Button(
+        name="Save Plot",
+        button_type="primary",
+    )
+    latex_button = pn.widgets.Toggle(
+        name="Latexify",
+        value=False,
+        button_type="success",
+    )
+    font_slider = pn.widgets.FloatSlider(
+        name="Scale fontsize",
+        start=0.2,
+        end=5,
+        step=0.1,
+        value=0.7,
+    )
+    flow_select = pn.widgets.Select(
+        name="Flow",
+        value=ds["flow"].values[0],
+        options=ds["flow"].values.tolist(),
+    )
+    phase_select = pn.widgets.Select(
+        name="Phase",
+        value=ds["phase"].values[0],
+        options=ds["phase"].values.tolist(),
+    )
+    dot_slider = pn.widgets.IntSlider(
+        name="Change the dot size",
+        start=1,
+        end=500,
+        step=2,
+        value=12,
+    )
+    median_toggle = pn.widgets.Toggle(
+        name="Show median instead of mean",
+        button_type="success",
+        value=True,
+    )
+    rank_toggle = pn.widgets.Toggle(
+        name="Show rank instead of avg impact",
+        button_type="success",
+    )
+    top_slider = pn.widgets.IntSlider(
+        name="Color the top n parameters",
+        start=1,
+        end=38,
+        step=1,
+        value=10,
+    )
+
+    plot_pane = pn.panel(
+        pn.bind(
+            plot_rank_probs,
+            ds=ds,
+            flow=flow_select,
+            phase=phase_select,
+            out_param=out_param,
+            median=median_toggle,
+            rank=rank_toggle,
+            mark_top_n=top_slider,
+            dot_size=dot_slider,
+            title=title_widget,
+            filename=save_to_field,
+            width=width_slider,
+            height=height_slider,
+            font_scale=font_slider,
+            save=save_button,
+            latex=latex_button,
+        ),
+    ).servable()
+
+    return pn.Column(
+        pn.Row(
+            width_slider,
+            height_slider,
+        ),
+        pn.Row(
+            save_to_field,
+            save_button,
+            latex_button,
+        ),
+        pn.Row(
+            flow_select,
+            phase_select,
+            out_param,
+        ),
+        pn.Row(
+            median_toggle,
+            rank_toggle,
+        ),
+        pn.Row(
+            top_slider,
+            font_slider,
+            dot_slider,
+        ),
+        plot_pane,
+    )
 
 
 if __name__ == "__main__":

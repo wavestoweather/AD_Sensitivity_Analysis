@@ -24,6 +24,11 @@ struct task_scheduler_t{
      */
     std::queue<checkpoint_t> checkpoint_queue;
     /**
+     * A queue of all checkpoints that had been sent but a MPI_Wait() for the
+     * corresponding request has not been done yet.
+     */
+    std::queue<checkpoint_t> checkpoint_sent_queue;
+    /**
      * A list of all ranks with 0 being busy and 1 free for work.
      * Rank 0 is allowed to set it as busy if it sends a task or allows
      * another rank to send a task.
@@ -38,11 +43,6 @@ struct task_scheduler_t{
      * work or found new one that could not be sent.
      */
     std::vector<int> work_available;
-
-    /**
-     * If 1 at idx then send work to process idx.
-     */
-    // std::vector<int> send_list;
 
     /**
      * Store the maximum ensemble id that had been created.
@@ -106,12 +106,19 @@ struct task_scheduler_t{
     int get_n_trajectories() const {return n_trajectories;}
     int get_n_processes() const {return n_processes;}
 
+    /**
+     * Wait until all checkpoints arrived that had been sent.
+     */
+    void check_sent_queue();
+
  private:
     bool static_scheduling;
     bool signal_sent;
     uint64_t n_ensembles;
     uint64_t n_trajectories;
     uint64_t n_processes;
+    MPI_Request request;
+    int all_done;
     /**
      * Only for rank 0. Checks for any available work on other
      * processes and signals them to send it.

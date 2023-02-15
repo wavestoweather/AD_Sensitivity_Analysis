@@ -67,12 +67,13 @@ class ProgressBar {
 #if !defined(TRACE_SAT) && !defined(TRACE_ENV) && !defined(TRACE_QV) && !defined(TRACE_QC) && !defined(TRACE_QR)
 #if !defined(TRACE_QS) && !defined(TRACE_QI) && !defined(TRACE_QG) && !defined(TRACE_QH)
         current_step++;
-        // std::cout << "update_every " << update_every
-        //     << "\ncurrent_step " << current_step
-        //     << "\nend_step " << end_step << "\n";
         if (update_every == 0) return;
         if (current_step%update_every != 0 && current_step != end_step) return;
         if (current_step == 0) return;
+        if (current_step > end_step) {
+            end_step = current_step + 1;
+            end_step_string = std::to_string(end_step);
+        }
         auto now = std::chrono::system_clock::now();
         double dt_total = ((std::chrono::duration<double>)(now - t_first)).count();
         // Get total time string
@@ -109,8 +110,13 @@ class ProgressBar {
         rem_string = rem_string + std::to_string(static_cast<int>(rem_time%60)) + "s";
 
         // Check how long the bar can be
-        if (right_string.length()+1+rem_string.length() > desc_width)
+        if (right_string.length()+1+rem_string.length() > desc_width) {
             desc_width = right_string.length() + rem_string.length();
+        } else {
+            while (right_string.length()+rem_string.length() < desc_width) {
+                rem_string = rem_string + " ";
+            }
+        }
         // Get the progressbar
         int bar_width_max = window_width-desc_width-1;
         double current_box = static_cast<double>(current_step)/static_cast<double>(end_step) * bar_width_max;

@@ -410,6 +410,7 @@ int netcdf_reader_t::read_buffer(
     const bool &start_over_env) {
     time_buffer_idx += step+start_time_idx-time_idx;
     time_idx = step+start_time_idx;
+//    bool did_i_buffer = false;
     // check if buffer needs to be reloaded
 #if defined B_EIGHT
     if (time_buffer_idx + 20 >= n_timesteps_buffer) {
@@ -418,6 +419,7 @@ int netcdf_reader_t::read_buffer(
 #endif
         buffer_params(ref_quant);
         time_buffer_idx = 0;
+//        did_i_buffer = true;
     }
 #ifdef TRACE_COMM
     std::cout << "read buffer: set time_buffer_idx: " << time_buffer_idx
@@ -553,9 +555,6 @@ int netcdf_reader_t::read_buffer(
 #endif
                 uint32_t j = 1;
                 while (check_invalid_buffer(buffer[Par_idx::ascent], j)) {
-//                while (time_idx+j <= n_timesteps_in && j < 11
-//                    && (std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j])
-//                    || std::isnan(buffer[Par_idx::pressure][time_buffer_idx+j]))) {
                     j++;
                     if (j == 11) break;
                 }
@@ -641,6 +640,8 @@ int netcdf_reader_t::read_buffer(
                     << "your dataset! Aborting now.\n";
                 SUCCESS_OR_DIE(INPUT_NAN_ERR);
 #endif
+
+//                SUCCESS_OR_DIE(INPUT_NAN_ERR);
             }
         }
     }
@@ -655,6 +656,18 @@ template<class float_t>
 void netcdf_reader_t::set_dims(
     const char *input_file,
     model_constants_t<float_t> &cc,
+    const int &simulation_mode) {
+
+    set_dims(input_file, simulation_mode);
+    if (simulation_mode != limited_time_ensembles) {
+        cc.n_ensembles = n_ensembles;
+        cc.max_n_trajs = n_trajectories;
+    }
+}
+
+
+void netcdf_reader_t::set_dims(
+    const char *input_file,
     const int &simulation_mode) {
     time_buffer_idx = 0;
     traj_idx = 0;
@@ -710,10 +723,7 @@ void netcdf_reader_t::set_dims(
                     << " which does not exist. ABORTING.\n";
         SUCCESS_OR_DIE(NC_TRAJ_IDX_ERR);
     }
-    if (simulation_mode != limited_time_ensembles) {
-        cc.n_ensembles = n_ensembles;
-        cc.max_n_trajs = n_trajectories;
-    }
+
     if (!already_open) {
         SUCCESS_OR_DIE(
             nc_inq_dimid(
@@ -733,7 +743,6 @@ void netcdf_reader_t::set_dims(
         size_t att_len;
         if (0 == nc_inq_att(ncid, varid[Par_idx::pressure], "units", NULL, &att_len)) {
             std::vector<char> att_val(att_len+1);
-//            char att_val[att_len+1];
             SUCCESS_OR_DIE(nc_get_att(
                 ncid, varid[Par_idx::pressure], "units", att_val.data()));
             att_val[att_len] = '\0';
@@ -846,7 +855,6 @@ void netcdf_reader_t::init_netcdf(
         nc_get_vara_double(
             ncid,
             varid_once[Par_once_idx::time],
-            // dimid[Dim_idx::time_dim_idx],
             startp2.data(),
             countp2.data(),
             time.data()));
@@ -854,14 +862,27 @@ void netcdf_reader_t::init_netcdf(
     cc.set_dt(time[1]-time[0], ref_quant);
 
     bool all_nan = true;
-    for (uint32_t i=0; i < rel_start_time.size(); i++) {
+    for (uint32_t i=0; i < rel_start_time.size()-1; i++) {
         if (std::isnan(rel_start_time[i])) continue;
         if (!std::isnan(start_time) && !checkpoint_flag) {
             // Calculate the needed index
-            start_time_idx = i + (start_time-rel_start_time[i])/cc.dt_traject;
+            if (rel_start_time[i+1] - rel_start_time[i] < cc.dt_traject) {
+                start_time_idx = i + (start_time - rel_start_time[i] * cc.dt_traject) / cc.dt_traject;
+            } else {
+                start_time_idx = i + (start_time - rel_start_time[i]) / cc.dt_traject;
+            }
+            all_nan = false;
+            break;
         } else if (checkpoint_flag && !std::isnan(start_time)) {
             // Calculate the needed index
-            start_time_idx = i + ceil(start_time-rel_start_time[i] + current_time)/cc.dt_traject;
+            if (rel_start_time[i+1] - rel_start_time[i] < cc.dt_traject) {
+                start_time_idx = i + ceil(start_time - rel_start_time[i]
+                        * cc.dt_traject + current_time) / cc.dt_traject;
+            } else {
+                start_time_idx = i + ceil(start_time - rel_start_time[i] + current_time) / cc.dt_traject;
+            }
+            all_nan = false;
+            break;
         }
         all_nan = false;
     }

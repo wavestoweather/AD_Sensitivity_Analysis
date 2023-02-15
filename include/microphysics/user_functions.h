@@ -7,7 +7,7 @@
 #include <cmath>
 #include <vector>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 #include "include/microphysics/constants.h"
 #include "include/microphysics/physical_parameterizations.h"
@@ -166,10 +166,33 @@ void saturation_adjust(
         do {
             i++;
             T_old = T_new;
+            p_vapor_sat = compute_pv(
+                T_new,
+                float_t(1),
+                get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                get_at(cc.constants, Cons_idx::p_sat_const_a),
+                get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                get_at(cc.constants, Cons_idx::p_sat_const_b));
+            rho_total = compute_rhoh(
+                p_prime, T_new, S,
+                get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                get_at(cc.constants, Cons_idx::p_sat_const_a),
+                get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                get_at(cc.constants, Cons_idx::p_sat_const_b),
+                get_at(cc.constants, Cons_idx::R_a),
+                get_at(cc.constants, Cons_idx::R_v));
             q_new = p_vapor_sat / (rho_total * get_at(cc.constants, Cons_idx::R_v) * T_new);
             dq_new_dT =  p_sat_const
                 / std::pow(T_new - get_at(cc.constants, Cons_idx::p_sat_const_b), 2)
                 - 1/T_new * q_new;
+            lat_heat_vapor = latent_heat_water(
+                T_new,
+                get_at(cc.constants, Cons_idx::L_wd),
+                get_at(cc.constants, Cons_idx::cv),
+                get_at(cc.constants, Cons_idx::cp),
+                get_at(cc.constants, Cons_idx::T_freeze),
+                get_at(cc.constants, Cons_idx::R_v),
+                get_at(cc.constants, Cons_idx::R_a));
             f = T_new - T_prime + lat_heat_vapor * (q_new - qv_prime);
             df_dT = 1 + lat_heat_vapor * dq_new_dT;
             T_new = T_new - f/df_dT;
@@ -208,6 +231,14 @@ void saturation_adjust(
             get_at(cc.constants, Cons_idx::p_sat_const_a),
             get_at(cc.constants, Cons_idx::T_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_const_b));
+        rho_total = compute_rhoh(
+                p_prime, T_new, S,
+                get_at(cc.constants, Cons_idx::p_sat_low_temp),
+                get_at(cc.constants, Cons_idx::p_sat_const_a),
+                get_at(cc.constants, Cons_idx::T_sat_low_temp),
+                get_at(cc.constants, Cons_idx::p_sat_const_b),
+                get_at(cc.constants, Cons_idx::R_a),
+                get_at(cc.constants, Cons_idx::R_v));
         float_t delta_q = p_vapor_sat / (rho_total * get_at(cc.constants, Cons_idx::R_v) * T_new);
         // I'm paranoid and this case should be in the other branch
         // of the if-clause.
@@ -1526,7 +1557,13 @@ void rain_evaporation_sb(
 #endif
 #ifdef TRACE_QV
         if (trace)
-            std::cout << "traj: " << cc.traj_id << " rain evaporation after Seifert (2008) dqv " << delta_qv << "\n";
+            std::cout << "traj: " << cc.traj_id << " rain evaporation after Seifert (2008) dqv " << delta_qv
+                << " g_d " << g_d << " Nr " << Nr << " mue " << mue
+                << " lambda " << lambda << " f_v " << f_v
+                << " s_sw " << s_sw
+                << " gamma_eva " << gamma_eva
+                << " x_r " << x_r
+                << "\n";
 #endif
         float_t delta_e = latent_heat_evap(T_prime) * delta_qv
             / specific_heat_water_vapor<float_t>();

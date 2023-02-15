@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 /** @defgroup constants Constants
  * Various constants for accessing data in the right order and model constants
@@ -132,6 +132,11 @@ typedef bool(*track_func)(const int&, const bool&);
  */
 #define limited_time_ensembles 4
 /**
+ * Input data are trajectories from a sensitivity simulation. Output is a
+ * regridded set.
+ */
+#define regrid_mode 5
+/**
  * Old:
  * Create a training set according to the configuration file. The output file contains
  * impact matrices M_ix, where x is the time in minutes until the impact is evaluated
@@ -147,8 +152,6 @@ typedef bool(*track_func)(const int&, const bool&);
  *
  */
 #define create_train_set 5
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Random generators
@@ -2739,12 +2742,12 @@ const uint32_t n_lookup_hr_dummy = 10;
 /**
  * Threshold for determining if a phase is an ice or mixed phase for cold hydrometeors.
  */
-const double ice_q_phase_threshold = 1e-14;
+const double ice_q_phase_threshold = 0.0;
 
 /**
  * Threshold for determining if a phase is an ice or mixed phase for cold hydrometeors.
  */
-const double ice_n_phase_threshold = 0.9999;
+const double ice_n_phase_threshold = 0.0;
 
 /**
  * Threshold for determining if a phase is a warm or mixed phase for cloud and rain droplets.

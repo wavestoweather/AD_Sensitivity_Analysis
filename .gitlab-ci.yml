@@ -17,7 +17,7 @@ black:
 lint:
   stage: Static Analysis CPP
   script:
-    - cpplint --linelength=120 --quiet --counting=toplevel --filter=-build/include_subdir,-readability/fn_size,-legal/copyright,-runtime/references,-runtime/arrays --recursive --exclude=src/scratch/*.cpp --exclude=build/* .
+    - cpplint --linelength=120 --quiet --counting=toplevel --filter=-build/include_subdir,-readability/fn_size,-legal/copyright,-runtime/references,-runtime/arrays,-build/c++11 --recursive --exclude=src/scratch/*.cpp --exclude=build/* .
   tags:
     - style
   allow_failure: false

@@ -120,7 +120,7 @@ def create_rank_traj_dataset(file_path, inoutflow_time=240, model_params=None):
     def get_phase(ds_tmp, phase):
         if phase == "any":
             return ds_tmp
-        if phase_type == str:
+        if phase_type == str or phase_type == object:
             phase_idx = phase
         else:
             phase_idx = np.argwhere(phases == phase)[0].item()
@@ -188,6 +188,8 @@ def create_rank_traj_dataset(file_path, inoutflow_time=240, model_params=None):
                 avg_ascent[f_i, traj_idx, phase_i] = avg_ascent_tmp[traj_idx]
                 asc600_steps[f_i, traj_idx, phase_i] = asc600_steps_tmp[traj_idx]
             for flow_i, flow in enumerate(coords["flow"]):
+                if inoutflow_time < 0 and flow != "any" and flow != "ascent":
+                    continue
                 ds_flow = get_flow(ds_phase, flow)
                 for out_p_i, out_p in enumerate(out_params_coord_id):
                     ds_out = ds_flow.sel({out_coord: out_p})
@@ -207,6 +209,10 @@ def create_rank_traj_dataset(file_path, inoutflow_time=240, model_params=None):
                                 model_parameter_index[param_pair[0]][
                                     out_p_i, f_i, traj_idx, phase_i, flow_i
                                 ] = worst_rank
+                            elif np.isnan(param_pair[1]):
+                                model_parameter_index[param_pair[0]][
+                                    out_p_i, f_i, traj_idx, phase_i, flow_i
+                                ] = 0
                             else:
                                 model_parameter_index[param_pair[0]][
                                     out_p_i, f_i, traj_idx, phase_i, flow_i
@@ -234,190 +240,6 @@ def create_rank_traj_dataset(file_path, inoutflow_time=240, model_params=None):
     return ds
 
 
-def create_rank_latex_table(ds, phase, flow):
-    """
-    Create multiple latex tables with median rank, median absolute deviation, mean rank, and standard deviation
-    for a given phase and flow.
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        Ranked index of each trajectory created by create_rank_traj_dataset().
-    phase : string
-        Name of the phase to use. Options are those in ds["phase"], which typically amounts to
-        "warm phase", "mixed phase", "ice phase", "any".
-    flow : string
-        Name of the 'flow' to use. Options are those in ds["flow"], which typically amounts to
-        "inflow", "ascent", "outflow", "any".
-
-    Returns
-    -------
-    Dictionary of raw strings (latex tables). The keys are the model state variables.
-    """
-    table_text = r"""
-    \begin{table}[ht]
-        \centering
-        \begin{tabular}{l|l|c|c|c|c}
-            \textbf{Model State Variable} & \textbf{{Parameter}} & \textbf{Median Rank} & \textbf{MAD} & \textbf{Mean Rank} & \textbf{STD} \\ \hline 
-    """
-    ds2 = ds.sel({"phase": phase, "flow": flow})
-    for o_p in ds["Output Parameter"]:
-        ds_op = ds2.sel({"Output Parameter": o_p})
-        table_text += f"        {latexify.parse_word(o_p.item()):<25}& "
-        p_i = 0
-        for param in ds:
-            if not "rank" in param:
-                continue
-
-            ds_op2 = ds_op[param]
-            ds_op2 = ds_op2.where(ds_op2 > 0)
-            med = ds_op2.median().item()
-            if med > 10 and ds_op2.mean().item() > 10:
-                continue
-            if np.isnan(med):
-                continue
-            mad = ds_op2 - med
-            mad = mad.median().item()
-            if p_i > 0:
-                table_text += "                                 & "
-            p_i += 1
-            word = latexify.parse_word(param[:-5]).replace(r"\partial ", "")
-            table_text += f"{word:<40}& "
-            table_text += (
-                f"{int(med):2d} & {int(mad):2d} & {ds_op2.mean().item():2.2f} & {ds_op2.std().item():2.2f}"
-                + r" \\"
-                + "\n"
-            )
-
-    table_text += r"""
-        \end{tabular}
-        \caption{"""
-    caption = "The median and median absolute deviation of the rank of each model parameter if we calculate the rank over all trajectories. Only those with median or mean lower than 11 are used."
-    if phase == "any":
-        caption += "Using any phase "
-    else:
-        caption += f"Using {phase} "
-    if flow == "any":
-        caption += "and inflow, outflow, and ascent."
-    else:
-        caption += f"and {flow}."
-    caption += f"Using {phase} phase and {flow} flow."
-    table_text += f"{caption}"
-    table_text += r"""}
-        \label{tab:analysis:rank_count}
-    \end{table}
-    """
-    return table_text
-
-
-def create_rank_latex_table_per_outp(ds, col, only_n=None):
-    """
-    Create multiple latex tables with the statistic defined in col. The table shows the statistic for any combination
-    of flow and phase. Each table is the impact on a different model state variable.
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        Ranked index of each trajectory created by create_rank_traj_dataset().
-    col : string
-        Define which statistic shall be shown. Options are "Median Rank", "Mean Rank", "MAD", "STD". If the
-        string is not recognized, it defaults to "STD".
-    only_n : int
-        Show only model parameters that have a rank lower than 'only_n'.
-
-    Returns
-    -------
-    Dictionary of raw strings (latex tables). The keys are the model state variables.
-    """
-    tables = {}
-    phases = ["warm phase", "mixed phase", "ice phase"]
-    flows = ["inflow", "ascent", "outflow"]
-    for o_p in ds["Output Parameter"]:
-        ds_op = ds.sel({"Output Parameter": o_p})
-
-        table_text = r"""
-\begin{table}[ht]
-    \centering
-    \begin{tabular}{l|c|c|c}
-        \multirow{3}*{\textbf{{Parameter}}}     & \multicolumn{3}{c}{\textbf{"""
-        table_text += f"{col}"
-        table_text += r"""}} \\ \cline{2-4} 
-                                                & inflow & ascent & outflow \\ \cline{2-4} 
-                                                & wp, mp, ip & wp, mp, ip & wp, mp, ip \\ \hline
-"""
-        for param in ds:
-            if not "rank" in param:
-                continue
-            row_vals = "        "
-            word = latexify.parse_word(param[:-5]).replace(r"\partial ", "")
-            row_vals += f"{word:<40}& "
-            got_valid = False
-            for flow in flows:
-                ds_flow = ds_op.sel({"flow": flow})
-                for phase_i, phase in enumerate(phases):
-                    ds2 = ds_flow.sel({"phase": phase})
-                    ds_op2 = ds2[param]
-                    ds_op2 = ds_op2.where(ds_op2 > 0)
-                    if col == "Median Rank":
-                        val = ds_op2.median().item()
-                        if only_n is None:
-                            got_valid = True
-                        elif only_n >= val:
-                            got_valid = True
-                    elif col == "Mean Rank":
-                        val = ds_op2.mean().item()
-                        if only_n is None:
-                            got_valid = True
-                        elif only_n >= val:
-                            got_valid = True
-                    elif col == "MAD":
-                        got_valid = True
-                        med = ds_op2.median().item()
-                        diff = ds_op2 - med
-                        diff = np.sort(diff.values.flatten())
-                        diff = diff[~np.isnan(diff)]
-                        if len(diff) == 0:
-                            val = np.nan
-                        elif len(diff) % 2 == 0:
-                            val = (diff[len(diff) // 2] + diff[len(diff) // 2 - 1]) / 2
-                        else:
-                            val = diff[len(diff) // 2]
-                    else:
-                        val = ds_op2.std().item()
-
-                    if np.isnan(val):
-                        row_vals += " -"
-                    else:
-                        if col == "Median Rank":
-                            row_vals += f"{int(val):02d}"
-                        else:
-                            row_vals += f"{val:2.2f}"
-
-                    if phase_i < len(phases) - 1:
-                        row_vals += ", "
-                    elif flow != "outflow":
-                        row_vals += " & "
-            if got_valid:
-                table_text += row_vals + r" \\" + "\n"
-
-        table_text += r"""
-    \end{tabular}
-    \caption{"""
-        caption = "The median and median absolute deviation of the rank of each model parameter if we calculate the rank over all trajectories. "
-        caption += "Only those with median or mean lower than 11 are used. Distinction with different phases. "
-        caption += "wp = warm phase, mp = mixed phase, ip = ice phase. "
-        caption += f"Impact on {latexify.parse_word(o_p.item())} is used here."
-        table_text += f"{caption}"
-        table_text += r"""}
-            \label{tab:analysis:rank_count_variations_"""
-        table_text += f"{o_p.item()}"
-        table_text += """}
-\end{table}
-        """
-        tables[o_p.item()] = table_text
-    return tables
-
-
 def plot_kde_histogram(
     ds,
     in_params,
@@ -431,6 +253,7 @@ def plot_kde_histogram(
     filename=None,
     width=17,
     height=16,
+    common_norm=False,
     font_scale=None,
     save=True,
     latex=False,
@@ -465,13 +288,14 @@ def plot_kde_histogram(
         Width in inches
     height : float
         Height in inches
+    common_norm : bool
+        All densities sum up to one if true
     font_scale : float
         Scale the fontsize for the title, labels and ticks.
     save : bool
         Used for interactive plotting. If the save button is pressed (=True) then store to the given file path.
     latex : bool
-        Use latex names for any title or axis. Otherwise use the
-        code names of variables and such.
+        Use latex font.
 
     Returns
     -------
@@ -485,7 +309,6 @@ def plot_kde_histogram(
     }
 
     ds_tmp = ds.sel({"Output Parameter": out_param}).drop("Output Parameter")
-    common_norm = False  # All densities sum up to one if true
     df = ds_tmp[in_params].to_dataframe().stack().reset_index()
     df = df.rename(columns={"level_4": "Parameter", 0: "Rank"})
     df = df.loc[df["Rank"] > 0]
@@ -595,13 +418,15 @@ def plot_kde_histogram(
                 )
         ax.get_legend().remove()
         handles, labels = ax.get_legend_handles_labels()
-        leg = ax.legend(handles, new_labels, fontsize=int(10 * font_scale))
+        leg = ax.legend(handles, new_labels, fontsize=int(9 * font_scale))
     elif phase:
         df = df.loc[
             (df["phase"] != "any")
             & (df["phase"] != "neutral phase")
             & (df["flow"] == "any")
         ]
+        if df.empty:
+            return
         phase_hue_order = np.sort(np.unique(df["phase"]))
         _ = sns.kdeplot(
             data=df,
@@ -621,7 +446,12 @@ def plot_kde_histogram(
             vals = np.unique(df.loc[df["phase"] == phase]["Rank"])
             if len(vals) == 1:
                 ax.axvline(x=vals[0], color=phase_colors[phase])
-
+        # new_labels = []
+        # for l in phase_hue_order[::-1]:
+        #     new_labels.append(l)
+        plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+        plt.setp(ax.get_legend().get_title(), fontsize=int(10 * font_scale))
+        # leg = ax.legend(new_labels, fontsize=int(9 * font_scale))
     elif flow:
         df = df.loc[df["phase"] == "any"]
         param_hue_order = np.sort(np.unique(df["Parameter"]))
@@ -645,7 +475,7 @@ def plot_kde_histogram(
                 param in df_tmp["Parameter"].values
                 and len(np.unique(df_tmp.loc[df_tmp["Parameter"] == param]["Rank"])) > 1
             ):
-                new_labels.append(f"inflow {param}")
+                new_labels.append(f"inflow {latexify.parse_word(param[:-5])} rank")
         df_tmp = df.loc[df["flow"] == "ascent"]
         _ = sns.kdeplot(
             data=df_tmp,
@@ -665,7 +495,7 @@ def plot_kde_histogram(
                 param in df_tmp["Parameter"].values
                 and len(np.unique(df_tmp.loc[df_tmp["Parameter"] == param]["Rank"])) > 1
             ):
-                new_labels.append(f"ascent {param}")
+                new_labels.append(f"ascent {latexify.parse_word(param[:-5])} rank")
         df_tmp = df.loc[df["flow"] == "outflow"]
         _ = sns.kdeplot(
             data=df_tmp,
@@ -685,16 +515,25 @@ def plot_kde_histogram(
                 param in df_tmp["Parameter"].values
                 and len(np.unique(df_tmp.loc[df_tmp["Parameter"] == param]["Rank"])) > 1
             ):
-                new_labels.append(f"outflow {param}")
+                new_labels.append(f"outflow {latexify.parse_word(param[:-5])} rank")
         ax.get_legend().remove()
         handles, labels = ax.get_legend_handles_labels()
-        leg = ax.legend(handles, new_labels, fontsize=int(10 * font_scale))
-
+        leg = ax.legend(handles, new_labels, fontsize=int(9 * font_scale))
     else:
-        param_hue_order = np.sort(np.unique(df["Parameter"]))
+        param_hue_order_tmp = np.sort(np.unique(df["Parameter"]))
         df = df.loc[df["phase"] == "any"]
+        df = df.loc[df["flow"] == "any"]
+        param_hue_order = []
+        for p in param_hue_order_tmp:
+            vals = np.unique(df.loc[df["Parameter"] == p]["Rank"])
+            if len(vals) == 1 and (0 in vals or worst_rank in vals):
+                continue
+            elif len(vals) == 2 and (0 in vals and worst_rank in vals):
+                continue
+            param_hue_order.append(p)
+        df = df.loc[df["Parameter"].isin(param_hue_order)]
         _ = sns.kdeplot(
-            data=df.loc[df["flow"] == "any"],
+            data=df,
             x="Rank",
             hue="Parameter",
             hue_order=param_hue_order,
@@ -705,6 +544,11 @@ def plot_kde_histogram(
             bw_adjust=bw_adjust,
             clip=(1, worst_rank),
         )
+        new_labels = []
+        for l in param_hue_order[::-1]:
+            new_labels.append(latexify.parse_word(l[:-5]))
+            new_labels[-1] += " rank"
+        leg = ax.legend(new_labels, fontsize=int(9 * font_scale))
 
     if font_scale is None:
         _ = ax.set_title(title)
@@ -732,9 +576,10 @@ def plot_kde_histogram(
     return fig
 
 
-def get_corr_matrix(
+def get_matrix(
     ds,
     store_path=None,
+    corr=True,
     verbose=False,
 ):
     """
@@ -745,13 +590,15 @@ def get_corr_matrix(
         Dataset with ranks per trajectory created by create_rank_traj_dataset().
     store_path : string
         If a store path is given then dumps the correlation matrix to f'{store_path}_correlation_matrix_per_traj.pkl'.
+    corr : bool
+        If true, calculate the Pearson correlation. Otherwise, calculate the covariance.
     verbose : bool
         Print progressbars.
 
     Returns
     -------
-    Dictionary with output parameter, flow, and phase as keys and values are correlation matrices. Also a list of
-    model parameter names for each column/row.
+    Dictionary with output parameter, flow, and phase as keys and values are correlation/covariance matrices.
+    Also a list of model parameter names for each column/row.
     """
     n = len(ds)
 
@@ -772,14 +619,28 @@ def get_corr_matrix(
                 for i, col in enumerate(
                     tqdm(col_names, leave=False) if verbose else col_names
                 ):
+                    if "rank" in col:
+                        ds_tmp4 = ds_tmp3.where(ds_tmp3[col] > 0)
+                    else:
+                        ds_tmp4 = ds_tmp3
                     for j, col2 in enumerate(col_names):
-                        corr_matrix[out_p.item()][flow.item()][phase.item()][
-                            i, j
-                        ] = xr.cov(ds_tmp3[col], ds_tmp3[col2]).item()
+                        if "rank" in col2:
+                            ds_tmp5 = ds_tmp4.where(ds_tmp4[col2] > 0)
+                        else:
+                            ds_tmp5 = ds_tmp4
+                        if corr:
+                            val = xr.corr(ds_tmp5[col], ds_tmp5[col2]).item()
+                        else:
+                            val = xr.cov(ds_tmp5[col], ds_tmp5[col2]).item()
+                        corr_matrix[out_p.item()][flow.item()][phase.item()][i, j] = val
     if store_path is not None:
         corr_and_names = {"correlation": corr_matrix, "column names": col_names}
-        with open(store_path + "_correlation_matrix_per_traj.pkl", "wb") as f:
-            pickle.dump(corr_and_names, f)
+        if corr:
+            with open(store_path + "_correlation_matrix_per_traj.pkl", "wb") as f:
+                pickle.dump(corr_and_names, f)
+        else:
+            with open(store_path + "_covariance_matrix_per_traj.pkl", "wb") as f:
+                pickle.dump(corr_and_names, f)
     return corr_matrix, col_names
 
 
@@ -874,6 +735,10 @@ def plot_kde_histogram_interactive(ds):
         name="Ignore zero gradients",
         button_type="success",
     )
+    common_toggle = pn.widgets.Toggle(
+        name="Common norm",
+        button_type="success",
+    )
 
     plot_pane = pn.panel(
         pn.bind(
@@ -890,6 +755,7 @@ def plot_kde_histogram_interactive(ds):
             filename=save_to_field,
             width=width_slider,
             height=height_slider,
+            common_norm=common_toggle,
             font_scale=font_slider,
             save=save_button,
             latex=latex_button,
@@ -914,7 +780,10 @@ def plot_kde_histogram_interactive(ds):
         ),
         pn.Row(
             in_params,
-            out_param,
+            pn.Column(
+                out_param,
+                common_toggle,
+            ),
         ),
         pn.Row(
             line_slider,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "codi.hpp"
+#include <codi.hpp>
 
 /**
  * Struct to hold model constants for particle collection that we *usually*

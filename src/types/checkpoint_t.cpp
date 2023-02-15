@@ -133,9 +133,7 @@ void checkpoint_t::print_checkpoint() {
 
 void checkpoint_t::send_checkpoint(
     const int send_id) {
-    MPI_Request request;
-    std::string s = checkpoint.dump();
-
+    s = checkpoint.dump();
     SUCCESS_OR_DIE(
         MPI_Isend(
             s.c_str(),
@@ -158,32 +156,34 @@ bool checkpoint_t::receive_checkpoint() {
             MPI_COMM_WORLD,
             &got_something,
             &status));
+
     if (!got_something) return got_something;
     SUCCESS_OR_DIE(
         MPI_Get_count(
             &status,
             MPI_CHAR,
             &count));
-    // get source tag
     char *buff = new char[count];
     SUCCESS_OR_DIE(
-        MPI_Recv(
+        MPI_Irecv(
             buff,
             count,
             MPI_CHAR,
             status.MPI_SOURCE,
             CHECKPOINT_MESSAGE,
             MPI_COMM_WORLD,
-            MPI_STATUS_IGNORE));
+            &request));
+    MPI_Wait(&request, &status);
     std::istringstream stream(std::string(buff, count));
-
     try {
         checkpoint.clear();
         stream >> checkpoint;
     } catch (...) {
         std::cout << "receive checkpoint failed: \n"
-        << buff << "\ncount: " << count << "\n"
-        << "from " << status.MPI_SOURCE << "\n";
+        << std::string(buff, count) << "\ncount: " << count << "\n"
+        << "from " << status.MPI_SOURCE
+        << " with tag " << status.MPI_TAG << "\n";
+        SUCCESS_OR_DIE(PERTURB_ERR);
     }
     delete [] buff;
     return got_something;
