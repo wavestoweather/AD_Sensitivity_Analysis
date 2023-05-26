@@ -410,7 +410,7 @@ int netcdf_reader_t::read_buffer(
     const bool &start_over_env) {
     time_buffer_idx += step+start_time_idx-time_idx;
     time_idx = step+start_time_idx;
-//    bool did_i_buffer = false;
+
     // check if buffer needs to be reloaded
 #if defined B_EIGHT
     if (time_buffer_idx + 20 >= n_timesteps_buffer) {
@@ -419,7 +419,6 @@ int netcdf_reader_t::read_buffer(
 #endif
         buffer_params(ref_quant);
         time_buffer_idx = 0;
-//        did_i_buffer = true;
     }
 #ifdef TRACE_COMM
     std::cout << "read buffer: set time_buffer_idx: " << time_buffer_idx
@@ -436,6 +435,8 @@ int netcdf_reader_t::read_buffer(
     y_single_old[Nr_out_idx] = 0;
     y_single_old[Ng_out_idx] = 0;
     y_single_old[Nh_out_idx] = 0;
+    // Reset precipitation efficiency
+    y_single_old[out_eff_idx] = 0;
 
     int err = SUCCESS;
 
@@ -443,7 +444,6 @@ int netcdf_reader_t::read_buffer(
     if ((step == 0 && !checkpoint_flag) || start_over_env) {
         uint32_t i = 0;
         while (check_invalid_buffer(buffer[Par_idx::pressure], i)) {
-//        while (time_idx+i <= n_timesteps_in && std::isnan(buffer[Par_idx::pressure][time_buffer_idx+i])) {
             i++;
             if (i == 11) {
 #ifdef TRUSTED_DATA
@@ -480,7 +480,7 @@ int netcdf_reader_t::read_buffer(
             inflows[qv_in_idx] = 0;
 #endif
             y_single_old[w_idx] = 0;
-            cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
+            cc.set_dw_polynomial(0, 0, 0, 0, 0);
         } else if (i > 0) {
 #ifdef DEVELOP
             std::cout << "read buffer: write at " << time_buffer_idx+i
@@ -545,7 +545,7 @@ int netcdf_reader_t::read_buffer(
             std::cout << " test \n";
 #endif
             if (time_idx == n_timesteps_in) {
-                cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
+                cc.set_dw_polynomial(buffer[Par_idx::ascent][time_buffer_idx], 0, 0, 0, 0);
             } else {
                 // Here we need to find the next valid w value again
                 // Unfortunately, some datasets may fill w with zeros instead of NaNs
@@ -558,15 +558,32 @@ int netcdf_reader_t::read_buffer(
                     j++;
                     if (j == 11) break;
                 }
+                uint32_t j2 = j+1;
+                while (check_invalid_buffer(buffer[Par_idx::ascent], j2)) {
+                    j2++;
+                    if (j2 == 11) break;
+                }
 #ifdef DEVELOP
                 std::cout << " test 3\n";
 #endif
+                // Only NaNs
                 if (j == 11 || std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j])) {
-                    cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
+                    cc.set_dw_polynomial(buffer[Par_idx::ascent][time_buffer_idx], 0, 0, 0, 0);
+                } else if (j2 == 1 || std::isnan(buffer[Par_idx::ascent][time_buffer_idx+j2])) {
+                    // Only one more valid datapoint
+                    cc.set_dw_polynomial(
+                            buffer[Par_idx::ascent][time_buffer_idx],
+                            buffer[Par_idx::ascent][time_buffer_idx+j],
+                            0,
+                            j*cc.dt_traject_prime,
+                            0);
                 } else {
-                    cc.constants[static_cast<int>(Cons_idx::dw)] = (
-                        (buffer[Par_idx::ascent][time_buffer_idx+j] - buffer[Par_idx::ascent][time_buffer_idx])
-                        / (cc.dt*cc.num_sub_steps*j));
+                    cc.set_dw_polynomial(
+                        buffer[Par_idx::ascent][time_buffer_idx],
+                        buffer[Par_idx::ascent][time_buffer_idx+j],
+                        buffer[Par_idx::ascent][time_buffer_idx+j2],
+                        j*cc.dt_traject_prime,
+                        (j2-j)*cc.dt_traject_prime);
 #ifdef DEVELOP
                     std::cout << " test 4\n";
 #endif
@@ -628,7 +645,7 @@ int netcdf_reader_t::read_buffer(
                 v = std::abs(v);
             }
         }
-        for (auto &v : y_single_old) {
+        for (const auto &v : y_single_old) {
             if (std::isnan(v)) {
 #ifdef TRUSTED_DATA
                 err = INPUT_NAN_ERR;
@@ -640,14 +657,42 @@ int netcdf_reader_t::read_buffer(
                     << "your dataset! Aborting now.\n";
                 SUCCESS_OR_DIE(INPUT_NAN_ERR);
 #endif
-
-//                SUCCESS_OR_DIE(INPUT_NAN_ERR);
             }
         }
     }
 #ifdef DEVELOP
     std::cout << " test end\n";
 #endif
+    if (inflows[qr_in_idx] > 0 && inflows[Nr_in_idx] == 0) {
+        auto avg_size = get_at(cc.rain.constants, Particle_cons_idx::min_x) + (
+            get_at(cc.rain.constants, Particle_cons_idx::max_x)
+            - get_at(cc.rain.constants, Particle_cons_idx::min_x)) / 2;
+        inflows[Nr_in_idx] = inflows[qr_in_idx] / avg_size;
+    }
+    if (inflows[qi_in_idx] > 0 && inflows[Ni_in_idx] == 0) {
+        auto avg_size = get_at(cc.ice.constants, Particle_cons_idx::min_x) + (
+            get_at(cc.ice.constants, Particle_cons_idx::max_x)
+            - get_at(cc.ice.constants, Particle_cons_idx::min_x)) / 2;
+        inflows[Ni_in_idx] = inflows[qi_in_idx] / avg_size;
+    }
+    if (inflows[qs_in_idx] > 0 && inflows[Ns_in_idx] == 0) {
+        auto avg_size = get_at(cc.snow.constants, Particle_cons_idx::min_x) + (
+            get_at(cc.snow.constants, Particle_cons_idx::max_x)
+            - get_at(cc.snow.constants, Particle_cons_idx::min_x)) / 2;
+        inflows[Ns_in_idx] = inflows[qs_in_idx] / avg_size;
+    }
+    if (inflows[qg_in_idx] > 0 && inflows[Ng_in_idx] == 0) {
+        auto avg_size = get_at(cc.graupel.constants, Particle_cons_idx::min_x) + (
+            get_at(cc.graupel.constants, Particle_cons_idx::max_x)
+            - get_at(cc.graupel.constants, Particle_cons_idx::min_x)) / 2;
+        inflows[Ng_in_idx] = inflows[qg_in_idx] / avg_size;
+    }
+    if (inflows[qh_in_idx] > 0 && inflows[Nh_in_idx] == 0) {
+        auto avg_size = get_at(cc.hail.constants, Particle_cons_idx::min_x)
+            + (get_at(cc.hail.constants, Particle_cons_idx::max_x)
+            - get_at(cc.hail.constants, Particle_cons_idx::min_x)) / 2;
+        inflows[Nh_in_idx] = inflows[qh_in_idx] / avg_size;
+    }
     return err;
 }
 
@@ -860,38 +905,39 @@ void netcdf_reader_t::init_netcdf(
             time.data()));
 
     cc.set_dt(time[1]-time[0], ref_quant);
-
-    bool all_nan = true;
-    for (uint32_t i=0; i < rel_start_time.size()-1; i++) {
-        if (std::isnan(rel_start_time[i])) continue;
-        if (!std::isnan(start_time) && !checkpoint_flag) {
-            // Calculate the needed index
-            if (rel_start_time[i+1] - rel_start_time[i] < cc.dt_traject) {
-                start_time_idx = i + (start_time - rel_start_time[i] * cc.dt_traject) / cc.dt_traject;
-            } else {
-                start_time_idx = i + (start_time - rel_start_time[i]) / cc.dt_traject;
+    if (!this->start_time_idx_given) {
+        bool all_nan = true;
+        for (uint32_t i = 0; i < rel_start_time.size() - 1; i++) {
+            if (std::isnan(rel_start_time[i])) continue;
+            if (!std::isnan(start_time) && !checkpoint_flag) {
+                // Calculate the needed index
+                if (rel_start_time[i + 1] - rel_start_time[i] < cc.dt_traject) {
+                    start_time_idx = i + (start_time - rel_start_time[i] * cc.dt_traject) / cc.dt_traject;
+                } else {
+                    start_time_idx = i + (start_time - rel_start_time[i]) / cc.dt_traject;
+                }
+                all_nan = false;
+                break;
+            } else if (checkpoint_flag && !std::isnan(start_time)) {
+                // Calculate the needed index
+                if (rel_start_time[i + 1] - rel_start_time[i] < cc.dt_traject) {
+                    start_time_idx = i + ceil(start_time - rel_start_time[i]
+                                                           * cc.dt_traject + current_time) / cc.dt_traject;
+                } else {
+                    start_time_idx = i + ceil(start_time - rel_start_time[i] + current_time) / cc.dt_traject;
+                }
+                all_nan = false;
+                break;
             }
             all_nan = false;
-            break;
-        } else if (checkpoint_flag && !std::isnan(start_time)) {
-            // Calculate the needed index
-            if (rel_start_time[i+1] - rel_start_time[i] < cc.dt_traject) {
-                start_time_idx = i + ceil(start_time - rel_start_time[i]
-                        * cc.dt_traject + current_time) / cc.dt_traject;
-            } else {
-                start_time_idx = i + ceil(start_time - rel_start_time[i] + current_time) / cc.dt_traject;
-            }
-            all_nan = false;
-            break;
         }
-        all_nan = false;
-    }
-    if (all_nan) {
-        std::cerr << "Error at trajectory index " << traj_idx << "\n"
-            << " and time index " << time_idx << ".\n"
-            << "The first 10 values of the column 'time_after_asc_start' are "
-            << "NaN. Check your dataset. Aborting.\n";
-        SUCCESS_OR_DIE(NC_TRAJ_IDX_ERR);
+        if (all_nan) {
+            std::cerr << "Error at trajectory index " << traj_idx << "\n"
+                      << " and time index " << time_idx << ".\n"
+                      << "The first 10 values of the column 'time_after_asc_start' are "
+                      << "NaN. Check your dataset. Aborting.\n";
+            SUCCESS_OR_DIE(NC_TRAJ_IDX_ERR);
+        }
     }
     // Check if the index begins with non-NaN values to get started properly
     startp[1] = start_time_idx;
@@ -1154,9 +1200,15 @@ void netcdf_reader_t::read_initial_values(
         while (j < 11 && std::isnan(buffer[Par_idx::ascent][j])) {
             j++;
         }
+        uint32_t j2 = j+1;
+        while (check_invalid_buffer(buffer[Par_idx::ascent], j2)) {
+            j2++;
+            if (j2 == 11) break;
+        }
+        // Only NaNs
         if (j == 11) {
 #ifdef TRUSTED_DATA
-            cc.constants[static_cast<int>(Cons_idx::dw)] = 0;
+            cc.set_dw_polynomial(buffer[Par_idx::ascent][time_buffer_idx], 0, 0, 0, 0);
 #else
             std::cerr  << "Error at trajectory index " << traj_idx
                 << " and time index " << time_idx << ".\n"
@@ -1165,13 +1217,29 @@ void netcdf_reader_t::read_initial_values(
                 << "your dataset! Aborting now.\n";
             SUCCESS_OR_DIE(NC_TRAJ_IDX_ERR);
 #endif
+        } else if (j2 == 11) {
+            // Only one more valid datapoint
+            cc.set_dw_polynomial(
+                    buffer[Par_idx::ascent][0],
+                    buffer[Par_idx::ascent][j],
+                    0,
+                    j * cc.dt_traject_prime,
+                    0);
         } else {
-            double dw = (buffer[Par_idx::ascent][j] - buffer[Par_idx::ascent][0]);
-            cc.constants[static_cast<int>(Cons_idx::dw)] = dw / (cc.dt*cc.num_sub_steps*j);
+            cc.set_dw_polynomial(
+                buffer[Par_idx::ascent][0],
+                buffer[Par_idx::ascent][j],
+                buffer[Par_idx::ascent][j2],
+                j * cc.dt_traject_prime,
+                (j2-j) * cc.dt_traject_prime);
         }
     #else
-        double dw = buffer[Par_idx::ascent][1] - buffer[Par_idx::ascent][0];
-        cc.constants[static_cast<int>(Cons_idx::dw)] = dw / (cc.dt*cc.num_sub_steps);
+        cc.set_dw_polynomial(
+                    buffer[Par_idx::ascent][0],
+                    buffer[Par_idx::ascent][1],
+                    buffer[Par_idx::ascent][2],
+                    cc.dt_traject_prime,
+                    cc.dt_traject_prime);
     #endif
         y_init[n_inact_idx] = 0;
         y_init[depo_idx] = 0;

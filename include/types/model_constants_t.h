@@ -198,6 +198,10 @@ struct model_constants_t {
     const double alpha_r = 1.0/(br + 1.0 - nbr);   /*!< Constants for the IFS model. */
     const double epsilonr = 0.5*dr + 2.5 - nbr;   /*!< Constants for the IFS model. */
 
+    // Parameters to calculate the change in buoyancy
+    double poly2, poly1, poly0;
+    uint32_t current_w_poly_idx;
+
     // See constants.h for a description of those.
     std::array<float_t, static_cast<int>(Cons_idx::n_items)> constants;
 
@@ -385,8 +389,45 @@ struct model_constants_t {
         std::vector<uint64_t> &param_idx) const;
 #endif
 
+    /**
+     * Given three datapoints for the ascent velocity, fit
+     * a polynomial of degree 2. This is needed if the time step of the simulation
+     * is smaller than what is provided in the dataset.
+     *
+     * @param w0 Velocity [m/s] at the current time step.
+     * @param w1 Velocity [m/s] at the next valid time step.
+     * @param w2 Velocity [m/s] at the next valid time step after w1.
+     * @param offset_1 Time [s] between w0 and w1.
+     * @param offset_2 Time [s] between w1 and w2.
+     */
+    void set_dw_polynomial(
+        const double &w0,
+        const double &w1,
+        const double &w2,
+        const int &offset_1,
+        const int &offset_2);
 
-//  private:
+    /**
+     * Get the current change in ascent velocity.
+     *
+     * @return Change in ascent velocity [m/s^2]
+     */
+    double get_dw() const;
+
+    /**
+     * Get the current ascent velocity.
+     *
+     * @return Ascent velocity [m/s]
+     */
+    double get_w() const;
+
+    /**
+     * Needed between each sub step of the simulation to get the interpolated ascent velocity
+     * between two time steps of the provided dataset.
+     * This sets the current index that is used in get_dw() and get_w().
+     */
+    void increment_w_idx();
+
     /**
      * Used to switch on or off certain trackings.
      */

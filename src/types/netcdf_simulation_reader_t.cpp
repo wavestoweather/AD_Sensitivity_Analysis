@@ -110,9 +110,16 @@ void netcdf_simulation_reader_t::init_netcdf(
     startp2.push_back(0);  // time
     countp2.push_back(1);
     countp2.push_back(1);
-    countp2.push_back(n_traj_buffer);
-    countp2.push_back(n_timesteps_buffer);
-
+    if (n_traj_buffer > n_trajectories) {
+        countp2.push_back(n_trajectories);
+    } else {
+        countp2.push_back(n_traj_buffer);
+    }
+    if (n_timesteps_buffer > n_timesteps_in) {
+        countp2.push_back(n_timesteps_in);
+    } else {
+        countp2.push_back(n_timesteps_buffer);
+    }
     if (startp[1] + countp[1] >= n_trajectories) {
         countp[1] = n_trajectories - startp[1];
         countp2[2] = countp[1];
@@ -212,12 +219,12 @@ void netcdf_simulation_reader_t::init_netcdf(
         startp2[0] = o_id;
         for (uint32_t i = 0; i < Sens_par_idx::n_sens_pars; i++) {
             SUCCESS_OR_DIE(
-                    nc_get_vara_double(
-                            ncid,
-                            sensvarid[i],
-                            startp2.data(),
-                            countp2.data(),
-                            buffer_sens[i*3 + o_id].data()));
+                nc_get_vara_double(
+                    ncid,
+                    sensvarid[i],
+                    startp2.data(),
+                    countp2.data(),
+                    buffer_sens[i*3 + o_id].data()));
         }
     }
 //    }

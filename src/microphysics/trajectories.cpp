@@ -202,11 +202,13 @@ void substep_trace(
     const reference_quantities_t &ref_quant,
     const std::vector<float_t> &y_single_old,
     const std::vector<float_t> &inflow) {
-
 #if defined(TRACE_TIME)
 #if defined(MET3D)
-    trace = (((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) + input.start_time >= trace_start)
-        && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) + input.start_time <= trace_end));
+    double start_time = input.start_time;
+    if (std::isnan(start_time))
+        start_time = input.start_time_idx * cc.dt_prime;
+    trace = (((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) + start_time >= trace_start)
+        && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) + start_time <= trace_end));
 #else
     trace = (((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime)  >= trace_start)
         && ((sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime) <= trace_end));
@@ -214,7 +216,7 @@ void substep_trace(
 #endif
     if (trace)
         std::cout << "\n################################\n"
-                  << cc.id << " timestep : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime)
+                  << cc.id << " time : " << (sub*cc.dt_prime + t*cc.num_sub_steps*cc.dt_prime)
                   << "\n";
 #if defined(TRACE_SAT)
     if (trace)
@@ -481,6 +483,8 @@ void run_substeps(
 
     codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
     double time_old, time_new;
+    for (auto i = 0; i < sub_start; i++)
+        cc.increment_w_idx();
     for (uint32_t sub=sub_start; sub <= cc.num_sub_steps; ++sub) {
 #if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) \
     || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH) || defined(TRACE_TIME)
@@ -499,24 +503,37 @@ void run_substeps(
         tape.setActive();
 #if defined(FLUX) && !defined(WCB)
         //     Add the inflow
-        y_single_old[qr_idx] += inflow[qr_in_idx]/cc.num_sub_steps;
-        y_single_old[Nr_idx] += inflow[Nr_in_idx]/cc.num_sub_steps;
+        y_single_old[qr_idx] += inflow[qr_in_idx]/(cc.num_sub_steps + 1 - sub_start);
+        y_single_old[Nr_idx] += 0.1 * inflow[Nr_in_idx]/(cc.num_sub_steps + 1 - sub_start);
     #if defined(RK4ICE)
-        y_single_old[qi_idx] += inflow[qi_in_idx]/cc.num_sub_steps;
-        y_single_old[qs_idx] += inflow[qs_in_idx]/cc.num_sub_steps;
-        y_single_old[qg_idx] += inflow[qg_in_idx]/cc.num_sub_steps;
-        y_single_old[Ni_idx] += inflow[Ni_in_idx]/cc.num_sub_steps;
-        y_single_old[Ns_idx] += inflow[Ns_in_idx]/cc.num_sub_steps;
-        y_single_old[Ng_idx] += inflow[Ng_in_idx]/cc.num_sub_steps;
+        y_single_old[qi_idx] += inflow[qi_in_idx]/(cc.num_sub_steps + 1 - sub_start);
+        y_single_old[qs_idx] += inflow[qs_in_idx]/(cc.num_sub_steps + 1 - sub_start);
+        y_single_old[qg_idx] += inflow[qg_in_idx]/(cc.num_sub_steps + 1 - sub_start);
+        y_single_old[Ni_idx] += inflow[Ni_in_idx]/(cc.num_sub_steps + 1 - sub_start);
+        y_single_old[Ns_idx] += inflow[Ns_in_idx]/(cc.num_sub_steps + 1 - sub_start);
+        y_single_old[Ng_idx] += inflow[Ng_in_idx]/(cc.num_sub_steps + 1 - sub_start);
     #if defined(B_EIGHT)
-        y_single_old[qh_idx] += inflow[qh_in_idx]/cc.num_sub_steps;
-        y_single_old[Nh_idx] += inflow[Nh_in_idx]/cc.num_sub_steps;
+        y_single_old[qh_idx] += inflow[qh_in_idx]/(cc.num_sub_steps + 1 - sub_start);
+        y_single_old[Nh_idx] += inflow[Nh_in_idx]/(cc.num_sub_steps + 1 - sub_start);
     #endif
     #endif
 #endif
 #if defined MET3D && defined TURBULENCE
         y_single_old[qv_idx] += inflow[qv_in_idx]/cc.num_sub_steps;
 #endif
+        // Reset outflow
+        y_single_old[qi_out_idx] = 0;
+        y_single_old[qs_out_idx] = 0;
+        y_single_old[qr_out_idx] = 0;
+        y_single_old[qg_out_idx] = 0;
+        y_single_old[qh_out_idx] = 0;
+        y_single_old[Ni_out_idx] = 0;
+        y_single_old[Ns_out_idx] = 0;
+        y_single_old[Nr_out_idx] = 0;
+        y_single_old[Ng_out_idx] = 0;
+        y_single_old[Nh_out_idx] = 0;
+        // Reset precipitation efficiency
+        y_single_old[out_eff_idx] = 0;
         if (!input.track_initial_cond)
             cc.register_input(tape);
         // We always have to set the dependent model constants to get
@@ -626,6 +643,8 @@ void run_substeps(
     task_scheduler_t &scheduler,
     const double delay_out_time = 0) {
 
+    for (auto i = 0; i < sub_start; i++)
+        cc.increment_w_idx();
     double time_old, time_new;
     for (uint32_t sub=sub_start; sub <= cc.num_sub_steps; ++sub) {
 #if defined(TRACE_SAT) || defined(TRACE_QR) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_QI) \
@@ -661,6 +680,19 @@ void run_substeps(
 #if defined MET3D && defined TURBULENCE
         y_single_old[qv_idx] += inflow[qv_in_idx]/cc.num_sub_steps;
 #endif
+        // Reset outflow
+        y_single_old[qi_out_idx] = 0;
+        y_single_old[qs_out_idx] = 0;
+        y_single_old[qr_out_idx] = 0;
+        y_single_old[qg_out_idx] = 0;
+        y_single_old[qh_out_idx] = 0;
+        y_single_old[Ni_out_idx] = 0;
+        y_single_old[Ns_out_idx] = 0;
+        y_single_old[Nr_out_idx] = 0;
+        y_single_old[Ng_out_idx] = 0;
+        y_single_old[Nh_out_idx] = 0;
+        // Reset precipitation efficiency
+        y_single_old[out_eff_idx] = 0;
         // We always have to set the dependent model constants to get
         // the correct impact of the parameters on which those depend on.
         cc.setup_dependent_model_constants();

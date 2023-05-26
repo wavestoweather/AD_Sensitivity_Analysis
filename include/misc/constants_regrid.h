@@ -6,18 +6,23 @@
 #include <vector>
 
 #define DELTA_TIMESTEP 30
+/**
+ * Define the compression level. Level 9 is the best compression but level 6
+ * is much faster and uses something between 2 and 5 times as much space.
+ */
+#define COMPRESSION_LEVEL 6
 
-const std::array<std::string, 38> order_sens = {
-        "dkin_visc_air", "da_prime", "db_prime", "dc_prime", "da_v", "db_v", "drain_cmu3", "drain_nu",
-        "db_ccn_1", "db_ccn_2", "db_ccn_3", "dc_ccn_1", "dc_ccn_2", "dc_ccn_3", "dg_ccn_1", "dg_ccn_2", "dh_ccn_1",
-        "di_ccn_1", "dhande_ccn_fac",
-        "drain_a_geo", "drain_b_geo", "dsnow_a_geo", "dsnow_b_geo", "dice_a_geo", "dice_b_geo", "dgraupel_a_geo",
-        "dgraupel_b_geo",
-        "dcloud_b_vel", "drain_a_vel", "drain_b_vel", "dsnow_b_vel", "dice_b_vel", "dgraupel_a_vel",
-        "dgraupel_b_vel",
-        "dT_mult_min", "dp_sat_melt", "da_HET", "drain_mu"
+const std::array<std::string, 29> order_sens = {
+        "db_ccn_1", "db_ccn_2", "db_ccn_3", "db_v",
+        "dc_ccn_1", "dc_ccn_2", "dc_ccn_3", "dg_ccn_1",
+        "dgraupel_a_geo", "dgraupel_b_geo", "dgraupel_b_vel", "dh_ccn_1",
+        "dhande_ccn_fac", "di_ccn_1", "dice_a_geo", "dice_b_geo",
+        "dice_b_vel", "dkin_visc_air", "dp_sat_melt", "drain_a_geo",
+        "drain_a_vel", "drain_alpha", "drain_b_geo", "drain_b_vel",
+        "drain_beta", "drain_cmu3", "drain_mu", "drain_nu",
+        "dsnow_b_geo"
 };
-const std::array<std::string, 24> order_par = {
+const std::array<std::string, 26> order_par = {
         "pressure",
         "T",
         "w",
@@ -37,8 +42,8 @@ const std::array<std::string, 24> order_par = {
         "NCHAIL",
         "latent_heat",
         "latent_cool",
-//        "lat",
-//        "lon",
+        "lat",
+        "lon",
         "relative_lat",
         "relative_lon",
         "time_after_ascent",
@@ -72,9 +77,10 @@ enum Par_idx {
     cool,
     lat,
     lon,
+    rel_lat,
+    rel_lon,
     time_after_ascent,
     asc600,
-//    time_val,
     n_pars
 };
 
@@ -85,44 +91,35 @@ enum Misc_idx {
 };
 
 enum Sens_par_idx {
-    dkin_visc_air,
-    da_prime,
-    db_prime,
-    dc_prime,
-    da_v,
-    db_v,
-    drain_cmu3,
-    drain_nu,
     db_ccn_1,
     db_ccn_2,
     db_ccn_3,
+    db_v,
     dc_ccn_1,
     dc_ccn_2,
     dc_ccn_3,
     dg_ccn_1,
-    dg_ccn_2,
-    dh_ccn_1,
-    di_ccn_1,
-    dhande_ccn_fac,
-    drain_a_geo,
-    drain_b_geo,
-    dsnow_a_geo,
-    dsnow_b_geo,
-    dice_a_geo,
-    dice_b_geo,
     dgraupel_a_geo,
     dgraupel_b_geo,
-    dcloud_b_vel,
-    drain_a_vel,
-    drain_b_vel,
-    dsnow_b_vel,
-    dice_b_vel,
-    dgraupel_a_vel,
     dgraupel_b_vel,
-    dT_mult_min,
+    dh_ccn_1,
+    dhande_ccn_fac,
+    di_ccn_1,
+    dice_a_geo,
+    dice_b_geo,
+    dice_b_vel,
+    dkin_visc_air,
     dp_sat_melt,
-    da_HET,
+    drain_a_geo,
+    drain_a_vel,
+    drain_alpha,
+    drain_b_geo,
+    drain_b_vel,
+    drain_beta,
+    drain_cmu3,
     drain_mu,
+    drain_nu,
+    dsnow_b_geo,
     n_sens_pars
 };
 enum Dim_idx {

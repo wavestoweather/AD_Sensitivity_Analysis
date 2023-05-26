@@ -632,20 +632,9 @@ inline float_t convert_S_to_qv(float_t p,
     float_t T_sat_low_temp,
     float_t p_sat_const_b,
     float_t Epsilon) {
-// #ifdef B_EIGHT
-//     float_t r_d = 287.04;
-//     float_t r_v = 461.51;
-//     float_t qv_sat = r_d/r_v * saturation_pressure_water(
-        // T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
-//         / (p - (1-r_d/r_v)
-//             * saturation_pressure_water(
-        // T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b));
-//     return S*qv_sat*100.0;
-// #else
     return (Epsilon*(
         compute_pv(T, S, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
         / compute_pa(p, T, S, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)));
-// #endif
 }
 
 
@@ -696,19 +685,8 @@ inline float_t convert_qv_to_S(
     float_t T_sat_low_temp,
     float_t p_sat_const_b,
     float_t Epsilon) {
-// #ifdef B_EIGHT
-//     float_t r_d = 287.04;
-//     float_t r_v = 461.51;
-//     float_t qv_sat = r_d/r_v * saturation_pressure_water(
-        // T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)
-//         / (p - (1-r_d/r_v)
-//             * saturation_pressure_water(
-        // T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b));
-//     return qv/qv_sat/100.0;
-// #else
     return ((p*qv)/((Epsilon + qv)
         * saturation_pressure_water(T, p_sat_low_temp, p_sat_const_a, T_sat_low_temp, p_sat_const_b)));
-// #endif
 }
 
 

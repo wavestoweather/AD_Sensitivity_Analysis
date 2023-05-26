@@ -6,11 +6,10 @@ Welcome to AD with ICON and Processing Results' documentation!
 .. toctree::
    :maxdepth: 4
    :caption: Python Documentation
-
-   scripts/Deriv_dask
-   scripts/Deriv
-   scripts/plot_outcomes
-   scripts/Sim
+.. automodule::
+   data_handler/filter
+   data_handler.loader
+   data_handler.transform
 
 .. toctree::
    :maxdepth: 4

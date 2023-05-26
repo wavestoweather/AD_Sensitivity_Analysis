@@ -52,18 +52,25 @@ typedef bool(*track_func)(const int&, const bool&);
 #define n_inact_idx 30      /*!< Number of inactive nuclei (ie due to being activated before) */
 #define depo_idx 31         /*!< Number of deposited nuclei */
 #define sub_idx 32          /*!< Sublimination number */
+#define out_eff_idx 33          /*!< Precipitation efficiency */
+
+/**
+ * Define the compression level. Level 9 is the best compression but level 6
+ * is not much worse for trajectories and much faster.
+ */
+#define COMPRESSION_LEVEL 6
 
 #if defined(RK4_ONE_MOMENT)
 #define num_comp 9          /*!< Number of output elements of a model */
 #define num_par 12          /*!< Number of gradients */
 
 #elif defined(RK4ICE) || defined(RK4NOICE)
-#define num_comp 33         /*!< Number of output elements of a model */
-#if defined(B_EIGHT)
-#define num_par 473
+#define num_comp 34         /*!< Number of output elements of a model */
+#if defined(CCN_AKM)
+#define num_par 472
 #else
 /*!< Number of gradients. 56 for each particle + model constants + initial conditions (fromerly (56*6+134+18)) */
-#define num_par 464
+#define num_par 463
 #endif
 
 #endif
@@ -132,11 +139,6 @@ typedef bool(*track_func)(const int&, const bool&);
  */
 #define limited_time_ensembles 4
 /**
- * Input data are trajectories from a sensitivity simulation. Output is a
- * regridded set.
- */
-#define regrid_mode 5
-/**
  * Old:
  * Create a training set according to the configuration file. The output file contains
  * impact matrices M_ix, where x is the time in minutes until the impact is evaluated
@@ -165,12 +167,12 @@ extern std::mt19937 rand_generator;
 ////////////////////////////////////////////////////////////////////////////////
 extern bool trace;
 #if defined(TRACE_TIME)
-// Relative to ascent time
+// Relative to start time
 extern double trace_time;
 const double trace_start = 0;
-const double trace_end = 180;
+const double trace_end = 990;
 #endif
-
+#define artifact_thresh 5e-20
 #if defined(RK4_ONE_MOMENT)
 /**
  * Used for header files of output parameters.
@@ -191,7 +193,7 @@ const std::vector<std::string> output_par_idx = {
     "QI", "NCICE", "QS", "NCSNOW", "QG", "NCGRAUPEL", "QH", "NCHAIL",
     "QI_OUT", "QS_OUT", "QR_OUT", "QG_OUT", "QH_OUT",
     "latent_heat", "latent_cool", "NI_OUT", "NS_OUT", "NR_OUT",
-    "NG_OUT", "NH_OUT", "z", "Inactive", "deposition", "sublimination"};
+    "NG_OUT", "NH_OUT", "z", "Inactive", "deposition", "sublimination", "precipitation_efficiency"};
 #else
 /**
  * Used for header files of output parameters.
@@ -201,7 +203,7 @@ const std::vector<std::string> output_par_idx = {
     "qi", "Ni", "qs", "Ns", "qg", "Ng", "qh", "Nh",
     "qiout", "qsout", "qrout", "qgout", "qhout",
     "latent_heat", "latent_cool", "Niout", "Nsout", "Nrout",
-    "Ngout", "Nhout", "z", "Inactive", "deposition", "sublimination"};
+    "Ngout", "Nhout", "z", "Inactive", "deposition", "sublimination", "precipitation_efficiency"};
 #endif
 /**
  * Used for header files of gradients.
@@ -211,7 +213,8 @@ const std::vector<std::string> output_grad_idx = {
     "da_1", "da_2", "de_1", "de_2", "dd", "dN_c", "dgamma", "dbeta_c",
     "dbeta_r", "ddelta1", "ddelta2", "dzeta",
     "drain_gfak", "dcloud_k_au",
-    "dcloud_k_sc", "dkc_autocon", "dinv_z", "dw",
+    "dcloud_k_sc", "dkc_autocon", "dinv_z",
+//    "dw",
     "dq_crit_i", "dD_crit_i", "dD_conv_i", "dq_crit_r",
     "dD_crit_r", "dq_crit_fr", "dD_coll_c", "dq_crit",
     "dD_conv_sg", "dD_conv_ig", "dx_conv", "dparcel_height",
@@ -238,7 +241,7 @@ const std::vector<std::string> output_grad_idx = {
     "db_ccn_1", "db_ccn_2", "db_ccn_3", "db_ccn_4",
     "dc_ccn_1", "dc_ccn_2", "dc_ccn_3", "dc_ccn_4",
     "dd_ccn_1", "dd_ccn_2", "dd_ccn_3", "dd_ccn_4",
-#if defined(B_EIGHT)
+#if defined(CCN_AKM)
     "dp_ccn", "dh_ccn_1", "dh_ccn_2",
     "dg_ccn_1", "dg_ccn_2", "dg_ccn_3",
     "di_ccn_1", "di_ccn_2", "dhande_ccn_fac",
@@ -344,14 +347,18 @@ const std::vector<std::string> output_grad_idx = {
     "dsnow_b_f", "dsnow_alfa_n", "dsnow_alfa_q", "dsnow_lambda",
     "dsnow_vsedi_min", "dsnow_vsedi_max",
     // initial conditions
-    "dpressure_init", "dT_init", "dw_init", "dS_init", "dQC_init", "dQR_init",
+    "dpressure_init", "dT_init",
+//    "dw_init",
+    "dS_init", "dQC_init", "dQR_init",
     "dQV_init", "dNCCLOUD_init",  "dNCRAIN_init", "dQI_init", "dNCICE_init",
     "dQS_init", "dNCSNOW_init", "dQG_init", "dNCGRAUPEL_init", "dQH_init",
     "dNCHAIL_init", "dz_init"};
 #endif
 
 const std::vector<std::string> init_grad_idx = {
-    "dpressure_init", "dT_init", "dw_init", "dS_init", "dQC_init",
+    "dpressure_init", "dT_init",
+//    "dw_init",
+    "dS_init", "dQC_init",
     "dQR_init", "dQV_init", "dNCCLOUD_init", "dNCRAIN_init", "dQI_init",
     "dNCICE_init", "dQS_init", "dNCSNOW_init", "dQG_init", "dNCGRAUPEL_init",
     "dQH_init", "dNCHAIL_init", "dz_init"};
@@ -423,7 +430,7 @@ enum class Cons_idx: uint32_t{
      */
     inv_z,
 
-    dw, /*!< Change in buoancy */
+//    dw, /*!< Change in buoyancy */
     q_crit_i,
     D_crit_i,
     D_conv_i,
@@ -535,7 +542,7 @@ enum class Cons_idx: uint32_t{
     c_ccn_1, c_ccn_2, c_ccn_3, c_ccn_4,
     d_ccn_1, d_ccn_2, d_ccn_3, d_ccn_4,
 #endif
-#if defined(B_EIGHT)
+#if defined(CCN_AKM)
     p_ccn,
     h_ccn_1, h_ccn_2,
     g_ccn_1, g_ccn_2, g_ccn_3,
@@ -558,7 +565,9 @@ std::unordered_map<std::string, Cons_idx> const table_param = {
 #if defined(RK4ICE) || defined(RK4NOICE)
     {"rain_gfak", Cons_idx::rain_gfak}, {"cloud_k_au", Cons_idx::cloud_k_au},
     {"cloud_k_sc", Cons_idx::cloud_k_sc}, {"kc_autocon", Cons_idx::kc_autocon},
-    {"inv_z", Cons_idx::inv_z}, {"dw", Cons_idx::dw}, {"q_crit_i", Cons_idx::q_crit_i},
+    {"inv_z", Cons_idx::inv_z},
+//    {"dw", Cons_idx::dw},
+    {"q_crit_i", Cons_idx::q_crit_i},
     {"D_crit_i", Cons_idx::D_crit_i}, {"D_conv_i", Cons_idx::D_conv_i},
     {"q_crit_r", Cons_idx::q_crit_r}, {"D_crit_r", Cons_idx::D_crit_r},
     {"q_crit_fr", Cons_idx::q_crit_fr}, {"D_coll_c", Cons_idx::D_coll_c},
@@ -602,7 +611,7 @@ std::unordered_map<std::string, Cons_idx> const table_param = {
     {"d_ccn_1", Cons_idx::d_ccn_1}, {"d_ccn_2", Cons_idx::d_ccn_2},
     {"d_ccn_3", Cons_idx::d_ccn_3}, {"d_ccn_4", Cons_idx::d_ccn_4},
 #endif
-#if defined(B_EIGHT)
+#if defined(CCN_AKM)
     {"p_ccn", Cons_idx::p_ccn}, {"h_ccn_1", Cons_idx::h_ccn_1},
     {"h_ccn_2", Cons_idx::h_ccn_2},
     {"g_ccn_1", Cons_idx::g_ccn_1}, {"g_ccn_2", Cons_idx::g_ccn_2},
@@ -1929,7 +1938,7 @@ extern uint32_t auto_type;
  */
 const std::vector<double> a_ccn = {183230691.161, 0.10147358938,
                                 -0.2922395814, 229189886.226};
-#if defined(B_EIGHT)
+#if defined(CCN_AKM)
 /**
  * CCN activation after Hande et al (2016) and modified by Annette Miltenberger
  */

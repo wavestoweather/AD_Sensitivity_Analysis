@@ -3,13 +3,11 @@
 #include <cmath>
 #include <string>
 
-// #include <boost/property_tree/ptree.hpp>
 #include <nlohmann/json.hpp>
 
 #include "include/misc/error.h"
 #include "include/types/global_args_t.h"
 
-// namespace pt = boost::property_tree;
 
 /**
  * Structure to collect all input parameters.

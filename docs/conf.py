@@ -19,11 +19,11 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'Process and Plot Scripts'
-copyright = '2019, Maicon Hieronymus'
+copyright = '2023, Maicon Hieronymus'
 author = 'Maicon Hieronymus'
 
 # The full version, including alpha/beta/rc tags
-release = '1'
+release = '2.03'
 
 
 # -- General configuration ---------------------------------------------------

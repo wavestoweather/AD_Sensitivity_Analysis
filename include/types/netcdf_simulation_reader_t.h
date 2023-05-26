@@ -19,7 +19,7 @@ struct netcdf_simulation_reader_t {
     uint32_t n_timesteps_buffer; /*!< Number of time steps that can be stored in the buffer. */
     uint64_t n_traj_buffer; /*!< Number of trajectories that can be stored in the bufer. */
     double mem_usage; /*!< Memory usage in KBytes. */
-    uint64_t n_timesteps_in; /*!< Total number of time steps that can be read from the input file. */
+    size_t n_timesteps_in; /*!< Total number of time steps that can be read from the input file. */
     uint64_t read_time_buffer; /*!< Number of time steps that have been read. */
     /**
      *

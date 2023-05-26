@@ -692,7 +692,7 @@ void model_constants_t<float_t>::setup_model_constants(
     this->constants[static_cast<int>(Cons_idx::k_1_accr)] = k_1_accr;
     this->constants[static_cast<int>(Cons_idx::k_r)] = k_r;
 
-#if defined(B_EIGHT)
+#if defined(CCN_AKM)
     this->constants[static_cast<int>(Cons_idx::p_ccn)] = p_ccn;
     this->constants[static_cast<int>(Cons_idx::h_ccn_1)] = h_ccn_1;
     this->constants[static_cast<int>(Cons_idx::h_ccn_2)] = h_ccn_2;
@@ -1157,9 +1157,10 @@ void model_constants_t<float_t>::set_dt(
     const reference_quantities_t &ref_quant) {
     this->dt_traject_prime = dt_prime;
     this->dt_traject = this->dt_traject_prime/ref_quant.tref;
-    this->num_steps = ceil(this->t_end_prime/this->dt_traject_prime);
+    this->num_steps = floor(this->t_end_prime/this->dt_traject_prime);
     // The trajectories from input files are calculated with dt_traject_prime s timesteps.
-    this->num_sub_steps = (floor(this->dt_traject_prime/this->dt) < 1) ? 1 : floor(this->dt_traject_prime/this->dt);
+    this->num_sub_steps = (floor(this->dt_traject_prime/this->dt_prime) < 1) ?
+            1 : floor(this->dt_traject_prime/this->dt_prime);
     }
 
 template<class float_t>
@@ -1180,12 +1181,7 @@ void model_constants_t<float_t>::print(std::ostream &os) {
         << "Timestep = " << this->dt_prime << " seconds\n"
         << "Nondimensional timestep = " << this->dt << "\n"
         << "Number of iterations = " << this->num_steps << "\n"
-        << "Number of substeps = " << this->num_sub_steps << "\n"
-        << "a1_scale = " << this->a1_scale << "\n"
-        << "a2_scale = " << this->a2_scale << "\n"
-        << "e1_scale = " << this->e1_scale << "\n"
-        << "e2_scale = " << this->e2_scale << "\n"
-        << "d_scale = " << this->d_scale << "\n";
+        << "Number of substeps = " << this->num_sub_steps << "\n";
     for (auto const &t : table_param) {
         os << t.first << " = " << get_at(this->constants, t.second) << "\n";
     }
@@ -1270,7 +1266,7 @@ void model_constants_t<float_t>::load_configuration(
 #ifdef OUT_DOUBLE
 template<class float_t>
 void model_constants_t<float_t>::get_perturbed_info(
-    std::vector<float> &perturbed,
+    std::vector<double> &perturbed,
     std::vector<uint64_t> &param_idx) const {
 #else
 template<class float_t>
@@ -1318,6 +1314,48 @@ void model_constants_t<float_t>::get_perturbed_info(
         perturbed.push_back(hail.constants[idx].getValue());
         param_idx.push_back(idx + offset);
     }
+}
+
+template<class float_t>
+void model_constants_t<float_t>::set_dw_polynomial(
+    const double &w0,
+    const double &w1,
+    const double &w2,
+    const int &offset_1,
+    const int &offset_2
+    ) {
+    poly0 = w0;
+    if (offset_1 == 0 && offset_2 == 0) {
+        poly1 = 0;
+        poly2 = 0;
+    } else if (offset_2 == 0) {
+        poly1 = (w1-w0) / offset_1;
+        poly2 = 0;
+    } else {
+        // x0 is 0
+        double x1 = offset_1;
+        double x2 = offset_2 + x1;
+        poly2 = (w1 - w2*x1/x2 - w0 * (1-x1/x2)) / (x1*x1 - x2*x1);
+        poly1 = w1/x1 - poly2*x1 - w0/x1;
+    }
+    current_w_poly_idx = 0;
+}
+
+template<class float_t>
+double model_constants_t<float_t>::get_dw(
+) const {
+    return 2*poly2*current_w_poly_idx + poly1;
+}
+
+template<class float_t>
+void model_constants_t<float_t>::increment_w_idx() {
+    current_w_poly_idx += dt_prime;
+}
+
+template<class float_t>
+double model_constants_t<float_t>::get_w(
+) const {
+    return poly2*current_w_poly_idx*current_w_poly_idx + poly1*current_w_poly_idx + poly0;
 }
 
 template class model_constants_t<codi::RealReverse>;
