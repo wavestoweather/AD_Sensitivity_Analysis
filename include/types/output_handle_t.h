@@ -146,6 +146,7 @@ struct output_handle_t{
         inactive,
         dep,
         sub,
+        eff,
 
         time,
         trajectory,

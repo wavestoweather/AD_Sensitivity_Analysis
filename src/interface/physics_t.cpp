@@ -174,6 +174,23 @@ void physics_t::setup_model_constants() {
 void physics_t::set_limits(
     std::vector<codi::RealReverse> &y,
     model_constants_t<codi::RealReverse> &cc) {
+
+    // Set everything negative and very small to zero.
+    // Those should be artifacts from instantaneous processes
+    y[qv_idx] = (y[qv_idx] < artifact_thresh) ? 0 : y[qv_idx];
+    y[qc_idx] = (y[qc_idx] < artifact_thresh) ? 0 : y[qc_idx];
+    y[qr_idx] = (y[qr_idx] < artifact_thresh) ? 0 : y[qr_idx];
+    y[qs_idx] = (y[qs_idx] < artifact_thresh) ? 0 : y[qs_idx];
+    y[qi_idx] = (y[qi_idx] < artifact_thresh) ? 0 : y[qi_idx];
+    y[qg_idx] = (y[qg_idx] < artifact_thresh) ? 0 : y[qg_idx];
+    y[qh_idx] = (y[qh_idx] < artifact_thresh) ? 0 : y[qh_idx];
+    y[Nc_idx] = (y[Nc_idx] < artifact_thresh) ? 0 : y[Nc_idx];
+    y[Nr_idx] = (y[Nr_idx] < artifact_thresh) ? 0 : y[Nr_idx];
+    y[Ns_idx] = (y[Ns_idx] < artifact_thresh) ? 0 : y[Ns_idx];
+    y[Ni_idx] = (y[Ni_idx] < artifact_thresh) ? 0 : y[Ni_idx];
+    y[Ng_idx] = (y[Ng_idx] < artifact_thresh) ? 0 : y[Ng_idx];
+    y[Nh_idx] = (y[Nh_idx] < artifact_thresh) ? 0 : y[Nh_idx];
+
     if (nuc_type > 0)
         y[Nc_idx] = min(min(max(y[Nc_idx], y[qc_idx]/get_at(cc.cloud.constants, Particle_cons_idx::max_x)),
                             y[qc_idx]/get_at(cc.cloud.constants, Particle_cons_idx::min_x)), 5e9);
@@ -187,20 +204,6 @@ void physics_t::set_limits(
                     y[qg_idx]/get_at(cc.graupel.constants, Particle_cons_idx::min_x));
     y[Nh_idx] = min(max(y[Nh_idx], y[qh_idx]/get_at(cc.hail.constants, Particle_cons_idx::max_x)),
                     y[qh_idx]/get_at(cc.hail.constants, Particle_cons_idx::min_x));
-    // Set everything negative to zero
-    y[qv_idx] = (y[qv_idx] < 0) ? 0 : y[qv_idx];
-    y[qc_idx] = (y[qc_idx] < 0) ? 0 : y[qc_idx];
-    y[qr_idx] = (y[qr_idx] < 0) ? 0 : y[qr_idx];
-    y[qs_idx] = (y[qs_idx] < 0) ? 0 : y[qs_idx];
-    y[qi_idx] = (y[qi_idx] < 0) ? 0 : y[qi_idx];
-    y[qg_idx] = (y[qg_idx] < 0) ? 0 : y[qg_idx];
-    y[qh_idx] = (y[qh_idx] < 0) ? 0 : y[qh_idx];
-    y[Nc_idx] = (y[Nc_idx] < 0) ? 0 : y[Nc_idx];
-    y[Nr_idx] = (y[Nr_idx] < 0) ? 0 : y[Nr_idx];
-    y[Ns_idx] = (y[Ns_idx] < 0) ? 0 : y[Ns_idx];
-    y[Ni_idx] = (y[Ni_idx] < 0) ? 0 : y[Ni_idx];
-    y[Ng_idx] = (y[Ng_idx] < 0) ? 0 : y[Ng_idx];
-    y[Nh_idx] = (y[Nh_idx] < 0) ? 0 : y[Nh_idx];
 }
 
 
@@ -223,11 +226,12 @@ void physics_t::compute_nondimensional_effects(
                    + res[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp)
                    - get_at(cc.constants, Cons_idx::gravity_acc)
                    * w_prime/get_at(cc.constants, Cons_idx::cp)) / ref_quant.Tref;
-    res[w_idx] += get_at(cc.constants, Cons_idx::dw)/ref_quant.wref;
+    res[w_idx] += cc.get_dw()/ref_quant.wref;
+//    res[w_idx] += get_at(cc.constants, Cons_idx::dw)/ref_quant.wref;
     res[z_idx] += w_prime/ref_quant.zref;
 }
 
-
+#ifdef CCN_AKM
 void physics_t::py_ccn_act_hande_akm(
     const double p,
     const double w,
@@ -285,7 +289,7 @@ void physics_t::py_ccn_act_hande_akm(
 
     // k, yold, dt_sixth
     ccn_act_hande_akm(yold[p_idx], yold[w_idx], yold[T_idx], yold[qv_idx],
-                      yold[qc_idx], yold[Nc_idx], EPSILON, k, cc);
+                      yold[qc_idx], yold[Nc_idx], EPSILON, k, cc, cc.dt_half);
     compute_nondimensional_effects(
         k, yold[p_idx]/ref_quant.pref, yold[w_idx]/ref_quant.wref, yold[w_idx],
         yold[T_idx]/ref_quant.Tref, yold[qv_idx]/ref_quant.qref, yold[qv_idx]);
@@ -307,7 +311,7 @@ void physics_t::py_ccn_act_hande_akm(
     for (auto &kv : k) kv = 0;
     // k, ytmp, dt_third
     ccn_act_hande_akm(ytmp[p_idx], ytmp[w_idx], ytmp[T_idx], ytmp[qv_idx],
-                      ytmp[qc_idx], ytmp[Nc_idx], EPSILON, k, cc);
+                      ytmp[qc_idx], ytmp[Nc_idx], EPSILON, k, cc, cc.dt_half);
     compute_nondimensional_effects(
             k, ytmp[p_idx]/ref_quant.pref, ytmp[w_idx]/ref_quant.wref, ytmp[w_idx],
             ytmp[T_idx]/ref_quant.Tref, ytmp[qv_idx]/ref_quant.qref, ytmp[qv_idx]);
@@ -320,7 +324,7 @@ void physics_t::py_ccn_act_hande_akm(
     for (auto &kv : k) kv = 0;
     // k, ytmp, dt_third
     ccn_act_hande_akm(ytmp[p_idx], ytmp[w_idx], ytmp[T_idx], ytmp[qv_idx],
-                      ytmp[qc_idx], ytmp[Nc_idx], EPSILON, k, cc);
+                      ytmp[qc_idx], ytmp[Nc_idx], EPSILON, k, cc, cc.dt_half);
     compute_nondimensional_effects(
             k, ytmp[p_idx]/ref_quant.pref, ytmp[w_idx]/ref_quant.wref, ytmp[w_idx],
             ytmp[T_idx]/ref_quant.Tref, ytmp[qv_idx]/ref_quant.qref, ytmp[qv_idx]);
@@ -333,7 +337,7 @@ void physics_t::py_ccn_act_hande_akm(
     for (auto &kv : k) kv = 0;
     // k, ytmp, dt_sixth
     ccn_act_hande_akm(ytmp[p_idx], ytmp[w_idx], ytmp[T_idx], ytmp[qv_idx],
-                      ytmp[qc_idx], ytmp[Nc_idx], EPSILON, k, cc);
+                      ytmp[qc_idx], ytmp[Nc_idx], EPSILON, k, cc, cc.dt_half);
     compute_nondimensional_effects(
             k, ytmp[p_idx]/ref_quant.pref, ytmp[w_idx]/ref_quant.wref, ytmp[w_idx],
             ytmp[T_idx]/ref_quant.Tref, ytmp[qv_idx]/ref_quant.qref, ytmp[qv_idx]);
@@ -355,6 +359,7 @@ void physics_t::py_ccn_act_hande_akm(
     of.close();
 #endif
 }
+#endif
 
 void physics_t::py_graupel_melting(
     const double T,
@@ -374,7 +379,7 @@ void physics_t::py_graupel_melting(
     for (auto &kv : k) kv = 0;
     for (int ii = 0 ; ii < num_comp ; ii++)
         ynew[ii] = yold[ii];
-    graupel_melting(yold[qg_idx], yold[Ng_idx], yold[T_idx], k, cc);
+    graupel_melting(yold[qg_idx], yold[Ng_idx], yold[T_idx], k, cc, cc.dt_half);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                    + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -384,7 +389,7 @@ void physics_t::py_graupel_melting(
     set_limits(ytmp, cc);
 
     for (auto &kv : k) kv = 0;
-    graupel_melting(ytmp[qg_idx], ytmp[Ng_idx], ytmp[T_idx], k, cc);
+    graupel_melting(ytmp[qg_idx], ytmp[Ng_idx], ytmp[T_idx], k, cc, cc.dt_half);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -394,7 +399,7 @@ void physics_t::py_graupel_melting(
     set_limits(ytmp, cc);
 
     for (auto &kv : k) kv = 0;
-    graupel_melting(ytmp[qg_idx], ytmp[Ng_idx], ytmp[T_idx], k, cc);
+    graupel_melting(ytmp[qg_idx], ytmp[Ng_idx], ytmp[T_idx], k, cc, cc.dt_half);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -403,9 +408,8 @@ void physics_t::py_graupel_melting(
     }
     set_limits(ytmp, cc);
 
-    cc.dt_prime = cc.dt_sixth;
     for (auto &kv : k) kv = 0;
-    graupel_melting(ytmp[qg_idx], ytmp[Ng_idx], ytmp[T_idx], k, cc);
+    graupel_melting(ytmp[qg_idx], ytmp[Ng_idx], ytmp[T_idx], k, cc, cc.dt_half);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
 
@@ -522,12 +526,12 @@ void physics_t::py_riming_ice(
     for (int ii = 0 ; ii < num_comp ; ii++)
         ynew[ii] = yold[ii];
     riming_cloud_core(yold[qc_idx], yold[Nc_idx], yold[qi_idx], yold[Ni_idx],
-                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(yold[qr_idx], yold[Nr_idx], yold[qi_idx], yold[Ni_idx],
                      cc.ice, cc.coeffs_irr, rime_rate_qi, rime_rate_qr, rime_rate_nr, cc);
     ice_riming(yold[qc_idx], yold[Nc_idx], yold[qr_idx], yold[Nr_idx], yold[qi_idx], yold[Ni_idx],
                dep_rate_ice, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qi, yold[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qi, yold[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -539,12 +543,12 @@ void physics_t::py_riming_ice(
     dep_rate_ice = 0.0;
     for (auto &kv : k) kv = 0;
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qi_idx], ytmp[Ni_idx],
-                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                      cc.ice, cc.coeffs_irr, rime_rate_qi, rime_rate_qr, rime_rate_nr, cc);
     ice_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                dep_rate_ice, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qi, ytmp[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qi, ytmp[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -556,12 +560,12 @@ void physics_t::py_riming_ice(
     dep_rate_ice = 0.0;
     for (auto &kv : k) kv = 0;
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qi_idx], ytmp[Ni_idx],
-                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                      cc.ice, cc.coeffs_irr, rime_rate_qi, rime_rate_qr, rime_rate_nr, cc);
     ice_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                dep_rate_ice, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qi, ytmp[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qi, ytmp[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -571,15 +575,14 @@ void physics_t::py_riming_ice(
     set_limits(ytmp, cc);
 
     dep_rate_ice = 0.0;
-    cc.dt_prime = cc.dt_sixth;
     for (auto &kv : k) kv = 0;
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qi_idx], ytmp[Ni_idx],
-                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                      cc.ice, cc.coeffs_irr, rime_rate_qi, rime_rate_qr, rime_rate_nr, cc);
     ice_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                dep_rate_ice, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qi, ytmp[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qi, ytmp[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
 
@@ -621,12 +624,12 @@ void physics_t::py_riming_snow(
     for (int ii = 0 ; ii < num_comp ; ii++)
         ynew[ii] = yold[ii];
     riming_cloud_core(yold[qc_idx], yold[Nc_idx], yold[qs_idx], yold[Ns_idx],
-                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(yold[qr_idx], yold[Nr_idx], yold[qs_idx], yold[Ns_idx],
                      cc.snow, cc.coeffs_srr, rime_rate_qs, rime_rate_qr, rime_rate_nr, cc);
     snow_riming(yold[qc_idx], yold[Nc_idx], yold[qr_idx], yold[Nr_idx], yold[qs_idx], yold[Ns_idx],
                dep_rate_snow, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qs, yold[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qs, yold[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -638,12 +641,12 @@ void physics_t::py_riming_snow(
     dep_rate_snow = 0.0;
     for (auto &kv : k) kv = 0;
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qs_idx], ytmp[Ns_idx],
-                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                      cc.snow, cc.coeffs_srr, rime_rate_qs, rime_rate_qr, rime_rate_nr, cc);
     snow_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                dep_rate_snow, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qs, ytmp[T_idx], cc.dt, k, cc);
+               rime_rate_qs, ytmp[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -655,12 +658,12 @@ void physics_t::py_riming_snow(
     dep_rate_snow = 0.0;
     for (auto &kv : k) kv = 0;
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qs_idx], ytmp[Ns_idx],
-                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                      cc.snow, cc.coeffs_srr, rime_rate_qs, rime_rate_qr, rime_rate_nr, cc);
     snow_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                dep_rate_snow, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qs, ytmp[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qs, ytmp[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -670,15 +673,14 @@ void physics_t::py_riming_snow(
     set_limits(ytmp, cc);
 
     dep_rate_snow = 0.0;
-    cc.dt_prime = cc.dt_sixth;
     for (auto &kv : k) kv = 0;
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qs_idx], ytmp[Ns_idx],
-                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                      cc.snow, cc.coeffs_srr, rime_rate_qs, rime_rate_qr, rime_rate_nr, cc);
     snow_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                dep_rate_snow, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qs, ytmp[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qs, ytmp[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
 
@@ -755,21 +757,21 @@ void physics_t::py_riming_with_depo(
     vapor_dep_relaxation(yold[qv_idx], yold[qi_idx], yold[Ni_idx],
                          yold[qs_idx], yold[Ns_idx], yold[qg_idx], yold[Ng_idx],
                          yold[qh_idx], yold[Nh_idx], s_si, p_sat_ice, yold[p_idx],
-                         yold[T_idx], EPSILON, dep_rate_ice, dep_rate_snow, D_vtp, k, cc);
+                         yold[T_idx], EPSILON, dep_rate_ice, dep_rate_snow, D_vtp, k, cc, cc.dt_half);
     riming_cloud_core(yold[qc_idx], yold[Nc_idx], yold[qi_idx], yold[Ni_idx],
-                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(yold[qr_idx], yold[Nr_idx], yold[qi_idx], yold[Ni_idx],
                      cc.ice, cc.coeffs_irr, rime_rate_qi, rime_rate_qr, rime_rate_nr, cc);
     ice_riming(yold[qc_idx], yold[Nc_idx], yold[qr_idx], yold[Nr_idx], yold[qi_idx], yold[Ni_idx],
                dep_rate_ice, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qi, yold[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qi, yold[T_idx], cc.dt_half, k, cc);
     riming_cloud_core(yold[qc_idx], yold[Nc_idx], yold[qs_idx], yold[Ns_idx],
-                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(yold[qr_idx], yold[Nr_idx], yold[qs_idx], yold[Ns_idx],
                      cc.snow, cc.coeffs_srr, rime_rate_qs, rime_rate_qr, rime_rate_nr, cc);
     snow_riming(yold[qc_idx], yold[Nc_idx], yold[qr_idx], yold[Nr_idx], yold[qs_idx], yold[Ns_idx],
                 dep_rate_snow, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-                rime_rate_qs, yold[T_idx], cc.dt_prime, k, cc);
+                rime_rate_qs, yold[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -806,21 +808,21 @@ void physics_t::py_riming_with_depo(
     vapor_dep_relaxation(ytmp[qv_idx], ytmp[qi_idx], ytmp[Ni_idx],
                          ytmp[qs_idx], ytmp[Ns_idx], ytmp[qg_idx], ytmp[Ng_idx],
                          ytmp[qh_idx], ytmp[Nh_idx], s_si, p_sat_ice, ytmp[p_idx],
-                         ytmp[T_idx], EPSILON, dep_rate_ice, dep_rate_snow, D_vtp, k, cc);
+                         ytmp[T_idx], EPSILON, dep_rate_ice, dep_rate_snow, D_vtp, k, cc, cc.dt_half);
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qi_idx], ytmp[Ni_idx],
-                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                      cc.ice, cc.coeffs_irr, rime_rate_qi, rime_rate_qr, rime_rate_nr, cc);
     ice_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                dep_rate_ice, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qi, ytmp[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qi, ytmp[T_idx], cc.dt_half, k, cc);
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qs_idx], ytmp[Ns_idx],
-                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                      cc.snow, cc.coeffs_srr, rime_rate_qs, rime_rate_qr, rime_rate_nr, cc);
     snow_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                 dep_rate_snow, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-                rime_rate_qs, ytmp[T_idx], cc.dt_prime, k, cc);
+                rime_rate_qs, ytmp[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -857,21 +859,21 @@ void physics_t::py_riming_with_depo(
     vapor_dep_relaxation(ytmp[qv_idx], ytmp[qi_idx], ytmp[Ni_idx],
                          ytmp[qs_idx], ytmp[Ns_idx], ytmp[qg_idx], ytmp[Ng_idx],
                          ytmp[qh_idx], ytmp[Nh_idx], s_si, p_sat_ice, ytmp[p_idx],
-                         ytmp[T_idx], EPSILON, dep_rate_ice, dep_rate_snow, D_vtp, k, cc);
+                         ytmp[T_idx], EPSILON, dep_rate_ice, dep_rate_snow, D_vtp, k, cc, cc.dt_half);
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qi_idx], ytmp[Ni_idx],
-                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                      cc.ice, cc.coeffs_irr, rime_rate_qi, rime_rate_qr, rime_rate_nr, cc);
     ice_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                dep_rate_ice, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qi, ytmp[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qi, ytmp[T_idx], cc.dt_half, k, cc);
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qs_idx], ytmp[Ns_idx],
-                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                      cc.snow, cc.coeffs_srr, rime_rate_qs, rime_rate_qr, rime_rate_nr, cc);
     snow_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                 dep_rate_snow, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-                rime_rate_qs, ytmp[T_idx], cc.dt_prime, k, cc);
+                rime_rate_qs, ytmp[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
     for (int ii = 0 ; ii < num_comp ; ii++) {
@@ -904,26 +906,25 @@ void physics_t::py_riming_with_depo(
             get_at(cc.constants, Cons_idx::p_sat_const_b));
     S_i = (ytmp[T_idx] < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverse(1);
     s_si = S_i - 1.0;
-    cc.dt_prime = cc.dt_sixth;
     for (auto &kv : k) kv = 0;
     vapor_dep_relaxation(ytmp[qv_idx], ytmp[qi_idx], ytmp[Ni_idx],
                          ytmp[qs_idx], ytmp[Ns_idx], ytmp[qg_idx], ytmp[Ng_idx],
                          ytmp[qh_idx], ytmp[Nh_idx], s_si, p_sat_ice, ytmp[p_idx],
-                         ytmp[T_idx], EPSILON, dep_rate_ice, dep_rate_snow, D_vtp, k, cc);
+                         ytmp[T_idx], EPSILON, dep_rate_ice, dep_rate_snow, D_vtp, k, cc, cc.dt_half);
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qi_idx], ytmp[Ni_idx],
-                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.ice, cc.coeffs_icr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                      cc.ice, cc.coeffs_irr, rime_rate_qi, rime_rate_qr, rime_rate_nr, cc);
     ice_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qi_idx], ytmp[Ni_idx],
                dep_rate_ice, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-               rime_rate_qi, ytmp[T_idx], cc.dt_prime, k, cc);
+               rime_rate_qi, ytmp[T_idx], cc.dt_half, k, cc);
     riming_cloud_core(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qs_idx], ytmp[Ns_idx],
-                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc);
+                      cc.snow, cc.coeffs_scr, rime_rate_qc, rime_rate_nc, cc, cc.dt_half);
     riming_rain_core(ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                      cc.snow, cc.coeffs_srr, rime_rate_qs, rime_rate_qr, rime_rate_nr, cc);
     snow_riming(ytmp[qc_idx], ytmp[Nc_idx], ytmp[qr_idx], ytmp[Nr_idx], ytmp[qs_idx], ytmp[Ns_idx],
                 dep_rate_snow, rime_rate_qc, rime_rate_nc, rime_rate_qr, rime_rate_nr,
-                rime_rate_qs, ytmp[T_idx], cc.dt_prime, k, cc);
+                rime_rate_qs, ytmp[T_idx], cc.dt_half, k, cc);
     k[T_idx] += (k[lat_heat_idx]/get_at(cc.constants, Cons_idx::cp)
                  + k[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp))/ref_quant.Tref;
 

@@ -901,6 +901,37 @@ void output_handle_t::set_attributes(
            &FILLVALUE));
     SUCCESS_OR_DIE(nc_put_att_text(
             ncid,
+            varid[Var_idx::eff],
+            "auxiliary_data",
+            strlen("yes"),
+            "yes"));
+    SUCCESS_OR_DIE(nc_put_att(
+            ncid,
+            varid[Var_idx::eff],
+            _FillValue,
+            NC_FLOAT_T,
+            1,
+            &FILLVALUE));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::eff],
+            "long_name",
+            strlen("precipitation efficiency"),
+            "precipitation efficiency"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::eff],
+            "standard_name",
+            strlen("prec_eff"),
+            "prec_eff"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
+            varid[Var_idx::eff],
+            "units",
+            strlen("kg/kg/s"),
+            "kg/kg/s"));
+    SUCCESS_OR_DIE(nc_put_att_text(
+            ncid,
             varid[Var_idx::lat_heat],
             "auxiliary_data",
             strlen("yes"),
@@ -1187,7 +1218,7 @@ void output_handle_t::set_compression(const model_constants_t<float_t> &cc) {
                                     varid[i],
                                     1,  // shuffle
                                     1,  // deflate
-                                    9));  // max compression
+                                    COMPRESSION_LEVEL));  // max compression
         }
         if (!track_ic) {
             // gradients
@@ -1205,7 +1236,7 @@ void output_handle_t::set_compression(const model_constants_t<float_t> &cc) {
                                     varid[Var_idx::n_vars + i],
                                     1,  // shuffle
                                     1,  // deflate
-                                    9));  // max compression
+                                    COMPRESSION_LEVEL));  // max compression
             }
         } else {
             // initial conditions
@@ -1223,7 +1254,7 @@ void output_handle_t::set_compression(const model_constants_t<float_t> &cc) {
                                     varid[Var_idx::n_vars + i],
                                     1,  // shuffle
                                     1,  // deflate
-                                    9));  // max compression
+                                    COMPRESSION_LEVEL));  // max compression
             }
         }
     }
@@ -1841,9 +1872,6 @@ void output_handle_t::buffer(
 
 #ifdef MET3D
     // time after ascent
-//    if (traj > 0)
-//        std::cout << "buffer " << t << ", rel " << netcdf_reader.get_relative_time(t)
-//            << ", dt " << cc.dt_traject_prime << ", sub " << sub << " dt2 " << cc.dt << "\n";
     output_buffer[Buffer_idx::time_ascent_buf][n_snapshots] =
         netcdf_reader.get_relative_time(t) * cc.dt_traject_prime + sub*cc.dt;
     // flags
@@ -2271,8 +2299,20 @@ bool output_handle_t::flush_buffer(
                     if (cc.trace_check(j, false)) {
 #ifdef DEVELOP
                         std::cout << "traj: " << traj << " at " << flushed_snapshots
-                                  << " Two gradient " << j << "/" << num_par
-                                  << " varid: " << varid[Var_idx::n_vars + j] << "\n";
+                                  << " Two gradient " << j << " + " << Var_idx::n_vars << "/" << num_par
+                                  << " output_buffer entry " << static_cast<uint32_t>(Buffer_idx::n_buffer) + j
+                                  << "/" << output_buffer.size()
+                                  << " startp ";
+                        for (auto &s : startp) std::cout << s << ", ";
+                        std::cout << "countp ";
+                        for (auto &s : countp) std::cout << s << ", ";
+                        std::cout << "buffer size "
+                            << output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j].size()
+                            << " varid: " << varid[Var_idx::n_vars + j]
+                            << ", local_num_comp " << local_num_comp
+                            << ", n_trajs_file " << n_trajs_file
+                            << " type size "
+                            << sizeof(output_buffer[static_cast<uint32_t>(Buffer_idx::n_buffer) + j][0]) << "\n";
 #endif
                         SUCCESS_OR_DIE(
                             nc_put_vara(
@@ -2485,7 +2525,8 @@ void output_handle_t::process_step(
 
     if (((0 == (sub + t*cc.num_sub_steps) % write_index)
         && (sub != 0) && (t != 0))
-        || (t == cc.num_steps-1 && last_step)) {
+        || (t == cc.num_steps-1 && last_step)
+        || n_snapshots == total_snapshots) {
         this->flush_buffer(cc);
     }
 }
