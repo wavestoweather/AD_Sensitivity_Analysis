@@ -77,153 +77,35 @@ Compiling code
 ---------------
 In order to compile the code, create a folder `build` and in this folder type
 ```
-cmake .. -DCMAKE_BUILD_TYPE=release -DTRUSTED_DATA:BOOL=ON -DTARGET=simulation
+cmake .. -DCMAKE_BUILD_TYPE=release -DTRUSTED_DATA:BOOL=ON -DB_EIGHT:BOOL=ON -DTARGET=simulation
 make -j 6
 ```
-With the option `TRUSTED_DATA` the program just stops simulations for every trajectory with more than 10
-consecutive NaNs for every other input column. Without this option, the program
-assumes the dataset is broken and terminates directly, giving information which
-trajectory and time index starts with consecutive NaNs.
 
 You may change the number for `make` to the number of cores available.
 In case the CMake does not find a specific library, you can specify them like this:
 ```
 cmake .. -DNETCDF_INCLUDE_DIR=<path/to/netcdf/include/> -DCODIPACK_INCLUDEDIR=<path/to/codipack/include/> -DHDF5_DIR=<path/to/hdf5/> -DCMAKE_BUILD_TYPE=release
 ```
-You may change the target for timing the microphysics with `-DTARGET=timing` if you wish to check the penalty cost of executing AD at every time step for varying amounts of model state variables and model parameters.
-
-You can add `-DCOMPRESS_OUTPUT:BOOL=ON` to write compressed output with zlib. You need for this HDF5 v1.10.2 or higher. Compression is only supported for sensitivity analysis but not for ensemble simulations at the moment. Default compression level is 6, but you may change it using `-DCOMPRESSION_LEVEL=X` where `X` is the desired compression level. Beware, that level 9 yields only small improvements for trajectories but takes much longer to write.
+Options are:
+- `-DCOMPRESS_OUTPUT:BOOL=ON` Write compressed output with zlib. You need for this HDF5 v1.10.2 or higher. 
+Compression is only supported for sensitivity analysis but not for ensemble simulations at the moment. 
+Default compression level is 6.
+- `-DCOMPRESSION_LEVEL=X` Use compression level `X`, where level 9 yields only small improvements for 
+trajectories but takes much longer to write.
+- `-DB_EIGHT:BOOL=ON` Output data contains hail. Data may use different time steps.
+- `-DTRUSTED_DATA:BOOL=ON` Stop the simulation for every trajectory with more than 10
+  consecutive NaNs for every other input column, i.e., trajectories with data from different domains.
+  Without this option, the program assumes the dataset is broken and terminates with the first NaN, printing
+  information which trajectory and time index starts with consecutive NaNs.
+- `-DCCN_AKM:BOOL=ON` Use a a different CCN activation scheme based on Hande et al. (2016) by Annette K. Miltenberger
+- `-RELOPTLEVEL=X` Set the optimization level for the compiler. Default optimization is 3.
+- `-DSILENT_MODE:BOOL=ON` Suppress prints where possible.
 
 Running a simulation
 ---------------------
-We provide three bash scripts to execute the code in `exe_scripts`. You may change the value of variable
-`NTASKS` to the number of cores available in the script if available.
-`perturbed_ensembles.sh` generates the data for estimating the correlation between AD-estimated deviations and
-ensemble-estimated deviations. The data is stored under `data/vladiana_ensembles/`.
-It runs perturbed ensembles every 30 minutes with a single parameter being perturbed for each member.
-For postprocessing, you have to execute the following command in `scripts`:
-```
-python segment_identifier.py \
-    --data_path ../data/vladiana_ensembles/ \
-    --verbosity 3 \
-    --store_appended_data ../data/vladiana_ensembles_postprocess/predictions.nc \
-    --only_append
-```
-You may now delete the files in `data/vladiana_ensembles/` since we do not need them anymore. You can visualize the results, for example a comparison of the simulated
-rain mass density with the gradients:
-```
-python plot_mse.py \
-    --data_path ../data/vladiana_ensembles_postprocess/predictions.nc \
-    --backend matplotlib \
-    --store_path ../pics/qr_AD_example \
-    --xlabel Time\ After\ Ascent\ Begins\ [min] \
-    --ylabel "" \
-    --title Results\ of\ AD\ Over\ Time \
-    --width 1600 \
-    --height 900 \
-    --plot_variant time_plot \
-    --traj 1 \
-    --twinlabel Predicted\ Deviation \
-    --n_model_params 5 \
-    --max_time 7500 \
-    --out_parameter QR
-```
-Or for snow:
-```
-python plot_mse.py \
-    --data_path ../data/vladiana_ensembles_postprocess/predictions.nc \
-    --backend matplotlib \
-    --store_path ../pics/qs_AD_example \
-    --xlabel Time\ After\ Ascent\ Begins\ [min] \
-    --ylabel "" \
-    --title Results\ of\ AD\ Over\ Time \
-    --width 1600 \
-    --height 900 \
-    --plot_variant time_plot \
-    --traj 1 \
-    --twinlabel Predicted\ Deviation \
-    --n_model_params 1 \
-    --max_time 7500 \
-    --min_time 2500 \
-    --out_parameter QS
-```
-Plots that show the correlation between AD-estimated and ensemble-estimated
-devation for all model state variables at once can be generated with:
-```
-python plot_mse.py \
-    --data_path ../data/vladiana_ensembles_postprocess/predictions.nc \
-    --add_zero_sens \
-    --plot_types \
-    --backend bokeh \
-    --store_path ../pics/correlation \
-    --xlabel AD-Estimated\ Log\ MSD \
-    --ylabel Ensemble-Estimated\ Log\ MSD \
-    --title Ensemble\ vs\ AD\ Estimation \
-    --width 900 \
-    --height 900 \
-    --plot_variant correlation \
-    --out_parameter all_at_once
-```
-or only for water vapor mass density:
-```
-python plot_mse.py \
-	--data_path /data/project/wcb/netcdf/vladiana_keyparams_errors/predictions.nc \
-	--add_zero_sens \
-	--plot_types \
-	--backend bokeh \
-	--store_path ../pics/correlation \
-	--confidence 0.90 \
-	--xlabel AD-Estimated\ Log\ MSD \
-	--ylabel Ensemble-Estimated\ Log\ MSD \
-	--title Ens.\ vs\ AD\ Est. \
-	--width 900 \
-	--height 900 \
-	--plot_variant correlation \
-	--out_parameter QV
-```
-You can generate the plot for other model state variables by exchanging `QV`
-with `QS` (snow mass density), `QR` (rain mass density), etc..
-
-`sensitivity_example.sh` is used to run a simulation for comparing the results to the original data.
-These can be visualized in folder `scripts`:
-```
-python plot_simulation_example.py \
-    --data_cosmo_path ../data/vladiana_input/ \
-    --data_sim_path ../data/comparison/ \
-    --width 1200 \
-    --height 900 \
-    --traj 0 \
-    --verbosity 3 \
-    --store_path ../pics/comparison \
-    --backend bokeh
-```
-
-`timing.sh` generates a comma separated output on the terminal with the run time for a
-simulation and the number of tracked parameters and model state variables. Be aware
-that you have to have compiled the program with target `timing` first!
-
-At last you can plot all input data, which may take a while the first time, with
-```
-python plot_cosmo.py \
-    --pollon 160 \
-    --pollat 51 \
-    --traj_type conv \
-    --store_path ../pics/cosmo_ \
-    --verbosity 3 \
-    --store_data ../data/all_conv.h5 \
-    --data_path ../data/vladiana_complete/
-```
-This creates a file `data/all_conv.h5` which may be used for additional plots
-that can be generated faster.
-You can then exchange
-```
---store_data ../data/all_conv.h5
-```
-with
-```
---data_path ../data/all_conv.h5
-```
-
+We provide an example bash scripts to execute the code in `exe_scripts`. You may change the value of variable
+`NTASKS` to the number of cores available.
+The data is stored under `data/simulation/*.nc` and can be analyzed using the various Jupyter notebooks.
 
 Adding New Physics
 ------------------
@@ -267,12 +149,10 @@ Otherwise you need to add additional lines of code, such as:
     my_RK4_step(..);
 #elif defined(RK4ICE)
 ```
-If you are using new model parameters, then you have to add them to the enum
-`Cons_idx` or if you need model parameters specific to certain
-hydrometeors, you have to add them to the enum `Particle_cons_idx` located
-in `include/microphysics/constants.h`. The same file has to maps `table_particle_param`
-for hydrometeor specific parameters and `table_param` for all other parameters
-to map the parameters to a name used for the output.
+If you are using new model parameters, then you have to add them to `model_constants_t` and specifically set the 
+values in `model_constant_t.setup_model_constants(..)` or in `particle_model_constants_t` if these parameters are
+different for different hydrometeors. In addition, please include the default value of these parameters in 
+`include/microphysics/constants.h`
 If your parameters depend on others, you may add such functions to the class
 `model_constants_t` which should be called by `setup_model_constants(..)`.
 To avoid any confusion, you might want to decorate your version with pragmas.
