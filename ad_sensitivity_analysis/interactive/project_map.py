@@ -43,7 +43,6 @@ def plot_2dmap_interactive(ds):
         name="Fix colorbar over all time steps",
         button_type="success",
     )
-    static = pn.widgets.StaticText(name="Min, Max Values", value="")
     width_height_font_row = create_widgets.image_font_size_row(pixel=False)
 
     log_plot = pn.widgets.Toggle(
@@ -91,14 +90,12 @@ def plot_2dmap_interactive(ds):
             save=save_field_button_latex_widget[1],
             latex=save_field_button_latex_widget[2],
             save_path=save_field_button_latex_widget[0],
-            static=static,
             colorblind=color_blind_toggle,
         ),
     ).servable()
 
     return pn.Column(
         "# Plot Grid",
-        static,
         kind_param,
         out_param,
         pn.Row(
@@ -108,6 +105,7 @@ def plot_2dmap_interactive(ds):
         pn.Row(
             fix,
             log_plot,
+            color_blind_toggle,
         ),
         width_height_font_row,
         log_threshold_slider,
