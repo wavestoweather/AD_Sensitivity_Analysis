@@ -412,11 +412,11 @@ def _plot_mpl(
             for i in range(len(data_types))
         }
     ).opts(fontsize=fontsize)
-    if perturb_delta is not None:
-        image = left * twin * perturb_lines * legend_overlay
-    else:
-        image = legend_overlay * left * twin
-    return image
+    return (
+        legend_overlay * left * twin
+        if perturb_delta is None
+        else left * twin * perturb_lines * legend_overlay
+    )
 
 
 # pylint: disable=too-many-arguments, too-many-locals
@@ -715,7 +715,6 @@ def plot_time_evolution(
             twinlabel,
             xlabel,
             ylabel,
-            precision=precision,
         )
 
     image = _set_image_size(image, backend, width, height, title)

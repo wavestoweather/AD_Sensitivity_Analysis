@@ -296,8 +296,7 @@ class PhysicsT:
                 gradients.ctypes.data_as(self.c_double_arr),
             )
             return True
-        else:
-            return False
+        return False
 
     def graupel_melting(self, param_dict, res, gradients):
         """

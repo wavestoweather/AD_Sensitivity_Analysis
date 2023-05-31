@@ -473,7 +473,6 @@ def plot_time_evolution_interactive(ds, perturbed=False):
         step=1,
     )
 
-
     plot_pane = pn.panel(
         pn.bind(
             _prepare_dataset_and_plot,
