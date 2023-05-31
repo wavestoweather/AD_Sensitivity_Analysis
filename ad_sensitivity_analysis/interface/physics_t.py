@@ -66,18 +66,19 @@ class PhysicsT:
         ]
         self.clib.physics_t_setup_model_constants_uncert.restyp = ctypes.c_void_p
 
-        self.clib.physics_t_py_ccn_act_hande_akm.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_double,
-            ctypes.c_double,
-            ctypes.c_double,
-            ctypes.c_double,
-            ctypes.c_double,
-            ctypes.c_double,
-            self.c_double_arr,
-            self.c_double_arr,
-        ]
-        self.clib.physics_t_py_ccn_act_hande_akm.restyp = ctypes.c_void_p
+        if hasattr(self.clib, "physics_t_py_ccn_act_hande_akm"):
+            self.clib.physics_t_py_ccn_act_hande_akm.argtypes = [
+                ctypes.c_void_p,
+                ctypes.c_double,
+                ctypes.c_double,
+                ctypes.c_double,
+                ctypes.c_double,
+                ctypes.c_double,
+                ctypes.c_double,
+                self.c_double_arr,
+                self.c_double_arr,
+            ]
+            self.clib.physics_t_py_ccn_act_hande_akm.restyp = ctypes.c_void_p
 
         self.clib.physics_t_py_graupel_melting.argtypes = [
             ctypes.c_void_p,
@@ -141,7 +142,8 @@ class PhysicsT:
             offset += 9
         self.index_in_dic = aux_interface.get_index_in_dic(offset)
 
-    def _create_plot(self, data, x, y, hue=None, logy=False):
+    @staticmethod
+    def _create_plot(data, x, y, hue=None, logy=False):
         """
 
         Parameters
@@ -163,7 +165,8 @@ class PhysicsT:
             plot_obj.axes.set_yscale("log")
         return plot_obj, data
 
-    def _set_vals(self, param, n_bins, param_dict):
+    @staticmethod
+    def _set_vals(param, n_bins, param_dict):
         """
 
         Parameters
@@ -278,19 +281,23 @@ class PhysicsT:
 
         Returns
         -------
-
+        True if the function exists and has been used, false otherwise.
         """
-        self.clib.physics_t_py_ccn_act_hande_akm(
-            self.obj,
-            param_dict["p"],
-            param_dict["w"],
-            param_dict["T"],
-            param_dict["qv"],
-            param_dict["qc"],
-            param_dict["Nc"],
-            res.ctypes.data_as(self.c_double_arr),
-            gradients.ctypes.data_as(self.c_double_arr),
-        )
+        if hasattr(self.clib, "physics_t_py_ccn_act_hande_akm"):
+            self.clib.physics_t_py_ccn_act_hande_akm(
+                self.obj,
+                param_dict["p"],
+                param_dict["w"],
+                param_dict["T"],
+                param_dict["qv"],
+                param_dict["qc"],
+                param_dict["Nc"],
+                res.ctypes.data_as(self.c_double_arr),
+                gradients.ctypes.data_as(self.c_double_arr),
+            )
+            return True
+        else:
+            return False
 
     def graupel_melting(self, param_dict, res, gradients):
         """
