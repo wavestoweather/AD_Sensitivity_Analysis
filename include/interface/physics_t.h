@@ -12,7 +12,7 @@
 
 
 struct physics_t {
-private:
+ private:
     model_constants_t<codi::RealReverse> cc;
     input_parameters_t input;
     reference_quantities_t ref_quant;
@@ -23,7 +23,7 @@ private:
     std::vector< std::array<double, num_par > > gradients_;
     double uncertainty_scale;
 
-public:
+ public:
     explicit physics_t(std::string table_path = "dmin_wetgrowth_lookup.dat");
 
     void set_limits(

@@ -31,7 +31,6 @@ void get_rank(
         const uint32_t &rank_offset,
         std::vector<double> &tmp_avg,
         std::vector<uint64_t> &ranking) {
-
     std::vector<int> max_idx = {-1, -1, -1};
     std::vector<double> max_sens = {0, 0, 0};
     for (uint32_t i = 0; i < n_params; i++) {
@@ -80,7 +79,6 @@ void process_file(
         const uint32_t &n_out_params,
         const int &n_times,
         const bool &relative_time) {
-
     ProgressBar pbar = ProgressBar(netcdf_reader.n_trajectories, 50, "Trajectory", std::cout);
     for (uint32_t traj = 0; traj < netcdf_reader.n_trajectories; traj++) {
         bool got_data = false;
@@ -387,134 +385,133 @@ void define_vars(
         std::vector<int>& varid_misc,
         const uint32_t &n_model_params,
         const uint32_t &n_params) {
-
     SUCCESS_OR_DIE(
-            nc_def_var(
-                    ncid,                   // ncid
-                    "Output_Parameter",     // name
-                    NC_STRING,              // type
-                    1,                      // ndims (0=scalar, 1=vector, 2=matrix, ...)
-                    &dimid[Grid_dim_idx::outp_dim_idx],     // dimid
-                    &varid[Grid_dim_idx::outp_dim_idx]));   // varid
+        nc_def_var(
+            ncid,                   // ncid
+            "Output_Parameter",     // name
+            NC_STRING,              // type
+            1,                      // ndims (0=scalar, 1=vector, 2=matrix, ...)
+            &dimid[Grid_dim_idx::outp_dim_idx],     // dimid
+            &varid[Grid_dim_idx::outp_dim_idx]));   // varid
     SUCCESS_OR_DIE(
-            nc_def_var(
-                    ncid,
-                    "time",
-                    NC_FLOAT_T,
-                    1,
-                    &dimid[Grid_dim_idx::time_griddim_idx],
-                    &varid[Grid_dim_idx::time_griddim_idx]));
+        nc_def_var(
+            ncid,
+            "time",
+            NC_FLOAT_T,
+            1,
+            &dimid[Grid_dim_idx::time_griddim_idx],
+            &varid[Grid_dim_idx::time_griddim_idx]));
     SUCCESS_OR_DIE(
-            nc_def_var(
-                    ncid,
-                    "pressure",
-                    NC_FLOAT_T,
-                    1,
-                    &dimid[Grid_dim_idx::p_dim_idx],
-                    &varid[Grid_dim_idx::p_dim_idx]));
+        nc_def_var(
+            ncid,
+            "pressure",
+            NC_FLOAT_T,
+            1,
+            &dimid[Grid_dim_idx::p_dim_idx],
+            &varid[Grid_dim_idx::p_dim_idx]));
     SUCCESS_OR_DIE(
-            nc_def_var(
-                    ncid,
-                    "lat",
-                    NC_FLOAT_T,
-                    1,
-                    &dimid[Grid_dim_idx::lat_dim_idx],
-                    &varid[Grid_dim_idx::lat_dim_idx]));
+        nc_def_var(
+            ncid,
+            "lat",
+            NC_FLOAT_T,
+            1,
+            &dimid[Grid_dim_idx::lat_dim_idx],
+            &varid[Grid_dim_idx::lat_dim_idx]));
     SUCCESS_OR_DIE(
-            nc_def_var(
-                    ncid,
-                    "lon",
-                    NC_FLOAT_T,
-                    1,
-                    &dimid[Grid_dim_idx::lon_dim_idx],
-                    &varid[Grid_dim_idx::lon_dim_idx]));
+        nc_def_var(
+            ncid,
+            "lon",
+            NC_FLOAT_T,
+            1,
+            &dimid[Grid_dim_idx::lon_dim_idx],
+            &varid[Grid_dim_idx::lon_dim_idx]));
     // Now all the other things
     // Model state
     for (uint32_t i = 1; i < n_model_params+1; i++) {
         SUCCESS_OR_DIE(
-                nc_def_var(
-                        ncid,
-                        ("Mean " + order_par[i]).c_str(),
-                        NC_FLOAT_T,
-                        4,
-                        &dimid[Grid_dim_idx::time_griddim_idx],
-                        &varid_means[i-1]));
+            nc_def_var(
+                ncid,
+                ("Mean " + order_par[i]).c_str(),
+                NC_FLOAT_T,
+                4,
+                &dimid[Grid_dim_idx::time_griddim_idx],
+                &varid_means[i-1]));
         SUCCESS_OR_DIE(
-                nc_def_var(
-                        ncid,
-                        ("Min " + order_par[i]).c_str(),
-                        NC_FLOAT_T,
-                        4,
-                        &dimid[Grid_dim_idx::time_griddim_idx],
-                        &varid_mins[i-1]));
+            nc_def_var(
+                ncid,
+                ("Min " + order_par[i]).c_str(),
+                NC_FLOAT_T,
+                4,
+                &dimid[Grid_dim_idx::time_griddim_idx],
+                &varid_mins[i-1]));
         SUCCESS_OR_DIE(
-                nc_def_var(
-                        ncid,
-                        ("Max " + order_par[i]).c_str(),
-                        NC_FLOAT_T,
-                        4,
-                        &dimid[Grid_dim_idx::time_griddim_idx],
-                        &varid_maxs[i-1]));
+            nc_def_var(
+                ncid,
+                ("Max " + order_par[i]).c_str(),
+                NC_FLOAT_T,
+                4,
+                &dimid[Grid_dim_idx::time_griddim_idx],
+                &varid_maxs[i-1]));
         SUCCESS_OR_DIE(
-                nc_def_var(
-                        ncid,
-                        ("Std " + order_par[i]).c_str(),
-                        NC_FLOAT_T,
-                        4,
-                        &dimid[Grid_dim_idx::time_griddim_idx],
-                        &varid_stds[i-1]));
+            nc_def_var(
+                ncid,
+                ("Std " + order_par[i]).c_str(),
+                NC_FLOAT_T,
+                4,
+                &dimid[Grid_dim_idx::time_griddim_idx],
+                &varid_stds[i-1]));
     }
     // Sensitivities
     for (uint32_t i = 0; i < n_params; i++) {
         SUCCESS_OR_DIE(
-                nc_def_var(
-                        ncid,
-                        ("Mean " + order_sens[i]).c_str(),
-                        NC_FLOAT_T,
-                        5,
-                        &dimid[Grid_dim_idx::outp_dim_idx],
-                        &varid_means_sens[i]));
+            nc_def_var(
+                ncid,
+                ("Mean " + order_sens[i]).c_str(),
+                NC_FLOAT_T,
+                5,
+                &dimid[Grid_dim_idx::outp_dim_idx],
+                &varid_means_sens[i]));
         SUCCESS_OR_DIE(
-                nc_def_var(
-                        ncid,
-                        ("Min " + order_sens[i]).c_str(),
-                        NC_FLOAT_T,
-                        5,
-                        &dimid[Grid_dim_idx::outp_dim_idx],
-                        &varid_mins_sens[i]));
+            nc_def_var(
+                ncid,
+                ("Min " + order_sens[i]).c_str(),
+                NC_FLOAT_T,
+                5,
+                &dimid[Grid_dim_idx::outp_dim_idx],
+                &varid_mins_sens[i]));
         SUCCESS_OR_DIE(
-                nc_def_var(
-                        ncid,
-                        ("Max " + order_sens[i]).c_str(),
-                        NC_FLOAT_T,
-                        5,
-                        &dimid[Grid_dim_idx::outp_dim_idx],
-                        &varid_maxs_sens[i]));
+            nc_def_var(
+                ncid,
+                ("Max " + order_sens[i]).c_str(),
+                NC_FLOAT_T,
+                5,
+                &dimid[Grid_dim_idx::outp_dim_idx],
+                &varid_maxs_sens[i]));
         SUCCESS_OR_DIE(
-                nc_def_var(
-                        ncid,
-                        ("Std " + order_sens[i]).c_str(),
-                        NC_FLOAT_T,
-                        5,
-                        &dimid[Grid_dim_idx::outp_dim_idx],
-                        &varid_stds_sens[i]));
+            nc_def_var(
+                ncid,
+                ("Std " + order_sens[i]).c_str(),
+                NC_FLOAT_T,
+                5,
+                &dimid[Grid_dim_idx::outp_dim_idx],
+                &varid_stds_sens[i]));
     }
     SUCCESS_OR_DIE(
-            nc_def_var(
-                    ncid,
-                    order_misc[Misc_idx::ranking].c_str(),
-                    NC_UINT64,
-                    5,
-                    &dimid[Grid_dim_idx::outp_dim_idx],
-                    &varid_misc[Misc_idx::ranking]));
+        nc_def_var(
+            ncid,
+            order_misc[Misc_idx::ranking].c_str(),
+            NC_UINT64,
+            5,
+            &dimid[Grid_dim_idx::outp_dim_idx],
+            &varid_misc[Misc_idx::ranking]));
     SUCCESS_OR_DIE(
-            nc_def_var(
-                    ncid,
-                    order_misc[Misc_idx::counts].c_str(),
-                    NC_UINT64,
-                    4,
-                    &dimid[Grid_dim_idx::time_griddim_idx],
-                    &varid_misc[Misc_idx::counts]));
+        nc_def_var(
+            ncid,
+            order_misc[Misc_idx::counts].c_str(),
+            NC_UINT64,
+            4,
+            &dimid[Grid_dim_idx::time_griddim_idx],
+            &varid_misc[Misc_idx::counts]));
 }
 
 void set_attributes(
@@ -529,7 +526,6 @@ void write_dim_values(
         const std::vector<double> &pressure_levels,
         const std::vector<double> &lons,
         const std::vector<double> &lats) {
-
     std::vector<size_t> startp, countp;
     startp.push_back(0);
     std::vector<std::string> out_params = {"QV", "latent_heat", "latent_cool"};
@@ -541,61 +537,60 @@ void write_dim_values(
     cstrings_outp.push_back("latent_cool");
     for (auto s : cstrings_outp) {
         SUCCESS_OR_DIE(
-                nc_put_var1_string(
-                        ncid,
-                        varid[Grid_dim_idx::outp_dim_idx],
-                        startp.data(),
-                        &s));
+            nc_put_var1_string(
+                ncid,
+                varid[Grid_dim_idx::outp_dim_idx],
+                startp.data(),
+                &s));
         startp[0]++;
     }
     startp[0] = 0;
 
     countp.push_back(times.size()-1);
     SUCCESS_OR_DIE(
-            nc_put_vara(
-                    ncid,
-                    varid[Grid_dim_idx::time_griddim_idx],
-                    startp.data(),
-                    countp.data(),
-                    times.data()));
+        nc_put_vara(
+            ncid,
+            varid[Grid_dim_idx::time_griddim_idx],
+            startp.data(),
+            countp.data(),
+            times.data()));
     countp[0] = pressure_levels.size()-1;
     SUCCESS_OR_DIE(
-            nc_put_vara(
-                    ncid,
-                    varid[Grid_dim_idx::p_dim_idx],
-                    startp.data(),
-                    countp.data(),
-                    pressure_levels.data()));
+        nc_put_vara(
+            ncid,
+            varid[Grid_dim_idx::p_dim_idx],
+            startp.data(),
+            countp.data(),
+            pressure_levels.data()));
     countp[0] = lons.size()-1;
     SUCCESS_OR_DIE(
-            nc_put_vara(
-                    ncid,
-                    varid[Grid_dim_idx::lon_dim_idx],
-                    startp.data(),
-                    countp.data(),
-                    lons.data()));
+        nc_put_vara(
+            ncid,
+            varid[Grid_dim_idx::lon_dim_idx],
+            startp.data(),
+            countp.data(),
+            lons.data()));
     countp[0] = lats.size()-1;
     SUCCESS_OR_DIE(
-            nc_put_vara(
-                    ncid,
-                    varid[Grid_dim_idx::lat_dim_idx],
-                    startp.data(),
-                    countp.data(),
-                    lats.data()));
+        nc_put_vara(
+            ncid,
+            varid[Grid_dim_idx::lat_dim_idx],
+            startp.data(),
+            countp.data(),
+            lats.data()));
 }
 
 void set_compression(
         const int &ncid,
         const std::vector<int> &varid) {
-
     for (const auto v : varid)
         SUCCESS_OR_DIE(
-                nc_def_var_deflate(
-                        ncid,
-                        v,
-                        1,  // shuffle
-                        1,  // deflate
-                        COMPRESSION_LEVEL));  // compression
+            nc_def_var_deflate(
+                ncid,
+                v,
+                1,  // shuffle
+                1,  // deflate
+                COMPRESSION_LEVEL));  // compression
 }
 
 void write_other_values(
@@ -612,36 +607,35 @@ void write_other_values(
         const uint32_t &offset_params,
         const std::vector<size_t> &startp,
         const std::vector<size_t> &countp) {
-
     for (uint32_t i = 0; i < n_model_params; i++) {
         SUCCESS_OR_DIE(
-                nc_put_vara(
-                        ncid,
-                        varid_means[i],
-                        startp.data(),
-                        countp.data(),
-                        &means[offset_params * i]));
+            nc_put_vara(
+                ncid,
+                varid_means[i],
+                startp.data(),
+                countp.data(),
+                &means[offset_params * i]));
         SUCCESS_OR_DIE(
-                nc_put_vara(
-                        ncid,
-                        varid_stds[i],
-                        startp.data(),
-                        countp.data(),
-                        &stds[offset_params * i]));
+            nc_put_vara(
+                ncid,
+                varid_stds[i],
+                startp.data(),
+                countp.data(),
+                &stds[offset_params * i]));
         SUCCESS_OR_DIE(
-                nc_put_vara(
-                        ncid,
-                        varid_mins[i],
-                        startp.data(),
-                        countp.data(),
-                        &mins[offset_params * i]));
+            nc_put_vara(
+                ncid,
+                varid_mins[i],
+                startp.data(),
+                countp.data(),
+                &mins[offset_params * i]));
         SUCCESS_OR_DIE(
-                nc_put_vara(
-                        ncid,
-                        varid_maxs[i],
-                        startp.data(),
-                        countp.data(),
-                        &maxs[offset_params * i]));
+            nc_put_vara(
+                ncid,
+                varid_maxs[i],
+                startp.data(),
+                countp.data(),
+                &maxs[offset_params * i]));
     }
 }
 
@@ -663,7 +657,6 @@ void parse(
         std::string &store_path,
         std::string &load_path,
         bool &relative_time) {
-
     if (argc > 64) {
         throw std::runtime_error("You provided more than 64 input parameters.");
     }
