@@ -24,7 +24,7 @@ class PhysicsT:
     def __init__(
         self,
         lib_path="../cmake-build-python_interface/lib/libpython_interface.so",
-        table_path="../dmin_wetgrowth_lookup.dat",
+        table_path="../../../dmin_wetgrowth_lookup.dat",
         b_eight=False,
     ):
         hv.extension("bokeh")
