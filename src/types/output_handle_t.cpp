@@ -1204,57 +1204,38 @@ void output_handle_t::set_compression(const model_constants_t<float_t> &cc) {
             if ((local_num_comp > 1 || i != static_cast<int>(Var_idx::out_param)) &&
               (n_perturbed_params > 1 || i != static_cast<int>(Var_idx::perturbed)))
                 if (simulation_mode == create_train_set || i != static_cast<int>(Var_idx::perturbation_value) )
-                    // This could be a version for szip
-                    //                         SUCCESS_OR_DIE(
-                    //                             nc_def_var_szip(
-                    //                                 ncid,
-                    //                                 varid[i],
-                    //                                 NC_SZIP_NN,
-                    //                                 8));  // pixels per block
                     // zlib version
                     SUCCESS_OR_DIE(
-                            nc_def_var_deflate(
-                                    ncid,
-                                    varid[i],
-                                    1,  // shuffle
-                                    1,  // deflate
-                                    COMPRESSION_LEVEL));  // max compression
+                        nc_def_var_deflate(
+                            ncid,
+                            varid[i],
+                            1,  // shuffle
+                            1,  // deflate
+                            COMPRESSION_LEVEL));  // max compression
         }
         if (!track_ic) {
             // gradients
             for (uint32_t i=0; i < num_par; ++i) {
                 if (cc.trace_check(i, false))
-//                         SUCCESS_OR_DIE(
-//                             nc_def_var_szip(
-//                                 ncid,
-//                                 varid[Var_idx::n_vars + i],
-//                                 NC_SZIP_NN,
-//                                 8));
                     SUCCESS_OR_DIE(
-                            nc_def_var_deflate(
-                                    ncid,
-                                    varid[Var_idx::n_vars + i],
-                                    1,  // shuffle
-                                    1,  // deflate
-                                    COMPRESSION_LEVEL));  // max compression
+                        nc_def_var_deflate(
+                            ncid,
+                            varid[Var_idx::n_vars + i],
+                            1,  // shuffle
+                            1,  // deflate
+                            COMPRESSION_LEVEL));  // max compression
             }
         } else {
             // initial conditions
             for (uint32_t i=0; i < num_par_init; ++i) {
                 if (cc.trace_check(i, 2))
-//                         SUCCESS_OR_DIE(
-//                             nc_def_var_szip(
-//                                 ncid,
-//                                 varid[Var_idx::n_vars + i],
-//                                 NC_SZIP_NN,
-//                                 8));
                     SUCCESS_OR_DIE(
-                            nc_def_var_deflate(
-                                    ncid,
-                                    varid[Var_idx::n_vars + i],
-                                    1,  // shuffle
-                                    1,  // deflate
-                                    COMPRESSION_LEVEL));  // max compression
+                        nc_def_var_deflate(
+                            ncid,
+                            varid[Var_idx::n_vars + i],
+                            1,  // shuffle
+                            1,  // deflate
+                            COMPRESSION_LEVEL));  // max compression
             }
         }
     }
@@ -1297,12 +1278,12 @@ void output_handle_t::write_dimension_values(
     for (uint32_t i=0; i < n_trajs_file; i++)
         data[i] = i;
     SUCCESS_OR_DIE(
-            nc_put_vara(
-                    ncid,
-                    varid[Var_idx::trajectory],
-                    startp.data(),
-                    countp.data(),
-                    data.data()));
+        nc_put_vara(
+            ncid,
+            varid[Var_idx::trajectory],
+            startp.data(),
+            countp.data(),
+            data.data()));
 #ifdef DEVELOP
     std::cout << "done n_trajs; starting with num_ens " << num_ens << "\n" << std::flush;
 #endif
@@ -1311,12 +1292,12 @@ void output_handle_t::write_dimension_values(
     for (uint32_t i=0; i < num_ens; i++)
         data[i] = i;
     SUCCESS_OR_DIE(
-            nc_put_vara(
-                    ncid,
-                    varid[Var_idx::ensemble],
-                    startp.data(),
-                    countp.data(),
-                    data.data()));
+        nc_put_vara(
+            ncid,
+            varid[Var_idx::ensemble],
+            startp.data(),
+            countp.data(),
+            data.data()));
 #ifdef DEVELOP
     std::cout << "out_param\n" << std::flush;
 #endif
@@ -1331,12 +1312,12 @@ void output_handle_t::write_dimension_values(
             }
         }
         SUCCESS_OR_DIE(
-                nc_put_vara(
-                        ncid,
-                        varid[Var_idx::out_param],
-                        startp.data(),
-                        countp.data(),
-                        data.data()));
+            nc_put_vara(
+                ncid,
+                varid[Var_idx::out_param],
+                startp.data(),
+                countp.data(),
+                data.data()));
     }
 #ifdef DEVELOP
     std::cout << "out_param done\n" << std::flush;
@@ -1354,11 +1335,11 @@ void output_handle_t::write_dimension_values(
         }
         for (auto s : cstrings_outp) {
             SUCCESS_OR_DIE(
-                    nc_put_var1_string(
-                            ncid,
-                            varid[Var_idx::out_param],
-                            startp.data(),
-                            &s));
+                nc_put_var1_string(
+                    ncid,
+                    varid[Var_idx::out_param],
+                    startp.data(),
+                    &s));
             startp[0]++;
         }
         startp[0] = 0;
@@ -2519,7 +2500,7 @@ void output_handle_t::process_step(
         this->buffer(cc, netcdf_reader, y_single_new, y_diff, sub, t,
             ref_quant, snapshot_index, previous_step_with_warm, previous_step_with_ice);
     } else if (this->simulation_mode != limited_time_ensembles || cc.traj_id == 0) {
-        // Why do we have this case here? This would store gradients at every step.
+        // This would store gradients at every step.
         this->buffer_gradient(cc, y_diff, snapshot_index);
     }
 

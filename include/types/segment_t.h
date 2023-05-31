@@ -58,7 +58,6 @@ struct segment_t {
         a_1, a_2, e_1, e_2, d, N_c, gamma, beta_c,
         beta_r, delta1, delta2, zeta, rain_gfak, cloud_k_au,
         cloud_k_sc, kc_autocon, inv_z,
-//        dw,
         q_crit_i,
         D_crit_i, D_conv_i, q_crit_r, D_crit_r, q_crit_fr,
         D_coll_c, q_crit, D_conv_sg, D_conv_ig, x_conv,
@@ -193,7 +192,6 @@ struct segment_t {
         {"beta_r", Param::beta_r}, {"delta1", Param::delta1}, {"delta2", Param::delta2}, {"zeta", Param::zeta},
         {"rain_gfak", Param::rain_gfak}, {"cloud_k_au", Param::cloud_k_au}, {"cloud_k_sc", Param::cloud_k_sc},
         {"kc_autocon", Param::kc_autocon}, {"inv_z", Param::inv_z},
-//        {"dw", Param::dw},
         {"q_crit_i", Param::q_crit_i},
         {"D_crit_i", Param::D_crit_i}, {"D_conv_i", Param::D_conv_i}, {"q_crit_r", Param::q_crit_r},
         {"D_crit_r", Param::D_crit_r}, {"q_crit_fr", Param::q_crit_fr}, {"D_coll_c", Param::D_coll_c},
@@ -394,7 +392,6 @@ struct segment_t {
      */
     template<class float_t>
     bool perturb_check(
-//        const model_constants_t<float_t> &cc,
         const std::vector< std::array<double, num_par > > &gradients,
         const std::vector<float_t> &y,
         const double timestep);
@@ -418,22 +415,11 @@ struct segment_t {
     template<class float_t>
     void reset_variables(model_constants_t<float_t> &cc);
 
-    // void put(pt::ptree &ptree) const;
-
-    // void to_json(nlohmann::json& j) const;
-
     /**
      * Used to read from a checkpoint file.
      */
     template<class float_t>
     void from_json(const nlohmann::json& j, model_constants_t<float_t> &cc);
-
-    /**
-     * Used to read from a checkpoint file where the mean for the gaussians
-     * to draw from is given.
-     */
-    // template<class float_t>
-    // int from_pt(pt::ptree &ptree, model_constants_t<float_t> &cc);
 
     /**
      * Get the number of seconds that the ensenmble shall run.
