@@ -13,19 +13,25 @@ from ad_sensitivity_analysis.plot.colors import set_top_param_cbar, get_b8_color
 
 
 def _create_rank_impact_dataframe(
-    ds, ds_imp, ds_rank, phase, flow, out_param, rank_name
+    ds_imp,
+    ds_rank,
+    phase,
+    flow,
+    out_param,
+    rank_name,
+    param_names,
 ):
     """
 
     Parameters
     ----------
-    ds
     ds_imp
     ds_rank
     phase
     flow
     out_param
     rank_name
+    param_names
 
     Returns
     -------
@@ -39,6 +45,7 @@ def _create_rank_impact_dataframe(
                 {
                     rank_name: rank_vals,
                     "Mean Impact": imp_vals,
+                    "Parameter": param_names,
                 }
             )
         else:
@@ -46,8 +53,9 @@ def _create_rank_impact_dataframe(
                 rank_name: np.asarray([]),
                 "Mean Impact": np.asarray([]),
                 "Output Parameter": np.asarray([]),
+                "Parameter": np.asarray([]),
             }
-            for out_p in ds["Output Parameter"]:
+            for out_p in ds_imp["Output Parameter"]:
                 imp_vals = (
                     ds_imp.sel({"Output Parameter": out_p}).to_array().values.flatten()
                 )
@@ -60,14 +68,18 @@ def _create_rank_impact_dataframe(
                     data_dic["Output Parameter"],
                     np.repeat(out_p.item(), len(rank_vals)),
                 )
+                data_dic["Parameter"] = np.append(
+                    data_dic["Parameter"], np.asarray(param_names)
+                )
             df = pd.DataFrame.from_dict(data_dic)
     elif phase and flow:
         data_dic = {
             rank_name: np.asarray([]),
             "Mean Impact": np.asarray([]),
             "Flow": np.asarray([]),
+            "Phase": np.asarray([]),
         }
-        for flow_v, phase_v in itertools.product(ds["flow"], ds["phase"]):
+        for flow_v, phase_v in itertools.product(ds_imp["flow"], ds_imp["phase"]):
             imp_vals = (
                 ds_imp.sel({"flow": flow_v, "phase": phase_v})
                 .to_array()
@@ -81,7 +93,7 @@ def _create_rank_impact_dataframe(
             data_dic[rank_name] = np.append(data_dic[rank_name], rank_vals)
             data_dic["Mean Impact"] = np.append(data_dic["Mean Impact"], imp_vals)
             data_dic["Flow"] = np.append(
-                data_dic["Flow"], np.repeat(flow_v.item(), len(imp_vals))
+                data_dic["Flow"], np.repeat(flow_v.item().capitalize(), len(imp_vals))
             )
             data_dic["Phase"] = np.append(
                 data_dic["Phase"], np.repeat(phase_v.item(), len(imp_vals))
@@ -94,7 +106,7 @@ def _create_rank_impact_dataframe(
             "Phase": np.asarray([]),
         }
         if out_param != "all":
-            for phase_v in ds["phase"]:
+            for phase_v in ds_imp["phase"]:
                 imp_vals = ds_imp.sel({"phase": phase_v}).to_array().values.flatten()
                 rank_vals = ds_rank.sel({"phase": phase_v}).to_array().values.flatten()
                 data_dic[rank_name] = np.append(data_dic[rank_name], rank_vals)
@@ -106,7 +118,7 @@ def _create_rank_impact_dataframe(
         else:
             data_dic["Output Parameter"] = np.asarray([])
             for phase_v, out_p in itertools.product(
-                ds["phase"], ds["Output Parameter"]
+                ds_imp["phase"], ds_imp["Output Parameter"]
             ):
                 imp_vals = (
                     ds_imp.sel({"Output Parameter": out_p, "phase": phase_v})
@@ -134,16 +146,15 @@ def _create_rank_impact_dataframe(
             "Mean Impact": np.asarray([]),
             "Flow": np.asarray([]),
         }
-        for flow_v in ds["flow"]:
+        for flow_v in ds_imp["flow"]:
             imp_vals = ds_imp.sel({"flow": flow_v}).to_array().values.flatten()
             rank_vals = ds_rank.sel({"flow": flow_v}).to_array().values.flatten()
             data_dic[rank_name] = np.append(data_dic[rank_name], rank_vals)
             data_dic["Mean Impact"] = np.append(data_dic["Mean Impact"], imp_vals)
             data_dic["Flow"] = np.append(
-                data_dic["Flow"], np.repeat(flow_v.item(), len(imp_vals))
+                data_dic["Flow"], np.repeat(flow_v.item().capitalize(), len(imp_vals))
             )
         df = pd.DataFrame.from_dict(data_dic)
-
     return df
 
 
@@ -166,16 +177,16 @@ def _scatter_rank_over_impact(
     -------
 
     """
-    param_color_order, color_shades = get_b8_colors(colorblind=colorblind)
+    _, color_shades, param_order = get_b8_colors(colorblind=colorblind)
     if out_param != "all":
         sns.scatterplot(
             data=df,
             x=rank_name,
-            y="Impact",
+            y="Mean Impact",
             ax=ax,
             s=dot_size,
             hue="Parameter",
-            hue_order=param_color_order,
+            hue_order=param_order,
             palette=color_shades,
             linewidth=0.7,
             legend=False,
@@ -190,7 +201,7 @@ def _scatter_rank_over_impact(
             s=dot_size,
             markers=out_markers,
             hue="Parameter",
-            hue_order=param_color_order,
+            hue_order=param_order,
             palette=color_shades,
             linewidth=0.7,
             legend="full",
@@ -226,8 +237,7 @@ def _scatter_rank_over_impact_phase(
             data=df,
             x=rank_name,
             y="Mean Impact",
-            style="Output Parameter",
-            markers=out_markers,
+            marker=out_markers[out_param],
             ax=ax,
             s=dot_size,
             hue="Phase",
@@ -269,10 +279,11 @@ def _scatter_rank_over_impact_flow(df, rank_name, ax, dot_size):
         y="Mean Impact",
         ax=ax,
         s=dot_size,
+        style="Flow",
         markers={
-            "Inflow": "hexagon",
-            "Ascent": "star",
-            "Outflow": "plus (filled)",
+            "Inflow": "H",
+            "Ascent": "X",
+            "Outflow": "P",
         },
     )
 
@@ -301,10 +312,11 @@ def _scatter_rank_over_impact_phase_flow(
         y="Mean Impact",
         ax=ax,
         s=dot_size,
+        style="Flow",
         markers={
-            "Inflow": "hexagon",
-            "Ascent": "star",
-            "Outflow": "plus (filled)",
+            "Inflow": "H",
+            "Ascent": "X",
+            "Outflow": "P",
         },
         hue="Phase",
         hue_order=phases,
@@ -313,12 +325,13 @@ def _scatter_rank_over_impact_phase_flow(
 
 
 def _get_ds_rank_imp_name(
-    out_param, phase=False, flow=False, phases=None, flows=None, avg=False
+    ds, out_param, phase=False, flow=False, phases=None, flows=None, avg=False
 ):
     """
 
     Parameters
     ----------
+    ds
     out_param
     phase
     flow
@@ -332,17 +345,18 @@ def _get_ds_rank_imp_name(
     """
     if out_param != "all":
         ds = ds.sel({"Output Parameter": out_param})
-
     if not phase and not flow:
         ds = ds.sel({"phase": "any", "flow": "any"})
-    elif phase:
+    elif phase and not flow:
         ds = ds.sel({"phase": phases, "flow": "any"})
-    elif flow:
+    elif flow and not phase:
         ds = ds.sel({"phase": "any", "flow": flows})
     else:
         ds = ds.sel({"phase": phases, "flow": flows})
     ds_rank = ds[[p for p in ds if "rank" in p]]
+    ds_rank = ds_rank.where(ds_rank != 0)
     ds_imp = ds[[p for p in ds if "avg" in p and p != "avg ascent"]]
+    param_names = [p[0:-5] for p in ds if "rank" in p]
     ds_imp = ds_imp.mean(dim=["trajectory", "file"])
     if avg:
         ds_rank = ds_rank.mean(dim=["trajectory", "file"])
@@ -350,7 +364,7 @@ def _get_ds_rank_imp_name(
     else:
         ds_rank = ds_rank.median(dim=["trajectory", "file"])
         rank_name = "Median Rank"
-    return ds_imp, ds_rank, rank_name
+    return ds_imp, ds_rank, rank_name, param_names
 
 
 # pylint: disable=too-many-arguments, too-many-locals
@@ -407,15 +421,13 @@ def plot_rank_over_impact(
         "ice phase": "tab:blue",
         "any": "k",
     }
-    if out_param != "all":
-        out_markers = None
-    else:
-        out_markers = {
-            "QV": "D",
-            "latent_heat": "o",
-            "latent_cool": "^",
-        }
-    ds_imp, ds_rank, rank_name = _get_ds_rank_imp_name(
+    out_markers = {
+        "QV": "D",
+        "latent_heat": "o",
+        "latent_cool": "^",
+    }
+    ds_imp, ds_rank, rank_name, param_names = _get_ds_rank_imp_name(
+        ds=ds,
         out_param=out_param,
         phase=phase,
         flow=flow,
@@ -425,13 +437,13 @@ def plot_rank_over_impact(
     )
 
     df = _create_rank_impact_dataframe(
-        ds=ds,
         ds_imp=ds_imp,
         ds_rank=ds_rank,
         phase=phase,
         flow=flow,
         out_param=out_param,
         rank_name=rank_name,
+        param_names=param_names,
     )
     if not phase and not flow:
         _scatter_rank_over_impact(
@@ -449,7 +461,7 @@ def plot_rank_over_impact(
             font_scale=font_scale,
             colorblind=colorblind,
         )
-    elif phase:
+    elif phase and not flow:
         _scatter_rank_over_impact_phase(
             df=df,
             rank_name=rank_name,
@@ -460,7 +472,7 @@ def plot_rank_over_impact(
             phases=phases,
             phase_colors=phase_colors,
         )
-    elif flow:
+    elif flow and not phase:
         _scatter_rank_over_impact_flow(
             df=df,
             rank_name=rank_name,
@@ -476,9 +488,9 @@ def plot_rank_over_impact(
             phases=phases,
             phase_colors=phase_colors,
         )
-
-    plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
-    plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
+    if phase:  # or flow:
+        plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
+        plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
     if log:
         ax.set_yscale("log")
     if title is not None:
@@ -640,7 +652,7 @@ def _plot_rank_probs_single(
 
     """
     order, vals, median, mean = _get_probs_top_order_vals(ds=ds, rank=rank)
-    param_color_order, color_shades = get_b8_colors(colorblind=colorblind)
+    param_color_order, color_shades, _ = get_b8_colors(colorblind=colorblind)
 
     df = pd.DataFrame.from_dict(
         {
@@ -696,7 +708,7 @@ def _plot_rank_probs_multiple(
 
     """
     order, vals, median, mean = _get_probs_top_order_vals(ds=ds, rank=rank)
-    param_color_order, color_shades = get_b8_colors(colorblind=colorblind)
+    _, color_shades, param_order = get_b8_colors(colorblind=colorblind)
     out_markers = {
         "QV": "D",
         "latent_heat": "o",
@@ -750,7 +762,7 @@ def _plot_rank_probs_multiple(
         style="Output Parameter",
         markers=out_markers,
         palette=color_shades,
-        hue_order=param_color_order,
+        hue_order=param_order,
         linewidth=0.7,
         hue="Parameter",
         legend="full",

@@ -63,7 +63,7 @@ def plot_2dmap(
     -------
 
     """
-    colors, _ = color_funcs.get_b8_colors(colorblind=colorblind)
+    colors, _, _ = color_funcs.get_b8_colors(colorblind=colorblind)
 
     if "Output Parameter" in ds:
         coord = "Output Parameter"
