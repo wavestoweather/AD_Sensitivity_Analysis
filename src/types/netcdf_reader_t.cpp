@@ -687,12 +687,14 @@ int netcdf_reader_t::read_buffer(
             - get_at(cc.graupel.constants, Particle_cons_idx::min_x)) / 2;
         inflows[Ng_in_idx] = inflows[qg_in_idx] / avg_size;
     }
+#if defined(B_EIGHT)
     if (inflows[qh_in_idx] > 0 && inflows[Nh_in_idx] == 0) {
         auto avg_size = get_at(cc.hail.constants, Particle_cons_idx::min_x)
             + (get_at(cc.hail.constants, Particle_cons_idx::max_x)
             - get_at(cc.hail.constants, Particle_cons_idx::min_x)) / 2;
         inflows[Nh_in_idx] = inflows[qh_in_idx] / avg_size;
     }
+#endif
     return err;
 }
 
