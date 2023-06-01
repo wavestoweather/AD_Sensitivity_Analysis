@@ -203,10 +203,14 @@ def plot_rank_probs_interactive(ds):
         step=0.1,
         value=0.7,
     )
+    flow_values = []
+    for flow in ds["flow"].values:
+        if "neutral" not in flow:
+            flow_values.append(flow)
     flow_select = pn.widgets.Select(
         name="Flow",
-        value=ds["flow"].values[0],
-        options=ds["flow"].values.tolist(),
+        value=flow_values[0],
+        options=flow_values,
     )
     phase_select = pn.widgets.Select(
         name="Phase",

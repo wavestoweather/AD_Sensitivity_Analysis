@@ -488,7 +488,7 @@ def plot_rank_over_impact(
             phases=phases,
             phase_colors=phase_colors,
         )
-    if phase:  # or flow:
+    if phase or flow:
         plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
         plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
     if log:
@@ -652,7 +652,7 @@ def _plot_rank_probs_single(
 
     """
     order, vals, median, mean = _get_probs_top_order_vals(ds=ds, rank=rank)
-    param_color_order, color_shades, _ = get_b8_colors(colorblind=colorblind)
+    _, color_shades, param_order = get_b8_colors(colorblind=colorblind)
 
     df = pd.DataFrame.from_dict(
         {
@@ -680,14 +680,14 @@ def _plot_rank_probs_single(
         s=dot_size,
         hue="Parameter",
         palette=color_shades,
-        hue_order=param_color_order,
+        hue_order=param_order,
         linewidth=0.7,
         legend=False,
     )
 
 
 def _plot_rank_probs_multiple(
-    ds, ax, y, y2, rank, dot_size, mark_top_n, font_scale, colorblind=True
+    ds, ax, y, y2, rank, dot_size, mark_top_n, colorblind=True
 ):
     """
 
@@ -700,7 +700,6 @@ def _plot_rank_probs_multiple(
     rank
     dot_size
     mark_top_n
-    font_scale
     colorblind
 
     Returns
@@ -715,7 +714,7 @@ def _plot_rank_probs_multiple(
         "latent_cool": "^",
     }
     params = list(out_markers.keys())
-    probs = np.array([vals[p] for p in params])
+    probs = np.array([vals[p] for p in params]).flatten()
     avgs = np.array([])
     if y == "Median":
         for p in params:
@@ -767,12 +766,6 @@ def _plot_rank_probs_multiple(
         hue="Parameter",
         legend="full",
     )
-    handles, labels = ax.get_legend_handles_labels()
-    for handle in handles:
-        handle._sizes = [dot_size]  # pylint: disable=protected-access
-    ax.legend(handles=handles[-4:], labels=labels[-4:])
-    plt.setp(ax.get_legend().get_texts(), fontsize=int(9 * font_scale))
-    plt.setp(ax.get_legend().get_title(), fontsize=int(11 * font_scale))
 
 
 def plot_rank_probs(
@@ -850,7 +843,6 @@ def plot_rank_probs(
             rank=rank,
             dot_size=dot_size,
             mark_top_n=mark_top_n,
-            font_scale=font_scale,
             colorblind=colorblind,
         )
     if show_cbar:
@@ -866,8 +858,16 @@ def plot_rank_probs(
     if logy:
         ax.set_yscale("log")
     ax.tick_params(axis="both", which="major", labelsize=int(10 * font_scale))
-    handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, fontsize=int(10 * font_scale), markerscale=font_scale)
+    if out_param == "all":
+        handles, labels = ax.get_legend_handles_labels()
+        for handle in handles:
+            handle._sizes = [dot_size]  # pylint: disable=protected-access
+        ax.legend(
+            handles=handles[-4:],
+            labels=labels[-4:],
+            fontsize=int(10 * font_scale),
+            markerscale=font_scale,
+        )
     ax.set_xlabel("Probability for high ranking", fontsize=int(11 * font_scale))
     ax.yaxis.get_offset_text().set_fontsize(int(11 * font_scale))
     ax.set_ylabel(f"{y} {y2}", fontsize=int(11 * font_scale))
