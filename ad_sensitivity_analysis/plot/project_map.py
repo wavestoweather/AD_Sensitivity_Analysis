@@ -32,7 +32,6 @@ def plot_2dmap(
     save,
     latex,
     save_path,
-    static,
     colorblind=True,
 ):
     """
@@ -58,14 +57,13 @@ def plot_2dmap(
     save
     latex
     save_path
-    static
     colorblind
 
     Returns
     -------
 
     """
-    colors, _ = color_funcs.get_b8_colors(colorblind=colorblind)
+    colors, _, _ = color_funcs.get_b8_colors(colorblind=colorblind)
 
     if "Output Parameter" in ds:
         coord = "Output Parameter"
@@ -87,7 +85,6 @@ def plot_2dmap(
         height=height,
         lthresh=lthresh,
         latex=latex,
-        static=static,
     )
     if title == "":
         title = None
@@ -143,19 +140,14 @@ def plot_2dmap(
             )
 
     set_2dmap_labels(
+        fig=fig,
         ax=ax,
         font_scale=font_scale,
         in_param=in_param,
         kind_param=kind_param,
         title=title,
+        colorblind=colorblind,
     )
-    if in_param == "Top_Parameter":
-        color_funcs.set_top_param_cbar(
-            fig=fig,
-            ax=ax,
-            font_scale=font_scale,
-            colorblind=colorblind,
-        )
     if save:
         # The local variables here have to be set in case
         # of interactive plotting.
@@ -177,7 +169,6 @@ def prepare_2dplot(
     height,
     lthresh,
     latex,
-    static,
 ):
     """
 
@@ -196,7 +187,6 @@ def prepare_2dplot(
     height
     lthresh
     latex
-    static
 
     Returns
     -------
@@ -228,27 +218,21 @@ def prepare_2dplot(
         return fig, ax, ds_local, 0, 0, 0, 0, 0
     mini, maxi, mini2, maxi2 = aux_ds_functions.get_extreme_vals(ds_fix)
     linthresh = aux_ds_functions.get_log_threshold(da=ds_fix, lthresh=lthresh)
-    min_local, max_local, min_local2, max_local2 = aux_ds_functions.get_extreme_vals(
-        ds_local
-    )
-    static.value = (
-        f"({mini:.2e}, {maxi:.2e}); "
-        f"at {pressure/100} hPa: ({min_local:.2e}, {max_local:.2e}) -- "
-        f"({min_local2:.2e}, {max_local2:.2e}) {linthresh:.2e}, {lthresh:.2e}"
-    )
     return fig, ax, ds_local, mini, maxi, mini2, maxi2, linthresh
 
 
-def set_2dmap_labels(ax, font_scale, in_param, kind_param, title):
+def set_2dmap_labels(fig, ax, font_scale, in_param, kind_param, title, colorblind):
     """
 
     Parameters
     ----------
+    fig
     ax
     font_scale
     in_param
     kind_param
     title
+    colorblind
 
     Returns
     -------
@@ -267,28 +251,24 @@ def set_2dmap_labels(ax, font_scale, in_param, kind_param, title):
     ax.yaxis.grid(True, which="major")
     ax.xaxis.grid(True, which="major")
     cbar = ax.collections[-1].colorbar
-    cbarax = cbar.ax
     if in_param == "Top_Parameter":
-        cbarlabel = "Index of top parameter"
-        cbar_ticks = [4, 14, 23, 30, 36]
-        cbar_labels = [
-            "evaporation",
-            "CCN activation",
-            "geometry",
-            "fall velocity",
-            "miscellaneous",
-        ]
-        cbar.set_ticks(cbar_ticks)
-        cbar.set_ticklabels(cbar_labels)
+        cbar.remove()
+        color_funcs.set_top_param_cbar(
+            fig=fig,
+            ax=ax,
+            font_scale=font_scale,
+            colorblind=colorblind,
+        )
     else:
+        cbarax = cbar.ax
         cbarlabel = f"{kind_param} " + latexify.parse_word(in_param).replace(
             r"\partial", ""
         )
-    cbarax.tick_params(labelsize=int(10 * font_scale))
-    cbar.set_label(
-        label=cbarlabel,
-        fontsize=int(11 * font_scale),
-    )
+        cbarax.tick_params(labelsize=int(10 * font_scale))
+        cbar.set_label(
+            label=cbarlabel,
+            fontsize=int(11 * font_scale),
+        )
 
 
 def plot_heatmap(ds, col, fig_size=250, aspect=1, cmap="viridis"):

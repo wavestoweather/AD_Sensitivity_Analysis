@@ -227,7 +227,6 @@ void physics_t::compute_nondimensional_effects(
                    - get_at(cc.constants, Cons_idx::gravity_acc)
                    * w_prime/get_at(cc.constants, Cons_idx::cp)) / ref_quant.Tref;
     res[w_idx] += cc.get_dw()/ref_quant.wref;
-//    res[w_idx] += get_at(cc.constants, Cons_idx::dw)/ref_quant.wref;
     res[z_idx] += w_prime/ref_quant.zref;
 }
 

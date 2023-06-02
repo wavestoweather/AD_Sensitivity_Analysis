@@ -145,11 +145,11 @@ def get_b8_cbar_colors(colorblind=True):
     -------
 
     """
-    _, color_shades = get_b8_colors(colorblind=colorblind)
+    _, color_shades, _ = get_b8_colors(colorblind=colorblind)
     cbar_colors = []
-    for key, params in param_process_order.items():
-        for i, _ in enumerate(params):
-            cbar_colors.append(color_shades[key][i])
+    for _, params in param_process_order.items():
+        for param in params:
+            cbar_colors.append(color_shades[param])
     cbar_colors.append([0, 0, 0, 0])
     return cbar_colors
 
@@ -184,23 +184,34 @@ def get_b8_colors(colorblind=True):
             else:
                 color = plt.cm.Greys(np.linspace(0.2, 1, n))
 
-        color_shades[key] = []
-        for i in range(n):
-            color_shades[key].append(color[i])
+        # color_shades[key] = []
+        for i, param in enumerate(params):
+            color_shades[param] = color[i]
 
     param_color_order = []
+    param_order = []
     for p in regrid_idx:
-        for key, params in param_process_order.items():
-            found = False
-            for i, p2 in enumerate(params):
-                if p2 == p:
-                    param_color_order.append(color_shades[key][i])
-                    found = True
-                    break
-            if found:
-                break
+        param_order.append(p)
+        param_color_order.append(color_shades[p])
     param_color_order.append([0, 0, 0, 0])
-    return param_color_order, color_shades
+    return param_color_order, color_shades, param_order
+
+
+def get_b8_process_from_param(param):
+    """
+
+    Parameters
+    ----------
+    param
+
+    Returns
+    -------
+
+    """
+    for key, params in param_process_order.items():
+        if param in params:
+            return key
+    return None
 
 
 def get_b8_cbar_ticks_labels(cbar_colors):

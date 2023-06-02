@@ -138,71 +138,7 @@ void netcdf_simulation_reader_t::init_netcdf(
         countp2[3] = countp[2];
         read_time_buffer = countp[2];
     }
-//    for (auto traj=traj_idx; traj < traj_idx+n_traj_buffer; traj++) {
-//        if (traj >= n_trajectories) break;
-        // get the relative time
-//        startp[1] = traj;
-//        countp[2] = 10;
-//        std::vector<double> rel_start_time(10);
-//        SUCCESS_OR_DIE(
-//                nc_get_vara_double(
-//                        ncid,
-//                        varid[Par_idx::time_after_ascent],
-//                        startp.data(),
-//                        countp.data(),
-//                        rel_start_time.data()));
-//        for (uint32_t i = 0; i < rel_start_time.size()-1; i++) {
-//            if (std::isnan(rel_start_time[i])) continue;
-//            if (start_time < rel_start_time[i]) {
-//                start_time_idx = 0;
-//            } else {
-//                start_time_idx = i + (start_time - rel_start_time[i]) / DELTA_TIMESTEP;
-//            }
-//        }
-//        startp[2] = start_time_idx;
-//        if (start_time_idx + n_timesteps_buffer >= n_timesteps_in) {
-//            countp[2] = n_timesteps_in-start_time_idx-1;
-//        } else {
-//            countp[2] = n_timesteps_buffer;
-//        }
-//        n_readable_timesteps[traj%n_traj_buffer] = countp[2];
-//        if (n_readable_timesteps[traj%n_traj_buffer] > n_timesteps_buffer) {
-//            std::cout << "The amount of readable time steps is larger than "
-//                      << "the buffer size. You should increase the buffer size.\n";
-//            countp[2] = n_timesteps_buffer;
-//        }
-//        std::cout << "buffer time done in " << dt_total << " s\n";
-        // Load all the data into buffer
-//        for (uint32_t i = 0; i < Par_idx::n_pars; i++) {
-//            SUCCESS_OR_DIE(
-//                    nc_get_vara_double(
-//                            ncid,
-//                            varid[i],
-//                            startp.data(),
-//                            countp.data(),
-//                            buffer[i].data() + (traj%n_traj_buffer)*n_timesteps_buffer));
-//        }
-//        auto mod_time = std::chrono::system_clock::now();
-//        dt_total = ((std::chrono::duration<double>)(mod_time - buffer_time)).count();
-//        std::cout << "mod done in " << dt_total << " s\n";
-//        startp2[2] = traj;
-//        startp2[3] = start_time_idx;
-//        countp2[3] = countp[2];
-//
-//        for (uint32_t o_id = 0; o_id < 3; o_id++) {
-//            startp2[0] = o_id;
-//            for (uint32_t i = 0; i < Sens_par_idx::n_sens_pars; i++) {
-//                SUCCESS_OR_DIE(
-//                        nc_get_vara_double(
-//                                ncid,
-//                                sensvarid[i],
-//                                startp2.data(),
-//                                countp2.data(),
-//                                buffer_sens[i*3 + o_id].data() + (traj%n_traj_buffer)*n_timesteps_buffer));
-//            }
-//        }
-
-    for (uint32_t i = 0; i < Par_idx::n_pars; i++) {
+        for (uint32_t i = 0; i < Par_idx::n_pars; i++) {
         SUCCESS_OR_DIE(
             nc_get_vara_double(
                 ncid,
@@ -211,9 +147,6 @@ void netcdf_simulation_reader_t::init_netcdf(
                 countp.data(),
                 buffer[i].data()));
     }
-//    startp2[2] = traj_idx;
-//    startp2[3] = start_time_idx;
-//    countp2[3] = countp[2];
 
     for (uint32_t o_id = 0; o_id < 3; o_id++) {
         startp2[0] = o_id;
@@ -227,7 +160,6 @@ void netcdf_simulation_reader_t::init_netcdf(
                     buffer_sens[i*3 + o_id].data()));
         }
     }
-//    }
 }
 
 void netcdf_simulation_reader_t::close_netcdf() {

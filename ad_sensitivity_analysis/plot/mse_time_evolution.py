@@ -191,6 +191,7 @@ def _plot_mpl(
     xlabel,
     ylabel,
     title,
+    precision,
 ):
     """
 
@@ -216,6 +217,7 @@ def _plot_mpl(
     xlabel
     ylabel
     title
+    precision
 
     Returns
     -------
@@ -256,9 +258,12 @@ def _plot_mpl(
             # Can implement an even fancier format here if needed
             if logy and tick_val == limits_dict["min_log_y"]:
                 return "-Infinity"
-            return np.format_float_scientific(
-                tick_val, precision=0, exp_digits=1
-            ).replace(".", "")
+            scientific = np.format_float_scientific(
+                tick_val, precision=precision, exp_digits=1, unique=True
+            )
+            if precision == 0:
+                return scientific.replace(".", "")
+            return scientific
 
         ax.yaxis.set_major_formatter(tick.FuncFormatter(format_fn))
         ax.tick_params(
@@ -325,9 +330,12 @@ def _plot_mpl(
             # Can implement an even fancier format here if needed
             if logtwin and tick_val == limits_dict["min_log_twin"]:
                 return "-Infinity"
-            return np.format_float_scientific(
-                tick_val, precision=0, exp_digits=1
-            ).replace(".", "")
+            scientific = np.format_float_scientific(
+                tick_val, precision=precision, exp_digits=1, unique=True
+            )
+            if precision == 0:
+                return scientific.replace(".", "")
+            return scientific
 
         twinax.yaxis.set_major_formatter(tick.FuncFormatter(format_fn))
         twinax.tick_params(
@@ -404,11 +412,11 @@ def _plot_mpl(
             for i in range(len(data_types))
         }
     ).opts(fontsize=fontsize)
-    if perturb_delta is not None:
-        image = left * twin * perturb_lines * legend_overlay
-    else:
-        image = legend_overlay * left * twin
-    return image
+    return (
+        legend_overlay * left * twin
+        if perturb_delta is None
+        else left * twin * perturb_lines * legend_overlay
+    )
 
 
 # pylint: disable=too-many-arguments, too-many-locals
@@ -565,6 +573,7 @@ def plot_time_evolution(
     trajectory=None,
     out_param=None,
     in_params=None,
+    precision=0,
 ):
     """
     Plot over time after ascent the model state (left y-axis) and
@@ -636,6 +645,9 @@ def plot_time_evolution(
         are available in df.
     in_params : list of strings
         Name of the model parameters in df to plot.
+    precision : int
+        Maximum number of digits for ticks used in
+        numpy.format_float_scientific if backend "matplotlib" is used.
 
     Returns
     -------
@@ -686,6 +698,7 @@ def plot_time_evolution(
             xlabel,
             ylabel,
             title,
+            precision=precision,
         )
     else:
         image = _plot_bokeh(

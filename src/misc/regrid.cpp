@@ -18,20 +18,19 @@ const double FILLVALUE = std::numeric_limits<double>::quiet_NaN();
 const nc_type NC_FLOAT_T = NC_DOUBLE;
 
 void get_rank(
-    const uint32_t &n_params,
-    const uint32_t &n_out_params,
-    const int &t_idx,
-    const int &p_idx,
-    const int &lat_idx,
-    const int &lon_idx,
-    const uint32_t &offset_lat,
-    const uint32_t &offset_p,
-    const uint32_t &offset_t,
-    const uint32_t &offset_params,
-    const uint32_t &rank_offset,
-    std::vector<double> &tmp_avg,
-    std::vector<uint64_t> &ranking) {
-
+        const uint32_t &n_params,
+        const uint32_t &n_out_params,
+        const int &t_idx,
+        const int &p_idx,
+        const int &lat_idx,
+        const int &lon_idx,
+        const uint32_t &offset_lat,
+        const uint32_t &offset_p,
+        const uint32_t &offset_t,
+        const uint32_t &offset_params,
+        const uint32_t &rank_offset,
+        std::vector<double> &tmp_avg,
+        std::vector<uint64_t> &ranking) {
     std::vector<int> max_idx = {-1, -1, -1};
     std::vector<double> max_sens = {0, 0, 0};
     for (uint32_t i = 0; i < n_params; i++) {
@@ -51,36 +50,35 @@ void get_rank(
 }
 
 void process_file(
-    netcdf_simulation_reader_t &netcdf_reader,
-    std::vector<double> &means_model,
-    std::vector<double> &mins_model,
-    std::vector<double> &maxs_model,
-    std::vector<double> &std_model,
-    std::vector<uint64_t> &counts,
-    std::vector<uint64_t> &ranking,
-    std::vector<double> &means,
-    std::vector<double> &mins,
-    std::vector<double> &maxs,
-    std::vector<double> &stds,
-    const uint32_t &offset_lat,
-    const uint32_t &offset_p,
-    const uint32_t &offset_t,
-    const uint32_t &offset_params,
-    const uint32_t &offset_sens,
-    const uint32_t &rank_offset,
-    const double &inflow_time,
-    const double &outflow_time,
-    const std::vector<double> &times,
-    const std::vector<double> &pressure_levels,
-    const std::vector<double> &lons,
-    const std::vector<double> &lats,
-    const uint32_t &counter,
-    const uint32_t &n_params,
-    const uint32_t &n_model_params,
-    const uint32_t &n_out_params,
-    const int &n_times,
-    const bool &relative_time) {
-
+        netcdf_simulation_reader_t &netcdf_reader,
+        std::vector<double> &means_model,
+        std::vector<double> &mins_model,
+        std::vector<double> &maxs_model,
+        std::vector<double> &std_model,
+        std::vector<uint64_t> &counts,
+        std::vector<uint64_t> &ranking,
+        std::vector<double> &means,
+        std::vector<double> &mins,
+        std::vector<double> &maxs,
+        std::vector<double> &stds,
+        const uint32_t &offset_lat,
+        const uint32_t &offset_p,
+        const uint32_t &offset_t,
+        const uint32_t &offset_params,
+        const uint32_t &offset_sens,
+        const uint32_t &rank_offset,
+        const double &inflow_time,
+        const double &outflow_time,
+        const std::vector<double> &times,
+        const std::vector<double> &pressure_levels,
+        const std::vector<double> &lons,
+        const std::vector<double> &lats,
+        const uint32_t &counter,
+        const uint32_t &n_params,
+        const uint32_t &n_model_params,
+        const uint32_t &n_out_params,
+        const int &n_times,
+        const bool &relative_time) {
     ProgressBar pbar = ProgressBar(netcdf_reader.n_trajectories, 50, "Trajectory", std::cout);
     for (uint32_t traj = 0; traj < netcdf_reader.n_trajectories; traj++) {
         bool got_data = false;
@@ -98,7 +96,7 @@ void process_file(
             } else {
                 auto rel_time = netcdf_reader.relative_time_buffer[i];
                 start_time_idx = i-(traj%netcdf_reader.n_traj_buffer)*10
-                        + (inflow_time - rel_time) / DELTA_TIMESTEP;
+                                 + (inflow_time - rel_time) / DELTA_TIMESTEP;
 
                 break;
             }
@@ -171,19 +169,19 @@ void process_file(
             int idx = t_idx * offset_t + p_idx * offset_p + lat_idx * offset_lat + lon_idx;
             if (old_idx > -1 && old_idx != idx) {
                 get_rank(
-                    n_params,
-                    n_out_params,
-                    old_t_idx,
-                    old_p_idx,
-                    old_lat_idx,
-                    old_lon_idx,
-                    offset_lat,
-                    offset_p,
-                    offset_t,
-                    offset_params,
-                    rank_offset,
-                    tmp_avg,
-                    ranking);
+                        n_params,
+                        n_out_params,
+                        old_t_idx,
+                        old_p_idx,
+                        old_lat_idx,
+                        old_lon_idx,
+                        offset_lat,
+                        offset_p,
+                        offset_t,
+                        offset_params,
+                        rank_offset,
+                        tmp_avg,
+                        ranking);
                 old_idx = idx;
                 old_t_idx = t_idx;
                 old_p_idx = p_idx;
@@ -235,38 +233,38 @@ void process_file(
             if (DELTA_TIMESTEP + current_time >= times[t_idx+1] && t_idx-1 == n_times) {
                 if (!got_rank) {
                     get_rank(
-                        n_params,
-                        n_out_params,
-                        t_idx,
-                        p_idx,
-                        lat_idx,
-                        lon_idx,
-                        offset_lat,
-                        offset_p,
-                        offset_t,
-                        offset_params,
-                        rank_offset,
-                        tmp_avg,
-                        ranking);
+                            n_params,
+                            n_out_params,
+                            t_idx,
+                            p_idx,
+                            lat_idx,
+                            lon_idx,
+                            offset_lat,
+                            offset_p,
+                            offset_t,
+                            offset_params,
+                            rank_offset,
+                            tmp_avg,
+                            ranking);
                 }
                 break;
             }
             if (current_idx + start_time_idx >= netcdf_reader.n_timesteps_in) {
                 if (!got_rank) {
                     get_rank(
-                        n_params,
-                        n_out_params,
-                        t_idx,
-                        p_idx,
-                        lat_idx,
-                        lon_idx,
-                        offset_lat,
-                        offset_p,
-                        offset_t,
-                        offset_params,
-                        rank_offset,
-                        tmp_avg,
-                        ranking);
+                            n_params,
+                            n_out_params,
+                            t_idx,
+                            p_idx,
+                            lat_idx,
+                            lon_idx,
+                            offset_lat,
+                            offset_p,
+                            offset_t,
+                            offset_params,
+                            rank_offset,
+                            tmp_avg,
+                            ranking);
                 }
                 break;
             }
@@ -282,32 +280,9 @@ void process_file(
             if (outflow_counter * DELTA_TIMESTEP >= outflow_time) {
                 if (!got_rank) {
                     get_rank(
-                        n_params,
-                        n_out_params,
-                        t_idx,
-                        p_idx,
-                        lat_idx,
-                        lon_idx,
-                        offset_lat,
-                        offset_p,
-                        offset_t,
-                        offset_params,
-                        rank_offset,
-                        tmp_avg,
-                        ranking);
-                }
-                break;
-            }
-            current_time += DELTA_TIMESTEP;
-            current_idx++;
-            if (current_time >= times[t_idx+1]) {
-                t_idx++;
-                if (t_idx == n_times || current_idx + start_time_idx >= netcdf_reader.n_timesteps_in) {
-                    if (!got_rank) {
-                        get_rank(
                             n_params,
                             n_out_params,
-                            t_idx-1,
+                            t_idx,
                             p_idx,
                             lat_idx,
                             lon_idx,
@@ -318,6 +293,29 @@ void process_file(
                             rank_offset,
                             tmp_avg,
                             ranking);
+                }
+                break;
+            }
+            current_time += DELTA_TIMESTEP;
+            current_idx++;
+            if (current_time >= times[t_idx+1]) {
+                t_idx++;
+                if (t_idx == n_times || current_idx + start_time_idx >= netcdf_reader.n_timesteps_in) {
+                    if (!got_rank) {
+                        get_rank(
+                                n_params,
+                                n_out_params,
+                                t_idx-1,
+                                p_idx,
+                                lat_idx,
+                                lon_idx,
+                                offset_lat,
+                                offset_p,
+                                offset_t,
+                                offset_params,
+                                rank_offset,
+                                tmp_avg,
+                                ranking);
                     }
                     break;
                 }
@@ -328,11 +326,11 @@ void process_file(
 }
 
 int create_dims(
-    const std::string& store_path,
-    const uint32_t& n_plevels,
-    const uint32_t& n_bins,
-    const uint32_t& n_times,
-    std::vector<int> &dimid) {
+        const std::string& store_path,
+        const uint32_t& n_plevels,
+        const uint32_t& n_bins,
+        const uint32_t& n_times,
+        std::vector<int> &dimid) {
     int ncid;
     SUCCESS_OR_DIE(nc_create(
             store_path.c_str(),
@@ -340,54 +338,53 @@ int create_dims(
             &ncid));
     // Create dimensions
     SUCCESS_OR_DIE(
-        nc_def_dim(
-            ncid,                // ncid
-            "Output_Parameter",  // name
-            3,                   // length
-            &dimid[Grid_dim_idx::outp_dim_idx]));   // idp
+            nc_def_dim(
+                    ncid,                // ncid
+                    "Output_Parameter",  // name
+                    3,                   // length
+                    &dimid[Grid_dim_idx::outp_dim_idx]));   // idp
     SUCCESS_OR_DIE(
-        nc_def_dim(
-            ncid,
-            "time",
-            n_times,
-            &dimid[Grid_dim_idx::time_griddim_idx]));
+            nc_def_dim(
+                    ncid,
+                    "time",
+                    n_times,
+                    &dimid[Grid_dim_idx::time_griddim_idx]));
     SUCCESS_OR_DIE(
-        nc_def_dim(
-            ncid,
-            "pressure",
-            n_plevels,
-            &dimid[Grid_dim_idx::p_dim_idx]));
+            nc_def_dim(
+                    ncid,
+                    "pressure",
+                    n_plevels,
+                    &dimid[Grid_dim_idx::p_dim_idx]));
     SUCCESS_OR_DIE(
-        nc_def_dim(
-            ncid,
-            "lat",
-            n_bins,
-            &dimid[Grid_dim_idx::lat_dim_idx]));
+            nc_def_dim(
+                    ncid,
+                    "lat",
+                    n_bins,
+                    &dimid[Grid_dim_idx::lat_dim_idx]));
     SUCCESS_OR_DIE(
-        nc_def_dim(
-            ncid,
-            "lon",
-            n_bins,
-            &dimid[Grid_dim_idx::lon_dim_idx]));
+            nc_def_dim(
+                    ncid,
+                    "lon",
+                    n_bins,
+                    &dimid[Grid_dim_idx::lon_dim_idx]));
     return ncid;
 }
 
 void define_vars(
-    const int &ncid,
-    std::vector<int>& varid,
-    std::vector<int>& dimid,
-    std::vector<int>& varid_means,
-    std::vector<int>& varid_mins,
-    std::vector<int>& varid_maxs,
-    std::vector<int>& varid_stds,
-    std::vector<int>& varid_means_sens,
-    std::vector<int>& varid_mins_sens,
-    std::vector<int>& varid_maxs_sens,
-    std::vector<int>& varid_stds_sens,
-    std::vector<int>& varid_misc,
-    const uint32_t &n_model_params,
-    const uint32_t &n_params) {
-
+        const int &ncid,
+        std::vector<int>& varid,
+        std::vector<int>& dimid,
+        std::vector<int>& varid_means,
+        std::vector<int>& varid_mins,
+        std::vector<int>& varid_maxs,
+        std::vector<int>& varid_stds,
+        std::vector<int>& varid_means_sens,
+        std::vector<int>& varid_mins_sens,
+        std::vector<int>& varid_maxs_sens,
+        std::vector<int>& varid_stds_sens,
+        std::vector<int>& varid_misc,
+        const uint32_t &n_model_params,
+        const uint32_t &n_params) {
     SUCCESS_OR_DIE(
         nc_def_var(
             ncid,                   // ncid
@@ -518,18 +515,17 @@ void define_vars(
 }
 
 void set_attributes(
-    const int &ncid) {
+        const int &ncid) {
     // Not now, maybe later
 }
 
 void write_dim_values(
-    const int &ncid,
-    const std::vector<int> &varid,
-    const std::vector<double> &times,
-    const std::vector<double> &pressure_levels,
-    const std::vector<double> &lons,
-    const std::vector<double> &lats) {
-
+        const int &ncid,
+        const std::vector<int> &varid,
+        const std::vector<double> &times,
+        const std::vector<double> &pressure_levels,
+        const std::vector<double> &lons,
+        const std::vector<double> &lats) {
     std::vector<size_t> startp, countp;
     startp.push_back(0);
     std::vector<std::string> out_params = {"QV", "latent_heat", "latent_cool"};
@@ -585,9 +581,8 @@ void write_dim_values(
 }
 
 void set_compression(
-    const int &ncid,
-    const std::vector<int> &varid) {
-
+        const int &ncid,
+        const std::vector<int> &varid) {
     for (const auto v : varid)
         SUCCESS_OR_DIE(
             nc_def_var_deflate(
@@ -599,20 +594,19 @@ void set_compression(
 }
 
 void write_other_values(
-    const int &ncid,
-    const std::vector<double> &means,
-    const std::vector<double> &mins,
-    const std::vector<double> &maxs,
-    const std::vector<double> &stds,
-    const std::vector<int> &varid_means,
-    const std::vector<int> &varid_mins,
-    const std::vector<int> &varid_maxs,
-    const std::vector<int> &varid_stds,
-    const uint32_t &n_model_params,
-    const uint32_t &offset_params,
-    const std::vector<size_t> &startp,
-    const std::vector<size_t> &countp) {
-
+        const int &ncid,
+        const std::vector<double> &means,
+        const std::vector<double> &mins,
+        const std::vector<double> &maxs,
+        const std::vector<double> &stds,
+        const std::vector<int> &varid_means,
+        const std::vector<int> &varid_mins,
+        const std::vector<int> &varid_maxs,
+        const std::vector<int> &varid_stds,
+        const uint32_t &n_model_params,
+        const uint32_t &offset_params,
+        const std::vector<size_t> &startp,
+        const std::vector<size_t> &countp) {
     for (uint32_t i = 0; i < n_model_params; i++) {
         SUCCESS_OR_DIE(
             nc_put_vara(
@@ -647,23 +641,22 @@ void write_other_values(
 
 
 void parse(
-    int argc,
-    char** argv,
-    uint32_t &buffer_size,
-    uint32_t &n_bins,
-    double &min_time,
-    double &max_time,
-    double &delta_time,
-    double &min_lon,
-    double &max_lon,
-    double &min_lat,
-    double &max_lat,
-    double &inflow_time,
-    double &outflow_time,
-    std::string &store_path,
-    std::string &load_path,
-    bool &relative_time) {
-
+        int argc,
+        char** argv,
+        uint32_t &buffer_size,
+        uint32_t &n_bins,
+        double &min_time,
+        double &max_time,
+        double &delta_time,
+        double &min_lon,
+        double &max_lon,
+        double &min_lat,
+        double &max_lat,
+        double &inflow_time,
+        double &outflow_time,
+        std::string &store_path,
+        std::string &load_path,
+        bool &relative_time) {
     if (argc > 64) {
         throw std::runtime_error("You provided more than 64 input parameters.");
     }
@@ -740,22 +733,22 @@ int main(int argc, char** argv) {
     bool relative_time;
 
     parse(
-        argc,
-        argv,
-        buffer_size,
-        n_bins,
-        min_time,
-        max_time,
-        delta_time,
-        min_lon,
-        max_lon,
-        min_lat,
-        max_lat,
-        inflow_time,
-        outflow_time,
-        store_path,
-        load_path_str,
-        relative_time);
+            argc,
+            argv,
+            buffer_size,
+            n_bins,
+            min_time,
+            max_time,
+            delta_time,
+            min_lon,
+            max_lon,
+            min_lat,
+            max_lat,
+            inflow_time,
+            outflow_time,
+            store_path,
+            load_path_str,
+            relative_time);
 
     const std::filesystem::path load_path = {load_path_str};
     const uint32_t n_params = order_sens.size();
@@ -763,7 +756,7 @@ int main(int argc, char** argv) {
 
     netcdf_simulation_reader_t netcdf_reader(buffer_size);
     std::vector<double> pressure_levels = {
-        0, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000
+            0, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000
     };
     const uint32_t n_plevels = pressure_levels.size()-1;
     std::vector<double> lons(n_bins+1);
@@ -803,12 +796,12 @@ int main(int argc, char** argv) {
     std::vector<double> stds(n_bins*n_bins*n_times*n_out_params*n_params*n_plevels);
 
     double mem_usage = sizeof(double) *
-            (means_model.size() + mins_model.size() + maxs_model.size()
-            + std_model.size() + means.size() + mins.size() + maxs.size()
-            + stds.size()) + sizeof(uint64_t) * (counts.size() + ranking.size()
-            + ranking_vals.size());
+                       (means_model.size() + mins_model.size() + maxs_model.size()
+                        + std_model.size() + means.size() + mins.size() + maxs.size()
+                        + stds.size()) + sizeof(uint64_t) * (counts.size() + ranking.size()
+                                                             + ranking_vals.size());
     std::cout << "For calculating the gridded data this program allocates about "
-        << mem_usage/(1024*1024*1024) << " GByte\n";
+              << mem_usage/(1024*1024*1024) << " GByte\n";
     std::cout << "Total usage: "
               << netcdf_reader.mem_usage/(1024*1024) + mem_usage/(1024*1024*1024) << " GByte\n";
     // Get the counts, means, min. max, std, ranking
@@ -1057,28 +1050,28 @@ int main(int argc, char** argv) {
     countp.push_back(n_bins);       // lon
 
     write_other_values(
-        ncid,
-        means_model,
-        mins_model,
-        maxs_model,
-        std_model,
-        varid_means,
-        varid_mins,
-        varid_maxs,
-        varid_stds,
-        n_model_params,
-        offset_params,
-        startp,
-        countp);
+            ncid,
+            means_model,
+            mins_model,
+            maxs_model,
+            std_model,
+            varid_means,
+            varid_mins,
+            varid_maxs,
+            varid_stds,
+            n_model_params,
+            offset_params,
+            startp,
+            countp);
 
     // flush counts
     SUCCESS_OR_DIE(
-        nc_put_vara(
-            ncid,
-            varid_misc[Misc_idx::counts],
-            startp.data(),
-            countp.data(),
-            counts.data()));
+            nc_put_vara(
+                    ncid,
+                    varid_misc[Misc_idx::counts],
+                    startp.data(),
+                    countp.data(),
+                    counts.data()));
 
     std::vector<size_t> startp2, countp2;
     startp2.push_back(0);
@@ -1109,12 +1102,12 @@ int main(int argc, char** argv) {
             countp2);
     // flush ranking
     SUCCESS_OR_DIE(
-        nc_put_vara(
-            ncid,
-            varid_misc[Misc_idx::ranking],
-            startp2.data(),
-            countp2.data(),
-            ranking_vals.data()));
+            nc_put_vara(
+                    ncid,
+                    varid_misc[Misc_idx::ranking],
+                    startp2.data(),
+                    countp2.data(),
+                    ranking_vals.data()));
     auto end_flush = std::chrono::system_clock::now();
     dt_total = ((std::chrono::duration<double>) (end_flush - start_flush)).count();
     time = "Done in ";

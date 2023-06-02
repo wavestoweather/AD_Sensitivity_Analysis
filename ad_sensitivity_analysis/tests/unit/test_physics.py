@@ -236,7 +236,7 @@ def test_ccn_act_akm(physics, w, T, qv, qc, verbose=False):
                     "qc": 10**qc,
                     "Nc": 1,
                     "T": T,
-                    "p": i * 1e5,
+                    "p": i,
                     "w": w_i,
                 },
                 **physics_output,

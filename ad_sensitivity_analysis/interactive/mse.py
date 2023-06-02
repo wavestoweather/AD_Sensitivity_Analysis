@@ -240,6 +240,7 @@ def _prepare_dataset_and_plot(
     in_params,
     plot_deviation,
     perturbed,
+    precision,
 ):
     """
 
@@ -266,6 +267,7 @@ def _prepare_dataset_and_plot(
     in_params
     plot_deviation
     perturbed
+    precision
 
     Returns
     -------
@@ -316,6 +318,7 @@ def _prepare_dataset_and_plot(
             font_scale=font_scale,
             dot_size=dot_size,
             plot_deviation=plot_deviation,
+            precision=precision,
         )
     # Perturbed ensemble
     df = ds.to_dataframe().reset_index()
@@ -340,6 +343,7 @@ def _prepare_dataset_and_plot(
         out_param=out_param,
         in_params=in_params,
         plot_deviation=plot_deviation,
+        precision=precision,
     )
 
 
@@ -462,6 +466,12 @@ def plot_time_evolution_interactive(ds, perturbed=False):
         end=len(ds["trajectory"]) - 1,
         step=1,
     )
+    prec_widget = pn.widgets.IntSlider(
+        name="Precision",
+        start=0,
+        end=5,
+        step=1,
+    )
 
     plot_pane = pn.panel(
         pn.bind(
@@ -487,6 +497,7 @@ def plot_time_evolution_interactive(ds, perturbed=False):
             plot_deviation=perturbed,
             font_scale=font_slider,
             perturbed=perturbed,
+            precision=prec_widget,
         ),
     ).servable()
 
@@ -513,6 +524,7 @@ def plot_time_evolution_interactive(ds, perturbed=False):
                 x_widget,
                 y_widget,
                 y2_widget,
+                prec_widget,
             ),
         ),
         pn.Row(
