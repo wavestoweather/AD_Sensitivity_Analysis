@@ -11,6 +11,12 @@ import xarray as xr
 
 from ad_sensitivity_analysis.data_handler.loader import load_dataset_part
 from ad_sensitivity_analysis.plot.latexify import param_id_map
+from ad_sensitivity_analysis.statistics.stats_overall_aux import (
+    get_phase_flow_combined_counts,
+    get_phase_flow_combined_stats,
+    get_phase_flow_counts,
+    get_phase_flow_stats,
+)
 
 
 def get_sums(
@@ -542,3 +548,47 @@ def get_cov_matrix_phase(
         with open(store_path + "_covariance_matrix_phases.pkl", "wb") as f:
             pickle.dump(cov, f)
     return means, cov
+
+
+def get_phase_flow_statistics(
+    file_path,
+    inoutflow_time=240,
+    combined=False,
+):
+    """
+    Get statistics for different phases and different flows.
+
+    Parameters
+    ----------
+    file_path
+    inoutflow_time
+    combined : Bool
+        If True: Get the statistics for combinations of phases and flows. Otherwise, look at phase and flow
+        independently.
+
+    Returns
+    -------
+
+    """
+    if combined:
+        n_phase_flows = get_phase_flow_combined_counts(
+            file_path=file_path,
+            inoutflow_time=inoutflow_time,
+        )
+        temp_phase_flows = get_phase_flow_combined_stats(
+            file_path=file_path,
+            n_phase_flows=n_phase_flows,
+            inoutflow_time=inoutflow_time,
+        )
+        return n_phase_flows, temp_phase_flows
+    n_phases, n_flows = get_phase_flow_counts(
+        file_path=file_path,
+        inoutflow_time=inoutflow_time,
+    )
+    temp_phases, temp_flows = get_phase_flow_stats(
+        file_path=file_path,
+        n_phases=n_phases,
+        n_flows=n_flows,
+        inoutflow_time=inoutflow_time,
+    )
+    return n_phases, n_flows, temp_phases, temp_flows

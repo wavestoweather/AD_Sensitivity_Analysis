@@ -12,23 +12,19 @@ authors = [
 requires-python = ">=3.7"
 
 dependencies = [
+    "bokeh",
     "datashader",
-    "matplotlib",
-    "netCDF4",
-    "pillow",
-    "numpy",
-    "pandas",
-    "scipy",
-    "scikit_learn",
-    "scikit_multilearn",
-    "tqdm",
-    "joblib",
-    "recommonmark",
-    "seaborn",
-    "xarray",
-    "python-snappy",
     "holoviews",
     "hvplot",
+    "matplotlib",
+    "netCDF4",
+    "numpy",
+    "pandas",
+    "scikit_learn",
+    "scipy",
+    "seaborn",
+    "tqdm",
+    "xarray",
 ]
 
 [tool.setuptools]

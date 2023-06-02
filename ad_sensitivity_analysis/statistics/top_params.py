@@ -253,7 +253,8 @@ def traj_get_top_params(dict_of_df, param_name, n, orders):
 
     Returns
     -------
-    Set of parameters within the given order of magnitude, set of top n parameters,
+    Set of parameters within the given order of magnitude, set of top n parameters, dictionaries for magnitude and top
+    n parameters for each output parameter.
 
     """
     top_sens_dic = {}
