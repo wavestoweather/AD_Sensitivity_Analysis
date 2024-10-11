@@ -13,8 +13,8 @@ physics_t::physics_t(std::string table_path) : cc("", false) {
 }
 
 
-codi::RealReverse::Tape& physics_t::prepare_call() {
-    codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
+codi::RealReverseIndex::Tape& physics_t::prepare_call() {
+    codi::RealReverseIndex::Tape& tape = codi::RealReverseIndex::getTape();
     tape.setActive();
     cc.register_input(tape);
     cc.setup_dependent_model_constants();
@@ -36,9 +36,9 @@ codi::RealReverse::Tape& physics_t::prepare_call() {
     yold[Nh_idx] *= ref_quant.Nref;
     yold[qv_idx] *= ref_quant.qref;
 
-    codi::RealReverse p_prime = yold[p_idx];
-    codi::RealReverse T_prime = yold[T_idx];
-    codi::RealReverse qv_prime = yold[qv_idx];
+    codi::RealReverseIndex p_prime = yold[p_idx];
+    codi::RealReverseIndex T_prime = yold[T_idx];
+    codi::RealReverseIndex qv_prime = yold[qv_idx];
     yold[S_idx] = convert_qv_to_S(
             p_prime,
             T_prime,
@@ -49,7 +49,7 @@ codi::RealReverse::Tape& physics_t::prepare_call() {
             get_at(cc.constants, Cons_idx::p_sat_const_b),
             get_at(cc.constants, Cons_idx::Epsilon));
 
-    codi::RealReverse rho_inter = log(compute_rhoh(p_prime, T_prime, yold[S_idx],
+    codi::RealReverseIndex rho_inter = log(compute_rhoh(p_prime, T_prime, yold[S_idx],
                                          get_at(cc.constants, Cons_idx::p_sat_low_temp),
                                          get_at(cc.constants, Cons_idx::p_sat_const_a),
                                          get_at(cc.constants, Cons_idx::T_sat_low_temp),
@@ -72,7 +72,7 @@ codi::RealReverse::Tape& physics_t::prepare_call() {
 }
 
 void physics_t::finish_call(
-    codi::RealReverse::Tape& tape,
+    codi::RealReverseIndex::Tape& tape,
     double *res,
     double *gradients) {
 
@@ -172,8 +172,8 @@ void physics_t::setup_model_constants() {
 
 
 void physics_t::set_limits(
-    std::vector<codi::RealReverse> &y,
-    model_constants_t<codi::RealReverse> &cc) {
+    std::vector<codi::RealReverseIndex> &y,
+    model_constants_t<codi::RealReverseIndex> &cc) {
 
     // Set everything negative and very small to zero.
     // Those should be artifacts from instantaneous processes
@@ -208,16 +208,16 @@ void physics_t::set_limits(
 
 
 void physics_t::compute_nondimensional_effects(
-    std::vector<codi::RealReverse> &res,
-    const codi::RealReverse &p,
-    const codi::RealReverse &w,
-    const codi::RealReverse &w_prime,
-    const codi::RealReverse &T,
-    const codi::RealReverse &qv,
-    const codi::RealReverse &qv_prime) {
-    codi::RealReverse C1 = (ref_quant.tref*get_at(cc.constants, Cons_idx::gravity_acc)*ref_quant.wref)
+    std::vector<codi::RealReverseIndex> &res,
+    const codi::RealReverseIndex &p,
+    const codi::RealReverseIndex &w,
+    const codi::RealReverseIndex &w_prime,
+    const codi::RealReverseIndex &T,
+    const codi::RealReverseIndex &qv,
+    const codi::RealReverseIndex &qv_prime) {
+    codi::RealReverseIndex C1 = (ref_quant.tref*get_at(cc.constants, Cons_idx::gravity_acc)*ref_quant.wref)
                  / (get_at(cc.constants, Cons_idx::R_a)*ref_quant.Tref);
-    codi::RealReverse C2 = ((1.0-get_at(cc.constants, Cons_idx::Epsilon))*ref_quant.qref)
+    codi::RealReverseIndex C2 = ((1.0-get_at(cc.constants, Cons_idx::Epsilon))*ref_quant.qref)
                  / get_at(cc.constants, Cons_idx::Epsilon);
     // Calculate pressure and temperature change in non-prime directly
     // Pressure change from ascent (C1), change in partial pressure from water vapor.
@@ -270,7 +270,7 @@ void physics_t::py_ccn_act_hande_akm(
 #endif
     const double EPSILON = 1.0e-20;
 
-    codi::RealReverse::Tape& tape = prepare_call();
+    codi::RealReverseIndex::Tape& tape = prepare_call();
 #ifdef DEVELOP
     of << "yold:\n"
        << "p: " << yold[p_idx]
@@ -372,7 +372,7 @@ void physics_t::py_graupel_melting(
     yold[qg_idx] = qg;
     yold[Ng_idx] = Ng;
 
-    codi::RealReverse::Tape& tape = prepare_call();
+    codi::RealReverseIndex::Tape& tape = prepare_call();
 
     // RK4
     for (auto &kv : k) kv = 0;
@@ -435,7 +435,7 @@ void physics_t::py_saturation_adjust(
     yold[qv_idx] = qv;
     yold[qc_idx] = qc;
 
-    codi::RealReverse::Tape& tape = prepare_call();
+    codi::RealReverseIndex::Tape& tape = prepare_call();
 
     // RK4
     for (auto &kv : k) kv = 0;
@@ -516,10 +516,10 @@ void physics_t::py_riming_ice(
     yold[Nr_idx] = Nr;
     yold[T_idx] = T;
 
-    codi::RealReverse::Tape& tape = prepare_call();
+    codi::RealReverseIndex::Tape& tape = prepare_call();
 
-    codi::RealReverse rime_rate_qc, rime_rate_nc, rime_rate_qi, rime_rate_qr, rime_rate_nr;
-    codi::RealReverse dep_rate_ice = 0.0;
+    codi::RealReverseIndex rime_rate_qc, rime_rate_nc, rime_rate_qi, rime_rate_qr, rime_rate_nr;
+    codi::RealReverseIndex dep_rate_ice = 0.0;
     // RK4
     for (auto &kv : k) kv = 0;
     for (int ii = 0 ; ii < num_comp ; ii++)
@@ -614,10 +614,10 @@ void physics_t::py_riming_snow(
     yold[Nr_idx] = Nr;
     yold[T_idx] = T;
 
-    codi::RealReverse::Tape& tape = prepare_call();
+    codi::RealReverseIndex::Tape& tape = prepare_call();
 
-    codi::RealReverse rime_rate_qc, rime_rate_nc, rime_rate_qs, rime_rate_qr, rime_rate_nr;
-    codi::RealReverse dep_rate_snow = 0.0;
+    codi::RealReverseIndex rime_rate_qc, rime_rate_nc, rime_rate_qs, rime_rate_qr, rime_rate_nr;
+    codi::RealReverseIndex dep_rate_snow = 0.0;
     // RK4
     for (auto &kv : k) kv = 0;
     for (int ii = 0 ; ii < num_comp ; ii++)
@@ -720,19 +720,19 @@ void physics_t::py_riming_with_depo(
     yold[p_idx] = p;
 
     const double EPSILON = 1.0e-20;
-    codi::RealReverse::Tape& tape = prepare_call();
+    codi::RealReverseIndex::Tape& tape = prepare_call();
 
-    codi::RealReverse rime_rate_qc, rime_rate_nc, rime_rate_qi, rime_rate_qs, rime_rate_qr, rime_rate_nr;
+    codi::RealReverseIndex rime_rate_qc, rime_rate_nc, rime_rate_qi, rime_rate_qs, rime_rate_qr, rime_rate_nr;
 
-    codi::RealReverse dep_rate_ice = 0.0;
-    codi::RealReverse dep_rate_snow = 0.0;
-    codi::RealReverse p_sat_ice = saturation_pressure_ice(
+    codi::RealReverseIndex dep_rate_ice = 0.0;
+    codi::RealReverseIndex dep_rate_snow = 0.0;
+    codi::RealReverseIndex p_sat_ice = saturation_pressure_ice(
             yold[T_idx], get_at(cc.constants, Cons_idx::p_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_ice_const_a),
             get_at(cc.constants, Cons_idx::T_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_ice_const_b));
-    codi::RealReverse D_vtp = diffusivity(yold[T_idx], yold[p_idx]);
-    codi::RealReverse S = convert_qv_to_S(
+    codi::RealReverseIndex D_vtp = diffusivity(yold[T_idx], yold[p_idx]);
+    codi::RealReverseIndex S = convert_qv_to_S(
             yold[p_idx],
             yold[T_idx],
             yold[qv_idx],
@@ -741,14 +741,14 @@ void physics_t::py_riming_with_depo(
             get_at(cc.constants, Cons_idx::T_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_const_b),
             get_at(cc.constants, Cons_idx::Epsilon));
-    codi::RealReverse e_d = compute_pv(
+    codi::RealReverseIndex e_d = compute_pv(
             yold[T_idx], S, get_at(cc.constants, Cons_idx::p_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_const_a),
             get_at(cc.constants, Cons_idx::T_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_const_b));
-    codi::RealReverse S_i =
-        (yold[T_idx] < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverse(1);
-    codi::RealReverse s_si = S_i - 1.0;
+    codi::RealReverseIndex S_i =
+        (yold[T_idx] < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverseIndex(1);
+    codi::RealReverseIndex s_si = S_i - 1.0;
     // RK4
     for (auto &kv : k) kv = 0;
     for (int ii = 0 ; ii < num_comp ; ii++)
@@ -801,7 +801,7 @@ void physics_t::py_riming_with_depo(
             get_at(cc.constants, Cons_idx::p_sat_const_a),
             get_at(cc.constants, Cons_idx::T_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_const_b));
-    S_i = (ytmp[T_idx] < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverse(1);
+    S_i = (ytmp[T_idx] < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverseIndex(1);
     s_si = S_i - 1.0;
     for (auto &kv : k) kv = 0;
     vapor_dep_relaxation(ytmp[qv_idx], ytmp[qi_idx], ytmp[Ni_idx],
@@ -852,7 +852,7 @@ void physics_t::py_riming_with_depo(
             get_at(cc.constants, Cons_idx::p_sat_const_a),
             get_at(cc.constants, Cons_idx::T_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_const_b));
-    S_i = (ytmp[T_idx] < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverse(1);
+    S_i = (ytmp[T_idx] < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverseIndex(1);
     s_si = S_i - 1.0;
     for (auto &kv : k) kv = 0;
     vapor_dep_relaxation(ytmp[qv_idx], ytmp[qi_idx], ytmp[Ni_idx],
@@ -903,7 +903,7 @@ void physics_t::py_riming_with_depo(
             get_at(cc.constants, Cons_idx::p_sat_const_a),
             get_at(cc.constants, Cons_idx::T_sat_low_temp),
             get_at(cc.constants, Cons_idx::p_sat_const_b));
-    S_i = (ytmp[T_idx] < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverse(1);
+    S_i = (ytmp[T_idx] < get_at(cc.constants, Cons_idx::T_freeze)) ? e_d / p_sat_ice : codi::RealReverseIndex(1);
     s_si = S_i - 1.0;
     for (auto &kv : k) kv = 0;
     vapor_dep_relaxation(ytmp[qv_idx], ytmp[qi_idx], ytmp[Ni_idx],

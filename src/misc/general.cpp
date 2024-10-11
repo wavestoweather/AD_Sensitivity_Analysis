@@ -137,9 +137,9 @@ void print_segments(const std::vector<segment_t> &segments) {
                       << "------------Output parameter type: " << param.out_name << "\n"
                       << "------------Mean for normal distribution used in perturbing: " << param.mean << "\n"
                       << "------------Is parameter specific for particle: " << param.particle_param << "\n";
-            if (!isnan(param.sigma))
+            if (!std::isnan(param.sigma))
                 std::cout << "------------Variance for normal distribution: " << param.sigma << "\n";
-            if (!isnan(param.sigma_perc))
+            if (!std::isnan(param.sigma_perc))
                 std::cout << "------------Variance in percentage: " << param.sigma_perc << "\n";
 
             j++;

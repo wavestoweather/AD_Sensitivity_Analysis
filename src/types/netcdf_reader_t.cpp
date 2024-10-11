@@ -1369,11 +1369,11 @@ bool netcdf_reader_t::check_invalid_buffer_lonlat(
             || buffer[Par_idx::dom_i][(t%(buffer_var.size()-1))+idx] == 0);
 }
 
-template int netcdf_reader_t::read_buffer<codi::RealReverse>(
-    model_constants_t<codi::RealReverse>&,
+template int netcdf_reader_t::read_buffer<codi::RealReverseIndex>(
+    model_constants_t<codi::RealReverseIndex>&,
     const reference_quantities_t&,
-    std::vector<codi::RealReverse>&,
-    std::vector<codi::RealReverse>&,
+    std::vector<codi::RealReverseIndex>&,
+    std::vector<codi::RealReverseIndex>&,
     const uint32_t&,
     const bool&,
     const bool&);
@@ -1387,9 +1387,9 @@ template int netcdf_reader_t::read_buffer<codi::RealForwardVec<num_par_init> >(
     const bool&,
     const bool&);
 
-template void netcdf_reader_t::set_dims<codi::RealReverse>(
+template void netcdf_reader_t::set_dims<codi::RealReverseIndex>(
     const char*,
-    model_constants_t<codi::RealReverse>&,
+    model_constants_t<codi::RealReverseIndex>&,
     const int&);
 
 template void netcdf_reader_t::set_dims<codi::RealForwardVec<num_par_init> >(
@@ -1397,12 +1397,12 @@ template void netcdf_reader_t::set_dims<codi::RealForwardVec<num_par_init> >(
     model_constants_t<codi::RealForwardVec<num_par_init> >&,
     const int&);
 
-template void netcdf_reader_t::init_netcdf<codi::RealReverse>(
+template void netcdf_reader_t::init_netcdf<codi::RealReverseIndex>(
 #ifdef MET3D
     double&,
 #endif
     const bool&,
-    model_constants_t<codi::RealReverse>&,
+    model_constants_t<codi::RealReverseIndex>&,
     const double,
     const reference_quantities_t &);
 
@@ -1415,10 +1415,10 @@ template void netcdf_reader_t::init_netcdf<codi::RealForwardVec<num_par_init> >(
     const double,
     const reference_quantities_t &);
 
-template void netcdf_reader_t::read_initial_values<codi::RealReverse>(
+template void netcdf_reader_t::read_initial_values<codi::RealReverseIndex>(
     std::vector<double>&,
     const reference_quantities_t&,
-    model_constants_t<codi::RealReverse>&,
+    model_constants_t<codi::RealReverseIndex>&,
     const bool&,
     const uint64_t&,
     const uint64_t&);
@@ -1431,10 +1431,10 @@ template void netcdf_reader_t::read_initial_values<codi::RealForwardVec<num_par_
     const uint64_t&,
     const uint64_t&);
 
-template void netcdf_reader_t::read_initial_values<codi::RealReverse>(
+template void netcdf_reader_t::read_initial_values<codi::RealReverseIndex>(
     std::vector<double>&,
     const reference_quantities_t&,
-    model_constants_t<codi::RealReverse>&,
+    model_constants_t<codi::RealReverseIndex>&,
     const bool&);
 
 template void netcdf_reader_t::read_initial_values<codi::RealForwardVec<num_par_init> >(

@@ -16,5 +16,5 @@ float_t table_t<float_t>::get(
 }
 
 
-template class table_t<codi::RealReverse>;
+template class table_t<codi::RealReverseIndex>;
 template class table_t<codi::RealForwardVec<num_par_init> >;

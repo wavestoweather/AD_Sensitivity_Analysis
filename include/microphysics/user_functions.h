@@ -24,9 +24,9 @@
  * @{
  */
 
-codi::RealReverse trunc(codi::RealReverse x) {
+codi::RealReverseIndex trunc(codi::RealReverseIndex x) {
     int left = x.getValue();
-    codi::RealReverse r = left;
+    codi::RealReverseIndex r = left;
     r.setGradient(x.getGradient());
     return r;
 }
@@ -149,7 +149,7 @@ void saturation_adjust(
             res[lat_cool_idx] += delta_e;
         else
             res[lat_heat_idx] += delta_e;
-#if defined(TRACE_ENV) || defined(TRACE_QV) || defined(TRACE_QC)
+#if defined(TRACE_ENV) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_LC) || defined(TRACE_LH)
         if (trace)
             std::cout << "traj: " << cc.traj_id << " saturation_adjust (out, new) dT "
                 << T_test - T_prime << ", "
@@ -157,7 +157,10 @@ void saturation_adjust(
                 << "dqc: " << -qc_prime << ", "
                 << "T_prime: " << T_prime << ", "
                 << "qv_prime: " << qv_prime << ", "
-                << "qc_prime: " << qc_prime
+                << "qc_prime: " << qc_prime << ", "
+                << "de: " << delta_e << ", "
+                << "dlh: " << ((delta_q < 0.0) ? 0.0 : delta_e) << ", "
+                << "dlc: " << ((delta_q < 0.0) ? delta_e : 0.0)
                 << "\n";
 #endif
 #endif
@@ -264,7 +267,7 @@ void saturation_adjust(
             res[lat_cool_idx] += delta_e;
         else
             res[lat_heat_idx] += delta_e;
-#if defined(TRACE_ENV) || defined(TRACE_QV) || defined(TRACE_QC)
+#if defined(TRACE_ENV) || defined(TRACE_QV) || defined(TRACE_QC) || defined(TRACE_LH) || defined(TRACE_LC)
         if (trace)
             std::cout << "traj: " << cc.traj_id << " saturation_adjust (out, new, after Newton) dT "
                 << res[T_idx] << ", "
@@ -272,7 +275,10 @@ void saturation_adjust(
                 << "dqc: " << res[qc_idx] << ", "
                 << "T_prime: " << T_prime << ", "
                 << "qv_prime: " << qv_prime << ", "
-                << "qc_prime: " << qc_prime
+                << "qc_prime: " << qc_prime << ", "
+                << "de: " << delta_e << ", "
+                << "dlh: " << ((delta_q < 0.0) ? 0.0 : delta_e) << ", "
+                << "dlc: " << ((delta_q < 0.0) ? delta_e : 0.0)
                 << "\n";
 #endif
 #endif
@@ -483,7 +489,7 @@ void ccn_act_hande_akm(
 #endif
 #ifdef TRACE_QV
         if (trace)
-            std::cout << "traj: " << cc.traj_id << " Ascent dqv " << -delta_q << "\n";
+            std::cout << "traj: " << cc.traj_id << " CCN dqv " << -delta_q << "\n";
 #endif
         float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_dry_air(T_prime);
         // Evaporation
@@ -491,6 +497,14 @@ void ccn_act_hande_akm(
             res[lat_cool_idx] += delta_e;
         else
             res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+      if (trace)
+          std::cout << "traj: " << cc.traj_id << " CCN dlh: " << ((delta_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id << " CCN dlc: " << ((delta_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
     }
 }
 #else
@@ -573,7 +587,7 @@ void ccn_act_hande(
 #endif
 #ifdef TRACE_QV
         if (trace)
-            std::cout << "traj: " << cc.traj_id << " Ascent dqv " << -delta_q << "\n";
+            std::cout << "traj: " << cc.traj_id << " CCN dqv " << -delta_q << "\n";
 #endif
         float_t delta_e = latent_heat_evap(T_prime) * delta_q / specific_heat_dry_air(T_prime);
         // Evaporation
@@ -581,6 +595,14 @@ void ccn_act_hande(
             res[lat_cool_idx] += delta_e;
         else
             res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+          if (trace)
+              std::cout << "traj: " << cc.traj_id << " CCN dlh: " << ((delta_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id << " CCN dlc: " << ((delta_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
     }
 }
 #endif
@@ -693,11 +715,19 @@ void ice_nuc_hom(
             float_t delta_e = latent_heat_melt(T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * delta_q
                 / specific_heat_dry_air(T_prime);
             // Sublimation, cooling
-            if (delta_e < 0.0)
+            if (delta_q < 0.0)
                 res[lat_cool_idx] += delta_e;
             // Deposition, heating
             else
                 res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id << " KHL06 dlh: " << ((delta_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id << " KHL06 dlc: " << ((delta_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
         }
     }
 }
@@ -842,6 +872,16 @@ void ice_activation_phillips(
         // Deposition, heating
         else
             res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+            std::cout << "traj: " << cc.traj_id << " Phillips nucleation dlh: "
+                << ((delta_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+            std::cout << "traj: " << cc.traj_id << " Phillips nucleation dlc: "
+                << ((delta_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
     }
 }
 
@@ -937,6 +977,14 @@ void cloud_freeze_hom(
         // Freezing, heating
         else
             res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id << " cloud freeze dlh: " << ((delta_qi < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id << " cloud freeze dlc: " << ((delta_qi < 0.0) ? delta_e : 0.0) << "\n";
+#endif
     }
 }
 
@@ -1138,6 +1186,16 @@ void snow_melting(
         // Freezing, heating
         else
             res[lat_heat_idx] -= delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id << " snow melting dlh: "
+                    << ((melt_q > 0.0) ? 0.0 : -delta_e.value()) << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+                    << " snow melting dlc: " << ((melt_q > 0.0) ?-delta_e.value() : 0.0) << "\n";
+#endif
     }
 }
 
@@ -1222,6 +1280,16 @@ void graupel_melting(
         // Freezing, heating
         else
             res[lat_heat_idx] -= delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+                    << " graupel melting dlh: " << ((melt_q > 0.0) ? 0.0 : -delta_e.value()) << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+                    << " graupel melting dlc: " << ((melt_q > 0.0) ?-delta_e.value() : 0.0) << "\n";
+#endif
     }
 }
 
@@ -1312,6 +1380,16 @@ void hail_melting(
         // Freezing, heating
         else
             res[lat_heat_idx] -= delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+                    << " hail melting dlh: " << ((melt_q > 0.0) ? 0.0 : -delta_e.value()) << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+                    << " hail melting dlc: " << ((melt_q > 0.0) ?-delta_e.value() : 0.0) << "\n";
+#endif
     }
 }
 
@@ -1643,6 +1721,18 @@ void rain_evaporation_sb(
         // Deposition, heating
         else
             res[lat_heat_idx] -= delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+                    << " rain evaporation after Seifert (2008) dlh: " << ((delta_qv > 0.0) ? 0.0 : -delta_e.value())
+                    << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+                    << " rain evaporation after Seifert (2008) dlc: " << ((delta_qv > 0.0) ?-delta_e.value() : 0.0)
+                    << "\n";
+#endif
     }
 }
 
@@ -2033,6 +2123,18 @@ void evaporation(
         // Deposition, heating
         else
             res[lat_heat_idx] -= delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+                    << " Evaporation from melting ice particles dlh: " << ((delta_q > 0.0) ? 0.0 : -delta_e.value())
+                    << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+                    << " Evaporation from melting ice particles dlc: " << ((delta_q > 0.0) ?-delta_e.value() : 0.0)
+                    << "\n";
+#endif
     }
 }
 
@@ -2235,12 +2337,23 @@ void vapor_dep_relaxation(
             float_t delta_e = latent_heat_melt(
                 T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * dep_sum
                 / specific_heat_dry_air(T_prime);
-            // Sublimation, cooling
-            if (dep_sum > 0.0)
-                res[lat_cool_idx] -= delta_e;
             // Deposition, heating
+            if (dep_sum > 0.0)
+                res[lat_heat_idx] += delta_e;
+            // Sublimation, cooling
             else
-                res[lat_heat_idx] -= delta_e;
+                res[lat_cool_idx] += delta_e;
+
+#if defined(TRACE_LH)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id
+                        << " Depos growth dlh: " << ((dep_sum > 0.0) ? delta_e.value() : 0.0) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id
+                        << " Depos growth dlc: " << ((dep_sum > 0.0) ? 0.0 : delta_e.value()) << "\n";
+#endif
         }
     }
 }
@@ -2906,7 +3019,7 @@ void ice_riming(
                 res[Ni_idx] += get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q;
 #ifdef TRACE_QI
                 if (trace)
-                    std::cout << "traj: " << cc.traj_id << " ice rain rimingwith mult dNi "
+                    std::cout << "traj: " << cc.traj_id << " ice rain riming with mult dNi "
                               << get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q << "\n";
 #endif
             }
@@ -2920,6 +3033,16 @@ void ice_riming(
             // Freezing, heating
             else
                 res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id
+                        << " ice rain riming dlh: " << ((rime_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id
+                        << " ice rain riming dlc: " << ((rime_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
         }
     } else {
         // Depositional growth negative or smaller than riming growth,
@@ -2965,7 +3088,7 @@ void ice_riming(
                 res[Ni_idx] += get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q;
 #ifdef TRACE_QI
                 if (trace)
-                    std::cout << "traj: " << cc.traj_id << " ice cloud rimingwith mult dNi "
+                    std::cout << "traj: " << cc.traj_id << " ice cloud riming with mult dNi "
                               << get_at(cc.constants, Cons_idx::C_mult) * mult_1 * mult_2 * rime_q << "\n";
 #endif
             }
@@ -2979,7 +3102,16 @@ void ice_riming(
             // Freezing, heating
             else
                 res[lat_heat_idx] += delta_e;
-
+#if defined(TRACE_LH)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id
+                        << " ice cloud riming dlh: " << ((rime_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id
+                        << " ice cloud riming dlc: " << ((rime_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
             // Conversion ice -> graupel
             // Technically I had to recalculate x_i given the new qi, Ni
             if (d_i > get_at(cc.constants, Cons_idx::D_conv_ig)) {
@@ -3067,6 +3199,16 @@ void ice_riming(
             // Freezing, heating
             else
                 res[lat_heat_idx] -= delta_e;
+#if defined(TRACE_LH)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id
+                    << " ice rain riming dlh: " << ((rime_qi > 0.0) ? 0.0 : -delta_e.value()) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+              std::cout << "traj: " << cc.traj_id
+                    << " ice rain riming dlc: " << ((rime_qi > 0.0) ?-delta_e.value() : 0.0) << "\n";
+#endif
 
             if (T_prime >= get_at(cc.constants, Cons_idx::T_freeze)) {
                 float_t qr_tmp = qr_prime+dt*res[qr_idx];
@@ -3096,11 +3238,21 @@ void ice_riming(
                     T_prime, get_at(cc.constants, Cons_idx::T_freeze)) * rime_qi
                     / specific_heat_dry_air(T_prime);
                 // Melting, cooling
-                if (rime_qi > 0.0)
-                    res[lat_cool_idx] -= delta_e;
+                if (rime_qi < 0.0)
+                    res[lat_cool_idx] += delta_e;
                 // Freezing, heating
                 else
-                    res[lat_heat_idx] -= delta_e;
+                    res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+                if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                            << " Melting dlh: " << ((rime_qi > 0.0) ? 0.0 : -delta_e.value()) << "\n";
+#endif
+#if defined(TRACE_LC)
+                if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                            << " Melting dlc: " << ((rime_qi > 0.0) ?-delta_e.value() : 0.0) << "\n";
+#endif
             } else {
                 // from multiplication
                 // Ice
@@ -3209,6 +3361,16 @@ void snow_riming(
             // Freezing, heating
             else
                 res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                            << " Snow riming dlh: " << ((rime_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                            << " Snow riming dlc: " << ((rime_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
 
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
                 float_t mult_1 =
@@ -3269,6 +3431,16 @@ void snow_riming(
             // Freezing, heating
             else
                 res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                            << " Snow rain riming dlh: " << ((rime_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                            << " Snow rain riming dlc: " << ((rime_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
 
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
                 float_t mult_1 =
@@ -3340,6 +3512,16 @@ void snow_riming(
             // Freezing, heating
             else
                 res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                            << " snow depos dlh: " << ((rime_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                            << " snow depos dlc: " << ((rime_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
 
             float_t mult_q = 0.0;
             if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
@@ -3443,6 +3625,16 @@ void snow_riming(
             // Freezing, heating
             else
                 res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                    << " snow rain riming 2 dlh: " << ((rime_qr < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                    << " snow rain riming 2 dlc: " << ((rime_qr < 0.0) ? delta_e : 0.0) << "\n";
+#endif
 
             float_t mult_q = 0.0;
             float_t mult_n = 0.0;
@@ -3491,6 +3683,16 @@ void snow_riming(
                 // Freezing, heating
                 else
                     res[lat_heat_idx] -= delta_e_enhance;
+#if defined(TRACE_LH)
+                if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                        << " More melting dlh: " << ((rime_qr > 0.0) ? 0.0 : -delta_e_enhance.value()) << "\n";
+#endif
+#if defined(TRACE_LC)
+                if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                        << " More melting dlc: " << ((rime_qr > 0.0) ? -delta_e_enhance.value() : 0.0) << "\n";
+#endif
             } else {
                 // from multiplication
                 // Ice
@@ -3624,6 +3826,16 @@ void particle_cloud_riming(
         // Deposition, heating
         else
             res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+            std::cout << "traj: " << cc.traj_id
+                << " Particle cloud riming dlh: " << ((rime_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+            std::cout << "traj: " << cc.traj_id
+                << " Particle cloud riming dlc: " << ((rime_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
 
         // ice multiplication
         if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
@@ -3680,6 +3892,16 @@ void particle_cloud_riming(
             // Freezing, heating
             else
                 res[lat_heat_idx] -= delta_e_enhance;
+#if defined(TRACE_LH)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                    << " enhancement of melting dlh: " << ((melt_q > 0.0) ? 0.0 : -delta_e_enhance.value()) << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                    << " enhancement of melting dlc: " << ((melt_q > 0.0) ? -delta_e_enhance.value() : 0.0) << "\n";
+#endif
         }
     }
 }
@@ -3782,6 +4004,16 @@ void particle_rain_riming(
         // Freezing, heating
         else
             res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+            << " particle rain riming dlh: " << ((rime_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+          std::cout << "traj: " << cc.traj_id
+            << " particle rain riming dlc: " << ((rime_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
 
         // ice multiplication (Hallett and Mossop)
         if (T_prime < get_at(cc.constants, Cons_idx::T_freeze) && ice_multiplication) {
@@ -3839,6 +4071,18 @@ void particle_rain_riming(
             // Freezing, heating
             else
                 res[lat_heat_idx] -= delta_e_enhance;
+#if defined(TRACE_LH)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                    << " particle rain riming enhancement dlh: " << ((melt_q > 0.0) ? 0.0 : -delta_e_enhance.value())
+                    << "\n";
+#endif
+#if defined(TRACE_LC)
+            if (trace)
+                  std::cout << "traj: " << cc.traj_id
+                    << " particle rain riming enhancement dlc: " << ((melt_q > 0.0) ? -delta_e_enhance.value() : 0.0)
+                    << "\n";
+#endif
         }
     }
 }
@@ -3984,7 +4228,6 @@ void rain_freeze(
         res[qr_idx] -= fr_q;
         // Rain N
         res[Nr_idx] -= fr_n;
-        // res[Nr_idx] = Nr_tmp - fr_n;
 #if defined(TRACE_QR) || defined(TRACE_QS) || defined(TRACE_QG) || defined(TRACE_QH)
         if (trace)
             std::cout << "traj: " << cc.traj_id
@@ -4040,6 +4283,14 @@ void rain_freeze(
         // Freezing, heating
         else
             res[lat_heat_idx] += delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+              std::cout << "traj: " << cc.traj_id << " Freezing dlh: " << ((fr_q < 0.0) ? 0.0 : delta_e) << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+              std::cout << "traj: " << cc.traj_id << " Freezing dlc: " << ((fr_q < 0.0) ? delta_e : 0.0) << "\n";
+#endif
     }
 }
 
@@ -4114,6 +4365,16 @@ void ice_melting(
         // Freezing, heating
         else
             res[lat_heat_idx] -= delta_e;
+#if defined(TRACE_LH)
+        if (trace)
+              std::cout << "traj: " << cc.traj_id
+                        << " ice melting ddlh: " << ((melt_q > 0.0) ? 0.0 : -delta_e.value()) << "\n";
+#endif
+#if defined(TRACE_LC)
+        if (trace)
+              std::cout << "traj: " << cc.traj_id
+                        << " ice melting ddlc: " << ((melt_q > 0.0) ?-delta_e.value() : 0.0) << "\n";
+#endif
     }
 }
 
@@ -4300,7 +4561,6 @@ void RHS_SB(std::vector<float_t> &res,
                   << "\n\n";
     }
 #endif
-
     float_t rime_rate_qc, rime_rate_qr, rime_rate_qi, rime_rate_qs;
     float_t rime_rate_nc, rime_rate_nr;
     float_t rho_inter = log(compute_rhoh(p_prime, T_prime, S,
@@ -4456,7 +4716,6 @@ void RHS_SB(std::vector<float_t> &res,
 #endif
     evaporation(p_sat, s_sw, T_prime,
         qs_prime, Ns, res[qs_idx], cc.snow, res, cc, dt);
-
 #ifdef TRACE_QS
     if (trace)
         std::cout << "traj: " << cc.traj_id << " evaporation dqs " << res[qs_idx]-qs_before << "\n";
@@ -4581,7 +4840,6 @@ void RHS_SB(std::vector<float_t> &res,
             + res[lat_cool_idx]/get_at(cc.constants, Cons_idx::cp)
             - get_at(cc.constants, Cons_idx::gravity_acc) * w_prime/get_at(cc.constants, Cons_idx::cp)) / ref.Tref;
         res[w_idx] += cc.get_dw();
-//        res[w_idx] += get_at(cc.constants, Cons_idx::dw)/ref.wref;
         res[z_idx] += w_prime/ref.zref;
     }
 

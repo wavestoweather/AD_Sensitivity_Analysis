@@ -15,7 +15,7 @@
 /**
  * Struct to hold all model constants regarding particles that we want to
  * know the gradients using AD of.
- * Has getter and register functions for codi::RealReverse for its
+ * Has getter and register functions for codi::RealReverseIndex for its
  * members.
  */
 template<class float_t>
@@ -32,12 +32,12 @@ struct particle_model_constants_t{
     particle_model_constants_t();
 
     /**
-     * Register the model parameters on the tape for codi::RealReverse.
+     * Register the model parameters on the tape for codi::RealReverseIndex.
      *
      * @param tape Tape where the parameters should be registered on.
      */
     void register_input(
-        codi::RealReverse::Tape &tape,
+        codi::RealReverseIndex::Tape &tape,
         uint32_t &id);
 
     /**

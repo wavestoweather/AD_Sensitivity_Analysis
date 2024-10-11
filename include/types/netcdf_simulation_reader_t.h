@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "include/misc/error.h"
-#include "include/misc/constants_regrid.h"
+#include "include/misc/constants_sim_reader.h"
 
 struct netcdf_simulation_reader_t {
     uint64_t n_trajectories;
@@ -17,15 +17,18 @@ struct netcdf_simulation_reader_t {
     uint64_t time_idx; /*!< Current index to read from netcdf file. */
     std::vector<uint64_t> n_readable_timesteps; /*!< Amount of timtesteps that have been loaded. */
     uint32_t n_timesteps_buffer; /*!< Number of time steps that can be stored in the buffer. */
-    uint64_t n_traj_buffer; /*!< Number of trajectories that can be stored in the bufer. */
+    uint64_t n_traj_buffer; /*!< Number of trajectories that can be stored in the buffer. */
     double mem_usage; /*!< Memory usage in KBytes. */
     size_t n_timesteps_in; /*!< Total number of time steps that can be read from the input file. */
-    uint64_t read_time_buffer; /*!< Number of time steps that have been read. */
+    uint64_t read_time_buffer; /*!< Number of time steps that have been read per trajectory. */
     /**
      *
      * @param buffer_size Number of time steps to read at once
      */
-    explicit netcdf_simulation_reader_t(const uint32_t &buffer_size);
+    explicit netcdf_simulation_reader_t(
+            const uint32_t &buffer_size,
+            const bool limited_set = true,
+            const uint32_t n_traj_buffer = 600);
     void init_netcdf(double &start_time);
     void set_ensemble_idx(uint32_t idx) {this->ens_idx = idx;}
     void set_traj_idx(uint32_t idx) {this->traj_idx = idx;}
@@ -43,13 +46,13 @@ struct netcdf_simulation_reader_t {
     void close_netcdf();
 
     std::array<std::vector<double>, Par_idx::n_pars > buffer;
-    std::array<std::vector<double>, Sens_par_idx::n_sens_pars*3 > buffer_sens;
-    std::vector<double> relative_time_buffer;
+    std::array<std::vector<double>, Sens_loompar_idx::n_sens_loompar*3 > buffer_sens;
 
  private:
     int ncid;
-
+    bool limited_set;
     uint64_t time_buffer_idx; /*!< Current index to read from the buffer. */
+    uint32_t n_sens_pars; /*!< Number of model parameters to read. */
 
     uint32_t traj_idx; /*!< Index of trajectory to read from. */
     uint32_t ens_idx; /*!< Index of ensemble to read from. */

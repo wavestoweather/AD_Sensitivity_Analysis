@@ -49,7 +49,7 @@ struct gamma_table_t {
      *
      * @param x Coordinate at which to evaluate the gamma function.
      */
-    template <class A = codi::RealReverse>
+    template <class A = codi::RealReverseIndex>
     A look_lo(A x) const;
 
     /**
@@ -57,7 +57,7 @@ struct gamma_table_t {
      *
      * @param x Coordinate at which to evaluate the gamma function.
      */
-    template <class A = codi::RealReverse>
+    template <class A = codi::RealReverseIndex>
     A look_up(A x) const;
 
     /** Init lookup table for the incomplete gamma function.

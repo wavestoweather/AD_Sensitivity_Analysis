@@ -68,5 +68,7 @@ set (NETCDF_LIBRARIES "${NetCDF_libs}" CACHE STRING "All NetCDF libraries requir
 # all listed variables are TRUE
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (NetCDF DEFAULT_MSG NETCDF_LIBRARIES NETCDF_INCLUDES NetCDF_has_interfaces)
-
+file(READ "${NETCDF_INCLUDES}/../lib/libnetcdf.settings" ver)
+string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" _ ${ver})
+set(NETCDF_VERSION "${CMAKE_MATCH_1}.${CMAKE_MATCH_2}.${CMAKE_MATCH_3}")
 mark_as_advanced (NETCDF_LIBRARIES NETCDF_INCLUDES)

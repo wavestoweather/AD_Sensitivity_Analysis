@@ -1,27 +1,35 @@
 #include "include/types/netcdf_simulation_reader_t.h"
 
 netcdf_simulation_reader_t::netcdf_simulation_reader_t(
-    const uint32_t &buffer_size) {
+    const uint32_t &buffer_size,
+    const bool limited_set,
+    const uint32_t n_traj_buffer) {
 
     dimid.resize(Dim_idx::n_dims);
     varid.resize(Par_idx::n_pars);
-    sensvarid.resize(Sens_par_idx::n_sens_pars);
+    this->limited_set = limited_set;
+    if (limited_set) {
+        this->n_sens_pars = Sens_par_idx::n_sens_pars;
+    } else {
+        this->n_sens_pars = Sens_loompar_idx::n_sens_loompar;
+    }
+    sensvarid.resize(n_sens_pars);
+
     this->n_timesteps_buffer = buffer_size;
     this->time_buffer_idx = 0;
-    this->n_traj_buffer = 600;
+    this->n_traj_buffer = n_traj_buffer;
     n_readable_timesteps.resize(n_traj_buffer);
-    relative_time_buffer.resize(10 * this->n_traj_buffer);
     mem_usage = 0;
-    for (uint32_t i=0; i < buffer.size(); i++) {
+    for (uint32_t i = 0; i < buffer.size(); i++) {
         this->buffer[i].resize(this->n_timesteps_buffer * this->n_traj_buffer);
-        mem_usage += (this->buffer[i].size() * sizeof(double))/1024;
+        mem_usage += (this->buffer[i].size() * sizeof(double)) / 1024;
     }
-    for (uint32_t i=0; i < buffer_sens.size(); i++) {
+    for (uint32_t i=0; i < this->n_sens_pars*3 ; i++) {
         this->buffer_sens[i].resize(this->n_timesteps_buffer * this->n_traj_buffer);
         mem_usage += (this->buffer_sens[i].size() * sizeof(double))/1024;
     }
+
     mem_usage += (n_readable_timesteps.size() * sizeof(uint64_t))/1024;
-    mem_usage += (relative_time_buffer.size() * sizeof(double))/1024;
     already_open = false;
     std::cout << "Reading data allocated " << mem_usage/1024 << " MBytes as buffer\n";
 }
@@ -55,25 +63,40 @@ void netcdf_simulation_reader_t::load_vars(
             ncid,
             "Output_Parameter_ID",
             &dimid[Dim_idx::output_para_idx]));
+
     for (uint32_t i = 0; i < Par_idx::n_pars; i++) {
         SUCCESS_OR_DIE(
-            nc_inq_varid(
-                ncid,
-                order_par[i].c_str(),
-                &varid[i]));
+                nc_inq_varid(
+                        ncid,
+                        order_par[i].c_str(),
+                        &varid[i]));
     }
-    for (uint32_t i = 0; i < Sens_par_idx::n_sens_pars; i++) {
-        SUCCESS_OR_DIE(
-            nc_inq_varid(
-                ncid,
-                order_sens[i].c_str(),
-                &sensvarid[i]));
+    if (limited_set) {
+        for (uint32_t i = 0; i < n_sens_pars; i++) {
+            SUCCESS_OR_DIE(
+                nc_inq_varid(
+                    ncid,
+                    order_sens[i].c_str(),
+                    &sensvarid[i]));
+        }
+    } else {
+        for (uint32_t i = 0; i < n_sens_pars; i++) {
+            SUCCESS_OR_DIE(
+                nc_inq_varid(
+                    ncid,
+                    loom_order_sens[i].c_str(),
+                    &sensvarid[i]));
+        }
     }
     SUCCESS_OR_DIE(
         nc_inq_dimlen(
             ncid,
             dimid[Dim_idx::time_dim_idx],
             &n_timesteps_in));
+    if (n_timesteps_buffer < n_timesteps_in)
+        std::cout << "WARNING: " << input_file << " contains " << n_timesteps_in
+            << " time steps but buffer is limited to " << n_timesteps_buffer << "!\n"
+            << "This program currently does not support reading more time steps when needed.\n";
     SUCCESS_OR_DIE(
         nc_inq_dimlen(
             ncid,
@@ -101,7 +124,10 @@ void netcdf_simulation_reader_t::init_netcdf(
     startp.push_back(0);            // time
     countp.push_back(1);
     countp.push_back(n_traj_buffer);
-    countp.push_back(10);
+    countp.push_back(n_timesteps_buffer);
+    if (startp[2] + countp[2] >= n_timesteps_in) {
+        countp[2] = n_timesteps_in - startp[2];
+    }
 
     std::vector<size_t> startp2, countp2;
     startp2.push_back(0);               // Out index
@@ -124,21 +150,14 @@ void netcdf_simulation_reader_t::init_netcdf(
         countp[1] = n_trajectories - startp[1];
         countp2[2] = countp[1];
     }
-    SUCCESS_OR_DIE(
-        nc_get_vara_double(
-            ncid,
-            varid[Par_idx::time_after_ascent],
-            startp.data(),
-            countp.data(),
-            relative_time_buffer.data()));
     countp[2] = n_timesteps_buffer;
 
     if (startp[2] + countp[2] >= n_timesteps_in) {
         countp[2] = n_timesteps_in - startp[2];
         countp2[3] = countp[2];
-        read_time_buffer = countp[2];
     }
-        for (uint32_t i = 0; i < Par_idx::n_pars; i++) {
+    read_time_buffer = countp[2];
+    for (uint32_t i = 0; i < Par_idx::n_pars; i++) {
         SUCCESS_OR_DIE(
             nc_get_vara_double(
                 ncid,
@@ -147,10 +166,9 @@ void netcdf_simulation_reader_t::init_netcdf(
                 countp.data(),
                 buffer[i].data()));
     }
-
     for (uint32_t o_id = 0; o_id < 3; o_id++) {
         startp2[0] = o_id;
-        for (uint32_t i = 0; i < Sens_par_idx::n_sens_pars; i++) {
+        for (uint32_t i = 0; i < n_sens_pars; i++) {
             SUCCESS_OR_DIE(
                 nc_get_vara_double(
                     ncid,

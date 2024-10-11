@@ -226,7 +226,7 @@ bool segment_t::perturb_check(
                 return false;
             }
 
-            if (signbit(value-current_value) != signbit(value-old_value)
+            if (std::signbit(value-current_value) != std::signbit(value-old_value)
                 || fabs(value-current_value) < fabs(value*tol)) {
                 activated = true;
                 return true;
@@ -304,7 +304,7 @@ void to_json(
     const segment_t& s) {
     if ((s.err != 0 || s.n_segments < 1) && !s.activated)
         return;
-    if (!isnan(s.value)) {
+    if (!std::isnan(s.value)) {
         j["when_value"] = s.value;
     }
     if (s.value_name != -1) {
@@ -376,10 +376,10 @@ double segment_t::limit_duration() const {
     return 0;
 }
 
-template bool segment_t::perturb_check<codi::RealReverse>(
-//    const model_constants_t<codi::RealReverse>&,
+template bool segment_t::perturb_check<codi::RealReverseIndex>(
+//    const model_constants_t<codi::RealReverseIndex>&,
     const std::vector< std::array<double, num_par > >&,
-    const std::vector<codi::RealReverse>&,
+    const std::vector<codi::RealReverseIndex>&,
     const double);
 
 template bool segment_t::perturb_check<codi::RealForwardVec<num_par_init> >(
@@ -388,8 +388,8 @@ template bool segment_t::perturb_check<codi::RealForwardVec<num_par_init> >(
     const std::vector<codi::RealForwardVec<num_par_init> >&,
     const double);
 
-template void segment_t::perturb<codi::RealReverse>(
-    model_constants_t<codi::RealReverse>&,
+template void segment_t::perturb<codi::RealReverseIndex>(
+    model_constants_t<codi::RealReverseIndex>&,
     const reference_quantities_t&,
     input_parameters_t&,
     std::string&);
@@ -400,15 +400,15 @@ template void segment_t::perturb<codi::RealForwardVec<num_par_init> >(
     input_parameters_t&,
     std::string&);
 
-template void segment_t::reset_variables<codi::RealReverse>(
-    model_constants_t<codi::RealReverse>&);
+template void segment_t::reset_variables<codi::RealReverseIndex>(
+    model_constants_t<codi::RealReverseIndex>&);
 
 template void segment_t::reset_variables<codi::RealForwardVec<num_par_init> >(
     model_constants_t<codi::RealForwardVec<num_par_init> >&);
 
-template void segment_t::from_json<codi::RealReverse>(
+template void segment_t::from_json<codi::RealReverseIndex>(
     const nlohmann::json&,
-    model_constants_t<codi::RealReverse>&);
+    model_constants_t<codi::RealReverseIndex>&);
 
 template void segment_t::from_json<codi::RealForwardVec<num_par_init> >(
     const nlohmann::json&,

@@ -1,31 +1,14 @@
-image: "mahieronymus/ad_sensitivity:2.10"
+image: "mahieronymus/ad_sensitivity:2.12"
 
 stages:
-  - Format Analysis Python
-  - Static Analysis Python
   - Static Analysis CPP
   - build
-  - test
 
-black:
-  stage: Format Analysis Python
-  script:
-    - black --check ad_sensitivity_analysis/
-  allow_failure: false
-  tags:
-    - style
-
-pylint:
-  stage: Static Analysis Python
-  script:
-    - pylint --rcfile ad_sensitivity_analysis/.pylintrc -E ad_sensitivity_analysis/
-  allow_failure: false
-  tags:
-    - style
 
 lint:
   stage: Static Analysis CPP
   script:
+    - source /app/venv/bin/activate
     - cpplint --linelength=120 --quiet --counting=toplevel --filter=-build/include_subdir,-readability/fn_size,-legal/copyright,-runtime/references,-runtime/arrays,-build/c++11 --recursive --exclude=src/scratch/*.cpp --exclude=build/* .
   tags:
     - style
@@ -44,35 +27,14 @@ build:
     - cd build_interface && 
       cmake .. -DCMAKE_BUILD_TYPE=release -DTARGET=python_interface  -DTRUSTED_DATA:BOOL=ON -DB_EIGHT:BOOL=ON -DCCN_AKM:BOOL=ON && 
       make -j4
+    - cd .. && mkdir build_regrid
+    - cd build_regrid &&
+      cmake .. -DCMAKE_BUILD_TYPE=release -DTARGET=regrid -DCOMPRESSION_LEVEL=6 -DTRUSTED_DATA:BOOL=ON -DB_EIGHT:BOOL=ON -DCCN_AKM:BOOL=ON &&
+      make -j4
+    - cd .. && mkdir build_loom
+    - cd build_loom &&
+      cmake .. -DCMAKE_BUILD_TYPE=release -DTARGET=loom -DCOMPRESS_OUTPUT:BOOL=ON -DCOMPRESSION_LEVEL=6 -DTRUSTED_DATA:BOOL=ON -DB_EIGHT:BOOL=ON -DCCN_AKM:BOOL=ON &&
+      make -j4
   tags:
     - make
-  allow_failure: false
-
-test:
-  stage: test
-  dependencies:
-    - build
-  script:
-    - pip3 install .
-    - mkdir -p data/test_files_simulated
-    - mpirun -n 4 build/bin/./trajectories 
-      -w 20000 
-      -a 3 
-      -t 0 
-      -f 234600 
-      -d 30 
-      -i 1 
-      -b 1 
-      -o data/test_files_simulated/artificial_test.nc 
-      -e 1 
-      -p 500 
-      -g 0 
-      -l data/artificial_test.nc 
-      -s configs/qv_qr_lat_config.json 
-      -u 180
-    - cd ad_sensitivity_analysis/tests/end_to_end && python3 test_output.py --input ../../../data/test_files_simulated/ --test_nan_dims 
-      --test_physics ../../../build_interface/lib/libpython_interface.so --test_phases --test_nan_vars --calc_phases --test_sensitivities --test_amounts --test_saturation
-      --verbosity 4
-  tags:
-    - test
   allow_failure: false

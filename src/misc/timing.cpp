@@ -104,7 +104,7 @@ void setup_simulation_base(
     reference_quantities_t &ref_quant,
     model_constants_t &cc,
     std::vector<double> &y_init,
-    std::vector<codi::RealReverse> &y_single_old,
+    std::vector<codi::RealReverseIndex> &y_single_old,
     bool &already_loaded,
     netcdf_reader_t &netcdf_reader) {
     if (!already_loaded) {
@@ -130,21 +130,21 @@ void setup_simulation_base(
 }
 
 void finish_last_step(
-    std::vector<codi::RealReverse> &y_single_new,
+    std::vector<codi::RealReverseIndex> &y_single_new,
     const reference_quantities_t &ref_quant,
     const model_constants_t &cc) {
-    codi::RealReverse T_prime = y_single_new[T_idx]*ref_quant.Tref;
-    codi::RealReverse p_prime = y_single_new[p_idx]*ref_quant.pref;
-    codi::RealReverse qv_prime = y_single_new[qv_idx]*ref_quant.qref;
-    codi::RealReverse qc_prime = y_single_new[qc_idx]*ref_quant.qref;
-    codi::RealReverse p_sat = saturation_pressure_water(
+    codi::RealReverseIndex T_prime = y_single_new[T_idx]*ref_quant.Tref;
+    codi::RealReverseIndex p_prime = y_single_new[p_idx]*ref_quant.pref;
+    codi::RealReverseIndex qv_prime = y_single_new[qv_idx]*ref_quant.qref;
+    codi::RealReverseIndex qc_prime = y_single_new[qc_idx]*ref_quant.qref;
+    codi::RealReverseIndex p_sat = saturation_pressure_water(
         T_prime,
         get_at(cc.constants, Cons_idx::p_sat_low_temp),
         get_at(cc.constants, Cons_idx::p_sat_const_a),
         get_at(cc.constants, Cons_idx::T_sat_low_temp),
         get_at(cc.constants, Cons_idx::p_sat_const_b));
 
-    std::vector<codi::RealReverse> res(7);
+    std::vector<codi::RealReverseIndex> res(7);
     for (auto& r : res) r = 0;
     saturation_adjust(
         T_prime,
@@ -176,10 +176,10 @@ void run_substeps(
     const reference_quantities_t &ref_quant,
     const uint32_t &t,
     model_constants_t &cc,
-    std::vector<codi::RealReverse> &y_single_old,
-    std::vector<codi::RealReverse> &inflow,
-    codi::RealReverse::Tape &tape,
-    std::vector<codi::RealReverse> &y_single_new,
+    std::vector<codi::RealReverseIndex> &y_single_old,
+    std::vector<codi::RealReverseIndex> &inflow,
+    codi::RealReverseIndex::Tape &tape,
+    std::vector<codi::RealReverseIndex> &y_single_new,
     netcdf_reader_t &netcdf_reader,
     std::vector< std::array<double, num_par > > &y_diff,
     const uint32_t &sub_start,
@@ -219,9 +219,9 @@ void run_substeps(
 #endif
         cc.register_input(tape);
         if (sub == 1) {
-            codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
-            codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
-            codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
+            codi::RealReverseIndex p_prime = y_single_old[p_idx]*ref_quant.pref;
+            codi::RealReverseIndex T_prime = y_single_old[T_idx]*ref_quant.Tref;
+            codi::RealReverseIndex qv_prime = y_single_old[qv_idx]*ref_quant.qref;
             y_single_old[S_idx] = convert_qv_to_S(
                 p_prime,
                 T_prime,
@@ -262,10 +262,10 @@ int run_simulation(
     input_parameters_t &input,
     const reference_quantities_t &ref_quant,
     const global_args_t &global_args,
-    std::vector<codi::RealReverse> &y_single_old,
+    std::vector<codi::RealReverseIndex> &y_single_old,
     std::vector< std::array<double, num_par > > &y_diff,
-    std::vector<codi::RealReverse> &y_single_new,
-    std::vector<codi::RealReverse> &inflow,
+    std::vector<codi::RealReverseIndex> &y_single_new,
+    std::vector<codi::RealReverseIndex> &inflow,
     std::vector<segment_t> &segments,
     task_scheduler_t &scheduler,
     netcdf_reader_t &netcdf_reader,
@@ -278,7 +278,7 @@ int run_simulation(
     const uint64_t progress_index = (rank != 0) ? 0 : input.progress_index;
     // Loop for timestepping: BEGIN
     try {
-        codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
+        codi::RealReverseIndex::Tape& tape = codi::RealReverseIndex::getTape();
         uint32_t sub_start = 1;
         if (global_args.checkpoint_flag && std::fmod(input.current_time, cc.dt_prime) != 0)
             sub_start = std::fmod(input.current_time, cc.dt_prime)
@@ -358,9 +358,9 @@ int main(int argc, char** argv) {
 
     // Allocate vectors for the single solution with unperturbed
     // parameter and assign initial values
-    std::vector<codi::RealReverse> y_single_old(num_comp);
-    std::vector<codi::RealReverse> y_single_new(num_comp);
-    std::vector<codi::RealReverse> inflow(num_inflows);
+    std::vector<codi::RealReverseIndex> y_single_old(num_comp);
+    std::vector<codi::RealReverseIndex> y_single_new(num_comp);
+    std::vector<codi::RealReverseIndex> inflow(num_inflows);
 
     model_constants_t cc = parse_args(argc, argv, rank, n_processes, input,
         global_args, ref_quant, segments, y_init, checkpoint);
