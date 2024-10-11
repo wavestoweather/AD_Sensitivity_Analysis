@@ -468,10 +468,10 @@ void run_substeps(
     input_parameters_t &input,
     const reference_quantities_t &ref_quant,
     const uint32_t &t,
-    model_constants_t<codi::RealReverse> &cc,
-    std::vector<codi::RealReverse> &y_single_old,
-    std::vector<codi::RealReverse> &inflow,
-    std::vector<codi::RealReverse> &y_single_new,
+    model_constants_t<codi::RealReverseIndex> &cc,
+    std::vector<codi::RealReverseIndex> &y_single_old,
+    std::vector<codi::RealReverseIndex> &inflow,
+    std::vector<codi::RealReverseIndex> &y_single_new,
     netcdf_reader_t &netcdf_reader,
     std::vector< std::array<double, num_par > > &y_diff,
     output_handle_t &out_handler,
@@ -481,7 +481,7 @@ void run_substeps(
     task_scheduler_t &scheduler,
     const double delay_out_time = 0) {
 
-    codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
+    codi::RealReverseIndex::Tape& tape = codi::RealReverseIndex::getTape();
     double time_old, time_new;
     for (auto i = 0; i < sub_start; i++)
         cc.increment_w_idx();
@@ -540,9 +540,9 @@ void run_substeps(
         // the correct impact of the parameters on which those depend on.
         cc.setup_dependent_model_constants();
         if (sub == 1) {
-            codi::RealReverse p_prime = y_single_old[p_idx]*ref_quant.pref;
-            codi::RealReverse T_prime = y_single_old[T_idx]*ref_quant.Tref;
-            codi::RealReverse qv_prime = y_single_old[qv_idx]*ref_quant.qref;
+            codi::RealReverseIndex p_prime = y_single_old[p_idx]*ref_quant.pref;
+            codi::RealReverseIndex T_prime = y_single_old[T_idx]*ref_quant.Tref;
+            codi::RealReverseIndex qv_prime = y_single_old[qv_idx]*ref_quant.qref;
             y_single_old[S_idx] = convert_qv_to_S(
                 p_prime,
                 T_prime,
@@ -1450,7 +1450,7 @@ int main(int argc, char** argv) {
                 rank, n_processes, input, global_args,
                 ref_quant, scheduler, netcdf_reader);
         } else {
-            only_sensitivity_simulation<codi::RealReverse>(
+            only_sensitivity_simulation<codi::RealReverseIndex>(
                 rank, n_processes, input, global_args,
                 ref_quant, scheduler, netcdf_reader);
         }
@@ -1460,7 +1460,7 @@ int main(int argc, char** argv) {
                     rank, n_processes, input, global_args,
                     ref_quant, scheduler, netcdf_reader);
         } else {
-            limited_time_ensemble_simulation<codi::RealReverse>(
+            limited_time_ensemble_simulation<codi::RealReverseIndex>(
                     rank, n_processes, input, global_args,
                     ref_quant, scheduler, netcdf_reader);
         }
@@ -1470,7 +1470,7 @@ int main(int argc, char** argv) {
                     rank, n_processes, input, global_args,
                     ref_quant, scheduler, netcdf_reader);
         } else {
-            create_set_simulation<codi::RealReverse>(
+            create_set_simulation<codi::RealReverseIndex>(
                     rank, n_processes, input, global_args,
                     ref_quant, scheduler, netcdf_reader);
         }
@@ -1480,7 +1480,7 @@ int main(int argc, char** argv) {
                 rank, n_processes, input, global_args,
                 ref_quant, scheduler, netcdf_reader);
         } else {
-            dynamic_ensemble_simulation<codi::RealReverse>(
+            dynamic_ensemble_simulation<codi::RealReverseIndex>(
                 rank, n_processes, input, global_args,
                 ref_quant, scheduler, netcdf_reader);
         }

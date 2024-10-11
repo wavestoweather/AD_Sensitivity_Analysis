@@ -10,8 +10,8 @@ particle_model_constants_t<float_t>::particle_model_constants_t() {
 
 
 template<>
-void particle_model_constants_t<codi::RealReverse>::register_input(
-    codi::RealReverse::Tape &tape,
+void particle_model_constants_t<codi::RealReverseIndex>::register_input(
+    codi::RealReverseIndex::Tape &tape,
     uint32_t &idx) {
     for (auto &c : this->constants) {
         tape.registerInput(c);
@@ -21,7 +21,7 @@ void particle_model_constants_t<codi::RealReverse>::register_input(
 
 
 template<>
-void particle_model_constants_t<codi::RealReverse>::get_gradient(
+void particle_model_constants_t<codi::RealReverseIndex>::get_gradient(
     std::array<double, num_par> &out_vec,
     uint32_t &idx,
     const double &ref_value) const {
@@ -73,7 +73,7 @@ void particle_model_constants_t<float_t>::print(
 }
 
 
-template class particle_model_constants_t<codi::RealReverse>;
+template class particle_model_constants_t<codi::RealReverseIndex>;
 template class particle_model_constants_t<codi::RealForwardVec<num_par_init> >;
 
 template<class float_t>
@@ -90,9 +90,9 @@ void to_json(
     j["perturbed"] = perturbed;
 }
 
-template void to_json<codi::RealReverse>(
+template void to_json<codi::RealReverseIndex>(
     nlohmann::json&,
-    const particle_model_constants_t<codi::RealReverse>& p);
+    const particle_model_constants_t<codi::RealReverseIndex>& p);
 
 template void to_json<codi::RealForwardVec<num_par_init> >(
     nlohmann::json&,

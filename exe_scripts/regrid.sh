@@ -22,11 +22,11 @@ MIN_LAT="17"
 MAX_LAT="85"
 # The time in seconds that fall within one time bin.
 DELTA_TIME="3600"
-# Define the number of time steps before the fastest (600 hPa) ascent starts.
-  #Datapoints before that are dismissed.
+# Define the number of time in seconds before the fastest (600 hPa) ascent starts.
+# Datapoints before that are dismissed.
 INFLOW_TIME="7200"
-# Define the number of time steps after the fastest (600 hPa) ascent ends.
-  #Datapoints after that are dismissed.
+# Define the number of time in seconds before the fastest (600 hPa) ascent starts.
+# Datapoints before that are dismissed.
 OUTFLOW_TIME="7200"
 
 OUTPUT_PATH="data/grid/"

@@ -830,7 +830,7 @@ float_t wet_growth_diam(
  * @param n \f$ k \f$ from Eq. 90
  * @return \f$\delta_b^k\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t coll_delta(
     particle_model_constants_t<float_t> &pc1,
     const uint64_t n) {
@@ -856,7 +856,7 @@ inline float_t coll_delta(
  * @param n \f$ k \f$ from Eq. 90
  * @return \f$\delta_b^k\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t coll_delta_11(
     particle_model_constants_t<float_t> &pc1,
     const uint64_t n) {
@@ -873,7 +873,7 @@ inline float_t coll_delta_11(
  * @param n \f$ k \f$ from Eq. 90
  * @return \f$\delta_a^k\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t coll_delta_22(
     particle_model_constants_t<float_t> &pc,
     const uint64_t n) {
@@ -890,7 +890,7 @@ inline float_t coll_delta_22(
  * @param n \f$ k \f$ from Eq. 91
  * @return \f$\delta_{ba}^k\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t coll_delta_12(
     particle_model_constants_t<float_t> &pc1,
     particle_model_constants_t<float_t> &pc2,
@@ -924,7 +924,7 @@ inline float_t coll_delta_12(
  * @param n \f$ k \f$ from Eq. 92
  * @return \f$\vartheta_b^k\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t coll_theta(
     particle_model_constants_t<float_t> &pc1,
     const uint64_t n) {
@@ -952,7 +952,7 @@ inline float_t coll_theta(
  * @param n \f$ k \f$ from Eq. 92
  * @return \f$\vartheta_b^k\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t coll_theta_11(
     particle_model_constants_t<float_t> &pc,
     const uint64_t n) {
@@ -969,7 +969,7 @@ inline float_t coll_theta_11(
  * @param n \f$ k \f$ from Eq. 92
  * @return \f$\vartheta_a^k\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t coll_theta_22(
     particle_model_constants_t<float_t> &pc,
     const uint64_t n) {
@@ -986,7 +986,7 @@ inline float_t coll_theta_22(
  * @param n \f$ k \f$ from Eq. 93
  * @return \f$\vartheta_{ba}^k\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t coll_theta_12(
     particle_model_constants_t<float_t> &pc1,
     particle_model_constants_t<float_t> &pc2,
@@ -1029,7 +1029,7 @@ inline float_t coll_theta_12(
  * @param n 1 for cosmo5
  * @return \f$a_f\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t vent_coeff_a(
     particle_model_constants_t<float_t> &pc,
     uint64_t n) {
@@ -1056,7 +1056,7 @@ inline float_t vent_coeff_a(
  * @param n 1 for cosmo5
  * @return \f$b_f\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t vent_coeff_b(
     particle_model_constants_t<float_t> &pc,
     uint64_t n) {
@@ -1082,7 +1082,7 @@ inline float_t vent_coeff_b(
  * @param n power (2 for cosmo5)
  * @return Complete mass moment \f$M^n\f$
  */
-template <class float_t = codi::RealReverse>
+template <class float_t = codi::RealReverseIndex>
 inline float_t moment_gamma(
     particle_model_constants_t<float_t> &pc,
     uint64_t n) {
@@ -1100,7 +1100,7 @@ inline float_t moment_gamma(
  *
  * @param pc Model constants for a certain particle type.
  */
-template<class float_t = codi::RealReverse>
+template<class float_t = codi::RealReverseIndex>
 void setup_bulk_sedi(
     particle_model_constants_t<float_t> &pc);
 
@@ -1113,7 +1113,7 @@ void setup_bulk_sedi(
  * @param pc2 Model constants for a particle type that collects
  * @param c Model constants for particle collection
  */
-template<class float_t = codi::RealReverse>
+template<class float_t = codi::RealReverseIndex>
 void init_particle_collection_1(
     particle_model_constants_t<float_t> &pc1,
     particle_model_constants_t<float_t> &pc2,
@@ -1128,7 +1128,7 @@ void init_particle_collection_1(
  * @param pc2 Model constants for a particle type that collects
  * @param c Model constants for particle collection
  */
-template<class float_t = codi::RealReverse>
+template<class float_t = codi::RealReverseIndex>
 void init_particle_collection_2(
     particle_model_constants_t<float_t> &pc1,
     particle_model_constants_t<float_t> &pc2,

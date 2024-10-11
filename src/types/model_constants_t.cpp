@@ -53,14 +53,14 @@ void model_constants_t<codi::RealForwardVec<num_par_init> >::register_input() {
 
 
 template<>
-void model_constants_t<codi::RealReverse>::register_input() {
+void model_constants_t<codi::RealReverseIndex>::register_input() {
     // Nothing to do for the backward mode
 }
 
 
 template<>
-void model_constants_t<codi::RealReverse>::register_input(
-    codi::RealReverse::Tape &tape) {
+void model_constants_t<codi::RealReverseIndex>::register_input(
+    codi::RealReverseIndex::Tape &tape) {
 #ifdef DEVELOP
     std::cout << "register input of at most " << static_cast<int>(Cons_idx::n_items)
               << " vs size " << this->constants.size() << "\n";
@@ -141,7 +141,7 @@ void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradient(
 
 
 template<>
-void model_constants_t<codi::RealReverse>::get_gradient(
+void model_constants_t<codi::RealReverseIndex>::get_gradient(
     std::array<double, num_par> &out_vec,
     const double &ref_value) const {
 #ifdef DEVELOP
@@ -274,10 +274,10 @@ void model_constants_t<codi::RealForwardVec<num_par_init> >::get_gradients(
 
 
 template<>
-void model_constants_t<codi::RealReverse>::get_gradients(
-    std::vector<codi::RealReverse> &y_single_new,
+void model_constants_t<codi::RealReverseIndex>::get_gradients(
+    std::vector<codi::RealReverseIndex> &y_single_new,
     std::vector< std::array<double, num_par > > &y_diff,
-    codi::RealReverse::Tape &tape,
+    codi::RealReverseIndex::Tape &tape,
     const reference_quantities_t &ref_quant)  {
 
     for (uint32_t ii = 0 ; ii < num_comp ; ii++) {
@@ -513,7 +513,7 @@ int model_constants_t<float_t>::from_json(
 #if defined(RK4_ONE_MOMENT)
 template<class float_t>
 void model_constants_t<float_t>::setCoefficients(
-    std::vector<codi::RealReverse> & y,
+    std::vector<codi::RealReverseIndex> & y,
     reference_quantities_t& ref) {
     float_t p_prime = y[p_idx]*ref.pref;
     float_t T_prime = y[T_idx]*ref.Tref;
@@ -1358,10 +1358,10 @@ double model_constants_t<float_t>::get_w(
     return poly2*current_w_poly_idx*current_w_poly_idx + poly1*current_w_poly_idx + poly0;
 }
 
-template class model_constants_t<codi::RealReverse>;
+template class model_constants_t<codi::RealReverseIndex>;
 template class model_constants_t<codi::RealForwardVec<num_par_init> >;
 
-template void to_json<codi::RealReverse>(
-    nlohmann::json&, const model_constants_t<codi::RealReverse>&);
+template void to_json<codi::RealReverseIndex>(
+    nlohmann::json&, const model_constants_t<codi::RealReverseIndex>&);
 template void to_json<codi::RealForwardVec<num_par_init> >(
     nlohmann::json&, const model_constants_t<codi::RealForwardVec<num_par_init> >&);

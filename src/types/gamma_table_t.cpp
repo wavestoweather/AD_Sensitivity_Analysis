@@ -26,7 +26,7 @@ A gamma_table_t::look_up(
     uint64_t io = iu + 1;
     A lookup = this->igf[this->n_bins-1] - this->igf[iu]
         - (this->igf[io] - this->igf[iu]) * this->odx*(xt-this->x[iu]);
-    return max(lookup, codi::RealReverse(0.0));
+    return max(lookup, codi::RealReverseIndex(0.0));
 }
 
 
@@ -69,8 +69,8 @@ void gamma_table_t::init_gamma_table(
     }
 }
 
-template codi::RealReverse gamma_table_t::look_lo<codi::RealReverse>(codi::RealReverse) const;
-template codi::RealReverse gamma_table_t::look_up<codi::RealReverse>(codi::RealReverse) const;
+template codi::RealReverseIndex gamma_table_t::look_lo<codi::RealReverseIndex>(codi::RealReverseIndex) const;
+template codi::RealReverseIndex gamma_table_t::look_up<codi::RealReverseIndex>(codi::RealReverseIndex) const;
 
 template codi::RealForwardVec<num_par_init> gamma_table_t::look_lo<codi::RealForwardVec<num_par_init> >(
     codi::RealForwardVec<num_par_init>) const;

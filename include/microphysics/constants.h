@@ -169,8 +169,8 @@ extern bool trace;
 #if defined(TRACE_TIME)
 // Relative to start time
 extern double trace_time;
-const double trace_start = 0;
-const double trace_end = 990;
+const double trace_start = 13610;
+const double trace_end = 14010;
 #endif
 #define artifact_thresh 5e-20
 #if defined(RK4_ONE_MOMENT)

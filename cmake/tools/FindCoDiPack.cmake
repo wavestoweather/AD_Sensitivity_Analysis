@@ -19,5 +19,7 @@ find_package_handle_standard_args(CoDiPack  DEFAULT_MSG
                                 CODIPACK_INCLUDE_DIR)
 
 mark_as_advanced(CODIPACK_INCLUDE_DIR CODIPACK_LIBRARY )
-
+file(READ "${CODIPACK_INCLUDE_DIR}/codi.hpp" ver)
+string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" _ ${ver})
+set(CODIPACK_VERSION "${CMAKE_MATCH_1}.${CMAKE_MATCH_2}.${CMAKE_MATCH_3}")
 set(CODIPACK_INCLUDE_DIRS ${CODIPACK_INCLUDE_DIR} )

@@ -194,9 +194,9 @@ bool checkpoint_t::checkpoint_available() const {
 }
 
 
-template checkpoint_t::checkpoint_t<codi::RealReverse>(
-    model_constants_t<codi::RealReverse>&,
-    const std::vector<codi::RealReverse>&,
+template checkpoint_t::checkpoint_t<codi::RealReverseIndex>(
+    model_constants_t<codi::RealReverseIndex>&,
+    const std::vector<codi::RealReverseIndex>&,
     const std::vector<segment_t>&,
     const input_parameters_t&,
     const double&,
@@ -216,9 +216,9 @@ template checkpoint_t::checkpoint_t<codi::RealReverse>(
     const uint64_t&,
     const double);
 
-template checkpoint_t::checkpoint_t<codi::RealReverse>(
-    const model_constants_t<codi::RealReverse>&,
-    const std::vector<codi::RealReverse>&,
+template checkpoint_t::checkpoint_t<codi::RealReverseIndex>(
+    const model_constants_t<codi::RealReverseIndex>&,
+    const std::vector<codi::RealReverseIndex>&,
     const std::vector<segment_t>&,
     const input_parameters_t&,
     const double&);
@@ -230,9 +230,9 @@ template checkpoint_t::checkpoint_t<codi::RealForwardVec<num_par_init> >(
     const input_parameters_t&,
     const double&);
 
-template void checkpoint_t::create_checkpoint<codi::RealReverse>(
-    const model_constants_t<codi::RealReverse>&,
-    const std::vector<codi::RealReverse>&,
+template void checkpoint_t::create_checkpoint<codi::RealReverseIndex>(
+    const model_constants_t<codi::RealReverseIndex>&,
+    const std::vector<codi::RealReverseIndex>&,
     const std::vector<segment_t>&,
     const input_parameters_t&,
     const double&);
@@ -244,22 +244,22 @@ template void checkpoint_t::create_checkpoint<codi::RealForwardVec<num_par_init>
     const input_parameters_t&,
     const double&);
 
-template int checkpoint_t::load_checkpoint<codi::RealReverse>(
+template int checkpoint_t::load_checkpoint<codi::RealReverseIndex>(
     const std::string&,
-    model_constants_t<codi::RealReverse>&,
+    model_constants_t<codi::RealReverseIndex>&,
     std::vector<double>&,
     std::vector<segment_t>&,
     input_parameters_t&);
 
-template int checkpoint_t::load_checkpoint<codi::RealReverse>(
-    model_constants_t<codi::RealReverse>&,
+template int checkpoint_t::load_checkpoint<codi::RealReverseIndex>(
+    model_constants_t<codi::RealReverseIndex>&,
     std::vector<double>&,
     std::vector<segment_t>&,
     input_parameters_t&,
     output_handle_t&);
 
-template int checkpoint_t::load_checkpoint<codi::RealReverse>(
-    model_constants_t<codi::RealReverse>&,
+template int checkpoint_t::load_checkpoint<codi::RealReverseIndex>(
+    model_constants_t<codi::RealReverseIndex>&,
     std::vector<double>&,
     std::vector<segment_t>&,
     input_parameters_t&);

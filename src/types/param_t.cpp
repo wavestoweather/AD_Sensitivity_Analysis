@@ -37,7 +37,7 @@ void param_t::add_type(
 void param_t::add_mean(
     double m) {
     mean = m;
-    if (!isnan(sigma_perc) && isnan(sigma))
+    if (!std::isnan(sigma_perc) && std::isnan(sigma))
         sigma = mean*sigma_perc/100;
 }
 
@@ -91,9 +91,9 @@ int param_t::add_name(
         }
     }
 
-    if (!isnan(sigma) && err != PARAM_CONFIG_ERR) {
+    if (!std::isnan(sigma) && err != PARAM_CONFIG_ERR) {
         add_sigma(sigma);
-    } else if (!isnan(sigma_perc) && err != PARAM_CONFIG_ERR) {
+    } else if (!std::isnan(sigma_perc) && err != PARAM_CONFIG_ERR) {
         add_sigma_perc(sigma_perc);
     }
     return SUCCESS;
@@ -103,7 +103,7 @@ int param_t::add_name(
 void param_t::add_sigma(
     double s) {
     sigma = s;
-    if (!isnan(mean) && func_name != "")
+    if (!std::isnan(mean) && func_name != "")
         add_rand_function(func_name);
 }
 
@@ -111,7 +111,7 @@ void param_t::add_sigma(
 void param_t::add_sigma_perc(
     double s) {
     sigma_perc = s;
-    if (!isnan(mean)) {
+    if (!std::isnan(mean)) {
         sigma = sigma_perc*mean/100;
         if (func_name != "")
             add_rand_function(func_name);
@@ -123,9 +123,9 @@ void param_t::add_rand_function(
     std::string name) {
     if (func_name == "")
         func_name = name;
-    if (!isnan(sigma_perc) && isnan(sigma) && !isnan(mean))
+    if (!std::isnan(sigma_perc) && std::isnan(sigma) && !std::isnan(mean))
         sigma = mean*sigma_perc/100;
-    if (!isnan(mean) && !isnan(sigma)) {
+    if (!std::isnan(mean) && !std::isnan(sigma)) {
         if (func_name == "normal") {
             normal_dis = std::normal_distribution<double>(mean, sigma);
             get_rand = std::bind(normal_dis, rand_generator);
@@ -149,7 +149,7 @@ int param_t::check() {
         err = MISSING_PARAM_CONFIG_ERR;
         return err;
     }
-    if (isnan(sigma) && isnan(sigma_perc)) {
+    if (std::isnan(sigma) && std::isnan(sigma_perc)) {
         std::cerr << "Error in config file:\n"
                     << "You did not specify the variance for "
                     << "perturbing the parameter.\n";
@@ -196,7 +196,7 @@ void to_json(
         return;
     j["mean"] = p.mean;
     j["name"] = p.param_name;
-    if (!isnan(p.sigma))
+    if (!std::isnan(p.sigma))
         j["sigma"] = p.sigma;
     else
         j["sigma_perc"] = p.sigma_perc;
@@ -379,33 +379,33 @@ std::string param_t::get_name() const {
 }
 
 
-template int param_t::check_name<codi::RealReverse>(
-    model_constants_t<codi::RealReverse>&);
+template int param_t::check_name<codi::RealReverseIndex>(
+    model_constants_t<codi::RealReverseIndex>&);
 
 template int param_t::check_name<codi::RealForwardVec<num_par_init> >(
     model_constants_t<codi::RealForwardVec<num_par_init> >&);
 
-template int param_t::add_name<codi::RealReverse>(
-    std::string, model_constants_t<codi::RealReverse>&);
+template int param_t::add_name<codi::RealReverseIndex>(
+    std::string, model_constants_t<codi::RealReverseIndex>&);
 
 template int param_t::add_name<codi::RealForwardVec<num_par_init> >(
     std::string, model_constants_t<codi::RealForwardVec<num_par_init> >&);
 
-template void param_t::perturb<codi::RealReverse>(
-    model_constants_t<codi::RealReverse>&) const;
+template void param_t::perturb<codi::RealReverseIndex>(
+    model_constants_t<codi::RealReverseIndex>&) const;
 
 template void param_t::perturb<codi::RealForwardVec<num_par_init> >(
     model_constants_t<codi::RealForwardVec<num_par_init> >&) const;
 
-template void param_t::reset<codi::RealReverse>(
-    model_constants_t<codi::RealReverse>&) const;
+template void param_t::reset<codi::RealReverseIndex>(
+    model_constants_t<codi::RealReverseIndex>&) const;
 
 template void param_t::reset<codi::RealForwardVec<num_par_init> >(
     model_constants_t<codi::RealForwardVec<num_par_init> >&) const;
 
-template int param_t::from_json<codi::RealReverse>(
+template int param_t::from_json<codi::RealReverseIndex>(
     const nlohmann::json&,
-    model_constants_t<codi::RealReverse>&);
+    model_constants_t<codi::RealReverseIndex>&);
 template int param_t::from_json<codi::RealForwardVec<num_par_init> >(
     const nlohmann::json&,
     model_constants_t<codi::RealForwardVec<num_par_init> >&);

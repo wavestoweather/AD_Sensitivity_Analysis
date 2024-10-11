@@ -24,12 +24,12 @@
 // y1-y1
 // for two given vectors y1 and y2.
 //
-inline codi::RealReverse compute_diff_length_square(
-    codi::RealReverse y1[],
-    codi::RealReverse y2[],
+inline codi::RealReverseIndex compute_diff_length_square(
+    codi::RealReverseIndex y1[],
+    codi::RealReverseIndex y2[],
     const int num_comp) {
 
-    codi::RealReverse result = 0.0;
+    codi::RealReverseIndex result = 0.0;
 
     for (int ii = 0 ; ii < num_comp ; ii++) {
         result = result + (y1[ii]-y2[ii])*(y1[ii]-y2[ii]);
@@ -50,19 +50,19 @@ inline codi::RealReverse compute_diff_length_square(
 // should _NOT_ be used for stiff equations.
 //
 void implicit_euler_step(
-    codi::RealReverse ynew[],
-    codi::RealReverse yold[],
+    codi::RealReverseIndex ynew[],
+    codi::RealReverseIndex yold[],
     const int num_comp,
     const reference_quantities_t& ref,
     model_constants_t& cc) {
 
     // Define the tolerance
     const double TOL_square = (1.0e-8)*(1.0e-8);
-    codi::RealReverse err_square = 1.0e10;
+    codi::RealReverseIndex err_square = 1.0e10;
 
     // Define the temporary variables
-    std::vector<codi::RealReverse> yit(num_comp);
-    std::vector<codi::RealReverse> k(num_comp);
+    std::vector<codi::RealReverseIndex> yit(num_comp);
+    std::vector<codi::RealReverseIndex> k(num_comp);
     int count = 0;
 
     // Evaluate the RHS to get f(yold)

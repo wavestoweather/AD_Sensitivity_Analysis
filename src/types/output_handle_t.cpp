@@ -2475,7 +2475,6 @@ bool output_handle_t::flush_buffer(
 #endif
     if (!no_flush) flushed_snapshots += n_snapshots;
     n_snapshots = 0;
-//    std::cout << "FLUSHING DONE\n";
     return true;
 }
 
@@ -2512,10 +2511,10 @@ void output_handle_t::process_step(
     }
 }
 
-template output_handle_t::output_handle_t<codi::RealReverse>(
+template output_handle_t::output_handle_t<codi::RealReverseIndex>(
     const std::string,
     const std::string,
-    const model_constants_t<codi::RealReverse>&,
+    const model_constants_t<codi::RealReverseIndex>&,
     const std::string,
     const uint32_t,
     const uint32_t ,
@@ -2542,10 +2541,10 @@ template output_handle_t::output_handle_t<codi::RealForwardVec<num_par_init> >(
 #endif
     const double);
 
-template output_handle_t::output_handle_t<codi::RealReverse>(
+template output_handle_t::output_handle_t<codi::RealReverseIndex>(
         const std::string,
         const std::string,
-        const model_constants_t<codi::RealReverse>&,
+        const model_constants_t<codi::RealReverseIndex>&,
         const std::string,
         const uint32_t,
         const uint32_t ,
@@ -2574,14 +2573,14 @@ template output_handle_t::output_handle_t<codi::RealForwardVec<num_par_init> >(
         const double,
         const std::vector<segment_t>&);
 
-template void output_handle_t::setup_gradients<codi::RealReverse>(
-        const model_constants_t<codi::RealReverse> &);
+template void output_handle_t::setup_gradients<codi::RealReverseIndex>(
+        const model_constants_t<codi::RealReverseIndex> &);
 
 template void output_handle_t::setup_gradients<codi::RealForwardVec<num_par_init> >(
         const model_constants_t<codi::RealForwardVec<num_par_init> > &);
 
-template void output_handle_t::define_var_gradients<codi::RealReverse>(
-        const model_constants_t<codi::RealReverse> &,
+template void output_handle_t::define_var_gradients<codi::RealReverseIndex>(
+        const model_constants_t<codi::RealReverseIndex> &,
         const int*,
         const int&);
 
@@ -2590,46 +2589,46 @@ template void output_handle_t::define_var_gradients<codi::RealForwardVec<num_par
         const int*,
         const int&);
 
-template void output_handle_t::define_vars<codi::RealReverse>(
-        const model_constants_t<codi::RealReverse> &);
+template void output_handle_t::define_vars<codi::RealReverseIndex>(
+        const model_constants_t<codi::RealReverseIndex> &);
 
 template void output_handle_t::define_vars<codi::RealForwardVec<num_par_init> >(
         const model_constants_t<codi::RealForwardVec<num_par_init> > &);
 
-template void output_handle_t::set_attributes<codi::RealReverse>(
-        const model_constants_t<codi::RealReverse> &,
+template void output_handle_t::set_attributes<codi::RealReverseIndex>(
+        const model_constants_t<codi::RealReverseIndex> &,
         const std::string);
 
 template void output_handle_t::set_attributes<codi::RealForwardVec<num_par_init> >(
         const model_constants_t<codi::RealForwardVec<num_par_init> > &,
         const std::string);
 
-template void output_handle_t::set_compression<codi::RealReverse>(
-        const model_constants_t<codi::RealReverse> &);
+template void output_handle_t::set_compression<codi::RealReverseIndex>(
+        const model_constants_t<codi::RealReverseIndex> &);
 
 template void output_handle_t::set_compression<codi::RealForwardVec<num_par_init> >(
         const model_constants_t<codi::RealForwardVec<num_par_init> > &);
 
-template void output_handle_t::write_dimension_values<codi::RealReverse>(
-        const model_constants_t<codi::RealReverse> &,
+template void output_handle_t::write_dimension_values<codi::RealReverseIndex>(
+        const model_constants_t<codi::RealReverseIndex> &,
         const double);
 
 template void output_handle_t::write_dimension_values<codi::RealForwardVec<num_par_init> >(
         const model_constants_t<codi::RealForwardVec<num_par_init> > &,
         const double);
 
-template void output_handle_t::set_parallel_access<codi::RealReverse>(
-        const model_constants_t<codi::RealReverse> &,
+template void output_handle_t::set_parallel_access<codi::RealReverseIndex>(
+        const model_constants_t<codi::RealReverseIndex> &,
         const std::string);
 
 template void output_handle_t::set_parallel_access<codi::RealForwardVec<num_par_init> >(
         const model_constants_t<codi::RealForwardVec<num_par_init> > &,
         const std::string);
 
-template void output_handle_t::setup<codi::RealReverse>(
+template void output_handle_t::setup<codi::RealReverseIndex>(
     const std::string,
     const std::string,
-    const model_constants_t<codi::RealReverse>&,
+    const model_constants_t<codi::RealReverseIndex>&,
     const std::string,
     const uint32_t,
     const uint32_t,
@@ -2646,8 +2645,8 @@ template void output_handle_t::setup<codi::RealForwardVec<num_par_init> >(
     const int&,
     const double);
 
-template void output_handle_t::buffer_gradient<codi::RealReverse>(
-    const model_constants_t<codi::RealReverse>&,
+template void output_handle_t::buffer_gradient<codi::RealReverseIndex>(
+    const model_constants_t<codi::RealReverseIndex>&,
     const std::vector< std::array<double, num_par > >&,
     const uint32_t);
 
@@ -2656,10 +2655,10 @@ template void output_handle_t::buffer_gradient<codi::RealForwardVec<num_par_init
     const std::vector< std::array<double, num_par > >&,
     const uint32_t);
 
-template void output_handle_t::buffer<codi::RealReverse>(
-    const model_constants_t<codi::RealReverse>&,
+template void output_handle_t::buffer<codi::RealReverseIndex>(
+    const model_constants_t<codi::RealReverseIndex>&,
     const netcdf_reader_t&,
-    const std::vector<codi::RealReverse>&,
+    const std::vector<codi::RealReverseIndex>&,
     const std::vector< std::array<double, num_par > >&,
     const uint32_t,
     const uint32_t,
@@ -2680,16 +2679,16 @@ template void output_handle_t::buffer<codi::RealForwardVec<num_par_init> >(
     const bool,
     const bool);
 
-template bool output_handle_t::flush_buffer<codi::RealReverse>(
-    const model_constants_t<codi::RealReverse>&, const bool);
+template bool output_handle_t::flush_buffer<codi::RealReverseIndex>(
+    const model_constants_t<codi::RealReverseIndex>&, const bool);
 
 template bool output_handle_t::flush_buffer<codi::RealForwardVec<num_par_init> >(
     const model_constants_t<codi::RealForwardVec<num_par_init> >&, const bool);
 
-template void output_handle_t::process_step<codi::RealReverse>(
-    const model_constants_t<codi::RealReverse>&,
+template void output_handle_t::process_step<codi::RealReverseIndex>(
+    const model_constants_t<codi::RealReverseIndex>&,
     const netcdf_reader_t&,
-    const std::vector<codi::RealReverse>&,
+    const std::vector<codi::RealReverseIndex>&,
     const std::vector< std::array<double, num_par > >&,
     const uint32_t,
     const uint32_t,

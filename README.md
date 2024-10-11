@@ -1,22 +1,40 @@
 Algorithmic Differentiation as Sensitivity Analysis in Cloud Microphysics
 =========================================================================
 
-Microphysical processes in convective clouds have an impact on radiation in climate models, precipitation and dynamical features. These processes are usually parameterized, i.e. in numerical weather prediction (NWP) models, due to the small scale in which those processes operate and the lack of understanding of some. Understanding the impact of uncertainties in parametrization to uncertainty in cloud responses is crucial for tuning such models. In addition, parameter values can depend on discretization details such as the grid interval, time resolution and other choices made by modeling physical processes. Typical sensitivity analysis investigate few model parameters selected by experts and perturb those based on (joint) proposal distributions that may be refined by experts. In this paper we propose algorithmic differentiation (AD) as a tool to detect the magnitude and time step at which a model state parameter is sensitive to any of hundreds of model parameters. We implement a two-moment scheme and identify the 20 most important parameters to each hydrometeor and validate those parameters by comparing perturbed ensembles and the resulting divergence with predicted deviations. Finally, we use the output of AD for detecting the time step at which perturbing a parameter is necessary with a random forest and a precision and recall of about 75% for each model parameter and hydrometeor.
+Microphysical processes in convective clouds have an impact on radiation in climate models, precipitation and 
+dynamical features. These processes are usually parameterized, i.e. in numerical weather prediction (NWP) models, 
+due to the small scale in which those processes operate and the lack of understanding of some. Understanding the 
+impact of uncertainties in parametrization to uncertainty in cloud responses is crucial for tuning such models. 
+In addition, parameter values can depend on discretization details such as the grid interval, time resolution and 
+other choices made by modeling physical processes. Typical sensitivity analysis investigate few model parameters 
+selected by experts and perturb those based on (joint) proposal distributions that may be refined by experts. 
+[In our first paper](https://doi.org/10.1029/2021MS002849) we propose algorithmic differentiation (AD) as a tool 
+to detect the magnitude and time step at which a 
+model state parameter is sensitive to any of hundreds of model parameters. We implement a two-moment scheme and 
+identify the 20 most important parameters to each hydrometeor and validate those parameters by comparing perturbed 
+ensembles and the resulting divergence with predicted deviations. Finally, we use the output of AD for detecting 
+the time step at which perturbing a parameter is necessary with a random forest and a precision and recall 
+of about 75% for each model parameter and hydrometeor. \
+In [another paper](https://doi.org/10.5194/gmd-16-4617-2023) we use [Met.3D](https://met3d.wavestoweather.de/met-3d.html)
+to analyze the output further.
+This version is used in a third paper where we analyze a WCB case with more than 16,000 trajectories associated
+with an extratropycal cyclone from 18 UTC 03 October 2016 and the following 66 hours.
 
-This repository consists of an implementation of a two-moment scheme (similar to [ICON](https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html)) with [AD using CoDiPack](https://github.com/scicompkl/codipack) where environment and intial variables are read from [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) files. Python scripts are used for post-processing and data analysis. For the C++ code we follow the
+This repository consists of an implementation of a two-moment scheme (similar to [ICON](https://www.dwd.de/EN/research/weatherforecasting/num_modelling/01_num_weather_prediction_modells/icon_description.html)) 
+with [AD using CoDiPack](https://github.com/scicompkl/codipack) where environment and initial variables are read from [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) files. 
+Python scripts are used for post-processing and data analysis. For the C++ code we follow the
 [doxygen standard](http://www.doxygen.nl/manual/docblocks.html). \
-We recommend an [anaconda](https://www.anaconda.com/) environment for which you may
-use `requirements.txt`. Either way, `requirements_pip.txt` with pip is needed
-as well to create a documentation.
-
-We also provide a docker image `mahieronymus/ad_sensitivity:2.10` with all necessary prerequisites installed. 
+We recommend using the docker image 
+[mahieronymus/ad_sensitivity:2.12](https://hub.docker.com/repository/docker/mahieronymus/ad_sensitivity/general) 
+which provides the Python scripts for analyzing and plotting the data and all necessary prerequisites. 
+Alternatively, you may use an [anaconda](https://www.anaconda.com/) environment with `pyproject.toml`. 
 
 
 
 Contents
 ---------
 
-- **ad_sensitivity_analysis:** Python scripts for plots and training a random forest.
+- **ad_sensitivity_analysis:** Python scripts for plots and training a random forest (only in docker image).
 - **src:** C++ code.
 - **include:** Header files for the C++ code.
 - **exe_scripts:** Bash scripts to compile and run the simulation.
@@ -24,37 +42,20 @@ Contents
 - **data:** Example NetCDF files with environment variables and initial datapoints. Output data can be stored here. The results of an ensemble simulations are stored as `data/simulation/*.nc`.
 
 
-Python Prerequisites for Post-Processing and Plotting
-------------------------------------------------------
-- [Python3](https://www.python.org/) (Tested with v3.7.6)
-- [bokeh](https://bokeh.org/) (Tested with v2.4.2)
-- [datashader](https://datashader.org/index.html) (Tested with v0.14.0)
-- [holoviews](http://holoviews.org/) (Tested with v1.14.8)
-- [hvplot](https://hvplot.holoviz.org/) (Tested with v0.8.2)
-- [matplotlib](https://matplotlib.org/) (Tested with v3.5.1)
-- [netCDF4 for Python](https://unidata.github.io/netcdf4-python/netCDF4/index.html) (Tested with v1.5.8)
-- [numpy](https://numpy.org/) (Tested with v1.21.5)
-- [pandas](https://pandas.pydata.org/) (Tested with v1.5.3)
-- [scikit-learn](https://scikit-learn.org/stable/index.html) (Tested with v1.0.2)
-- [scipy](https://www.scipy.org/) (Tested with v1.8.0)
-- [seaborn](https://seaborn.pydata.org/) (Tested with v0.11.2)
-- [tqdm](https://tqdm.github.io/) (Tested with v4.64.0)
-- [xarray](http://xarray.pydata.org/en/stable/) (Tested with v2022.3.0)
-
-
 C++ Prerequisites
 -----------------
-- [GCC](https://gcc.gnu.org/) (Tested with v10.2.1-6)
-- [OpenMPI](https://www.open-mpi.org/) (Tested with v4.1.2)
-- [GSL](https://www.gnu.org/software/gsl/) (Tested with v2.7.1)
-- [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) (Tested with v4.8.1)
-- [HDF5](https://www.hdfgroup.org/solutions/hdf5/) (Tested with v1.12.1; problems may occur with versions below v1.12)
-- [Boost](https://www.boost.org/) (Tested with v1.6.2)
-- [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/) (Tested with v2.0; must be at least v2.0)
-- [CMake](https://cmake.org/) (v3.7.2 or above; tested with v3.18.4)
-- [nlohmann/json](https://github.com/nlohmann/json) (v3.9.1 or above; tested with v3.9.1)
-- [(optional) PnetCDF](https://parallel-netcdf.github.io/) (tested with v1.12.2; only if you want to use classic NetCDF-files)
-- [(optional) zlib](https://zlib.net/) (tested with v1.2.11; in case you want to compress data with zlib)
+- [GCC](https://gcc.gnu.org/) (v10.2.1 or above; tested with v12.2.0-14)
+- [curl](https://curl.se/) (v7.74.0 or above; tested with v7.88.1)
+- [OpenMPI](https://www.open-mpi.org/) (v3.1 or above; tested with v4.1.4)
+- [GSL](https://www.gnu.org/software/gsl/) (v2.6 or above; tested with v2.7.1)
+- [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) (v4.9.2)
+- [HDF5](https://www.hdfgroup.org/solutions/hdf5/) (v1.12 or above; tested with v1.14.2)
+- [Boost](https://www.boost.org/) (1.74.0 or above; tested with v1.81.0)
+- [CoDiPack](https://www.scicomp.uni-kl.de/software/codi/) (v2.0 or above: tested with v2.2.0)
+- [CMake](https://cmake.org/) (v3.7.2 or above; tested with v3.26.4)
+- [nlohmann/json](https://github.com/nlohmann/json) (v3.9.1 or above; tested with v3.11.2)
+- [(optional) PnetCDF](https://parallel-netcdf.github.io/) (v1.12.2; only if you want to use classic NetCDF-files)
+- [(optional) zlib](https://zlib.net/) (v1.2.11 or above; tested with v1.2.13; in case you want to compress data with zlib)
 
 
 Compiling code
@@ -81,7 +82,7 @@ trajectories but takes much longer to write.
   consecutive NaNs for every other input column, i.e., trajectories with data from different domains.
   Without this option, the program assumes the dataset is broken and terminates with the first NaN, printing
   information which trajectory and time index starts with consecutive NaNs.
-- `-DCCN_AKM:BOOL=ON` Use a a different CCN activation scheme based on Hande et al. (2016) by Annette K. Miltenberger
+- `-DCCN_AKM:BOOL=ON` Use a different CCN activation scheme based on Hande et al. (10.5194/acp-16-12059-2016) by Annette K. Miltenberger (10.5194/acp-23-8553-2023)
 - `-RELOPTLEVEL=X` Set the optimization level for the compiler. Default optimization is 3.
 - `-DSILENT_MODE:BOOL=ON` Suppress prints where possible.
 
@@ -90,6 +91,7 @@ Possible targets:
 - `regrid` Convert results from a sensitivity simulation to a grid based dataset.
 - `python_interface` Create a library that can be used by `physics_t.py` 
 to run tests of the physics code from python scripts.
+- `loom` Calculate the parameters within leading order of magnitude.
 
 Running or regridding a simulation
 ---------------------
@@ -123,18 +125,14 @@ Default: off
 
 Analyzing the output
 --------------------
-We recommend an [anaconda](https://www.anaconda.com/) environment for which you may
-use `requirements.txt` or go to root of the repository and type 
-```
-pip3 install .
-```
-The data of the sensitivity simulation is stored under `data/simulation/*.nc` and can be analyzed using the various Jupyter notebooks.
-- `2d_map_plots_interactive.ipynb` Plot regridded data with mean, minimum, maximum, and variance in each box. Can
-plot top parameters in each box for different heights and time bins.
-- `impact_over_rank_plot_interactive.ipynb` Plot a comparison of impact and rank over all trajectories. You may
-choose median or average values or plot KDEs to analyze the probability of a high rank during different phases
-of the trajectory.
-- `get_statistics_tables.ipynb`
+We recommend [our docker image]((https://hub.docker.com/repository/docker/mahieronymus/ad_sensitivity/general)) (v2.12).
+This docker image provides multiple scripts to analyze the data with Jupyter notebooks.
+The data of the sensitivity simulation is stored under `data/simulation/*.nc`.
+Within `ad_sensitivity_analysis/interactive/`, there are different functions that can be called with the 
+corresponding dataset and they return an interactive panel, where the dataset can be examined and plots can be
+saved. Most plotting functions at `ad_sensitivity_analysis/plot/` have such an interactive version.
+At `ad_sensitivity_analysis/statistics/` are functions that yield statistics such as correlations, parameters
+with the largest impact or histograms which can be plotted.
 
 Adding New Physics
 ------------------

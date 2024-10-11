@@ -242,12 +242,12 @@ struct model_constants_t {
     void register_input();
 
     /**
-     * Register the model parameters on the tape for codi::RealReverse.
+     * Register the model parameters on the tape for codi::RealReverseIndex.
      *
      * @param tape Tape where the parameters should be registered on.
      */
     void register_input(
-        codi::RealReverse::Tape &tape);
+        codi::RealReverseIndex::Tape &tape);
 
     /**
      * Evaluate the gradients in forward mode. Used to track initial
@@ -265,7 +265,7 @@ struct model_constants_t {
     void get_gradients(
         std::vector<float_t> &y_single_new,
         std::vector< std::array<double, num_par > > &y_diff,
-        codi::RealReverse::Tape &tape,
+        codi::RealReverseIndex::Tape &tape,
         const reference_quantities_t &ref_quant);
 
     /**

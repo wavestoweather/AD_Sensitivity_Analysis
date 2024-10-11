@@ -168,36 +168,36 @@ void init_particle_collection_2(
 }
 
 
-template codi::RealReverse wet_growth_diam<codi::RealReverse>(
-    const codi::RealReverse&, const codi::RealReverse&,
-    const codi::RealReverse&, const codi::RealReverse&,
-    const table_t<codi::RealReverse>&);
+template codi::RealReverseIndex wet_growth_diam<codi::RealReverseIndex>(
+    const codi::RealReverseIndex&, const codi::RealReverseIndex&,
+    const codi::RealReverseIndex&, const codi::RealReverseIndex&,
+    const table_t<codi::RealReverseIndex>&);
 
 template codi::RealForwardVec<num_par_init> wet_growth_diam<codi::RealForwardVec<num_par_init> >(
     const codi::RealForwardVec<num_par_init>&, const codi::RealForwardVec<num_par_init>&,
     const codi::RealForwardVec<num_par_init>&, const codi::RealForwardVec<num_par_init>&,
     const table_t<codi::RealForwardVec<num_par_init> >&);
 
-template void setup_bulk_sedi<codi::RealReverse>(
-    particle_model_constants_t<codi::RealReverse>&);
+template void setup_bulk_sedi<codi::RealReverseIndex>(
+    particle_model_constants_t<codi::RealReverseIndex>&);
 
 template void setup_bulk_sedi<codi::RealForwardVec<num_par_init> >(
     particle_model_constants_t<codi::RealForwardVec<num_par_init> >&);
 
-template void init_particle_collection_1<codi::RealReverse>(
-    particle_model_constants_t<codi::RealReverse>&,
-    particle_model_constants_t<codi::RealReverse>&,
-    collection_model_constants_t<codi::RealReverse>&);
+template void init_particle_collection_1<codi::RealReverseIndex>(
+    particle_model_constants_t<codi::RealReverseIndex>&,
+    particle_model_constants_t<codi::RealReverseIndex>&,
+    collection_model_constants_t<codi::RealReverseIndex>&);
 
 template void init_particle_collection_1<codi::RealForwardVec<num_par_init> >(
     particle_model_constants_t<codi::RealForwardVec<num_par_init> >&,
     particle_model_constants_t<codi::RealForwardVec<num_par_init> >&,
     collection_model_constants_t<codi::RealForwardVec<num_par_init> >&);
 
-template void init_particle_collection_2<codi::RealReverse>(
-    particle_model_constants_t<codi::RealReverse>&,
-    particle_model_constants_t<codi::RealReverse>&,
-    collection_model_constants_t<codi::RealReverse>&);
+template void init_particle_collection_2<codi::RealReverseIndex>(
+    particle_model_constants_t<codi::RealReverseIndex>&,
+    particle_model_constants_t<codi::RealReverseIndex>&,
+    collection_model_constants_t<codi::RealReverseIndex>&);
 
 template void init_particle_collection_2<codi::RealForwardVec<num_par_init> >(
     particle_model_constants_t<codi::RealForwardVec<num_par_init> >&,

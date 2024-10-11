@@ -13,13 +13,13 @@
 
 struct physics_t {
  private:
-    model_constants_t<codi::RealReverse> cc;
+    model_constants_t<codi::RealReverseIndex> cc;
     input_parameters_t input;
     reference_quantities_t ref_quant;
-    std::vector<codi::RealReverse> yold;
-    std::vector<codi::RealReverse> ynew;
-    std::vector<codi::RealReverse> ytmp;
-    std::vector<codi::RealReverse> k;
+    std::vector<codi::RealReverseIndex> yold;
+    std::vector<codi::RealReverseIndex> ynew;
+    std::vector<codi::RealReverseIndex> ytmp;
+    std::vector<codi::RealReverseIndex> k;
     std::vector< std::array<double, num_par > > gradients_;
     double uncertainty_scale;
 
@@ -27,20 +27,20 @@ struct physics_t {
     explicit physics_t(std::string table_path = "dmin_wetgrowth_lookup.dat");
 
     void set_limits(
-            std::vector<codi::RealReverse> &y,
-            model_constants_t<codi::RealReverse> &cc);
+            std::vector<codi::RealReverseIndex> &y,
+            model_constants_t<codi::RealReverseIndex> &cc);
 
     int get_num_comp() {return num_comp;}
     int get_num_par() {return num_par;}
 
     void compute_nondimensional_effects(
-            std::vector<codi::RealReverse> &res,
-            const codi::RealReverse &p,
-            const codi::RealReverse &w,
-            const codi::RealReverse &w_prime,
-            const codi::RealReverse &T,
-            const codi::RealReverse &qv,
-            const codi::RealReverse &qv_prime);
+            std::vector<codi::RealReverseIndex> &res,
+            const codi::RealReverseIndex &p,
+            const codi::RealReverseIndex &w,
+            const codi::RealReverseIndex &w_prime,
+            const codi::RealReverseIndex &T,
+            const codi::RealReverseIndex &qv,
+            const codi::RealReverseIndex &qv_prime);
 
     void set_ref_quants(
             const double qref,
@@ -60,10 +60,10 @@ struct physics_t {
 
     void setup_model_constants();
 
-    codi::RealReverse::Tape& prepare_call();
+    codi::RealReverseIndex::Tape& prepare_call();
 
     void finish_call(
-            codi::RealReverse::Tape& tape,
+            codi::RealReverseIndex::Tape& tape,
             double *res,
             double *gradients);
 #ifdef CCN_AKM
